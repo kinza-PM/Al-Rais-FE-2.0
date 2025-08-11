@@ -20,21 +20,34 @@ const AppLayout: React.FC = () => {
 
   return (
     <>
-      <div className="min-h-screen">
+      <div className={`${shouldAddGradient ? "bg-sky-gradient" : ""} min-h-screen`}>
         <style>{`
           body {
             font-family: 'Inter', sans-serif;
           }
           .bg-sky-gradient {
-            background-image: linear-gradient(180deg, #FFFFFF 8.5%, #8FAFE7 38.5%, #5383DA 52.37%, #85A7E5 67.93%, #FFFFFF 100%);
+            background: linear-gradient(107.56deg, #FFFFFF 0%, #A7C0EC 100%);
           }
           .header-gradient {
-            background: linear-gradient(to bottom, white 60%, rgba(255, 255, 255, 0));
+            background: transparent;
           }
           .modal-overlay {
             background-color: rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(4px);
           }
+          .underline-blur {
+            position: absolute;
+            background: #5383DA;
+            border-radius: 9999px;
+            filter: blur(0);
+            -webkit-mask-image: linear-gradient(to top, rgb(83, 131, 218, 1), transparent);
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-size: 100% 100%;
+          }
+          .hide-date-icon::-webkit-calendar-picker-indicator { opacity: 0; display: block; width: 0; height: 0; }
+          .hide-date-icon::-webkit-inner-spin-button,
+          .hide-date-icon::-webkit-clear-button { display: none; }
+          .hide-date-icon { color-scheme: light; }
         `}</style>
 
         {location.pathname !== "/auth" && (
@@ -45,7 +58,7 @@ const AppLayout: React.FC = () => {
           />
         )}
 
-        <main className={`${shouldAddGradient ? "bg-sky-gradient" : ""} min-h-screen`}>
+        <main className="min-h-screen">
           <Outlet context={{ onLoginClick: openLogin, onSignupClick: openSignup }} />
         </main>
       </div>

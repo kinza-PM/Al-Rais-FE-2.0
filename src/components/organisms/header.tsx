@@ -37,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({ logoSrc, onLoginClick, onSignupClick })
         </div>
 
         {/* Navigation - Original Design */}
-        <nav className="flex font-thin items-center mt-3 space-x-10 sm:space-x-6 lg:space-x-20 text-xs sm:hidden lg:text-base text-black-200 font-medium">
+        <nav className="flex items-center mt-3 space-x-10 sm:space-x-6 lg:space-x-20 sm:hidden text-base font-normal leading-none tracking-normal text-center align-middle font-inter text-black-200">
           <Link to="/travel" className="hover:text-blue-700 whitespace-nowrap">
             Travel
           </Link>
