@@ -1,0 +1,1 @@
+export type AuthMode = 'login' | 'signup' | 'forgot-password' | 'otp-verification' | 'reset-password';
