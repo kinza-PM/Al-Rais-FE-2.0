@@ -1,0 +1,316 @@
+.topHeaderSetting {
+  display: flex;
+  padding: 15px 0px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.countrySelectBox .ant-select-selector {
+  border: 1px solid var(--black-100, #c2cad6);
+  border-radius: 12px;
+}
+
+.radioButtonGroup {
+  border: 1px solid var(--black-100, #c2cad6);
+  border-radius: 12px;
+  padding: 3px;
+}
+
+.radioButtonGroup .ant-segmented {
+  background-color: #ffffff !important;
+}
+.radioButtonGroup .ant-segmented-item {
+  background: #ffffff;
+  color: #000;
+  font-weight: 400;
+  padding: 2px 30px 2px;
+  border-radius: 6px;
+  height: auto;
+  line-height: 1 !important;
+  font-size: 12px;
+}
+
+.radioButtonGroup .ant-segmented-item-selected {
+  background: var(--primary-300, #2351a3);
+  color: #ffffff;
+  border-radius: 6px;
+}
+
+.smalSeparater {
+  margin: 0px 20px;
+}
+
+.getHelpLink {
+  color: var(--primary-200, #5383da);
+}
+.getHelpLink:hover {
+  text-decoration: underline;
+}
+
+.countrySelectAndGetHelp {
+  display: flex;
+  align-items: center;
+}
+
+.topHeaderTabs {
+  margin-right: 100px;
+}
+
+.topHeaderTabs
+  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
+  .ant-tabs-tab.ant-tabs-tab-active
+  .ant-tabs-tab-btn {
+  color: #2351a3 !important;
+  text-shadow: 0 0 0.25px #2351a3;
+}
+
+.topHeaderTabs
+  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
+  .ant-tabs-ink-bar {
+  color: #2351a3 !important;
+}
+.topHeaderTabs
+  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
+  .ant-tabs-ink-bar:hover {
+  color: #2351a3 !important;
+}
+
+.topHeaderTabs
+  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
+  .ant-tabs-ink-bar {
+  background: #2351a3;
+}
+
+.ant-tabs-ink-bar
+  .topHeaderTabs
+  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs-top
+  > .ant-tabs-nav {
+  margin-bottom: 0px;
+}
+
+.inputStyleChild {
+  width: 100%;
+  max-width: 250px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #0a0c0f;
+  line-height: 100%;
+  letter-spacing: 0px;
+  border-radius: 12px;
+  min-height: 40px;
+  /* padding: 15px; */
+}
+.datePickerChild,
+.selectChild {
+  width: 100%;
+  max-width: 200px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #0a0c0f;
+  line-height: 1;
+  letter-spacing: 0px;
+  border-radius: 12px !important;
+  min-height: 40px;
+  /* padding: 15px; */
+}
+
+.selectChild .ant-select-selector {
+  border-radius: 12px !important;
+}
+
+.buttonStyleChild {
+  width: 100%;
+  max-width: 154px;
+  padding: 14px 30px;
+  border-radius: 8px;
+  background: #2351a3;
+  color: #f2f2f3;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  height: auto;
+  max-height: 37px;
+}
+
+.bottomHeaderSetting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 35px;
+}
+
+.fromToIcon svg {
+  width: 100%;
+  max-width: 48px;
+  height: auto;
+  max-height: 48px;
+}
+
+.filterSectionStyle {
+  width: 100%;
+  max-width: 250px;
+}
+
+.collapseStyle {
+  border-radius: 15px !important;
+  overflow: hidden;
+}
+
+.collapseStyle .ant-collapse-header-text {
+  color: #3d495c;
+  letter-spacing: 0px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.collapseStyle .ant-collapse-header {
+  background: #ffffff;
+}
+
+.collapseStyle .ant-collapse-header {
+  align-items: center !important;
+}
+
+.collapseStyle .ant-collapse-content {
+  border: none !important;
+}
+
+.collapseStyle .ant-collapse-content-box {
+  padding-top: 0px !important;
+}
+
+.filterHeading {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+  margin-bottom: 15px;
+}
+
+.stopsRadioStyle {
+  display: flex;
+  gap: 5px;
+}
+.transitHours {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.stopsRadioStyle label,
+.transitHours label {
+  border-radius: 100px !important;
+  width: 100%;
+  max-width: 50px !important;
+  /* height: 39px !important; */
+  /* border: none !important; */
+  padding: 0px;
+  border: 1px solid var(--black-100, #c2cad6);
+}
+
+.transitHours label {
+  border-radius: 100px !important;
+  width: 100%;
+  max-width: 68px !important;
+}
+
+.stopsRadioStyle .ant-radio-button-wrapper-checked {
+  width: 100%;
+  max-width: 40px !important;
+}
+
+.transitHours .ant-radio-button-wrapper-checked {
+  width: 100%;
+  max-width: 68px !important;
+}
+
+.stopsRadioStyle
+  :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper:not(
+    :first-child
+  )::before,
+.transitHours
+  :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper:not(
+    :first-child
+  )::before {
+  content: none;
+}
+
+.stopsRadioStyle .ant-radio-button-label,
+.transitHours .ant-radio-button-label {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.transitHours
+  :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper-block {
+  flex: auto;
+}
+
+.baggageCheckbox .ant-checkbox-inner {
+  border-radius: 8px !important;
+}
+
+.departureArrival {
+  display: flex;
+  /* justify-content: space-between; */
+  gap: 14px;
+  align-items: center;
+}
+
+.timeBox {
+  width: 100%;
+  max-width: 100px;
+  height: auto;
+  max-height: 50px;
+  border: 1px solid var(--black-100, #c2cad6);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0px;
+  padding: 15px;
+  border-radius: 12px;
+  line-height: 1;
+}
+
+.filterHeading h4 {
+  color: #0a0c0f;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: 0px;
+}
+
+.smallDot {
+  width: 6px;
+  height: 6px;
+  color: #0a0c0f;
+}
+
+.lightActiveText {
+  font-size: 14px;
+  color: #3d495c;
+  font-weight: 400;
+  letter-spacing: 0px;
+}
+
+.resetAllBtn a {
+  color: #5383da;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.collapseStyle {
+  margin-bottom: 5px;
+}
+
+.departureArrivalHeading {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: #0a0c0f;
+  padding-top: 15px;
+  margin-bottom: 10px;
+}
+/* .collapseStyle panel{
+  border-radius: 12px !important;
+} */
