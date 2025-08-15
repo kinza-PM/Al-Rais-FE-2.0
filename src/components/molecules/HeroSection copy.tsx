@@ -1,66 +1,45 @@
-// HeroSection.tsx
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import OneWayForm from './OneWayForm';
 import RoundTripForm from './RoundTripForm';
 import MultiCityForm from './MultiCityForm';
 import Celebration from '../../assets/svgs/celebration.svg';
-
-import type {
-    TripType,
-    FlightTypeOption,
-    CountryOption,
-    PassengerSchema,
-    CabinClassOption,
-} from "../../features/flights/types";
-
-// ⬇️ NEW: use the hook
-import { useMasterListings } from "../../hooks/useMasterListings";
+import type { TripType, FlightTypeOption, FlightTypesResponse } from "../../features/flights/types/index";
+import { listingTables } from "../../config/masterListing";
+import { getMasterListingData } from "../../services/api/apiMasterListing";
+import { buildFlightTypeOptions } from "../../utils/flightTypes";
 
 const HeroSection: React.FC = () => {
-    // trip/tab state (as before)
     const [trip, setTrip] = useState<TripType>("oneway");
+    const [options, setOptions] = useState<FlightTypeOption[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    // route + cabin class selection (local UI state)
-    const [fromCode, setFromCode] = useState<string>("");
-    const [toCode, setToCode] = useState<string>("");
-    const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("");
-
-    // ⬇️ Fetch all master listings via hook (single source of truth)
-    const {
-        flightTypes,
-        countries,
-        passengers,      // PassengerSchema
-        cabinClasses,
-        loading,
-        error,
-    } = useMasterListings();
-
-    // keep your "tabs" memo
-    const tabs = useMemo<FlightTypeOption[]>(() => flightTypes, [flightTypes]);
-
-    // If you want to keep the old "namespaced" loading shape for child props:
-    const nsLoading = useMemo(
-        () => ({
-            flightTypes: loading,
-            countries: loading,
-            passengers: loading,
-            cabinClasses: loading,
-        }),
-        [loading]
-    );
-
-    // initialize defaults for from/to once countries arrive (same behavior you had)
     useEffect(() => {
-        if (!fromCode && countries[0]) setFromCode(countries[0].code);
-        if (!toCode && countries[1]) setToCode(countries[1].code);
-    }, [countries, fromCode, toCode]);
+        const ac = new AbortController();
+        (async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const resp: FlightTypesResponse = await getMasterListingData(listingTables.flightTypes, ac.signal);
+                const opts = buildFlightTypeOptions(resp.items || []);
+                setOptions(opts);
+            } catch (e) {
+                setError(e instanceof Error ? e.message : "Failed to load flight types");
+                setOptions(buildFlightTypeOptions([])); // fallback
+            } finally {
+                setLoading(false);
+            }
+        })();
+        return () => ac.abort();
+    }, []);
 
-    // ensure current trip is valid when flightTypes change
     useEffect(() => {
-        if (tabs.length && !tabs.find(t => t.key === trip)) {
-            setTrip(tabs[0].key);
+        if (options.length && !options.find(o => o.key === trip)) {
+            setTrip(options[0].key);
         }
-    }, [tabs, trip]);
+    }, [options, trip]);
+
+    const tabs = useMemo(() => options, [options]);
 
     return (
         <div>
@@ -83,13 +62,14 @@ const HeroSection: React.FC = () => {
                         />
                     </div>
 
-                    {/* Trip type segmented control */}
+
+                    {/* Trip type segmented control (outer border only, no inner dividers) */}
                     <div className="flex justify-center mt-4">
                         <div className="flex items-center rounded-xl ring-1 ring-[#D9E2EF] p-1">
-                            {nsLoading.flightTypes && (
+                            {loading && (
                                 <div className="px-6 py-2 text-[14px] rounded-xl text-[#3A4350] opacity-60">Loading…</div>
                             )}
-                            {!nsLoading.flightTypes && tabs.map(t => (
+                            {!loading && tabs.map(t => (
                                 <button
                                     key={t.id}
                                     type="button"
@@ -100,98 +80,70 @@ const HeroSection: React.FC = () => {
                                     {t.label}
                                 </button>
                             ))}
+                            {/* {(["oneway", "roundtrip", "multicity"] as TripType[]).map((t) => (
+                                <button
+                                    key={t}
+                                    type="button"
+                                    onClick={() => setTrip(t)}
+                                    className={`px-6 py-2 text-[14px] rounded-xl ${trip === t
+                                        ? "bg-[#2351A3] text-white"
+                                        : "text-[#3A4350]"
+                                        }`}
+                                >
+                                    {t === "oneway" ? "One way" : t === "roundtrip" ? "Round trip" : "Multi-city"}
+                                </button>
+                            ))} */}
                         </div>
                     </div>
 
-                    {/* Form row */}
+                    {/* Form row (no scroll; wraps on small screens) */}
                     <div className="px-6 pb-6 pt-6">
                         {trip === "oneway" && (
-                            <OneWayForm
-                                countries={countries as CountryOption[]}
-                                loadingCountries={nsLoading.countries}
-                                fromCode={fromCode}
-                                toCode={toCode}
-                                onChangeFrom={setFromCode}
-                                onChangeTo={setToCode}
-                                passengerSchema={passengers as PassengerSchema}
-                                loadingPassengers={nsLoading.passengers}
-                                cabinClasses={cabinClasses as CabinClassOption[]}
-                                loadingCabinClasses={nsLoading.cabinClasses}
-                                selectedCabinClassId={selectedCabinClassId}
-                                onChangeCabinClassId={setSelectedCabinClassId}
-                            />
+                            <OneWayForm />
                         )}
 
                         {trip === "roundtrip" && (
-                            <RoundTripForm
-                                countries={countries as CountryOption[]}
-                                loadingCountries={nsLoading.countries}
-                                fromCode={fromCode}
-                                toCode={toCode}
-                                onChangeFrom={setFromCode}
-                                onChangeTo={setToCode}
-                                passengerSchema={passengers as PassengerSchema}
-                                loadingPassengers={nsLoading.passengers}
-                                cabinClasses={cabinClasses as CabinClassOption[]}
-                                loadingCabinClasses={nsLoading.cabinClasses}
-                                selectedCabinClassId={selectedCabinClassId}
-                                onChangeCabinClassId={setSelectedCabinClassId}
-                            />
+                            <RoundTripForm />
                         )}
 
                         {trip === "multicity" && (
-                            <MultiCityForm
-                                countries={countries as CountryOption[]}
-                                loadingCountries={nsLoading.countries}
-                                passengerSchema={passengers as PassengerSchema}
-                                loadingPassengers={nsLoading.passengers}
-                                cabinClasses={cabinClasses as CabinClassOption[]}
-                                loadingCabinClasses={nsLoading.cabinClasses}
-                                selectedCabinClassId={selectedCabinClassId}
-                                onChangeCabinClassId={setSelectedCabinClassId}
-                            />
+                            <MultiCityForm />
                         )}
-
                         {/* Search */}
                         <div className="flex justify-center mt-6">
                             <button className="h-10 px-8 rounded-md bg-[#2351A3] text-white text-[14px] font-medium shadow-sm">
                                 Search
                             </button>
                         </div>
-
-                        {/* (optional) a tiny error line, if hook failed */}
-                        {/* {error && (
-                            <p className="mt-3 text-center text-[12px] text-red-600 opacity-80">
-                                {error}
-                            </p>
-                        )} */}
                     </div>
                 </div>
             </div>
-
-            {/* cards */}
             <div className="w-full flex mt-8 px-12">
                 <div className="w-full grid md:grid-cols-3 gap-4">
+
                     {/* Card 1 — Welcome gift */}
                     <div className="relative rounded-2xl border border-[#E7EEF7] bg-white px-4 py-4 min-h-[160px] shadow-[0_1px_2px_rgba(12,40,86,0.05)] flex items-center justify-between gap-4">
+                        {/* gradient pill top-left */}
                         <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full text-white text-[12px] font-medium
-              bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)] shadow-[0_2px_8px_rgba(12,40,86,0.18)]">
+                       bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)] shadow-[0_2px_8px_rgba(12,40,86,0.18)]">
                             <img src={Celebration} alt='celebration' className="w-[16px] h-[16px] shrink-0" />
                             Welcome gift
                         </span>
+
                         <div className="pt-2">
                             <h3 className="text-[26px] leading-6 text-[rgba(10, 12, 15, 1)]">
                                 Get 25% off on your first booking
                             </h3>
                         </div>
+
                         <button className="shrink-0 h-10 px-5 rounded-lg bg-[rgba(35,81,163,1)] text-white text-[14px] font-medium shadow-sm">
                             Sign in to claim
                         </button>
                     </div>
 
-                    {/* Card 2 — Did you know */}
+                    {/* Card 2 — Did you know (gradient) */}
                     <div className="rounded-2xl px-4 py-4 min-h-[160px] text-white shadow-[0_8px_28px_rgba(12,40,86,0.08)]
-            bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)] flex items-center justify-between gap-4">
+                    bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)] flex items-center justify-between gap-4">
                         <div>
                             <p className="text-[12px] opacity-80">Did you know?</p>
                             <p className="mt-2 text-[14px] leading-6 opacity-95">
@@ -212,10 +164,13 @@ const HeroSection: React.FC = () => {
                             Explore now
                         </button>
                     </div>
+
                 </div>
             </div>
+
+
         </div>
     );
 };
 
-export default HeroSection;
+export default HeroSection; 
