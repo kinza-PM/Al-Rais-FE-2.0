@@ -311,6 +311,286 @@
   padding-top: 15px;
   margin-bottom: 10px;
 }
+
+.contentWrapFlex {
+  display: flex;
+  gap: 16px;
+}
+
+.setHeroImage {
+  background-image: url("../images/travel_main_img2.png");
+  /* background-size: cover; */
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  /* min-height: 146px; */
+  border-radius: 12px;
+  padding: 11px 15px;
+  margin-bottom: 15px;
+}
+
+.heroImgDFlex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.partOne {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.partOne img {
+  width: 100%;
+  max-width: 100px;
+}
+
+.partOne h4 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: 0px;
+  color: #ffffff;
+  font-style: italic;
+}
+
+.partOne h6 {
+  font-size: 14px;
+  font-weight: 400;
+  color: #f2f2f3;
+  letter-spacing: 0px;
+  margin-bottom: 15px;
+}
+
+.para1 {
+  color: #f2f2f3;
+  font-size: 10px;
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+
+.para2 {
+  color: #f2f2f3;
+  font-size: 10px;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.promoCodeBtn {
+  color: #2351a3;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  width: 100%;
+  max-width: 224px;
+  height: auto;
+  max-height: 47px;
+  background: #fff;
+  border-radius: 8px;
+  border: none;
+  padding: 14px 40px;
+}
+
+.topHalfCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border: 1px solid var(--white-300, #e4e4e7);
+}
+
+.RoundTripCardDetail {
+  border-radius: 0px;
+  border: none;
+}
+
+.fightTitle {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.flightIcon {
+  width: 52px;
+  height: 52px;
+}
+.flightIcon img {
+  width: 100%;
+}
+
+.nameAndDetails h5 {
+  color: #0a0c0f;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0px;
+}
+.nameAndDetails p {
+  color: #3d495c;
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--black-200, #3d495c);
+}
+
+.flightTiming {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 13px;
+}
+
+.startTime h5,
+.EndTime h5 {
+  color: var(--black-300, #0a0c0f);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.startTime p,
+.EndTime p {
+  color: var(--black-200, #3d495c);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.FlightDirection {
+  text-align: center;
+}
+
+.FlightDirection span {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--black-200, #3d495c);
+}
+
+.visualGuid {
+  background: var(--primary-100, #a7c0ec);
+  width: 400px;
+  height: 2px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stopPoint {
+  width: 12px;
+  height: 12px;
+  background: var(--primary-300, #2351a3);
+  border-radius: 100%;
+}
+
+.featureIcons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.StartingPrice span {
+  color: var(--black-200, #3d495c);
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1;
+}
+.StartingPrice h5 {
+  color: var(--black-300, #0a0c0f);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.bottomHalfCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+  border: 1px solid var(--white-300, #e4e4e7);
+  border-top: none;
+}
+
+.modalOptions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.modalOptions .setMargin {
+  margin: 0px 20px;
+}
+
+.modalOptions p {
+  color: var(--black-200, #3d495c);
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.modalOptions .shareModalBtn {
+  color: var(--primary-200, #5383da);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.flightDetailCards {
+  margin-bottom: 15px;
+}
+
+.flightDetailRoundTripCards {
+  border: 1px solid var(--white-300, #e4e4e7);
+  border-radius: 12px;
+}
+
+.reminderCard {
+  background: linear-gradient(90.59deg, #5383da 0%, #2351a3 50%, #081326 100%);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 18px;
+  border-radius: 12px;
+  margin-bottom: 15px;
+}
+
+.reminderCardPart1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.reminderCardPart1 .textSection h5 {
+  color: var(--white-200, #ffffff);
+  font-size: 14px;
+  font-weight: 500;
+}
+.reminderCardPart1 .textSection p {
+  color: var(--white-100, #f2f2f3);
+  font-size: 10px;
+  font-weight: 400;
+}
+
+.reminderCard
+  :where(.css-dev-only-do-not-override-1ur7oz).ant-switch.ant-switch-checked {
+  background: #ffffff;
+}
+
+.reminderCard :where(.css-dev-only-do-not-override-1ur7oz).ant-switch {
+  background: #ffffff;
+}
+
+.reminderCard
+  :where(.css-dev-only-do-not-override-1ur7oz).ant-switch
+  .ant-switch-handle::before {
+  background: var(--primary-300, #2351a3);
+}
+
+.compareLikeButton:hover {
+  cursor: pointer;
+}
+
 /* .collapseStyle panel{
   border-radius: 12px !important;
 } */
