@@ -1,17 +1,62 @@
+:root {
+  --black-100: #c2cad6;
+  --white-300: #e4e4e7;
+  --black-200: #3d495c;
+}
+
 .topHeaderSetting {
+  /* border-top: 1px solid var(--white-300); */
+  border-bottom: 1px solid var(--white-300);
+  border-left: none;
+  border-right: none;
+  margin-bottom: 30px;
+}
+.topHeaderSettingInner {
   display: flex;
-  padding: 15px 0px;
   align-items: center;
   justify-content: space-between;
 }
-
-.countrySelectBox .ant-select-selector {
-  border: 1px solid var(--black-100, #c2cad6);
-  border-radius: 12px;
+.py-pxTopHeader {
+  padding-top: 8px;
+  padding-bottom: 14px;
+  padding-left: 32px;
+  padding-right: 32px;
 }
 
+.countrySelectBox .ant-select-selector {
+  border: 1px solid var(--black-100) !important;
+  border-radius: 16px;
+  box-shadow: none !important;
+}
+
+.header-input-common {
+  border: 1px solid var(--black-100) !important;
+  border-radius: 16px;
+  min-height: 50px;
+  width: 100%;
+}
+.header-labels-common {
+  font-size: 12px;
+  color: var(--black-200);
+}
+.header-input-common:focus,
+.header-input-common:hover {
+  border: 1px solid #2351a3 !important;
+}
+.header-sub-inputs-common .ant-select-selector {
+  border: 1px solid var(--black-100) !important;
+  border-radius: 16px !important;
+}
+.header-sub-inputs-common .ant-select-selector:focus,
+.header-sub-inputs-common .ant-select-selector:hover {
+  border: 1px solid #2351a3 !important;
+}
+
+.ant-input-select {
+  font-weight: bold !important;
+}
 .radioButtonGroup {
-  border: 1px solid var(--black-100, #c2cad6);
+  border: 1px solid var(--black-100);
   border-radius: 12px;
   padding: 3px;
 }
@@ -121,30 +166,34 @@
 .buttonStyleChild {
   width: 100%;
   max-width: 154px;
-  padding: 14px 30px;
+  padding: 10px 30px;
   border-radius: 8px;
   background: #2351a3;
   color: #f2f2f3;
-  font-size: 12px;
+  font-size: 16px;
+  min-height: 47px;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.5px;
   height: auto;
-  max-height: 37px;
+  max-height: 57px;
 }
 
 .bottomHeaderSetting {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   margin-bottom: 35px;
+  gap: 16px;
 }
 
 .fromToIcon svg {
   width: 100%;
   max-width: 48px;
+  min-width: 48px;
+  min-height: 48px;
   height: auto;
   max-height: 48px;
+  cursor: pointer;
 }
 
 .filterSectionStyle {
@@ -205,7 +254,7 @@
   /* height: 39px !important; */
   /* border: none !important; */
   padding: 0px;
-  border: 1px solid var(--black-100, #c2cad6);
+  border: 1px solid var(--black-100);
 }
 
 .transitHours label {
@@ -247,7 +296,7 @@
 }
 
 .baggageCheckbox .ant-checkbox-inner {
-  border-radius: 8px !important;
+  border-radius: 6px !important;
 }
 
 .departureArrival {
@@ -262,7 +311,7 @@
   max-width: 100px;
   height: auto;
   max-height: 50px;
-  border: 1px solid var(--black-100, #c2cad6);
+  border: 1px solid var(--black-100);
   font-size: 14px;
   font-weight: 500;
   letter-spacing: 0px;
@@ -407,6 +456,51 @@
   border-radius: 0px;
   border: none;
 }
+.modalFlightDetailCard {
+  padding: 10px 15px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  border: 1px solid var(--white-300, #e4e4e7);
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+.modalFlightDetail {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.modalFlightTiming {
+  margin-top: 15px;
+}
+.modalFlightTiming .visualGuid {
+  width: 322px;
+}
+
+.modalHeader {
+  text-align: center;
+}
+.modalHeader h2 {
+  margin-top: 25px;
+  margin-bottom: 15px;
+  color: var(--black-300, #0a0c0f);
+  font-size: 32px;
+  font-weight: 500;
+}
+.modalHeader p {
+  margin-bottom: 35px;
+  font-size: 16px;
+  font-weight: 400;
+  color: var(--black-200, #3d495c);
+}
+
+.compareModal {
+  width: 600px !important;
+}
+
+.compareModal .ant-modal-content {
+  border-radius: 12px;
+  padding: 25px 15px;
+}
 
 .fightTitle {
   display: flex;
@@ -481,6 +575,48 @@
   background: var(--primary-300, #2351a3);
   border-radius: 100%;
 }
+.stopDots {
+  width: 8px;
+  height: 8px;
+}
+
+.copyMailWhatsappBtn {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.copyMailWhatsappBtn .textCenter {
+  text-align: center;
+}
+.copyMailWhatsappBtn .textCenter p {
+  font-size: 12px;
+  color: var(--black-200, #3d495c);
+  font-weight: 400;
+}
+
+.copyEmailBtn {
+  background: var(--white-100, #f2f2f3);
+  padding: 11px;
+}
+
+.copyMailWhatsappBtn .btnClass {
+  border-radius: 100%;
+  border: none;
+  margin-bottom: 5px;
+}
+
+.stopsDetail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.fightTitle {
+  min-width: 200px;
+}
 
 .featureIcons {
   display: flex;
@@ -489,11 +625,12 @@
   gap: 10px;
 }
 
-.StartingPrice span {
+.StartingPrice p {
   color: var(--black-200, #3d495c);
   font-size: 10px;
   font-weight: 400;
   line-height: 1;
+  margin-bottom: 2px;
 }
 .StartingPrice h5 {
   color: var(--black-300, #0a0c0f);
@@ -502,15 +639,33 @@
   line-height: 1;
 }
 
+.forBorderBottom {
+  border-bottom: 1px solid var(--white-300, #e4e4e7);
+}
+
 .bottomHalfCard {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
+  padding: 0px;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
   border: 1px solid var(--white-300, #e4e4e7);
   border-top: none;
+}
+
+.roundTripBorder {
+  border: none !important;
+}
+
+.bottomHalfCardflexStyle {
+  padding: 0px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pricingCardsWrap {
+  border-top: 1px solid var(--white-300, #e4e4e7);
+
+  padding: 0px 15px;
 }
 
 .modalOptions {
@@ -521,6 +676,13 @@
 }
 .modalOptions .setMargin {
   margin: 0px 20px;
+}
+
+.modalOptions .ant-tabs-tab-btn {
+  color: var(--black-200, #3d495c);
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-family: "Inter", sans-serif;
 }
 
 .modalOptions p {
@@ -590,7 +752,113 @@
 .compareLikeButton:hover {
   cursor: pointer;
 }
+.customIndicate .ant-tabs-ink-bar {
+  height: 3px !important; /* Default is 0, increase to move lower */
+}
+.customIndicate .ant-tabs-nav::before {
+  border-bottom: none !important;
+}
+.customIndicate .ant-tabs-tab {
+  padding: 25px 0px !important;
+}
 
-/* .collapseStyle panel{
+.ant-tabs-nav {
+  margin-bottom: 0 !important;
+} /* .collapseStyle panel{
   border-radius: 12px !important;
 } */
+
+.priceCardHeadings {
+  padding: 20px;
+  border-width: 1px !important;
+
+  border-style: solid;
+
+  border-color: var(--white-300, #e4e4e7) !important;
+  text-align: center;
+  border: none;
+  border-bottom: 1px solid;
+}
+
+.priceCardHeadings p {
+  color: var(--black-300, #0a0c0f);
+  letter-spacing: 0;
+  line-height: 1;
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.emptyLabel {
+  padding: 20px;
+}
+.emptyLabel {
+  color: var(--black-300, #0a0c0f);
+  letter-spacing: 0;
+  line-height: 1;
+  font-size: 18px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.priceCardLabel {
+  padding: 15px 0px;
+  min-height: 72.8px;
+  display: flex;
+  /* justify-content: center; */
+  align-items: center;
+}
+.priceCardLabel p {
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0px;
+  line-height: 1;
+  color: #000000;
+  text-align: left;
+}
+
+.parahAlign {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  align-items: center;
+  padding: 26px;
+  border-width: 1px !important;
+
+  border-style: solid;
+
+  border-color: var(--white-300, #e4e4e7) !important;
+  text-align: center;
+  border: none;
+  border-bottom: 1px solid;
+  min-height: 72.8px;
+}
+
+.parahAlign p {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--black-200, #3d495c);
+  line-height: 1;
+  letter-spacing: 0px;
+}
+
+.cardPrice {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 25px;
+  padding-bottom: 25px;
+}
+
+.cardPrice p {
+  font-size: 32px;
+  font-weight: bold;
+  color: #0a0c0f;
+  letter-spacing: 0px;
+}
+.cardPrice p span {
+  font-size: 24px;
+  font-weight: 400;
+  color: #3d495c;
+}
