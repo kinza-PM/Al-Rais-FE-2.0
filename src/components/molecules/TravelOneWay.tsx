@@ -6,6 +6,7 @@ import flydubaiLogo from "../../assets/images/flydubai_icon.jpeg";
 import planeImg from "../../assets/images/travel_plane_image.png";
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
 import flightIcon from "../../assets/images/emirates.png";
+import colSeparater from "../../assets/svgs/Lineseparater.svg";
 
 import { Segmented, Tabs, Select, Radio, Checkbox, Switch, Modal } from "antd";
 import type { CheckboxGroupProps } from "antd/es/checkbox";
@@ -21,6 +22,9 @@ import { useState } from "react";
 import type { CheckboxProps } from "antd";
 import { travelData } from "../../utils/mockData";
 import PricingDetailCard from "./PricingDetailCard";
+import CompareCard from "./CompareCard";
+import warning from "antd/es/_util/warning";
+import FlightDetailsCard from "./FlightDetailsCard";
 
 const radioReminder = (checked: boolean) => {
   console.log(`switch to ${checked}`);
@@ -54,7 +58,7 @@ const TravelOneWay: React.FC = () => {
   };
 
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
-    const filtered = filterDetail.filter((item) => item.id === id);
+    const filtered = travelData.filter((item) => item.id === id);
     setFilterDetail(filtered);
   };
 
@@ -69,6 +73,9 @@ const TravelOneWay: React.FC = () => {
       setshareModal(false);
     }
   };
+
+  const [active, setActive] = useState({ name: "", id: 0 });
+  console.log(active, "active");
 
   return (
     <div className="">
@@ -115,7 +122,7 @@ const TravelOneWay: React.FC = () => {
         </div>
       </div>
 
-      {travelData?.map((item) => (
+      {travelData?.map((item, index) => (
         <div className="flightDetailCards">
           <div className="topHalfCard">
             <div className="fightTitle">
@@ -269,39 +276,80 @@ const TravelOneWay: React.FC = () => {
           <div className="bottomHalfCard">
             <div className="bottomHalfCardflexStyle">
               <div className="modalOptions">
-                <Tabs
-                  defaultActiveKey="1"
-                  className="customIndicate"
-                  items={items}
-                  onChange={() => {
-                    HandlePriceOption({ id: item.id });
-                  }}
-                  tabBarStyle={{ marginBottom: "16px !important" }}
-                  // indicator={{ size: (origin) => origin - 20, align: alignValue }}
-                />
-                <p
+                <div className="tabs">
+                  <div
+                    className={`tab ${
+                      active?.name === "price" && active?.id === index
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      HandlePriceOption({ id: item.id });
+                      // setActive({ name: "price", id: index });
+                      setActive((prev) => {
+                        return {
+                          ...prev,
+                          name: "price",
+                          id: index,
+                        };
+                      });
+                    }}
+                  >
+                    Price options
+                  </div>
+                  <div
+                    className={`tab ${
+                      active?.name === "flight" && active?.id === index
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      HandlePriceOption({ id: item.id });
+                      // setActive({ name: "flight", id: index });
+                      setActive((prev) => {
+                        return {
+                          ...prev,
+                          name: "flight",
+                          id: index,
+                        };
+                      });
+                    }}
+                  >
+                    Flight details
+                  </div>
+                  <div
+                    className={`tab ${
+                      active?.name === "compare" && active?.id === index
+                        ? "active"
+                        : ""
+                    }`}
+                    onClick={() => {
+                      // setActive({ name: "compare", id: index });
+                      setActive((prev) => {
+                        return {
+                          ...prev,
+                          name: "compare",
+                          id: index,
+                        };
+                      });
+                    }}
+                  >
+                    Compare
+                  </div>
+                </div>
+                {/* <p
                   className="compareLikeButton"
                   onClick={() => {
                     showModalCompare({ modalType: "compare", id: undefined });
                   }}
                 >
                   Compare
-                </p>
-                <svg
-                  width="1"
-                  height="30"
-                  viewBox="0 0 1 30"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <line
-                    x1="0.5"
-                    y1="2.18556e-08"
-                    x2="0.499999"
-                    y2="30"
-                    stroke="#E4E4E7"
-                  />
-                </svg>
+                </p> */}
+                <img
+                  src={colSeparater}
+                  alt=""
+                  style={{ width: 1, height: 30 }}
+                />
                 <p
                   className="shareModalBtn compareLikeButton"
                   onClick={() => {
@@ -315,7 +363,15 @@ const TravelOneWay: React.FC = () => {
                 <CustomButton>Select Price</CustomButton>
               </div>
             </div>
-            <PricingDetailCard passSome={filterDetail} />
+            {active?.name == "price" && active?.id == index ? (
+              <PricingDetailCard passSome={filterDetail} />
+            ) : active?.name == "flight" && active?.id == index ? (
+              <FlightDetailsCard details={item} />
+            ) : active?.name == "compare" && active?.id == index ? (
+              <CompareCard passSome={filterDetail} />
+            ) : (
+              ""
+            )}
           </div>
         </div>
       ))}

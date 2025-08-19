@@ -61,25 +61,26 @@
   padding: 3px;
 }
 
-.radioButtonGroup .ant-segmented {
+/* .radioButtonGroup .ant-segmented {
   background-color: #ffffff !important;
-}
+} */
 .radioButtonGroup .ant-segmented-item {
-  background: #ffffff;
-  color: #000;
+  /* background: #ffffff; */
+  /* color: #000; */
   font-weight: 400;
   padding: 2px 30px 2px;
   border-radius: 6px;
   height: auto;
   line-height: 1 !important;
   font-size: 12px;
+  /* background: #fefefe; */
 }
 
-.radioButtonGroup .ant-segmented-item-selected {
+/* .radioButtonGroup .ant-segmented-item-selected {
   background: var(--primary-300, #2351a3);
   color: #ffffff;
   border-radius: 6px;
-}
+} */
 
 .smalSeparater {
   margin: 0px 20px;
@@ -639,6 +640,12 @@
   line-height: 1;
 }
 
+.StartingPrice span {
+  color: #3d495c;
+  font-size: 14px;
+  font-weight: 400;
+}
+
 .forBorderBottom {
   border-bottom: 1px solid var(--white-300, #e4e4e7);
 }
@@ -768,6 +775,19 @@
   border-radius: 12px !important;
 } */
 
+.priceCard {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: 0.3s;
+  padding: 12px;
+}
+
+.priceCard.selected {
+  border: 2px solid #0056b3;
+  background: #f0f8ff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
 .priceCardHeadings {
   padding: 20px;
   border-width: 1px !important;
@@ -861,4 +881,180 @@
   font-size: 24px;
   font-weight: 400;
   color: #3d495c;
+}
+
+.tabs {
+  display: flex;
+  gap: 40px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.tab {
+  position: relative;
+
+  color: var(--black-200, #3d495c);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.tab:hover {
+  cursor: pointer !important;
+}
+
+.tab.active {
+  font-weight: 600;
+
+  color: var(--primary-300, #2351a3);
+}
+
+.tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 4px;
+  border-radius: 2px;
+  background: #2351a3;
+  filter: blur(0.9px);
+  /* backdrop-filter: blur(2px); */
+}
+
+.compareCard {
+  border-radius: 12px;
+  border: 1px solid var(--white-300, #e4e4e7);
+  max-width: 360px;
+}
+
+.cardHeader {
+  padding: 15px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0a0c0f;
+  border-bottom: 1px solid var(--white-300, #e4e4e7);
+}
+
+.pricingCardsWrap {
+  padding: 15px 15px;
+}
+
+.cardBody {
+  padding: 10px;
+}
+
+.featureImgs {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.featureImgs .featureIconText {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.featureImgs .featureIconText p {
+  font-size: 12px;
+  font-weight: 400;
+  color: #3d495c;
+  letter-spacing: 0;
+}
+
+.flightSeats {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.flightSeats .SeatDetail {
+  display: flex;
+  align-items: center;
+}
+
+.flight_detail_card {
+  /* min-height: 35vh; */
+  height: fit-content;
+  border-top: 1px solid #e5e7eb;
+}
+.sub_inner {
+  height: 100%;
+}
+.date_time_center_fd {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  gap: 5;
+}
+.common_typography_fd {
+  color: var(--black-200) !important;
+}
+.prefix_headings {
+  color: var(--black-300);
+  font-size: 16px !important;
+}
+
+.map_container {
+  /* background: black; */
+  border-radius: 16px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.flightDetail,
+.SeatDetail {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.flightDetail p,
+.SeatDetail p {
+  color: var(--black-300, #0a0c0f);
+  font-size: 12px;
+  font-weight: 500;
+}
+.flightDetail .parahTwo,
+.SeatDetail .parahTwo {
+  color: var(--black-200, #3d495c);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.compareModalButton {
+  border: 1px solid var(--primary-100, #a7c0ec);
+  border-radius: 12px;
+  max-width: 360px;
+  height: auto;
+  max-height: 290px;
+}
+
+.compareModalButton {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 121px 0px;
+}
+
+.compareModalButton p {
+  font-size: 14;
+  font-weight: 500;
+  color: var(--primary-200, #5383da);
+}
+
+.compareCardsFlex {
+  /* gap: 4px; */
+}
+
+.featureIconText img {
+  width: 15px;
+  height: 15px;
+}
+
+.featureImgs :where(.css-dev-only-do-not-override-1w2pzdr).ant-row {
+  gap: 0px;
 }

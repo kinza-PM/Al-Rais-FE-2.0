@@ -15,11 +15,11 @@ const ReadyToFlySection: React.FC = () => {
       </section>
       <section
         style={{ backgroundImage: `url(${readyToFlyBgImg})` }}
-        className="bg-no-repeat bg-center bg-cover py-20px"
+        className="bg-no-repeat bg-center bg-cover py-20"
       >
         <div>
-          <div className="w-full max-w-[1040px] !mt-20 !mb-20 m-auto">
-            <h5 className="text-[40px] leading-[100%] text-center text-[#FFFFFF] mt-20 mb-5">
+          <div className="w-full max-w-[1040px] !mt-00 m-auto">
+            <h5 className="text-[40px] leading-[100%] text-center text-[#FFFFFF] mt10 mb-5">
               Ready to take a trip around <br />
               the world with us?
             </h5>

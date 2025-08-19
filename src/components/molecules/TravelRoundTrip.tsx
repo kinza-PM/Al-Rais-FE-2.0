@@ -33,8 +33,12 @@ const items: TabsProps["items"] = [
 const TravelRoundTrip: React.FC = () => {
   const [filterDetail, setFilterDetail] = useState<any[]>([]);
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
-    const filtered = filterDetail.filter((item) => item.id === id);
-    setFilterDetail(filtered);
+    if (id) {
+      const filtered = filterDetail.filter((item) => item.id === id);
+      setFilterDetail(filtered);
+    } else {
+      setFilterDetail(null);
+    }
   };
 
   return (
@@ -299,7 +303,6 @@ const TravelRoundTrip: React.FC = () => {
           <div className="bottomHalfCardflexStyle">
             <div className="modalOptions">
               <Tabs
-                defaultActiveKey="1"
                 className="customIndicate"
                 items={items}
                 onChange={() => {

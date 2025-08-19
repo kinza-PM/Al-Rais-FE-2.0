@@ -72,104 +72,112 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
             </div>
           </Col>
           <Col span={21} className="">
-            <Row>
-              <Col span={8} className="">
-                <div className="priceCardHeadings">
-                  <p>Economy lite</p>
-                </div>
-                <div className="parahAlign">
-                  <OkCheckIcon />
-                  <p>01 item (e.g., small backpack, laptop bag)</p>
-                </div>
-                <div className="parahAlign">
-                  <CrossIcon />
-                </div>
-                <div className="parahAlign">
-                  <CrossIcon />
-                  <p>Assigned at check-in</p>
-                </div>
-                <div className="parahAlign">
-                  <CrossIcon />
-                  <p>with very high fee</p>
-                </div>
-                <div className="parahAlign">
-                  <CrossIcon />
-                </div>
-                <div className="cardPrice">
-                  <p>
-                    $48<span>/per seat</span>
-                  </p>
-                  <Checkbox className="baggageCheckbox" onChange={baggage}>
-                    Select this option
-                  </Checkbox>
-                </div>
-              </Col>
-              <Col span={8} className="">
-                <div className="priceCardHeadings">
-                  <p>Economy Standard</p>
-                </div>
-                <div className="parahAlign">
-                  <OkCheckIcon />
-                  <p>01 item (e.g., small backpack, laptop bag)</p>
-                </div>
-                <div className="parahAlign">
-                  <CrossIcon />
-                  <p>01 item (up to 20kg)</p>
-                </div>
-                <div className="parahAlign">
-                  <OkCheckIcon />
-                  <p>Standard (free)</p>
-                </div>
-                <div className="parahAlign">
-                  <OkCheckIcon />
-                  <p>$4 + fare difference</p>
-                </div>
-                <div className="parahAlign">
-                  <CrossIcon />
-                </div>
-                <div className="cardPrice">
-                  <p>
-                    $52<span>/per seat</span>
-                  </p>
-                  <Checkbox className="baggageCheckbox" onChange={baggage}>
-                    This option is selected
-                  </Checkbox>
-                </div>
-              </Col>
-              <Col span={8} className="">
-                <div className="priceCardHeadings">
-                  <p>Economy Flex</p>
-                </div>
-                <div className="parahAlign">
-                  <OkCheckIcon />
-                  <p>01 item (e.g., small backpack, laptop bag)</p>
-                </div>
-                <div className="parahAlign">
-                  <CrossIcon />
-                  <p>02 items (up to 20kg each)</p>
-                </div>
-                <div className="parahAlign">
-                  <OkCheckIcon />
-                  <p>Any (free, including preferred seats)</p>
-                </div>
-                <div className="parahAlign">
-                  <OkCheckIcon />
-                  <p>Free (fare differences may apply)</p>
-                </div>
-                <div className="parahAlign">
-                  <OkCheckIcon />
-                  <p>with a small fee</p>
-                </div>
-                <div className="cardPrice">
-                  <p>
-                    $52<span>/per seat</span>
-                  </p>
-                  <Checkbox className="baggageCheckbox" onChange={baggage}>
-                    Select this option
-                  </Checkbox>
-                </div>
-              </Col>
-            </Row>
+            {passSome.map((item) => (
+              <Row>
+                <Col span={8} className="">
+                  <div className="priceCardHeadings">
+                    <p>Economy lite</p>
+                  </div>
+                  <div className="parahAlign">
+                    <OkCheckIcon />
+                    <p>{item.price.economyLite.personalItem}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <CrossIcon />
+                    <p>{item.price.economyLite.baggage}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <CrossIcon />
+                    <p>{item.price.economyLite.seatSelection}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <CrossIcon />
+                    <p>{item.price.economyLite.Changes}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <CrossIcon />
+                    <p>{item.price.economyLite.Refundable}</p>
+                  </div>
+                  <div className="cardPrice">
+                    <p>
+                      ${item.price.economyLite.price}
+                      <span>/per seat</span>
+                    </p>
+                    <Checkbox className="baggageCheckbox" onChange={baggage}>
+                      Select this option
+                    </Checkbox>
+                  </div>
+                </Col>
+                <Col span={8} className="">
+                  <div className="priceCardHeadings">
+                    <p>Economy Standard</p>
+                  </div>
+                  <div className="parahAlign">
+                    <OkCheckIcon />
+                    <p>{item.price.economyStandard.personalItem}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <CrossIcon />
+                    <p>{item.price.economyStandard.baggage}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <OkCheckIcon />
+                    <p>{item.price.economyStandard.seatSelection}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <OkCheckIcon />
+                    <p>{item.price.economyStandard.Changes}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <CrossIcon />
+                    {item.price.economyStandard.Refundable}
+                  </div>
+                  <div className="cardPrice">
+                    <p>
+                      ${item.price.economyStandard.price}
+                      <span>/per seat</span>
+                    </p>
+                    <Checkbox className="baggageCheckbox" onChange={baggage}>
+                      This option is selected
+                    </Checkbox>
+                  </div>
+                </Col>
+                <Col span={8} className="">
+                  <div className="priceCardHeadings">
+                    <p>Economy Flex</p>
+                  </div>
+                  <div className="parahAlign">
+                    <OkCheckIcon />
+                    <p>{item.price.economyFlex.personalItem}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <CrossIcon />
+                    <p>{item.price.economyFlex.baggage}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <OkCheckIcon />
+                    <p>{item.price.economyFlex.seatSelection}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <OkCheckIcon />
+                    <p>{item.price.economyFlex.Changes}</p>
+                  </div>
+                  <div className="parahAlign">
+                    <OkCheckIcon />
+                    <p>{item.price.economyFlex.Refundable}</p>
+                  </div>
+                  <div className="cardPrice">
+                    <p>
+                      ${item.price.economyFlex.price}
+                      <span>/per seat</span>
+                    </p>
+                    <Checkbox className="baggageCheckbox" onChange={baggage}>
+                      Select this option
+                    </Checkbox>
+                  </div>
+                </Col>
+              </Row>
+            ))}
           </Col>
         </Row>
       </div>
