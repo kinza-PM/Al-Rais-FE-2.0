@@ -61,25 +61,26 @@
   padding: 3px;
 }
 
-.radioButtonGroup .ant-segmented {
+/* .radioButtonGroup .ant-segmented {
   background-color: #ffffff !important;
-}
+} */
 .radioButtonGroup .ant-segmented-item {
-  background: #ffffff;
-  color: #000;
+  /* background: #ffffff; */
+  /* color: #000; */
   font-weight: 400;
   padding: 2px 30px 2px;
   border-radius: 6px;
   height: auto;
   line-height: 1 !important;
   font-size: 12px;
+  /* background: #fefefe; */
 }
 
-.radioButtonGroup .ant-segmented-item-selected {
+/* .radioButtonGroup .ant-segmented-item-selected {
   background: var(--primary-300, #2351a3);
   color: #ffffff;
   border-radius: 6px;
-}
+} */
 
 .smalSeparater {
   margin: 0px 20px;
@@ -464,6 +465,11 @@
   border-radius: 12px;
   margin-bottom: 10px;
 }
+
+.modalFlightDetailCard:hover {
+  cursor: pointer;
+}
+
 .modalFlightDetail {
   display: flex;
   justify-content: space-between;
@@ -639,6 +645,12 @@
   line-height: 1;
 }
 
+.StartingPrice span {
+  color: #3d495c;
+  font-size: 14px;
+  font-weight: 400;
+}
+
 .forBorderBottom {
   border-bottom: 1px solid var(--white-300, #e4e4e7);
 }
@@ -768,6 +780,19 @@
   border-radius: 12px !important;
 } */
 
+.priceCard {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  transition: 0.3s;
+  padding: 12px;
+}
+
+.priceCard.selected {
+  border: 2px solid #0056b3;
+  background: #f0f8ff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
 .priceCardHeadings {
   padding: 20px;
   border-width: 1px !important;
@@ -801,6 +826,10 @@
   text-align: center;
 }
 
+.activeCard {
+  background: var(--white-100, #f2f2f3);
+}
+
 .priceCardLabel {
   padding: 15px 0px;
   min-height: 72.8px;
@@ -816,6 +845,22 @@
   color: #000000;
   text-align: left;
 }
+
+/* Price Card Radio Style */
+
+/* Card base style */
+
+/* Active card */
+
+/* Radio ko checkbox jesa */
+
+.cardPrice
+  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-wrapper
+  .ant-radio-inne {
+  border-radius: 6px;
+}
+
+/* Price Card Radio Style */
 
 .parahAlign {
   display: flex;
@@ -862,3 +907,251 @@
   font-weight: 400;
   color: #3d495c;
 }
+
+.tabs {
+  display: flex;
+  gap: 40px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.tab {
+  position: relative;
+
+  color: var(--black-200, #3d495c);
+  font-size: 14px;
+  font-weight: 400;
+  cursor: pointer;
+}
+.tab:hover {
+  cursor: pointer !important;
+}
+
+.tab.active {
+  font-weight: 600;
+
+  color: var(--primary-300, #2351a3);
+}
+
+.tab.active::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 4px;
+  border-radius: 2px;
+  background: #5383da;
+
+  /* backdrop-filter: blur(2px); */
+}
+
+.compareCard {
+  border-radius: 12px;
+  border: 1px solid var(--white-300, #e4e4e7);
+  max-width: 360px;
+  margin-top: 15px;
+}
+
+.cardHeader {
+  padding: 15px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0a0c0f;
+  border-bottom: 1px solid var(--white-300, #e4e4e7);
+}
+
+.pricingCardsWrap {
+  padding: 0px 15px 15px;
+}
+
+.cardBody {
+  padding: 10px;
+}
+
+.featureImgs {
+  margin-top: 15px;
+  margin-bottom: 15px;
+}
+
+.featureImgs .featureIconText {
+  display: flex;
+  align-items: center;
+  gap: 2.5px;
+  padding-top: 7px;
+  padding-bottom: 7px;
+}
+
+.featureImgs .featureIconText p {
+  font-size: 12px;
+  font-weight: 400;
+  color: #3d495c;
+  letter-spacing: 0;
+}
+
+.flightSeats {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.flightSeats .SeatDetail {
+  display: flex;
+  align-items: center;
+}
+
+.flight_detail_card {
+  /* min-height: 35vh; */
+  height: fit-content;
+  border-top: 1px solid #e5e7eb;
+}
+.sub_inner {
+  height: 100%;
+}
+.date_time_center_fd {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  text-align: center;
+  gap: 5px;
+  font-size: 16px !important;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-align: center;
+  color: var(--black-300, rgba(10, 12, 15, 1));
+}
+
+.common_typography_fd {
+  color: var(--black-200, rgba(61, 73, 92, 1));
+  font-size: 12px !important;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.prefix_headings {
+  color: var(--black-300);
+  font-size: 14px !important;
+}
+
+.map_container {
+  /* background: black; */
+  border-radius: 16px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.airportEndPoints {
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: 0px;
+  color: var(--black-300, rgba(10, 12, 15, 1));
+}
+
+.flightDetail,
+.SeatDetail {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.flightDetail p,
+.SeatDetail p {
+  color: var(--black-300, #0a0c0f);
+  font-size: 12px;
+  font-weight: 500;
+}
+.flightDetail .parahTwo,
+.SeatDetail .parahTwo {
+  color: var(--black-200, #3d495c);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.compareModalButton {
+  border: 1px solid var(--primary-100, #a7c0ec);
+  border-radius: 12px;
+  max-width: 360px;
+  height: auto;
+  max-height: 290px;
+
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 121px 0px;
+  margin-top: 15px;
+}
+
+.compareModalButton p {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--primary-200, #5383da);
+}
+
+.compareCardsFlex {
+  /* gap: 4px; */
+}
+
+.featureIconText img {
+  width: 15px;
+  height: 15px;
+}
+
+.featureImgs :where(.css-dev-only-do-not-override-1w2pzdr).ant-row {
+  gap: 0px;
+}
+
+/* Tooltips */
+
+.featureIcons {
+  display: flex;
+  gap: 16px;
+}
+
+.featureIconTooltipWrap {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.tooltip {
+  visibility: hidden;
+  opacity: 0;
+  background-color: #f4f4f5;
+  color: var(--black-300, #0a0c0f);
+  text-align: center;
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: opacity 0.2s ease-in-out;
+  box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.15);
+  border: 1px solid #c2cad6;
+}
+
+.tooltip::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #c2cad6 transparent transparent transparent;
+}
+
+img:hover {
+  color: #2351a3;
+}
+
+.featureIconTooltipWrap:hover .tooltip {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Tooltips */

@@ -29,6 +29,12 @@ const theme: ThemeConfig = {
       colorPrimaryHover: "#C2CAD6",
       borderRadius: 8,
     },
+    Segmented: {
+      trackBg: "#FFFFFF", // background of the "track"
+      itemSelectedBg: "#2351a3", // selected item background
+      itemHoverBg: "#F5f5f5", // selected item background
+      itemSelectedColor: "#fff", // selected text color
+    },
   },
 };
 

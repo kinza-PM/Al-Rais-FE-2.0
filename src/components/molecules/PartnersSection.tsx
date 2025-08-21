@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React from "react";
 
 import emiratesIcon from "../../assets/images/emirates.png";
 import qatarIcon from "../../assets/images/qatar.png";

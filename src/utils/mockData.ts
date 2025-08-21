@@ -4,17 +4,35 @@ export const travelData = [
     name: "Emirates Airline",
     logo: "src/assets/images/emirates.png",
     flight_detail: {
+      flight_features: {
+        cabin: 1,
+        baggage: "40KGs",
+        usb_power: true,
+        free_meal: true,
+        wifi: true,
+        entertainment: true,
+      },
       flight_number: "EK 1234",
+      flight_bus: "Airbus A380",
       flight_class: "Economy class",
       start_time: "10:45 AM",
       start_date: "Mon, 16 June 2025",
       end_time: "02:00 PM",
       end_date: "Mon, 16 June 2025",
+      seats_layout: "2-2-2",
+      upgradable: true,
+    },
+    airport_details: {
+      startAirport: "Dubai International Airport (DXB)",
+      startTerminal: "Terminal 3 International",
+      endAirport:
+        "Chhatrapati Shivaji Maharaj International Airport Mumbai (BOM)",
+      endTerminal: "Terminal 1 international",
     },
     stop: [],
     price: {
       economyLite: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "",
         seatSelection: "Assigned at check-in",
         Changes: "with very high fee",
@@ -22,7 +40,7 @@ export const travelData = [
         price: "48",
       },
       economyStandard: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "01 item (up to 20kg)",
         seatSelection: "Standard (free)",
         Changes: "$4 + fare difference",
@@ -30,7 +48,7 @@ export const travelData = [
         price: "52",
       },
       economyFlex: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "02 items (up to 20kg each)",
         seatSelection: "Any (free, including preferred seats)",
         Changes: "Free (fare differences may apply)",
@@ -44,12 +62,31 @@ export const travelData = [
     name: "Qatar Airways",
     logo: "src/assets/images/qatar.png",
     flight_detail: {
+      flight_features: {
+        cabin: 1,
+        baggage: "40KGs",
+        usb_power: true,
+        free_meal: true,
+        wifi: true,
+        entertainment: true,
+      },
       flight_number: "QR 5678",
+      flight_bus: "Airbus A320",
+
       flight_class: "Business class",
       start_time: "10:45 AM",
       start_date: "Mon, 16 June 2025",
       end_time: "02:00 PM",
       end_date: "Mon, 16 June 2025",
+      seats_layout: "1-1-1",
+      upgradable: true,
+    },
+    airport_details: {
+      startAirport: "Dubai International Airport (DXB)",
+      startTerminal: "Terminal 3 International",
+      endAirport:
+        "Chhatrapati Shivaji Maharaj International Airport Mumbai (BOM)",
+      endTerminal: "Terminal 1 international",
     },
     stop: [
       {
@@ -67,7 +104,7 @@ export const travelData = [
     ],
     price: {
       economyLite: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "",
         seatSelection: "Assigned at check-in",
         Changes: "with very high fee",
@@ -75,7 +112,7 @@ export const travelData = [
         price: "70",
       },
       economyStandard: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "01 item (up to 20kg)",
         seatSelection: "Standard (free)",
         Changes: "$4 + fare difference",
@@ -83,7 +120,7 @@ export const travelData = [
         price: "120",
       },
       economyFlex: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "02 items (up to 20kg each)",
         seatSelection: "Any (free, including preferred seats)",
         Changes: "Free (fare differences may apply)",
@@ -93,15 +130,34 @@ export const travelData = [
     },
   },
   {
+    id: 1,
     name: "Flydubai",
     logo: "src/assets/images/flydubai_icon.jpeg",
+    airport_details: {
+      startAirport: "Dubai International Airport (DXB)",
+      startTerminal: "Terminal 3 International",
+      endAirport:
+        "Chhatrapati Shivaji Maharaj International Airport Mumbai (BOM)",
+      endTerminal: "Terminal 1 international",
+    },
     flight_detail: {
+      flight_features: {
+        cabin: 1,
+        baggage: "40KGs",
+        usb_power: true,
+        free_meal: true,
+        wifi: true,
+        entertainment: true,
+      },
+      flight_bus: "Airbus A120",
       flight_number: "BA 9101",
       flight_class: "First class",
       start_time: "10:45 AM",
       start_date: "Mon, 16 June 2025",
       end_time: "02:00 PM",
       end_date: "Mon, 16 June 2025",
+      seats_layout: "1-1-1-1",
+      upgradable: true,
     },
     stop: [
       {
@@ -113,7 +169,7 @@ export const travelData = [
     ],
     price: {
       economyLite: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "",
         seatSelection: "Assigned at check-in",
         Changes: "with very high fee",
@@ -121,7 +177,7 @@ export const travelData = [
         price: "40",
       },
       economyStandard: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "01 item (up to 20kg)",
         seatSelection: "Standard (free)",
         Changes: "$4 + fare difference",
@@ -129,7 +185,7 @@ export const travelData = [
         price: "80",
       },
       economyFlex: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "02 items (up to 20kg each)",
         seatSelection: "Any (free, including preferred seats)",
         Changes: "Free (fare differences may apply)",
