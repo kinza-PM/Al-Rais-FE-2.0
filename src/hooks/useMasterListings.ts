@@ -1,5 +1,5 @@
 // hooks/useMasterListings.ts
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { getMasterListingData } from "../services/api/apiMasterListing";
 import { listingTables } from "../config/masterListing";
 import {
@@ -7,96 +7,178 @@ import {
     buildCountryOptions,
     buildFlightTypeOptions,
     buildPassengerSchema,
+    buildPriceSortOptions,
+    buildNumberStopsOptions,
+    buildTransitHourOptions,
+    buildBaggageOptions,
 } from "../utils/flightTypes";
+
 import type {
-    FlightTypeOption,
-    CountryOption,
-    PassengerSchema,
-    CabinClassOption,
-    FlightTypesResponse,
-    CountriesResponse,
-    PassengersResponse,
-    CabinClassesResponse,
+    FlightTypesResponse, FlightTypeOption,
+    CountriesResponse, CountryOption,
+    PassengersResponse, PassengerSchema,
+    CabinClassesResponse, CabinClassOption,
+    PriceSortResponse, PriceSortOption,
+    NumberStopsResponse, NumberStopsOption,
+    TransitHoursResponse, TransitHoursOption,
+    BaggageResponse, BaggageOption,
 } from "../features/flights/types";
 
-type ErrorsMap = {
-    flightTypes?: string | null;
-    countries?: string | null;
-    passengers?: string | null;
-    cabinClasses?: string | null;
-};
+type Key =
+    | "flightTypes"
+    | "countries"
+    | "passengers"
+    | "cabinClasses"
+    | "priceSort"
+    | "numberStops"
+    | "transitHours"
+    | "baggage";
 
-export function useMasterListings(): {
-    flightTypes: FlightTypeOption[];
-    countries: CountryOption[];
-    passengers: PassengerSchema;
-    cabinClasses: CabinClassOption[];
-    loading: boolean;
-    error: string | null; // aggregated
-    errors: ErrorsMap;    // per-resource
-} {
+type Include = Key[];
+
+export function useMasterListings(opts?: { include?: Include }) {
+    const include = useMemo<Set<Key>>(
+        () =>
+            new Set(
+                opts?.include ??
+                ["flightTypes", "countries", "passengers", "cabinClasses"] // default (Hero)
+            ),
+        [opts?.include?.join("|")]
+    );
+
+    // data
     const [flightTypes, setFlightTypes] = useState<FlightTypeOption[]>([]);
     const [countries, setCountries] = useState<CountryOption[]>([]);
     const [passengers, setPassengers] = useState<PassengerSchema>([]);
     const [cabinClasses, setCabinClasses] = useState<CabinClassOption[]>([]);
+    const [priceSort, setPriceSort] = useState<PriceSortOption[]>([]);
+    const [numberStops, setNumberStops] = useState<NumberStopsOption[]>([]);
+    const [transitHours, setTransitHours] = useState<TransitHoursOption[]>([]);
+    const [baggage, setBaggage] = useState<BaggageOption[]>([]);
 
-    const [loading, setLoading] = useState<boolean>(true);
-    const [errors, setErrors] = useState<ErrorsMap>({});
+    // loading/errors – unchanged semantics, just new keys added
+    const [loadingMap, setLoadingMap] = useState<Record<Key, boolean>>({
+        flightTypes: false,
+        countries: false,
+        passengers: false,
+        cabinClasses: false,
+        priceSort: false,
+        numberStops: false,
+        transitHours: false,
+        baggage: false,
+    });
+    const [errorMap, setErrorMap] = useState<Record<Key, string | null>>({
+        flightTypes: null,
+        countries: null,
+        passengers: null,
+        cabinClasses: null,
+        priceSort: null,
+        numberStops: null,
+        transitHours: null,
+        baggage: null,
+    });
+
+    const mounted = useRef(true);
+    useEffect(() => () => { mounted.current = false; }, []);
 
     useEffect(() => {
         const ac = new AbortController();
 
-        (async () => {
-            setLoading(true);
-            setErrors({});
+        const run = <R,>(
+            key: Key,
+            fetcher: () => Promise<R>,
+            builder: (items: any[]) => any[],
+            setter: (val: any[]) => void
+        ) => {
+            if (!include.has(key)) return;
+            setLoadingMap((m) => ({ ...m, [key]: true }));
+            setErrorMap((m) => ({ ...m, [key]: null }));
 
-            const [ftRes, ctRes, pxRes, ccRes] = await Promise.allSettled([
-                getMasterListingData<FlightTypesResponse>(listingTables.flightTypes, ac.signal),
-                getMasterListingData<CountriesResponse>(listingTables.countries, ac.signal),
-                getMasterListingData<PassengersResponse>(listingTables.passengers, ac.signal),
-                getMasterListingData<CabinClassesResponse>(listingTables.cabinClasses, ac.signal),
-            ]);
+            fetcher()
+                .then((res: any) => {
+                    const items = res?.items ?? [];
+                    const built = builder(items);
+                    if (mounted.current) setter(built);
+                })
+                .catch((e: any) => {
+                    if (mounted.current) {
+                        setErrorMap((m) => ({ ...m, [key]: e?.message || `Failed to load ${key}` }));
+                        setter(builder([])); // graceful fallback
+                    }
+                })
+                .finally(() => {
+                    if (mounted.current) setLoadingMap((m) => ({ ...m, [key]: false }));
+                });
+        };
 
-            // flight types
-            if (ftRes.status === "fulfilled") {
-                setFlightTypes(buildFlightTypeOptions(ftRes.value?.items ?? []));
-            } else {
-                setErrors(prev => ({ ...prev, flightTypes: ftRes.reason?.message ?? "Failed to load flight types" }));
-                setFlightTypes(buildFlightTypeOptions([])); // optional fallback (gives default 3)
-            }
+        run<FlightTypesResponse>(
+            "flightTypes",
+            () => getMasterListingData(listingTables.flightTypes, ac.signal),
+            buildFlightTypeOptions,
+            setFlightTypes
+        );
+        run<CountriesResponse>(
+            "countries",
+            () => getMasterListingData(listingTables.countries, ac.signal),
+            buildCountryOptions,
+            setCountries
+        );
+        run<PassengersResponse>(
+            "passengers",
+            () => getMasterListingData(listingTables.passengers, ac.signal),
+            buildPassengerSchema,
+            setPassengers
+        );
+        run<CabinClassesResponse>(
+            "cabinClasses",
+            () => getMasterListingData(listingTables.cabinClasses, ac.signal),
+            buildCabinClassOptions,
+            setCabinClasses
+        );
+        run<PriceSortResponse>(
+            "priceSort",
+            () => getMasterListingData(listingTables.priceSorted, ac.signal),
+            buildPriceSortOptions,
+            setPriceSort
+        );
 
-            // countries
-            if (ctRes.status === "fulfilled") {
-                setCountries(buildCountryOptions(ctRes.value?.items ?? []));
-            } else {
-                setErrors(prev => ({ ...prev, countries: ctRes.reason?.message ?? "Failed to load countries" }));
-                setCountries([]); // stays empty -> your dropdown shows "Please select"
-            }
-
-            // passengers
-            if (pxRes.status === "fulfilled") {
-                setPassengers(buildPassengerSchema(pxRes.value?.items ?? []));
-            } else {
-                setErrors(prev => ({ ...prev, passengers: pxRes.reason?.message ?? "Failed to load passengers" }));
-                setPassengers([]); // your dropdown will use its internal defaults if you want
-            }
-
-            // cabin classes
-            if (ccRes.status === "fulfilled") {
-                setCabinClasses(buildCabinClassOptions(ccRes.value?.items ?? []));
-            } else {
-                setErrors(prev => ({ ...prev, cabinClasses: ccRes.reason?.message ?? "Failed to load cabin classes" }));
-                setCabinClasses([]);
-            }
-
-            setLoading(false);
-        })().catch(() => setLoading(false));
+        // NEW calls for Travel page only (behind include):
+        run<NumberStopsResponse>(
+            "numberStops",
+            () => getMasterListingData(listingTables.numberStops, ac.signal),
+            buildNumberStopsOptions,
+            setNumberStops
+        );
+        run<TransitHoursResponse>(
+            "transitHours",
+            () => getMasterListingData(listingTables.transitHours, ac.signal),
+            buildTransitHourOptions,
+            setTransitHours
+        );
+        run<BaggageResponse>(
+            "baggage",
+            () => getMasterListingData(listingTables.baggage, ac.signal),
+            buildBaggageOptions,
+            setBaggage
+        );
 
         return () => ac.abort();
-    }, []);
+    }, [include]);
 
-    const error =
-        Object.values(errors).filter(Boolean).join(" • ") || null;
+    const loadingAny = Array.from(include).some(k => loadingMap[k]);
 
-    return { flightTypes, countries, passengers, cabinClasses, loading, error, errors };
+    return {
+        // data
+        flightTypes,
+        countries,
+        passengers,
+        cabinClasses,
+        priceSort,
+        numberStops,
+        transitHours,
+        baggage,
+        loading: loadingAny,
+        loadingMap,
+        errorMap,
+    };
 }

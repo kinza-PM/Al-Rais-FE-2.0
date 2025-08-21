@@ -10,11 +10,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   children,
   addPadding = true,
 }) => {
-  return (
-    <main className={`flex-1 ${addPadding ? "p-4" : ""}`}>
-      {children}
-    </main>
-  );
+  return <main className={`flex-1 ${addPadding ? "" : ""}`}>{children}</main>;
 };
 
 export default MainLayout;

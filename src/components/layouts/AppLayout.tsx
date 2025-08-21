@@ -1,7 +1,7 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import Header from "../organisms/header";
-
+import Footer from "../organisms/Footer";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -20,7 +20,9 @@ const AppLayout: React.FC = () => {
 
   return (
     <>
-      <div className={`${shouldAddGradient ? "bg-sky-gradient" : ""} min-h-screen`}>
+      <div
+        className={`${shouldAddGradient ? "bg-sky-gradient" : ""} min-h-screen`}
+      >
         <style>{`
           body {
             font-family: 'Inter', sans-serif;
@@ -59,11 +61,14 @@ const AppLayout: React.FC = () => {
         )}
 
         <main className="min-h-screen">
-          <Outlet context={{ onLoginClick: openLogin, onSignupClick: openSignup }} />
+          <Outlet
+            context={{ onLoginClick: openLogin, onSignupClick: openSignup }}
+          />
         </main>
+        <Footer />
       </div>
     </>
   );
 };
 
-export default AppLayout
+export default AppLayout;

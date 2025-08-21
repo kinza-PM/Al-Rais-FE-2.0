@@ -29,7 +29,7 @@ const HeroSection: React.FC = () => {
     const {
         flightTypes,
         countries,
-        passengers,      // PassengerSchema
+        passengers,     
         cabinClasses,
         loading,
         error,
