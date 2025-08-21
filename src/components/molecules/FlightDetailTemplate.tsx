@@ -5,9 +5,8 @@ import FlagInd from "../../assets/svgs/Flag-ind.svg";
 import FlagUsa from "../../assets/svgs/Flag-usa.svg";
 import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import { Segmented, Tabs, Select, Radio, Checkbox, Flex } from "antd";
-import type { CheckboxGroupProps } from "antd/es/checkbox";
+// import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
-import CustomInput from "../common/CustomInput";
 import CustomSelect from "../common/CustomSelect";
 import CustomDatePicker from "../common/CustomDatePicker";
 import CustomCollapse from "../common/CustomCollapse";
@@ -18,13 +17,10 @@ import { Collapse } from "antd";
 import type { TabsProps } from "antd";
 import { useState } from "react";
 import type { CheckboxProps } from "antd";
-import CustomSwitch from "../atoms/CustomSwitch";
-import { cabinClass, passengersOptions } from "../../utils/mockData";
 import { useFlightStore } from "../../store/UseFlightStore";
 import { useMasterListings } from "../../hooks/useMasterListings";
 
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
-import { useMasterListings } from "../../hooks/useMasterListings";
 import type {
   CountryOption,
   PassengerSchema,
@@ -47,40 +43,37 @@ const items: TabsProps["items"] = [
   { key: "2", label: "Hotels", children: "" },
 ];
 
-const options: CheckboxGroupProps<string>["options"] = [
-  { label: "0", value: "0" },
-  { label: "01", value: "01" },
-  { label: "02", value: "02" },
-];
-const options2: CheckboxGroupProps<string>["options"] = [
-  { label: "0-3h", value: "0-3h" },
-  { label: "3-6h", value: "3-6h" },
-  { label: "6-12h", value: "6-12h" },
-  { label: "12h+", value: "12h+" },
-  { label: "24h+", value: "24h+" },
-];
-
 const baggageHandler: CheckboxProps["onChange"] = (e) => {
   console.log(`checked = ${e.target.checked}`);
 };
 
-type Align = "One way" | "Round trip" | "Multi-city";
+// type Align = "One way" | "Round trip" | "Multi-city";
 
-<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
 const FlightDetailTemplate: React.FC = () => {
-  const [alignValue, setAlignValue] = useState<Align>("One way");
-=======
-const TravelTemplate: React.FC = () => {
->>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
+  // const [alignValue, setAlignValue] = useState<Align>("One way");
 
   const {
-    flightTypes, countries, passengers, cabinClasses, priceSort,
-    numberStops, transitHours, baggage,
-    loading
+    flightTypes,
+    countries,
+    passengers,
+    cabinClasses,
+    priceSort,
+    numberStops,
+    transitHours,
+    baggage,
+    loading,
   } = useMasterListings({
-    include: ["flightTypes", "countries", "passengers", "cabinClasses", "priceSort", "numberStops", "transitHours", "baggage"]
+    include: [
+      "flightTypes",
+      "countries",
+      "passengers",
+      "cabinClasses",
+      "priceSort",
+      "numberStops",
+      "transitHours",
+      "baggage",
+    ],
   });
-
 
   const [trip, setTrip] = useState<TripType>("oneway");
   const [fromCode, setFromCode] = useState<string>("");
@@ -105,14 +98,17 @@ const TravelTemplate: React.FC = () => {
 
   // memo’d options
   const segOptions = useMemo(
-    () => (flightTypes || []).map(ft => ({ label: ft.label, value: ft.key })),
+    () => (flightTypes || []).map((ft) => ({ label: ft.label, value: ft.key })),
     [flightTypes]
   );
 
   const cabinSelectOptions = useMemo(
     () => [
       { value: "", label: "Please select", disabled: true },
-      ...(cabinClasses as CabinClassOption[]).map(c => ({ value: c.id, label: c.label })),
+      ...(cabinClasses as CabinClassOption[]).map((c) => ({
+        value: c.id,
+        label: c.label,
+      })),
     ],
     [cabinClasses]
   );
@@ -122,21 +118,21 @@ const TravelTemplate: React.FC = () => {
       (priceSort && priceSort.length
         ? priceSort
         : [
-          { value: "lowest", label: "Lowest Price" },
-          { value: "medium", label: "Medium Price" },
-          { value: "highest", label: "Highest Price" },
-        ]) as { value: string; label: string }[],
+            { value: "lowest", label: "Lowest Price" },
+            { value: "medium", label: "Medium Price" },
+            { value: "highest", label: "Highest Price" },
+          ]) as { value: string; label: string }[],
     [priceSort]
   );
 
   const selectedPriceLabel = useMemo(
-    () => priceOptions.find(o => o.value === selectedPriceId)?.label ?? "",
+    () => priceOptions.find((o) => o.value === selectedPriceId)?.label ?? "",
     [priceOptions, selectedPriceId]
   );
 
   const { flight } = useFlightStore();
 
-  const { cabinClasses } = useMasterListings();
+  // const { cabinClasses } = useMasterListings();
 
   const headerContent = (
     <div>
@@ -144,7 +140,9 @@ const TravelTemplate: React.FC = () => {
         Sort by
       </div>
       {selectedPriceLabel && (
-        <div style={{ fontSize: 16, fontWeight: 500 }}>{selectedPriceLabel}</div>
+        <div style={{ fontSize: 16, fontWeight: 500 }}>
+          {selectedPriceLabel}
+        </div>
       )}
     </div>
   );
@@ -167,10 +165,10 @@ const TravelTemplate: React.FC = () => {
                   segOptions.length
                     ? segOptions
                     : [
-                      { label: "One way", value: "oneway" },
-                      { label: "Round trip", value: "roundtrip" },
-                      { label: "Multi-city", value: "multicity" },
-                    ]
+                        { label: "One way", value: "oneway" },
+                        { label: "Round trip", value: "roundtrip" },
+                        { label: "Multi-city", value: "multicity" },
+                      ]
                 }
                 disabled={loading && !segOptions.length}
               />
@@ -183,10 +181,7 @@ const TravelTemplate: React.FC = () => {
               items={items}
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
-<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
-=======
-            // indicator={{ size: (origin) => origin - 20, align: alignValue }}
->>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
+              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
             />
           </div>
           <div className="countrySelectAndGetHelp py-pxTopHeader">
@@ -295,47 +290,8 @@ const TravelTemplate: React.FC = () => {
               labels={{ from: "From", to: "To" }}
               placeholders={{ from: "Please select", to: "Please select" }}
               disableSameSelection
-              widthClass="w-[260px]"   // same as OneWayForm; chaho to "w-full" bhi de sakte ho
+              widthClass="w-[260px]" // same as OneWayForm; chaho to "w-full" bhi de sakte ho
             />
-            {/* <Flex vertical flex={1}>
-              <label className="header-labels-common">From</label>
-<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
-              <CustomInput
-                className="header-input-common"
-                placeholder="Dubai (DXB)"
-                value={flight?.fromCode}
-=======
-              <CustomSelect
-                className="header-sub-inputs-common"
-                placeholder="Please select"
-                options={fromSelectOptions}
-                value={fromCode || undefined}
-                onChange={(v: string) => setFromCode(v)}
-                style={{ minWidth: "100%", height: "50px" }}
-                disabled={loading}
->>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
-              />
-            </Flex>
-            <CustomSwitch onClick={onSwap} />
-            <Flex vertical flex={1}>
-              <label className="header-labels-common">To</label>
-<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
-              <CustomInput
-                className="header-input-common"
-                placeholder="Mumbai (BOM)"
-                value={flight?.toCode}
-=======
-              <CustomSelect
-                className="header-sub-inputs-common"
-                placeholder="Please select"
-                options={toSelectOptions}
-                value={toCode || undefined}
-                onChange={(v: string) => setToCode(v)}
-                style={{ minWidth: "100%", height: "50px" }}
-                disabled={loading}
->>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
-              />
-            </Flex> */}
           </Flex>
           <Flex align="end" style={{ width: "45%" }} gap={16}>
             <Flex vertical style={{ width: "100%" }} flex={1}>
@@ -354,7 +310,6 @@ const TravelTemplate: React.FC = () => {
                   maxTotal={9}
                 />
               </div>
-
             </Flex>
             <Flex vertical style={{ width: "100%" }} flex={1}>
               <label className="header-labels-common ">Cabin Class</label>
@@ -363,13 +318,10 @@ const TravelTemplate: React.FC = () => {
                 options={cabinSelectOptions}
                 className="header-sub-inputs-common"
                 style={{ minWidth: "100%", height: "50px" }}
-<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
-                value={findedCabine}
-=======
+                // value={findedCabine}
                 value={selectedCabinClassId || undefined}
                 onChange={(v: string) => setSelectedCabinClassId(v)}
                 disabled={loading}
->>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
               />
             </Flex>
           </Flex>
@@ -392,21 +344,10 @@ const TravelTemplate: React.FC = () => {
                   <Select
                     style={{ width: "100%" }}
                     placeholder="Select an option"
-<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
-                    value={selectedValue || undefined}
-                    onChange={(value) => setSelectedValue(value)}
-                    defaultOpen={true}
-                    options={[
-                      { value: "Lowest Price", label: "Lowest Price" },
-                      { value: "Medium Price", label: "Medium Price" },
-                      { value: "Highest Price", label: "Highest Price" },
-                    ]}
-=======
                     value={selectedPriceId || undefined}
                     onChange={(value) => setSelectedPriceId(value)}
                     options={priceOptions}
                     disabled={loading && !priceOptions.length}
->>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
                   />
                 </Panel>
               </CustomCollapse>
@@ -429,7 +370,7 @@ const TravelTemplate: React.FC = () => {
                   <Radio.Group
                     block
                     options={
-                      (numberStops && numberStops.length)
+                      numberStops && numberStops.length
                         ? numberStops
                         : [{ label: "0", value: "0" }]
                     }
@@ -448,7 +389,8 @@ const TravelTemplate: React.FC = () => {
                     onChange={baggageHandler}
                     disabled={loading && !baggage.length}
                   >
-                    {(baggage && baggage[0]?.label) || "Checked baggage included"}
+                    {(baggage && baggage[0]?.label) ||
+                      "Checked baggage included"}
                   </Checkbox>
                 </Panel>
               </CustomCollapse>
@@ -458,13 +400,13 @@ const TravelTemplate: React.FC = () => {
                   <Radio.Group
                     block
                     options={
-                      (transitHours && transitHours.length)
+                      transitHours && transitHours.length
                         ? transitHours
-                        : [
-                          { label: "0-3h", value: "0-3h" },
-                        ]
+                        : [{ label: "0-3h", value: "0-3h" }]
                     }
-                    defaultValue={(transitHours && transitHours[0]?.value) ?? "0-3h"}
+                    defaultValue={
+                      (transitHours && transitHours[0]?.value) ?? "0-3h"
+                    }
                     optionType="button"
                     buttonStyle="solid"
                     className="transitHours"

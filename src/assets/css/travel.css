@@ -275,14 +275,14 @@
 }
 
 .stopsRadioStyle
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper:not(
+  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
     :first-child
   )::before,
 .transitHours
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper:not(
+  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
     :first-child
   )::before {
-  content: none;
+  content: none !important;
 }
 
 .stopsRadioStyle .ant-radio-button-label,

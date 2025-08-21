@@ -1,23 +1,16 @@
-<<<<<<< HEAD
 import React from "react";
-=======
-import React, { useRef } from "react";
->>>>>>> dev-umer
 import { useOutletContext } from "react-router-dom";
 import { MainLayout } from "../components";
 import HeroSection from "../components/molecules/HeroSection";
 import PartnersSection from "../components/molecules/PartnersSection";
 import WhyChooseUs from "../components/molecules/WhyChooseUsSection";
 import ReadyToFlySection from "../components/molecules/ReadyToFlySection";
-<<<<<<< HEAD
 // import React, { useRef } from 'react';
 // import { useOutletContext } from 'react-router-dom';
 // import { MainLayout } from '../components';
 // import HeroSection from '../components/molecules/HeroSection';
-import PopularDestinations from "../components/molecules/PopularDestinations";
+import PopularDestinations from "../components/molecules/PopularDestinationSection";
 import BestDealsSection from "../components/molecules/BestDealsSection";
-=======
->>>>>>> dev-umer
 
 interface LandingPageContext {
   onLoginClick: () => void;
@@ -44,7 +37,6 @@ const LandingPage: React.FC = () => {
         {/* <PopularDestination />
         <BestDeals /> */}
       </div>
-<<<<<<< HEAD
 
       <div className="bg-white">
         <PopularDestinations />
@@ -54,8 +46,6 @@ const LandingPage: React.FC = () => {
         <WhyChooseUs />
         <ReadyToFlySection />
       </div>
-=======
->>>>>>> dev-umer
     </MainLayout>
   );
 };
