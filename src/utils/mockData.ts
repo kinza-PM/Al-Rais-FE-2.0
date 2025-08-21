@@ -32,7 +32,7 @@ export const travelData = [
     stop: [],
     price: {
       economyLite: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "",
         seatSelection: "Assigned at check-in",
         Changes: "with very high fee",
@@ -40,7 +40,7 @@ export const travelData = [
         price: "48",
       },
       economyStandard: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "01 item (up to 20kg)",
         seatSelection: "Standard (free)",
         Changes: "$4 + fare difference",
@@ -48,7 +48,7 @@ export const travelData = [
         price: "52",
       },
       economyFlex: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "02 items (up to 20kg each)",
         seatSelection: "Any (free, including preferred seats)",
         Changes: "Free (fare differences may apply)",
@@ -104,7 +104,7 @@ export const travelData = [
     ],
     price: {
       economyLite: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "",
         seatSelection: "Assigned at check-in",
         Changes: "with very high fee",
@@ -112,7 +112,7 @@ export const travelData = [
         price: "70",
       },
       economyStandard: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "01 item (up to 20kg)",
         seatSelection: "Standard (free)",
         Changes: "$4 + fare difference",
@@ -120,7 +120,7 @@ export const travelData = [
         price: "120",
       },
       economyFlex: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "02 items (up to 20kg each)",
         seatSelection: "Any (free, including preferred seats)",
         Changes: "Free (fare differences may apply)",
@@ -169,7 +169,7 @@ export const travelData = [
     ],
     price: {
       economyLite: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "",
         seatSelection: "Assigned at check-in",
         Changes: "with very high fee",
@@ -177,7 +177,7 @@ export const travelData = [
         price: "40",
       },
       economyStandard: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "01 item (up to 20kg)",
         seatSelection: "Standard (free)",
         Changes: "$4 + fare difference",
@@ -185,7 +185,7 @@ export const travelData = [
         price: "80",
       },
       economyFlex: {
-        presonalItem: "01 item (e.g., small backpack, laptop bag)",
+        personalItem: "01 item (e.g., small backpack, laptop bag)",
         baggage: "02 items (up to 20kg each)",
         seatSelection: "Any (free, including preferred seats)",
         Changes: "Free (fare differences may apply)",
