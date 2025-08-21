@@ -17,7 +17,7 @@ import { Collapse } from "antd";
 import type { TabsProps } from "antd";
 import { useState } from "react";
 import type { CheckboxProps } from "antd";
-import { useMasterListings } from "../../hooks/useMasterListings";
+import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {

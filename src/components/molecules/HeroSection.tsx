@@ -14,7 +14,7 @@ import type {
 } from "../../features/flights/types";
 
 // ⬇️ NEW: use the hook
-import { useMasterListings } from "../../hooks/useMasterListings";
+import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { useFlightStore } from "../../store/UseFlightStore";
 import { useNavigate } from "react-router-dom";
 
