@@ -8,7 +8,7 @@ import {
     buildPassengerSchema,
     buildPriceSortOptions,
     buildTransitHourOptions,
-} from "../../utils/flightTypes";
+} from "../../utils/masterLIstingFlightTypesBuilder";
 
 import type {
     BaggageResponse, BaggageOption,
