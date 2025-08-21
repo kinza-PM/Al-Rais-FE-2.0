@@ -33,13 +33,15 @@ const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
     setIsModalOpen(false);
   };
 
-  const [newFlightData, setNewFlightData] = useState<any[]>([passSome]);
+  const [newFlightData, setNewFlightData] = useState<any[]>(passSome);
+  console.log("passSome", passSome);
+  console.log("newFlightData", newFlightData);
 
   return (
     <div className="">
       <div className="pricingCardsWrap">
         <Row className="compareCardsFlex">
-          {passSome.map((item) => (
+          {newFlightData.map((item) => (
             <Col span={8} className="">
               <div className="compareCard">
                 <div className="cardHeader">This Flight</div>
@@ -156,8 +158,15 @@ const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
         }}
         className="compareModal"
       >
-        {travelData?.map((item) => (
-          <div className="modalFlightDetailCard">
+        {travelData?.map((item, index) => (
+          <div
+            key={index}
+            className="modalFlightDetailCard"
+            onClick={() => {
+              setNewFlightData((prev) => [...prev, item]);
+              handleCancelCompare();
+            }}
+          >
             <div className="modalFlightDetail">
               <div className="fightTitle">
                 <div className="flightIcon">
@@ -276,8 +285,8 @@ const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
                     <div className="stopPoint"></div>
 
                     {item?.stop?.length > 0 ? (
-                      item?.stop?.map((stopStayTime) => (
-                        <div className="stopsDetail">
+                      item?.stop?.map((stopStayTime, i) => (
+                        <div key={i} className="stopsDetail">
                           <span>{stopStayTime?.stayTime}</span>
                           <div className="stopPoint stopDots"></div>
                           <span>{stopStayTime?.name}</span>

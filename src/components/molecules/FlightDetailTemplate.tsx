@@ -3,6 +3,7 @@ import "../../assets/css/travel.css";
 import FlagUae from "../../assets/svgs/Flag-uae.svg";
 import FlagInd from "../../assets/svgs/Flag-ind.svg";
 import FlagUsa from "../../assets/svgs/Flag-usa.svg";
+import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import { Segmented, Tabs, Select, Radio, Checkbox, Flex } from "antd";
 import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
@@ -179,21 +180,7 @@ const FlightDetailTemplate: React.FC = () => {
               />
             </div>
             <div className="smalSeparater">
-              <svg
-                width="1"
-                height="30"
-                viewBox="0 0 1 30"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <line
-                  x1="0.5"
-                  y1="2.18556e-08"
-                  x2="0.499999"
-                  y2="30"
-                  stroke="#E4E4E7"
-                />
-              </svg>
+              <img src={colSeparater} alt="" style={{ width: 1, height: 30 }} />
             </div>
 
             <div className="getHelpLink">
@@ -278,6 +265,7 @@ const FlightDetailTemplate: React.FC = () => {
                     placeholder="Select an option"
                     value={selectedValue || undefined}
                     onChange={(value) => setSelectedValue(value)}
+                    defaultOpen={true}
                     options={[
                       { value: "Lowest Price", label: "Lowest Price" },
                       { value: "Medium Price", label: "Medium Price" },

@@ -76,15 +76,20 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
           justify="space-between"
           gap={20}
         >
-          <div>
-            <CustomTypography style={{ marginBottom: 0 }} variant="title">
-              {details?.airport_details?.startAirport}
-            </CustomTypography>
-            <CustomTypography className="common_typography_fd">
-              {details?.airport_details?.startTerminal}
-            </CustomTypography>
-          </div>
           <Flex gap={20} vertical>
+            <div>
+              <CustomTypography
+                className="airportEndPoints"
+                style={{ marginBottom: 0 }}
+                variant="title"
+              >
+                {details?.airport_details?.startAirport}
+              </CustomTypography>
+              <CustomTypography className="common_typography_fd">
+                {details?.airport_details?.startTerminal}
+              </CustomTypography>
+            </div>
+
             <div>
               <FeaturesRender
                 featuresObj={details?.flight_detail?.flight_features}
@@ -102,12 +107,13 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                 <Flex
                   style={{
                     width: "30%",
+                    alignItems: "center",
                   }}
                   gap={5}
                   align="start"
                 >
                   <img
-                    style={{ paddingTop: "14px" }}
+                    style={{ paddingTop: "0px" }}
                     width={20}
                     height={20}
                     src={PLANE_ICON}
@@ -135,12 +141,13 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                 <Flex
                   style={{
                     width: "30%",
+                    alignItems: "center",
                   }}
                   gap={8}
                   align="start"
                 >
                   <img
-                    style={{ paddingTop: "14px" }}
+                    style={{ paddingTop: "0px" }}
                     width={18}
                     height={18}
                     src={SEATS_LAYOUT_ICON}
@@ -167,12 +174,13 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                 <Flex
                   style={{
                     width: "30%",
+                    alignItems: "center",
                   }}
                   gap={8}
                   align="start"
                 >
                   <img
-                    style={{ paddingTop: "14px" }}
+                    style={{ paddingTop: "0px" }}
                     width={18}
                     height={18}
                     src={SEAT_ICON}
@@ -215,7 +223,11 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
             </Flex>
           </Flex>
           <div>
-            <CustomTypography style={{ marginBottom: 0 }} variant="title">
+            <CustomTypography
+              className="airportEndPoints"
+              style={{ marginBottom: 0 }}
+              variant="title"
+            >
               {details?.airport_details?.endAirport}
             </CustomTypography>
             <CustomTypography className="common_typography_fd">
