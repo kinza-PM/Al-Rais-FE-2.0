@@ -82,3 +82,41 @@ export interface CabinClassOption {
     id: string;    // from API
     label: string; // category text to show
 }
+
+export interface PriceSortItem {
+    id: string;
+    category: string;  // e.g. "Lowest Price" | "Medium Price" | "Highest Price"
+    status: number;
+    createdAt: number;
+    updatedAt: number;
+}
+
+export interface PriceSortResponse {
+    items: PriceSortItem[];
+    nextToken: string | null;
+}
+
+// AntD Select-options shape
+export interface PriceSortOption {
+    value: string;   // id
+    label: string;   // category
+}
+
+export interface NumberStopsItem {
+    id: string; category: string; status: number; createdAt: number; updatedAt: number;
+}
+export interface NumberStopsResponse { items: NumberStopsItem[]; nextToken: string | null; }
+export interface NumberStopsOption { label: string; value: string; }
+
+export interface TransitHoursItem {
+    id: string; category: string; status: number; createdAt: number; updatedAt: number;
+}
+export interface TransitHoursResponse { items: TransitHoursItem[]; nextToken: string | null; }
+export interface TransitHoursOption { label: string; value: string; }
+
+export interface BaggageItem {
+    id: string; category: string; status: number; createdAt: number; updatedAt: number;
+}
+export interface BaggageResponse { items: BaggageItem[]; nextToken: string | null; }
+
+export interface BaggageOption { label: string; value: string; }

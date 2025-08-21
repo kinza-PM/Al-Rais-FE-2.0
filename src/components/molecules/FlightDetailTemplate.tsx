@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo } from "react";
 import "../../assets/css/travel.css";
 import FlagUae from "../../assets/svgs/Flag-uae.svg";
 import FlagInd from "../../assets/svgs/Flag-ind.svg";
@@ -22,6 +22,16 @@ import CustomSwitch from "../atoms/CustomSwitch";
 import { cabinClass, passengersOptions } from "../../utils/mockData";
 import { useFlightStore } from "../../store/UseFlightStore";
 import { useMasterListings } from "../../hooks/useMasterListings";
+
+import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
+import { useMasterListings } from "../../hooks/useMasterListings";
+import type {
+  CountryOption,
+  PassengerSchema,
+  CabinClassOption,
+  TripType,
+} from "../../features/flights/types";
+import TravelRoutePicker from "../atoms/TravelRoutePicker";
 
 const { Panel } = Collapse;
 
@@ -50,16 +60,79 @@ const options2: CheckboxGroupProps<string>["options"] = [
   { label: "24h+", value: "24h+" },
 ];
 
-const baggage: CheckboxProps["onChange"] = (e) => {
+const baggageHandler: CheckboxProps["onChange"] = (e) => {
   console.log(`checked = ${e.target.checked}`);
 };
 
 type Align = "One way" | "Round trip" | "Multi-city";
 
+<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
 const FlightDetailTemplate: React.FC = () => {
   const [alignValue, setAlignValue] = useState<Align>("One way");
+=======
+const TravelTemplate: React.FC = () => {
+>>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
 
-  const [selectedValue, setSelectedValue] = useState<string>("Lowest Price");
+  const {
+    flightTypes, countries, passengers, cabinClasses, priceSort,
+    numberStops, transitHours, baggage,
+    loading
+  } = useMasterListings({
+    include: ["flightTypes", "countries", "passengers", "cabinClasses", "priceSort", "numberStops", "transitHours", "baggage"]
+  });
+
+
+  const [trip, setTrip] = useState<TripType>("oneway");
+  const [fromCode, setFromCode] = useState<string>("");
+  const [toCode, setToCode] = useState<string>("");
+  const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("");
+  const [selectedPriceId, setSelectedPriceId] = useState<string>("");
+
+  useEffect(() => {
+    if (!fromCode && (countries as CountryOption[])[0]) {
+      setFromCode((countries as CountryOption[])[0].code);
+    }
+    if (!toCode && (countries as CountryOption[])[1]) {
+      setToCode((countries as CountryOption[])[1].code);
+    }
+  }, [countries, fromCode, toCode]);
+
+  useEffect(() => {
+    if (fromCode && toCode && fromCode === toCode) {
+      setToCode(""); // invalid combo ko turant clear
+    }
+  }, [fromCode, toCode]);
+
+  // memo’d options
+  const segOptions = useMemo(
+    () => (flightTypes || []).map(ft => ({ label: ft.label, value: ft.key })),
+    [flightTypes]
+  );
+
+  const cabinSelectOptions = useMemo(
+    () => [
+      { value: "", label: "Please select", disabled: true },
+      ...(cabinClasses as CabinClassOption[]).map(c => ({ value: c.id, label: c.label })),
+    ],
+    [cabinClasses]
+  );
+
+  const priceOptions = useMemo(
+    () =>
+      (priceSort && priceSort.length
+        ? priceSort
+        : [
+          { value: "lowest", label: "Lowest Price" },
+          { value: "medium", label: "Medium Price" },
+          { value: "highest", label: "Highest Price" },
+        ]) as { value: string; label: string }[],
+    [priceSort]
+  );
+
+  const selectedPriceLabel = useMemo(
+    () => priceOptions.find(o => o.value === selectedPriceId)?.label ?? "",
+    [priceOptions, selectedPriceId]
+  );
 
   const { flight } = useFlightStore();
 
@@ -70,8 +143,8 @@ const FlightDetailTemplate: React.FC = () => {
       <div style={{ fontSize: 12, fontWeight: 400, color: "#3D495C" }}>
         Sort by
       </div>
-      {selectedValue && (
-        <div style={{ fontSize: 16, fontWeight: 500 }}>{selectedValue}</div>
+      {selectedPriceLabel && (
+        <div style={{ fontSize: 16, fontWeight: 500 }}>{selectedPriceLabel}</div>
       )}
     </div>
   );
@@ -87,10 +160,19 @@ const FlightDetailTemplate: React.FC = () => {
           <div className="tadioButtonGroupWrap py-pxTopHeader">
             <div className="radioButtonGroup">
               <Segmented
-                value={alignValue}
+                value={trip}
                 style={{ marginBottom: 0 }}
-                onChange={setAlignValue}
-                options={["One way", "Round trip", "Multi-city"]}
+                onChange={(v) => setTrip(v as TripType)}
+                options={
+                  segOptions.length
+                    ? segOptions
+                    : [
+                      { label: "One way", value: "oneway" },
+                      { label: "Round trip", value: "roundtrip" },
+                      { label: "Multi-city", value: "multicity" },
+                    ]
+                }
+                disabled={loading && !segOptions.length}
               />
             </div>
           </div>
@@ -101,6 +183,10 @@ const FlightDetailTemplate: React.FC = () => {
               items={items}
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
+<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
+=======
+            // indicator={{ size: (origin) => origin - 20, align: alignValue }}
+>>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
             />
           </div>
           <div className="countrySelectAndGetHelp py-pxTopHeader">
@@ -197,23 +283,59 @@ const FlightDetailTemplate: React.FC = () => {
       >
         <div className="bottomHeaderSetting ">
           <Flex align="end" gap={16} style={{ width: "40%" }}>
-            <Flex vertical flex={1}>
+            <TravelRoutePicker
+              options={countries as CountryOption[]}
+              loading={loading}
+              value={{ fromCode, toCode }}
+              onChange={({ fromCode: f, toCode: t }) => {
+                setFromCode(f);
+                setToCode(t);
+              }}
+              showSwap
+              labels={{ from: "From", to: "To" }}
+              placeholders={{ from: "Please select", to: "Please select" }}
+              disableSameSelection
+              widthClass="w-[260px]"   // same as OneWayForm; chaho to "w-full" bhi de sakte ho
+            />
+            {/* <Flex vertical flex={1}>
               <label className="header-labels-common">From</label>
+<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
               <CustomInput
                 className="header-input-common"
                 placeholder="Dubai (DXB)"
                 value={flight?.fromCode}
+=======
+              <CustomSelect
+                className="header-sub-inputs-common"
+                placeholder="Please select"
+                options={fromSelectOptions}
+                value={fromCode || undefined}
+                onChange={(v: string) => setFromCode(v)}
+                style={{ minWidth: "100%", height: "50px" }}
+                disabled={loading}
+>>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
               />
             </Flex>
-            <CustomSwitch onClick={() => {}} />
+            <CustomSwitch onClick={onSwap} />
             <Flex vertical flex={1}>
               <label className="header-labels-common">To</label>
+<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
               <CustomInput
                 className="header-input-common"
                 placeholder="Mumbai (BOM)"
                 value={flight?.toCode}
+=======
+              <CustomSelect
+                className="header-sub-inputs-common"
+                placeholder="Please select"
+                options={toSelectOptions}
+                value={toCode || undefined}
+                onChange={(v: string) => setToCode(v)}
+                style={{ minWidth: "100%", height: "50px" }}
+                disabled={loading}
+>>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
               />
-            </Flex>
+            </Flex> */}
           </Flex>
           <Flex align="end" style={{ width: "45%" }} gap={16}>
             <Flex vertical style={{ width: "100%" }} flex={1}>
@@ -226,21 +348,28 @@ const FlightDetailTemplate: React.FC = () => {
             </Flex>
             <Flex vertical style={{ width: "100%" }} flex={1}>
               <label className="header-labels-common ">Passengers</label>
-              <CustomSelect
-                placeholder="Select Passengers"
-                options={passengersOptions}
-                className="header-sub-inputs-common"
-                style={{ minWidth: "100%", height: "50px" }}
-              />
+              <div style={{ minWidth: "100%", height: 50 }}>
+                <PassengerCounterDropdown
+                  schema={passengers as PassengerSchema}
+                  maxTotal={9}
+                />
+              </div>
+
             </Flex>
             <Flex vertical style={{ width: "100%" }} flex={1}>
               <label className="header-labels-common ">Cabin Class</label>
               <CustomSelect
-                placeholder="Select Cabin Class"
-                options={cabinClass}
+                placeholder={loading ? "Loading…" : "Please select"}
+                options={cabinSelectOptions}
                 className="header-sub-inputs-common"
                 style={{ minWidth: "100%", height: "50px" }}
+<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
                 value={findedCabine}
+=======
+                value={selectedCabinClassId || undefined}
+                onChange={(v: string) => setSelectedCabinClassId(v)}
+                disabled={loading}
+>>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
               />
             </Flex>
           </Flex>
@@ -263,6 +392,7 @@ const FlightDetailTemplate: React.FC = () => {
                   <Select
                     style={{ width: "100%" }}
                     placeholder="Select an option"
+<<<<<<< HEAD:src/components/molecules/FlightDetailTemplate.tsx
                     value={selectedValue || undefined}
                     onChange={(value) => setSelectedValue(value)}
                     defaultOpen={true}
@@ -271,6 +401,12 @@ const FlightDetailTemplate: React.FC = () => {
                       { value: "Medium Price", label: "Medium Price" },
                       { value: "Highest Price", label: "Highest Price" },
                     ]}
+=======
+                    value={selectedPriceId || undefined}
+                    onChange={(value) => setSelectedPriceId(value)}
+                    options={priceOptions}
+                    disabled={loading && !priceOptions.length}
+>>>>>>> dev-umer:src/components/molecules/TravelTemplate.tsx
                   />
                 </Panel>
               </CustomCollapse>
@@ -292,18 +428,27 @@ const FlightDetailTemplate: React.FC = () => {
                 <Panel header="Number of stops" key="1">
                   <Radio.Group
                     block
-                    options={options}
-                    defaultValue="0"
+                    options={
+                      (numberStops && numberStops.length)
+                        ? numberStops
+                        : [{ label: "0", value: "0" }]
+                    }
+                    defaultValue={(numberStops && numberStops[0]?.value) ?? "0"}
                     optionType="button"
                     buttonStyle="solid"
                     className="stopsRadioStyle"
+                    disabled={loading && !numberStops.length}
                   />
                 </Panel>
               </CustomCollapse>
               <CustomCollapse>
                 <Panel header="Baggage" key="1">
-                  <Checkbox className="baggageCheckbox" onChange={baggage}>
-                    Checkbox
+                  <Checkbox
+                    className="baggageCheckbox"
+                    onChange={baggageHandler}
+                    disabled={loading && !baggage.length}
+                  >
+                    {(baggage && baggage[0]?.label) || "Checked baggage included"}
                   </Checkbox>
                 </Panel>
               </CustomCollapse>
@@ -312,11 +457,18 @@ const FlightDetailTemplate: React.FC = () => {
                 <Panel header="Transit hours" key="1">
                   <Radio.Group
                     block
-                    options={options2}
-                    defaultValue="0-3h"
+                    options={
+                      (transitHours && transitHours.length)
+                        ? transitHours
+                        : [
+                          { label: "0-3h", value: "0-3h" },
+                        ]
+                    }
+                    defaultValue={(transitHours && transitHours[0]?.value) ?? "0-3h"}
                     optionType="button"
                     buttonStyle="solid"
                     className="transitHours"
+                    disabled={loading && !transitHours.length}
                   />
                 </Panel>
               </CustomCollapse>
@@ -372,9 +524,9 @@ const FlightDetailTemplate: React.FC = () => {
             </div>
           </div>
           <div className="" style={{ width: "100%" }}>
-            {alignValue === "One way" ? (
+            {trip === "oneway" ? (
               <TravelOneWay />
-            ) : alignValue === "Round trip" ? (
+            ) : trip === "roundtrip" ? (
               <TravelRoundTrip />
             ) : (
               <TravelMultiCity />

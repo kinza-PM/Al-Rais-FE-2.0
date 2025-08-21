@@ -1,4 +1,4 @@
-import type { CabinClassItem, CabinClassOption, CountryItem, CountryOption, FlightTypeItem, FlightTypeOption, PassengerCategoryOption, PassengerItem, PassengerSchema, TripType } from "../features/flights/types/index";
+import type { BaggageItem, BaggageOption, CabinClassItem, CabinClassOption, CountryItem, CountryOption, FlightTypeItem, FlightTypeOption, NumberStopsItem, NumberStopsOption, PassengerCategoryOption, PassengerItem, PassengerSchema, PriceSortItem, PriceSortOption, TransitHoursItem, TransitHoursOption, TripType } from "../features/flights/types/index";
 
 /** "one way" | "OneWay" | "ONE-WAY" -> "oneway"; "Round Trip" -> "roundtrip"; "Multi Cities" -> "multicity" */
 export function normalizeTripKey(name: string): TripType | null {
@@ -109,4 +109,69 @@ export function buildCabinClassOptions(items: CabinClassItem[]): CabinClassOptio
         .map(i => ({ id: i.id, label: i.category.trim() }))
         // optional stable sort by label
         .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export function buildPriceSortOptions(items: PriceSortItem[]): PriceSortOption[] {
+    const opts = (items || [])
+        .filter(i => i.status === 1 && i.category?.trim())
+        .map(i => ({ value: i.id, label: i.category.trim() }));
+
+    // Fallback if API empty:
+    if (!opts.length) {
+        return [
+            { value: "lowest", label: "Lowest Price" },
+            { value: "medium", label: "Medium Price" },
+            { value: "highest", label: "Highest Price" },
+        ];
+    }
+
+    // Stable order (optional)
+    const order = ["lowest", "low", "lower", "medium", "mid", "highest", "high"];
+    const rank = (s: string) => {
+        const n = s.toLowerCase();
+        for (let i = 0; i < order.length; i++) if (n.includes(order[i])) return i;
+        return 999;
+    };
+    return opts.sort((a, b) => rank(a.label) - rank(b.label));
+}
+
+export function buildNumberStopsOptions(items: NumberStopsItem[]): NumberStopsOption[] {
+    const opts = (items || [])
+        .filter(i => i.status === 1 && i.category?.trim())
+        .map(i => ({ label: i.category.trim(), value: i.category.trim() }));
+    if (!opts.length) return [{ label: "0", value: "0" }];
+    // numeric-ish sort: 0, 01, 02 ...
+    return opts.sort((a, b) => parseInt(a.value, 10) - parseInt(b.value, 10));
+}
+
+export function buildTransitHourOptions(items: TransitHoursItem[]): TransitHoursOption[] {
+    const opts = (items || [])
+        .filter(i => i.status === 1 && i.category?.trim())
+        .map(i => ({ label: i.category.trim(), value: i.category.trim() }));
+    if (!opts.length) return [
+        { label: "0-3h", value: "0-3h" },
+        // { label: "3-6h", value: "3-6h" },
+        // { label: "6-12h", value: "6-12h" },
+        // { label: "12h+", value: "12h+" },
+        // { label: "24h+", value: "24h+" },
+    ];
+    const rank = (s: string) => {
+        const m = s.match(/^(\d+)/); // take starting number
+        return m ? parseInt(m[1], 10) : 9999;
+    };
+    return opts.sort((a, b) => rank(a.value) - rank(b.value));
+}
+
+const humanize = (s: string) =>
+    s.replace(/[-_]+/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+export function buildBaggageOptions(items: BaggageItem[]): BaggageOption[] {
+    const opts = (items || [])
+        .filter(i => i.status === 1 && i.category?.trim())
+        .map(i => ({
+            value: i.id,
+            label: humanize(i.category.trim()),
+        }));
+    if (!opts.length) return [{ value: "checked", label: "Checked baggage included" }];
+    return opts;
 }
