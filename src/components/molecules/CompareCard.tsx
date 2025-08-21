@@ -21,8 +21,6 @@ type CompareCardProps = {
 
 const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [shareModal, setshareModal] = useState(false);
-  const [filterData, setFilterData] = useState<any[]>([]);
 
   console.log("passSome", passSome);
 
@@ -34,8 +32,6 @@ const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
   };
 
   const [newFlightData, setNewFlightData] = useState<any[]>(passSome);
-  console.log("passSome", passSome);
-  console.log("newFlightData", newFlightData);
 
   return (
     <div className="">

@@ -4,11 +4,10 @@ import "../../assets/css/travel.css";
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
 import colSeparater from "../../assets/svgs/Lineseparater.svg";
 
-import { Modal, Tabs } from "antd";
+import { Modal } from "antd";
 
 import CustomButton from "../common/CustomButton";
 
-import type { TabsProps } from "antd";
 import { useState } from "react";
 import PricingDetailCard from "./PricingDetailCard";
 
@@ -22,11 +21,6 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import { travelData } from "../../utils/mockData";
 import FlightDetailsCard from "./FlightDetailsCard";
 import CompareCard from "./CompareCard";
-
-const items: TabsProps["items"] = [
-  { key: "1", label: "Price option" },
-  { key: "2", label: "Flight Details" },
-];
 
 const TravelRoundTrip: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);

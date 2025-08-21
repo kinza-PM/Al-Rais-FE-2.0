@@ -1,9 +1,7 @@
-import React, { useRef } from "react";
+import React from "react";
 import { useOutletContext } from "react-router-dom";
 import { MainLayout } from "../components";
 import HeroSection from "../components/molecules/HeroSection";
-import PopularDestination from "../components/molecules/PopularDestination";
-import BestDeals from "../components/molecules/BestDeals";
 import PartnersSection from "../components/molecules/PartnersSection";
 import WhyChooseUs from "../components/molecules/WhyChooseUsSection";
 import ReadyToFlySection from "../components/molecules/ReadyToFlySection";

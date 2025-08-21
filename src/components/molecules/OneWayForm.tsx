@@ -9,33 +9,45 @@ import type {
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 
 type Props = {
-  countries: CountryOption[];
+  countries?: CountryOption[];
   loadingCountries?: boolean;
-  fromCode: string;
-  toCode: string;
-  onChangeFrom: (code: string) => void;
-  onChangeTo: (code: string) => void;
+  fromCode?: string;
+  toCode?: string;
+  onChangeFrom?: (code: string) => void;
+  onChangeTo?: (code: string) => void;
   passengerSchema?: PassengerSchema;
-  loadingPassengers?: boolean;
-  cabinClasses: CabinClassOption[];
+  // loadingPassengers?: boolean;
+  cabinClasses?: CabinClassOption[];
   loadingCabinClasses?: boolean;
-  selectedCabinClassId: string; // empty string means none selected
-  onChangeCabinClassId: (id: string) => void;
+  selectedCabinClassId?: string; // empty string means none selected
+  onChangeCabinClassId?: (id: string) => void;
 };
 
 const OneWayForm: React.FC<Props> = ({
-  countries,
-  loadingCountries,
-  fromCode,
-  toCode,
-  onChangeFrom,
-  onChangeTo,
+  // countries,
+  // loadingCountries,
+  // fromCode,
+  // toCode,
+  // onChangeFrom,
+  // onChangeTo,
+  // passengerSchema,
+  // loadingPassengers,
+  // cabinClasses,
+  // loadingCabinClasses,
+  // selectedCabinClassId,
+  // onChangeCabinClassId,
+  countries = [],
+  loadingCountries = false,
+  fromCode = "",
+  toCode = "",
+  onChangeFrom = () => {},
+  onChangeTo = () => {},
   passengerSchema,
-  loadingPassengers,
-  cabinClasses,
-  loadingCabinClasses,
-  selectedCabinClassId,
-  onChangeCabinClassId,
+  // loadingPassengers = false,
+  cabinClasses = [],
+  loadingCabinClasses = false,
+  selectedCabinClassId = "",
+  onChangeCabinClassId = () => {},
 }) => {
   const depRef = useRef<HTMLInputElement>(null);
 

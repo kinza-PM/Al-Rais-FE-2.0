@@ -4,7 +4,7 @@ import type {
   SyncUserResponse,
   UpdateUserProfileRequest,
   UserProfile,
-} from '../../types/profileServiceTypes';
+} from "../../types/ProfileServiceTypes";
 import { LocalStorageService } from "../storage/localStorageService";
 import * as ApiClient from "./apiClient";
 import * as SessionService from "./sessionService";

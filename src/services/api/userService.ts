@@ -21,7 +21,7 @@ export type {
   UpdateUserProfileRequest,
   CognitoUserData,
   SyncUserResponse,
-} from "../../types/profileServiceTypes";
+} from "../../types/ProfileServiceTypes";
 
 export type {
   CreateSessionRequest,

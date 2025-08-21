@@ -15,7 +15,6 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import { Switch, Modal } from "antd";
 import CustomButton from "../common/CustomButton";
 
-import type { TabsProps } from "antd";
 import { useState } from "react";
 import { travelData } from "../../utils/mockData";
 import PricingDetailCard from "./PricingDetailCard";
@@ -26,10 +25,10 @@ const radioReminder = (checked: boolean) => {
   console.log(`switch to ${checked}`);
 };
 
-const items: TabsProps["items"] = [
-  { key: "1", label: "Price option" },
-  { key: "2", label: "Flight Details" },
-];
+// const items: TabsProps["items"] = [
+//   { key: "1", label: "Price option" },
+//   { key: "2", label: "Flight Details" },
+// ];
 
 const TravelOneWay: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
