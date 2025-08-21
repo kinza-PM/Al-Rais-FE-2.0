@@ -29,10 +29,9 @@ const HeroSection: React.FC = () => {
     const {
         flightTypes,
         countries,
-        passengers,     
+        passengers,
         cabinClasses,
         loading,
-        error,
     } = useMasterListings();
 
     // keep your "tabs" memo

@@ -27,6 +27,7 @@ import type {
   TripType,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
+import Loader from "../atoms/Loader";
 
 const { Panel } = Collapse;
 
@@ -137,6 +138,7 @@ const TravelTemplate: React.FC = () => {
 
   return (
     <div className="">
+      <Loader show={loading} />
       <div className="topHeaderSetting">
         <div className="topHeaderSettingInner">
           <div className="tadioButtonGroupWrap py-pxTopHeader">

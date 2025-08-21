@@ -84,7 +84,7 @@ const OneWayForm: React.FC<Props> = ({
             {/* Cabin class */}
             <div className="w-[150px]">
                 <label className="block text-[12px] text-[#3D495C] mb-1">
-                    {loadingCabinClasses ? "Cabin class (loading…)" : "Cabin class"}
+                    Cabin class
                 </label>
                 <div className="relative">
                     <select
