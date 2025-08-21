@@ -147,9 +147,9 @@ const FlightDetailTemplate: React.FC = () => {
     </div>
   );
 
-  const findedCabine = cabinClasses?.find(
-    (item) => item.id === flight?.selectedCabinClassId
-  );
+  // const findedCabine = cabinClasses?.find(
+  //   (item) => item.id === flight?.selectedCabinClassId
+  // );
 
   return (
     <div className="">
