@@ -17,7 +17,6 @@ import { Collapse } from "antd";
 import type { TabsProps } from "antd";
 import { useState } from "react";
 import type { CheckboxProps } from "antd";
-import { useFlightStore } from "../../store/UseFlightStore";
 import { useMasterListings } from "../../hooks/useMasterListings";
 
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
@@ -130,7 +129,6 @@ const FlightDetailTemplate: React.FC = () => {
     [priceOptions, selectedPriceId]
   );
 
-  const { flight } = useFlightStore();
 
   // const { cabinClasses } = useMasterListings();
 
