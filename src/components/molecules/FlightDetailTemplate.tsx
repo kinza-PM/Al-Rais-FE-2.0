@@ -29,6 +29,7 @@ import type {
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import Loader from "../atoms/Loader";
 import { useFlightStore } from "../../store/UseFlightStore";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 const { Panel } = Collapse;
 
@@ -142,6 +143,8 @@ const FlightDetailTemplate: React.FC = () => {
   const findedCabine = cabinClasses?.find(
     (item) => item.id === flight?.selectedCabinClassId
   );
+
+  const [departDate, setDepartDate] = React.useState<Date | null>(new Date());
 
   return (
     <div className="">
@@ -287,35 +290,40 @@ const FlightDetailTemplate: React.FC = () => {
             {/* legacy code removed after refactor */}
           </Flex>
           <Flex align="end" style={{ width: "45%" }} gap={16}>
-            <Flex vertical style={{ width: "100%" }} flex={1}>
-              <label className="header-labels-common ">Departure Date</label>
-              <CustomDatePicker
-                format={"dddd, DD MMM YYYY "}
-                style={{ minWidth: "100%" }}
-                className="header-input-common ant-input-select"
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+              <label className="block text-[12px] text-[#3D495C] mb-1">
+                Departure date
+              </label>
+              <TailiwindCustomDatePicker
+                value={departDate}
+                onChange={(d) => setDepartDate(d)}
+                placeholder="Please select"
+                buttonIconSrc={true}
               />
-            </Flex>
-            <Flex vertical style={{ width: "100%" }} flex={1}>
-              <label className="header-labels-common ">Passengers</label>
-              <div style={{ minWidth: "100%", height: 50 }}>
-                <PassengerCounterDropdown
-                  schema={passengers as PassengerSchema}
-                  maxTotal={9}
-                />
-              </div>
+            </div>
 
-            </Flex>
+            {/* Passengers */}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+              <label className="header-labels-common mb-1">Passengers</label>
+              <PassengerCounterDropdown schema={passengers as PassengerSchema} maxTotal={9} />
+            </div>
             <Flex vertical style={{ width: "100%" }} flex={1}>
-              <label className="header-labels-common ">Cabin Class</label>
-              <CustomSelect
-                placeholder={loading ? "Loading…" : "Please select"}
-                options={cabinSelectOptions}
-                className="header-sub-inputs-common"
-                style={{ minWidth: "100%", height: "50px" }}
-                value={selectedCabinClassId || undefined}
-                onChange={(v: string) => setSelectedCabinClassId(v)}
-                disabled={loading}
-              />
+              <label className="header-labels-common mb-1">Cabin Class</label>
+              <div className="relative">
+                <select
+                  value={selectedCabinClassId}          // "" by default
+                  onChange={(e) => setSelectedCabinClassId(e.target.value)}
+                  className="appearance-none h-11 w-full rounded-xl border border-[#DFE7F3] px-4 pr-8 text-[14px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20"
+                >
+                  <option value="">{loading ? "Loading…" : "Please select"}</option>
+                  {cabinClasses.map((c) => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+                <svg className="pointer-events-none absolute right-3 top-1/3" width="16" height="16" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 7.5l5 5 5-5" stroke="#2351A3" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
             </Flex>
           </Flex>
           <CustomButton

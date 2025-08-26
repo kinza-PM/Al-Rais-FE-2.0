@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import Calendar from "../../assets/svgs/calendar.svg";
+// import Calendar from "../../assets/svgs/calendar.svg";
 import type {
   CabinClassOption,
   CountryOption,
@@ -7,6 +7,7 @@ import type {
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import PassengerCabinDropdown from "../atoms/PassengerCabinDropdown";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 type Props = {
   countries?: CountryOption[];
@@ -40,17 +41,19 @@ const RoundTripForm: React.FC<Props> = ({
   loadingCountries = false,
   fromCode = "",
   toCode = "",
-  onChangeFrom = () => {},
-  onChangeTo = () => {},
+  onChangeFrom = () => { },
+  onChangeTo = () => { },
   passengerSchema,
   //   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => {},
+  onChangeCabinClassId = () => { },
 }) => {
   const depRef = useRef<HTMLInputElement>(null);
   const arrRef = useRef<HTMLInputElement>(null);
+  const [departDate, setDepartDate] = React.useState<Date | null>(new Date());
+  const [arrivalDate, setArrivalDate] = React.useState<Date | null>(new Date());
 
   return (
     <div className="flex items-end gap-4">
@@ -75,7 +78,13 @@ const RoundTripForm: React.FC<Props> = ({
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
-        <div className="relative">
+        <TailiwindCustomDatePicker
+          value={departDate}
+          onChange={(d) => setDepartDate(d)}
+          placeholder="Please select"
+          buttonIconSrc={true}
+        />
+        {/* <div className="relative">
           <input
             ref={depRef}
             type="date"
@@ -94,14 +103,20 @@ const RoundTripForm: React.FC<Props> = ({
               className="w-[16px] h-[16px]"
             />
           </button>
-        </div>
+        </div> */}
       </div>
 
       <div className="w-[200px]">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Arrival date
         </label>
-        <div className="relative">
+        <TailiwindCustomDatePicker
+          value={arrivalDate}
+          onChange={(d) => setArrivalDate(d)}
+          placeholder="Please select"
+          buttonIconSrc={true}
+        />
+        {/* <div className="relative">
           <input
             ref={arrRef}
             type="date"
@@ -120,7 +135,7 @@ const RoundTripForm: React.FC<Props> = ({
               className="w-[16px] h-[16px]"
             />
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Passengers */}

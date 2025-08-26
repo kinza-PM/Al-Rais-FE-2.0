@@ -1,5 +1,4 @@
 import React, { useRef } from "react";
-import Calendar from "../../assets/svgs/calendar.svg";
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {
   CabinClassOption,
@@ -7,6 +6,7 @@ import type {
   PassengerSchema,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 type Props = {
   countries?: CountryOption[];
@@ -49,7 +49,8 @@ const OneWayForm: React.FC<Props> = ({
   selectedCabinClassId = "",
   onChangeCabinClassId = () => { },
 }) => {
-  const depRef = useRef<HTMLInputElement>(null);
+  // const depRef = useRef<HTMLInputElement>(null);
+  const [departDate, setDepartDate] = React.useState<Date | null>(new Date());
 
   return (
     <div className="flex items-end gap-4">
@@ -73,7 +74,13 @@ const OneWayForm: React.FC<Props> = ({
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
-        <div className="relative">
+        <TailiwindCustomDatePicker
+          value={departDate}
+          onChange={(d) => setDepartDate(d)}
+          placeholder="Please select"
+          buttonIconSrc={true}
+        />
+        {/* <div className="relative">
           <input
             ref={depRef}
             type="date"
@@ -92,7 +99,7 @@ const OneWayForm: React.FC<Props> = ({
               className="w-[16px] h-[16px]"
             />
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Passengers */}
