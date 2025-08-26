@@ -6,6 +6,9 @@ import { Amplify } from "aws-amplify";
 import awsconfig from "./aws-exports";
 import type { ThemeConfig } from "antd";
 import { ConfigProvider } from "antd";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
 
 const theme: ThemeConfig = {
   token: {
@@ -43,8 +46,10 @@ Amplify.configure(awsconfig);
 
 createRoot(document.getElementById("root")!).render(
   // <StrictMode>
-  <ConfigProvider theme={theme}>
-    <App />
-  </ConfigProvider>
+  <QueryClientProvider client={queryClient}>
+    <ConfigProvider theme={theme}>
+      <App />
+    </ConfigProvider>
+  </QueryClientProvider>
   // </StrictMode>
 );

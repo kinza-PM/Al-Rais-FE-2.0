@@ -25,14 +25,14 @@
 
 .countrySelectBox .ant-select-selector {
   border: 1px solid var(--black-100) !important;
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: none !important;
 }
 
 .header-input-common {
   border: 1px solid var(--black-100) !important;
-  border-radius: 16px;
-  min-height: 50px;
+  border-radius: 12px;
+  min-height: 44px;
   width: 100%;
 }
 .header-labels-common {
@@ -45,7 +45,7 @@
 }
 .header-sub-inputs-common .ant-select-selector {
   border: 1px solid var(--black-100) !important;
-  border-radius: 16px !important;
+  border-radius: 12px !important;
 }
 .header-sub-inputs-common .ant-select-selector:focus,
 .header-sub-inputs-common .ant-select-selector:hover {
@@ -183,8 +183,9 @@
 .bottomHeaderSetting {
   display: flex;
   align-items: flex-end;
+  justify-content: space-between;
   margin-bottom: 35px;
-  gap: 16px;
+  gap: 24px;
 }
 
 .fromToIcon svg {
@@ -197,9 +198,17 @@
   cursor: pointer;
 }
 
+.flightDetailFilter {
+  /* width: 100%; */
+}
+
 .filterSectionStyle {
   width: 100%;
-  max-width: 250px;
+  min-width: 250px;
+}
+
+.flightDetailMainContent {
+  width: 100%;
 }
 
 .collapseStyle {
@@ -447,6 +456,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.topHalfCardWrap {
   padding: 10px 15px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
@@ -1034,7 +1046,7 @@
 
 .map_container {
   /* background: black; */
-  border-radius: 16px;
+  border-radius: 12px;
   overflow: hidden;
   width: 100%;
 }
@@ -1155,3 +1167,146 @@ img:hover {
 }
 
 /* Tooltips */
+
+.fromToSelectWidth {
+  width: 100%;
+  max-width: 250px;
+}
+
+.bottomHeaderFlex .fromToBtn {
+  width: 100% !important;
+  height: 48px !important;
+  max-width: 48px;
+}
+
+.bottomHeaderFlex {
+  width: 100%;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.searchFilterBtn {
+  max-width: 200px;
+  border-radius: 8px;
+  margin-left: 44px;
+  flex: 1;
+
+  width: 100%;
+  /* max-width: 154px; */
+  padding: 10px 30px;
+  border-radius: 8px;
+  background: #2351a3;
+  color: #f2f2f3;
+  font-size: 16px;
+  min-height: 47px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.5px;
+  height: auto;
+  max-height: 57px;
+}
+
+.stopsOnSmall {
+  display: none;
+}
+
+.stopsOnLarge {
+  display: block;
+}
+
+/* Responsive Start */
+
+@media (min-width: 769px) {
+  .filterToggleBtn {
+    display: none !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .visualGuid {
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .radioButtonGroup .ant-segmented-item {
+    padding: 2px 10px 2px;
+  }
+}
+
+/* Small Screens Filter Toggle */
+
+.filterToggleBtn {
+  display: none;
+  background: #2351a3;
+  color: #fff;
+  /* padding: 10px 15px; */
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+}
+
+/* Small screens pe button visible */
+@media (max-width: 992px) {
+  .filterToggleBtn {
+    display: block;
+    margin-bottom: 10px;
+  }
+  .filterSectionStyle.closed {
+    display: none;
+  }
+  .filterSectionStyle.open {
+    display: block;
+  }
+
+  .topHeaderTabs {
+    margin: 0px;
+  }
+
+  .stopsOnSmall {
+    display: block;
+    width: 100%;
+  }
+
+  .stopsOnLarge {
+    display: none;
+  }
+}
+
+@media (max-width: 575px) {
+  .topHeaderSettingInner {
+    flex-direction: column;
+  }
+
+  .topHeaderTabs {
+    margin: 0px;
+  }
+
+  .customIndicate .ant-tabs-tab {
+    padding: 15px 0px;
+  }
+}
+@media (max-width: 768px) {
+  .py-pxTopHeader {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .bottomHeaderSetting {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .bottomHeaderFlex {
+    width: 100%;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .searchFilterBtn {
+    margin-left: 0px;
+  }
+}
+
+/* Small Screens Filter Toggle */

@@ -1,7 +1,6 @@
 import React from "react";
 import "../../assets/css/travel.css";
-import alraisLogo from "../../assets/images/alraisLogo.png";
-import planeImg from "../../assets/images/travel_plane_image.png";
+
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
 import colSeparater from "../../assets/svgs/Lineseparater.svg";
 
@@ -20,6 +19,11 @@ import { travelData } from "../../utils/mockData";
 import PricingDetailCard from "./PricingDetailCard";
 import CompareCard from "./CompareCard";
 import FlightDetailsCard from "./FlightDetailsCard";
+import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
+
+type TravelOneWayProps = {
+  passData: any[]; // yahan aap type refine kar sakte ho
+};
 
 const radioReminder = (checked: boolean) => {
   console.log(`switch to ${checked}`);
@@ -30,11 +34,12 @@ const radioReminder = (checked: boolean) => {
 //   { key: "2", label: "Flight Details" },
 // ];
 
-const TravelOneWay: React.FC = () => {
+const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shareModal, setshareModal] = useState(false);
   const [filterData, setFilterData] = useState<any[]>([]);
   const [filterDetail, setFilterDetail] = useState<any[]>([]);
+  // const [stopsData, setStopsData] = useState<any[]>([]);
 
   const showModalCompare = ({
     modalType,
@@ -70,133 +75,68 @@ const TravelOneWay: React.FC = () => {
 
   return (
     <div className="">
-      <div className="relative w-full max-w-[1040px] m-auto">
-        <img
-          src={planeImg}
-          alt=""
-          className="absolute w-[344px] top-[-18px] left-[312px]"
-        />
-      </div>
-      <div className="setHeroImage">
-        <div className="heroImgDFlex">
-          <div className="partOne">
-            <div>
-              <img src={alraisLogo} alt="" />
-            </div>
-            <div>
-              <h4>30% off</h4>
-              <h6>World Flight Day Special!</h6>
-              <p className="para1">
-                Book a FlyDubai flight to Mumbai today and enjoy
-              </p>
-              <p className="para2">
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M10 1.875C8.39303 1.875 6.82214 2.35152 5.486 3.24431C4.14985 4.1371 3.10844 5.40605 2.49348 6.8907C1.87852 8.37535 1.71762 10.009 2.03112 11.5851C2.34463 13.1612 3.11846 14.6089 4.25476 15.7452C5.39106 16.8815 6.8388 17.6554 8.4149 17.9689C9.99099 18.2824 11.6247 18.1215 13.1093 17.5065C14.594 16.8916 15.8629 15.8502 16.7557 14.514C17.6485 13.1779 18.125 11.607 18.125 10C18.1227 7.84581 17.266 5.78051 15.7427 4.25727C14.2195 2.73403 12.1542 1.87727 10 1.875ZM10 16.875C8.64026 16.875 7.31105 16.4718 6.18046 15.7164C5.04987 14.9609 4.16868 13.8872 3.64833 12.6309C3.12798 11.3747 2.99183 9.99237 3.2571 8.65875C3.52238 7.32513 4.17716 6.10013 5.13864 5.13864C6.10013 4.17716 7.32514 3.52237 8.65876 3.2571C9.99238 2.99183 11.3747 3.12798 12.631 3.64833C13.8872 4.16868 14.9609 5.04987 15.7164 6.18045C16.4718 7.31104 16.875 8.64025 16.875 10C16.8729 11.8227 16.1479 13.5702 14.8591 14.8591C13.5702 16.1479 11.8227 16.8729 10 16.875ZM11.25 13.75C11.25 13.9158 11.1842 14.0747 11.0669 14.1919C10.9497 14.3092 10.7908 14.375 10.625 14.375C10.2935 14.375 9.97554 14.2433 9.74112 14.0089C9.5067 13.7745 9.375 13.4565 9.375 13.125V10C9.20924 10 9.05027 9.93415 8.93306 9.81694C8.81585 9.69973 8.75 9.54076 8.75 9.375C8.75 9.20924 8.81585 9.05027 8.93306 8.93306C9.05027 8.81585 9.20924 8.75 9.375 8.75C9.70652 8.75 10.0245 8.8817 10.2589 9.11612C10.4933 9.35054 10.625 9.66848 10.625 10V13.125C10.7908 13.125 10.9497 13.1908 11.0669 13.3081C11.1842 13.4253 11.25 13.5842 11.25 13.75ZM8.75 6.5625C8.75 6.37708 8.80499 6.19582 8.908 6.04165C9.01101 5.88748 9.15743 5.76732 9.32874 5.69636C9.50004 5.62541 9.68854 5.60684 9.8704 5.64301C10.0523 5.67919 10.2193 5.76848 10.3504 5.89959C10.4815 6.0307 10.5708 6.19775 10.607 6.3796C10.6432 6.56146 10.6246 6.74996 10.5536 6.92127C10.4827 7.09257 10.3625 7.23899 10.2084 7.342C10.0542 7.44502 9.87292 7.5 9.6875 7.5C9.43886 7.5 9.20041 7.40123 9.02459 7.22541C8.84878 7.0496 8.75 6.81114 8.75 6.5625Z"
-                    fill="#A7C0EC"
-                  />
-                </svg>
-                <span>Terms and conditions apply</span>
-              </p>
-            </div>
-          </div>
-
-          <div>
-            <button className="promoCodeBtn">Copy promo code</button>
-          </div>
-        </div>
-      </div>
-
-      {travelData?.map((item, index) => (
-        <div className="flightDetailCards">
-          <div className="topHalfCard">
-            <div className="fightTitle">
-              <div className="flightIcon">
-                <img src={item?.logo} alt="" />
-              </div>
-              <div className="nameAndDetails">
-                <h5>{item?.name}</h5>
-                <p>
-                  {item?.flight_detail?.flight_number} -
-                  {item?.flight_detail?.flight_class}
-                </p>
-              </div>
-            </div>
-            <div className="flightTiming">
-              <div className="startTime">
-                <h5>{item?.flight_detail?.start_time}</h5>
-                <p>{item?.flight_detail?.start_date}</p>
-              </div>
-              <div className="FlightDirection">
-                <div className="visualGuid">
-                  <div className="stopPoint"></div>
-
-                  {item?.stop?.length > 0 ? (
-                    item?.stop?.map((stopStayTime) => (
-                      <div className="stopsDetail">
-                        <span>{stopStayTime?.stayTime}</span>
-                        <div className="stopPoint stopDots"></div>
-                        <span>{stopStayTime?.name}</span>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="stopsDetail">
-                      <span>03h 15min</span>
-                      <div className=""></div>
-                      <span>Direct</span>
-                    </div>
-                  )}
-                  <div className="stopPoint"></div>
+      {passData?.map((item, index) => (
+        <div className="flightDetailCards" key={index}>
+          <div className="topHalfCardWrap">
+            <div className="topHalfCard">
+              <div className="fightTitle">
+                <div className="flightIcon">
+                  <img src={item?.logo} alt="" />
+                </div>
+                <div className="nameAndDetails">
+                  <h5>{item?.name}</h5>
+                  <p>
+                    {item?.flight_detail?.flight_number} -
+                    {item?.flight_detail?.flight_class}
+                  </p>
                 </div>
               </div>
-              <div className="EndTime">
-                <h5>{item.flight_detail.end_time}</h5>
-                <p>{item.flight_detail.end_date}</p>
+              <div className="stopsOnLarge">
+                <FlightTimingAndStops passSome={item} />
+              </div>
+
+              <div className="featureIcons">
+                <div className="featureIconTooltipWrap">
+                  <img src={cabinIcon} alt="Cabin" />
+                  <span className="tooltip">Cabin: 1PC</span>
+                </div>
+
+                <div className="featureIconTooltipWrap">
+                  <img src={baggageIcon} alt="Baggage" />
+                  <span className="tooltip">Baggage: 20KG</span>
+                </div>
+
+                <div className="featureIconTooltipWrap">
+                  <img src={mealIcon} alt="Meal" />
+                  <span className="tooltip">Meal Included</span>
+                </div>
+
+                <div className="featureIconTooltipWrap">
+                  <img src={wifiIcon} alt="WiFi" />
+                  <span className="tooltip">WiFi Available</span>
+                </div>
+
+                <div className="featureIconTooltipWrap">
+                  <img src={portsIcon} alt="Ports" />
+                  <span className="tooltip">USB Ports</span>
+                </div>
+
+                <div className="featureIconTooltipWrap">
+                  <img src={entertainmentIcon} alt="Entertainment" />
+                  <span className="tooltip">Entertainment</span>
+                </div>
+              </div>
+
+              <div className="StartingPrice">
+                <p>Start from</p>
+                <h5>${item.price.economyLite.price}</h5>
               </div>
             </div>
-            <div className="featureIcons">
-              <div className="featureIconTooltipWrap">
-                <img src={cabinIcon} alt="Cabin" />
-                <span className="tooltip">Cabin: 1PC</span>
-              </div>
-
-              <div className="featureIconTooltipWrap">
-                <img src={baggageIcon} alt="Baggage" />
-                <span className="tooltip">Baggage: 20KG</span>
-              </div>
-
-              <div className="featureIconTooltipWrap">
-                <img src={mealIcon} alt="Meal" />
-                <span className="tooltip">Meal Included</span>
-              </div>
-
-              <div className="featureIconTooltipWrap">
-                <img src={wifiIcon} alt="WiFi" />
-                <span className="tooltip">WiFi Available</span>
-              </div>
-
-              <div className="featureIconTooltipWrap">
-                <img src={portsIcon} alt="Ports" />
-                <span className="tooltip">USB Ports</span>
-              </div>
-
-              <div className="featureIconTooltipWrap">
-                <img src={entertainmentIcon} alt="Entertainment" />
-                <span className="tooltip">Entertainment</span>
-              </div>
-            </div>
-
-            <div className="StartingPrice">
-              <p>Start from</p>
-              <h5>${item.price.economyLite.price}</h5>
+            <div className="stopsOnSmall">
+              <FlightTimingAndStops passSome={item} />
             </div>
           </div>
+
           <div className="bottomHalfCard">
             <div className="bottomHalfCardflexStyle">
               <div className="modalOptions">
