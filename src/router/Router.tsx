@@ -4,7 +4,7 @@ import AppLayout from "../components/layouts/AppLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import SearchFlight from "../pages/SearchFlight";
 const LandingPage = lazy(() => import("../pages/LandingPage"));
-const TravelPage = lazy(() => import("../pages/TravelPage"));
+// const TravelPage = lazy(() => import("../pages/TravelPage"));
 const AuthPage = lazy(() => import("../pages/AuthPage"));
 const PackagesPage = lazy(() => import("../pages/PackagesPage"));
 const AboutPage = lazy(() => import("../pages/AboutPage"));
@@ -16,6 +16,7 @@ const ProfilePage = lazy(() => import("../pages/ProfilePage"));
 // Lazy load pages for better performance
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 const Travellers = lazy(() => import("../pages/Travellers"));
+const FlightBooking = lazy(() => import("../pages/FlightBooking"));
 
 const router = createBrowserRouter([
   {
@@ -32,7 +33,8 @@ const router = createBrowserRouter([
       },
       {
         path: "travel",
-        element: <TravelPage />,
+        element: <Travellers />,
+        // element: <TravelPage />,
       },
       {
         path: "search_flight",
@@ -47,8 +49,8 @@ const router = createBrowserRouter([
         element: <AboutPage />,
       },
       {
-        path: "travellers",
-        element: <Travellers />,
+        path: "flight-booking",
+        element: <FlightBooking />,
       },
       {
         path: "my-bookings",

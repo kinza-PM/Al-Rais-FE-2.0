@@ -213,3 +213,150 @@ export const cabinClass = [
   { value: "businessClass", label: "Business Class" },
   { value: "firstClass", label: "First Class" },
 ];
+
+export const flightBookingMeals = [
+  { name: "Vegan Burger", price: 15.75 },
+  { name: "Gluten-Free Pasta", price: 18.2 },
+  { name: "Quinoa Salad", price: 14.5 },
+  { name: "Stuffed Bell Peppers", price: 17.3 },
+  { name: "Mushroom Risotto", price: 12.85 },
+];
+export const flightBookingDrinks = [
+  { name: "Herbal Tea", price: 4.75 },
+  { name: "Freshly Squeezed Lemonade", price: 3.2 },
+  { name: "Iced Green Tea", price: 4.5 },
+  { name: "Coconut Water", price: 3.65 },
+  { name: "Chilled Hibiscus Drink", price: 2.85 },
+];
+
+export const flightBookingComfortAndEntertainment = {
+  wifi: [
+    {
+      leg: "Departure flight",
+      logo: 'src/assets/images/emirates.png',
+      airline: "Emirates Airlines",
+      flight: "EK 1234 – Economy class",
+      passenger: "01 Adult",
+      speed: "10 Mbps",
+      cost: 22.5,
+      checked: true,
+    },
+    {
+      leg: "Return flight",
+      logo: 'src/assets/images/air-india.png',
+      airline: "Air India",
+      flight: "AI 1452 – Economy class",
+      passenger: "01 Adult",
+      speed: "12 Mbps",
+      cost: 16.0,
+      checked: true,
+    },
+  ],
+  movies: [
+    {
+      leg: "Departure flight",
+      logo: 'src/assets/images/emirates.png',
+      airline: "Emirates Airlines",
+      flight: "EK 1234 – Economy class",
+      passenger: "01 Adult",
+      selection: "Newly released",
+      cost: 50,
+      checked: false,
+    },
+    {
+      leg: "Return flight",
+      logo: 'src/assets/images/air-india.png',
+      airline: "Air India",
+      flight: "AI 1452 – Economy class",
+      passenger: "01 Adult",
+      selection: "Newly released",
+      cost: 44.5,
+      checked: false,
+    },
+  ],
+  music: [
+    {
+      leg: "Departure flight",
+      logo: 'src/assets/images/emirates.png',
+      airline: "Emirates Airlines",
+      flight: "EK 1234 – Economy class",
+      passenger: "01 Adult",
+      selection: "Spotify Trending",
+      cost: 40,
+      checked: true,
+    },
+    {
+      leg: "Return flight",
+      logo: 'src/assets/images/air-india.png',
+      airline: "Air India",
+      flight: "AI 1452 – Economy class",
+      passenger: "01 Adult",
+      selection: "Spotify Trending",
+      cost: 32,
+      checked: true,
+    },
+  ],
+}
+
+export const flightBookingAirportServices = {
+  lounge_access: [
+    {
+      leg: "Departure flight",
+      logo: 'src/assets/images/emirates.png',
+      airline: "Emirates Airlines",
+      flight: "EK 1234 – Economy class",
+      passenger: "01 Adult",
+      cost: 62.50,
+      checked: true,
+    },
+    {
+      leg: "Return flight",
+      logo: 'src/assets/images/air-india.png',
+      airline: "Air India",
+      flight: "AI 1452 – Economy class",
+      passenger: "01 Adult",
+      cost: 55.70,
+      checked: true,
+    },
+  ],
+  fast_track: [
+    {
+      leg: "Departure flight",
+      logo: 'src/assets/images/emirates.png',
+      airline: "Emirates Airlines",
+      flight: "EK 1234 – Economy class",
+      passenger: "01 Adult",
+      cost: 90,
+      checked: true,
+    },
+    {
+      leg: "Return flight",
+      logo: 'src/assets/images/air-india.png',
+      airline: "Air India",
+      flight: "AI 1452 – Economy class",
+      passenger: "01 Adult",
+      cost: 75.50,
+      checked: false,
+    },
+  ],
+  priority_boarding: [
+    {
+      leg: "Departure flight",
+      logo: 'src/assets/images/emirates.png',
+      airline: "Emirates Airlines",
+      flight: "EK 1234 – Economy class",
+      passenger: "01 Adult",
+      cost: 45,
+      checked: false,
+    },
+    {
+      leg: "Return flight",
+      logo: 'src/assets/images/air-india.png',
+      airline: "Air India",
+      flight: "AI 1452 – Economy class",
+      passenger: "01 Adult",
+      cost: 30,
+      checked: true,
+    },
+  ],
+}
