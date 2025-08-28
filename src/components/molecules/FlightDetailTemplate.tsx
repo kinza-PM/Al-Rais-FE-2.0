@@ -397,11 +397,7 @@ const FlightDetailTemplate: React.FC = () => {
         </div>
       </div>
 
-      <div
-        style={{
-          padding: "0px 32px",
-        }}
-      >
+      <div className="flightDetailTemplateWrap">
         <div className="bottomHeaderSetting">
           <Flex className="bottomHeaderFlex">
             <TravelRoutePicker
@@ -462,7 +458,7 @@ const FlightDetailTemplate: React.FC = () => {
           </CustomButton>
         </div>
 
-        {!screens.md && (
+        {!screens.lg && (
           <div className="">
             <Drawer
               title="Filters"
@@ -613,7 +609,7 @@ const FlightDetailTemplate: React.FC = () => {
         )}
 
         <div className="contentWrapFlex">
-          {screens.md && (
+          {screens.lg && (
             <div className="flightDetailFilter">
               <div className="filterSectionStyle">
                 <div className="">
@@ -791,7 +787,7 @@ const FlightDetailTemplate: React.FC = () => {
               </div>
             </div>
 
-            {!screens.md && (
+            {!screens.lg && (
               <Button
                 className="filterToggleBtn"
                 type="primary"

@@ -1,6 +1,6 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
-import Header from "../organisms/header";
+import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
 
 const AppLayout: React.FC = () => {
@@ -53,7 +53,7 @@ const AppLayout: React.FC = () => {
         `}</style>
 
         {location.pathname !== "/auth" && (
-          <Header
+          <AppHeader
             logoSrc={AlRaisLogo}
             onLoginClick={openLogin}
             onSignupClick={openSignup}

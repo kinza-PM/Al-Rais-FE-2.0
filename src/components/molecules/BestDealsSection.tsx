@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Modal, message } from "antd";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 import Deal1 from "../../assets/images/deal1.png";
 import Deal2 from "../../assets/images/deal2.png";
 import Deal3 from "../../assets/images/deal3.png";
@@ -40,6 +42,28 @@ const DEALS: Deal[] = [
 // const TABS = [100, 200, 500, 999];
 
 const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
+  // DESIGN UI CHANGES
+
+  const { isAuthenticated } = useAuth();
+
+  const [successVisible, setSuccessVisible] = useState(false);
+  const [loginVisible, setLoginVisible] = useState(false);
+
+  const handleBookNow = () => {
+    if (isAuthenticated) {
+      setSuccessVisible(true);
+    } else {
+      setLoginVisible(true);
+    }
+  };
+
+  const handleLoginRedirect = () => {
+    message.info("Redirecting to login...");
+    window.location.href = "/auth";
+  };
+
+  // DESIGN UI CHANGES
+
   return (
     <div className="group relative overflow-hidden rounded-2xl shadow-sm ring-1 ring-black/5 bg-white">
       {/* Image */}
@@ -84,6 +108,7 @@ const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
         <div className="flex justify-center">
           <button
             type="button"
+            onClick={handleBookNow}
             className="rounded-lg px-4 py-1.5 text-sm
                          bg-white text-[rgba(35,81,163,1)]
                          shadow-[0_1px_2px_rgba(0,0,0,0.08),0_6px_18px_rgba(0,0,0,0.06)]
@@ -93,6 +118,32 @@ const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
           </button>
         </div>
       </div>
+
+      {/* DESIGN UI CHANGES */}
+      <Modal
+        open={successVisible}
+        onOk={() => setSuccessVisible(false)}
+        onCancel={() => setSuccessVisible(false)}
+        okText="Great!"
+        title="Booking Successful 🎉"
+      >
+        <p>
+          Your trip to <b>{d.title}</b> has been booked successfully!
+        </p>
+      </Modal>
+
+      <Modal
+        open={loginVisible}
+        onOk={handleLoginRedirect}
+        onCancel={() => setLoginVisible(false)}
+        okText="Login"
+        cancelText="Cancel"
+        title="Login Required"
+      >
+        <p>Please login to book your trip.</p>
+      </Modal>
+
+      {/* DESIGN UI CHANGES */}
     </div>
   );
 };
