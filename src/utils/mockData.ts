@@ -360,3 +360,22 @@ export const flightBookingAirportServices = {
     },
   ],
 }
+
+export const flightBookingReviewContactDetail = {
+  title: "Mr.",
+  fullName: "Zeeshan Ahmad",
+  email: "zeeshan.ahmad@email.com",
+  phone: "+12 345 67890",
+};
+
+export const flightBookingReviewPassengerDetail = {
+  paxType: "Adult",
+  passportNumber: "123DXB78WYR",
+  issuingCountry: "Dubai",
+  expiryDate: "09/2030",
+};
+
+export const flightBookingReviewSeatDetail = {
+  cabinClass: "Economy",
+  seatNo: "B9",
+};

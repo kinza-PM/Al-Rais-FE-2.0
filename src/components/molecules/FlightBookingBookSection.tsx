@@ -4,27 +4,19 @@ import entertainmentIcon from "../../assets/svgs/entertainment.svg";
 import mealIcon from "../../assets/svgs/meals.svg";
 import portIcon from "../../assets/svgs/ports.svg";
 import wifiIcon from "../../assets/svgs/wifi.svg";
+import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
+import arrownUpwardIcon from "../../assets/svgs/arrow-upwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import { useState } from "react";
 import FlightBookingBaggageSection from "../atoms/FlightBookingBaggageSection";
 import FlightBookingMealsSection from "../atoms/FlightBookingMealsSection";
 import FlightBookingComfortAirportAndTravelSection from "../atoms/FlightBookingComfortAirportAndTravelSection";
+import FlightBookingSeatSection from "../atoms/FlightBookingSeatSection";
+import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 
 function ChevronDown() {
     return (
-        <svg
-            width="14"
-            height="9"
-            viewBox="0 0 14 9"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className="pointer-events-none absolute right-3 top-3/5"
-        >
-            <path
-                d="M13.6925 1.94217L7.44254 8.19217C7.38449 8.25028 7.31556 8.29638 7.23969 8.32783C7.16381 8.35928 7.08248 8.37547 7.00035 8.37547C6.91821 8.37547 6.83688 8.35928 6.76101 8.32783C6.68514 8.29638 6.61621 8.25028 6.55816 8.19217L0.30816 1.94217C0.190885 1.82489 0.125 1.66583 0.125 1.49998C0.125 1.33413 0.190885 1.17507 0.30816 1.05779C0.425435 0.940518 0.584495 0.874634 0.750347 0.874634C0.9162 0.874634 1.07526 0.940518 1.19253 1.05779L7.00035 6.86639L12.8082 1.05779C12.8662 0.999725 12.9352 0.953662 13.011 0.922235C13.0869 0.890809 13.1682 0.874634 13.2503 0.874634C13.3325 0.874634 13.4138 0.890809 13.4897 0.922235C13.5655 0.953662 13.6345 0.999725 13.6925 1.05779C13.7506 1.11586 13.7967 1.1848 13.8281 1.26067C13.8595 1.33654 13.8757 1.41786 13.8757 1.49998C13.8757 1.5821 13.8595 1.66342 13.8281 1.73929C13.7967 1.81516 13.7506 1.8841 13.6925 1.94217Z"
-                fill="#3D495C"
-            />
-        </svg>
+        <img alt="arrow-icon" src={arrownDownwardIcon} className="pointer-events-none absolute right-3 top-3/5" />
     )
 }
 
@@ -44,16 +36,9 @@ const CardChevron = ({
         className={`transition-transform duration-200 ${open ? "rotate-180" : ""} ${className}`}
     >
         {open ? (
-            <svg width="14" height="9" viewBox="0 0 14 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path
-                    d="M13.6925 1.94217L7.44254 8.19217C7.38449 8.25028 7.31556 8.29638 7.23969 8.32783C7.16381 8.35928 7.08248 8.37547 7.00035 8.37547C6.91821 8.37547 6.83688 8.35928 6.76101 8.32783C6.68514 8.29638 6.61621 8.25028 6.55816 8.19217L0.30816 1.94217C0.190885 1.82489 0.125 1.66583 0.125 1.49998C0.125 1.33413 0.190885 1.17507 0.30816 1.05779C0.425435 0.940518 0.584495 0.874634 0.750347 0.874634C0.9162 0.874634 1.07526 0.940518 1.19253 1.05779L7.00035 6.86639L12.8082 1.05779C12.8662 0.999725 12.9352 0.953662 13.011 0.922235C13.0869 0.890809 13.1682 0.874634 13.2503 0.874634C13.3325 0.874634 13.4138 0.890809 13.4897 0.922235C13.5655 0.953662 13.6345 0.999725 13.6925 1.05779C13.7506 1.11586 13.7967 1.1848 13.8281 1.26067C13.8595 1.33654 13.8757 1.41786 13.8757 1.49998C13.8757 1.5821 13.8595 1.66342 13.8281 1.73929C13.7967 1.81516 13.7506 1.8841 13.6925 1.94217Z"
-                    fill="#0A0C0F"
-                />
-            </svg>
+            <img alt="arrow-icon" src={arrownUpwardIcon} />
         ) : (
-            <svg width="14" height="9" viewBox="0 0 14 9" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M0.307465 7.05783L6.55747 0.80783C6.61551 0.74972 6.68444 0.70362 6.76032 0.672168C6.83619 0.640715 6.91752 0.624527 6.99965 0.624527C7.08179 0.624527 7.16312 0.640715 7.23899 0.672168C7.31486 0.70362 7.3838 0.74972 7.44184 0.80783L13.6918 7.05783C13.8091 7.17511 13.875 7.33417 13.875 7.50002C13.875 7.66587 13.8091 7.82493 13.6918 7.94221C13.5746 8.05948 13.4155 8.12537 13.2497 8.12537C13.0838 8.12537 12.9247 8.05948 12.8075 7.94221L6.99965 2.13361L1.19184 7.94221C1.13377 8.00027 1.06483 8.04634 0.988962 8.07776C0.913092 8.10919 0.831774 8.12537 0.749652 8.12537C0.66753 8.12537 0.586212 8.10919 0.510342 8.07776C0.434471 8.04634 0.365533 8.00027 0.307465 7.94221C0.249395 7.88414 0.203333 7.8152 0.171907 7.73933C0.14048 7.66346 0.124304 7.58214 0.124304 7.50002C0.124304 7.4179 0.14048 7.33658 0.171907 7.26071C0.203333 7.18484 0.249395 7.1159 0.307465 7.05783Z" fill="#0A0C0F" />
-            </svg>
+            <img alt="arrow-icon" src={arrownDownwardIcon} />
         )}
     </button>
 );
@@ -102,8 +87,9 @@ function FormSwitch({
 }
 
 export default function FlightBookingBookSection() {
-    const [openPrice, setOpenPrice] = useState(true);
+    const [openPrice, setOpenPrice] = useState(false);
     const [openBaggage, setOpenBaggage] = useState(true);
+    const [openSeats, setOpenSeats] = useState(true);
     const [openMeals, setOpenMeals] = useState(true);
     const [openCE, setOpenCE] = useState(true);
     const [openAirport, setOpenAirport] = useState(true);
@@ -270,6 +256,12 @@ export default function FlightBookingBookSection() {
                             retChecked={retBagOn}
                             onToggleDep={() => setDepBagOn(v => !v)}
                             onToggleRet={() => setRetBagOn(v => !v)}
+                        />
+
+                        <FlightBookingSeatSection
+                            CardChevron={CardChevron}
+                            open={openSeats}
+                            onToggleOpen={() => setOpenSeats(v => !v)}
                         />
 
                         {/* Meals & Drinks */}
@@ -461,29 +453,12 @@ export default function FlightBookingBookSection() {
                         </ul>
                     </div>
 
-                    <div className="mt-4 rounded-xl border border-[#E4E4E7] bg-white">
-                        <div className="flex items-center justify-between px-4 py-3">
-                            <div className="text-[16px] font-semibold text-[#0A0C0F]">Price breakdown</div>
-                            <CardChevron open={openPrice} onClick={() => setOpenPrice((v) => !v)} />
-                        </div>
+                    <FLightPriceBreakdown
+                        CardChevron={CardChevron}
+                        open={openPrice}
+                        onToggleOpen={() => setOpenPrice(v => !v)}
+                    />
 
-                        {openPrice && <div className="h-px bg-[#E4E4E7]" />}
-
-                        <div
-                            className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${openPrice ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
-                                }`}
-                        >
-                            <div className="overflow-hidden">
-                                <ul className="px-4 py-1">
-                                    <li className="flex items-center justify-between py-1">
-                                        <span className="text-[12px] text-[#3D495C]">Total</span>
-                                        <span className="text-[14px] font-semibold text-[#0A0C0F]">$1,329.75</span>
-                                    </li>
-                                    {/* yahan aur line-items add kar sakte ho if needed */}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
 
                     <button
                         type="button"
