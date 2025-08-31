@@ -27,15 +27,15 @@ const HeroSection: React.FC = () => {
     const [toCode, setToCode] = useState<string>("");
     const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("");
 
-    // ⬇️ Fetch all master listings via hook (single source of truth)
-    const {
-        flightTypes,
-        countries,
-        passengers, // PassengerSchema
-        cabinClasses,
-        loading,
-        // error,
-    } = useMasterListings();
+  // ⬇️ Fetch all master listings via hook (single source of truth)
+  const {
+    flightTypes,
+    countries,
+    passengers, // PassengerSchema
+    cabinClasses,
+    loading,
+    // error,
+  } = useMasterListings();
 
     const navigate = useNavigate();
 

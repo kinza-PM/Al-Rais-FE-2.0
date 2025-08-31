@@ -2,9 +2,9 @@ import footerLogo from "../../assets/images/footerLogo.png";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="bg-[#F2F2F3] pt-20 pb-10">
+    <footer className="bg-[#F2F2F3] pt-20 pb-10 footerWrapper">
       <div className="w-full flex py-4 px-4 sm:px-6 lg:px-10">
-        <div className="flex">
+        <div className="flex footerFlexDirection">
           {/* Logo and Description */}
           <div className="md:basis-1/3 lg:basis-2/5 pr-8">
             <img
@@ -22,7 +22,7 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Links Sections */}
-          <div className="md:basis-2/3 lg:basis-3/5 flex gap-[34px]">
+          <div className="md:basis-2/3 lg:basis-3/5 flex gap-[34px] footerFlexDirection">
             {/* Company Links */}
             <div>
               <h3 className="font-semibold text-lg mb-4">Company</h3>
