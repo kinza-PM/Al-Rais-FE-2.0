@@ -11,11 +11,13 @@
   border-right: none;
   margin-bottom: 30px;
 }
+
 .topHeaderSettingInner {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
+
 .py-pxTopHeader {
   padding-top: 8px;
   padding-bottom: 14px;
@@ -35,18 +37,22 @@
   min-height: 44px;
   width: 100%;
 }
+
 .header-labels-common {
   font-size: 12px;
   color: var(--black-200);
 }
+
 .header-input-common:focus,
 .header-input-common:hover {
   border: 1px solid #2351a3 !important;
 }
+
 .header-sub-inputs-common .ant-select-selector {
   border: 1px solid var(--black-100) !important;
   border-radius: 12px !important;
 }
+
 .header-sub-inputs-common .ant-select-selector:focus,
 .header-sub-inputs-common .ant-select-selector:hover {
   border: 1px solid #2351a3 !important;
@@ -55,6 +61,7 @@
 .ant-input-select {
   font-weight: bold !important;
 }
+
 .radioButtonGroup {
   border: 1px solid var(--black-100);
   border-radius: 12px;
@@ -89,6 +96,7 @@
 .getHelpLink {
   color: var(--primary-200, #5383da);
 }
+
 .getHelpLink:hover {
   text-decoration: underline;
 }
@@ -102,35 +110,24 @@
   margin-right: 100px;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-tab.ant-tabs-tab-active
-  .ant-tabs-tab-btn {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
   color: #2351a3 !important;
   text-shadow: 0 0 0.25px #2351a3;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar {
-  color: #2351a3 !important;
-}
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar:hover {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar {
   color: #2351a3 !important;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar:hover {
+  color: #2351a3 !important;
+}
+
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar {
   background: #2351a3;
 }
 
-.ant-tabs-ink-bar
-  .topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs-top
-  > .ant-tabs-nav {
+.ant-tabs-ink-bar .topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs-top>.ant-tabs-nav {
   margin-bottom: 0px;
 }
 
@@ -146,6 +143,7 @@
   min-height: 40px;
   /* padding: 15px; */
 }
+
 .datePickerChild,
 .selectChild {
   width: 100%;
@@ -250,6 +248,7 @@
   display: flex;
   gap: 5px;
 }
+
 .transitHours {
   display: flex;
   flex-wrap: wrap;
@@ -283,14 +282,8 @@
   max-width: 68px !important;
 }
 
-.stopsRadioStyle
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
-    :first-child
-  )::before,
-.transitHours
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
-    :first-child
-  )::before {
+.stopsRadioStyle :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not( :first-child)::before,
+.transitHours :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not( :first-child)::before {
   content: none !important;
 }
 
@@ -300,8 +293,7 @@
   font-weight: 500;
 }
 
-.transitHours
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper-block {
+.transitHours :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper-block {
   flex: auto;
 }
 
@@ -393,6 +385,7 @@
   justify-content: space-between;
   align-items: center;
 }
+
 .partOne {
   display: flex;
   justify-content: space-between;
@@ -470,6 +463,7 @@
   border-radius: 0px;
   border: none;
 }
+
 .modalFlightDetailCard {
   padding: 10px 15px;
   border-top-left-radius: 12px;
@@ -488,9 +482,11 @@
   justify-content: space-between;
   align-items: center;
 }
+
 .modalFlightTiming {
   margin-top: 15px;
 }
+
 .modalFlightTiming .visualGuid {
   width: 322px;
 }
@@ -498,6 +494,7 @@
 .modalHeader {
   text-align: center;
 }
+
 .modalHeader h2 {
   margin-top: 25px;
   margin-bottom: 15px;
@@ -505,6 +502,7 @@
   font-size: 32px;
   font-weight: 500;
 }
+
 .modalHeader p {
   margin-bottom: 35px;
   font-size: 16px;
@@ -531,6 +529,7 @@
   width: 52px;
   height: 52px;
 }
+
 .flightIcon img {
   width: 100%;
 }
@@ -541,6 +540,7 @@
   font-weight: 500;
   letter-spacing: 0px;
 }
+
 .nameAndDetails p {
   color: #3d495c;
   font-size: 10px;
@@ -602,6 +602,7 @@
   background: var(--primary-300, #2351a3);
   border-radius: 100%;
 }
+
 .stopDots {
   width: 8px;
   height: 8px;
@@ -617,6 +618,7 @@
 .copyMailWhatsappBtn .textCenter {
   text-align: center;
 }
+
 .copyMailWhatsappBtn .textCenter p {
   font-size: 12px;
   color: var(--black-200, #3d495c);
@@ -659,6 +661,7 @@
   line-height: 1;
   margin-bottom: 2px;
 }
+
 .StartingPrice h5 {
   color: var(--black-300, #0a0c0f);
   font-size: 16px;
@@ -707,6 +710,7 @@
   justify-content: space-between;
   gap: 20px;
 }
+
 .modalOptions .setMargin {
   margin: 0px 20px;
 }
@@ -761,14 +765,14 @@
   font-size: 14px;
   font-weight: 500;
 }
+
 .reminderCardPart1 .textSection p {
   color: var(--white-100, #f2f2f3);
   font-size: 10px;
   font-weight: 400;
 }
 
-.reminderCard
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-switch.ant-switch-checked {
+.reminderCard :where(.css-dev-only-do-not-override-1ur7oz).ant-switch.ant-switch-checked {
   background: #ffffff;
 }
 
@@ -776,28 +780,32 @@
   background: #ffffff;
 }
 
-.reminderCard
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-switch
-  .ant-switch-handle::before {
+.reminderCard :where(.css-dev-only-do-not-override-1ur7oz).ant-switch .ant-switch-handle::before {
   background: var(--primary-300, #2351a3);
 }
 
 .compareLikeButton:hover {
   cursor: pointer;
 }
+
 .customIndicate .ant-tabs-ink-bar {
-  height: 3px !important; /* Default is 0, increase to move lower */
+  height: 3px !important;
+  /* Default is 0, increase to move lower */
 }
+
 .customIndicate .ant-tabs-nav::before {
   border-bottom: none !important;
 }
+
 .customIndicate .ant-tabs-tab {
   padding: 25px 0px !important;
 }
 
 .ant-tabs-nav {
   margin-bottom: 0 !important;
-} /* .collapseStyle panel{
+}
+
+/* .collapseStyle panel{
   border-radius: 12px !important;
 } */
 
@@ -838,6 +846,7 @@
 .emptyLabel {
   padding: 20px;
 }
+
 .emptyLabel {
   color: var(--black-300, #0a0c0f);
   letter-spacing: 0;
@@ -858,6 +867,7 @@
   /* justify-content: center; */
   align-items: center;
 }
+
 .priceCardLabel p {
   font-size: 14px;
   font-weight: 500;
@@ -875,9 +885,7 @@
 
 /* Radio ko checkbox jesa */
 
-.cardPrice
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-wrapper
-  .ant-radio-inne {
+.cardPrice :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-wrapper .ant-radio-inne {
   border-radius: 6px;
 }
 
@@ -923,6 +931,7 @@
   color: #0a0c0f;
   letter-spacing: 0px;
 }
+
 .cardPrice p span {
   font-size: 24px;
   font-weight: 400;
@@ -944,6 +953,7 @@
   font-weight: 400;
   cursor: pointer;
 }
+
 .tab:hover {
   cursor: pointer !important;
 }
@@ -1026,9 +1036,11 @@
   height: fit-content;
   border-top: 1px solid #e5e7eb;
 }
+
 .sub_inner {
   height: 100%;
 }
+
 .date_time_center_fd {
   display: flex;
   align-items: center;
@@ -1048,6 +1060,7 @@
   font-weight: 400;
   letter-spacing: 0;
 }
+
 .prefix_headings {
   color: var(--black-300);
   font-size: 14px !important;
@@ -1080,6 +1093,7 @@
   font-size: 12px;
   font-weight: 500;
 }
+
 .flightDetail .parahTwo,
 .SeatDetail .parahTwo {
   color: var(--black-200, #3d495c);
@@ -1258,6 +1272,7 @@ img:hover {
   .bottomHeaderFlex {
     gap: 18px;
   }
+
   .bottomHeaderFlex .text-\[14px\] {
     font-size: 12px !important;
   }
@@ -1270,14 +1285,17 @@ img:hover {
     min-width: auto;
   }
 }
+
 @media (max-width: 1024px) {
   .filterToggleBtn {
     display: block;
     margin-bottom: 10px;
   }
+
   .filterSectionStyle.closed {
     display: none;
   }
+
   .filterSectionStyle.open {
     display: block;
   }
@@ -1299,9 +1317,12 @@ img:hover {
     max-width: 100%;
   }
 
-  .bottomHeaderFlex
-    :where(.css-dev-only-do-not-override-1w2pzdr).ant-flex-align-stretch {
+  .bottomHeaderFlex :where(.css-dev-only-do-not-override-1w2pzdr).ant-flex-align-stretch {
     max-width: 100% !important;
+  }
+
+  .flight-booking-grid {
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -1452,6 +1473,7 @@ img:hover {
   .nameAndDetails h5 {
     font-size: 12px;
   }
+
   .startTime p,
   .EndTime p,
   .nameAndDetails p,
@@ -1471,6 +1493,7 @@ img:hover {
     max-width: 12px;
   }
 }
+
 @media (max-width: 475px) {
   .topHalfCard {
     gap: 5px;
@@ -1535,6 +1558,39 @@ img:hover {
 
   .bottomHalfCardflexStyle {
     gap: 5px;
+  }
+
+  .flight-booking-section {
+    padding-left: .5rem;
+    padding-right: .5rem;
+  }
+
+  .enhance-baggage-grid,
+  .enhance-airport-and-travel-grid {
+    grid-template-columns: 1fr;
+    gap: .5rem;
+  }
+
+  .enhance-baggage-grid>*,
+  .enhance-airport-and-travel-grid>* {
+    grid-column: 1 / -1;
+  }
+
+  .enhance-baggage-grid>*:nth-child(5),
+  .enhance-airport-and-travel-grid>*:nth-child(4) {
+    justify-self: start;
+  }
+
+  .enhance-seat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .enhance-seat-grid>* {
+    min-width: 0;
+  }
+
+  .flight-seat-overlay .grid {
+    gap: .1rem;
   }
 }
 

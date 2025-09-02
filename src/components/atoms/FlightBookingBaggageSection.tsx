@@ -57,7 +57,7 @@ export default function FlightBookingBaggageSection({
                                 Departure flight
                             </div>
 
-                            <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_auto_1fr_auto] items-center gap-8">
+                            <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_auto_1fr_auto] items-center gap-8 enhance-baggage-grid">
                                 <div className="flex items-center gap-3">
                                     <img
                                         src={EmirateLogo}
@@ -101,7 +101,7 @@ export default function FlightBookingBaggageSection({
                                 Return flight
                             </div>
 
-                            <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_auto_1fr_auto] items-center gap-8">
+                            <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_auto_1fr_auto] items-center gap-8 enhance-baggage-grid">
                                 <div className="flex items-center gap-3">
                                     <img
                                         src={AirIndia}

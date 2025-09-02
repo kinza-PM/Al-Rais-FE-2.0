@@ -100,8 +100,8 @@ export default function FlightBookingBookSection() {
 
 
     return (
-        <section className="mx-auto max-w-full px-10">
-            <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
+        <section className="mx-auto max-w-full px-10 flight-booking-section">
+            <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
                 {/* LEFT: Forms */}
                 <div className="space-y-4">
                     {/* Contact person details (own card) */}

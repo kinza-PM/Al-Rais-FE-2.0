@@ -92,7 +92,7 @@ export default function FlightBookingSeatSection({
                 {open && <div className="h-px bg-[#E4E4E7]" />}
 
                 {open && (
-                    <div className="px-3 py-4 grid gap-6 md:grid-cols-[minmax(320px,420px)_1fr]">
+                    <div className="px-3 py-4 grid gap-6 md:grid-cols-[minmax(320px,420px)_1fr] enhance-seat-grid">
                         <div className="md:order-1">
                             <div className="rounded-xl border border-[#E4E4E7] bg-[#FFFFFF] px-3 py-2">
                                 <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function FlightBookingSeatSection({
                             <div className="relative mx-auto max-w-[520px]">
                                 <img src={BookingPlane} className="w-full select-none pointer-events-none" alt="plane" />
 
-                                <div className="absolute left-[24%] right-[26%] top-[10%] bottom-[9%] box-border">
+                                <div className="absolute left-[24%] right-[26%] top-[10%] bottom-[9%] box-border flight-seat-overlay">
                                     <div className="h-full flex flex-col justify-between">
                                         {rows.map((r) => (
                                             <div

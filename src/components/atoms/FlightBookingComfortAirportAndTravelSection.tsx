@@ -159,7 +159,7 @@ export default function FlightBookingComfortAirportAndTravelSection({
                                                         {row.leg}
                                                     </div>
 
-                                                    <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_auto_1fr_auto] items-center gap-10">
+                                                    <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_auto_1fr_auto] items-center gap-10 enhance-baggage-grid">
                                                         {/* airline */}
                                                         <div className="flex items-center gap-3">
                                                             <img src={row.logo} alt={row.airline} className="h-10 w-10 rounded-full object-cover" />
@@ -250,7 +250,7 @@ export default function FlightBookingComfortAirportAndTravelSection({
                                                         {row.leg}
                                                     </div>
 
-                                                    <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_auto_1fr_auto] items-center gap-10">
+                                                    <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_auto_1fr_auto] items-center gap-10 enhance-airport-and-travel-grid">
                                                         <div className="flex items-center gap-3">
                                                             <img src={row.logo} alt={row.airline} className="h-10 w-10 rounded-full object-cover" />
                                                             <div>
@@ -322,7 +322,7 @@ export default function FlightBookingComfortAirportAndTravelSection({
                             <div className="mt-5">
                                 <div className="mb-2 text-[15px] font-semibold text-[#0A0C0F]">Departure flight</div>
 
-                                <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_1fr_auto] items-center gap-10">
+                                <div className="grid grid-cols-[minmax(220px,1.1fr)_auto_1fr_auto] items-center gap-10 enhance-airport-and-travel-grid">
                                     <div className="flex items-center gap-3">
                                         <img
                                             src={tpState.departure.logo}
