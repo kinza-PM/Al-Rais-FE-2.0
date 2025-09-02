@@ -149,7 +149,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Layout, Menu, Dropdown, Avatar, Drawer } from "antd";
 import {
   MenuOutlined,
-  UserOutlined,
+  // UserOutlined,
   LogoutOutlined,
   ProfileOutlined,
 } from "@ant-design/icons";

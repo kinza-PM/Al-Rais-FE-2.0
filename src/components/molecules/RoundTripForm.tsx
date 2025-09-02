@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React from "react";
 // import Calendar from "../../assets/svgs/calendar.svg";
 import type {
   CabinClassOption,
@@ -50,8 +50,8 @@ const RoundTripForm: React.FC<Props> = ({
   selectedCabinClassId = "",
   onChangeCabinClassId = () => { },
 }) => {
-  const depRef = useRef<HTMLInputElement>(null);
-  const arrRef = useRef<HTMLInputElement>(null);
+  // const depRef = useRef<HTMLInputElement>(null);
+  // const arrRef = useRef<HTMLInputElement>(null);
   const [departDate, setDepartDate] = React.useState<Date | null>(new Date());
   const [arrivalDate, setArrivalDate] = React.useState<Date | null>(new Date());
 

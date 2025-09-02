@@ -13,9 +13,9 @@ const WEEKDAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 function startOfMonth(d: Date) {
     return new Date(d.getFullYear(), d.getMonth(), 1);
 }
-function endOfMonth(d: Date) {
-    return new Date(d.getFullYear(), d.getMonth() + 1, 0);
-}
+// function endOfMonth(d: Date) {
+//     return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+// }
 function addMonths(d: Date, n: number) {
     return new Date(d.getFullYear(), d.getMonth() + n, 1);
 }
@@ -70,7 +70,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
     // Build calendar grid (Mon–Sun)
     const days = useMemo(() => {
         const start = startOfMonth(view);
-        const end = endOfMonth(view);
+        // const end = endOfMonth(view);
 
         // JS: 0=Sun … 6=Sat; we want Mon=0 … Sun=6
         const jsDow = start.getDay();          // 0..6
