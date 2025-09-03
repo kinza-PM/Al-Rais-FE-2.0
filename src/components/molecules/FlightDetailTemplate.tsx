@@ -30,10 +30,10 @@ import { Collapse } from "antd";
 import type { TabsProps } from "antd";
 import { useState } from "react";
 import type { CheckboxProps } from "antd";
-import { useMasterListings } from "../../hooks/useMasterListings";
+import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { FilterOutlined } from "@ant-design/icons";
 
-import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
+import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";   
 import type {
   CountryOption,
   PassengerSchema,
@@ -41,6 +41,9 @@ import type {
   TripType,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
+import Loader from "../atoms/Loader";
+// import { useFlightStore } from "../../store/UseFlightStore";
+// import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 import { useFlightSearch } from "../../hooks/useFlightSearch";
 
@@ -84,6 +87,7 @@ const FlightDetailTemplate: React.FC = () => {
     setDateTime(formatted);
   };
   const handlePassanger = (passanger: any) => {
+    console.log(passanger);
     // setDateTime(date)
   };
 
@@ -290,10 +294,10 @@ const FlightDetailTemplate: React.FC = () => {
       (priceSort && priceSort.length
         ? priceSort
         : [
-            { value: "lowest", label: "Lowest Price" },
-            { value: "medium", label: "Medium Price" },
-            { value: "highest", label: "Highest Price" },
-          ]) as { value: string; label: string }[],
+          { value: "lowest", label: "Lowest Price" },
+          { value: "medium", label: "Medium Price" },
+          { value: "highest", label: "Highest Price" },
+        ]) as { value: string; label: string }[],
     [priceSort]
   );
 
@@ -302,6 +306,7 @@ const FlightDetailTemplate: React.FC = () => {
     [priceOptions, selectedPriceId]
   );
 
+  // const { flight } = useFlightStore();
   // const { cabinClasses } = useMasterListings();
 
   const headerContent = (
@@ -321,8 +326,11 @@ const FlightDetailTemplate: React.FC = () => {
   //   (item) => item.id === flight?.selectedCabinClassId
   // );
 
+  // const [departDate, setDepartDate] = React.useState<Date | null>(new Date());
+
   return (
     <div className="">
+      <Loader show={loading} />
       <div className="topHeaderSetting">
         <div className="topHeaderSettingInner">
           <div className="tadioButtonGroupWrap py-pxTopHeader">
@@ -335,10 +343,10 @@ const FlightDetailTemplate: React.FC = () => {
                   segOptions.length
                     ? segOptions
                     : [
-                        { label: "One way", value: "oneway" },
-                        { label: "Round trip", value: "roundtrip" },
-                        { label: "Multi-city", value: "multicity" },
-                      ]
+                      { label: "One way", value: "oneway" },
+                      { label: "Round trip", value: "roundtrip" },
+                      { label: "Multi-city", value: "multicity" },
+                    ]
                 }
                 disabled={loading && !segOptions.length}
               />
@@ -351,7 +359,7 @@ const FlightDetailTemplate: React.FC = () => {
               items={items}
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
-              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
+            // indicator={{ size: (origin) => origin - 20, align: alignValue }}
             />
           </div>
           <div className="countrySelectAndGetHelp py-pxTopHeader">

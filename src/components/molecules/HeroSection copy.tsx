@@ -8,9 +8,9 @@ import type {
   FlightTypeOption,
   FlightTypesResponse,
 } from "../../features/flights/types/index";
-import { listingTables } from "../../config/masterListing";
+import { listingTables } from "../../config/apiRoute";
 import { getMasterListingData } from "../../services/api/apiMasterListing";
-import { buildFlightTypeOptions } from "../../utils/flightTypes";
+import { buildFlightTypeOptions } from "../../utils/masterLIstingFlightTypesBuilder";
 
 const HeroSection: React.FC = () => {
   const [trip, setTrip] = useState<TripType>("oneway");

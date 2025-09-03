@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Calendar from "../../assets/svgs/calendar.svg";
+// import Calendar from "../../assets/svgs/calendar.svg";
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {
   CabinClassOption,
@@ -7,8 +7,9 @@ import type {
   PassengerSchema,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
-type Leg = { fromCode: string; toCode: string; date?: string };
+type Leg = { fromCode: string; toCode: string; date: Date | null };
 
 type Props = {
   countries?: CountryOption[];
@@ -29,7 +30,7 @@ const MultiCityForm: React.FC<Props> = ({
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => {},
+  onChangeCabinClassId = () => { },
   // countries,
   // loadingCountries,
   // passengerSchema,
@@ -40,8 +41,8 @@ const MultiCityForm: React.FC<Props> = ({
   // onChangeCabinClassId,
 }) => {
   const [legs, setLegs] = useState<Leg[]>([
-    { fromCode: "", toCode: "", date: "" },
-    { fromCode: "", toCode: "", date: "" },
+    { fromCode: "", toCode: "", date: null },
+    { fromCode: "", toCode: "", date: null },
   ]);
 
   const updateLeg = (i: number, next: Partial<Leg>) =>
@@ -83,37 +84,21 @@ const MultiCityForm: React.FC<Props> = ({
         {/* Cabin class (faux select) */}
         <div className="w-[250px]">
           <label className="block text-[12px] text-[#3D495C] mb-1">
-            {loadingCabinClasses ? "Cabin class (loading…)" : "Cabin class"}
+            Cabin class
           </label>
           <div className="relative">
             <select
-              value={selectedCabinClassId} // "" by default
+              value={selectedCabinClassId}          // "" by default
               onChange={(e) => onChangeCabinClassId(e.target.value)}
               className="appearance-none h-11 w-full rounded-xl border border-[#DFE7F3] px-4 pr-8 text-[14px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20"
             >
-              <option value="">
-                {loadingCabinClasses ? "Loading…" : "Please select"}
-              </option>
+              <option value="">{loadingCabinClasses ? "Loading…" : "Please select"}</option>
               {cabinClasses.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.label}
-                </option>
+                <option key={c.id} value={c.id}>{c.label}</option>
               ))}
             </select>
-            <svg
-              className="pointer-events-none absolute right-3 top-1/3 "
-              width="16"
-              height="16"
-              viewBox="0 0 20 20"
-              fill="none"
-            >
-              <path
-                d="M5 7.5l5 5 5-5"
-                stroke="#2351A3"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg className="pointer-events-none absolute right-3 top-1/3 " width="16" height="16" viewBox="0 0 20 20" fill="none">
+              <path d="M5 7.5l5 5 5-5" stroke="#2351A3" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
         </div>
@@ -143,7 +128,13 @@ const MultiCityForm: React.FC<Props> = ({
             <label className="block text-[12px] text-[#3D495C] mb-1">
               Departure date
             </label>
-            <div className="relative">
+            <TailiwindCustomDatePicker
+              value={legs[0].date}
+              onChange={(d) => updateLeg(0, { date: d })}
+              placeholder="Please select"
+              buttonIconSrc={true}
+            />
+            {/* <div className="relative">
               <input
                 readOnly
                 defaultValue="Monday, 16 June 2025"
@@ -152,7 +143,7 @@ const MultiCityForm: React.FC<Props> = ({
               <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
                 <img src={Calendar} alt="calendar" className="w-4 h-4" />
               </span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -181,7 +172,13 @@ const MultiCityForm: React.FC<Props> = ({
             <label className="block text-[12px] text-[#3D495C] mb-1">
               Departure date
             </label>
-            <div className="relative">
+            <TailiwindCustomDatePicker
+              value={legs[1].date}
+              onChange={(d) => updateLeg(1, { date: d })}
+              placeholder="Please select"
+              buttonIconSrc={true}
+            />
+            {/* <div className="relative">
               <input
                 readOnly
                 defaultValue="Monday, 16 June 2025"
@@ -190,7 +187,7 @@ const MultiCityForm: React.FC<Props> = ({
               <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
                 <img src={Calendar} alt="calendar" className="w-4 h-4" />
               </span>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

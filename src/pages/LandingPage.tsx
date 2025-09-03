@@ -9,7 +9,7 @@ import ReadyToFlySection from "../components/molecules/ReadyToFlySection";
 // import { useOutletContext } from 'react-router-dom';
 // import { MainLayout } from '../components';
 // import HeroSection from '../components/molecules/HeroSection';
-import PopularDestinations from "../components/molecules/PopularDestinationSection";
+import PopularDestinationSection from "../components/molecules/PopularDestinationSection";
 import BestDealsSection from "../components/molecules/BestDealsSection";
 
 interface LandingPageContext {
@@ -39,7 +39,7 @@ const LandingPage: React.FC = () => {
       </div>
 
       <div className="bg-white">
-        <PopularDestinations />
+        <PopularDestinationSection />
 
         <BestDealsSection />
         <PartnersSection />

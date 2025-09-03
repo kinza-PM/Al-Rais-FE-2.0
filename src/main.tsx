@@ -8,8 +8,6 @@ import type { ThemeConfig } from "antd";
 import { ConfigProvider } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-const queryClient = new QueryClient();
-
 const theme: ThemeConfig = {
   token: {
     colorPrimary: "#2351A3", // Primary color
@@ -43,6 +41,7 @@ const theme: ThemeConfig = {
 
 // Initialize AWS Amplify
 Amplify.configure(awsconfig);
+const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
   // <StrictMode>

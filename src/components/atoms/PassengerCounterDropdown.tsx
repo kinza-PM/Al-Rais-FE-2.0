@@ -140,7 +140,7 @@ const PassengerCounterDropdown: React.FC<Props> = ({
         aria-haspopup="dialog"
         aria-expanded={open}
       >
-        <span className="tabular-nums">{pad2(total)} Passengers</span>{" "}
+        <span className="tabular-nums">{pad2(total)} Passenger(s)</span>{" "}
         {/* <= SIRF NUMBER */}
         <svg
           className="shrink-0"

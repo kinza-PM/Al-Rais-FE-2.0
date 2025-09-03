@@ -1,5 +1,4 @@
-import React, { useRef } from "react";
-import Calendar from "../../assets/svgs/calendar.svg";
+import React from "react";
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {
   CabinClassOption,
@@ -7,6 +6,7 @@ import type {
   PassengerSchema,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 type Props = {
   countries?: CountryOption[];
@@ -40,16 +40,17 @@ const OneWayForm: React.FC<Props> = ({
   loadingCountries = false,
   fromCode = "",
   toCode = "",
-  onChangeFrom = () => {},
-  onChangeTo = () => {},
+  onChangeFrom = () => { },
+  onChangeTo = () => { },
   passengerSchema,
   // loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => {},
+  onChangeCabinClassId = () => { },
 }) => {
-  const depRef = useRef<HTMLInputElement>(null);
+  // const depRef = useRef<HTMLInputElement>(null);
+  const [departDate, setDepartDate] = React.useState<Date | null>(new Date());
 
   return (
     <div className="flex items-end gap-4">
@@ -73,7 +74,13 @@ const OneWayForm: React.FC<Props> = ({
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
-        <div className="relative">
+        <TailiwindCustomDatePicker
+          value={departDate}
+          onChange={(d) => setDepartDate(d)}
+          placeholder="Please select"
+          buttonIconSrc={true}
+        />
+        {/* <div className="relative">
           <input
             ref={depRef}
             type="date"
@@ -92,7 +99,7 @@ const OneWayForm: React.FC<Props> = ({
               className="w-[16px] h-[16px]"
             />
           </button>
-        </div>
+        </div> */}
       </div>
 
       {/* Passengers */}
@@ -110,37 +117,21 @@ const OneWayForm: React.FC<Props> = ({
       {/* Cabin class */}
       <div className="w-[150px]">
         <label className="block text-[12px] text-[#3D495C] mb-1">
-          {loadingCabinClasses ? "Cabin class (loading…)" : "Cabin class"}
+          Cabin class
         </label>
         <div className="relative">
           <select
-            value={selectedCabinClassId} // "" by default
+            value={selectedCabinClassId}          // "" by default
             onChange={(e) => onChangeCabinClassId(e.target.value)}
             className="appearance-none h-11 w-full rounded-xl border border-[#DFE7F3] px-4 pr-8 text-[14px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20"
           >
-            <option value="">
-              {loadingCabinClasses ? "Loading…" : "Please select"}
-            </option>
+            <option value="">{loadingCabinClasses ? "Loading…" : "Please select"}</option>
             {cabinClasses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
+              <option key={c.id} value={c.id}>{c.label}</option>
             ))}
           </select>
-          <svg
-            className="pointer-events-none absolute right-3 top-1/3"
-            width="16"
-            height="16"
-            viewBox="0 0 20 20"
-            fill="none"
-          >
-            <path
-              d="M5 7.5l5 5 5-5"
-              stroke="#2351A3"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+          <svg className="pointer-events-none absolute right-3 top-1/3" width="16" height="16" viewBox="0 0 20 20" fill="none">
+            <path d="M5 7.5l5 5 5-5" stroke="#2351A3" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
       </div>
