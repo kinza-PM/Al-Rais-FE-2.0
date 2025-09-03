@@ -125,7 +125,7 @@ const HeroSection: React.FC = () => {
                                 onChangeFrom={setFromCode}
                                 onChangeTo={setToCode}
                                 passengerSchema={passengers as PassengerSchema}
-                                // loadingPassengers={nsLoading.passengers}
+                                loadingPassengers={nsLoading.passengers}
                                 cabinClasses={cabinClasses as CabinClassOption[]}
                                 loadingCabinClasses={nsLoading.cabinClasses}
                                 selectedCabinClassId={selectedCabinClassId}
@@ -142,7 +142,7 @@ const HeroSection: React.FC = () => {
                                 onChangeFrom={setFromCode}
                                 onChangeTo={setToCode}
                                 passengerSchema={passengers as PassengerSchema}
-                                // loadingPassengers={nsLoading.passengers}
+                                loadingPassengers={nsLoading.passengers}
                                 cabinClasses={cabinClasses as CabinClassOption[]}
                                 loadingCabinClasses={nsLoading.cabinClasses}
                                 selectedCabinClassId={selectedCabinClassId}
@@ -155,7 +155,7 @@ const HeroSection: React.FC = () => {
                                 countries={countries as CountryOption[]}
                                 loadingCountries={nsLoading.countries}
                                 passengerSchema={passengers as PassengerSchema}
-                                // loadingPassengers={nsLoading.passengers}
+                                loadingPassengers={nsLoading.passengers}
                                 cabinClasses={cabinClasses as CabinClassOption[]}
                                 loadingCabinClasses={nsLoading.cabinClasses}
                                 selectedCabinClassId={selectedCabinClassId}

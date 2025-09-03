@@ -17,7 +17,7 @@ type Props = {
   onChangeFrom?: (code: string) => void;
   onChangeTo?: (code: string) => void;
   passengerSchema?: PassengerSchema;
-  //   loadingPassengers?: boolean;
+  loadingPassengers?: boolean;
   cabinClasses?: CabinClassOption[];
   loadingCabinClasses?: boolean;
   selectedCabinClassId?: string;
@@ -44,7 +44,7 @@ const RoundTripForm: React.FC<Props> = ({
   onChangeFrom = () => { },
   onChangeTo = () => { },
   passengerSchema,
-  //   loadingPassengers = false,
+  loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
@@ -71,6 +71,16 @@ const RoundTripForm: React.FC<Props> = ({
         placeholders={{ from: "Please select", to: "Please select" }}
         disableSameSelection
         widthClass="w-[190px]"
+        fromError={
+          !loadingCountries && countries.length === 0
+            ? "Please try a different search."
+            : undefined
+        }
+        toError={
+          !loadingCountries && countries.length === 0
+            ? "Please try a different search."
+            : undefined
+        }
       />
 
       {/* Departure date */}
@@ -141,7 +151,7 @@ const RoundTripForm: React.FC<Props> = ({
       {/* Passengers */}
       <PassengerCabinDropdown
         schema={passengerSchema}
-        // loadingPassengers={loadingPassengers}
+        loadingPassengers={loadingPassengers}
         cabinClasses={cabinClasses}
         loadingCabinClasses={loadingCabinClasses}
         selectedCabinClassId={selectedCabinClassId}

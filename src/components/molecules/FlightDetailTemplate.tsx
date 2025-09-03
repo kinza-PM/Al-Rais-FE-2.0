@@ -33,7 +33,7 @@ import type { CheckboxProps } from "antd";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { FilterOutlined } from "@ant-design/icons";
 
-import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";   
+import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {
   CountryOption,
   PassengerSchema,
@@ -420,7 +420,17 @@ const FlightDetailTemplate: React.FC = () => {
               labels={{ from: "From", to: "To" }}
               placeholders={{ from: "Please select", to: "Please select" }}
               disableSameSelection
-              widthClass="fromToSelectWidth" // same as OneWayForm; chaho to "w-full" bhi de sakte ho
+              widthClass="fromToSelectWidth"
+              fromError={
+                !loading && countries.length === 0
+                  ? "Please try a different search."
+                  : undefined
+              }
+              toError={
+                !loading && countries.length === 0
+                  ? "Please try a different search."
+                  : undefined
+              }
             />
           </Flex>
           <Flex className="bottomHeaderFlex">
