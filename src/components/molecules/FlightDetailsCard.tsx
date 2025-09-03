@@ -15,6 +15,8 @@ type FlightDetailsCardProps = {
 
 const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
   console.log(details, "details");
+
+  const detailss = Array.isArray(details) ? details[0] : details;
   return (
     <div className="flight_detail_card">
       <Flex
@@ -32,9 +34,9 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         >
           <div>
             <CustomTypography className="date_time_center_fd" variant="title">
-              {details?.flight_detail?.start_time}
+              {detailss?.flight_detail?.start_time}
               <CustomTypography className="common_typography_fd">
-                {details?.flight_detail?.start_date}
+                {detailss?.flight_detail?.start_date}
               </CustomTypography>
             </CustomTypography>
           </div>
@@ -42,10 +44,10 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
             <CustomTypography className="common_typography_fd date_time_center_fd ">
               0
               {calculateFlightDuration(
-                details?.flight_detail?.start_time,
-                details?.flight_detail?.start_date,
-                details?.flight_detail?.end_time,
-                details?.flight_detail?.end_date
+                detailss?.flight_detail?.start_time,
+                detailss?.flight_detail?.start_date,
+                detailss?.flight_detail?.end_time,
+                detailss?.flight_detail?.end_date
               )}
               <br />
               Direct
@@ -53,9 +55,9 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
           </div>
           <div>
             <CustomTypography className="date_time_center_fd" variant="title">
-              {details?.flight_detail?.end_time}
+              {detailss?.flight_detail?.end_time}
               <CustomTypography className="common_typography_fd">
-                {details?.flight_detail?.end_date}
+                {detailss?.flight_detail?.end_date}
               </CustomTypography>
             </CustomTypography>
           </div>
@@ -83,16 +85,16 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                 style={{ marginBottom: 0 }}
                 variant="title"
               >
-                {details?.airport_details?.startAirport}
+                {detailss?.airport_details?.startAirport}
               </CustomTypography>
               <CustomTypography className="common_typography_fd">
-                {details?.airport_details?.startTerminal}
+                {detailss?.airport_details?.startTerminal}
               </CustomTypography>
             </div>
 
             <div>
               <FeaturesRender
-                featuresObj={details?.flight_detail?.flight_features}
+                featuresObj={detailss?.flight_detail?.flight_features}
               />
             </div>
             <Flex
@@ -103,7 +105,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                 rowGap: "10px",
               }}
             >
-              {details?.name && (
+              {detailss?.name && (
                 <Flex
                   style={{
                     width: "30%",
@@ -125,19 +127,19 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                       className="prefix_headings"
                       variant="title"
                     >
-                      {details?.name}
+                      {detailss?.name}
                     </CustomTypography>
                     <CustomTypography
                       className="common_typography_fd"
                       variant="paragraph"
                     >
-                      {details?.flight_detail?.flight_number},{" "}
-                      {details?.flight_detail?.flight_bus}
+                      {detailss?.flight_detail?.flight_number},{" "}
+                      {detailss?.flight_detail?.flight_bus}
                     </CustomTypography>
                   </Flex>
                 </Flex>
               )}
-              {details?.flight_detail?.flight_class && (
+              {detailss?.flight_detail?.flight_class && (
                 <Flex
                   style={{
                     width: "30%",
@@ -165,12 +167,12 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                       className="common_typography_fd"
                       variant="paragraph"
                     >
-                      {details?.flight_detail?.seats_layout}
+                      {detailss?.flight_detail?.seats_layout}
                     </CustomTypography>
                   </Flex>
                 </Flex>
               )}
-              {details?.flight_detail?.seats_layout && (
+              {detailss?.flight_detail?.seats_layout && (
                 <Flex
                   style={{
                     width: "30%",
@@ -198,12 +200,12 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                       className="common_typography_fd"
                       variant="paragraph"
                     >
-                      {details?.flight_detail?.flight_class}
+                      {detailss?.flight_detail?.flight_class}
                     </CustomTypography>
                   </Flex>
                 </Flex>
               )}
-              {details?.flight_detail?.upgradable && (
+              {detailss?.flight_detail?.upgradable && (
                 <Flex gap={8} align="center">
                   <img
                     width={18}
@@ -228,10 +230,10 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
               style={{ marginBottom: 0 }}
               variant="title"
             >
-              {details?.airport_details?.endAirport}
+              {detailss?.airport_details?.endAirport}
             </CustomTypography>
             <CustomTypography className="common_typography_fd">
-              {details?.airport_details?.endTerminal}
+              {detailss?.airport_details?.endTerminal}
             </CustomTypography>
           </div>
         </Flex>

@@ -52,13 +52,13 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
       setIsModalOpen(true);
     } else {
       setshareModal(true);
-      const filtered = travelData.filter((item) => item.id === id);
+      const filtered = passData.filter((item) => item.id === id);
       setFilterData(filtered);
     }
   };
 
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
-    const filtered = travelData.filter((item) => item.id === id);
+    const filtered = passData.filter((item) => item.id === id);
     setFilterDetail(filtered);
   };
 
@@ -230,9 +230,9 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
             {active?.name == "price" && active?.id == index ? (
               <PricingDetailCard passSome={filterDetail} />
             ) : active?.name == "flight" && active?.id == index ? (
-              <FlightDetailsCard details={item} />
+              <FlightDetailsCard details={filterDetail} />
             ) : active?.name == "compare" && active?.id == index ? (
-              <CompareCard passSome={filterDetail} />
+              <CompareCard passSome={filterDetail} passAllData={passData} />
             ) : (
               ""
             )}
@@ -290,7 +290,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
         }}
         className="compareModal"
       >
-        {travelData?.map((item) => (
+        {passData?.map((item) => (
           <div className="modalFlightDetailCard">
             <div className="modalFlightDetail">
               <div className="fightTitle">
@@ -409,17 +409,19 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
                   <div className="visualGuid">
                     <div className="stopPoint"></div>
 
-                    {item?.stop?.length > 0 ? (
-                      item?.stop?.map((stopStayTime) => (
-                        <div className="stopsDetail">
-                          <span>{stopStayTime?.stayTime}</span>
-                          <div className="stopPoint stopDots"></div>
-                          <span>{stopStayTime?.name}</span>
-                        </div>
-                      ))
+                    {item?.stop?.length ? (
+                      item?.stop?.map(
+                        (stopStayTime: any, stopIndex: number) => (
+                          <div className="stopsDetail" key={stopIndex}>
+                            <span>{stopStayTime?.stayTime}</span>
+                            <div className="stopPoint stopDots"></div>
+                            <span>{stopStayTime?.name}</span>
+                          </div>
+                        )
+                      )
                     ) : (
                       <div className="stopsDetail">
-                        <span>03h 15min</span>
+                        <span>{item?.flight_detail?.duration}</span>
                         <div className=""></div>
                         <span>Direct</span>
                       </div>

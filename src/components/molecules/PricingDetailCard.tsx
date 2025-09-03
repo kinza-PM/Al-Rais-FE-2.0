@@ -51,28 +51,28 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                   </div>
                   <div className="parahAlign">
                     <img src={OkCheckIcon} alt="" />
-                    <p>{item.price.economyLite.personalItem}</p>
+                    <p>{item.priceTemporary.economyLite.personalItem}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={CrossIcon} alt="" />
-                    <p>{item.price.economyLite.baggage}</p>
+                    <p>{item.priceTemporary.economyLite.baggage}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={CrossIcon} alt="" />
-                    <p>{item.price.economyLite.seatSelection}</p>
+                    <p>{item.priceTemporary.economyLite.seatSelection}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={CrossIcon} alt="" />
-                    <p>{item.price.economyLite.Changes}</p>
+                    <p>{item.priceTemporary.economyLite.Changes}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={CrossIcon} alt="" />
-                    <p>{item.price.economyLite.Refundable}</p>
+                    <p>{item.priceTemporary.economyLite.Refundable}</p>
                   </div>
 
                   <div className="cardPrice">
                     <p>
-                      ${item.price.economyLite.price}
+                      ${item.priceTemporary.economyLite.price}
                       <span>/per seat</span>
                     </p>
                     <Radio
@@ -100,28 +100,28 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                   </div>
                   <div className="parahAlign">
                     <img src={OkCheckIcon} alt="" />
-                    <p>{item.price.economyStandard.personalItem}</p>
+                    <p>{item.priceTemporary.economyStandard.personalItem}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={CrossIcon} alt="" />
-                    <p>{item.price.economyStandard.baggage}</p>
+                    <p>{item.priceTemporary.economyStandard.baggage}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={OkCheckIcon} alt="" />
-                    <p>{item.price.economyStandard.seatSelection}</p>
+                    <p>{item.priceTemporary.economyStandard.seatSelection}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={OkCheckIcon} alt="" />
-                    <p>{item.price.economyStandard.Changes}</p>
+                    <p>{item.priceTemporary.economyStandard.Changes}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={CrossIcon} alt="" />
-                    {item.price.economyStandard.Refundable}
+                    {item.priceTemporary.economyStandard.Refundable}
                   </div>
 
                   <div className="cardPrice">
                     <p>
-                      ${item.price.economyStandard.price}
+                      ${item.priceTemporary.economyStandard.price}
                       <span>/per seat</span>
                     </p>
                     <Radio
@@ -147,28 +147,28 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                   </div>
                   <div className="parahAlign">
                     <img src={OkCheckIcon} alt="" />
-                    <p>{item.price.economyFlex.personalItem}</p>
+                    <p>{item.priceTemporary.economyFlex.personalItem}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={CrossIcon} alt="" />
-                    <p>{item.price.economyFlex.baggage}</p>
+                    <p>{item.priceTemporary.economyFlex.baggage}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={OkCheckIcon} alt="" />
-                    <p>{item.price.economyFlex.seatSelection}</p>
+                    <p>{item.priceTemporary.economyFlex.seatSelection}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={OkCheckIcon} alt="" />
-                    <p>{item.price.economyFlex.Changes}</p>
+                    <p>{item.priceTemporary.economyFlex.Changes}</p>
                   </div>
                   <div className="parahAlign">
                     <img src={OkCheckIcon} alt="" />
-                    <p>{item.price.economyFlex.Refundable}</p>
+                    <p>{item.priceTemporary.economyFlex.Refundable}</p>
                   </div>
 
                   <div className="cardPrice">
                     <p>
-                      ${item.price.economyFlex.price}
+                      ${item.priceTemporary.economyFlex.price}
                       <span>/per seat</span>
                     </p>
                     <Radio

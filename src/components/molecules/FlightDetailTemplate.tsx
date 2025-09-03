@@ -123,6 +123,7 @@ const FlightDetailTemplate: React.FC = () => {
       departureAirportCode: fromCode,
       departureDate: dateTime,
       arrivalAirportCode: "DEL",
+      // arrivalAirportCode: toCode,
       cabinPreferences: [selectedCabinClassId],
       passengers: [
         {
@@ -134,6 +135,8 @@ const FlightDetailTemplate: React.FC = () => {
 
     try {
       const response = await mutateAsync(requestBody);
+
+      console.log("RESPONSE", response);
 
       const formattedData = response.data.map((item: any, index: number) => {
         const segment = item?.journey?.[0]?.flightSegments?.[0];
@@ -152,11 +155,52 @@ const FlightDetailTemplate: React.FC = () => {
               segment?.departureDateTime,
               segment?.arrivalDateTime
             ),
+            seats_layout: segment?.seatsAvailable,
+            flight_features: {
+              cabin: 1,
+              baggage: "40KGs",
+              usb_power: true,
+              free_meal: true,
+              wifi: true,
+              entertainment: true,
+            },
+          },
+          airport_details: {
+            startAirport: segment?.departureAirportCode,
+            startTerminal: `Terminal ${segment?.departureTerminal}`,
+            endAirport: segment?.arrivalAirportCode,
+            endTerminal: `Terminal ${segment?.arrivalTerminal}`,
           },
           stop: item?.journey?.[0]?.stops || [], // agar stops array aaye toh dynamic
           price: {
             economyLite: {
               price: item?.fare?.totalFare,
+            },
+          },
+          priceTemporary: {
+            economyLite: {
+              personalItem: "01 item (e.g., small backpack, laptop bag)",
+              baggage: "",
+              seatSelection: "Assigned at check-in",
+              Changes: "with very high fee",
+              Refundable: "",
+              price: "48",
+            },
+            economyStandard: {
+              personalItem: "01 item (e.g., small backpack, laptop bag)",
+              baggage: "01 item (up to 20kg)",
+              seatSelection: "Standard (free)",
+              Changes: "$4 + fare difference",
+              Refundable: "",
+              price: "52",
+            },
+            economyFlex: {
+              personalItem: "01 item (e.g., small backpack, laptop bag)",
+              baggage: "02 items (up to 20kg each)",
+              seatSelection: "Any (free, including preferred seats)",
+              Changes: "Free (fare differences may apply)",
+              Refundable: "with a small fee",
+              price: "66",
             },
           },
         };

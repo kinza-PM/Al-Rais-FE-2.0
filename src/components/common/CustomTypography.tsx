@@ -14,7 +14,7 @@ const CustomTypography: React.FC<CustomTypographyProps> = ({
   level = 4,
   children,
   className = "",
-  style,
+  style = { marginBottom: 0 },
 }) => {
   if (variant === "title") {
     return (

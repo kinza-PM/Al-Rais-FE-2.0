@@ -17,9 +17,10 @@ import { travelData } from "../../utils/mockData";
 
 type CompareCardProps = {
   passSome: any[];
+  passAllData: any[];
 };
 
-const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
+const CompareCard: React.FC<CompareCardProps> = ({ passSome, passAllData }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   console.log("passSome", passSome);
@@ -37,10 +38,12 @@ const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
     <div className="">
       <div className="pricingCardsWrap">
         <Row className="compareCardsFlex">
-          {newFlightData.map((item) => (
+          {newFlightData.map((item, index) => (
             <Col span={8} className="">
               <div className="compareCard">
-                <div className="cardHeader">This Flight</div>
+                <div className="cardHeader">
+                  {index === 0 ? "This Flight" : `Compare ${index}`}
+                </div>
                 <div className="cardBody">
                   <div className="modalFlightDetail">
                     <div className="fightTitle">
@@ -154,7 +157,7 @@ const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
         }}
         className="compareModal"
       >
-        {travelData?.map((item, index) => (
+        {passAllData?.map((item, index) => (
           <div
             key={index}
             className="modalFlightDetailCard"
@@ -280,17 +283,19 @@ const CompareCard: React.FC<CompareCardProps> = ({ passSome }) => {
                   <div className="visualGuid">
                     <div className="stopPoint"></div>
 
-                    {item?.stop?.length > 0 ? (
-                      item?.stop?.map((stopStayTime, i) => (
-                        <div key={i} className="stopsDetail">
-                          <span>{stopStayTime?.stayTime}</span>
-                          <div className="stopPoint stopDots"></div>
-                          <span>{stopStayTime?.name}</span>
-                        </div>
-                      ))
+                    {item?.stop?.length ? (
+                      item?.stop?.map(
+                        (stopStayTime: any, stopIndex: number) => (
+                          <div className="stopsDetail" key={stopIndex}>
+                            <span>{stopStayTime?.stayTime}</span>
+                            <div className="stopPoint stopDots"></div>
+                            <span>{stopStayTime?.name}</span>
+                          </div>
+                        )
+                      )
                     ) : (
                       <div className="stopsDetail">
-                        <span>03h 15min</span>
+                        <span>{item?.flight_detail?.duration}</span>
                         <div className=""></div>
                         <span>Direct</span>
                       </div>
