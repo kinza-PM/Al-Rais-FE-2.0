@@ -1,14 +1,40 @@
 import React from "react";
+import Logo from "../../assets/images/logo-small.png";
 
-type Props = { show: boolean; label?: string };
+type Props = {
+    show: boolean;
+    label?: string;
+};
 
-const Loader: React.FC<Props> = ({ show, label = "Loading…" }) => {
+const Loader: React.FC<Props> = ({
+    show,
+    label = "Loading, Please wait...",
+}) => {
+
     if (!show) return null;
+
     return (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/50">
-            <div className="flex flex-col items-center gap-3">
-                <div className="h-12 w-12 rounded-full border-4 border-[#E6EEFF] border-t-[#2351A3] animate-spin" />
-                <p className="text-sm font-medium text-[#2351A3]">{label}</p>
+        <div
+            className="
+        fixed inset-0 z-[9999] flex items-center justify-center
+        bg-white/40 backdrop-blur-[4px] 
+      "
+            aria-hidden="true"
+        >
+            <div
+                className="pointer-events-auto flex flex-col items-center gap-2"
+                role="status"
+                aria-live="polite"
+            >
+                <img
+                    src={Logo}
+                    alt="loading"
+                    className="h-10 w-10 object-contain"
+                    draggable={false}
+                />
+                <p className="text-[16px] text-[#081326] text-center">
+                    {label}
+                </p>
             </div>
         </div>
     );

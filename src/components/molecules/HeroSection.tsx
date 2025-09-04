@@ -17,25 +17,23 @@ import type {
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { useFlightStore } from "../../store/UseFlightStore";
 import { useNavigate } from "react-router-dom";
+import Loader from "../atoms/Loader";
 
 const HeroSection: React.FC = () => {
-    // trip/tab state (as before)
     const [trip, setTrip] = useState<TripType>("oneway");
 
-    // route + cabin class selection (local UI state)
     const [fromCode, setFromCode] = useState<string>("");
     const [toCode, setToCode] = useState<string>("");
     const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("");
 
-  // ⬇️ Fetch all master listings via hook (single source of truth)
-  const {
-    flightTypes,
-    countries,
-    passengers, // PassengerSchema
-    cabinClasses,
-    loading,
-    // error,
-  } = useMasterListings();
+    const {
+        flightTypes,
+        countries,
+        passengers, // PassengerSchema
+        cabinClasses,
+        loading,
+        // error,
+    } = useMasterListings();
 
     const navigate = useNavigate();
 
@@ -70,6 +68,7 @@ const HeroSection: React.FC = () => {
 
     return (
         <div>
+            <Loader show={loading} />
             <div className="w-full flex justify-center px-4 mt-10">
                 <div className="w-full max-w-[1040px] bg-white rounded-xl border border-[#E7EEF7] shadow-[0_8px_28px_rgba(12,40,86,0.08)]">
                     <div className="relative h-[50px] px-6">
@@ -104,8 +103,8 @@ const HeroSection: React.FC = () => {
                                         type="button"
                                         onClick={() => setTrip(t.key)}
                                         className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${trip === t.key
-                                                ? "bg-[#2351A3] text-white"
-                                                : "text-[#3A4350] hover:bg-[#F4F7FD]"
+                                            ? "bg-[#2351A3] text-white"
+                                            : "text-[#3A4350] hover:bg-[#F4F7FD]"
                                             }`}
                                     >
                                         {t.label}
