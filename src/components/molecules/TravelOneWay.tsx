@@ -15,7 +15,7 @@ import { Switch, Modal } from "antd";
 import CustomButton from "../common/CustomButton";
 
 import { useState } from "react";
-import { travelData } from "../../utils/mockData";
+// import { travelData } from "../../utils/mockData";
 import PricingDetailCard from "./PricingDetailCard";
 import CompareCard from "./CompareCard";
 import FlightDetailsCard from "./FlightDetailsCard";

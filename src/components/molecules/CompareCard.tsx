@@ -13,14 +13,17 @@ import seaticon from "../../assets/svgs/seatsicon.svg";
 
 import circlePlus from "../../assets/svgs/plus-circle.svg";
 
-import { travelData } from "../../utils/mockData";
+// import { travelData } from "../../utils/mockData";
 
 type CompareCardProps = {
   passSome: any[];
-  passAllData: any[];
+  passAllData?: any[];
 };
 
-const CompareCard: React.FC<CompareCardProps> = ({ passSome, passAllData }) => {
+const CompareCard: React.FC<CompareCardProps> = ({
+  passSome,
+  passAllData = [],
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   console.log("passSome", passSome);
