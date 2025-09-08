@@ -1,6 +1,6 @@
 import type { BaggageItem, BaggageOption, CabinClassItem, CabinClassOption, CountryItem, CountryOption, FlightTypeItem, FlightTypeOption, NumberStopsItem, NumberStopsOption, PassengerCategoryOption, PassengerItem, PassengerSchema, PriceSortItem, PriceSortOption, TransitHoursItem, TransitHoursOption, TripType } from "../features/flights/types/index";
 
-/** "one way" | "OneWay" | "ONE-WAY" -> "oneway"; "Round Trip" -> "roundtrip"; "Multi Cities" -> "multicity" */
+
 export function normalizeTripKey(name: string): TripType | null {
     const n = (name || "")
         .toLowerCase()

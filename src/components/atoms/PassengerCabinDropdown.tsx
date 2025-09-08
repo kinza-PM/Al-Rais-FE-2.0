@@ -5,13 +5,14 @@ import type {
   PassengerSchema,
   CabinClassOption,
 } from "../../features/flights/types";
+import CustomDropdownError from "../common/CustomDropdownError";
 
 type Pax = { adults: number; kids: number; infants: number; seniors?: number };
 
 type Props = {
   // Passengers
   schema?: PassengerSchema;
-  //   loadingPassengers?: boolean;
+  loadingPassengers?: boolean;
   maxTotal?: number;
   value?: Pax;
   onChangePax?: (p: Pax) => void;
@@ -30,7 +31,7 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const PassengerCabinDropdown: React.FC<Props> = ({
   schema = [],
-  //   loadingPassengers,
+  loadingPassengers,
   maxTotal = 9,
   value,
   onChangePax,
@@ -41,7 +42,24 @@ const PassengerCabinDropdown: React.FC<Props> = ({
   widthClass = "w-[190px]",
 }) => {
   const [open, setOpen] = useState(false);
+  const [openCabinError, setOpenCabinError] = React.useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const cabinError =
+    !loadingCabinClasses && (!cabinClasses || cabinClasses.length === 0)
+      ? "Cabin classes are not available right now. Please try again later."
+      : null;
+
+  const handleCabinToggle = (
+    e:
+      | React.MouseEvent<HTMLSelectElement>
+      | React.KeyboardEvent<HTMLSelectElement>
+  ) => {
+    if (!cabinError) return;
+    e.preventDefault();
+    setOpenCabinError((v) => !v);
+    (e.currentTarget as HTMLSelectElement).blur();
+  };
 
   const [paxLocal, setPaxLocal] = useState<Pax>({
     adults: 1,
@@ -60,7 +78,13 @@ const PassengerCabinDropdown: React.FC<Props> = ({
     [pax]
   );
 
-  // ✅ guard: if list is empty or id not matched, show "Please select"
+  const toStrictPax = (p: Partial<Pax> | undefined): Pax => ({
+    adults: p?.adults ?? 0,
+    kids: p?.kids ?? 0,
+    infants: p?.infants ?? 0,
+    seniors: p?.seniors ?? undefined,
+  });
+
   const selectedCabinLabel =
     cabinClasses.find((c) => c.id === selectedCabinClassId)?.label ||
     "Please select";
@@ -119,10 +143,16 @@ const PassengerCabinDropdown: React.FC<Props> = ({
             <PassengerCounterDropdown
               value={value}
               onChange={(p) => {
-                onChangePax ? onChangePax(p) : setPaxLocal(p);
+                const normalized = toStrictPax(p);
+                onChangePax ? onChangePax(normalized) : setPaxLocal(normalized);
               }}
               maxTotal={maxTotal}
               schema={schema}
+              errorMessage={
+                !loadingPassengers && (!schema || schema.length === 0)
+                  ? "Passenger types are not available right now. Please try again later."
+                  : null
+              }
             />
           </div>
 
@@ -138,6 +168,23 @@ const PassengerCabinDropdown: React.FC<Props> = ({
                 disabled={loadingCabinClasses}
                 className="appearance-none h-11 w-full rounded-xl border border-[#DFE7F3] px-4 pr-8 text-[14px]
                            text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20"
+                aria-invalid={!!cabinError}
+                aria-describedby={
+                  cabinError && openCabinError ? "cabin-error" : undefined
+                }
+                onMouseDown={handleCabinToggle}
+                onKeyDown={(e) => {
+                  if (
+                    cabinError &&
+                    (e.key === " " ||
+                      e.key === "Enter" ||
+                      e.key === "ArrowDown" ||
+                      e.key === "ArrowUp")
+                  ) {
+                    handleCabinToggle(e);
+                  }
+                  if (e.key === "Escape") setOpenCabinError(false);
+                }}
               >
                 <option value="">Please select</option>
                 {cabinClasses.map((cc) => (
@@ -161,6 +208,16 @@ const PassengerCabinDropdown: React.FC<Props> = ({
                   strokeLinejoin="round"
                 />
               </svg>
+
+              {cabinError && openCabinError && (
+                // <div className="absolute z-30 mt-2 w-[220px]">
+                <CustomDropdownError
+                  id="cabin-error"
+                  title="Nothing found!"
+                  message={cabinError}
+                />
+                // </div>
+              )}
             </div>
           </div>
         </div>
