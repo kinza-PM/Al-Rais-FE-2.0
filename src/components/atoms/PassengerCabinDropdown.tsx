@@ -29,16 +29,15 @@ type Props = {
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
 const PassengerCabinDropdown: React.FC<Props> = ({
-  // ✅ safe defaults
   schema = [],
   //   loadingPassengers,
   maxTotal = 9,
   value,
   onChangePax,
-  cabinClasses = [], // ✅ default to []
+  cabinClasses = [],
   loadingCabinClasses,
-  selectedCabinClassId = "", // ✅ default to ""
-  onChangeCabinClassId = () => {}, // ✅ no-op default
+  selectedCabinClassId = "",
+  onChangeCabinClassId = () => {},
   widthClass = "w-[190px]",
 }) => {
   const [open, setOpen] = useState(false);
