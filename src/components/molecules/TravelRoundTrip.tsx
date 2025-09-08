@@ -21,8 +21,13 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import { travelData } from "../../utils/mockData";
 import FlightDetailsCard from "./FlightDetailsCard";
 import CompareCard from "./CompareCard";
+import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 
-const TravelRoundTrip: React.FC = () => {
+type TravelRoundTripProps = {
+  passData: any[]; // yahan aap type refine kar sakte ho
+};
+
+const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({ passData }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shareModal, setshareModal] = useState(false);
   const [filterData, setFilterData] = useState<any[]>([]);
@@ -61,7 +66,7 @@ const TravelRoundTrip: React.FC = () => {
 
   return (
     <div className="">
-      {travelData?.map((item, index) => (
+      {passData?.map((item, index) => (
         <div
           key={index}
           className="flightDetailCards flightDetailRoundTripCards"
@@ -80,7 +85,7 @@ const TravelRoundTrip: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="flightTiming">
+              {/* <div className="flightTiming">
                 <div className="startTime">
                   <h5>{item?.flight_detail?.start_time}</h5>
                   <p>{item?.flight_detail?.start_date}</p>
@@ -111,6 +116,10 @@ const TravelRoundTrip: React.FC = () => {
                   <h5>{item?.flight_detail?.end_time}</h5>
                   <p>{item?.flight_detail?.end_date}</p>
                 </div>
+              </div> */}
+
+              <div className="stopsOnLarge">
+                <FlightTimingAndStops passSome={item} />
               </div>
               <div className="featureIcons">
                 <div className="featureIconTooltipWrap">
@@ -161,7 +170,7 @@ const TravelRoundTrip: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="flightTiming">
+              {/* <div className="flightTiming">
                 <div className="startTime">
                   <h5>{item?.flight_detail?.start_time}</h5>
                   <p>{item?.flight_detail?.start_date}</p>
@@ -192,6 +201,10 @@ const TravelRoundTrip: React.FC = () => {
                   <h5>{item?.flight_detail?.end_time}</h5>
                   <p>{item?.flight_detail?.end_date}</p>
                 </div>
+              </div> */}
+
+              <div className="stopsOnSmall">
+                <FlightTimingAndStops passSome={item} />
               </div>
 
               <div className="featureIcons">

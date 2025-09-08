@@ -294,10 +294,10 @@ const FlightDetailTemplate: React.FC = () => {
       (priceSort && priceSort.length
         ? priceSort
         : [
-          { value: "lowest", label: "Lowest Price" },
-          { value: "medium", label: "Medium Price" },
-          { value: "highest", label: "Highest Price" },
-        ]) as { value: string; label: string }[],
+            { value: "lowest", label: "Lowest Price" },
+            { value: "medium", label: "Medium Price" },
+            { value: "highest", label: "Highest Price" },
+          ]) as { value: string; label: string }[],
     [priceSort]
   );
 
@@ -343,10 +343,10 @@ const FlightDetailTemplate: React.FC = () => {
                   segOptions.length
                     ? segOptions
                     : [
-                      { label: "One way", value: "oneway" },
-                      { label: "Round trip", value: "roundtrip" },
-                      { label: "Multi-city", value: "multicity" },
-                    ]
+                        { label: "One way", value: "oneway" },
+                        { label: "Round trip", value: "roundtrip" },
+                        { label: "Multi-city", value: "multicity" },
+                      ]
                 }
                 disabled={loading && !segOptions.length}
               />
@@ -359,7 +359,7 @@ const FlightDetailTemplate: React.FC = () => {
               items={items}
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
-            // indicator={{ size: (origin) => origin - 20, align: alignValue }}
+              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
             />
           </div>
           <div className="countrySelectAndGetHelp py-pxTopHeader">
@@ -862,7 +862,7 @@ const FlightDetailTemplate: React.FC = () => {
             {trip === "oneway" ? (
               <TravelOneWay passData={responseData || []} />
             ) : trip === "roundtrip" ? (
-              <TravelRoundTrip />
+              <TravelRoundTrip passData={responseData || []} />
             ) : (
               <TravelMultiCity />
             )}
