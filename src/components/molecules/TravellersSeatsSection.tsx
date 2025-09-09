@@ -2,6 +2,7 @@ import Seat1 from '../../assets/images/travellers-seat-1.png';
 import Seat2 from '../../assets/images/travellers-seat-2.png';
 import EmiratesRectangular from '../../assets/images/emirates_rectangular.png';
 import TravellersSeatPlaneSelection from './TravellersSeatPlaneSelection';
+import Button from '../atoms/Button';
 
 export default function TravellersSeatsSection() {
 
@@ -162,12 +163,12 @@ export default function TravellersSeatsSection() {
                         </div>
 
                         <div className="mt-4 flex gap-4">
-                            <button className="w-[170px] rounded-[10px] border border-[#D7E4F4] bg-white py-2 text-[15px] font-semibold text-[#0563C1]">
+                            <Button type='button' className='w-[170px] rounded-[10px] border border-[#D7E4F4] bg-white py-2 text-[15px] font-semibold text-[#0563C1]' overrideClasses>
                                 Cancel
-                            </button>
-                            <button className="flex-1 rounded-[10px] bg-[#0563C1] py-2 text-[15px] font-semibold text-white shadow-sm">
+                            </Button>
+                            <Button type='button' className='flex-1 rounded-[10px] bg-[#0563C1] py-2 text-[15px] font-semibold text-white shadow-sm' overrideClasses>
                                 Confirm Seat Selection
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 </div>

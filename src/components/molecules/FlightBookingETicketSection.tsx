@@ -3,6 +3,7 @@ import EmirateLogo from "../../assets/images/emirates.png";
 import AlRaisLogo from "../../assets/images/al-rais-logo.png";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import INFO_ICON from "../../assets/svgs/info.svg"
+import Button from "../atoms/Button";
 
 export default function FlightBookingETicketSection() {
     const [openShareModal, setOpenShareModal] = useState(false);
@@ -97,13 +98,14 @@ export default function FlightBookingETicketSection() {
                 <NotchDivider />
 
                 <div className="pb-2 text-center">
-                    <button
+                    <Button
                         type="button"
                         className="text-[15px] font-medium text-[#5383DA] hover:underline"
                         onClick={() => setShowInstructions(false)}
+                        overrideClasses
                     >
                         Go Back
-                    </button>
+                    </Button>
                 </div>
             </div>
 
@@ -251,27 +253,29 @@ export default function FlightBookingETicketSection() {
                         <NotchDivider />
 
                         <div className="pb-2 text-center">
-                            <button
+                            <Button
                                 type="button"
                                 className="text-[15px] font-medium text-[#5383DA] hover:underline"
                                 onClick={() => setShowInstructions(true)}
+                                overrideClasses
                             >
                                 View Instructions
-                            </button>
+                            </Button>
                         </div>
                     </div>
                 ) : <InstructionsCard />}
 
                 <div className="flex items-center justify-ceneter px-12 gap-4 mt-10 mb-12">
-                    <button
+                    <Button
                         type="button"
+                        overrideClasses
                         className="h-11 w-full rounded-xl bg-white border border-[#2351A3] border-[2px] text-[#2351A3] text-[16px] font-semibold"
                         onClick={() => setOpenShareModal(true)}>
                         Share your ticket
-                    </button>
-                    <button type="button" className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold">
+                    </Button>
+                    <Button type="button" className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold" overrideClasses>
                         Download your ticket
-                    </button>
+                    </Button>
                 </div>
             </div>
 

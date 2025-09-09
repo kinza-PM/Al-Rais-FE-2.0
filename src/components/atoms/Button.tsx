@@ -1,31 +1,34 @@
-import React from 'react';
+import React from "react";
 
 interface ButtonProps {
   onClick?: () => void;
   children: React.ReactNode;
-  variant?: 'primary' | 'secondary';
-  type?: 'button' | 'submit';
+  variant?: "primary" | "secondary";
+  type?: "button" | "submit";
   className?: string;
   disabled?: boolean;
+  overrideClasses?: boolean; // 👈 new prop
 }
 
-const Button: React.FC<ButtonProps> = ({ 
-  onClick, 
-  children, 
-  variant = 'primary', 
-  type = 'button',
-  className = '',
-  disabled = false
+const Button: React.FC<ButtonProps> = ({
+  onClick,
+  children,
+  variant = "primary",
+  type = "button",
+  className = "",
+  disabled = false,
+  overrideClasses = false,
 }) => {
-  const baseClasses = "font-semibold py-2 px-4 rounded-md transition-all whitespace-nowrap";
-  
+  const baseClasses =
+    "font-semibold py-2 px-4 rounded-md transition-all whitespace-nowrap";
+
   const variantClasses = {
-    primary: disabled 
-      ? "bg-gray-400 text-white cursor-not-allowed" 
+    primary: disabled
+      ? "bg-gray-400 text-white cursor-not-allowed"
       : "bg-primary text-white hover:bg-opacity-90",
-    secondary: disabled 
-      ? "bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed" 
-      : "bg-none text-primary border border-primary hover:bg-primary hover:text-white"
+    secondary: disabled
+      ? "bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed"
+      : "bg-none text-primary border border-primary hover:bg-primary hover:text-white",
   };
 
   return (
@@ -33,11 +36,15 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className={`${baseClasses} ${variantClasses[variant]} ${className}`}
+      className={
+        overrideClasses
+          ? className // 👈 sirf apki class lagegi
+          : `${baseClasses} ${variantClasses[variant]} ${className}`
+      }
     >
       {children}
     </button>
   );
 };
 
-export default Button; 
+export default Button;

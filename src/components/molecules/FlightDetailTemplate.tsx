@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 
 import alraisLogo from "../../assets/images/alraisLogo.png";
 import planeImg from "../../assets/images/travel_plane_image.png";
@@ -46,6 +46,8 @@ import Loader from "../atoms/Loader";
 // import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 import { useFlightSearch } from "../../hooks/useFlightSearch";
+import { useLoadMoreFlights } from "../../hooks/useLoadMoreFlights";
+import type { FlightSearchRequest } from "../../services/api/flightSearch";
 
 const { Panel } = Collapse;
 
@@ -71,9 +73,16 @@ const FlightDetailTemplate: React.FC = () => {
   // const [alignValue, setAlignValue] = useState<Align>("One way");
 
   const { mutateAsync, isPending } = useFlightSearch();
+  const { loadMoreAsync, isLoadingMore } = useLoadMoreFlights();
 
   const [responseData, setResponseData] = useState<any[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const lastRequestRef = useRef<FlightSearchRequest | null>(null);
   const [dateTime, setDateTime] = useState("");
+
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [ioReady, setIoReady] = useState(false);
+
   const handleDate = (date: any) => {
     if (!date) return;
 
@@ -136,13 +145,19 @@ const FlightDetailTemplate: React.FC = () => {
       ],
     };
 
+    lastRequestRef.current = requestBody;
+    setHasMore(true);
+    setResponseData([]);
+
     try {
       const response = await mutateAsync(requestBody);
 
-      const formattedData = response.data.map((item: any, index: number) => {
+      const formattedData = response.data.map((item: any) => {
+        // const formattedData = response.data.map((item: any, index: number) => {
         const segment = item?.journey?.[0]?.flightSegments?.[0];
         return {
-          id: index + 1,
+          // id: index + 1,
+          id: segment?.segmentKey,
           logo: `/airlines/${segment?.marketingAirline}.png`,
           name: segment?.marketingAirline,
           flight_detail: {
@@ -167,11 +182,53 @@ const FlightDetailTemplate: React.FC = () => {
       });
 
       setResponseData(formattedData);
+
+      // if first page is empty, don’t try to load more
+      setHasMore((response.data || []).length > 0);
+      setIoReady(true); // allow intersection observer to start
     } catch (error) {
       console.error("Flight search failed:", error);
     }
 
     // mutate(requestBody);
+  };
+
+  const handleLoadMore = async () => {
+    if (!hasMore || isLoadingMore || !lastRequestRef.current) return;
+    try {
+      const moreResp = await loadMoreAsync(lastRequestRef.current);
+
+      const moreFormatted = (moreResp.data || []).map((item: any) => {
+        const segment = item?.journey?.[0]?.flightSegments?.[0];
+        return {
+          id: segment?.segmentKey,
+          logo: `/airlines/${segment?.marketingAirline}.png`,
+          name: segment?.marketingAirline,
+          flight_detail: {
+            flight_number: segment?.flightNumber,
+            flight_class: segment?.cabinClass,
+            start_time: formatTime(segment?.departureDateTime),
+            start_date: formatDate(segment?.departureDateTime),
+            end_time: formatTime(segment?.arrivalDateTime),
+            end_date: formatDate(segment?.arrivalDateTime),
+            duration: formatDuration(segment?.departureDateTime, segment?.arrivalDateTime),
+          },
+          stop: item?.journey?.[0]?.stops || [],
+          price: { economyLite: { price: item?.fare?.totalFare } },
+        };
+      });
+
+      if (!moreFormatted.length) {
+        setHasMore(false); // no more data from server
+        return;
+      }
+
+      setResponseData(prev => [...prev, ...moreFormatted]);
+    } catch (e) {
+      console.error("Load more failed:", e);
+      // on error, stop auto-loading to avoid loops; user can trigger a fresh search
+      setHasMore(false);
+    }
   };
 
   const {
@@ -261,6 +318,37 @@ const FlightDetailTemplate: React.FC = () => {
     () => priceOptions.find((o) => o.value === selectedPriceId)?.label ?? "",
     [priceOptions, selectedPriceId]
   );
+
+  useEffect(() => {
+    if (!loadMoreRef.current) return;
+    if (!ioReady) return;
+
+    const el = loadMoreRef.current;
+    // debounce-ish guard
+    let loading = false;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !loading) {
+          loading = true;
+          // small micro-delay so consecutive intersects don’t spam
+          setTimeout(async () => {
+            await handleLoadMore();
+            loading = false;
+          }, 80);
+        }
+      },
+      {
+        root: null,
+        rootMargin: "0px 0px 400px 0px", // prefetch a bit earlier
+        threshold: 0,
+      }
+    );
+
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [ioReady, hasMore, isLoadingMore]);
 
   // const { flight } = useFlightStore();
   // const { cabinClasses } = useMasterListings();
@@ -816,7 +904,18 @@ const FlightDetailTemplate: React.FC = () => {
               </Button>
             )}
             {trip === "oneway" ? (
-              <TravelOneWay passData={responseData || []} />
+              <>
+                <TravelOneWay passData={responseData || []} />
+                <div ref={loadMoreRef} />
+                {/* {isLoadingMore && (
+                  <div style={{ padding: 16, textAlign: "center" }}>Loading more…</div>
+                )}
+                {!hasMore && responseData.length > 0 && (
+                  <div style={{ padding: 16, textAlign: "center", color: "#6b7280" }}>
+                    No more results
+                  </div>
+                )} */}
+              </>
             ) : trip === "roundtrip" ? (
               <TravelRoundTrip />
             ) : (

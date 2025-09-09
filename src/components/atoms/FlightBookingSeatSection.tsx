@@ -7,13 +7,12 @@ import flightSeatSelection from "../../assets/svgs/flight-seat-selection-svg.svg
 import standardSeatGlyph from "../../assets/svgs/standard-seat-glyph.svg"
 import extendedSeatGlyph from "../../assets/svgs/extended-seat-glyph.svg"
 import seat from "../../assets/svgs/enhance-seat.svg"
+import CardCollapseToggle from "../common/CardCollapseToggle";
 
 export default function FlightBookingSeatSection({
-    CardChevron,
     open,
     onToggleOpen,
 }: {
-    CardChevron: React.ComponentType<{ open: boolean; onClick: () => void; className?: string }>;
     open: boolean;
     onToggleOpen: () => void;
 }) {
@@ -76,7 +75,7 @@ export default function FlightBookingSeatSection({
                             </div>
                         </div>
                     </div>
-                    <CardChevron open={open} onClick={onToggleOpen} />
+                    <CardCollapseToggle open={open} onClick={onToggleOpen} />
                 </button>
 
                 {open && <div className="h-px bg-[#E4E4E7]" />}

@@ -4,6 +4,7 @@ import Plane from '../assets/images/plane.png';
 import TravellersPassengerDetail from "../components/molecules/TravellersPassengerDetail";
 import TravellersPaymentSection from "../components/molecules/TravellersPaymentSection";
 import TravellersSeatsSection from "../components/molecules/TravellersSeatsSection";
+import { Button } from "../components";
 
 type TabKey = "passenger" | "seats" | "payment";
 
@@ -76,7 +77,13 @@ const Travellers = () => {
                     <div className="px-5 pt-4 flex-1">
                         <div className="flex items-center justify-between">
                             <p className="text-[24px] font-bold text-[#3D3D3D]">Fare Summary</p>
-                            <button className="text-[16px] font-medium text-[#EC2028]">Fare Rules</button>
+                            <Button
+                                type="button"
+                                className="text-[16px] font-medium text-[#EC2028]"
+                                overrideClasses
+                            >
+                                Fare Rules
+                            </Button>
                         </div>
                         <div className="mt-4 space-y-[10px] text-[13px]">
                             <div className="flex items-center justify-between">
@@ -106,18 +113,22 @@ const Travellers = () => {
             <div className="grid md:grid-cols-[2fr_1fr]">
                 <div />
                 <div className="flex items-center justify-between px-1 sm:px-5 py-3">
-                    <button
+                    <Button
+                        type="button"
                         onClick={() => setShowBaggage(s => !s)}
                         className={`text-[14px] hover:underline text-[#0563C1]`}
+                        overrideClasses
                     >
                         {showBaggage ? "Hide Baggage Details" : "Show Baggage Details"}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                        type="button"
                         onClick={() => setShowBreakup((s) => !s)}
                         className={`text-[14px] text-[#EC2028] hover:underline `}
+                        overrideClasses
                     >
                         {showBreakup ? "Hide Price Breakup" : "Show Price Breakup"}
-                    </button>
+                    </Button>
                 </div>
             </div>
             <div className="px-2 md:px-0">
@@ -129,17 +140,19 @@ const Travellers = () => {
                     ].map((t) => {
                         const isActive = activeTab === t.key as any;
                         return (
-                            <button
+                            <Button
+                                type="button"
                                 key={t.key}
                                 onClick={() => setActiveTab(t.key as any)}
                                 className={`relative pb-3 focus:outline-none ${isActive ? "text-[#0563C1] font-bold" : "text-[#969696]"
                                     }`}
+                                overrideClasses
                             >
                                 {t.label}
                                 {isActive && (
                                     <span className="absolute inset-x-0 -bottom-[2px] mx-auto h-[2px] w-full rounded bg-[#0563C1]" />
                                 )}
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>

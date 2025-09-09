@@ -6,6 +6,8 @@ type DatePickerProps = {
     onChange?: (d: Date) => void;
     placeholder?: string;
     buttonIconSrc?: boolean; // calendar svg
+    overridesClass?: boolean;
+    inputClass?: string;
 };
 
 const WEEKDAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
@@ -46,7 +48,9 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
     value = null,
     onChange = () => { },
     placeholder = "Please select",
-    buttonIconSrc
+    buttonIconSrc,
+    overridesClass = false,
+    inputClass = null
 }) => {
     const [open, setOpen] = useState(false);
     const [view, setView] = useState<Date>(() => value ?? new Date());
@@ -104,7 +108,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
                     value={fmtLong(value) || ""}
                     placeholder={placeholder}
                     onClick={() => setOpen(true)}
-                    className="h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20 cursor-pointer"
+                    className={`${overridesClass ? inputClass : "h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20 cursor-pointer"}`}
                 />
                 <button
                     type="button"

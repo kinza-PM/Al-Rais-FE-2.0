@@ -1,17 +1,16 @@
-type ChevronProps = { open: boolean; onClick: () => void; className?: string };
+import CardCollapseToggle from "../common/CardCollapseToggle";
 
 type FlightBookingBaggageSectionProps = {
-    CardChevron: React.ComponentType<ChevronProps>;
     open: boolean;
     onToggleOpen: () => void;
 };
 
-export default function FLightPriceBreakdown({ CardChevron, open, onToggleOpen }: FlightBookingBaggageSectionProps) {
+export default function FLightPriceBreakdown({ open, onToggleOpen }: FlightBookingBaggageSectionProps) {
     return (
         <div className="mt-4 rounded-xl border border-[#E4E4E7] bg-white">
             <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
                 <div className="text-[16px] font-semibold text-[#0A0C0F]">Price breakdown</div>
-                <CardChevron open={open} onClick={onToggleOpen} />
+                <CardCollapseToggle open={open} onClick={onToggleOpen} />
             </div>
 
             <div

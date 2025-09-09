@@ -1,4 +1,6 @@
 import React, { useRef, useState } from "react";
+import Button from "../atoms/Button";
+import TailwindCustomInput from "../common/TailwindCustomInput";
 
 const CalendarIcon = (props: React.SVGProps<SVGSVGElement>) => (
     <svg width="18" height="20" viewBox="0 0 18 20" fill="none" {...props}>
@@ -35,13 +37,14 @@ function DateInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
                 className="date-input h-9 w-full rounded-md border border-[#E4EBF3] px-3 pr-10 text-[13px] outline-none focus:border-[#0563C1]"
                 {...props}
             />
-            <button
+            <Button
                 type="button"
                 onClick={() => ref.current?.showPicker?.()}
                 className="absolute right-2 top-1/4"
+                overrideClasses
             >
                 <CalendarIcon width={16} height={16} />
-            </button>
+            </Button>
         </div>
     );
 }
@@ -68,14 +71,16 @@ export default function TravellersPassengerDetail() {
                     {(["Mr", "Mrs", "Ms"] as const).map((t) => {
                         const active = title === t;
                         return (
-                            <button
+                            <Button
+                                type="button"
                                 key={t}
                                 onClick={() => setTitle(t)}
                                 className={`h-8 rounded-md px-6 text-[12px] font-medium ${active ? "bg-[#0563C1] text-white" : "bg-[#E8F0FF] text-[#3D3D3D]"
                                     }`}
+                                overrideClasses
                             >
                                 {t}
-                            </button>
+                            </Button>
                         );
                     })}
                 </div>
@@ -83,23 +88,32 @@ export default function TravellersPassengerDetail() {
 
             {/* Grid form */}
             <div className="grid gap-4 md:grid-cols-2">
-                <Field label="First Name">
-                    <input className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]" placeholder="First Name" />
-                </Field>
-                <Field label="Last Name">
-                    <input className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]" placeholder="Last Name" />
-                </Field>
+                <TailwindCustomInput
+                    type="text"
+                    placeholder="First Name"
+                    className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]"
+                    label="First Name"
+                    labelClass="mb-1 block text-[12px] font-bold text-[#3D3D3D]"
+                />
+                <TailwindCustomInput
+                    type="text"
+                    placeholder="Last Name"
+                    className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]"
+                    label="Last Name"
+                    labelClass="mb-1 block text-[12px] font-bold text-[#3D3D3D]"
+                />
 
                 <Field label="Date of Birth">
                     <DateInput />
                 </Field>
 
-                <Field label="Passport Number">
-                    <input
-                        className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]"
-                        placeholder="Passport Number"
-                    />
-                </Field>
+                <TailwindCustomInput
+                    type="text"
+                    placeholder="Passport Name"
+                    className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]"
+                    label="Passport Number"
+                    labelClass="mb-1 block text-[12px] font-bold text-[#3D3D3D]"
+                />
 
                 <Field label="Passport Issue Date">
                     <DateInput />
@@ -152,18 +166,30 @@ export default function TravellersPassengerDetail() {
                             </span>
                             <span className="text-[13px] text-[#3D495C]">+971</span>
                         </div>
-                        <input className="h-9 w-full rounded-r-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]" placeholder="Phone number" />
+                        <TailwindCustomInput
+                            type="text"
+                            placeholder="Phone Number"
+                            className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]"
+                        />
                     </div>
                 </Field>
-                <Field label="Email">
-                    <input className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]" placeholder="Email" type="email" />
-                </Field>
+                <TailwindCustomInput
+                    type="email"
+                    placeholder="Email"
+                    className="h-9 w-full rounded-md border border-[#E4EBF3] px-3 text-[13px] placeholder:text-[#B2BFCC] outline-none focus:border-[#0563C1]"
+                    label="Email"
+                    labelClass="mb-1 block text-[12px] font-bold text-[#3D3D3D]"
+                />
             </div>
 
             <div className="mt-6">
-                <button className="w-full rounded-md bg-[#E8F0FF] py-2 text-center text-[14px] font-semibold text-[#0563C1]" type="button">
+                <Button
+                    type="button"
+                    className="w-full rounded-md bg-[#E8F0FF] py-2 text-center text-[14px] font-semibold text-[#0563C1]"
+                    overrideClasses
+                >
                     Next
-                </button>
+                </Button>
             </div>
         </div>
     );
