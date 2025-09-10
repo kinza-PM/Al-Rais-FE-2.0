@@ -55,9 +55,9 @@ const router = createBrowserRouter([
       {
         path: "my-bookings",
         element: (
-          <ProtectedRoute>
+          // <ProtectedRoute>
             <MyBookingsPage />
-          </ProtectedRoute>
+          // </ProtectedRoute>
         ),
       },
       {
