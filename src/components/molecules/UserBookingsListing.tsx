@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Button from "../atoms/Button";
 
 export type BookingStatus = "Confirmed" | "Pending" | "Expired";
