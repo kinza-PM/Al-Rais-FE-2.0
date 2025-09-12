@@ -1,3 +1,5 @@
+import type { Booking, BookingStatus } from "../components/molecules/UserBookingsListing";
+
 export const travelData = [
   {
     id: 2,
@@ -379,3 +381,66 @@ export const flightBookingReviewSeatDetail = {
   cabinClass: "Economy",
   seatNo: "B9",
 };
+
+export const userBookingListings: Booking[] = [
+  {
+    id: "1",
+    type: "flight",
+    airline: {
+      name: "Emirates Airlines",
+      code: "EK",
+      flightNo: "1234",
+      logoUrl:
+        "src/assets/images/emirates.png",
+      cabin: "Economy class",
+    },
+    from: { city: "Dubai", code: "DXB", time: "10:45 AM", dateLabel: "Mon, 16 June 2025" },
+    to: { city: "Mumbai", code: "BOM", time: "02:00 PM", dateLabel: "Mon, 16 June 2025" },
+    durationLabel: "03 hours 15 minutes",
+    isDirect: true,
+    passengersLabel: "01 Adult",
+    bookingRef: "6DFFX8901HAE",
+    status: "Confirmed" as BookingStatus,
+  },
+  {
+    id: "2",
+    type: "flight",
+    airline: {
+      name: "Emirates Airlines",
+      code: "EK",
+      flightNo: "1234",
+      logoUrl:
+        "src/assets/images/emirates.png",
+      cabin: "Economy class",
+    },
+    from: { city: "Dubai", code: "DXB", time: "10:45 AM", dateLabel: "Mon, 16 June 2025" },
+    to: { city: "Mumbai", code: "BOM", time: "02:00 PM", dateLabel: "Mon, 16 June 2025" },
+    durationLabel: "03 hours 15 minutes",
+    isDirect: true,
+    passengersLabel: "01 Adult",
+    bookingRef: "6DFFX8901HAE",
+    status: "Pending" as BookingStatus,
+    countdownHours: "00",
+    countdownMins: "35",
+    countdownSecs: "49",
+  },
+  {
+    id: "3",
+    type: "flight",
+    airline: {
+      name: "Emirates Airlines",
+      code: "EK",
+      flightNo: "5678",
+      logoUrl:
+        "src/assets/images/emirates.png",
+      cabin: "Economy class",
+    },
+    from: { city: "Dubai", code: "DXB", time: "06:20 AM", dateLabel: "Tue, 17 June 2025" },
+    to: { city: "Karachi", code: "KHI", time: "07:40 AM", dateLabel: "Tue, 17 June 2025" },
+    durationLabel: "01 hour 20 minutes",
+    isDirect: true,
+    passengersLabel: "02 Adults",
+    bookingRef: "7ZXCV9801QQ",
+    status: "Expired" as BookingStatus,
+  },
+];
