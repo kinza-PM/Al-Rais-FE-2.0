@@ -52,7 +52,7 @@ function FlightTimeline({
                 </span>
             )}
 
-            <div className="relative h-[1px] w-[440px] max-w-[72vw] rounded-full bg-[#A7C0EC]">
+            <div className="relative h-[1px] w-[440px] max-w-[72vw] rounded-full bg-[#A7C0EC] max-[768px]:w-full max-[768px]:max-w-full">
                 <span className="absolute -top-[5px] left-0 h-2.5 w-2.5 rounded-full bg-[#2351A3]" />
                 <span className="absolute -top-[5px] right-0 h-2.5 w-2.5 rounded-full bg-[#2351A3]" />
             </div>
@@ -66,7 +66,7 @@ function FlightTimeline({
 
 function CardDivider() {
     return (
-        <div className="-mx-5 h-px bg-[#E4E4E7]" />
+        <div className="-mx-5 h-px bg-[#E4E4E7] max-[768px]:-mx-4" />
     )
 }
 
@@ -76,14 +76,14 @@ function BookingCard({ booking }: { booking: Booking }) {
 
     return (
         <div className={[
-            "relative rounded-2xl border border-[#E4E4E7] bg-white px-5 pb-4 pt-4 shadow-sm transition",
+            "relative rounded-2xl border border-[#E4E4E7] bg-white px-5 pb-4 pt-4 shadow-sm transition max-[768px]:pt-8",
             isExpired ? "opacity-50 [filter:grayscale(100%)]" : "",
         ].join(" ")}>
             <div className="absolute right-4 top-2">
                 <StatusPill status={status} />
             </div>
 
-            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-8">
+            <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-8 max-[768px]:grid-cols-[.5fr_auto_.5fr]">
                 <div className="text-end mt-4">
                     <div className="text-[15px] font-medium text-[#0A0C0F]">{booking.from.time}</div>
                     <div className="text-[12px] text-[#3D495C]">{booking.from.dateLabel}</div>
@@ -110,7 +110,7 @@ function BookingCard({ booking }: { booking: Booking }) {
 
             <CardDivider />
 
-            <div className="mt-2 mb-2 flex items-start justify-between gap-4">
+            <div className="mt-2 mb-2 flex items-start justify-between gap-4 max-[768px]:flex-col">
                 <div className="flex items-center gap-3">
                     {booking.airline?.logoUrl ? (
                         <img src={booking.airline.logoUrl} alt="airline" className="h-10 w-10 rounded-full object-cover" />
