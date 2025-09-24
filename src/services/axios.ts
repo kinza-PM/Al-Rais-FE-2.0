@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const flightApis = ["/flightSearch", "/moreFareSearch"];
+
 export const API_BASE =
   import.meta.env.VITE_API_BASE ||
   "https://ie7eaxnxpg.execute-api.eu-west-1.amazonaws.com/dev";
@@ -17,7 +19,7 @@ axiosClient.interceptors.request.use((config) => {
   // const token = yourAuthStore.getState().token;
   // if (token) config.headers.Authorization = `Bearer ${token}`;
 
-  if (config.url?.startsWith("/flightSearch")) {
+  if (flightApis.some(prefix => config.url?.startsWith(prefix))) {
     config.baseURL = FLIGHT_API_BASE;
   }
 

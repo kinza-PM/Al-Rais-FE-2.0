@@ -2,11 +2,16 @@
 import { api, toApiError } from "../axios";
 
 export type FlightSearchRequest = {
-  departureAirportCode: string;
-  departureDate: string;
-  arrivalAirportCode: string;
-  cabinPreferences: string[];
-  passengers: { id: string; ptc: string }[];
+  flightSegments: {
+    departureAirportCode: string;
+    departureDate: string;
+    arrivalAirportCode: string;
+    cabinPreferences?: string[];
+  }[];
+  passengers: {
+    id: string;
+    ptc: string;
+  }[];
 };
 
 export async function postFlightSearchData<TResp = any>(

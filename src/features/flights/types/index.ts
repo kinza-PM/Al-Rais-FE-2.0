@@ -50,6 +50,7 @@ export interface PassengerItem {
     status: number;
     createdAt: number;
     updatedAt: number;
+    ptc: string
 }
 
 export interface PassengersResponse {
@@ -59,8 +60,9 @@ export interface PassengersResponse {
 
 
 export interface PassengerCategoryOption {
-    key: PaxKey;                 // "adults" | "kids" | "infants" | "seniors"
-    title: string;               // e.g. "Adults"
+    key: PaxKey;                 
+    title: string;   
+    ptc: string            
 }
 
 export type PassengerSchema = PassengerCategoryOption[];

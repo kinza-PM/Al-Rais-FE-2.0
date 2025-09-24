@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Input from '../atoms/Input';
 import Button from '../atoms/Button';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import Logo from '../atoms/Logo';
 import logoImg from '../../assets/images/logo.jpg';
+import { getEmailError } from '../../utils/validators';
 interface LoginFormProps {
   onSignupClick: () => void;
   onLoginSuccess?: () => void;
@@ -18,6 +19,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
 
   const [usePhone, setUsePhone] = useState(false);
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
+  const [touched, setTouched] = useState({ email: false, password: false });
   const { login, loading, error } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -25,9 +27,24 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+  };
+
+  const isEmailValid = (value: string) => {
+    const trimmed = value.trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginMessage(null);
+
+    if (!isFormValid) {
+      setTouched({ email: true, password: true });
+      return;
+    }
 
     if (!formData.email || !formData.password) return;
 
@@ -38,6 +55,22 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
       }, 2000);
     }
   };
+
+  const isFormValid = useMemo(() => {
+    const emailTrim = formData.email.trim();
+    const passTrim = formData.password.trim();
+
+    if (!emailTrim || !passTrim) return false;
+    if (!usePhone && !isEmailValid(emailTrim)) return false;
+    return true;
+  }, [formData, usePhone]);
+
+  const emailError = useMemo(
+    () => getEmailError(formData.email, usePhone),
+    [formData.email, usePhone]
+  );
+
+  const emailHasError = Boolean(emailError);
 
   return (
     <div className="flex items-center justify-center">
@@ -77,8 +110,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
               placeholder={usePhone ? 'Enter your phone number' : 'Enter your email'}
               value={formData.email}
               onChange={handleInputChange}
-              required
+              onBlur={handleBlur}
+              touched={touched.email}
+              error={emailHasError}
             />
+            {touched.email && emailHasError && (
+              <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
+                {emailError}
+              </p>
+            )}
           </div>
 
           <div>
@@ -89,8 +129,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
               placeholder="Password"
               value={formData.password}
               onChange={handleInputChange}
-              required
+              onBlur={handleBlur}
+              touched={touched.password}
+              error={formData.password.trim() === ''}
             />
+            {touched.password && formData.password.trim() === '' && (
+              <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
+                This field is required.
+              </p>
+            )}
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -106,7 +153,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
             </button>
           </div>
 
-          <Button type="submit" className="w-full">
+          <Button type="submit" className="w-full"
+            disabled={!isFormValid || !!loading?.login}
+            aria-disabled={!isFormValid || !!loading?.login}
+          >
             {loading?.login ? 'Logging in...' : 'Login'}
           </Button>
         </form>

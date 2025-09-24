@@ -9,9 +9,12 @@ import {
   SignupForm
 } from "../components";
 import type { AuthMode } from "../types/AuthTypes";
+import { useLocation } from "react-router-dom";
 
 const AuthPage = () => {
-  const [mode, setMode] = useState<AuthMode>("login");
+  const location = useLocation();
+  const initialMode = (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const [forgotPasswordOTP, setForgotPasswordOTP] = useState("");
   const handleModeSwitch = () => {

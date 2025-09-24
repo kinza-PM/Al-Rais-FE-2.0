@@ -93,7 +93,7 @@ export function buildPassengerSchema(items: PassengerItem[]): PassengerSchema {
         if (it.status !== 1) continue;
         const key = mapKey(it.category);
         if (!key || seen.has(key)) continue;
-        out.push({ key, title: TITLE[key] });
+        out.push({ key, title: TITLE[key], ptc: it.ptc });
         seen.add(key);
     }
 

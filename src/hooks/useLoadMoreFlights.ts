@@ -1,13 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { postMoreFareSearchData } from "../services/api/flightSearch";
-
-type FlightSearchRequest = {
-  departureAirportCode: string;
-  departureDate: string;
-  arrivalAirportCode: string;
-  cabinPreferences: string[];
-  passengers: { id: string; ptc: string }[];
-};
+import { postMoreFareSearchData, type FlightSearchRequest } from "../services/api/flightSearch";
 
 export function useLoadMoreFlights() {
   const mutate = useMutation({

@@ -23,6 +23,11 @@ import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 
 type TravelOneWayProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
+  isLoadingMore?: boolean;
+  hasMore?: boolean;
+  renderLoader?: (state: { isLoadingMore?: boolean; hasMore?: boolean }) => React.ReactNode;
+  loadMoreRef?: React.RefObject<HTMLDivElement | null>;
+  emptyState?: (() => React.ReactNode) | React.ReactNode;
 };
 
 const radioReminder = (checked: boolean) => {
@@ -34,7 +39,14 @@ const radioReminder = (checked: boolean) => {
 //   { key: "2", label: "Flight Details" },
 // ];
 
-const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
+const TravelOneWay: React.FC<TravelOneWayProps> = ({
+  passData,
+  isLoadingMore,
+  hasMore,
+  renderLoader,
+  loadMoreRef,
+  emptyState,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shareModal, setshareModal] = useState(false);
   const [filterData, setFilterData] = useState<any[]>([]);
@@ -72,6 +84,15 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
 
   const [active, setActive] = useState({ name: "", id: 0 });
   console.log(active, "active");
+
+  if (!passData || passData.length === 0) {
+    return (
+      <div>
+        {typeof emptyState === "function" ? emptyState() : emptyState ?? null}
+        <div ref={loadMoreRef} className="min-h-[1px]" />
+      </div>
+    );
+  }
 
   return (
     <div className="">
@@ -142,11 +163,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
               <div className="modalOptions">
                 <div className="tabs">
                   <div
-                    className={`tab ${
-                      active?.name === "price" && active?.id === index
-                        ? "active"
-                        : ""
-                    }`}
+                    className={`tab ${active?.name === "price" && active?.id === index
+                      ? "active"
+                      : ""
+                      }`}
                     onClick={() => {
                       HandlePriceOption({ id: item.id });
                       // setActive({ name: "price", id: index });
@@ -162,11 +182,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
                     Price options
                   </div>
                   <div
-                    className={`tab ${
-                      active?.name === "flight" && active?.id === index
-                        ? "active"
-                        : ""
-                    }`}
+                    className={`tab ${active?.name === "flight" && active?.id === index
+                      ? "active"
+                      : ""
+                      }`}
                     onClick={() => {
                       HandlePriceOption({ id: item.id });
                       // setActive({ name: "flight", id: index });
@@ -182,11 +201,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
                     Flight details
                   </div>
                   <div
-                    className={`tab ${
-                      active?.name === "compare" && active?.id === index
-                        ? "active"
-                        : ""
-                    }`}
+                    className={`tab ${active?.name === "compare" && active?.id === index
+                      ? "active"
+                      : ""
+                      }`}
                     onClick={() => {
                       // setActive({ name: "compare", id: index });
                       setActive((prev) => {
@@ -239,6 +257,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({ passData }) => {
           </div>
         </div>
       ))}
+
+      <div ref={loadMoreRef} className="min-h-[1px]">
+        {renderLoader?.({ isLoadingMore, hasMore })}
+      </div>
 
       <div className="reminderCard">
         <div className="reminderCardPart1">

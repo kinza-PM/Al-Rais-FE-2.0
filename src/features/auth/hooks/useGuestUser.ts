@@ -29,11 +29,11 @@ export const useGuestUser = (actions: GuestUserActions) => {
         setGuestState(guestUser, guestData.session);
       } else {
         console.error(' useGuestUser: Failed to initialize guest user');
-        setError('Failed to initialize guest session');
+        // setError('Failed to initialize guest session');
       }
     } catch (error) {
       console.error(' useGuestUser: Error initializing guest user:', error);
-      setError('Failed to initialize guest session');
+      // setError('Failed to initialize guest session');
     }
   };
 
