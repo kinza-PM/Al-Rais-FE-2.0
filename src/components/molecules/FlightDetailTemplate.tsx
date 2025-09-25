@@ -104,24 +104,30 @@ const FlightDetailTemplate: React.FC = () => {
   const [paxCounts, setPaxCounts] = useState<any>({});
   const passengerRequestOrder = useRef<string[]>([]);
   const lastRequestRef = useRef<FlightSearchRequest | null>(null);
-  const [dateTime, setDateTime] = useState("");
+  const [departDate, setDepartDate] = useState<string>("");
+  const [returnDate, setReturnDate] = useState<string>("");
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [ioReady, setIoReady] = useState(false);
 
   const [hasSearched, setHasSearched] = useState(false);
 
-  const handleDate = (date: any) => {
-    if (!date) return;
+  const handleDate = (date: any, which: "depart" | "return" = "depart") => {
+    if (!date) {
+      if (which === "depart") setDepartDate("");
+      else setReturnDate("");
+      return;
+    }
 
     const d = new Date(date);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
 
-    const formatted = `${year}-${month}-${day}`;
+    const formatted = `${year}-${month}-${day}`; // YYYY-MM-DD
 
-    setDateTime(formatted);
+    if (which === "depart") setDepartDate(formatted);
+    else setReturnDate(formatted);
   };
 
   const handlePassenger = (passanger: any) => {
@@ -185,18 +191,28 @@ const FlightDetailTemplate: React.FC = () => {
 
   const handleSearch = async () => {
     const passengersForRequest = buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts);
-    // console.log('passengers', passengersForRequest)
+    const flightSegments: any[] = [
+      {
+        // departureAirportCode: fromCode,
+        departureAirportCode: "DXB",
+        departureDate: departDate,
+        // arrivalAirportCode: toCode,
+        arrivalAirportCode: "DEL",
+        cabinPreferences: [selectedCabinClassId],
+      },
+    ];
+    if (trip === "roundtrip") {
+      flightSegments.push({
+        // departureAirportCode: toCode,
+        departureAirportCode: "DEL",
+        departureDate: returnDate,
+        // arrivalAirportCode: fromCode,
+        arrivalAirportCode: "DXB",
+        cabinPreferences: [selectedCabinClassId],
+      });
+    }
     const requestBody = {
-      flightSegments: [
-        {
-          departureAirportCode: fromCode,
-          // departureAirportCode: "DXB",
-          departureDate: dateTime,
-          arrivalAirportCode: toCode,
-          // arrivalAirportCode: "DEL",
-          cabinPreferences: [selectedCabinClassId]
-        }
-      ],
+      flightSegments: flightSegments,
       passengers: passengersForRequest,
     };
 
@@ -617,7 +633,7 @@ const FlightDetailTemplate: React.FC = () => {
                 style={{ width: "100%", height: 44 }}
                 className="header-input-common ant-input-select"
                 onChange={(value) => {
-                  handleDate(value);
+                  handleDate(value, "depart");
                 }}
               />
             </Flex>
@@ -629,7 +645,7 @@ const FlightDetailTemplate: React.FC = () => {
                   style={{ width: "100%", height: 44 }}
                   className="header-input-common ant-input-select"
                   onChange={(value) => {
-                    handleDate(value);
+                    handleDate(value, "return");
                   }}
                 />
               </Flex>
