@@ -22,7 +22,23 @@ import { travelData } from "../../utils/mockData";
 import FlightDetailsCard from "./FlightDetailsCard";
 import CompareCard from "./CompareCard";
 
-const TravelRoundTrip: React.FC = () => {
+type TravelRoundTripProps = {
+  passData: any[]; // yahan aap type refine kar sakte ho
+  isLoadingMore?: boolean;
+  hasMore?: boolean;
+  renderLoader?: (state: { isLoadingMore?: boolean; hasMore?: boolean }) => React.ReactNode;
+  loadMoreRef?: React.RefObject<HTMLDivElement | null>;
+  emptyState?: (() => React.ReactNode) | React.ReactNode;
+};
+
+const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
+  passData,
+  isLoadingMore,
+  hasMore,
+  renderLoader,
+  loadMoreRef,
+  emptyState,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shareModal, setshareModal] = useState(false);
   const [filterData, setFilterData] = useState<any[]>([]);
@@ -59,39 +75,54 @@ const TravelRoundTrip: React.FC = () => {
 
   const [active, setActive] = useState({ name: "", id: 0 });
 
+  if (!passData || passData.length === 0) {
+    return (
+      <div>
+        {typeof emptyState === "function" ? emptyState() : emptyState ?? null}
+        <div ref={loadMoreRef} className="min-h-[1px]" />
+      </div>
+    );
+  }
+
   return (
     <div className="">
-      {travelData?.map((item, index) => (
-        <div
-          key={index}
-          className="flightDetailCards flightDetailRoundTripCards"
-        >
-          <div className="forBorderBottom">
-            <div className="topHalfCard RoundTripCardDetail">
+      {passData?.map((item: any, index: number) => {
+        const renderRoundTopCard = (display: any, parent: any) => {
+          const d = display ?? parent;
+          const price =
+            (d?.price?.economyLite?.price) ??
+            (parent?.price?.economyLite?.price) ??
+            parent?.totalFare ??
+            0;
+
+          return (
+            <div className="topHalfCard RoundTripCardDetail" key={d?.id || parent?.id || Math.random()}>
               <div className="fightTitle">
                 <div className="flightIcon">
-                  <img src={item?.logo} alt="" />
+                  <img src={d?.logo} alt="" />
                 </div>
                 <div className="nameAndDetails">
-                  <h5>{item?.name}</h5>
+                  <h5>{d?.name}</h5>
                   <p>
-                    {item?.flight_detail?.flight_number} -{" "}
-                    {item?.flight_detail?.flight_class}
+                    {d?.flight_detail?.flight_number} -{" "}
+                    {d?.flight_detail?.flight_class}
                   </p>
                 </div>
               </div>
+
               <div className="flightTiming">
                 <div className="startTime">
-                  <h5>{item?.flight_detail?.start_time}</h5>
-                  <p>{item?.flight_detail?.start_date}</p>
+                  <h5>{d?.flight_detail?.start_time}</h5>
+                  <p>{d?.flight_detail?.start_date}</p>
                 </div>
+
                 <div className="FlightDirection">
                   <div className="visualGuid">
                     <div className="stopPoint"></div>
 
-                    {item?.stop?.length > 0 ? (
-                      item?.stop?.map((stopStayTime) => (
-                        <div className="stopsDetail">
+                    {d?.stop?.length > 0 ? (
+                      d.stop.map((stopStayTime: any, i: number) => (
+                        <div className="stopsDetail" key={i}>
                           <span>{stopStayTime?.stayTime}</span>
                           <div className="stopPoint stopDots"></div>
                           <span>{stopStayTime?.name}</span>
@@ -99,98 +130,19 @@ const TravelRoundTrip: React.FC = () => {
                       ))
                     ) : (
                       <div className="stopsDetail">
-                        <span>03h 15min</span>
+                        <span>{d?.flight_detail?.duration ?? "—"}</span>
                         <div className=""></div>
                         <span>Direct</span>
                       </div>
                     )}
+
                     <div className="stopPoint"></div>
                   </div>
                 </div>
+
                 <div className="EndTime">
-                  <h5>{item?.flight_detail?.end_time}</h5>
-                  <p>{item?.flight_detail?.end_date}</p>
-                </div>
-              </div>
-              <div className="featureIcons">
-                <div className="featureIconTooltipWrap">
-                  <img src={cabinIcon} alt="Cabin" />
-                  <span className="tooltip">Cabin: 1PC</span>
-                </div>
-
-                <div className="featureIconTooltipWrap">
-                  <img src={baggageIcon} alt="Baggage" />
-                  <span className="tooltip">Baggage: 20KG</span>
-                </div>
-
-                <div className="featureIconTooltipWrap">
-                  <img src={mealIcon} alt="Meal" />
-                  <span className="tooltip">Meal Included</span>
-                </div>
-
-                <div className="featureIconTooltipWrap">
-                  <img src={wifiIcon} alt="WiFi" />
-                  <span className="tooltip">WiFi Available</span>
-                </div>
-
-                <div className="featureIconTooltipWrap">
-                  <img src={portsIcon} alt="Ports" />
-                  <span className="tooltip">USB Ports</span>
-                </div>
-
-                <div className="featureIconTooltipWrap">
-                  <img src={entertainmentIcon} alt="Entertainment" />
-                  <span className="tooltip">Entertainment</span>
-                </div>
-              </div>
-              <div className="StartingPrice">
-                <span>Start from</span>
-                <h5>${item?.price?.economyLite?.price}</h5>
-              </div>
-            </div>
-            <div className="topHalfCard RoundTripCardDetail">
-              <div className="fightTitle">
-                <div className="flightIcon">
-                  <img src={item.logo} alt="" />
-                </div>
-                <div className="nameAndDetails">
-                  <h5>{item?.name}</h5>
-                  <p>
-                    {item?.flight_detail?.flight_number} -{" "}
-                    {item?.flight_detail?.flight_class}
-                  </p>
-                </div>
-              </div>
-              <div className="flightTiming">
-                <div className="startTime">
-                  <h5>{item?.flight_detail?.start_time}</h5>
-                  <p>{item?.flight_detail?.start_date}</p>
-                </div>
-                <div className="FlightDirection">
-                  <div className="visualGuid">
-                    <div className="stopPoint"></div>
-
-                    {item?.stop?.length > 0 ? (
-                      item?.stop?.map((stopStayTime) => (
-                        <div className="stopsDetail">
-                          <span>{stopStayTime?.stayTime}</span>
-                          <div className="stopPoint stopDots"></div>
-                          <span>{stopStayTime?.name}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="stopsDetail">
-                        <span>03h 15min</span>
-                        <div className=""></div>
-                        <span>Direct</span>
-                      </div>
-                    )}
-                    <div className="stopPoint"></div>
-                  </div>
-                </div>
-                <div className="EndTime">
-                  <h5>{item?.flight_detail?.end_time}</h5>
-                  <p>{item?.flight_detail?.end_date}</p>
+                  <h5>{d?.flight_detail?.end_time}</h5>
+                  <p>{d?.flight_detail?.end_date}</p>
                 </div>
               </div>
 
@@ -228,105 +180,128 @@ const TravelRoundTrip: React.FC = () => {
 
               <div className="StartingPrice">
                 <span>Start from</span>
-                <h5>$48</h5>
+                <h5>${price}</h5>
               </div>
             </div>
-          </div>
+          );
+        };
 
-          <div className="bottomHalfCard">
-            <div className="bottomHalfCardflexStyle">
-              <div className="modalOptions">
-                <div className="tabs">
-                  <div
-                    className={`tab ${
-                      active?.name === "price" && active?.id === index
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      HandlePriceOption({ id: item.id });
-                      // setActive({ name: "price", id: index });
-                      setActive((prev) => {
-                        return {
-                          ...prev,
-                          name: "price",
-                          id: index,
-                        };
-                      });
-                    }}
-                  >
-                    Price options
-                  </div>
-                  <div
-                    className={`tab ${
-                      active?.name === "flight" && active?.id === index
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      HandlePriceOption({ id: item.id });
-                      // setActive({ name: "flight", id: index });
-                      setActive((prev) => {
-                        return {
-                          ...prev,
-                          name: "flight",
-                          id: index,
-                        };
-                      });
-                    }}
-                  >
-                    Flight details
-                  </div>
-                  <div
-                    className={`tab ${
-                      active?.name === "compare" && active?.id === index
-                        ? "active"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      setActive((prev) => {
-                        return {
-                          ...prev,
-                          name: "compare",
-                          id: index,
-                        };
-                      });
-                    }}
-                  >
-                    Compare
-                  </div>
-                </div>
+        const outbound = item?.outbound ?? null;
+        const inbound = item?.inbound ?? null;
 
-                <img
-                  src={colSeparater}
-                  alt=""
-                  style={{ width: 1, height: 30 }}
-                />
-                <p
-                  className="shareModalBtn compareLikeButton"
+        return (
+          <div key={index} className={`flightDetailCards ${inbound ? "flightDetailRoundTripCards" : ""}`}>
+            <div className="forBorderBottom">
+              {renderRoundTopCard(outbound ?? item, item)}
+
+              {/* inbound (render only when present) */}
+              {inbound && renderRoundTopCard(inbound, item)}
+            </div>
+
+            <div className="bottomHalfCard">
+              <div className="bottomHalfCardflexStyle">
+                <div className="modalOptions">
+                  <div className="tabs">
+                    <div
+                      className={`tab ${active?.name === "price" && active?.id === index
+                        ? "active"
+                        : ""
+                        }`}
+                      onClick={() => {
+                        HandlePriceOption({ id: item.id });
+                        // setActive({ name: "price", id: index });
+                        setActive((prev) => {
+                          return {
+                            ...prev,
+                            name: "price",
+                            id: index,
+                          };
+                        });
+                      }}
+                    >
+                      Price options
+                    </div>
+                    <div
+                      className={`tab ${active?.name === "flight" && active?.id === index
+                        ? "active"
+                        : ""
+                        }`}
+                      onClick={() => {
+                        HandlePriceOption({ id: item.id });
+                        // setActive({ name: "flight", id: index });
+                        setActive((prev) => {
+                          return {
+                            ...prev,
+                            name: "flight",
+                            id: index,
+                          };
+                        });
+                      }}
+                    >
+                      Flight details
+                    </div>
+                    <div
+                      className={`tab ${active?.name === "compare" && active?.id === index
+                        ? "active"
+                        : ""
+                        }`}
+                      onClick={() => {
+                        // setActive({ name: "compare", id: index });
+                        setActive((prev) => {
+                          return {
+                            ...prev,
+                            name: "compare",
+                            id: index,
+                          };
+                        });
+                      }}
+                    >
+                      Compare
+                    </div>
+                  </div>
+                  {/* <p
+                  className="compareLikeButton"
                   onClick={() => {
-                    showModalCompare({ modalType: "share", id: item.id });
+                    showModalCompare({ modalType: "compare", id: undefined });
                   }}
                 >
-                  Share
-                </p>
+                  Compare
+                </p> */}
+                  <img
+                    src={colSeparater}
+                    alt=""
+                    style={{ width: 1, height: 30 }}
+                  />
+                  <p
+                    className="shareModalBtn compareLikeButton"
+                    onClick={() => {
+                      showModalCompare({ modalType: "share", id: item.id });
+                    }}
+                  >
+                    Share
+                  </p>
+                </div>
+                <div className="selectPriceBtn">
+                  <CustomButton>Select Price</CustomButton>
+                </div>
               </div>
-              <div className="selectPriceBtn">
-                <CustomButton>Select Price</CustomButton>
-              </div>
+              {active?.name == "price" && active?.id == index ? (
+                <PricingDetailCard passSome={filterDetail} />
+              ) : active?.name == "flight" && active?.id == index ? (
+                <FlightDetailsCard details={item} />
+              ) : active?.name == "compare" && active?.id == index ? (
+                <CompareCard passSome={filterDetail} />
+              ) : (
+                ""
+              )}
             </div>
-            {active?.name == "price" && active?.id == index ? (
-              <PricingDetailCard passSome={filterDetail} />
-            ) : active?.name == "flight" && active?.id == index ? (
-              <FlightDetailsCard details={item} />
-            ) : active?.name == "compare" && active?.id == index ? (
-              <CompareCard passSome={filterDetail} />
-            ) : (
-              ""
-            )}
           </div>
-        </div>
-      ))}
+        );
+      })}
+
+      <div ref={loadMoreRef} className="min-h-[1px]">
+        {renderLoader?.({ isLoadingMore, hasMore })}
+      </div>
 
       <Modal
         title={

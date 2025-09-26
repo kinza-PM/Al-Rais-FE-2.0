@@ -27,13 +27,14 @@ axiosClient.interceptors.request.use((config) => {
 });
 
 export function toApiError(source: string, err: unknown): Error {
+  console.log('source', source);
+  console.log('err', err);
   if (axios.isAxiosError(err)) {
     // Abort / cancel
     if (err.code === "ERR_CANCELED") {
       return new Error(`${source} aborted (timeout/cancelled)`);
     }
     const status = err.response?.status;
-    // Try to pick server message if any
     const serverMsg =
       (err.response?.data as any)?.message ||
       (typeof err.response?.data === "string" ? err.response?.data : "");

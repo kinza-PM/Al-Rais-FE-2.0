@@ -100,6 +100,7 @@ const FlightDetailTemplate: React.FC = () => {
   const { loadMoreAsync, isLoadingMore } = useLoadMoreFlights();
 
   const [responseData, setResponseData] = useState<any[]>([]);
+  const [roundResponseData, setRoundResponseData] = useState<any[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [paxCounts, setPaxCounts] = useState<any>({});
   const passengerRequestOrder = useRef<string[]>([]);
@@ -223,46 +224,74 @@ const FlightDetailTemplate: React.FC = () => {
 
     try {
       const response = await mutateAsync(requestBody);
+      const raw = response.data || [];
 
-      const formattedData = response.data.map((item: any) => {
-        // const formattedData = response.data.map((item: any, index: number) => {
-        const segment = item?.journey?.[0]?.flightSegments?.[0];
+      const formatSeg = (seg: any, journeyItem?: any) => {
+        if (!seg) return null;
         return {
-          // id: index + 1,
-          id: segment?.segmentKey,
-          logo: `/airlines/${segment?.marketingAirline}.png`,
-          name: segment?.marketingAirline,
+          id: seg.segmentKey,
+          logo: `/airlines/${seg.marketingAirline}.png`,
+          name: seg.marketingAirline,
           flight_detail: {
-            flight_number: segment?.flightNumber,
-            flight_class: segment?.cabinClass,
-            start_time: formatTime(segment?.departureDateTime),
-            start_date: formatDate(segment?.departureDateTime),
-            end_time: formatTime(segment?.arrivalDateTime),
-            end_date: formatDate(segment?.arrivalDateTime),
-            duration: formatDuration(
-              segment?.departureDateTime,
-              segment?.arrivalDateTime
-            ),
+            flight_number: seg.flightNumber,
+            flight_class: seg.cabinClass,
+            start_time: formatTime(seg.departureDateTime),
+            start_date: formatDate(seg.departureDateTime),
+            end_time: formatTime(seg.arrivalDateTime),
+            end_date: formatDate(seg.arrivalDateTime),
+            duration: formatDuration(seg.departureDateTime, seg.arrivalDateTime),
           },
-          stop: item?.journey?.[0]?.stops || [], // agar stops array aaye toh dynamic
-          price: {
-            economyLite: {
-              price: item?.fare?.totalFare,
-            },
-          },
+          stop: journeyItem?.stops || [],
+          rawSegment: seg,
         };
-      });
+      };
 
-      setResponseData(formattedData);
+      const oneWayFormatted: any[] = [];
+      const roundFormatted: any[] = [];
 
-      // if first page is empty, don’t try to load more
-      setHasMore((response.data || []).length > 0);
-      setIoReady(true); // allow intersection observer to start
+      for (const [idx, item] of raw.entries()) {
+        const journeys = item?.journey || [];
+        const seg0 = journeys[0]?.flightSegments?.[0] ?? null;
+        const seg1 = journeys[1]?.flightSegments?.[0] ?? null;
+
+        const outbound = formatSeg(seg0, journeys[0]);
+        const inbound = formatSeg(seg1, journeys[1]); // may be null
+
+        const logoFromSeg = (seg: any) => (seg ? `/airlines/${seg.marketingAirline}.png` : "");
+
+        // one-way shape (exactly what TravelOneWay expects)
+        oneWayFormatted.push({
+          id: outbound?.id ?? `offer-${idx}`,
+          logo: outbound?.logo ?? logoFromSeg(outbound?.rawSegment) ?? logoFromSeg(item?.journey?.[0]?.flightSegments?.[0]),
+          name: outbound?.name ?? item?.offerId ?? `offer-${idx}`,
+          flight_detail: outbound?.flight_detail ?? null,
+          stop: outbound?.stop ?? [],
+          price: { economyLite: { price: item?.fare?.totalFare } },
+          raw: item,
+        });
+
+        // round-trip minimal shape
+        roundFormatted.push({
+          id: item?.offerId ?? outbound?.id ?? `offer-${idx}`,
+          offerId: item?.offerId,
+          outbound: outbound ? { ...outbound, logo: outbound?.logo ?? logoFromSeg(outbound?.rawSegment) } : null,
+          inbound: inbound ? { ...inbound, logo: inbound?.logo ?? logoFromSeg(inbound?.rawSegment) } : null,
+          price: { economyLite: { price: item?.fare?.totalFare } },
+          raw: item,
+        });
+      }
+
+      setResponseData(oneWayFormatted);
+      setRoundResponseData(roundFormatted);
+
+      setHasMore(raw.length > 0);
+      setIoReady(true);
     } catch (error) {
       console.error("Flight search failed:", error);
     } finally {
       setHasSearched(true);
     }
+
 
     // mutate(requestBody);
   };
@@ -468,6 +497,15 @@ const FlightDetailTemplate: React.FC = () => {
       </div>
     ) : null
   }
+
+  useEffect(() => {
+    setResponseData([]);
+    setRoundResponseData([]);
+    setHasMore(false);
+    setIoReady(false);
+    setHasSearched(false);
+    lastRequestRef.current = null;
+  }, [trip]);
 
   // const findedCabine = cabinClasses?.find(
   //   (item) => item.id === flight?.selectedCabinClassId
@@ -1037,7 +1075,13 @@ const FlightDetailTemplate: React.FC = () => {
                   emptyState={noFlightsDataAvailable} />
               </>
             ) : trip === "roundtrip" ? (
-              <TravelRoundTrip />
+              <TravelRoundTrip
+                passData={roundResponseData || []}
+                isLoadingMore={isLoadingMore}
+                hasMore={hasMore}
+                renderLoader={renderLoadMoreApiLoader}
+                loadMoreRef={loadMoreRef}
+                emptyState={noFlightsDataAvailable} />
             ) : (
               <TravelMultiCity />
             )}
