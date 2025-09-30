@@ -49,6 +49,7 @@ import Loader from "../atoms/Loader";
 import { useFlightSearch } from "../../hooks/useFlightSearch";
 import { useLoadMoreFlights } from "../../hooks/useLoadMoreFlights";
 import type { FlightSearchRequest } from "../../services/api/flightSearch";
+import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
 
 const { Panel } = Collapse;
 
@@ -220,6 +221,8 @@ const FlightDetailTemplate: React.FC = () => {
     const outbound = formatFlightSegmentForTrips(seg0, journeys[0]);
     const inbound = formatFlightSegmentForTrips(seg1, journeys[1]); // may be null
 
+    const priceOptions = buildFlightSearchPriceOptions(item);
+
     const oneWayId = outbound?.id ?? `offer-${idx}-${item?.offerId ?? ""}`;
     const oneWayObj = {
       id: oneWayId,
@@ -230,7 +233,9 @@ const FlightDetailTemplate: React.FC = () => {
       name: outbound?.name ?? item?.offerId ?? oneWayId,
       flight_detail: outbound?.flight_detail ?? null,
       stop: outbound?.stop ?? [],
-      price: { economyLite: { price: item?.fare?.totalFare } },
+      rawTotalStartingFare: item?.fare?.totalFare,
+      // price: { economyLite: { price: item?.fare?.totalFare } },
+      price: priceOptions,
       raw: item,
     };
 
@@ -240,7 +245,9 @@ const FlightDetailTemplate: React.FC = () => {
       offerId: item?.offerId,
       outbound: outbound ? { ...outbound, logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment) } : null,
       inbound: inbound ? { ...inbound, logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment) } : null,
-      price: { economyLite: { price: item?.fare?.totalFare } },
+      // price: { economyLite: { price: item?.fare?.totalFare } },
+      price: priceOptions,
+      rawTotalStartingFare: item?.fare?.totalFare ?? null,
       raw: item,
     };
 
@@ -320,7 +327,7 @@ const FlightDetailTemplate: React.FC = () => {
       // append only unique items
       setResponseData((prev) => appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted));
       setRoundResponseData((prev) => appendUniqueItemsForLoadMoreFlights(prev, roundFormatted));
-      
+
       const anyHasMore = (raw || []).some((it: any) => !!it?.detail?.moreFaresAvailable);
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);

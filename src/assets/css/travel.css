@@ -515,7 +515,7 @@
   width: 600px !important;
 }
 
-.compareModalBody{
+.compareModalBody {
   max-height: 60vh !important;
   overflow-y: scroll;
 }
@@ -920,6 +920,21 @@
   color: var(--black-200, #3d495c);
   line-height: 1;
   letter-spacing: 0px;
+}
+
+.pricingCardRouteSegments {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.pricingCardRouteSegments span {
+  display: inline-block;
+  min-width: 110px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #3D3D3D;
 }
 
 .cardPrice {

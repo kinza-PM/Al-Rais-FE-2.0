@@ -62,7 +62,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   };
 
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
-    const filtered = travelData.filter((item) => item.id === id);
+    const filtered = passData.filter((item) => item.id === id);
+    console.log('flitered-------', filtered);
     setFilterDetail(filtered);
   };
 
@@ -165,8 +166,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         const renderRoundTopCard = (display: any, parent: any) => {
           const d = display ?? parent;
           const price =
-            (d?.price?.economyLite?.price) ??
-            (parent?.price?.economyLite?.price) ??
+            (d?.rawTotalStartingFare) ??
+            (parent?.rawTotalStartingFare) ??
             parent?.totalFare ??
             0;
 
@@ -584,7 +585,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 </div>
                 <div className="StartingPrice">
                   <p>Start from</p>
-                  <h5>${item.price.economyLite.price}/per seat</h5>
+                  <h5>${item.rawTotalStartingFare}/per seat</h5>
+                  {/* <h5>${item.price.economyLite.price}/per seat</h5> */}
                 </div>
               </div>
             </div>

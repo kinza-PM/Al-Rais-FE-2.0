@@ -88,6 +88,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
     const filtered = passData.filter((item) => item.id === id);
+    console.log('price---------------', filtered)
     // console.log('id', id);
     // console.log('passData==========', passData);
     setFilterDetail(filtered);
@@ -151,7 +152,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
 
   const [active, setActive] = useState({ name: "", id: 0 });
-  console.log(active, "active");
+  // console.log(active, "active");
 
   if (!passData || passData.length === 0) {
     return (
@@ -218,7 +219,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
               <div className="StartingPrice">
                 <p>Start from</p>
-                <h5>${item.price.economyLite.price}</h5>
+                <h5>${item.rawTotalStartingFare}</h5>
               </div>
             </div>
             <div className="stopsOnSmall">
@@ -569,7 +570,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 </div>
                 <div className="StartingPrice">
                   <p>Start from</p>
-                  <h5>${item.price.economyLite.price}/per seat</h5>
+                  <h5>${item.rawTotalStartingFare}/per seat</h5>
                 </div>
               </div>
             </div>
