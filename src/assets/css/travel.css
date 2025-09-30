@@ -465,7 +465,7 @@
 }
 
 .modalFlightDetailCard {
-  padding: 10px 15px;
+  padding: 10px 60px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
   border: 1px solid var(--white-300, #e4e4e7);
@@ -481,6 +481,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin: 0 auto;
 }
 
 .modalFlightTiming {
@@ -512,6 +513,11 @@
 
 .compareModal {
   width: 600px !important;
+}
+
+.compareModalBody{
+  max-height: 60vh !important;
+  overflow-y: scroll;
 }
 
 .compareModal .ant-modal-content {

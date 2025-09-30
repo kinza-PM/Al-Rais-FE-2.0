@@ -18,3 +18,23 @@ export function calculateFlightDuration(
 
   return `${hours}h ${minutes}min`;
 }
+
+
+export function formatTime(dateStr: string) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+export function formatDate(dateStr: string) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    weekday: "short", // Mon
+    day: "2-digit", // 16
+    month: "long", // June
+    year: "numeric", // 2025
+  });
+}

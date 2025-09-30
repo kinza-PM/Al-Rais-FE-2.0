@@ -21,6 +21,7 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import { travelData } from "../../utils/mockData";
 import FlightDetailsCard from "./FlightDetailsCard";
 import CompareCard from "./CompareCard";
+import { formatDate, formatTime } from "../../utils/helpers";
 
 type TravelRoundTripProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
@@ -72,6 +73,80 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       setshareModal(false);
     }
   };
+
+  // returns up to `count` random round-trip items (lightweight, with outbound/inbound info)
+  const pickRandomFlightsRound = (all: any[] = [], excludeId: any, count = 4) => {
+    if (!Array.isArray(all) || all.length === 0) return [];
+
+    // filter out current flight
+    const candidates = all.filter((f) => f && f.id !== excludeId);
+
+    // shuffle (Fisher-Yates)
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+
+    return candidates.slice(0, count).map((f) => {
+      const raw = f.raw ?? {};
+      // support both shapes: some sources may already have outbound/inbound, others may be single
+      const outSeg = f.outbound?.rawSegment ?? raw?.journey?.[0]?.flightSegments?.[0] ?? null;
+      const inSeg = f.inbound?.rawSegment ?? raw?.journey?.[1]?.flightSegments?.[0] ?? null;
+
+      const briefForSeg = (seg: any, segmentWrapper?: any) =>
+        seg
+          ? {
+            flight_number: seg.flightNumber ?? seg.flight_number ?? segmentWrapper?.flight_detail?.flight_number ?? null,
+            flight_class: seg.cabinClass ?? seg.cabin_class ?? segmentWrapper?.flight_detail?.flight_class ?? null,
+            start_time: segmentWrapper?.flight_detail?.start_time ?? formatTime?.(seg.departureDateTime) ?? seg.departureDateTime,
+            start_date: segmentWrapper?.flight_detail?.start_date ?? formatDate?.(seg.departureDateTime) ?? seg.departureDateTime,
+            end_time: segmentWrapper?.flight_detail?.end_time ?? formatTime?.(seg.arrivalDateTime) ?? seg.arrivalDateTime,
+            end_date: segmentWrapper?.flight_detail?.end_date ?? formatDate?.(seg.arrivalDateTime) ?? seg.arrivalDateTime,
+            duration: segmentWrapper?.flight_detail?.duration ?? (seg.duration ?? raw?.journey?.[0]?.flight?.flightInfo?.duration) ?? null,
+            equipment: seg.equipmentName ?? seg.equipmentType ?? null,
+            seatsAvailable: seg.seatsAvailable ?? null,
+            baggageChecked: seg?.baggageAllowance?.checkedInBaggage?.[0]
+              ? `${seg.baggageAllowance.checkedInBaggage[0].value}${seg.baggageAllowance.checkedInBaggage[0].unit ?? ""}`
+              : null,
+            baggageCarry: seg?.baggageAllowance?.carryOnBaggage?.[0]
+              ? `${seg.baggageAllowance.carryOnBaggage[0].value}${seg.baggageAllowance.carryOnBaggage[0].unit ?? ""}`
+              : null,
+            marketingAirline: seg.marketingAirline ?? seg.operatingAirline ?? null,
+            rawSegment: seg,
+          }
+          : null;
+
+      const outboundBrief = f.outbound
+        ? { ...f.outbound, brief: briefForSeg(f.outbound.rawSegment, f.outbound) }
+        : briefForSeg(outSeg) ? { logo: `/airlines/${outSeg?.marketingAirline}.png`, brief: briefForSeg(outSeg) } : null;
+
+      const inboundBrief = f.inbound
+        ? { ...f.inbound, brief: briefForSeg(f.inbound.rawSegment, f.inbound) }
+        : briefForSeg(inSeg) ? { logo: `/airlines/${inSeg?.marketingAirline}.png`, brief: briefForSeg(inSeg) } : null;
+
+      const totalFare = raw?.fare?.totalFare ?? f?.price?.economyLite?.price ?? null;
+      const currency = raw?.fare?.currencyCode ?? f?.currency ?? "AED";
+      const refundable = !!(raw?.fare?.fareType?.refundable || f?.refundable);
+
+      return {
+        id: f.id,
+        offerId: raw?.offerId ?? f.offerId ?? f.id,
+        logo: f.logo ?? outboundBrief?.logo ?? `/airlines/${outSeg?.marketingAirline ?? "default"}.png`,
+        name: f.name ?? raw?.offerId ?? `Offer ${f.id}`,
+        outbound: outboundBrief,
+        inbound: inboundBrief,
+        price: f.price ?? { economyLite: { price: totalFare } },
+        totalFare,
+        currency,
+        refundable,
+        // small raw pointer
+        rawMinimal: {
+          supplier: raw?.financialInfo?.supplier ?? null,
+        },
+      };
+    });
+  };
+
 
   const [active, setActive] = useState({ name: "", id: 0 });
 
@@ -290,7 +365,9 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
               ) : active?.name == "flight" && active?.id == index ? (
                 <FlightDetailsCard details={item} />
               ) : active?.name == "compare" && active?.id == index ? (
-                <CompareCard passSome={filterDetail} />
+                <CompareCard
+                  availableFlights={pickRandomFlightsRound(passData || [], item.id, 4)}
+                />
               ) : (
                 ""
               )}

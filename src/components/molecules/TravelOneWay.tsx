@@ -69,9 +69,33 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     }
   };
 
+  const getRandomItemsExcluding = (arr: any[], excludeId: any, limit = 4) => {
+    if (!Array.isArray(arr) || arr.length === 0) return [];
+    // Filter out current item
+    const pool = arr.filter((it) => it?.id !== excludeId);
+    if (pool.length <= limit) return pool;
+    const result: any[] = [];
+    const used = new Set<number>();
+    while (result.length < limit) {
+      const idx = Math.floor(Math.random() * pool.length);
+      if (!used.has(idx)) {
+        used.add(idx);
+        result.push(pool[idx]);
+      }
+    }
+    return result;
+  };
+
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
-    const filtered = travelData.filter((item) => item.id === id);
+    const filtered = passData.filter((item) => item.id === id);
+    // console.log('id', id);
+    // console.log('passData==========', passData);
     setFilterDetail(filtered);
+  };
+
+  const HandleCompareOption = ({ id }: { id: number | undefined }) => {
+    const randomFour = getRandomItemsExcluding(passData || [], id, 4);
+    setFilterDetail(randomFour);
   };
 
   const handleCancelCompare = (modalType: "compare" | "share") => {
@@ -81,6 +105,50 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
       setshareModal(false);
     }
   };
+
+  const pickRandomFlights = (all: any[] = [], excludeId: any, count = 4) => {
+    if (!Array.isArray(all) || all.length === 0) return [];
+    const candidates = all.filter((f) => f && f.id !== excludeId);
+
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+    }
+
+    return candidates.slice(0, count).map((f) => {
+      const raw = f.raw || {};
+      const seg = raw?.journey?.[0]?.flightSegments?.[0] || raw?.outbound?.rawSegment || null;
+      const checked = seg?.baggageAllowance?.checkedInBaggage?.[0];
+      const checkedBaggage = checked ? `${checked.value}${checked.unit ?? ""}` : null;
+
+      const carry = seg?.baggageAllowance?.carryOnBaggage?.[0];
+      const carryBaggage = carry ? `${carry.value}${carry.unit ?? ""}` : null;
+
+      const totalFare = raw?.fare?.totalFare ?? f?.price?.economyLite?.price ?? null;
+      const currency = raw?.fare?.currencyCode ?? (f?.raw?.fare?.currencyCode) ?? "AED";
+
+      return {
+        id: f.id,
+        logo: f.logo,
+        name: f.name,
+        flight_detail: f.flight_detail,
+        price: f.price,
+        totalFare,
+        currency,
+        duration: f.flight_detail?.duration ?? raw?.journey?.[0]?.flight?.flightInfo?.duration ?? null,
+        equipment: seg?.equipmentName ?? seg?.equipmentType ?? null,
+        seatsAvailable: seg?.seatsAvailable ?? null,
+        baggageChecked: checkedBaggage,
+        baggageCarry: carryBaggage,
+        refundable: raw?.fare?.fareType?.refundable ?? false,
+        rawMinimal: {
+          offerId: raw?.offerId ?? raw?.offerId,
+          supplier: raw?.financialInfo?.supplier ?? raw?.financialInfo,
+        },
+      };
+    });
+  };
+
 
   const [active, setActive] = useState({ name: "", id: 0 });
   console.log(active, "active");
@@ -205,15 +273,19 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                       ? "active"
                       : ""
                       }`}
+                    // onClick={() => {
+                    //   // setActive({ name: "compare", id: index });
+                    //   setActive((prev) => {
+                    //     return {
+                    //       ...prev,
+                    //       name: "compare",
+                    //       id: index,
+                    //     };
+                    //   });
+                    // }}
                     onClick={() => {
-                      // setActive({ name: "compare", id: index });
-                      setActive((prev) => {
-                        return {
-                          ...prev,
-                          name: "compare",
-                          id: index,
-                        };
-                      });
+                      HandleCompareOption({ id: item.id });
+                      setActive((prev) => ({ ...prev, name: "compare", id: index }));
                     }}
                   >
                     Compare
@@ -250,7 +322,9 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
             ) : active?.name == "flight" && active?.id == index ? (
               <FlightDetailsCard details={item} />
             ) : active?.name == "compare" && active?.id == index ? (
-              <CompareCard passSome={filterDetail} />
+              <CompareCard
+                availableFlights={pickRandomFlights(passData || [], item.id, 4)}
+              />
             ) : (
               ""
             )}

@@ -190,149 +190,148 @@ const FlightDetailTemplate: React.FC = () => {
     });
   }
 
+  const formatFlightSegmentForTrips = (seg: any, journeyItem?: any) => {
+    if (!seg) return null;
+    return {
+      id: seg.segmentKey,
+      logo: `/airlines/${seg.marketingAirline}.png`,
+      name: seg.marketingAirline,
+      flight_detail: {
+        flight_number: seg.flightNumber,
+        flight_class: seg.cabinClass,
+        start_time: formatTime(seg.departureDateTime),
+        start_date: formatDate(seg.departureDateTime),
+        end_time: formatTime(seg.arrivalDateTime),
+        end_date: formatDate(seg.arrivalDateTime),
+        duration: formatDuration(seg.departureDateTime, seg.arrivalDateTime),
+      },
+      stop: journeyItem?.stops || [],
+      rawSegment: seg,
+    };
+  };
+
+  const logoFromFlightSegment = (seg: any) => (seg ? `/airlines/${seg.marketingAirline}.png` : "");
+
+  const mapFlightRawResponseToFormats = (item: any, idx: number) => {
+    const journeys = item?.journey || [];
+    const seg0 = journeys[0]?.flightSegments?.[0] ?? null;
+    const seg1 = journeys[1]?.flightSegments?.[0] ?? null;
+
+    const outbound = formatFlightSegmentForTrips(seg0, journeys[0]);
+    const inbound = formatFlightSegmentForTrips(seg1, journeys[1]); // may be null
+
+    const oneWayId = outbound?.id ?? `offer-${idx}-${item?.offerId ?? ""}`;
+    const oneWayObj = {
+      id: oneWayId,
+      logo:
+        outbound?.logo ??
+        logoFromFlightSegment(outbound?.rawSegment) ??
+        logoFromFlightSegment(item?.journey?.[0]?.flightSegments?.[0]),
+      name: outbound?.name ?? item?.offerId ?? oneWayId,
+      flight_detail: outbound?.flight_detail ?? null,
+      stop: outbound?.stop ?? [],
+      price: { economyLite: { price: item?.fare?.totalFare } },
+      raw: item,
+    };
+
+    const roundId = item?.offerId ?? outbound?.id ?? `offer-${idx}-${item?.offerId ?? ""}`;
+    const roundObj = {
+      id: roundId,
+      offerId: item?.offerId,
+      outbound: outbound ? { ...outbound, logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment) } : null,
+      inbound: inbound ? { ...inbound, logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment) } : null,
+      price: { economyLite: { price: item?.fare?.totalFare } },
+      raw: item,
+    };
+
+    return { oneWayObj, roundObj };
+  };
+
+  const processFLightSearchResults = (raw: any[] = []) => {
+    const oneWayFormatted: any[] = [];
+    const roundFormatted: any[] = [];
+
+    for (const [idx, item] of (raw || []).entries()) {
+      const { oneWayObj, roundObj } = mapFlightRawResponseToFormats(item, idx);
+      oneWayFormatted.push(oneWayObj);
+      roundFormatted.push(roundObj);
+    }
+
+    return { oneWayFormatted, roundFormatted };
+  };
+
+  const appendUniqueItemsForLoadMoreFlights = (prevArray: any[], newArray: any[]) => {
+    const existing = new Set(prevArray.map((p) => p.id));
+    const toAdd = newArray.filter((n) => !existing.has(n.id));
+    return toAdd.length ? [...prevArray, ...toAdd] : prevArray;
+  };
+
   const handleSearch = async () => {
     const passengersForRequest = buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts);
     const flightSegments: any[] = [
-      {
-        // departureAirportCode: fromCode,
-        departureAirportCode: "DXB",
-        departureDate: departDate,
-        // arrivalAirportCode: toCode,
-        arrivalAirportCode: "DEL",
-        cabinPreferences: [selectedCabinClassId],
-      },
+      { departureAirportCode: "DXB", departureDate: departDate, arrivalAirportCode: "DEL", cabinPreferences: [selectedCabinClassId] }
     ];
     if (trip === "roundtrip") {
-      flightSegments.push({
-        // departureAirportCode: toCode,
-        departureAirportCode: "DEL",
-        departureDate: returnDate,
-        // arrivalAirportCode: fromCode,
-        arrivalAirportCode: "DXB",
-        cabinPreferences: [selectedCabinClassId],
-      });
+      flightSegments.push({ departureAirportCode: "DEL", departureDate: returnDate, arrivalAirportCode: "DXB", cabinPreferences: [selectedCabinClassId] });
     }
-    const requestBody = {
-      flightSegments: flightSegments,
-      passengers: passengersForRequest,
-    };
 
+    const requestBody = { flightSegments, passengers: passengersForRequest };
     lastRequestRef.current = requestBody;
     setHasMore(true);
     setResponseData([]);
+    setRoundResponseData([]);
     setHasSearched(false);
 
     try {
       const response = await mutateAsync(requestBody);
       const raw = response.data || [];
 
-      const formatSeg = (seg: any, journeyItem?: any) => {
-        if (!seg) return null;
-        return {
-          id: seg.segmentKey,
-          logo: `/airlines/${seg.marketingAirline}.png`,
-          name: seg.marketingAirline,
-          flight_detail: {
-            flight_number: seg.flightNumber,
-            flight_class: seg.cabinClass,
-            start_time: formatTime(seg.departureDateTime),
-            start_date: formatDate(seg.departureDateTime),
-            end_time: formatTime(seg.arrivalDateTime),
-            end_date: formatDate(seg.arrivalDateTime),
-            duration: formatDuration(seg.departureDateTime, seg.arrivalDateTime),
-          },
-          stop: journeyItem?.stops || [],
-          rawSegment: seg,
-        };
-      };
-
-      const oneWayFormatted: any[] = [];
-      const roundFormatted: any[] = [];
-
-      for (const [idx, item] of raw.entries()) {
-        const journeys = item?.journey || [];
-        const seg0 = journeys[0]?.flightSegments?.[0] ?? null;
-        const seg1 = journeys[1]?.flightSegments?.[0] ?? null;
-
-        const outbound = formatSeg(seg0, journeys[0]);
-        const inbound = formatSeg(seg1, journeys[1]); // may be null
-
-        const logoFromSeg = (seg: any) => (seg ? `/airlines/${seg.marketingAirline}.png` : "");
-
-        // one-way shape (exactly what TravelOneWay expects)
-        oneWayFormatted.push({
-          id: outbound?.id ?? `offer-${idx}`,
-          logo: outbound?.logo ?? logoFromSeg(outbound?.rawSegment) ?? logoFromSeg(item?.journey?.[0]?.flightSegments?.[0]),
-          name: outbound?.name ?? item?.offerId ?? `offer-${idx}`,
-          flight_detail: outbound?.flight_detail ?? null,
-          stop: outbound?.stop ?? [],
-          price: { economyLite: { price: item?.fare?.totalFare } },
-          raw: item,
-        });
-
-        // round-trip minimal shape
-        roundFormatted.push({
-          id: item?.offerId ?? outbound?.id ?? `offer-${idx}`,
-          offerId: item?.offerId,
-          outbound: outbound ? { ...outbound, logo: outbound?.logo ?? logoFromSeg(outbound?.rawSegment) } : null,
-          inbound: inbound ? { ...inbound, logo: inbound?.logo ?? logoFromSeg(inbound?.rawSegment) } : null,
-          price: { economyLite: { price: item?.fare?.totalFare } },
-          raw: item,
-        });
-      }
+      const { oneWayFormatted, roundFormatted } = processFLightSearchResults(raw);
 
       setResponseData(oneWayFormatted);
       setRoundResponseData(roundFormatted);
-
-      setHasMore(raw.length > 0);
+      const anyHasMore = (raw || []).some((it: any) => !!it?.detail?.moreFaresAvailable);
+      setHasMore(raw.length > 0 && anyHasMore);
+      // setHasMore(raw.length > 0);
       setIoReady(true);
     } catch (error) {
       console.error("Flight search failed:", error);
+      setHasMore(false);
     } finally {
       setHasSearched(true);
     }
-
-
-    // mutate(requestBody);
   };
+
 
   const handleLoadMore = async () => {
     if (!hasMore || isLoadingMore || !lastRequestRef.current) return;
+
     try {
       const moreResp = await loadMoreAsync(lastRequestRef.current);
+      const raw = moreResp.data || [];
 
-      const moreFormatted = (moreResp.data || []).map((item: any) => {
-        const segment = item?.journey?.[0]?.flightSegments?.[0];
-        return {
-          id: segment?.segmentKey,
-          logo: `/airlines/${segment?.marketingAirline}.png`,
-          name: segment?.marketingAirline,
-          flight_detail: {
-            flight_number: segment?.flightNumber,
-            flight_class: segment?.cabinClass,
-            start_time: formatTime(segment?.departureDateTime),
-            start_date: formatDate(segment?.departureDateTime),
-            end_time: formatTime(segment?.arrivalDateTime),
-            end_date: formatDate(segment?.arrivalDateTime),
-            duration: formatDuration(segment?.departureDateTime, segment?.arrivalDateTime),
-          },
-          stop: item?.journey?.[0]?.stops || [],
-          price: { economyLite: { price: item?.fare?.totalFare } },
-        };
-      });
-
-      if (!moreFormatted.length) {
-        setHasMore(false); // no more data from server
+      if (!raw.length) {
+        setHasMore(false);
         return;
       }
 
-      setResponseData(prev => [...prev, ...moreFormatted]);
+      const { oneWayFormatted, roundFormatted } = processFLightSearchResults(raw);
+
+      // append only unique items
+      setResponseData((prev) => appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted));
+      setRoundResponseData((prev) => appendUniqueItemsForLoadMoreFlights(prev, roundFormatted));
+      
+      const anyHasMore = (raw || []).some((it: any) => !!it?.detail?.moreFaresAvailable);
+      setHasMore(raw.length > 0 && anyHasMore);
+      // setHasMore(raw.length > 0);
+      setIoReady(true);
     } catch (e) {
       console.error("Load more failed:", e);
-      // on error, stop auto-loading to avoid loops; user can trigger a fresh search
       setHasMore(false);
     }
   };
+
+
 
   const {
     flightTypes,
@@ -437,7 +436,7 @@ const FlightDetailTemplate: React.FC = () => {
           loading = true;
           // small micro-delay so consecutive intersects don’t spam
           setTimeout(async () => {
-            // await handleLoadMore();
+            await handleLoadMore();
             loading = false;
           }, 80);
         }
