@@ -276,15 +276,29 @@ const FlightDetailTemplate: React.FC = () => {
   const handleSearch = async () => {
     const passengersForRequest = buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts);
     const flightSegments: any[] = [
-      { departureAirportCode: "DXB", departureDate: departDate, arrivalAirportCode: "DEL", cabinPreferences: [selectedCabinClassId] }
+      {
+        departureAirportCode: fromCode,
+        // departureAirportCode: "DXB", 
+        departureDate: departDate,
+        arrivalAirportCode: toCode,
+        // arrivalAirportCode: "DEL", 
+        cabinPreferences: [selectedCabinClassId]
+      }
     ];
     if (trip === "roundtrip") {
-      flightSegments.push({ departureAirportCode: "DEL", departureDate: returnDate, arrivalAirportCode: "DXB", cabinPreferences: [selectedCabinClassId] });
+      flightSegments.push({
+        // departureAirportCode: "DEL", 
+        departureAirportCode: toCode,
+        departureDate: returnDate,
+        arrivalAirportCode: fromCode,
+        // arrivalAirportCode: "DXB", 
+        cabinPreferences: [selectedCabinClassId]
+      });
     }
 
     const requestBody = { flightSegments, passengers: passengersForRequest };
     lastRequestRef.current = requestBody;
-    setHasMore(true);
+    // setHasMore(true);
     setResponseData([]);
     setRoundResponseData([]);
     setHasSearched(false);
@@ -298,6 +312,7 @@ const FlightDetailTemplate: React.FC = () => {
       setResponseData(oneWayFormatted);
       setRoundResponseData(roundFormatted);
       const anyHasMore = (raw || []).some((it: any) => !!it?.detail?.moreFaresAvailable);
+      // console.log("anyHasMore", anyHasMore, (raw.length > 0 && anyHasMore));
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);
       setIoReady(true);
@@ -311,6 +326,7 @@ const FlightDetailTemplate: React.FC = () => {
 
 
   const handleLoadMore = async () => {
+    // console.log("handleLoadMore", hasMore, isLoadingMore);
     if (!hasMore || isLoadingMore || !lastRequestRef.current) return;
 
     try {
