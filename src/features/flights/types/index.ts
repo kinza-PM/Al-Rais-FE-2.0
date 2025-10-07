@@ -87,7 +87,8 @@ export interface CabinClassOption {
 
 export interface PriceSortItem {
     id: string;
-    category: string;  // e.g. "Lowest Price" | "Medium Price" | "Highest Price"
+    category: string;  
+    value: string;  
     status: number;
     createdAt: number;
     updatedAt: number;

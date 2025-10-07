@@ -50,6 +50,7 @@ import { useFlightSearch } from "../../hooks/useFlightSearch";
 import { useLoadMoreFlights } from "../../hooks/useLoadMoreFlights";
 import type { FlightSearchRequest } from "../../services/api/flightSearch";
 import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
+import { buildFilterPreferenceForFlightSearchRequest } from "../../utils/helpers";
 
 const { Panel } = Collapse;
 
@@ -113,6 +114,10 @@ const FlightDetailTemplate: React.FC = () => {
   const [ioReady, setIoReady] = useState(false);
 
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedMaxConnections, setSelectedMaxConnections] = useState<number>(0);
+  const filterChangeDebounceRef = useRef<number | null>(null);
+
+  // const priceChangeDebounceRef = useRef<number | null>(null);
 
   const handleDate = (date: any, which: "depart" | "return" = "depart") => {
     if (!date) {
@@ -273,30 +278,37 @@ const FlightDetailTemplate: React.FC = () => {
     return toAdd.length ? [...prevArray, ...toAdd] : prevArray;
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (searchFilters: { priceId?: string; maxConnections?: number } = {}) => {
+    const sortedPrice = typeof searchFilters.priceId !== "undefined" ? searchFilters.priceId : selectedPriceId;
+    const sortedMaxConnections =
+      typeof searchFilters.maxConnections !== "undefined" ? searchFilters.maxConnections : (selectedMaxConnections ?? 0);
+
     const passengersForRequest = buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts);
     const flightSegments: any[] = [
       {
-        departureAirportCode: fromCode,
-        // departureAirportCode: "DXB", 
+        // departureAirportCode: fromCode,
+        departureAirportCode: "DXB",
         departureDate: departDate,
-        arrivalAirportCode: toCode,
-        // arrivalAirportCode: "DEL", 
+        // arrivalAirportCode: toCode,
+        arrivalAirportCode: "DEL",
         cabinPreferences: [selectedCabinClassId]
       }
     ];
     if (trip === "roundtrip") {
       flightSegments.push({
-        // departureAirportCode: "DEL", 
-        departureAirportCode: toCode,
+        departureAirportCode: "DEL",
+        // departureAirportCode: toCode,
         departureDate: returnDate,
-        arrivalAirportCode: fromCode,
-        // arrivalAirportCode: "DXB", 
+        // arrivalAirportCode: fromCode,
+        arrivalAirportCode: "DXB",
         cabinPreferences: [selectedCabinClassId]
       });
     }
 
-    const requestBody = { flightSegments, passengers: passengersForRequest };
+    const baseBody: any = { flightSegments, passengers: passengersForRequest };
+    const searchFilterObj = buildFilterPreferenceForFlightSearchRequest(sortedPrice, Number(sortedMaxConnections ?? 0));
+    const requestBody = searchFilterObj ? { ...baseBody, ...searchFilterObj } : baseBody;
+
     lastRequestRef.current = requestBody;
     // setHasMore(true);
     setResponseData([]);
@@ -427,22 +439,46 @@ const FlightDetailTemplate: React.FC = () => {
     [cabinClasses]
   );
 
-  const priceOptions = useMemo(
+  const filterSortPriceOptions = useMemo(
     () =>
       (priceSort && priceSort.length
         ? priceSort
-        : [
-          { value: "lowest", label: "Lowest Price" },
-          { value: "medium", label: "Medium Price" },
-          { value: "highest", label: "Highest Price" },
-        ]) as { value: string; label: string }[],
+        : []) as { value: string; label: string }[],
     [priceSort]
   );
-
   const selectedPriceLabel = useMemo(
-    () => priceOptions.find((o) => o.value === selectedPriceId)?.label ?? "",
-    [priceOptions, selectedPriceId]
+    () => filterSortPriceOptions.find((o) => o.value === selectedPriceId)?.label ?? "",
+    [filterSortPriceOptions, selectedPriceId]
   );
+
+  const handleSearchFiltersChange = (changes: { priceId?: string | null; maxConnections?: number | null }) => {
+    if (typeof changes.priceId !== "undefined") {
+      setSelectedPriceId(changes.priceId ?? "");
+    }
+    // console.log('changessss-----------', changes);
+    if (typeof changes.maxConnections !== "undefined") {
+      setSelectedMaxConnections(changes.maxConnections ?? 0);
+    }
+
+    if (filterChangeDebounceRef.current) {
+      window.clearTimeout(filterChangeDebounceRef.current);
+    }
+
+    filterChangeDebounceRef.current = window.setTimeout(() => {
+      handleSearch({
+        priceId: changes.priceId ?? undefined,
+        maxConnections: typeof changes.maxConnections !== "undefined" ? Number(changes.maxConnections) : undefined,
+      });
+    }, 300);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (filterChangeDebounceRef.current) {
+        window.clearTimeout(filterChangeDebounceRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!loadMoreRef.current) return;
@@ -736,7 +772,7 @@ const FlightDetailTemplate: React.FC = () => {
               />
             </Flex>
           </Flex>
-          <CustomButton className="searchFilterBtn" onClick={handleSearch}>
+          <CustomButton className="searchFilterBtn" onClick={() => handleSearch()}>
             {isPending ? "Searching..." : "Search flights"}
           </CustomButton>
         </div>
@@ -765,9 +801,10 @@ const FlightDetailTemplate: React.FC = () => {
                         style={{ width: "100%" }}
                         placeholder="Select an option"
                         value={selectedPriceId || undefined}
-                        onChange={(value) => setSelectedPriceId(value)}
-                        options={priceOptions}
-                        disabled={loading && !priceOptions.length}
+                        // onChange={(value) => setSelectedPriceId(value)}
+                        onChange={(value) => handleSearchFiltersChange({ priceId: value })}
+                        options={filterSortPriceOptions}
+                        disabled={loading && !filterSortPriceOptions.length}
                       />
                     </Panel>
                   </CustomCollapse>
@@ -785,25 +822,26 @@ const FlightDetailTemplate: React.FC = () => {
                       <a href="#">Reset all</a>
                     </div>
                   </div>
-                  <CustomCollapse>
-                    <Panel header="Number of stops" key="1">
-                      <Radio.Group
-                        block
-                        options={
-                          numberStops && numberStops.length
-                            ? numberStops
-                            : [{ label: "0", value: "0" }]
-                        }
-                        defaultValue={
-                          (numberStops && numberStops[0]?.value) ?? "0"
-                        }
-                        optionType="button"
-                        buttonStyle="solid"
-                        className="stopsRadioStyle"
-                        disabled={loading && !numberStops.length}
-                      />
-                    </Panel>
-                  </CustomCollapse>
+                  {trip !== 'oneway' && (
+                    <CustomCollapse>
+                      <Panel header="Number of stops" key="1">
+                        <Radio.Group
+                          block
+                          options={
+                            numberStops && numberStops.length
+                              ? numberStops
+                              : [{ label: "0", value: "0" }]
+                          }
+                          value={String(selectedMaxConnections)}
+                          optionType="button"
+                          buttonStyle="solid"
+                          className="stopsRadioStyle"
+                          disabled={loading && !numberStops.length}
+                          onChange={(e) => handleSearchFiltersChange({ maxConnections: e?.target?.value ?? e })}
+                        />
+                      </Panel>
+                    </CustomCollapse>
+                  )}
                   <CustomCollapse>
                     <Panel header="Baggage" key="1">
                       <Checkbox
@@ -902,9 +940,10 @@ const FlightDetailTemplate: React.FC = () => {
                         style={{ width: "100%" }}
                         placeholder="Select an option"
                         value={selectedPriceId || undefined}
-                        onChange={(value) => setSelectedPriceId(value)}
-                        options={priceOptions}
-                        disabled={loading && !priceOptions.length}
+                        // onChange={(value) => setSelectedPriceId(value)}
+                        onChange={(value) => handleSearchFiltersChange({ priceId: value })}
+                        options={filterSortPriceOptions}
+                        disabled={loading && !filterSortPriceOptions.length}
                       />
                     </Panel>
                   </CustomCollapse>
@@ -922,25 +961,26 @@ const FlightDetailTemplate: React.FC = () => {
                       <a href="#">Reset all</a>
                     </div>
                   </div>
-                  <CustomCollapse>
-                    <Panel header="Number of stops" key="1">
-                      <Radio.Group
-                        block
-                        options={
-                          numberStops && numberStops.length
-                            ? numberStops
-                            : [{ label: "0", value: "0" }]
-                        }
-                        defaultValue={
-                          (numberStops && numberStops[0]?.value) ?? "0"
-                        }
-                        optionType="button"
-                        buttonStyle="solid"
-                        className="stopsRadioStyle"
-                        disabled={loading && !numberStops.length}
-                      />
-                    </Panel>
-                  </CustomCollapse>
+                  {trip !== 'oneway' && (
+                    <CustomCollapse>
+                      <Panel header="Number of stops" key="1">
+                        <Radio.Group
+                          block
+                          options={
+                            numberStops && numberStops.length
+                              ? numberStops
+                              : [{ label: "0", value: "0" }]
+                          }
+                          value={String(selectedMaxConnections)}
+                          optionType="button"
+                          buttonStyle="solid"
+                          className="stopsRadioStyle"
+                          disabled={loading && !numberStops.length}
+                          onChange={(e) => handleSearchFiltersChange({ maxConnections: e?.target?.value ?? e })}
+                        />
+                      </Panel>
+                    </CustomCollapse>
+                  )}
                   <CustomCollapse>
                     <Panel header="Baggage" key="1">
                       <Checkbox

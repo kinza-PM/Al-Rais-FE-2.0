@@ -114,15 +114,11 @@ export function buildCabinClassOptions(items: CabinClassItem[]): CabinClassOptio
 export function buildPriceSortOptions(items: PriceSortItem[]): PriceSortOption[] {
     const opts = (items || [])
         .filter(i => i.status === 1 && i.category?.trim())
-        .map(i => ({ value: i.id, label: i.category.trim() }));
+        .map(i => ({ value: i.value, label: i.category.trim() }));
 
     // Fallback if API empty:
     if (!opts.length) {
-        return [
-            { value: "lowest", label: "Lowest Price" },
-            { value: "medium", label: "Medium Price" },
-            { value: "highest", label: "Highest Price" },
-        ];
+        return [];
     }
 
     // Stable order (optional)

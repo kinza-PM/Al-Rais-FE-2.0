@@ -38,3 +38,24 @@ export function formatDate(dateStr: string) {
     year: "numeric", // 2025
   });
 }
+
+export function buildFilterPreferenceForFlightSearchRequest(
+  selectedPriceId?: string | null,
+  selectedMaxConnections?: number | null
+) {
+  const maxConnections = typeof selectedMaxConnections === "number" ? selectedMaxConnections : 0;
+
+  const preference = selectedPriceId
+    ? {
+      preference: {
+        farePreference: [
+          {
+            farePreference: selectedPriceId,
+          },
+        ],
+      },
+    }
+    : undefined;
+
+  return preference ? { ...preference, maxConnections } : { maxConnections };
+}

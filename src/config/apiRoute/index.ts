@@ -3,7 +3,7 @@ export const listingTables = {
     countries: "countries-listing",
     passengers: "passengers",
     cabinClasses: "cabin-class",
-    priceSorted: "price-sorted",
+    priceSorted: "price-filters",
     numberStops: "number-stops",
     transitHours: "transit-hours",
     baggage: "baggage",
