@@ -22,6 +22,7 @@ import { travelData } from "../../utils/mockData";
 import FlightDetailsCard from "./FlightDetailsCard";
 import CompareCard from "./CompareCard";
 import { formatDate, formatTime } from "../../utils/helpers";
+import { useNavigate } from "react-router-dom";
 
 type TravelRoundTripProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
@@ -44,6 +45,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   const [shareModal, setshareModal] = useState(false);
   const [filterData, setFilterData] = useState<any[]>([]);
   const [filterDetail, setFilterDetail] = useState<any[]>([]);
+
+  const navigate = useNavigate();
 
   const showModalCompare = ({
     modalType,
@@ -147,6 +150,11 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       };
     });
   };
+
+  const handleOfferSelection = (offerId: string, item: any) => {
+    // console.log(offerId);
+    navigate('/flight-booking', { state: { offerId, flightDetail: item } })
+  }
 
 
   const [active, setActive] = useState({ name: "", id: 0 });
@@ -357,7 +365,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     Share
                   </p>
                 </div>
-                <div className="selectPriceBtn">
+                <div className="selectPriceBtn" onClick={() => handleOfferSelection(item?.offerId, item)}>
                   <CustomButton>Select Price</CustomButton>
                 </div>
               </div>

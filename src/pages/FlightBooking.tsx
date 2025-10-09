@@ -5,13 +5,24 @@ import FlightBookingPaymentSection from "../components/molecules/FlightBookingPa
 import FlightBookingETicketSection from "../components/molecules/FlightBookingETicketSection";
 import { Button } from "../components";
 import BookingBannerAlert from "../components/common/BookingBannerAlert";
+import { useLocation } from "react-router-dom";
 
 const FlightBooking = () => {
     const [currentStep, setCurrentStep] = useState(0);
+    const location = useLocation();
+
     const steps = ["Book", "Review", "Pay", "E-ticket"];
 
     const progressPct =
         steps.length > 1 ? (currentStep / (steps.length - 1)) * 100 : 0;
+
+    const offerData =
+        (location.state && (location.state as any)) ||
+        (window.history.state && (window.history.state as any)) ||
+        null;
+
+    console.log('offerId-----', offerData.offerId);
+    console.log('flight Detail-----', offerData.flightDetail);
 
     const showTimerBanner = [1, 2].includes(currentStep);
 
@@ -73,7 +84,7 @@ const FlightBooking = () => {
                 </div>
 
                 <div className="mt-6">
-                    {currentStep === 0 && <FlightBookingBookSection />}
+                    {currentStep === 0 && <FlightBookingBookSection trip={offerData.flightDetail} />}
                     {currentStep === 1 && (
                         <FlightBookingReviewSection />
                     )}

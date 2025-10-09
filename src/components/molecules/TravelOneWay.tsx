@@ -20,6 +20,7 @@ import PricingDetailCard from "./PricingDetailCard";
 import CompareCard from "./CompareCard";
 import FlightDetailsCard from "./FlightDetailsCard";
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
+import { useNavigate } from "react-router-dom";
 
 type TravelOneWayProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
@@ -52,6 +53,8 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   const [filterData, setFilterData] = useState<any[]>([]);
   const [filterDetail, setFilterDetail] = useState<any[]>([]);
   // const [stopsData, setStopsData] = useState<any[]>([]);
+
+  const navigate = useNavigate();
 
   const showModalCompare = ({
     modalType,
@@ -149,6 +152,11 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
       };
     });
   };
+
+  const handleOfferSelection = (offerId: string, item: any) => {
+    // console.log(offerId);
+    navigate('/flight-booking', { state: { offerId, flightDetail: item } })
+  }
 
 
   const [active, setActive] = useState({ name: "", id: 0 });
@@ -314,7 +322,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                   Share
                 </p>
               </div>
-              <div className="selectPriceBtn">
+              <div className="selectPriceBtn" onClick={() => handleOfferSelection(item?.offerId, item)}>
                 <CustomButton>Select Price</CustomButton>
               </div>
             </div>

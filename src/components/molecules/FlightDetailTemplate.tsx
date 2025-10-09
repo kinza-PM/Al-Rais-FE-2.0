@@ -210,6 +210,8 @@ const FlightDetailTemplate: React.FC = () => {
         end_time: formatTime(seg.arrivalDateTime),
         end_date: formatDate(seg.arrivalDateTime),
         duration: formatDuration(seg.departureDateTime, seg.arrivalDateTime),
+        departureCode: seg.departureAirportCode,
+        arrivalCode: seg.arrivalAirportCode
       },
       stop: journeyItem?.stops || [],
       rawSegment: seg,
@@ -231,6 +233,7 @@ const FlightDetailTemplate: React.FC = () => {
     const oneWayId = outbound?.id ?? `offer-${idx}-${item?.offerId ?? ""}`;
     const oneWayObj = {
       id: oneWayId,
+      offerId: item?.offerId,
       logo:
         outbound?.logo ??
         logoFromFlightSegment(outbound?.rawSegment) ??

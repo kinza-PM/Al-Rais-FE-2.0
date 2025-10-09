@@ -76,11 +76,14 @@ export default function FlightSummaryCard({
 
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <img
-                                    src={seg.airlineLogo}
-                                    alt={seg.airlineName}
-                                    className="h-12 w-12 rounded-full object-cover"
-                                />
+                                <div className="h-12 w-12 rounded-full object-cover">
+                                    <img
+                                        src={seg.airlineLogo}
+                                        // alt={seg.airlineName}
+                                        alt=""
+                                    />
+                                </div>
+
                                 <div>
                                     <div className="text-[15px] font-medium text-[#0A0C0F]">
                                         {seg.airlineName}

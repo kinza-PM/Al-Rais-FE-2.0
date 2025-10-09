@@ -18,6 +18,7 @@ import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import FLightFareRule from "../atoms/FlightFareRule";
+import { formatDate, formatTime } from "../../utils/helpers";
 
 function ChevronDown() {
     return (
@@ -25,7 +26,91 @@ function ChevronDown() {
     )
 }
 
-export default function FlightBookingBookSection() {
+const defaultPassenger = () => ({
+    id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
+    paxType: "",
+    passportNumber: "",
+    issuingCountry: "",
+    expiryDate: null,
+});
+
+
+const mapFlightSegment = (item: any, defaultHeading = "Flight") => {
+    const fd = item?.flight_detail ?? item;
+    const departureCode =
+        fd?.departureCode
+    item?.raw?.journey?.[0]?.flightSegments?.[0]?.departureAirportCode ||
+        "";
+    const arrivalCode =
+        fd?.arrivalCode
+    item?.raw?.journey?.[0]?.flightSegments?.slice(-1)?.[0]?.arrivalAirportCode ||
+        "";
+
+    const route = (
+        <>
+            {departureCode ? `${departureCode} ` : ""}
+            <span className="mx-2">→</span>
+            {arrivalCode ? `${arrivalCode}` : ""}
+        </>
+    );
+
+    const flightNumber = fd?.flight_number ?? fd?.flightNo ?? "—";
+    const flightClass = fd?.flight_class ?? fd?.cabinClass ?? "—";
+
+    return {
+        heading: defaultHeading,
+        route,
+        airlineLogo: item?.logo ?? item?.outbound?.logo ?? EmirateLogo,
+        airlineName: item?.name ?? item?.airlineName ?? item?.outbound?.name ?? "Airline",
+        flightMeta: `${flightNumber} – ${flightClass}`,
+        amenities: [
+            { src: cabinIcon, alt: "Cabin", title: `Cabin: ${fd?.cabin_allowance ?? "1PC"}` },
+            { src: baggageIcon, alt: "Baggage", title: `Baggage: ${fd?.baggage ?? "20KG"}` },
+            { src: mealIcon, alt: "Meal", title: fd?.meal ? "Meal Included" : "No meal" },
+            { src: wifiIcon, alt: "Wi-Fi", title: fd?.wifi ? "WiFi Available" : "—" },
+            { src: portIcon, alt: "Ports", title: "USB Ports" },
+            { src: entertainmentIcon, alt: "Entertainment", title: "Entertainment" },
+        ],
+        dep: {
+            time: fd?.start_time ?? fd?.dep_time ?? formatTime(fd?.departure) ?? "—",
+            date: fd?.start_date ?? fd?.dep_date ?? formatDate(fd?.departure) ?? "—",
+        },
+        arr: {
+            time: fd?.end_time ?? fd?.arr_time ?? formatTime(fd?.arrival) ?? "—",
+            date: fd?.end_date ?? fd?.arr_date ?? formatDate(fd?.arrival) ?? "—",
+        },
+        durationLabel: fd?.duration ?? fd?.flight_time ?? "—",
+        tag: (item?.stop && item.stop.length > 0) ? `${item.stop.length} stop(s)` : (fd?.stops ? `${fd.stops} stop(s)` : "Direct"),
+    };
+};
+
+const buildFlightSegmentFromTrip = (trip: any) => {
+    if (!trip) return [];
+
+    if (trip.outbound || trip.inbound) {
+        const segments: any[] = [];
+        if (trip.outbound) segments.push(mapFlightSegment(trip.outbound, "Departure flight"));
+        if (trip.inbound) segments.push(mapFlightSegment(trip.inbound, "Return flight"));
+        return segments;
+    }
+
+    return [mapFlightSegment(trip, "Departure flight")];
+};
+
+const getPriceCabinClassForFlightSummary = (trip: any) => {
+    if (!trip?.price) return null;
+    if (Array.isArray(trip.price) && trip.price.length > 0) {
+        return trip.price[0];
+    }
+    if (typeof trip.price === "object") {
+        const values = Object.values(trip.price);
+        if (values.length > 0) return values[0];
+    }
+
+    return null;
+};
+
+export default function FlightBookingBookSection({ trip }: { trip: any }) {
     const [openPrice, setOpenPrice] = useState(false);
     const [openBaggage, setOpenBaggage] = useState(true);
     const [openSeats, setOpenSeats] = useState(true);
@@ -37,6 +122,39 @@ export default function FlightBookingBookSection() {
     const [bookingForOther, setBookingForOther] = useState(true);
     const [openTP, setOpenTP] = useState(true);
 
+    const [passengers, setPassengers] = useState([defaultPassenger()]);
+
+    const updatePassengers = (next: ReturnType<typeof defaultPassenger>[]) => {
+        setPassengers(next);
+    };
+
+    const handlePassengerFieldChange = (index: number, field: "paxType" | "passportNumber" | "issuingCountry" | "expiryDate", value: any) => {
+        updatePassengers(
+            passengers.map((p, i) => (i === index ? { ...p, [field]: value } : p))
+        );
+    };
+
+    const addPassenger = () => {
+        updatePassengers([...passengers, defaultPassenger()]);
+    };
+
+    const removePassenger = (index: number) => {
+        if (passengers.length === 1) return;
+        updatePassengers(passengers.filter((_, i) => i !== index));
+    };
+
+    const segments = buildFlightSegmentFromTrip(trip);
+
+    const firstPrice = getPriceCabinClassForFlightSummary(trip);
+
+    const priceFareFamily = {
+        label: "Fare family",
+        value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
+        changeText: "Change",
+        onChangeClick: () => {
+            console.log("open fare change");
+        },
+    };
 
     return (
         <section className="mx-auto max-w-full px-10 flight-booking-section">
@@ -107,60 +225,89 @@ export default function FlightBookingBookSection() {
                     </div>
 
                     {/* Passenger details (separate card) */}
-                    <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
-                        <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7]">
-                            <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                                Passenger 01 details
-                            </h3>
+                    {passengers.map((p, idx) => (
+                        <div key={p.id} className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
+                            <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7]">
+                                <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                                    Passenger {String(idx + 1).padStart(2, "0")} details
+                                </h3>
 
+                                {passengers.length > 1 && idx > 0 && (
+                                    <button
+                                        type="button"
+                                        onClick={() => removePassenger(idx)}
+                                        className="text-sm text-red-600 hover:underline"
+                                    >
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
 
-                        </div>
+                            <div className="px-4 py-4">
+                                <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
+                                    <div className="relative w-full">
+                                        <label className="mb-1 block text-[12px] text-[#3D495C]">Pax type</label>
+                                        <select
+                                            className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                            value={p.paxType}
+                                            onChange={(e) => handlePassengerFieldChange(idx, "paxType", e.target.value)}
+                                        >
+                                            <option value="">Select title</option>
+                                            <option value="Adult">Adult</option>
+                                            <option value="Child">Child</option>
+                                            <option value="Infant">Infant</option>
+                                        </select>
+                                        <ChevronDown />
+                                    </div>
 
-                        <div className="px-4 py-4">
-                            <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
-                                <div className="relative w-full">
-                                    <label className="mb-1 block text-[12px] text-[#3D495C]">Pax type</label>
-                                    <select className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none">
-                                        <option>Select title</option>
-                                        <option>Adult</option>
-                                    </select>
-                                    <ChevronDown />
-                                </div>
-
-                                <TailwindCustomInput
-                                    type="text"
-                                    placeholder="Enter passport number"
-                                    label="Passport number"
-                                />
-
-                                <div className="relative w-full">
-                                    <label className="mb-1 block text-[12px] text-[#3D495C]">Issuing country</label>
-                                    <select className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none">
-                                        <option>Select issuing country</option>
-                                        <option>UAE</option>
-                                    </select>
-                                    <ChevronDown />
-                                </div>
-
-                                <div className="w-full">
-                                    <label className="mb-1 block text-[12px] text-[#3D495C]">Expiry date</label>
-                                    <TailiwindCustomDatePicker
-                                        value={new Date()}
-                                        onChange={() => { }}
-                                        placeholder="Please select"
-                                        buttonIconSrc={true}
-                                        overridesClass
-                                        inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                                    <TailwindCustomInput
+                                        type="text"
+                                        placeholder="Enter passport number"
+                                        label="Passport number"
+                                        value={p.passportNumber}
+                                        onChange={(evOrVal) => {
+                                            const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
+                                            handlePassengerFieldChange(idx, "passportNumber", v ?? "");
+                                        }}
                                     />
+
+                                    <div className="relative w-full">
+                                        <label className="mb-1 block text-[12px] text-[#3D495C]">Issuing country</label>
+                                        <select
+                                            className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                            value={p.issuingCountry}
+                                            onChange={(e) => handlePassengerFieldChange(idx, "issuingCountry", e.target.value)}
+                                        >
+                                            <option value="">Select issuing country</option>
+                                            <option value="UAE">UAE</option>
+                                            <option value="PK">Pakistan</option>
+                                            <option value="US">United States</option>
+                                            {/* ya ap countries list map kar do */}
+                                        </select>
+                                        <ChevronDown />
+                                    </div>
+
+                                    <div className="w-full">
+                                        <label className="mb-1 block text-[12px] text-[#3D495C]">Expiry date</label>
+                                        <TailiwindCustomDatePicker
+                                            value={p.expiryDate}
+                                            onChange={(date) => handlePassengerFieldChange(idx, "expiryDate", date)}
+                                            placeholder="Please select"
+                                            buttonIconSrc={true}
+                                            overridesClass
+                                            inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    ))}
 
                     <div className="pt-4 pb-2 flex justify-center">
                         <Button
                             overrideClasses
                             type="button"
+                            onClick={addPassenger}
                             className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#2351A3] hover:underline"
                         >
                             Add another passenger
@@ -216,52 +363,8 @@ export default function FlightBookingBookSection() {
                         title="Trip details"
                         headerActionText="View all"
                         onHeaderActionClick={() => {/* handle view all */ }}
-                        segments={[
-                            {
-                                heading: "Departure flight",
-                                route: <>Dubai (DXB) <span className="mx-2">→</span> Mumbai (BOM)</>,
-                                airlineLogo: EmirateLogo,
-                                airlineName: "Emirates Airlines",
-                                flightMeta: "EK 1234 – Economy class",
-                                amenities: [
-                                    { src: cabinIcon, alt: "Cabin", title: "Cabin: 1PC" },
-                                    { src: baggageIcon, alt: "Baggage", title: "Baggage: 20KG" },
-                                    { src: mealIcon, alt: "Meal", title: "Meal Included" },
-                                    { src: wifiIcon, alt: "Wi-Fi", title: "WiFi Available" },
-                                    { src: portIcon, alt: "Beverage", title: "Beverages" },
-                                    { src: entertainmentIcon, alt: "Entertainment", title: "Entertainment" },
-                                ],
-                                dep: { time: "10:45 AM", date: "Mon, 16 June 2025" },
-                                arr: { time: "02:00 PM", date: "Mon, 16 June 2025" },
-                                durationLabel: "Duration: 03 hours 15 minutes",
-                                tag: "Direct",
-                            },
-                            {
-                                heading: "Return flight",
-                                route: <>Mumbai (BOM) <span className="mx-2">→</span> Dubai (DXB)</>,
-                                airlineLogo: EmirateLogo,
-                                airlineName: "Emirates Airlines",
-                                flightMeta: "EK 1234 – Economy class",
-                                amenities: [
-                                    { src: cabinIcon, alt: "Cabin", title: "Cabin: 1PC" },
-                                    { src: baggageIcon, alt: "Baggage", title: "Baggage: 20KG" },
-                                    { src: mealIcon, alt: "Meal", title: "Meal Included" },
-                                    { src: wifiIcon, alt: "Wi-Fi", title: "WiFi Available" },
-                                    { src: portIcon, alt: "Beverage", title: "Beverages" },
-                                    { src: entertainmentIcon, alt: "Entertainment", title: "Entertainment" },
-                                ],
-                                dep: { time: "03:00 PM", date: "Mon, 23 June 2025" },
-                                arr: { time: "06:20 PM", date: "Mon, 23 June 2025" },
-                                durationLabel: "Duration: 03 hours 15 minutes",
-                                tag: "Direct",
-                            },
-                        ]}
-                        fare={{
-                            label: "Fare family",
-                            value: "Economy standard",
-                            changeText: "Change",
-                            onChangeClick: () => {/* open fare change */ },
-                        }}
+                        segments={segments}
+                        fare={priceFareFamily}
                     />
 
 
@@ -270,6 +373,7 @@ export default function FlightBookingBookSection() {
                     <FLightPriceBreakdown
                         open={openPrice}
                         onToggleOpen={() => setOpenPrice(v => !v)}
+                        trip={trip.raw}
                     />
 
 
