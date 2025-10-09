@@ -115,7 +115,7 @@ export default function FlightSummaryCard({
                                 <span className="absolute right-0 top-[14px] h-[14px] w-[14px] rounded-full bg-[#2351A3]" />
                                 <div className="relative flex justify-center">
                                     <span className="inline-block px-3 py-1 text-[12px] text-[#3D495C] text-center">
-                                        {seg.durationLabel}
+                                        Duration: {seg.durationLabel}
                                     </span>
                                 </div>
                                 {seg.tag && (

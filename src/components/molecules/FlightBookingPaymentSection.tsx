@@ -21,6 +21,7 @@ import CardCollapseToggle from "../common/CardCollapseToggle";
 import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailwindCustomInput from "../common/TailwindCustomInput";
+import { buildFlightSegmentFromTrip, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
 
 type PaymentMethod = "card" | "apple" | "google"
 
@@ -30,37 +31,28 @@ function ChevronDown() {
     )
 }
 
-export default function FlightBookingPaymentSection() {
+export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
     const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
     const [openAddress, setOpenAddress] = useState(true);
     const [openPrice, setOpenPrice] = useState(false);
+
+    const assets = { EmirateLogo, cabinIcon, baggageIcon, mealIcon, wifiIcon, portIcon, entertainmentIcon };
+    const segments = buildFlightSegmentFromTrip(trip, assets);
+
+    const firstPrice = getPriceCabinClassForFlightSummary(trip);
+
+    const priceFareFamily = {
+        label: "Fare family",
+        value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
+    };
 
     return (
         <section className="mt-10 flex items-center justify-center px-4">
             <div className="w-full max-w-[520px]">
                 <FlightSummaryCard
                     title="Flight details"
-                    segments={[
-                        {
-                            route: <>Dubai (DXB) <span className="mx-2">→</span> Mumbai (BOM)</>,
-                            airlineLogo: EmirateLogo,
-                            airlineName: "Emirates Airlines",
-                            flightMeta: "EK 1234 – Economy class",
-                            amenities: [
-                                { src: cabinIcon, alt: "Cabin", title: "Cabin: 1PC" },
-                                { src: baggageIcon, alt: "Baggage", title: "Baggage: 20KG" },
-                                { src: mealIcon, alt: "Meal", title: "Meal Included" },
-                                { src: wifiIcon, alt: "Wi-Fi", title: "WiFi Available" },
-                                { src: portIcon, alt: "Beverage", title: "Beverages" },
-                                { src: entertainmentIcon, alt: "Entertainment", title: "Entertainment" },
-                            ],
-                            dep: { time: "10:45 AM", date: "Mon, 16 June 2025" },
-                            arr: { time: "02:00 PM", date: "Mon, 16 June 2025" },
-                            durationLabel: "Duration: 03 hours 15 minutes",
-                            tag: "Direct",
-                        },
-                    ]}
-                    fare={{ value: "Economy standard" }}
+                    segments={segments}
+                    fare={priceFareFamily}
                 />
 
                 <div className="mt-6">
@@ -262,6 +254,7 @@ export default function FlightBookingPaymentSection() {
                 <FLightPriceBreakdown
                     open={openPrice}
                     onToggleOpen={() => setOpenPrice(v => !v)}
+                    trip={trip.raw}
                 />
 
                 <div className="mt-16 px-5">

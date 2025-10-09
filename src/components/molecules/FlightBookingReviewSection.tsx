@@ -13,6 +13,7 @@ import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import FLightFareRule from "../atoms/FlightFareRule";
+import { buildFlightSegmentFromTrip, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
 
 type Section = "contact" | "passenger" | "seat";
 
@@ -85,7 +86,7 @@ const HeaderActions = ({
         </div>
     );
 
-export default function FlightBookingReviewSection() {
+export default function FlightBookingReviewSection({ trip }: { trip: any }) {
     const [openPrice, setOpenPrice] = useState(false);
 
     const [isEditing, setIsEditing] = useState<{ contact: boolean; passenger: boolean; seat: boolean }>({
@@ -120,6 +121,20 @@ export default function FlightBookingReviewSection() {
     const setContact = (partial: Partial<typeof values.contact>) => setSection("contact", partial);
     const setPassenger = (partial: Partial<typeof values.passenger>) => setSection("passenger", partial);
     const setSeat = (partial: Partial<typeof values.seat>) => setSection("seat", partial);
+
+    const assets = { EmirateLogo, cabinIcon, baggageIcon, mealIcon, wifiIcon, portIcon, entertainmentIcon };
+    const segments = buildFlightSegmentFromTrip(trip, assets);
+
+    const firstPrice = getPriceCabinClassForFlightSummary(trip);
+
+    const priceFareFamily = {
+        label: "Fare family",
+        value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
+        changeText: "Change",
+        onChangeClick: () => {
+            console.log("open fare change");
+        },
+    };
 
     return (
         <section className="mx-auto max-w-full px-10">
@@ -492,38 +507,16 @@ export default function FlightBookingReviewSection() {
                         title="Flight details"
                         headerActionText="View all"
                         onHeaderActionClick={() => {/* handle view all */ }}
-                        segments={[
-                            {
-                                route: <>Dubai (DXB) <span className="mx-2">→</span> Mumbai (BOM)</>,
-                                airlineLogo: EmirateLogo,
-                                airlineName: "Emirates Airlines",
-                                flightMeta: "EK 1234 – Economy class",
-                                amenities: [
-                                    { src: cabinIcon, alt: "Cabin", title: "Cabin: 1PC" },
-                                    { src: baggageIcon, alt: "Baggage", title: "Baggage: 20KG" },
-                                    { src: mealIcon, alt: "Meal", title: "Meal Included" },
-                                    { src: wifiIcon, alt: "Wi-Fi", title: "WiFi Available" },
-                                    { src: portIcon, alt: "Beverage", title: "Beverages" },
-                                    { src: entertainmentIcon, alt: "Entertainment", title: "Entertainment" },
-                                ],
-                                dep: { time: "10:45 AM", date: "Mon, 16 June 2025" },
-                                arr: { time: "02:00 PM", date: "Mon, 16 June 2025" },
-                                durationLabel: "Duration: 03 hours 15 minutes",
-                                tag: "Direct",
-                            },
-                        ]}
-                        fare={{
-                            value: "Economy standard",
-                            changeText: "Change",
-                            onChangeClick: () => {/* open fare change */ },
-                        }}
+                        segments={segments}
+                        fare={priceFareFamily}
                     />
 
-                    <FLightFareRule />
+                    <FLightFareRule trip={trip.raw} />
 
                     <FLightPriceBreakdown
                         open={openPrice}
                         onToggleOpen={() => setOpenPrice(v => !v)}
+                        trip={trip.raw}
                     />
                 </div>
 

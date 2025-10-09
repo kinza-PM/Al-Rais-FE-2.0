@@ -86,10 +86,10 @@ const FlightBooking = () => {
                 <div className="mt-6">
                     {currentStep === 0 && <FlightBookingBookSection trip={offerData.flightDetail} />}
                     {currentStep === 1 && (
-                        <FlightBookingReviewSection />
+                        <FlightBookingReviewSection trip={offerData.flightDetail} />
                     )}
                     {currentStep === 2 && (
-                        <FlightBookingPaymentSection />
+                        <FlightBookingPaymentSection trip={offerData.flightDetail} />
                     )}
                     {currentStep === 3 && (
                         <FlightBookingETicketSection />

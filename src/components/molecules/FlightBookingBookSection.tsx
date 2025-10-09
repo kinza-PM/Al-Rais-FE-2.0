@@ -18,7 +18,7 @@ import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import FLightFareRule from "../atoms/FlightFareRule";
-import { formatDate, formatTime } from "../../utils/helpers";
+import { buildFlightSegmentFromTrip, formatDate, formatTime, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
 
 function ChevronDown() {
     return (
@@ -33,82 +33,6 @@ const defaultPassenger = () => ({
     issuingCountry: "",
     expiryDate: null,
 });
-
-
-const mapFlightSegment = (item: any, defaultHeading = "Flight") => {
-    const fd = item?.flight_detail ?? item;
-    const departureCode =
-        fd?.departureCode
-    item?.raw?.journey?.[0]?.flightSegments?.[0]?.departureAirportCode ||
-        "";
-    const arrivalCode =
-        fd?.arrivalCode
-    item?.raw?.journey?.[0]?.flightSegments?.slice(-1)?.[0]?.arrivalAirportCode ||
-        "";
-
-    const route = (
-        <>
-            {departureCode ? `${departureCode} ` : ""}
-            <span className="mx-2">→</span>
-            {arrivalCode ? `${arrivalCode}` : ""}
-        </>
-    );
-
-    const flightNumber = fd?.flight_number ?? fd?.flightNo ?? "—";
-    const flightClass = fd?.flight_class ?? fd?.cabinClass ?? "—";
-
-    return {
-        heading: defaultHeading,
-        route,
-        airlineLogo: item?.logo ?? item?.outbound?.logo ?? EmirateLogo,
-        airlineName: item?.name ?? item?.airlineName ?? item?.outbound?.name ?? "Airline",
-        flightMeta: `${flightNumber} – ${flightClass}`,
-        amenities: [
-            { src: cabinIcon, alt: "Cabin", title: `Cabin: ${fd?.cabin_allowance ?? "1PC"}` },
-            { src: baggageIcon, alt: "Baggage", title: `Baggage: ${fd?.baggage ?? "20KG"}` },
-            { src: mealIcon, alt: "Meal", title: fd?.meal ? "Meal Included" : "No meal" },
-            { src: wifiIcon, alt: "Wi-Fi", title: fd?.wifi ? "WiFi Available" : "—" },
-            { src: portIcon, alt: "Ports", title: "USB Ports" },
-            { src: entertainmentIcon, alt: "Entertainment", title: "Entertainment" },
-        ],
-        dep: {
-            time: fd?.start_time ?? fd?.dep_time ?? formatTime(fd?.departure) ?? "—",
-            date: fd?.start_date ?? fd?.dep_date ?? formatDate(fd?.departure) ?? "—",
-        },
-        arr: {
-            time: fd?.end_time ?? fd?.arr_time ?? formatTime(fd?.arrival) ?? "—",
-            date: fd?.end_date ?? fd?.arr_date ?? formatDate(fd?.arrival) ?? "—",
-        },
-        durationLabel: fd?.duration ?? fd?.flight_time ?? "—",
-        tag: (item?.stop && item.stop.length > 0) ? `${item.stop.length} stop(s)` : (fd?.stops ? `${fd.stops} stop(s)` : "Direct"),
-    };
-};
-
-const buildFlightSegmentFromTrip = (trip: any) => {
-    if (!trip) return [];
-
-    if (trip.outbound || trip.inbound) {
-        const segments: any[] = [];
-        if (trip.outbound) segments.push(mapFlightSegment(trip.outbound, "Departure flight"));
-        if (trip.inbound) segments.push(mapFlightSegment(trip.inbound, "Return flight"));
-        return segments;
-    }
-
-    return [mapFlightSegment(trip, "Departure flight")];
-};
-
-const getPriceCabinClassForFlightSummary = (trip: any) => {
-    if (!trip?.price) return null;
-    if (Array.isArray(trip.price) && trip.price.length > 0) {
-        return trip.price[0];
-    }
-    if (typeof trip.price === "object") {
-        const values = Object.values(trip.price);
-        if (values.length > 0) return values[0];
-    }
-
-    return null;
-};
 
 export default function FlightBookingBookSection({ trip }: { trip: any }) {
     const [openPrice, setOpenPrice] = useState(false);
@@ -143,7 +67,8 @@ export default function FlightBookingBookSection({ trip }: { trip: any }) {
         updatePassengers(passengers.filter((_, i) => i !== index));
     };
 
-    const segments = buildFlightSegmentFromTrip(trip);
+    const assets = { EmirateLogo, cabinIcon, baggageIcon, mealIcon, wifiIcon, portIcon, entertainmentIcon };
+    const segments = buildFlightSegmentFromTrip(trip, assets);
 
     const firstPrice = getPriceCabinClassForFlightSummary(trip);
 
@@ -368,7 +293,7 @@ export default function FlightBookingBookSection({ trip }: { trip: any }) {
                     />
 
 
-                    <FLightFareRule />
+                    <FLightFareRule trip={trip.raw} />
 
                     <FLightPriceBreakdown
                         open={openPrice}
