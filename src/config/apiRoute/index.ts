@@ -7,4 +7,5 @@ export const listingTables = {
     numberStops: "number-stops",
     transitHours: "transit-hours",
     baggage: "baggage",
+    airlines: "airline-codes",
 } as const;

@@ -1,5 +1,6 @@
 // hooks/listings.ts
 import {
+    buildAirlineOptions,
     buildBaggageOptions,
     buildCabinClassOptions,
     buildCountryOptions,
@@ -19,6 +20,8 @@ import type {
     PassengersResponse, PassengerSchema,
     PriceSortResponse, PriceSortOption,
     TransitHoursResponse, TransitHoursOption,
+    AirlinesResponse,
+    AirlineOption,
 } from "../../features/flights/types";
 
 import { listingTables } from "../../config/apiRoute";
@@ -79,5 +82,12 @@ export const useBaggageOptions = (enabled = true) =>
     useListing<BaggageResponse, any, BaggageOption>(
         listingTables.baggage,
         buildBaggageOptions,
+        enabled
+    );
+
+export const useAirlineOptions = (enabled = true) =>
+    useListing<AirlinesResponse, any, AirlineOption>(
+        listingTables.airlines,
+        buildAirlineOptions,
         enabled
     );

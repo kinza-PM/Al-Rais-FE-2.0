@@ -320,6 +320,20 @@
   padding: 15px;
   border-radius: 12px;
   line-height: 1;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+}
+
+.timeBox::-webkit-calendar-picker-indicator,
+.timeBox::-webkit-clear-button,
+.timeBox::-webkit-inner-spin-button {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.timeBox::-ms-clear {
+  display: none;
 }
 
 .filterHeading h4 {

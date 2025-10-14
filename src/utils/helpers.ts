@@ -50,24 +50,26 @@ export function formatDate(dateStr: string) {
 }
 
 export function buildFilterPreferenceForFlightSearchRequest(
-  selectedPriceId?: string | null,
+  // selectedPriceId?: string | null,
   selectedMaxConnections?: number | null
 ) {
   const maxConnections = typeof selectedMaxConnections === "number" ? selectedMaxConnections : 0;
 
-  const preference = selectedPriceId
-    ? {
-      preference: {
-        farePreference: [
-          {
-            farePreference: selectedPriceId,
-          },
-        ],
-      },
-    }
-    : undefined;
+  return { maxConnections };
 
-  return preference ? { ...preference, maxConnections } : { maxConnections };
+  // const preference = selectedPriceId
+  //   ? {
+  //     preference: {
+  //       farePreference: [
+  //         {
+  //           farePreference: selectedPriceId,
+  //         },
+  //       ],
+  //     },
+  //   }
+  //   : undefined;
+
+  // return preference ? { ...preference, maxConnections } : { maxConnections };
 }
 
 export function mapFlightSegment(item: any, assets: AssetBundle = {}, defaultHeading = "Flight") {
@@ -166,5 +168,35 @@ export function getPriceCabinClassForFlightSummary(trip: any) {
     const values = Object.values(trip.price);
     if (values.length > 0) return values[0];
   }
+  return null;
+}
+
+export function timeToMinutesFromAnyString(t?: string | null) {
+  if (!t) return null;
+  if (/\d{4}-\d{2}-\d{2}T/.test(t)) {
+    const d = new Date(t);
+    if (!isNaN(d.getTime())) return d.getHours() * 60 + d.getMinutes();
+  }
+
+  const hhmm = t.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
+  if (hhmm) {
+    const h = Number(hhmm[1]);
+    const m = Number(hhmm[2]);
+    return h * 60 + m;
+  }
+
+  const ampm = t.match(/^(\d{1,2}):(\d{2})\s*([AaPp][Mm])$/);
+  if (ampm) {
+    let h = Number(ampm[1]);
+    const m = Number(ampm[2]);
+    const period = ampm[3].toLowerCase();
+    if (period === "pm" && h !== 12) h += 12;
+    if (period === "am" && h === 12) h = 0;
+    return h * 60 + m;
+  }
+
+  const fallback = new Date(t);
+  if (!isNaN(fallback.getTime())) return fallback.getHours() * 60 + fallback.getMinutes();
+
   return null;
 }

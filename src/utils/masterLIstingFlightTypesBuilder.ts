@@ -1,4 +1,4 @@
-import type { BaggageItem, BaggageOption, CabinClassItem, CabinClassOption, CountryItem, CountryOption, FlightTypeItem, FlightTypeOption, NumberStopsItem, NumberStopsOption, PassengerCategoryOption, PassengerItem, PassengerSchema, PriceSortItem, PriceSortOption, TransitHoursItem, TransitHoursOption, TripType } from "../features/flights/types/index";
+import type { AirlineItem, AirlineOption, BaggageItem, BaggageOption, CabinClassItem, CabinClassOption, CountryItem, CountryOption, FlightTypeItem, FlightTypeOption, NumberStopsItem, NumberStopsOption, PassengerCategoryOption, PassengerItem, PassengerSchema, PriceSortItem, PriceSortOption, TransitHoursItem, TransitHoursOption, TripType } from "../features/flights/types/index";
 
 
 export function normalizeTripKey(name: string): TripType | null {
@@ -170,4 +170,12 @@ export function buildBaggageOptions(items: BaggageItem[]): BaggageOption[] {
         }));
     if (!opts.length) return [{ value: "checked", label: "Checked baggage included" }];
     return opts;
+}
+
+
+export function buildAirlineOptions(items: AirlineItem[]): AirlineOption[] {
+    return (items || [])
+        .filter(i => i.status === 1 && i.name?.trim())
+        .map(i => ({ id: i.id, label: i.name.trim(), code: i.code.trim() }))
+        .sort((a, b) => a.label.localeCompare(b.label));
 }

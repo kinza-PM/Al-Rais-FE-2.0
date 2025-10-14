@@ -60,9 +60,9 @@ export interface PassengersResponse {
 
 
 export interface PassengerCategoryOption {
-    key: PaxKey;                 
-    title: string;   
-    ptc: string            
+    key: PaxKey;
+    title: string;
+    ptc: string
 }
 
 export type PassengerSchema = PassengerCategoryOption[];
@@ -87,8 +87,8 @@ export interface CabinClassOption {
 
 export interface PriceSortItem {
     id: string;
-    category: string;  
-    value: string;  
+    category: string;
+    value: string;
     status: number;
     createdAt: number;
     updatedAt: number;
@@ -123,3 +123,23 @@ export interface BaggageItem {
 export interface BaggageResponse { items: BaggageItem[]; nextToken: string | null; }
 
 export interface BaggageOption { label: string; value: string; }
+
+export interface AirlineItem {
+    id: string;
+    name: string;      
+    code: string;      
+    status: number;
+    createdAt: number;
+    updatedAt: number;
+}
+
+export interface AirlinesResponse {
+    items: AirlineItem[];
+    nextToken: string | null;
+}
+
+export interface AirlineOption {
+    id: string;
+    label: string;
+    code: string;
+}

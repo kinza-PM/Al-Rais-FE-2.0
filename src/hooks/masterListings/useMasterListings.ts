@@ -9,6 +9,7 @@ import {
     useNumberStopsOptions,
     useTransitHoursOptions,
     useBaggageOptions,
+    useAirlineOptions,
 } from "./listing";
 
 type Key =
@@ -19,7 +20,8 @@ type Key =
     | "priceSort"
     | "numberStops"
     | "transitHours"
-    | "baggage";
+    | "baggage"
+    | "airline";
 
 type Include = Key[];
 
@@ -45,6 +47,7 @@ export function useMasterListings(opts?: { include?: Include }) {
     const qStops = useNumberStopsOptions(include.has("numberStops"));
     const qTransit = useTransitHoursOptions(include.has("transitHours"));
     const qBaggage = useBaggageOptions(include.has("baggage"));
+    const qAirline = useAirlineOptions(include.has("airline"));
 
     const loadingMap = {
         flightTypes: !!(include.has("flightTypes") && (qFlightTypes.isLoading || qFlightTypes.isFetching)),
@@ -55,6 +58,7 @@ export function useMasterListings(opts?: { include?: Include }) {
         numberStops: !!(include.has("numberStops") && (qStops.isLoading || qStops.isFetching)),
         transitHours: !!(include.has("transitHours") && (qTransit.isLoading || qTransit.isFetching)),
         baggage: !!(include.has("baggage") && (qBaggage.isLoading || qBaggage.isFetching)),
+        airline: !!(include.has("airline") && (qAirline.isLoading || qAirline.isFetching)),
     } as const;
 
     const errorMap = {
@@ -66,6 +70,7 @@ export function useMasterListings(opts?: { include?: Include }) {
         numberStops: qStops.error?.message ?? null,
         transitHours: qTransit.error?.message ?? null,
         baggage: qBaggage.error?.message ?? null,
+        airline: qAirline.error?.message ?? null,
     } as const;
 
     const loadingAny = Array.from(include).some(k => loadingMap[k]);
@@ -79,6 +84,7 @@ export function useMasterListings(opts?: { include?: Include }) {
         numberStops: qStops.data,
         transitHours: qTransit.data,
         baggage: qBaggage.data,
+        airline: qAirline.data,
 
         // status (unchanged semantics)
         loading: loadingAny,
