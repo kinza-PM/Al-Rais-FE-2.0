@@ -84,11 +84,7 @@ const buildPassengersArrayForFlightSearch = (order: string[], schema: PassengerS
   return arr;
 };
 
-// type Align = "One way" | "Round trip" | "Multi-city";
-
 const FlightDetailTemplate: React.FC = () => {
-  // const [alignValue, setAlignValue] = useState<Align>("One way");
-
   const { mutateAsync, isPending } = useFlightSearch();
   const { loadMoreAsync, isLoadingMore } = useLoadMoreFlights();
 
@@ -111,6 +107,7 @@ const FlightDetailTemplate: React.FC = () => {
   const [departureFlightRange, setDepartureFlightRange] = useState({ start: "", end: "" });
   const [arrivalFlightRange, setArrivalFlightRange] = useState({ start: "", end: "" });
   const [selectedAirlineIds, setSelectedAirlineIds] = useState<string[]>([]);
+  const [selectedTransitRange, setSelectedTransitRange] = useState<string | null>(null);
   const [priceRangeBounds, setPriceRangeBounds] = React.useState<[number, number]>([0, 1000]);
   const [selectedPriceRange, setSelectedPriceRange] = React.useState<[number, number]>([0, 1000]);
   const PRICE_STEP = 50;
@@ -520,7 +517,8 @@ const FlightDetailTemplate: React.FC = () => {
     depRange?: { start?: string; end?: string } | null,
     arrRange?: { start?: string; end?: string } | null,
     selectedAirlinesParam?: string[] | null,
-    priceRange?: [number, number] | null
+    priceRange?: [number, number] | null,
+    transitRange?: string | null
   ) {
     const { filteredOneWay, filteredRound } = filterFlightsByTimeAndAirlines(
       originalResponseRef.current ?? [],
@@ -528,6 +526,7 @@ const FlightDetailTemplate: React.FC = () => {
       depRange ?? null,
       arrRange ?? null,
       selectedAirlinesParam ?? selectedAirlineIds ?? null,
+      transitRange ?? selectedTransitRange ?? null,
       timeToMinutesFromAnyString,
       { matchAllSegments: false } // default behavior
     );
@@ -863,6 +862,7 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     next,
+                    selectedTransitRange,
                   );
                 }}
                 numberStops={numberStops}
@@ -871,6 +871,17 @@ const FlightDetailTemplate: React.FC = () => {
                 baggage={baggage}
                 baggageHandler={baggageHandler}
                 transitHours={transitHours}
+                selectedTransitRange={selectedTransitRange}
+                onTransitRangeChange={(val) => {
+                  setSelectedTransitRange(val);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    selectedPriceRange,
+                    val,
+                  );
+                }}
                 departureFlightRange={departureFlightRange}
                 arrivalFlightRange={arrivalFlightRange}
                 onDepartureRangeChange={(next) => handleSearchFiltersChange({ departureFlightRange: next })}
@@ -886,11 +897,13 @@ const FlightDetailTemplate: React.FC = () => {
                   setDepartureFlightRange({ start: "", end: "" });
                   setArrivalFlightRange({ start: "", end: "" });
                   setSelectedPriceRange(priceRangeBounds);
+                  setSelectedTransitRange(null);
                   applyFlightSearchFilters(
                     { start: "", end: "" },
                     { start: "", end: "" },
                     [],
                     priceRangeBounds,
+                    null,
                   );
                 }}
               />
@@ -914,6 +927,7 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     next,
+                    selectedTransitRange,
                   );
                 }}
                 numberStops={numberStops}
@@ -922,6 +936,17 @@ const FlightDetailTemplate: React.FC = () => {
                 baggage={baggage}
                 baggageHandler={baggageHandler}
                 transitHours={transitHours}
+                selectedTransitRange={selectedTransitRange}
+                onTransitRangeChange={(val) => {
+                  setSelectedTransitRange(val);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    selectedPriceRange,
+                    val,
+                  );
+                }}
                 departureFlightRange={departureFlightRange}
                 arrivalFlightRange={arrivalFlightRange}
                 onDepartureRangeChange={(next) => handleSearchFiltersChange({ departureFlightRange: next })}
@@ -937,11 +962,13 @@ const FlightDetailTemplate: React.FC = () => {
                   setDepartureFlightRange({ start: "", end: "" });
                   setArrivalFlightRange({ start: "", end: "" });
                   setSelectedPriceRange(priceRangeBounds);
+                  setSelectedTransitRange(null);
                   applyFlightSearchFilters(
                     { start: "", end: "" },
                     { start: "", end: "" },
                     [],
                     priceRangeBounds,
+                    null,
                   );
                 }}
               />

@@ -204,13 +204,99 @@ export function filterFlightsByTimeAndAirlines(
     depRange?: { start?: string; end?: string } | null,
     arrRange?: { start?: string; end?: string } | null,
     selectedAirlines?: string[] | null,
+    transitHoursRange?: string | null,
     timeParser?: (t?: string | null) => number | null,
     airlineOptions?: Omit<AirlineFilterOptions, "selectedAirlines">
 ): AirlineFilterResult {
     const timeFiltered = filterFlightsByTime(oneWayList, roundList, depRange ?? null, arrRange ?? null, timeParser);
-    const airlineFiltered = filterFlightsByAirlines(timeFiltered.filteredOneWay, timeFiltered.filteredRound, {
+
+    const { one: afterTransitOne, round: afterTransitRound } = applyTransitHoursFilter(
+        timeFiltered.filteredOneWay,
+        timeFiltered.filteredRound,
+        transitHoursRange ?? null
+    );
+
+    const airlineFiltered = filterFlightsByAirlines(afterTransitOne, afterTransitRound, {
         selectedAirlines,
         ...(airlineOptions || {}),
     });
     return airlineFiltered;
+}
+
+function parseLayoverStringToMinutes(layover?: string | null): number | null {
+    if (!layover || typeof layover !== "string") return null;
+    // formats like "2H50M", "45M", "1H"
+    const hMatch = layover.match(/(\d+)\s*H/i);
+    const mMatch = layover.match(/(\d+)\s*M/i);
+    const h = hMatch ? Number(hMatch[1]) : 0;
+    const m = mMatch ? Number(mMatch[1]) : 0;
+    const total = h * 60 + m;
+    return Number.isFinite(total) ? total : null;
+}
+
+function computeMaxLayoverMinutesFromJourney(journey: any): number | null {
+    if (!journey) return null;
+    const segs = journey?.flightSegments || [];
+    if (!Array.isArray(segs) || segs.length <= 1) return 0; // no stops
+    let maxLayover = 0;
+    for (let i = 0; i < segs.length - 1; i++) {
+        const nextSeg = segs[i + 1];
+        const fromLayStr = nextSeg?.layoverTime ?? null; // many APIs attach layover to next segment
+        let mins = parseLayoverStringToMinutes(fromLayStr);
+        if (mins === null) {
+            // fallback: compute from times if available
+            const arrIso = segs[i]?.arrivalDateTime ?? null;
+            const depIso = nextSeg?.departureDateTime ?? null;
+            if (arrIso && depIso) {
+                const arr = new Date(arrIso).getTime();
+                const dep = new Date(depIso).getTime();
+                if (isFinite(arr) && isFinite(dep) && dep > arr) {
+                    mins = Math.floor((dep - arr) / 60000);
+                }
+            }
+        }
+        if (mins !== null && mins > maxLayover) maxLayover = mins;
+    }
+    return maxLayover;
+}
+
+function parseTransitRange(range?: string | null): [number, number] | null {
+    if (!range || typeof range !== "string") return null;
+    // formats like "0-3h", "3-6h", "6-12h", "12h+"
+    const plus = range.match(/^(\d+)\s*h\s*\+$/i);
+    if (plus) {
+        const minH = Number(plus[1]);
+        return [minH * 60, Number.POSITIVE_INFINITY];
+    }
+    const m = range.match(/^(\d+)\s*-\s*(\d+)\s*h$/i);
+    if (m) {
+        const a = Number(m[1]);
+        const b = Number(m[2]);
+        if (Number.isFinite(a) && Number.isFinite(b)) return [a * 60, b * 60];
+    }
+    return null;
+}
+
+function applyTransitHoursFilter(oneWay: any[] = [], round: any[] = [], range?: string | null): { one: any[]; round: any[] } {
+    const bounds = parseTransitRange(range ?? null);
+    if (!bounds) return { one: oneWay.slice(), round: round.slice() };
+    const [minM, maxM] = bounds;
+    const within = (mins: number | null) => mins !== null && mins >= minM && (maxM === Number.POSITIVE_INFINITY || mins <= maxM);
+
+    const oneFiltered = (oneWay || []).filter((it) => {
+        const journey = it?.raw?.journey?.[0] ?? null;
+        const maxLay = computeMaxLayoverMinutesFromJourney(journey);
+        return within(maxLay);
+    });
+
+    const roundFiltered = (round || []).filter((it) => {
+        const outJ = it?.raw?.journey?.[0] ?? null;
+        const inJ = it?.raw?.journey?.[1] ?? null;
+        const outLay = computeMaxLayoverMinutesFromJourney(outJ);
+        const inLay = computeMaxLayoverMinutesFromJourney(inJ);
+        // keep if either direction matches
+        return within(outLay) || within(inLay);
+    });
+
+    return { one: oneFiltered, round: roundFiltered };
 }

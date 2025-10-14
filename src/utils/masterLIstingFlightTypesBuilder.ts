@@ -144,13 +144,7 @@ export function buildTransitHourOptions(items: TransitHoursItem[]): TransitHours
     const opts = (items || [])
         .filter(i => i.status === 1 && i.category?.trim())
         .map(i => ({ label: i.category.trim(), value: i.category.trim() }));
-    if (!opts.length) return [
-        { label: "0-3h", value: "0-3h" },
-        // { label: "3-6h", value: "3-6h" },
-        // { label: "6-12h", value: "6-12h" },
-        // { label: "12h+", value: "12h+" },
-        // { label: "24h+", value: "24h+" },
-    ];
+    if (!opts.length) return [];
     const rank = (s: string) => {
         const m = s.match(/^(\d+)/); // take starting number
         return m ? parseInt(m[1], 10) : 9999;

@@ -25,6 +25,8 @@ export type FlightSearchFilterProps = {
 
     // transit
     transitHours: { label: string; value: string }[];
+    selectedTransitRange?: string | null;
+    onTransitRangeChange?: (value: string | null) => void;
 
     // time ranges
     departureFlightRange: { start: string; end: string };
@@ -57,6 +59,8 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     baggageHandler,
 
     transitHours,
+    selectedTransitRange,
+    onTransitRangeChange,
 
     departureFlightRange,
     arrivalFlightRange,
@@ -119,7 +123,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                     <Panel header="Number of stops" key="stops">
                         <Radio.Group
                             block
-                            options={numberStops && numberStops.length ? numberStops : [{ label: "0", value: "0" }]}
+                            options={numberStops && numberStops.length ? numberStops : []}
                             value={String(selectedMaxConnections)}
                             optionType="button"
                             buttonStyle="solid"
@@ -138,19 +142,22 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                     </Panel>
                 </CustomCollapse>
 
-                <CustomCollapse>
-                    <Panel header="Transit hours" key="transit">
-                        <Radio.Group
-                            block
-                            options={transitHours && transitHours.length ? transitHours : [{ label: "0-3h", value: "0-3h" }]}
-                            defaultValue={(transitHours && transitHours[0]?.value) ?? "0-3h"}
-                            optionType="button"
-                            buttonStyle="solid"
-                            className="transitHours"
-                            disabled={loading && !transitHours.length}
-                        />
-                    </Panel>
-                </CustomCollapse>
+                {Number(selectedMaxConnections || 0) > 0 && (
+                    <CustomCollapse>
+                        <Panel header="Transit hours" key="transit">
+                            <Radio.Group
+                                block
+                                options={transitHours && transitHours.length ? transitHours : []}
+                                value={selectedTransitRange ?? undefined}
+                                optionType="button"
+                                buttonStyle="solid"
+                                className="transitHours"
+                                disabled={loading && !transitHours.length}
+                                onChange={(e) => onTransitRangeChange?.(e?.target?.value ?? null)}
+                            />
+                        </Panel>
+                    </CustomCollapse>
+                )}
 
                 <CustomCollapse>
                     <Panel header="Flight time" key="time">
