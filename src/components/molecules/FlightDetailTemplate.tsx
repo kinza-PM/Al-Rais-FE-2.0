@@ -8,27 +8,16 @@ import FlagInd from "../../assets/svgs/Flag-ind.svg";
 import FlagUsa from "../../assets/svgs/Flag-usa.svg";
 import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import noFlights from "../../assets/svgs/no-flights.svg";
-import {
-  Segmented,
-  Tabs,
-  Select,
-  Radio,
-  Checkbox,
-  Flex,
-  Drawer,
-  Button,
-  Grid,
-  Slider,
-} from "antd";
+import { Segmented, Tabs, Select, Flex, Drawer, Button, Grid } from "antd";
 // import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
 import CustomSelect from "../common/CustomSelect";
 import CustomDatePicker from "../common/CustomDatePicker";
-import CustomCollapse from "../common/CustomCollapse";
+import FlightSearchFilter from "../atoms/FlightSearchFilter";
 import TravelOneWay from "./TravelOneWay";
 import TravelRoundTrip from "./TravelRoundTrip";
 import TravelMultiCity from "./TravelMultiCity";
-import { Collapse } from "antd";
+
 import type { TabsProps } from "antd";
 import { useState } from "react";
 import type { CheckboxProps } from "antd";
@@ -54,7 +43,7 @@ import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUti
 import { buildFilterPreferenceForFlightSearchRequest, formatDate, formatTime, timeToMinutesFromAnyString } from "../../utils/helpers";
 import { filterFlightsByTimeAndAirlines } from "../../utils/flightFilters";
 
-const { Panel } = Collapse;
+
 
 const onChange = (key: string) => {
   console.log(key);
@@ -385,7 +374,7 @@ const FlightDetailTemplate: React.FC = () => {
     countries,
     passengers,
     cabinClasses,
-    priceSort,
+    // priceSort,
     numberStops,
     transitHours,
     baggage,
@@ -411,7 +400,7 @@ const FlightDetailTemplate: React.FC = () => {
   const [fromCode, setFromCode] = useState<string>("");
   const [toCode, setToCode] = useState<string>("");
   const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("");
-  const [selectedPriceId, setSelectedPriceId] = useState<string>("");
+
 
   // const [showFilters, setShowFilters] = useState(false);
 
@@ -451,18 +440,6 @@ const FlightDetailTemplate: React.FC = () => {
       })),
     ],
     [cabinClasses]
-  );
-
-  const filterSortPriceOptions = useMemo(
-    () =>
-      (priceSort && priceSort.length
-        ? priceSort
-        : []) as { value: string; label: string }[],
-    [priceSort]
-  );
-  const selectedPriceLabel = useMemo(
-    () => filterSortPriceOptions.find((o) => o.value === selectedPriceId)?.label ?? "",
-    [filterSortPriceOptions, selectedPriceId]
   );
 
   const handleAirlineToggle = (airlineCode: string, checked: boolean) => {
@@ -522,11 +499,6 @@ const FlightDetailTemplate: React.FC = () => {
 
       return;
     }
-
-
-    // if (typeof changes.priceId !== "undefined") {
-    //   setSelectedPriceId(changes.priceId ?? "");
-    // }
 
     if (typeof changes.maxConnections !== "undefined") {
       setSelectedMaxConnections(changes.maxConnections ?? 0);
@@ -616,19 +588,11 @@ const FlightDetailTemplate: React.FC = () => {
     return () => obs.disconnect();
   }, [ioReady, hasMore, isLoadingMore]);
 
-  // const { flight } = useFlightStore();
-  // const { cabinClasses } = useMasterListings();
-
   const headerContent = (
     <div>
       <div style={{ fontSize: 12, fontWeight: 400, color: "#3D495C" }}>
         Sort by
       </div>
-      {selectedPriceLabel && (
-        <div style={{ fontSize: 16, fontWeight: 500 }}>
-          {selectedPriceLabel}
-        </div>
-      )}
     </div>
   );
 
@@ -689,11 +653,7 @@ const FlightDetailTemplate: React.FC = () => {
                 options={
                   segOptions.length
                     ? segOptions
-                    : [
-                      { label: "One way", value: "oneway" },
-                      { label: "Round trip", value: "roundtrip" },
-                      { label: "Multi-city", value: "multicity" },
-                    ]
+                    : []
                 }
                 disabled={loading && !segOptions.length}
               />
@@ -890,178 +850,50 @@ const FlightDetailTemplate: React.FC = () => {
               open={open}
               width={300}
             >
-              {/* <button
-              className="filterToggleBtn"
-              onClick={() => setShowFilters(!showFilters)}
-            > */}
-              {/* <FilterOutlined />
-            </button> */}
-              <div className="filterSectionStyle">
-                <div className="">
-                  <CustomCollapse>
-                    <Panel header={headerContent} key="1">
-                      <Slider
-                        range
-                        defaultValue={[priceRangeBounds[0], priceRangeBounds[1]]}
-                        aria-label="price-range-slider"
-                        min={priceRangeBounds[0]}
-                        max={priceRangeBounds[1]}
-                        step={PRICE_STEP}
-                        value={selectedPriceRange}
-                        onChange={(val) => {
-                          const next = val as [number, number];
-                          setSelectedPriceRange(next);
-                          applyFlightSearchFilters(
-                            departureFlightRange,
-                            arrivalFlightRange,
-                            selectedAirlineIds,
-                            next,
-                          );
-                        }}
-                      />
-                      {/* <Select
-                        style={{ width: "100%" }}
-                        placeholder="Select an option"
-                        value={selectedPriceId || undefined}
-                        // onChange={(value) => setSelectedPriceId(value)}
-                        onChange={(value) => handleSearchFiltersChange({ priceId: value })}
-                        options={filterSortPriceOptions}
-                        disabled={loading && !filterSortPriceOptions.length}
-                      /> */}
-                    </Panel>
-                  </CustomCollapse>
-                </div>
-                <div className="filterStyle">
-                  <div className="filterHeading">
-                    <div>
-                      <h4>
-                        Filters
-                        <span className="smallDot">•</span>
-                        <span className="lightActiveText">{0} Active</span>
-                      </h4>
-                    </div>
-                    <div className="resetAllBtn">
-                      <a href="#">Reset all</a>
-                    </div>
-                  </div>
-                  <CustomCollapse>
-                    <Panel header="Number of stops" key="1">
-                      <Radio.Group
-                        block
-                        options={
-                          numberStops && numberStops.length
-                            ? numberStops
-                            : [{ label: "0", value: "0" }]
-                        }
-                        value={String(selectedMaxConnections)}
-                        optionType="button"
-                        buttonStyle="solid"
-                        className="stopsRadioStyle"
-                        disabled={loading && !numberStops.length}
-                        onChange={(e) => handleSearchFiltersChange({ maxConnections: e?.target?.value ?? e })}
-                      />
-                    </Panel>
-                  </CustomCollapse>
-                  <CustomCollapse>
-                    <Panel header="Baggage" key="1">
-                      <Checkbox
-                        className="baggageCheckbox"
-                        onChange={baggageHandler}
-                        disabled={loading && !baggage.length}
-                      >
-                        {(baggage && baggage[0]?.label) ||
-                          "Checked baggage included"}
-                      </Checkbox>
-                    </Panel>
-                  </CustomCollapse>
-
-                  <CustomCollapse>
-                    <Panel header="Transit hours" key="1">
-                      <Radio.Group
-                        block
-                        options={
-                          transitHours && transitHours.length
-                            ? transitHours
-                            : [{ label: "0-3h", value: "0-3h" }]
-                        }
-                        defaultValue={
-                          (transitHours && transitHours[0]?.value) ?? "0-3h"
-                        }
-                        optionType="button"
-                        buttonStyle="solid"
-                        className="transitHours"
-                        disabled={loading && !transitHours.length}
-                      />
-                    </Panel>
-                  </CustomCollapse>
-
-                  <CustomCollapse>
-                    <Panel header="Flight time" key="1">
-                      <p
-                        className="departureArrivalHeading"
-                        style={{ paddingTop: 0 }}
-                      >
-                        Departure
-                      </p>
-                      <div className="departureArrival">
-                        {/* <div className="timeBox">11:00AM</div> */}
-                        <input
-                          type="time"
-                          className="timeBox"
-                          ref={(el) => { timeRefs.current["departureFlightStartTime"] = el; }}
-                          onClick={() => openTimePicker("departureFlightStartTime")}
-                        />
-                        <div className="rightArrow">
-
-                        </div>
-                        <input
-                          type="time"
-                          className="timeBox"
-                          ref={(el) => { timeRefs.current["departureFlightEndTime"] = el; }}
-                          onClick={() => openTimePicker("departureFlightEndTime")}
-                        />
-                      </div>
-
-                      <p className="departureArrivalHeading">Arrival</p>
-                      <div className="departureArrival">
-                        <input
-                          type="time"
-                          className="timeBox"
-                          ref={(el) => { timeRefs.current["arrivalFlightStartTime"] = el; }}
-                          onClick={() => openTimePicker("arrivalFlightStartTime")}
-                        />
-                        <div className="rightArrow">
-
-                        </div>
-                        <input
-                          type="time"
-                          className="timeBox"
-                          ref={(el) => { timeRefs.current["arrivalFlightEndTime"] = el; }}
-                          onClick={() => openTimePicker("arrivalFlightEndTime")}
-                        />
-                      </div>
-                    </Panel>
-                  </CustomCollapse>
-
-                  <CustomCollapse>
-                    <Panel header="Airlines" key="1">
-                      <div className="flex flex-col gap-2">
-                        {airline.map((a) => (
-                          <Checkbox
-                            key={a.id}
-                            className="baggageCheckbox"
-                            disabled={loading && !airline.length}
-                            onChange={(e: any) => handleAirlineToggle(a.code, e?.target?.checked ?? !!e)}
-                            checked={selectedAirlineIds.includes(a.code)}
-                          >
-                            {a.label}
-                          </Checkbox>
-                        ))}
-                      </div>
-                    </Panel>
-                  </CustomCollapse>
-                </div>
-              </div>
+              <FlightSearchFilter
+                loading={loading}
+                headerContent={headerContent}
+                priceRangeBounds={priceRangeBounds}
+                selectedPriceRange={selectedPriceRange}
+                priceStep={PRICE_STEP}
+                onPriceRangeChange={(next) => {
+                  setSelectedPriceRange(next);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    next,
+                  );
+                }}
+                numberStops={numberStops}
+                selectedMaxConnections={selectedMaxConnections}
+                onMaxConnectionsChange={(next) => handleSearchFiltersChange({ maxConnections: next })}
+                baggage={baggage}
+                baggageHandler={baggageHandler}
+                transitHours={transitHours}
+                departureFlightRange={departureFlightRange}
+                arrivalFlightRange={arrivalFlightRange}
+                onDepartureRangeChange={(next) => handleSearchFiltersChange({ departureFlightRange: next })}
+                onArrivalRangeChange={(next) => handleSearchFiltersChange({ arrivalFlightRange: next })}
+                openTimePicker={openTimePicker}
+                timeRefs={timeRefs}
+                airline={airline}
+                selectedAirlineIds={selectedAirlineIds}
+                onAirlineToggle={(code, checked) => handleAirlineToggle(code, checked)}
+                onReset={() => {
+                  setSelectedAirlineIds([]);
+                  setSelectedMaxConnections(0);
+                  setDepartureFlightRange({ start: "", end: "" });
+                  setArrivalFlightRange({ start: "", end: "" });
+                  setSelectedPriceRange(priceRangeBounds);
+                  applyFlightSearchFilters(
+                    { start: "", end: "" },
+                    { start: "", end: "" },
+                    [],
+                    priceRangeBounds,
+                  );
+                }}
+              />
             </Drawer>
           </div>
         )}
@@ -1069,218 +901,50 @@ const FlightDetailTemplate: React.FC = () => {
         <div className="contentWrapFlex">
           {screens.lg && (
             <div className="flightDetailFilter">
-              <div className="filterSectionStyle">
-                <div className="">
-                  <CustomCollapse>
-                    <Panel header={headerContent} key="1">
-                      <Slider
-                        range
-                        defaultValue={[priceRangeBounds[0], priceRangeBounds[1]]}
-                        aria-label="price-range-slider"
-                        min={priceRangeBounds[0]}
-                        max={priceRangeBounds[1]}
-                        step={PRICE_STEP}
-                        value={selectedPriceRange}
-                        onChange={(val) => {
-                          const next = val as [number, number];
-                          setSelectedPriceRange(next);
-                          applyFlightSearchFilters(
-                            departureFlightRange,
-                            arrivalFlightRange,
-                            selectedAirlineIds,
-                            next,
-                          );
-                        }}
-                      />
-                      {/* <Select
-                        style={{ width: "100%" }}
-                        placeholder="Select an option"
-                        value={selectedPriceId || undefined}
-                        // onChange={(value) => setSelectedPriceId(value)}
-                        onChange={(value) => handleSearchFiltersChange({ priceId: value })}
-                        options={filterSortPriceOptions}
-                        disabled={loading && !filterSortPriceOptions.length}
-                      /> */}
-                    </Panel>
-                  </CustomCollapse>
-                </div>
-                <div className="filterStyle">
-                  <div className="filterHeading">
-                    <div>
-                      <h4>
-                        Filters
-                        <span className="smallDot">•</span>
-                        <span className="lightActiveText">{0} Active</span>
-                      </h4>
-                    </div>
-                    <div className="resetAllBtn">
-                      <a href="#">Reset all</a>
-                    </div>
-                  </div>
-                  <CustomCollapse>
-                    <Panel header="Number of stops" key="1">
-                      <Radio.Group
-                        block
-                        options={
-                          numberStops && numberStops.length
-                            ? numberStops
-                            : [{ label: "0", value: "0" }]
-                        }
-                        value={String(selectedMaxConnections)}
-                        optionType="button"
-                        buttonStyle="solid"
-                        className="stopsRadioStyle"
-                        disabled={loading && !numberStops.length}
-                        onChange={(e) => handleSearchFiltersChange({ maxConnections: e?.target?.value ?? e })}
-                      />
-                    </Panel>
-                  </CustomCollapse>
-                  <CustomCollapse>
-                    <Panel header="Baggage" key="1">
-                      <Checkbox
-                        className="baggageCheckbox"
-                        onChange={baggageHandler}
-                        disabled={loading && !baggage.length}
-                      >
-                        {(baggage && baggage[0]?.label) ||
-                          "Checked baggage included"}
-                      </Checkbox>
-                    </Panel>
-                  </CustomCollapse>
-
-                  <CustomCollapse>
-                    <Panel header="Transit hours" key="1">
-                      <Radio.Group
-                        block
-                        options={
-                          transitHours && transitHours.length
-                            ? transitHours
-                            : [{ label: "0-3h", value: "0-3h" }]
-                        }
-                        defaultValue={
-                          (transitHours && transitHours[0]?.value) ?? "0-3h"
-                        }
-                        optionType="button"
-                        buttonStyle="solid"
-                        className="transitHours"
-                        disabled={loading && !transitHours.length}
-                      />
-                    </Panel>
-                  </CustomCollapse>
-
-                  <CustomCollapse>
-                    <Panel header="Flight time" key="1">
-                      <p
-                        className="departureArrivalHeading"
-                        style={{ paddingTop: 0 }}
-                      >
-                        Departure
-                      </p>
-                      <div className="departureArrival">
-                        {/* <div className="timeBox">11:00AM</div> */}
-                        <input
-                          type="time"
-                          className="timeBox"
-                          ref={(el) => { timeRefs.current["departureFlightStartTime"] = el; }}
-                          onClick={() => openTimePicker("departureFlightStartTime")}
-                          onChange={(e) => handleSearchFiltersChange({
-                            departureFlightRange: {
-                              start: e.target.value,
-                              end: departureFlightRange.end
-                            }
-                          })}
-                        />
-                        <div className="rightArrow">
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M13.8538 8.35378L9.35375 12.8538C9.25993 12.9476 9.13268 13.0003 9 13.0003C8.86732 13.0003 8.74007 12.9476 8.64625 12.8538C8.55243 12.76 8.49972 12.6327 8.49972 12.5C8.49972 12.3674 8.55243 12.2401 8.64625 12.1463L12.2931 8.50003H2.5C2.36739 8.50003 2.24021 8.44736 2.14645 8.35359C2.05268 8.25982 2 8.13264 2 8.00003C2 7.86743 2.05268 7.74025 2.14645 7.64648C2.24021 7.55271 2.36739 7.50003 2.5 7.50003H12.2931L8.64625 3.85378C8.55243 3.75996 8.49972 3.63272 8.49972 3.50003C8.49972 3.36735 8.55243 3.2401 8.64625 3.14628C8.74007 3.05246 8.86732 2.99976 9 2.99976C9.13268 2.99976 9.25993 3.05246 9.35375 3.14628L13.8538 7.64628C13.9002 7.69272 13.9371 7.74786 13.9623 7.80856C13.9874 7.86926 14.0004 7.93433 14.0004 8.00003C14.0004 8.06574 13.9874 8.13081 13.9623 8.1915C13.9371 8.2522 13.9002 8.30735 13.8538 8.35378Z"
-                              fill="#0A0C0F"
-                            />
-                          </svg>
-                        </div>
-                        <input
-                          type="time"
-                          className="timeBox"
-                          ref={(el) => { timeRefs.current["departureFlightEndTime"] = el; }}
-                          onClick={() => openTimePicker("departureFlightEndTime")}
-                          onChange={(e) => handleSearchFiltersChange({
-                            departureFlightRange: {
-                              start: departureFlightRange.start,
-                              end: e.target.value
-                            }
-                          })}
-                        />
-                      </div>
-
-                      <p className="departureArrivalHeading">Arrival</p>
-                      <div className="departureArrival">
-                        <input
-                          type="time"
-                          className="timeBox"
-                          ref={(el) => { timeRefs.current["arrivalFlightStartTime"] = el; }}
-                          onClick={() => openTimePicker("arrivalFlightStartTime")}
-                          onChange={(e) => handleSearchFiltersChange({
-                            arrivalFlightRange: {
-                              start: e.target.value,
-                              end: arrivalFlightRange.end
-                            }
-                          })}
-                        />
-                        <div className="rightArrow">
-                          <svg
-                            width="16"
-                            height="16"
-                            viewBox="0 0 16 16"
-                            fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              d="M13.8538 8.35378L9.35375 12.8538C9.25993 12.9476 9.13268 13.0003 9 13.0003C8.86732 13.0003 8.74007 12.9476 8.64625 12.8538C8.55243 12.76 8.49972 12.6327 8.49972 12.5C8.49972 12.3674 8.55243 12.2401 8.64625 12.1463L12.2931 8.50003H2.5C2.36739 8.50003 2.24021 8.44736 2.14645 8.35359C2.05268 8.25982 2 8.13264 2 8.00003C2 7.86743 2.05268 7.74025 2.14645 7.64648C2.24021 7.55271 2.36739 7.50003 2.5 7.50003H12.2931L8.64625 3.85378C8.55243 3.75996 8.49972 3.63272 8.49972 3.50003C8.49972 3.36735 8.55243 3.2401 8.64625 3.14628C8.74007 3.05246 8.86732 2.99976 9 2.99976C9.13268 2.99976 9.25993 3.05246 9.35375 3.14628L13.8538 7.64628C13.9002 7.69272 13.9371 7.74786 13.9623 7.80856C13.9874 7.86926 14.0004 7.93433 14.0004 8.00003C14.0004 8.06574 13.9874 8.13081 13.9623 8.1915C13.9371 8.2522 13.9002 8.30735 13.8538 8.35378Z"
-                              fill="#0A0C0F"
-                            />
-                          </svg>
-                        </div>
-                        <input
-                          type="time"
-                          className="timeBox"
-                          ref={(el) => { timeRefs.current["arrivalFlightEndTime"] = el; }}
-                          onClick={() => openTimePicker("arrivalFlightEndTime")}
-                          onChange={(e) => handleSearchFiltersChange({
-                            arrivalFlightRange: {
-                              start: arrivalFlightRange.start,
-                              end: e.target.value
-                            }
-                          })}
-                        />
-                      </div>
-                    </Panel>
-                  </CustomCollapse>
-
-                  <CustomCollapse>
-                    <Panel header="Airlines" key="1">
-                      <div className="flex flex-col gap-2">
-                        {airline.map((a) => (
-                          <Checkbox
-                            key={a.id}
-                            className="baggageCheckbox"
-                            disabled={loading && !airline.length}
-                            onChange={(e: any) => handleAirlineToggle(a.code, e?.target?.checked ?? !!e)}
-                            checked={selectedAirlineIds.includes(a.code)}
-                          >
-                            {a.label}
-                          </Checkbox>
-                        ))}
-                      </div>
-                    </Panel>
-                  </CustomCollapse>
-                </div>
-              </div>
+              <FlightSearchFilter
+                loading={loading}
+                headerContent={headerContent}
+                priceRangeBounds={priceRangeBounds}
+                selectedPriceRange={selectedPriceRange}
+                priceStep={PRICE_STEP}
+                onPriceRangeChange={(next) => {
+                  setSelectedPriceRange(next);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    next,
+                  );
+                }}
+                numberStops={numberStops}
+                selectedMaxConnections={selectedMaxConnections}
+                onMaxConnectionsChange={(next) => handleSearchFiltersChange({ maxConnections: next })}
+                baggage={baggage}
+                baggageHandler={baggageHandler}
+                transitHours={transitHours}
+                departureFlightRange={departureFlightRange}
+                arrivalFlightRange={arrivalFlightRange}
+                onDepartureRangeChange={(next) => handleSearchFiltersChange({ departureFlightRange: next })}
+                onArrivalRangeChange={(next) => handleSearchFiltersChange({ arrivalFlightRange: next })}
+                openTimePicker={openTimePicker}
+                timeRefs={timeRefs}
+                airline={airline}
+                selectedAirlineIds={selectedAirlineIds}
+                onAirlineToggle={(code, checked) => handleAirlineToggle(code, checked)}
+                onReset={() => {
+                  setSelectedAirlineIds([]);
+                  setSelectedMaxConnections(0);
+                  setDepartureFlightRange({ start: "", end: "" });
+                  setArrivalFlightRange({ start: "", end: "" });
+                  setSelectedPriceRange(priceRangeBounds);
+                  applyFlightSearchFilters(
+                    { start: "", end: "" },
+                    { start: "", end: "" },
+                    [],
+                    priceRangeBounds,
+                  );
+                }}
+              />
             </div>
           )}
           <div className="flightDetailMainContent" style={{ width: "100%" }}>

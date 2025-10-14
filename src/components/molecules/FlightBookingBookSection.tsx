@@ -18,7 +18,7 @@ import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import FLightFareRule from "../atoms/FlightFareRule";
-import { buildFlightSegmentFromTrip, formatDate, formatTime, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
+import { buildFlightSegmentFromTrip, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
 
 function ChevronDown() {
     return (
