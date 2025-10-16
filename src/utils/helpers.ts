@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export type AssetBundle = {
   EmirateLogo?: string;
   cabinIcon?: string;
@@ -50,26 +52,11 @@ export function formatDate(dateStr: string) {
 }
 
 export function buildFilterPreferenceForFlightSearchRequest(
-  // selectedPriceId?: string | null,
   selectedMaxConnections?: number | null
 ) {
   const maxConnections = typeof selectedMaxConnections === "number" ? selectedMaxConnections : 0;
 
   return { maxConnections };
-
-  // const preference = selectedPriceId
-  //   ? {
-  //     preference: {
-  //       farePreference: [
-  //         {
-  //           farePreference: selectedPriceId,
-  //         },
-  //       ],
-  //     },
-  //   }
-  //   : undefined;
-
-  // return preference ? { ...preference, maxConnections } : { maxConnections };
 }
 
 export function mapFlightSegment(item: any, assets: AssetBundle = {}, defaultHeading = "Flight") {
@@ -199,4 +186,24 @@ export function timeToMinutesFromAnyString(t?: string | null) {
   if (!isNaN(fallback.getTime())) return fallback.getHours() * 60 + fallback.getMinutes();
 
   return null;
+}
+
+export const generateUUID = () =>
+  typeof crypto !== "undefined" && typeof (crypto as any).randomUUID === "function"
+    ? (crypto as any).randomUUID()
+    : `uuid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+export function formatDateToLocalISO(date: Date | null): string | null {
+  if (!date) return null;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+export function parseLocalDateString(dateStr: string | null | undefined): Date | null {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split("-");
+  if (!y || !m || !d) return null;
+  return new Date(Number(y), Number(m) - 1, Number(d)); // local midnight
 }

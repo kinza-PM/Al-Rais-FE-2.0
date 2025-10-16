@@ -6,6 +6,7 @@ import portIcon from "../../assets/svgs/ports.svg";
 import wifiIcon from "../../assets/svgs/wifi.svg";
 import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
+import FlagUsa from "../../assets/images/Flag-usa.png";
 import { useState } from "react";
 import FlightBookingBaggageSection from "../atoms/FlightBookingBaggageSection";
 import FlightBookingMealsSection from "../atoms/FlightBookingMealsSection";
@@ -13,12 +14,25 @@ import FlightBookingComfortAirportAndTravelSection from "../atoms/FlightBookingC
 import FlightBookingSeatSection from "../atoms/FlightBookingSeatSection";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
-import CustomToggle from "../common/CustomToggle";
+// import CustomToggle from "../common/CustomToggle";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import FLightFareRule from "../atoms/FlightFareRule";
-import { buildFlightSegmentFromTrip, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
+import { buildFlightSegmentFromTrip, formatDateToLocalISO, getPriceCabinClassForFlightSummary, parseLocalDateString } from "../../utils/helpers";
+import { useFlightInitialBooking } from "../../hooks/useFlightBooking";
+import toast from "react-hot-toast";
+import { validatePassengersForFlightProvisionalBooking } from "../../utils/flightBookingHelper";
+import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+
+type FlightBookingBookSectionProps = {
+    trip: any;
+    passengers: Array<any>;
+    countries: Array<{ id: string; code: string; label: string; city: string; }>;
+    flightBookingPayload: any;
+    onPassengerFieldChange: (index: number, path: string, value: any) => void;
+    fareBookingRules?: any;
+}
 
 function ChevronDown() {
     return (
@@ -26,15 +40,14 @@ function ChevronDown() {
     )
 }
 
-const defaultPassenger = () => ({
-    id: `${Date.now()}-${Math.floor(Math.random() * 10000)}`,
-    paxType: "",
-    passportNumber: "",
-    issuingCountry: "",
-    expiryDate: null,
-});
-
-export default function FlightBookingBookSection({ trip }: { trip: any }) {
+export default function FlightBookingBookSection({
+    trip,
+    passengers = [],
+    countries = [],
+    flightBookingPayload,
+    onPassengerFieldChange,
+    fareBookingRules,
+}: FlightBookingBookSectionProps) {
     const [openPrice, setOpenPrice] = useState(false);
     const [openBaggage, setOpenBaggage] = useState(true);
     const [openSeats, setOpenSeats] = useState(true);
@@ -43,29 +56,11 @@ export default function FlightBookingBookSection({ trip }: { trip: any }) {
     const [openAirport, setOpenAirport] = useState(true);
     const [depBagOn, setDepBagOn] = useState(true);
     const [retBagOn, setRetBagOn] = useState(false);
-    const [bookingForOther, setBookingForOther] = useState(true);
+    // const [bookingForOther, setBookingForOther] = useState(true);
     const [openTP, setOpenTP] = useState(true);
 
-    const [passengers, setPassengers] = useState([defaultPassenger()]);
-
-    const updatePassengers = (next: ReturnType<typeof defaultPassenger>[]) => {
-        setPassengers(next);
-    };
-
-    const handlePassengerFieldChange = (index: number, field: "paxType" | "passportNumber" | "issuingCountry" | "expiryDate", value: any) => {
-        updatePassengers(
-            passengers.map((p, i) => (i === index ? { ...p, [field]: value } : p))
-        );
-    };
-
-    const addPassenger = () => {
-        updatePassengers([...passengers, defaultPassenger()]);
-    };
-
-    const removePassenger = (index: number) => {
-        if (passengers.length === 1) return;
-        updatePassengers(passengers.filter((_, i) => i !== index));
-    };
+    const pRules = fareBookingRules?.passengerRules?.[0] ?? {};
+    const { mutateAsync, isPending } = useFlightInitialBooking();
 
     const assets = { EmirateLogo, cabinIcon, baggageIcon, mealIcon, wifiIcon, portIcon, entertainmentIcon };
     const segments = buildFlightSegmentFromTrip(trip, assets);
@@ -81,163 +76,355 @@ export default function FlightBookingBookSection({ trip }: { trip: any }) {
         },
     };
 
+    const handleFlightProvInitialBooking = async () => {
+        if (typeof validatePassengersForFlightProvisionalBooking === "function") {
+            const { valid, error } = validatePassengersForFlightProvisionalBooking(fareBookingRules, flightBookingPayload);
+            if (!valid) {
+                toast.error(error || "Validation failed.");
+                return;
+            }
+        }
+        try {
+            const response = await mutateAsync(flightBookingPayload);
+            if (response?.meta?.success && response?.meta?.statusMessage == "SUCCESS") {
+                toast.success(response?.meta?.actionType);
+            }
+        } catch (error) {
+            const err = extractErrorFromAxiosApiError(error);
+            toast.error(err);
+        }
+    }
+
     return (
         <section className="mx-auto max-w-full px-10 flight-booking-section">
             <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
-                {/* LEFT: Forms */}
                 <div className="space-y-4">
-                    {/* Contact person details (own card) */}
-                    <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
-                        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
-                            <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                                Contact person details
-                            </h3>
-                            <CustomToggle
-                                label="I’m booking for someone else"
-                                checked={bookingForOther}
-                                onChange={() => setBookingForOther((v) => !v)}
-                            />
-
-
-                        </div>
-
-                        <div className="px-4 py-4">
-                            <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
-                                <div className="relative w-full">
-                                    <label className="mb-1 block text-[12px] text-[#3D495C]">Title</label>
-                                    <select className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none">
-                                        <option>Select title</option>
-                                        <option>Mr</option>
-                                        <option>Ms</option>
-                                        <option>Mrs</option>
-                                    </select>
-                                    <ChevronDown />
+                    {passengers.map((p, idx) => (
+                        <>
+                            <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm" key={p.passengerKey || idx}>
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
+                                    <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                                        Contact person {String(idx + 1).padStart(2, "0")} details
+                                    </h3>
+                                    {/* <CustomToggle
+                                        label="I’m booking for someone else"
+                                        checked={bookingForOther}
+                                        onChange={() => setBookingForOther((v) => !v)}
+                                    /> */}
                                 </div>
-                                <TailwindCustomInput
-                                    type="text"
-                                    placeholder="Enter your full name"
-                                    label="Full name (Filled based on ID/Passport/Driver’s license)"
-                                />
 
-                                <div className="w-full">
-                                    <label className="mb-1 block text-[12px] text-[#3D495C]">Phone</label>
-                                    <div className="flex gap-2">
-                                        <Button
-                                            overrideClasses
-                                            type="button"
-                                            className="h-10 inline-flex items-center gap-2 rounded-lg border border-[#C2CAD6] bg-white px-3 text-sm text-[#3D495C]"
-                                        >
-                                            <span className="text-lg leading-none">🇺🇸</span>
-                                            <span className="text-[#3D495C]">+1</span>
-                                            <svg width="12" height="7" viewBox="0 0 12 7" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <path d="M11.354 1.35372L6.35403 6.35372C6.30759 6.40021 6.25245 6.43709 6.19175 6.46225C6.13105 6.48742 6.06599 6.50037 6.00028 6.50037C5.93457 6.50037 5.86951 6.48742 5.80881 6.46225C5.74811 6.43709 5.69296 6.40021 5.64653 6.35372L0.646528 1.35372C0.552708 1.2599 0.5 1.13265 0.5 0.999973C0.5 0.867291 0.552708 0.740043 0.646528 0.646223C0.740348 0.552402 0.867596 0.499695 1.00028 0.499695C1.13296 0.499695 1.26021 0.552402 1.35403 0.646223L6.00028 5.2931L10.6465 0.646223C10.693 0.599767 10.7481 0.562917 10.8088 0.537776C10.8695 0.512635 10.9346 0.499695 11.0003 0.499695C11.066 0.499695 11.131 0.512635 11.1917 0.537776C11.2524 0.562917 11.3076 0.599767 11.354 0.646223C11.4005 0.692678 11.4373 0.747828 11.4625 0.808525C11.4876 0.869221 11.5006 0.934275 11.5006 0.999973C11.5006 1.06567 11.4876 1.13072 11.4625 1.19142C11.4373 1.25212 11.4005 1.30727 11.354 1.35372Z" fill="#3D495C" />
-                                            </svg>
-
-                                        </Button>
+                                <div className="px-4 py-4">
+                                    <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
+                                        <div className="relative w-full">
+                                            <label className="mb-1 block text-[12px] text-[#3D495C]">Title</label>
+                                            <select
+                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                value={p.passengerInfo?.nameTitle ?? ""}
+                                                onChange={(e) => onPassengerFieldChange(idx, "passengerInfo.nameTitle", e.target.value)}>
+                                                <option value="">Select title</option>
+                                                <option value="MR">Mr</option>
+                                                <option value="MS">Ms</option>
+                                                <option value="MRS">Mrs</option>
+                                            </select>
+                                            <ChevronDown />
+                                        </div>
                                         <TailwindCustomInput
                                             type="text"
-                                            placeholder="Phone"
+                                            placeholder="Enter your full name"
+                                            label="Full name (Filled based on ID/Passport/Driver’s license)"
+                                            value={p.passengerInfo?.givenName ?? ""}
+                                            onChange={(evOrVal) => {
+                                                const v = evOrVal && (evOrVal.target) ? evOrVal.target.value : evOrVal;
+                                                onPassengerFieldChange(idx, "passengerInfo.givenName", v ?? "");
+                                            }}
                                         />
-                                    </div>
-                                </div>
-                                <TailwindCustomInput
-                                    type="text"
-                                    placeholder="Enter an email"
-                                    label="Email"
-                                />
-                            </div>
-                        </div>
-                    </div>
 
-                    {/* Passenger details (separate card) */}
-                    {passengers.map((p, idx) => (
-                        <div key={p.id} className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
-                            <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7]">
-                                <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                                    Passenger {String(idx + 1).padStart(2, "0")} details
-                                </h3>
-
-                                {passengers.length > 1 && idx > 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={() => removePassenger(idx)}
-                                        className="text-sm text-red-600 hover:underline"
-                                    >
-                                        Remove
-                                    </button>
-                                )}
-                            </div>
-
-                            <div className="px-4 py-4">
-                                <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
-                                    <div className="relative w-full">
-                                        <label className="mb-1 block text-[12px] text-[#3D495C]">Pax type</label>
-                                        <select
-                                            className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-                                            value={p.paxType}
-                                            onChange={(e) => handlePassengerFieldChange(idx, "paxType", e.target.value)}
-                                        >
-                                            <option value="">Select title</option>
-                                            <option value="Adult">Adult</option>
-                                            <option value="Child">Child</option>
-                                            <option value="Infant">Infant</option>
-                                        </select>
-                                        <ChevronDown />
-                                    </div>
-
-                                    <TailwindCustomInput
-                                        type="text"
-                                        placeholder="Enter passport number"
-                                        label="Passport number"
-                                        value={p.passportNumber}
-                                        onChange={(evOrVal) => {
-                                            const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
-                                            handlePassengerFieldChange(idx, "passportNumber", v ?? "");
-                                        }}
-                                    />
-
-                                    <div className="relative w-full">
-                                        <label className="mb-1 block text-[12px] text-[#3D495C]">Issuing country</label>
-                                        <select
-                                            className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-                                            value={p.issuingCountry}
-                                            onChange={(e) => handlePassengerFieldChange(idx, "issuingCountry", e.target.value)}
-                                        >
-                                            <option value="">Select issuing country</option>
-                                            <option value="UAE">UAE</option>
-                                            <option value="PK">Pakistan</option>
-                                            <option value="US">United States</option>
-                                            {/* ya ap countries list map kar do */}
-                                        </select>
-                                        <ChevronDown />
-                                    </div>
-
-                                    <div className="w-full">
-                                        <label className="mb-1 block text-[12px] text-[#3D495C]">Expiry date</label>
-                                        <TailiwindCustomDatePicker
-                                            value={p.expiryDate}
-                                            onChange={(date) => handlePassengerFieldChange(idx, "expiryDate", date)}
-                                            placeholder="Please select"
-                                            buttonIconSrc={true}
-                                            overridesClass
-                                            inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                                        <TailwindCustomInput
+                                            type="text"
+                                            placeholder="Enter your surname"
+                                            label="Surname"
+                                            value={p.passengerInfo?.surname ?? ""}
+                                            onChange={(evOrVal) => {
+                                                const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
+                                                onPassengerFieldChange(idx, "passengerInfo.surname", v ?? "");
+                                            }}
                                         />
+
+                                        <div className="relative w-full">
+                                            <label className="mb-1 block text-[12px] text-[#3D495C]">Gender</label>
+                                            <select
+                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                value={p.passengerInfo?.gender ?? ""}
+                                                onChange={(e) => onPassengerFieldChange(idx, "passengerInfo.gender", e.target.value)}
+                                            >
+                                                <option>Select gender</option>
+                                                <option value="M">Male</option>
+                                                <option value="F">Female</option>
+                                            </select>
+                                            <ChevronDown />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+
+                            {/* Passenger details (separate card) */}
+
+                            <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
+                                <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7]">
+                                    <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                                        Passenger {String(idx + 1).padStart(2, "0")} details
+                                    </h3>
+                                </div>
+
+                                <div className="px-4 py-4">
+                                    <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
+                                        <div className="relative w-full">
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder="Select Pax Type"
+                                                label="Pax type"
+                                                value={p.ptc || ""}
+                                                disabled
+                                            />
+                                        </div>
+
+                                        {pRules.isIdTypeMandatory && (
+                                            <div className="relative w-full">
+                                                <label className="mb-1 block text-[12px] text-[#3D495C]">ID type</label>
+                                                <select
+                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                    value={p.identityDocuments?.[0]?.idType ?? "PT"}
+                                                    onChange={(e) => onPassengerFieldChange(idx, "identityDocuments.0.idType", e.target.value)}
+                                                >
+                                                    <option value="PT">Passport (PT)</option>
+                                                </select>
+                                                <ChevronDown />
+                                            </div>
+                                        )}
+
+                                        {pRules.isDocumentNumberMandatory && (
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder={`Enter ${p.identityDocuments?.[0]?.idType === "PT" ? "Passport number" : p.identityDocuments?.[0]?.idType === "DL" ? "Driving licence" : "National ID"}`}
+                                                label={`${p.identityDocuments?.[0]?.idType === "PT" ? "Passport number" : p.identityDocuments?.[0]?.idType === "DL" ? "Driving licence" : "National ID"}`}
+                                                value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
+                                                onChange={(evOrVal) => {
+                                                    const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
+                                                    onPassengerFieldChange(idx, "identityDocuments.0.idDocumentNumber", v ?? "");
+                                                }}
+                                            />
+                                        )}
+
+                                        {pRules.isIssuingCountryCodeMandatory && (
+                                            <div className="relative w-full">
+                                                <label className="mb-1 block text-[12px] text-[#3D495C]">Issuing country</label>
+                                                <select
+                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                    value={p.identityDocuments?.[0]?.issuingCountryCode ?? ""}
+                                                    onChange={(e) => onPassengerFieldChange(idx, "identityDocuments.0.issuingCountryCode", e.target.value)}
+                                                >
+                                                    <option value="">Select issuing country</option>
+                                                    {countries?.map((c) => <option key={c.code} value={c.code}>{c.city}</option>)}
+                                                </select>
+                                                <ChevronDown />
+                                            </div>
+                                        )}
+
+                                        {pRules.isDateOfIssueMandatory && (
+                                            <div className="w-full">
+                                                <label className="mb-1 block text-[12px] text-[#3D495C]">Date of issue</label>
+                                                <TailiwindCustomDatePicker
+                                                    value={p.identityDocuments?.[0]?.dateOfIssue ? parseLocalDateString(p.identityDocuments?.[0]?.dateOfIssue) : null}
+                                                    onChange={(date) => {
+                                                        const iso = formatDateToLocalISO(date);
+                                                        onPassengerFieldChange(idx, "identityDocuments.0.dateOfIssue", iso);
+                                                    }}
+                                                    placeholder="Please select"
+                                                    overridesClass
+                                                    inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {pRules.isExpiryDateMandatory && (
+                                            <div className="w-full">
+                                                <label className="mb-1 block text-[12px] text-[#3D495C]">Expiry date</label>
+                                                <TailiwindCustomDatePicker
+                                                    value={p.identityDocuments?.[0]?.expiryDate ? parseLocalDateString(p.identityDocuments?.[0]?.expiryDate) : null}
+                                                    onChange={(date) => {
+                                                        const iso = formatDateToLocalISO(date);
+                                                        onPassengerFieldChange(idx, "identityDocuments.0.expiryDate", iso);
+                                                    }}
+                                                    placeholder="Please select"
+                                                    overridesClass
+                                                    inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {pRules.isResidenceCountryCodeMandatory && (
+                                            <div className="relative w-full">
+                                                <label className="mb-1 block text-[12px] text-[#3D495C]">Residence Country</label>
+                                                <select
+                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                    value={p.identityDocuments?.[0]?.residenceCountryCode ?? ""}
+                                                    onChange={(e) => onPassengerFieldChange(idx, "identityDocuments.0.residenceCountryCode", e.target.value)}
+                                                >
+                                                    <option value="">Select residence country</option>
+                                                    {countries?.map((c) => <option key={c.code} value={c.code}>{c.city}</option>)}
+                                                </select>
+                                                <ChevronDown />
+                                            </div>
+                                        )}
+
+                                        {fareBookingRules?.isLeadEmailAddressMandatory && (
+                                            <TailwindCustomInput
+                                                type="email"
+                                                placeholder="Enter an email"
+                                                label="Email"
+                                                value={p.contact?.contactsProvided?.[0]?.emailAddress?.[0] ?? ""}
+                                                onChange={(evOrVal) => {
+                                                    const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
+                                                    onPassengerFieldChange(idx, "contact.contactsProvided.0.emailAddress.0", v ?? "");
+                                                }}
+                                            />
+                                        )}
+
+                                        {pRules.isDateOfBirthMandatory && (
+                                            <div className="w-full">
+                                                <label className="mb-1 block text-[12px] text-[#3D495C]">Birth date</label>
+                                                <TailiwindCustomDatePicker
+                                                    placeholder="Please select"
+                                                    value={p.passengerInfo?.birthDate ? parseLocalDateString(p.passengerInfo?.birthDate) : null}
+                                                    onChange={(date) => {
+                                                        const iso = formatDateToLocalISO(date);
+                                                        onPassengerFieldChange(idx, "passengerInfo.birthDate", iso);
+                                                    }}
+                                                    overridesClass
+                                                    inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                                                />
+                                            </div>
+                                        )}
+
+                                        {pRules.isPANMandatory && (
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder="Enter PAN"
+                                                label="PAN"
+                                                value={p.passengerInfo?.PAN ?? ""}
+                                                onChange={(evOrVal) => {
+                                                    const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
+                                                    onPassengerFieldChange(idx, "passengerInfo.PAN", v ?? "");
+                                                }}
+                                            />
+                                        )}
+
+                                        {pRules.isAdditionalIdTypeMandatory && (
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder="Additional ID type"
+                                                label="Additional ID type"
+                                                value={p.additionalId?.type ?? ""}
+                                                onChange={(evOrVal) => {
+                                                    const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
+                                                    onPassengerFieldChange(idx, "additionalId.type", v ?? "");
+                                                }}
+                                            />
+                                        )}
+
+                                        {pRules.isAdditionalDocumentNumberMandatory && (
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder="Additional document number"
+                                                label="Additional document number"
+                                                value={p.additionalId?.number ?? ""}
+                                                onChange={(evOrVal) => {
+                                                    const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
+                                                    onPassengerFieldChange(idx, "additionalId.number", v ?? "");
+                                                }}
+                                            />
+                                        )}
+
+                                        {/* Seat, Meal, Baggage, OtherAncillary (only show if mandatory) */}
+                                        {pRules.isSeatMandatory && (
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder="Preferred seat (if any)"
+                                                label="Seat"
+                                                value={p.seat ?? ""}
+                                                onChange={(evOrVal) => onPassengerFieldChange(idx, "seat", evOrVal.target?.value ?? evOrVal)}
+                                            />
+                                        )}
+
+                                        {pRules.isMealMandatory && (
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder="Meal preference"
+                                                label="Meal"
+                                                value={p.meal ?? ""}
+                                                onChange={(evOrVal) => onPassengerFieldChange(idx, "meal", evOrVal.target?.value ?? evOrVal)}
+                                            />
+                                        )}
+
+                                        {pRules.isBaggageMandatory && (
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder="Baggage"
+                                                label="Baggage"
+                                                value={p.baggage ?? ""}
+                                                onChange={(evOrVal) => onPassengerFieldChange(idx, "baggage", evOrVal.target?.value ?? evOrVal)}
+                                            />
+                                        )}
+
+                                        {pRules.isOtherAncillaryMandatory && (
+                                            <TailwindCustomInput
+                                                type="text"
+                                                placeholder="Other ancillaries"
+                                                label="Other ancillaries"
+                                                value={p.otherAncillary ?? ""}
+                                                onChange={(evOrVal) => onPassengerFieldChange(idx, "otherAncillary", evOrVal.target?.value ?? evOrVal)}
+                                            />
+                                        )}
+
+                                        {fareBookingRules?.isLeadPhoneNumberMandatory && (
+                                            <div className="w-full">
+                                                <label className="mb-1 block text-[12px] text-[#3D495C]">Phone</label>
+                                                <div className="flex gap-2">
+                                                    <div className="relative">
+                                                        <select
+                                                            aria-label="Country code"
+                                                            style={{ backgroundImage: `url(${FlagUsa})`, }}
+                                                            className="h-10 w-28 appearance-none rounded-lg border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none bg-[var(--flag-url)] bg-no-repeat bg-[length:30px_28px] bg-[position:8px_center] pl-[55px]"
+                                                            value={p.contact?.contactsProvided?.[0]?.phone?.[0]?.areaCode ?? ""}
+                                                            onChange={(e) => onPassengerFieldChange(idx, "contact.contactsProvided.0.phone.0.areaCode", e.target.value)}
+                                                        >
+                                                            <option value="+1">+1</option>
+                                                            <option value="+92">+92</option>
+                                                            <option value="+971">+971</option>
+                                                        </select>
+                                                        <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                                                            <ChevronDown />
+                                                        </div>
+                                                    </div>
+
+                                                    <TailwindCustomInput
+                                                        type="text"
+                                                        placeholder="Phone"
+                                                        value={p.contact?.contactsProvided?.[0]?.phone?.[0]?.phoneNumber ?? ""}
+                                                        onChange={(evOrVal) => {
+                                                            const v = evOrVal && evOrVal.target ? evOrVal.target.value : evOrVal;
+                                                            onPassengerFieldChange(idx, "contact.contactsProvided.0.phone.0.phoneNumber", v ?? "");
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+
+                                    </div>
+                                </div>
+                            </div>
+                        </>
                     ))}
-
-                    <div className="pt-4 pb-2 flex justify-center">
-                        <Button
-                            overrideClasses
-                            type="button"
-                            onClick={addPassenger}
-                            className="inline-flex items-center gap-2 text-[14px] font-semibold text-[#2351A3] hover:underline"
-                        >
-                            Add another passenger
-                        </Button>
-                    </div>
 
                     <div className="mt-6 rounded-2xl border border-[#E4E4E7] bg-white">
                         <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7]">
@@ -306,8 +493,10 @@ export default function FlightBookingBookSection({ trip }: { trip: any }) {
                         type="button"
                         overrideClasses
                         className="mt-6 mx-4 w-[calc(100%-2rem)] rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90"
+                        onClick={() => handleFlightProvInitialBooking()}
+                        disabled={isPending}
                     >
-                        Continue
+                        {isPending ? 'Loading...' : 'Continue'}
                     </Button>
                 </div>
 

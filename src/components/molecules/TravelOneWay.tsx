@@ -24,6 +24,7 @@ import { useNavigate } from "react-router-dom";
 
 type TravelOneWayProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
+  passengersForRequest?: { id: string; ptc: string }[];
   isLoadingMore?: boolean;
   hasMore?: boolean;
   renderLoader?: (state: { isLoadingMore?: boolean; hasMore?: boolean }) => React.ReactNode;
@@ -42,6 +43,7 @@ const radioReminder = (checked: boolean) => {
 
 const TravelOneWay: React.FC<TravelOneWayProps> = ({
   passData,
+  passengersForRequest,
   isLoadingMore,
   hasMore,
   renderLoader,
@@ -155,7 +157,13 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
   const handleOfferSelection = (offerId: string, item: any) => {
     // console.log(offerId);
-    navigate('/flight-booking', { state: { offerId, flightDetail: item } })
+    navigate('/flight-booking', { 
+      state: { 
+        offerId, 
+        flightDetail: item,
+        passengersForRequest: passengersForRequest || []
+      } 
+    })
   }
 
 

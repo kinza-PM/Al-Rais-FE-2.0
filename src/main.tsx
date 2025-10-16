@@ -7,6 +7,7 @@ import awsconfig from "./aws-exports";
 import type { ThemeConfig } from "antd";
 import { ConfigProvider } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Toaster } from "react-hot-toast";
 
 const theme: ThemeConfig = {
   token: {
@@ -49,6 +50,18 @@ createRoot(document.getElementById("root")!).render(
     <ConfigProvider theme={theme}>
       <App />
     </ConfigProvider>
+    <Toaster
+      position="top-right"
+      toastOptions={{
+        duration: 4000,
+        style: {
+          background: "#0b1220", 
+          color: "#E6EEF8", 
+          boxShadow: "0 6px 18px rgba(2,6,23,0.6)",
+          borderRadius: "10px",
+        },
+      }}
+    />
   </QueryClientProvider>
   // </StrictMode>
 );

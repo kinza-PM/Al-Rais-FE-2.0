@@ -26,6 +26,7 @@ import { useNavigate } from "react-router-dom";
 
 type TravelRoundTripProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
+  passengersForRequest?: { id: string; ptc: string }[];
   isLoadingMore?: boolean;
   hasMore?: boolean;
   renderLoader?: (state: { isLoadingMore?: boolean; hasMore?: boolean }) => React.ReactNode;
@@ -35,6 +36,7 @@ type TravelRoundTripProps = {
 
 const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   passData,
+  passengersForRequest,
   isLoadingMore,
   hasMore,
   renderLoader,
@@ -153,7 +155,13 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
   const handleOfferSelection = (offerId: string, item: any) => {
     // console.log(offerId);
-    navigate('/flight-booking', { state: { offerId, flightDetail: item } })
+    navigate('/flight-booking', { 
+      state: { 
+        offerId, 
+        flightDetail: item,
+        passengersForRequest: passengersForRequest || []
+      } 
+    })
   }
 
 

@@ -44,8 +44,6 @@ export const useCountryOptions = (enabled = true) =>
 export const usePassengerSchema = (enabled = true) =>
     useListing<PassengersResponse, any, PassengerSchema[number]>(
         listingTables.passengers,
-        // builder returns PassengerSchema (array), but useListing expects array of TOut.
-        // So just wrap the real builder to pass-through:
         (items) => buildPassengerSchema(items as any) as unknown as PassengerSchema[number][],
         enabled
     );

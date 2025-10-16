@@ -1,6 +1,7 @@
 import axios from "axios";
+import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
 
-const flightApis = ["/flightSearch", "/moreFareSearch"];
+const flightApis = ["/flightSearch", "/moreFareSearch", "/flightProvBooking", "/fareRuleSearch"];
 
 export const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -27,22 +28,19 @@ axiosClient.interceptors.request.use((config) => {
 });
 
 export function toApiError(source: string, err: unknown): Error {
-  console.log('source', source);
-  console.log('err', err);
   if (axios.isAxiosError(err)) {
-    // Abort / cancel
     if (err.code === "ERR_CANCELED") {
       return new Error(`${source} aborted (timeout/cancelled)`);
     }
     const status = err.response?.status;
-    const serverMsg =
-      (err.response?.data as any)?.message ||
-      (typeof err.response?.data === "string" ? err.response?.data : "");
-    const msg = serverMsg || err.message || "Unknown error";
+    const data = err.response?.data ?? err.response;
+    const serverMsg = extractServerMessageFromAny(data);
+    const msg = serverMsg ?? (err as any)?.message ?? "Unknown error";
     return new Error(`${source} failed (${status ?? "no-status"}): ${msg}`);
   }
   return new Error((err as any)?.message || `${source} failed (unknown)`);
 }
+
 
 export const api = {
   get: async <T>(

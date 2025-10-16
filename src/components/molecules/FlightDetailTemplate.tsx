@@ -1038,6 +1038,7 @@ const FlightDetailTemplate: React.FC = () => {
               <>
                 <TravelOneWay
                   passData={responseData || []}
+                  passengersForRequest={buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts)}
                   isLoadingMore={isLoadingMore}
                   hasMore={hasMore}
                   renderLoader={renderLoadMoreApiLoader}
@@ -1047,6 +1048,7 @@ const FlightDetailTemplate: React.FC = () => {
             ) : trip === "roundtrip" ? (
               <TravelRoundTrip
                 passData={roundResponseData || []}
+                passengersForRequest={buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts)}
                 isLoadingMore={isLoadingMore}
                 hasMore={hasMore}
                 renderLoader={renderLoadMoreApiLoader}
