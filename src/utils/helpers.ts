@@ -1,5 +1,3 @@
-import axios from "axios";
-
 export type AssetBundle = {
   EmirateLogo?: string;
   cabinIcon?: string;
