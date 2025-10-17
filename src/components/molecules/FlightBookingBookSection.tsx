@@ -8,10 +8,10 @@ import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import FlagUsa from "../../assets/images/Flag-usa.png";
 import { useState } from "react";
-import FlightBookingBaggageSection from "../atoms/FlightBookingBaggageSection";
-import FlightBookingMealsSection from "../atoms/FlightBookingMealsSection";
-import FlightBookingComfortAirportAndTravelSection from "../atoms/FlightBookingComfortAirportAndTravelSection";
-import FlightBookingSeatSection from "../atoms/FlightBookingSeatSection";
+// import FlightBookingBaggageSection from "../atoms/FlightBookingBaggageSection";
+// import FlightBookingMealsSection from "../atoms/FlightBookingMealsSection";
+// import FlightBookingComfortAirportAndTravelSection from "../atoms/FlightBookingComfortAirportAndTravelSection";
+// import FlightBookingSeatSection from "../atoms/FlightBookingSeatSection";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
 // import CustomToggle from "../common/CustomToggle";
@@ -24,14 +24,23 @@ import { useFlightInitialBooking } from "../../hooks/useFlightBooking";
 import toast from "react-hot-toast";
 import { validatePassengersForFlightProvisionalBooking } from "../../utils/flightBookingHelper";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import LoginModal from "../common/LoginModal";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 
 type FlightBookingBookSectionProps = {
     trip: any;
     passengers: Array<any>;
-    countries: Array<{ id: string; code: string; label: string; city: string; }>;
+    cities: Array<{ id: string; code: string; label: string; city: string; }>;
     flightBookingPayload: any;
     onPassengerFieldChange: (index: number, path: string, value: any) => void;
-    fareBookingRules?: any;
+    fareBookingSearchRules?: any;
+    onNext?: () => void;
+    onUpdateFlightRaw?: (newRaw: {
+        detail?: any;
+        fare?: any;
+        financialInfo?: any;
+        journey?: any;
+    }) => void;
 }
 
 function ChevronDown() {
@@ -43,23 +52,26 @@ function ChevronDown() {
 export default function FlightBookingBookSection({
     trip,
     passengers = [],
-    countries = [],
+    cities = [],
     flightBookingPayload,
     onPassengerFieldChange,
-    fareBookingRules,
+    fareBookingSearchRules,
+    onNext,
+    onUpdateFlightRaw,
 }: FlightBookingBookSectionProps) {
+    const { isAuthenticated } = useAuth();
     const [openPrice, setOpenPrice] = useState(false);
-    const [openBaggage, setOpenBaggage] = useState(true);
-    const [openSeats, setOpenSeats] = useState(true);
-    const [openMeals, setOpenMeals] = useState(true);
-    const [openCE, setOpenCE] = useState(true);
-    const [openAirport, setOpenAirport] = useState(true);
-    const [depBagOn, setDepBagOn] = useState(true);
-    const [retBagOn, setRetBagOn] = useState(false);
+    // const [openBaggage, setOpenBaggage] = useState(true);
+    // const [openSeats, setOpenSeats] = useState(true);
+    // const [openMeals, setOpenMeals] = useState(true);
+    // const [openCE, setOpenCE] = useState(true);
+    // const [openAirport, setOpenAirport] = useState(true);
+    // const [depBagOn, setDepBagOn] = useState(true);
+    // const [retBagOn, setRetBagOn] = useState(false);
     // const [bookingForOther, setBookingForOther] = useState(true);
-    const [openTP, setOpenTP] = useState(true);
+    // const [openTP, setOpenTP] = useState(true);
 
-    const pRules = fareBookingRules?.passengerRules?.[0] ?? {};
+    const pRules = fareBookingSearchRules?.passengerRules?.[0] ?? {};
     const { mutateAsync, isPending } = useFlightInitialBooking();
 
     const assets = { EmirateLogo, cabinIcon, baggageIcon, mealIcon, wifiIcon, portIcon, entertainmentIcon };
@@ -78,7 +90,7 @@ export default function FlightBookingBookSection({
 
     const handleFlightProvInitialBooking = async () => {
         if (typeof validatePassengersForFlightProvisionalBooking === "function") {
-            const { valid, error } = validatePassengersForFlightProvisionalBooking(fareBookingRules, flightBookingPayload);
+            const { valid, error } = validatePassengersForFlightProvisionalBooking(fareBookingSearchRules, flightBookingPayload);
             if (!valid) {
                 toast.error(error || "Validation failed.");
                 return;
@@ -88,6 +100,22 @@ export default function FlightBookingBookSection({
             const response = await mutateAsync(flightBookingPayload);
             if (response?.meta?.success && response?.meta?.statusMessage == "SUCCESS") {
                 toast.success(response?.meta?.actionType);
+                const updated = response?.data?.[0];
+                if (updated && typeof onUpdateFlightRaw === "function") {
+                    const { detail, fare, financialInfo, journey, offerId } = updated;
+                    const newRaw: any = {};
+                    if (detail !== undefined) newRaw.detail = detail;
+                    if (fare !== undefined) newRaw.fare = fare;
+                    if (financialInfo !== undefined) newRaw.financialInfo = financialInfo;
+                    if (journey !== undefined) newRaw.journey = journey;
+                    if (offerId !== undefined) newRaw.offerId = offerId;
+                    if (Object.keys(newRaw).length) {
+                        onUpdateFlightRaw(newRaw);
+                    }
+                }
+                if (typeof onNext === "function") {
+                    onNext();
+                }
             }
         } catch (error) {
             const err = extractErrorFromAxiosApiError(error);
@@ -157,7 +185,7 @@ export default function FlightBookingBookSection({
                                                 value={p.passengerInfo?.gender ?? ""}
                                                 onChange={(e) => onPassengerFieldChange(idx, "passengerInfo.gender", e.target.value)}
                                             >
-                                                <option>Select gender</option>
+                                                <option value="">Select gender</option>
                                                 <option value="M">Male</option>
                                                 <option value="F">Female</option>
                                             </select>
@@ -224,7 +252,7 @@ export default function FlightBookingBookSection({
                                                     onChange={(e) => onPassengerFieldChange(idx, "identityDocuments.0.issuingCountryCode", e.target.value)}
                                                 >
                                                     <option value="">Select issuing country</option>
-                                                    {countries?.map((c) => <option key={c.code} value={c.code}>{c.city}</option>)}
+                                                    {cities?.map((c) => <option key={c.code} value={c.code}>{c.city}</option>)}
                                                 </select>
                                                 <ChevronDown />
                                             </div>
@@ -271,13 +299,13 @@ export default function FlightBookingBookSection({
                                                     onChange={(e) => onPassengerFieldChange(idx, "identityDocuments.0.residenceCountryCode", e.target.value)}
                                                 >
                                                     <option value="">Select residence country</option>
-                                                    {countries?.map((c) => <option key={c.code} value={c.code}>{c.city}</option>)}
+                                                    {cities?.map((c) => <option key={c.code} value={c.code}>{c.city}</option>)}
                                                 </select>
                                                 <ChevronDown />
                                             </div>
                                         )}
 
-                                        {fareBookingRules?.isLeadEmailAddressMandatory && (
+                                        {fareBookingSearchRules?.isLeadEmailAddressMandatory && (
                                             <TailwindCustomInput
                                                 type="email"
                                                 placeholder="Enter an email"
@@ -386,7 +414,7 @@ export default function FlightBookingBookSection({
                                             />
                                         )}
 
-                                        {fareBookingRules?.isLeadPhoneNumberMandatory && (
+                                        {fareBookingSearchRules?.isLeadPhoneNumberMandatory && (
                                             <div className="w-full">
                                                 <label className="mb-1 block text-[12px] text-[#3D495C]">Phone</label>
                                                 <div className="flex gap-2">
@@ -426,7 +454,7 @@ export default function FlightBookingBookSection({
                         </>
                     ))}
 
-                    <div className="mt-6 rounded-2xl border border-[#E4E4E7] bg-white">
+                    {/* <div className="mt-6 rounded-2xl border border-[#E4E4E7] bg-white">
                         <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7]">
                             <h3 className="text-[16px] font-semibold text-[#0A0C0F]">Enhance your trip</h3>
                             <Button overrideClasses className="text-[14px] font-medium text-[#5383DA] hover:underline">
@@ -434,7 +462,6 @@ export default function FlightBookingBookSection({
                             </Button>
                         </div>
 
-                        {/* Baggage sub-card */}
                         <FlightBookingBaggageSection
                             open={openBaggage}
                             onToggleOpen={() => setOpenBaggage(v => !v)}
@@ -449,13 +476,11 @@ export default function FlightBookingBookSection({
                             onToggleOpen={() => setOpenSeats(v => !v)}
                         />
 
-                        {/* Meals & Drinks */}
                         <FlightBookingMealsSection
                             open={openMeals}
                             onToggleOpen={() => setOpenMeals(v => !v)}
                         />
 
-                        {/* Comfort & Entertainment */}
                         <FlightBookingComfortAirportAndTravelSection
                             openComfort={openCE}
                             switchComfort={() => setOpenCE(v => !v)}
@@ -465,7 +490,7 @@ export default function FlightBookingBookSection({
                             switchProtection={() => setOpenTP(v => !v)}
                         />
 
-                    </div>
+                    </div> */}
                 </div>
 
 
@@ -500,6 +525,8 @@ export default function FlightBookingBookSection({
                     </Button>
                 </div>
 
+                {!isAuthenticated &&
+                    <LoginModal showModal={!isAuthenticated} />}
 
             </div>
         </section>

@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { postFlightFareRuleSearch, postInitialFlightProvBooking, type FlightFareRuleSearch, type FlightInitialBooking } from "../services/api/flightBooking";
+import { postFlightFareRuleSearch, postFlightReservationBooking, postInitialFlightProvBooking, type FlightFareRuleSearch, type FlightInitialBooking, type FlightReservationBooking } from "../services/api/flightBooking";
 
 export function useFlightInitialBooking() {
     return useMutation({
@@ -11,5 +11,11 @@ export function useFlightInitialBooking() {
 export function useFlightFareRuleSearch() {
     return useMutation({
         mutationFn: (body: FlightFareRuleSearch) => postFlightFareRuleSearch(body),
+    });
+}
+
+export function useFlightReservationBooking() {
+    return useMutation({
+        mutationFn: (body: FlightReservationBooking) => postFlightReservationBooking(body),
     });
 }

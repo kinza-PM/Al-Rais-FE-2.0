@@ -7,20 +7,28 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import { useState } from "react";
-import { flightBookingReviewContactDetail, flightBookingReviewPassengerDetail, flightBookingReviewSeatDetail } from "../../utils/mockData";
+import { flightBookingReviewSeatDetail } from "../../utils/mockData";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailwindCustomInput from "../common/TailwindCustomInput";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import FLightFareRule from "../atoms/FlightFareRule";
-import { buildFlightSegmentFromTrip, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
-
-type Section = "contact" | "passenger" | "seat";
+import {
+    buildFlightSegmentFromTrip,
+    formatDateToLocalISO,
+    getPriceCabinClassForFlightSummary,
+    parseLocalDateString,
+} from "../../utils/helpers";
 
 function ChevronDown() {
     return (
-        <img alt="arrow-icon" src={arrownDownwardIcon} className="pointer-events-none absolute right-3 top-4" />
-    )
+        <img
+            alt="arrow-icon"
+            src={arrownDownwardIcon}
+            className="pointer-events-none absolute right-3 top-4"
+        />
+    );
 }
 
 const CardShell = ({
@@ -48,6 +56,7 @@ const HeaderActions = ({
     onSave,
     editLabel = "Edit",
     saveLabel = "Save",
+    showSave = true,
 }: {
     editing: boolean;
     onEdit: () => void;
@@ -55,6 +64,7 @@ const HeaderActions = ({
     onSave: () => void;
     editLabel?: string;
     saveLabel?: string;
+    showSave?: boolean;
 }) =>
     !editing ? (
         <Button
@@ -75,54 +85,80 @@ const HeaderActions = ({
             >
                 Cancel
             </Button>
-            <Button
-                type="button"
-                onClick={onSave}
-                className="h-8 rounded-lg bg-[#2351A3] px-3 text-sm font-medium text-white"
-                overrideClasses
-            >
-                {saveLabel}
-            </Button>
+            {showSave && (
+                <Button
+                    type="button"
+                    onClick={onSave}
+                    className="h-8 rounded-lg bg-[#2351A3] px-3 text-sm font-medium text-white"
+                    overrideClasses
+                >
+                    {saveLabel}
+                </Button>
+            )}
         </div>
     );
 
-export default function FlightBookingReviewSection({ trip }: { trip: any }) {
+type FlightBookingReviewSectionProps = {
+    trip: any;
+    fareBookingSearchRules?: any;
+    flightBookingPayload?: any;
+    onPassengerFieldChange?: (index: number, path: string, value: any) => void;
+    cities?: Array<{ id: string; code: string; label: string; city: string }>;
+    onNext?: () => void;
+};
+
+export default function FlightBookingReviewSection({
+    trip,
+    fareBookingSearchRules,
+    flightBookingPayload,
+    onPassengerFieldChange,
+    cities = [],
+    onNext,
+}: FlightBookingReviewSectionProps) {
     const [openPrice, setOpenPrice] = useState(false);
 
-    const [isEditing, setIsEditing] = useState<{ contact: boolean; passenger: boolean; seat: boolean }>({
+    const [isEditing, setIsEditing] = useState<{
+        contact: boolean;
+        passenger: boolean;
+        seat: boolean;
+    }>({
         contact: false,
         passenger: false,
         seat: false,
     });
 
+    const passengers = flightBookingPayload?.passengers || [];
+
     const [values, setValues] = useState({
-        contact: flightBookingReviewContactDetail,
-        passenger: flightBookingReviewPassengerDetail,
         seat: flightBookingReviewSeatDetail,
     });
     const [draft, setDraft] = useState(values);
 
     // generic helpers
-    const startEdit = (section: Section) => {
-        setDraft((d) => ({ ...d, [section]: values[section] }));
+    const startEdit = (section: "contact" | "passenger" | "seat") => {
+        if (section === "seat") {
+            setDraft((d) => ({ ...d, [section]: values[section] }));
+        }
         setIsEditing((s) => ({ ...s, [section]: true }));
     };
-    const cancelEdit = (section: Section) =>
+    const cancelEdit = (section: "contact" | "passenger" | "seat") =>
         setIsEditing((s) => ({ ...s, [section]: false }));
-    const saveEdit = (section: Section) => {
-        setValues((v) => ({ ...v, [section]: draft[section] }));
+    const saveEdit = (section: "contact" | "passenger" | "seat") => {
+        if (section === "seat") {
+            setValues((v) => ({ ...v, [section]: draft[section] }));
+        }
         setIsEditing((s) => ({ ...s, [section]: false }));
     };
 
-    // partial updaters
-    const setSection = <T extends Section>(section: T, partial: Partial<typeof values[T]>) =>
-        setDraft((d) => ({ ...d, [section]: { ...d[section], ...partial } }));
-
-    const setContact = (partial: Partial<typeof values.contact>) => setSection("contact", partial);
-    const setPassenger = (partial: Partial<typeof values.passenger>) => setSection("passenger", partial);
-    const setSeat = (partial: Partial<typeof values.seat>) => setSection("seat", partial);
-
-    const assets = { EmirateLogo, cabinIcon, baggageIcon, mealIcon, wifiIcon, portIcon, entertainmentIcon };
+    const assets = {
+        EmirateLogo,
+        cabinIcon,
+        baggageIcon,
+        mealIcon,
+        wifiIcon,
+        portIcon,
+        entertainmentIcon,
+    };
     const segments = buildFlightSegmentFromTrip(trip, assets);
 
     const firstPrice = getPriceCabinClassForFlightSummary(trip);
@@ -136,235 +172,324 @@ export default function FlightBookingReviewSection({ trip }: { trip: any }) {
         },
     };
 
+    const continueToPayment = () => {
+        if (typeof onNext === "function") {
+            onNext();
+        }
+    }
+
     return (
         <section className="mx-auto max-w-full px-10">
             <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
                 {/* LEFT: Forms */}
                 <div className="space-y-4">
-                    <CardShell
-                        title="Contact person details"
-                        right={
-                            <HeaderActions
-                                editing={isEditing.contact}
-                                onEdit={() => startEdit("contact")}
-                                onCancel={() => cancelEdit("contact")}
-                                onSave={() => saveEdit("contact")}
-                                editLabel="Edit"
-                            />
-                        }
-                    >
-                        <div className="px-5 py-4">
-                            <dl className="grid grid-cols-2 gap-y-2">
-                                {/* Title */}
-                                <dt className="text-[12px] text-[#3D495C]">Title</dt>
-                                <dd className="text-right">
-                                    {!isEditing.contact ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.contact.title || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px] relative">
-                                            <select
-                                                value={draft.contact.title}
-                                                onChange={(e) => setContact({ title: e.target.value })}
-                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
-                                            >
-                                                <option value="">Select title</option>
-                                                <option>Mr.</option>
-                                                <option>Ms.</option>
-                                                <option>Mrs.</option>
-                                                <option>Dr.</option>
-                                            </select>
-                                            {/* ChevronDown or inline svg */}
-                                            <ChevronDown />
-                                        </div>
-                                    )}
-                                </dd>
+                    {passengers.map((p: any, idx: number) => (
+                        <>
+                            <CardShell
+                                key={p.passengerKey || idx}
+                                title={`Contact person ${String(idx + 1).padStart(
+                                    2,
+                                    "0"
+                                )} details`}
+                                right={
+                                    <HeaderActions
+                                        editing={isEditing.contact}
+                                        onEdit={() => startEdit("contact")}
+                                        onCancel={() => cancelEdit("contact")}
+                                        onSave={() => saveEdit("contact")}
+                                        editLabel="Edit"
+                                        showSave={false}
+                                    />
+                                }
+                            >
+                                <div className="px-5 py-4">
+                                    <dl className="grid grid-cols-2 gap-y-2">
+                                        {/* Title */}
+                                        <dt className="text-[12px] text-[#3D495C]">Title</dt>
+                                        <dd className="text-right">
+                                            {!isEditing.contact ? (
+                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                    {p.passengerInfo?.nameTitle || "—"}
+                                                </span>
+                                            ) : (
+                                                <div className="inline-block w-full max-w-[320px] relative">
+                                                    <select
+                                                        value={p.passengerInfo?.nameTitle || ""}
+                                                        onChange={(e) =>
+                                                            onPassengerFieldChange?.(
+                                                                idx,
+                                                                "passengerInfo.nameTitle",
+                                                                e.target.value
+                                                            )
+                                                        }
+                                                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
+                                                    >
+                                                        <option value="">Select title</option>
+                                                        <option value="MR">Mr</option>
+                                                        <option value="MS">Ms</option>
+                                                        <option value="MRS">Mrs</option>
+                                                    </select>
+                                                    <ChevronDown />
+                                                </div>
+                                            )}
+                                        </dd>
 
-                                {/* Full Name */}
-                                <dt className="text-[12px] text-[#3D495C]">Full Name</dt>
-                                <dd className="text-right">
-                                    {!isEditing.contact ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.contact.fullName || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px]">
-                                            <TailwindCustomInput
-                                                type="text"
-                                                placeholder="Enter your full name"
-                                                value={draft.contact.fullName}
-                                                onChange={(e) => setContact({ fullName: e.target.value })}
-                                            />
-                                        </div>
-                                    )}
-                                </dd>
+                                        {/* Full Name */}
+                                        <dt className="text-[12px] text-[#3D495C]">Full Name</dt>
+                                        <dd className="text-right">
+                                            {!isEditing.contact ? (
+                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                    {p.passengerInfo?.givenName
+                                                        ? `${p.passengerInfo.givenName}`
+                                                        : "—"}
+                                                </span>
+                                            ) : (
+                                                <div className="inline-block w-full max-w-[320px]">
+                                                    <TailwindCustomInput
+                                                        type="text"
+                                                        placeholder="Enter your full name"
+                                                        value={
+                                                            p.passengerInfo?.givenName
+                                                                ? `${p.passengerInfo?.givenName}`
+                                                                : ""
+                                                        }
+                                                        onChange={(e) => {
+                                                            onPassengerFieldChange?.(
+                                                                idx,
+                                                                "passengerInfo.givenName",
+                                                                e.target.value
+                                                            );
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
+                                        </dd>
 
-                                {/* Email */}
-                                <dt className="text-[12px] text-[#3D495C]">Email</dt>
-                                <dd className="text-right">
-                                    {!isEditing.contact ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.contact.email || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px]">
-                                            <TailwindCustomInput
-                                                type="email"
-                                                placeholder="Enter an email"
-                                                value={draft.contact.email}
-                                                onChange={(e) => setContact({ email: e.target.value })}
-                                                className="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                                            />
-                                        </div>
-                                    )}
-                                </dd>
+                                        {/* Email - only show if required by fare rules */}
+                                        {fareBookingSearchRules?.isLeadEmailAddressMandatory && (
+                                            <>
+                                                <dt className="text-[12px] text-[#3D495C]">Email</dt>
+                                                <dd className="text-right">
+                                                    {!isEditing.contact ? (
+                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                            {p.contact?.contactsProvided?.[0]
+                                                                ?.emailAddress?.[0] || "—"}
+                                                        </span>
+                                                    ) : (
+                                                        <div className="inline-block w-full max-w-[320px]">
+                                                            <TailwindCustomInput
+                                                                type="email"
+                                                                placeholder="Enter an email"
+                                                                value={
+                                                                    p.contact?.contactsProvided?.[0]
+                                                                        ?.emailAddress?.[0] || ""
+                                                                }
+                                                                onChange={(e) =>
+                                                                    onPassengerFieldChange?.(
+                                                                        idx,
+                                                                        "contact.contactsProvided.0.emailAddress.0",
+                                                                        e.target.value
+                                                                    )
+                                                                }
+                                                                className="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </dd>
+                                            </>
+                                        )}
 
-                                {/* Phone */}
-                                <dt className="text-[12px] text-[#3D495C]">Phone</dt>
-                                <dd className="text-right">
-                                    {!isEditing.contact ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.contact.phone || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px]">
-                                            <TailwindCustomInput
-                                                type="tel"
-                                                placeholder="Phone"
-                                                value={draft.contact.phone}
-                                                onChange={(e) => setContact({ phone: e.target.value })}
-                                            />
-                                        </div>
-                                    )}
-                                </dd>
-                            </dl>
-                        </div>
-                    </CardShell>
+                                        {/* Phone - only show if required by fare rules */}
+                                        {fareBookingSearchRules?.isLeadPhoneNumberMandatory && (
+                                            <>
+                                                <dt className="text-[12px] text-[#3D495C]">Phone</dt>
+                                                <dd className="text-right">
+                                                    {!isEditing.contact ? (
+                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                            {p.contact?.contactsProvided?.[0]?.phone?.[0]
+                                                                ?.phoneNumber
+                                                                ? `${p.contact.contactsProvided[0].phone[0].phoneNumber}`
+                                                                : "—"}
+                                                        </span>
+                                                    ) : (
+                                                        <div className="inline-block w-full max-w-[320px]">
+                                                            <TailwindCustomInput
+                                                                type="tel"
+                                                                placeholder="Phone"
+                                                                value={
+                                                                    p.contact?.contactsProvided?.[0]?.phone?.[0]
+                                                                        ?.phoneNumber || ""
+                                                                }
+                                                                onChange={(e) =>
+                                                                    onPassengerFieldChange?.(
+                                                                        idx,
+                                                                        "contact.contactsProvided.0.phone.0.phoneNumber",
+                                                                        e.target.value
+                                                                    )
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
+                                                </dd>
+                                            </>
+                                        )}
+                                    </dl>
+                                </div>
+                            </CardShell>
+                            <CardShell
+                                key={`passenger-${p.passengerKey || idx}`}
+                                title={`Passenger ${String(idx + 1).padStart(2, "0")} details`}
+                                right={
+                                    <HeaderActions
+                                        editing={isEditing.passenger}
+                                        onEdit={() => startEdit("passenger")}
+                                        onCancel={() => cancelEdit("passenger")}
+                                        onSave={() => saveEdit("passenger")}
+                                        editLabel="Edit"
+                                        showSave={false}
+                                    />
+                                }
+                            >
+                                <div className="px-5 py-4">
+                                    <dl className="grid grid-cols-2 gap-y-2">
+                                        {/* Pax type - disabled */}
+                                        <dt className="text-[12px] text-[#3D495C]">Pax type</dt>
+                                        <dd className="text-right">
+                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                {p.ptc || "—"}
+                                            </span>
+                                        </dd>
 
-                    <CardShell
-                        title="Passenger 01 details"
-                        right={
-                            <HeaderActions
-                                editing={isEditing.passenger}
-                                onEdit={() => startEdit("passenger")}
-                                onCancel={() => cancelEdit("passenger")}
-                                onSave={() => saveEdit("passenger")}
-                                editLabel="Edit"
-                            />
-                        }
-                    >
-                        <div className="px-5 py-4">
-                            <dl className="grid grid-cols-2 gap-y-2">
-                                {/* Pax type */}
-                                <dt className="text-[12px] text-[#3D495C]">Pax type</dt>
-                                <dd className="text-right">
-                                    {!isEditing.passenger ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.passenger.paxType || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px] relative">
-                                            <select
-                                                value={draft.passenger.paxType}
-                                                onChange={(e) => setPassenger({ paxType: e.target.value })}
-                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
-                                            >
-                                                <option value="">Select type</option>
-                                                <option>Adult</option>
-                                                <option>Child</option>
-                                                <option>Infant</option>
-                                                <option>Senior</option>
-                                            </select>
-                                            <svg
-                                                width="12"
-                                                height="7"
-                                                viewBox="0 0 12 7"
-                                                fill="none"
-                                                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                                            >
-                                                <path d="M11.354 1.354L6.354 6.354a1 1 0 0 1-1.414 0L0.646 1.354" stroke="#3D495C" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                </dd>
+                                        {/* Passport number - only show if required by fare rules */}
+                                        {fareBookingSearchRules?.passengerRules?.[0]
+                                            ?.isDocumentNumberMandatory && (
+                                                <>
+                                                    <dt className="text-[12px] text-[#3D495C]">
+                                                        Passport number
+                                                    </dt>
+                                                    <dd className="text-right">
+                                                        {!isEditing.passenger ? (
+                                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                                {p.identityDocuments?.[0]?.idDocumentNumber || "—"}
+                                                            </span>
+                                                        ) : (
+                                                            <div className="inline-block w-full max-w-[320px]">
+                                                                <TailwindCustomInput
+                                                                    type="text"
+                                                                    placeholder="Enter passport number"
+                                                                    value={
+                                                                        p.identityDocuments?.[0]?.idDocumentNumber || ""
+                                                                    }
+                                                                    onChange={(e) =>
+                                                                        onPassengerFieldChange?.(
+                                                                            idx,
+                                                                            "identityDocuments.0.idDocumentNumber",
+                                                                            e.target.value
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </dd>
+                                                </>
+                                            )}
 
-                                {/* Passport number */}
-                                <dt className="text-[12px] text-[#3D495C]">Passport number</dt>
-                                <dd className="text-right">
-                                    {!isEditing.passenger ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.passenger.passportNumber || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px]">
-                                            <TailwindCustomInput
-                                                type="text"
-                                                placeholder="Enter passport number"
-                                                value={draft.passenger.passportNumber}
-                                                onChange={(e) => setPassenger({ passportNumber: e.target.value })}
-                                            />
-                                        </div>
-                                    )}
-                                </dd>
+                                        {fareBookingSearchRules?.passengerRules?.[0]
+                                            ?.isIssuingCountryCodeMandatory && (
+                                                <>
+                                                    <dt className="text-[12px] text-[#3D495C]">
+                                                        Issuing country
+                                                    </dt>
+                                                    <dd className="text-right">
+                                                        {!isEditing.passenger ? (
+                                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                                {cities.find(
+                                                                    (c) =>
+                                                                        c.code ===
+                                                                        p.identityDocuments?.[0]?.issuingCountryCode
+                                                                )?.city ||
+                                                                    p.identityDocuments?.[0]?.issuingCountryCode ||
+                                                                    "—"}
+                                                            </span>
+                                                        ) : (
+                                                            <div className="inline-block w-full max-w-[320px] relative">
+                                                                <select
+                                                                    value={
+                                                                        p.identityDocuments?.[0]?.issuingCountryCode ||
+                                                                        ""
+                                                                    }
+                                                                    onChange={(e) =>
+                                                                        onPassengerFieldChange?.(
+                                                                            idx,
+                                                                            "identityDocuments.0.issuingCountryCode",
+                                                                            e.target.value
+                                                                        )
+                                                                    }
+                                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
+                                                                >
+                                                                    <option value="">Select country</option>
+                                                                    {cities?.map((c) => (
+                                                                        <option key={c.code} value={c.code}>
+                                                                            {c.city}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <svg
+                                                                    width="12"
+                                                                    height="7"
+                                                                    viewBox="0 0 12 7"
+                                                                    fill="none"
+                                                                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
+                                                                >
+                                                                    <path
+                                                                        d="M11.354 1.354L6.354 6.354a1 1 0 0 1-1.414 0L0.646 1.354"
+                                                                        stroke="#3D495C"
+                                                                        strokeWidth="1"
+                                                                        strokeLinecap="round"
+                                                                        strokeLinejoin="round"
+                                                                    />
+                                                                </svg>
+                                                            </div>
+                                                        )}
+                                                    </dd>
+                                                </>
+                                            )}
 
-                                {/* Issuing country */}
-                                <dt className="text-[12px] text-[#3D495C]">Issuing country</dt>
-                                <dd className="text-right">
-                                    {!isEditing.passenger ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.passenger.issuingCountry || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px] relative">
-                                            <select
-                                                value={draft.passenger.issuingCountry}
-                                                onChange={(e) => setPassenger({ issuingCountry: e.target.value })}
-                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
-                                            >
-                                                <option value="">Select country</option>
-                                                <option>Dubai</option>
-                                                <option>Pakistan</option>
-                                                <option>Saudi Arabia</option>
-                                                <option>India</option>
-                                            </select>
-                                            <svg
-                                                width="12"
-                                                height="7"
-                                                viewBox="0 0 12 7"
-                                                fill="none"
-                                                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                                            >
-                                                <path d="M11.354 1.354L6.354 6.354a1 1 0 0 1-1.414 0L0.646 1.354" stroke="#3D495C" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
-                                            </svg>
-                                        </div>
-                                    )}
-                                </dd>
+                                        {fareBookingSearchRules?.passengerRules?.[0]
+                                            ?.isExpiryDateMandatory && (
+                                                <>
+                                                    <dt className="text-[12px] text-[#3D495C]">
+                                                        Expiry date
+                                                    </dt>
+                                                    <dd className="text-right">
+                                                        {!isEditing.passenger ? (
+                                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                                {p.identityDocuments?.[0]?.expiryDate || "—"}
+                                                            </span>
+                                                        ) : (
+                                                            <div className="inline-block w-full max-w-[320px]">
+                                                                <TailiwindCustomDatePicker
+                                                                    value={p.identityDocuments?.[0]?.expiryDate ? parseLocalDateString(p.identityDocuments?.[0]?.expiryDate) : null}
+                                                                    onChange={(date) => {
+                                                                        const iso = formatDateToLocalISO(date);
+                                                                        onPassengerFieldChange?.(idx, "identityDocuments.0.expiryDate", iso);
+                                                                    }}
+                                                                    placeholder="Please select"
+                                                                    overridesClass
+                                                                    inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </dd>
+                                                </>
+                                            )}
+                                    </dl>
+                                </div>
+                            </CardShell>
+                        </>
+                    ))}
 
-                                {/* Expiry date */}
-                                <dt className="text-[12px] text-[#3D495C]">Expiry date</dt>
-                                <dd className="text-right">
-                                    {!isEditing.passenger ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.passenger.expiryDate || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px]">
-                                            <input
-                                                type="text"
-                                                value={draft.passenger.expiryDate}
-                                                onChange={(e) => setPassenger({ expiryDate: e.target.value })}
-                                                placeholder="MM/YYYY"
-                                                className="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none"
-                                            />
-                                        </div>
-                                    )}
-                                </dd>
-                            </dl>
-                        </div>
-                    </CardShell>
-
-                    <CardShell
+                    {/* <CardShell
                         title="Seat"
                         right={
                             <HeaderActions
@@ -388,7 +513,9 @@ export default function FlightBookingReviewSection({ trip }: { trip: any }) {
                                         <div className="inline-block w-full max-w-[320px] relative">
                                             <select
                                                 value={draft.seat.cabinClass}
-                                                onChange={(e) => setSeat({ cabinClass: e.target.value })}
+                                                onChange={(e) =>
+                                                    setDraft((d) => ({ ...d, seat: { ...d.seat, cabinClass: e.target.value } }))
+                                                }
                                                 className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
                                             >
                                                 <option value="">Select type</option>
@@ -403,7 +530,13 @@ export default function FlightBookingReviewSection({ trip }: { trip: any }) {
                                                 fill="none"
                                                 className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
                                             >
-                                                <path d="M11.354 1.354L6.354 6.354a1 1 0 0 1-1.414 0L0.646 1.354" stroke="#3D495C" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" />
+                                                <path
+                                                    d="M11.354 1.354L6.354 6.354a1 1 0 0 1-1.414 0L0.646 1.354"
+                                                    stroke="#3D495C"
+                                                    strokeWidth="1"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                />
                                             </svg>
                                         </div>
                                     )}
@@ -421,22 +554,26 @@ export default function FlightBookingReviewSection({ trip }: { trip: any }) {
                                                 type="text"
                                                 placeholder="Enter passport number"
                                                 value={draft.seat.seatNo}
-                                                onChange={(e) => setSeat({ seatNo: e.target.value })}
+                                                onChange={(e) => setDraft((d) => ({ ...d, seat: { ...d.seat, seatNo: e.target.value } }))}
                                             />
                                         </div>
                                     )}
                                 </dd>
                             </dl>
                         </div>
-                    </CardShell>
+                    </CardShell> */}
 
                     <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
                         <div className="px-4 py-3 border-b border-[#E4E4E7]">
-                            <h3 className="text-[15px] font-medium text-[#0A0C0F]">Got a promo code?</h3>
+                            <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                                Got a promo code?
+                            </h3>
                         </div>
 
                         <div className="px-3 py-3">
-                            <label className="mb-1 block text-[12px] text-[#3D495C]">Promo code</label>
+                            <label className="mb-1 block text-[12px] text-[#3D495C]">
+                                Promo code
+                            </label>
 
                             <div className="flex items-center gap-3">
                                 <TailwindCustomInput
@@ -455,15 +592,18 @@ export default function FlightBookingReviewSection({ trip }: { trip: any }) {
                         </div>
                     </div>
 
-
                     <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
                         <div className="px-4 py-3 border-b border-[#E4E4E7]">
-                            <h3 className="text-[15px] font-medium text-[#0A0C0F]">Earn and redeem air miles</h3>
+                            <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                                Earn and redeem air miles
+                            </h3>
                         </div>
 
                         <div className="px-3 py-3 space-y-2">
                             <div>
-                                <label className="mb-1 block text-[12px] text-[#3D495C]">Flight program</label>
+                                <label className="mb-1 block text-[12px] text-[#3D495C]">
+                                    Flight program
+                                </label>
                                 <div className="relative">
                                     <select
                                         className="h-11 w-full appearance-none rounded-xl border border-[#C2CAD6] bg-white px-4 pr-9 text-[14px] font-medium text-[#0A0C0F] focus:outline-none"
@@ -497,16 +637,16 @@ export default function FlightBookingReviewSection({ trip }: { trip: any }) {
                             </div>
                         </div>
                     </div>
-
                 </div>
-
 
                 {/* RIGHT: Trip details */}
                 <div>
                     <FlightSummaryCard
                         title="Flight details"
                         headerActionText="View all"
-                        onHeaderActionClick={() => {/* handle view all */ }}
+                        onHeaderActionClick={() => {
+                            /* handle view all */
+                        }}
                         segments={segments}
                         fare={priceFareFamily}
                     />
@@ -515,12 +655,10 @@ export default function FlightBookingReviewSection({ trip }: { trip: any }) {
 
                     <FLightPriceBreakdown
                         open={openPrice}
-                        onToggleOpen={() => setOpenPrice(v => !v)}
+                        onToggleOpen={() => setOpenPrice((v) => !v)}
                         trip={trip.raw}
                     />
                 </div>
-
-
             </div>
 
             <div className="mt-14 flex justify-center w-full">
@@ -528,11 +666,11 @@ export default function FlightBookingReviewSection({ trip }: { trip: any }) {
                     type="button"
                     className="h-10 w-full max-w-[420px] rounded-lg bg-[#2351A3] px-8 text-[15px] font-semibold text-[#F2F2F3]"
                     overrideClasses
+                    onClick={() => continueToPayment()}
                 >
                     Continue to payment
                 </Button>
             </div>
-
         </section>
     );
 }

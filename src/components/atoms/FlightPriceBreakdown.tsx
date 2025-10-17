@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import CardCollapseToggle from "../common/CardCollapseToggle";
+import { formatMoney } from "../../utils/helpers";
 
 type Props = {
     open: boolean;
@@ -13,14 +14,7 @@ const PAX_LABEL: Record<string, string> = {
     INF: "Infant",
 };
 
-const formatMoney = (value: number | undefined | null, currency = "USD") => {
-    if (value == null || Number.isNaN(value)) return "—";
-    try {
-        return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
-    } catch {
-        return `${value} ${currency}`;
-    }
-};
+
 
 export default function FLightPriceBreakdown({ open, onToggleOpen, trip }: Props) {
     const fare = trip?.fare ?? trip?.financials?.fare ?? null;

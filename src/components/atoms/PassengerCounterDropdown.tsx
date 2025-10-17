@@ -76,6 +76,7 @@ const PassengerCounterDropdown: React.FC<Props> = ({
   const [open, setOpen] = useState(false);
   const [showError, setShowError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const isUpdatingFromProps = useRef(false);
 
   const total = useMemo(
     () => rows.reduce((acc, r) => acc + ((pax as any)[r.key] || 0), 0),
@@ -83,7 +84,13 @@ const PassengerCounterDropdown: React.FC<Props> = ({
   );
 
   // keep pax shape in sync if schema arrives later
-  useEffect(() => setPax(initialPax), [initialPax]);
+  // useEffect(() => setPax(initialPax), [initialPax]);
+  useEffect(() => {
+    if (value && JSON.stringify(value) !== JSON.stringify(pax)) {
+      isUpdatingFromProps.current = true;
+      setPax(initialPax);
+    }
+  }, [value, initialPax]);
 
   // outside click → close panels
   useEffect(() => {
@@ -97,7 +104,13 @@ const PassengerCounterDropdown: React.FC<Props> = ({
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  useEffect(() => void onChange?.(pax), [pax, onChange]);
+  // useEffect(() => void onChange?.(pax), [pax, onChange]);
+  useEffect(() => {
+    if (onChange && !isUpdatingFromProps.current) {
+      onChange(pax);
+    }
+    isUpdatingFromProps.current = false;
+  }, [pax, onChange]);
 
   const canInc = (_k: PaxKey) => total < maxTotal;
 

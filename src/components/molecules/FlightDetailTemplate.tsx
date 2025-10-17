@@ -812,6 +812,7 @@ const FlightDetailTemplate: React.FC = () => {
               <label className="header-labels-common ">Passengers</label>
               <div style={{ minWidth: "100%", height: 44 }}>
                 <PassengerCounterDropdown
+                value={paxCounts}
                   schema={passengers as PassengerSchema}
                   maxTotal={9}
                   onChange={(value) => {

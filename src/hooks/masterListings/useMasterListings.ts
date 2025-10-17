@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import {
     useFlightTypesOptions,
-    useCountryOptions,
+    useCityOptions,
     usePassengerSchema,
     useCabinClassOptions,
     usePriceSortOptions,
@@ -40,7 +40,7 @@ export function useMasterListings(opts?: { include?: Include }) {
     );
 
     const qFlightTypes = useFlightTypesOptions(include.has("flightTypes"));
-    const qCountries = useCountryOptions(include.has("countries"));
+    const qCountries = useCityOptions(include.has("countries"));
     const qPassengers = usePassengerSchema(include.has("passengers"));
     const qCabin = useCabinClassOptions(include.has("cabinClasses"));
     const qPrice = usePriceSortOptions(include.has("priceSort"));

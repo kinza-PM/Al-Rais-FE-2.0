@@ -7,23 +7,24 @@ import { Button } from "../components";
 import BookingBannerAlert from "../components/common/BookingBannerAlert";
 import { useLocation } from "react-router-dom";
 import { buildInitialFlightBookingPassengersPayload } from "../utils/flightBookingHelper";
-import { useCountryOptions } from "../hooks/masterListings/listing";
+import { useCityOptions } from "../hooks/masterListings/listing";
 import Loader from "../components/atoms/Loader";
 import { useFlightFareRuleSearch } from "../hooks/useFlightBooking";
 import toast from "react-hot-toast";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 
 const FlightBooking = () => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [fareBookingRules, setFareBookingRules] = useState<any>(null);
     const location = useLocation();
-    const steps = ["Book", "Review", "Pay", "E-ticket"];
-    const progressPct =
-        steps.length > 1 ? (currentStep / (steps.length - 1)) * 100 : 0;
-    const offerData =
+    const initialOfferData =
         (location.state && (location.state as any)) ||
         (window.history.state && (window.history.state as any)) ||
         null;
+    const [offerData, setOfferData] = useState<any>(initialOfferData);
+    const [currentStep, setCurrentStep] = useState(0);
+    const [fareBookingSearchRules, setFareBookingSearchRules] = useState<any>(null);
+    const steps = ["Book", "Review", "Pay", "E-ticket"];
+    const progressPct =
+        steps.length > 1 ? (currentStep / (steps.length - 1)) * 100 : 0;
 
     const [flightBookingPayload, setFlightBookingPayload] = useState(() => ({
         offerId: offerData?.offerId,
@@ -35,10 +36,31 @@ const FlightBooking = () => {
         }
     }));
 
+    const [flightReservationBookingPayload, setFlightReservationBookingPayload] = useState(() => ({
+        bookingReferenceId: "",
+        offerId: flightBookingPayload?.offerId,
+        customerInfo: {
+            emailAddress: ""
+        },
+        passengers: flightBookingPayload?.passengers,
+        paymentDetails: {
+            paymentMode: "CR",
+            transactionAmount: null,
+            cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
+            address: {
+                label: "Billing",
+                street: [],
+                postalCode: "",
+                cityName: "",
+                countryCode: "UAE"
+            }
+        }
+    }));
+
     const {
-        data: countryOptions,
+        data: cityOptions,
         isLoading: isCountryLoading,
-    } = useCountryOptions(true);
+    } = useCityOptions(true);
 
     const { mutateAsync, isPending } = useFlightFareRuleSearch();
 
@@ -76,6 +98,86 @@ const FlightBooking = () => {
         });
     };
 
+    const handleUpdateFlightRawDetails = (newRaw: Partial<{
+        detail: any;
+        fare: any;
+        financialInfo: any;
+        journey: any;
+        offerId?: string | number;
+    }>) => {
+        setOfferData((prev: any) => {
+            if (!prev) return prev;
+            const updated = {
+                ...prev,
+                flightDetail: {
+                    ...(prev.flightDetail ?? {}),
+                    raw: {
+                        ...((prev.flightDetail && prev.flightDetail.raw) || {}),
+                        ...newRaw,
+                    },
+                },
+            };
+
+            const candidateOfferId = (newRaw as any).offerId ?? (newRaw as any).detail?.offerId;
+            if (candidateOfferId !== undefined) {
+                updated.offerId = candidateOfferId;
+            }
+
+            return updated;
+        });
+
+        const candidateOfferId = (newRaw as any).offerId ?? (newRaw as any).detail?.offerId;
+        if (candidateOfferId !== undefined) {
+            setFlightBookingPayload((prev) => ({
+                ...prev,
+                offerId: candidateOfferId,
+            }));
+        }
+
+        setFlightReservationBookingPayload((prev) => ({
+            ...prev,
+            offerId: candidateOfferId,
+            passengers: flightBookingPayload?.passengers
+        }))
+    };
+
+    const handleFlightReservationBookingChange = (
+        eOrPath:
+            | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+            | string,
+        maybeValue?: any
+    ) => {
+        let path: string;
+        let value: any;
+
+        if (typeof eOrPath === "string") {
+            path = eOrPath;
+            value = maybeValue;
+        } else {
+            const target = eOrPath.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+            path = target.name;
+            if (!path) {
+                console.warn("Input missing `name` attribute for generic reservation handler.");
+                return;
+            }
+            if (target.type === "checkbox") {
+                value = (target as HTMLInputElement).checked;
+            } else if (target.type === "number") {
+                const parsed = (target as HTMLInputElement).value;
+                value = parsed === "" ? "" : Number(parsed);
+            } else {
+                value = target.value;
+            }
+        }
+
+        setFlightReservationBookingPayload((prev) => {
+            const next = JSON.parse(JSON.stringify(prev || {}));
+            setPassengerFlightInitialPayload(next, path, value);
+            return next;
+        });
+    };
+
+
     const showTimerBanner = [1, 2].includes(currentStep);
 
     const init = async () => {
@@ -83,7 +185,7 @@ const FlightBooking = () => {
         try {
             const response = await mutateAsync({ offerId: offerData?.offerId });
             const rules = response?.data?.[0]?.bookingRules ?? null;
-            setFareBookingRules(rules);
+            setFareBookingSearchRules(rules);
         } catch (error) {
             const err = extractErrorFromAxiosApiError(error);
             toast.error(err);
@@ -131,10 +233,10 @@ const FlightBooking = () => {
                                 <li key={label} className="flex flex-col items-center">
                                     <Button
                                         type="button"
-                                        onClick={() => setCurrentStep(i)}
+                                        // onClick={() => setCurrentStep(i)}
                                         className={[
                                             "flex h-5 w-5 items-center justify-center rounded-full border transition p-0", // keep circle shape
-                                            "hover:ring-4 hover:ring-[#2351A3]/20 focus:outline-none",
+                                            "focus:outline-none",
                                             isReached
                                                 ? "bg-[#2351A3] border-[#2351A3]"
                                                 : "bg-[#C2CAD6] border-[#C2CAD6]",
@@ -146,7 +248,7 @@ const FlightBooking = () => {
 
                                     <Button
                                         type="button"
-                                        onClick={() => setCurrentStep(i)}
+                                        // onClick={() => setCurrentStep(i)}
                                         className={[
                                             "mt-2 text-sm transition-colors bg-transparent border-none hover:text-[#2351A3]",
                                             isReached ? "text-[#2351A3] font-medium" : "text-[#3D495C]",
@@ -168,15 +270,29 @@ const FlightBooking = () => {
                             passengers={flightBookingPayload.passengers}
                             flightBookingPayload={flightBookingPayload}
                             onPassengerFieldChange={updatePassengerField}
-                            countries={countryOptions}
-                            fareBookingRules={fareBookingRules}
+                            cities={cityOptions}
+                            fareBookingSearchRules={fareBookingSearchRules}
+                            onNext={() => setCurrentStep(1)}
+                            onUpdateFlightRaw={handleUpdateFlightRawDetails}
                         />
                     }
                     {currentStep === 1 && (
-                        <FlightBookingReviewSection trip={offerData.flightDetail} />
+                        <FlightBookingReviewSection
+                            trip={offerData.flightDetail}
+                            fareBookingSearchRules={fareBookingSearchRules}
+                            flightBookingPayload={flightBookingPayload}
+                            onPassengerFieldChange={updatePassengerField}
+                            cities={cityOptions}
+                            onNext={() => setCurrentStep(2)}
+                        />
                     )}
                     {currentStep === 2 && (
-                        <FlightBookingPaymentSection trip={offerData.flightDetail} />
+                        <FlightBookingPaymentSection
+                            trip={offerData.flightDetail}
+                            cities={cityOptions}
+                            reservation={flightReservationBookingPayload}
+                            onReservationChange={handleFlightReservationBookingChange}
+                        />
                     )}
                     {currentStep === 3 && (
                         <FlightBookingETicketSection />

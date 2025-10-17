@@ -205,3 +205,12 @@ export function parseLocalDateString(dateStr: string | null | undefined): Date |
   if (!y || !m || !d) return null;
   return new Date(Number(y), Number(m) - 1, Number(d)); // local midnight
 }
+
+export const formatMoney = (value: number | undefined | null, currency = "USD") => {
+  if (value == null || Number.isNaN(value)) return "—";
+  try {
+    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
+  } catch {
+    return `${value} ${currency}`;
+  }
+};

@@ -4,26 +4,42 @@ import entertainmentIcon from "../../assets/svgs/entertainment.svg";
 import mealIcon from "../../assets/svgs/meals.svg";
 import portIcon from "../../assets/svgs/ports.svg";
 import wifiIcon from "../../assets/svgs/wifi.svg";
-import applePay from "../../assets/svgs/ApplePay.svg";
-import googlePay from "../../assets/svgs/GooglePay.svg";
+// import applePay from "../../assets/svgs/ApplePay.svg";
+// import googlePay from "../../assets/svgs/GooglePay.svg";
 import shareIcon from "../../assets/svgs/share.svg";
 import secureLockIcon from "../../assets/svgs/secure-lock.svg";
 import visaIcon from "../../assets/svgs/visa.svg";
 import masterCardIcon from "../../assets/svgs/mastercard.svg";
 import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
-import FlagUsa from "../../assets/images/Flag-usa.png";
+// import FlagUsa from "../../assets/images/Flag-usa.png";
+import FlagUae from "../../assets/svgs/Flag-uae.svg";
 import Tabby from "../../assets/images/tabby.png";
 import Tamara from "../../assets/images/tamara.png";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import CardCollapseToggle from "../common/CardCollapseToggle";
 import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailwindCustomInput from "../common/TailwindCustomInput";
-import { buildFlightSegmentFromTrip, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
+import { buildFlightSegmentFromTrip, formatMoney, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
+import { useFlightReservationBooking } from "../../hooks/useFlightBooking";
+import toast from "react-hot-toast";
+import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 
 type PaymentMethod = "card" | "apple" | "google"
+
+type FlightBookingPaymentSectionProps = {
+    trip: any;
+    cities: Array<{ id: string; code: string; label: string; city: string; }>;
+    reservation?: any;
+    onReservationChange: (
+        eOrPath:
+            | React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+            | string,
+        maybeValue?: any
+    ) => void;
+}
 
 function ChevronDown() {
     return (
@@ -31,20 +47,56 @@ function ChevronDown() {
     )
 }
 
-export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
+export default function FlightBookingPaymentSection({
+    trip,
+    cities,
+    reservation,
+    onReservationChange,
+}: FlightBookingPaymentSectionProps) {
     const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
     const [openAddress, setOpenAddress] = useState(true);
     const [openPrice, setOpenPrice] = useState(false);
 
+    const { mutateAsync, isPending } = useFlightReservationBooking();
+
     const assets = { EmirateLogo, cabinIcon, baggageIcon, mealIcon, wifiIcon, portIcon, entertainmentIcon };
     const segments = buildFlightSegmentFromTrip(trip, assets);
+    const address = reservation?.paymentDetails?.address ?? {};
 
     const firstPrice = getPriceCabinClassForFlightSummary(trip);
+
+    const fare = trip?.raw?.fare ?? trip?.raw?.financials?.fare ?? null;
+    const currency = fare?.currencyCode ?? fare?.currency ?? "USD";
+    const total = fare?.totalFare ?? fare?.total ?? null;
 
     const priceFareFamily = {
         label: "Fare family",
         value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
     };
+
+    const handleReservationFlightBooking = async () => {
+        console.log('reservation-----------', reservation);
+        try {
+            const response = await mutateAsync(reservation);
+            if (response?.meta?.success && response?.meta?.statusMessage == "SUCCESS") {
+                toast.success(response?.meta?.actionType);
+                // if (typeof onNext === "function") {
+                //     onNext();
+                // }
+            }
+        } catch (error) {
+            const err = extractErrorFromAxiosApiError(error);
+            toast.error(err);
+        }
+    }
+
+    useEffect(() => {
+        if (total === null) return;
+        const existing = reservation?.paymentDetails?.transactionAmount;
+        if (existing !== total) {
+            onReservationChange?.("paymentDetails.transactionAmount", total);
+        }
+    }, [total, reservation?.paymentDetails?.transactionAmount, onReservationChange]);
 
     return (
         <section className="mt-10 flex items-center justify-center px-4">
@@ -56,7 +108,8 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                 />
 
                 <div className="mt-6">
-                    <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* <div className="grid grid-cols-3 sm:grid-cols-3 gap-3"> */}
                         <Button
                             type="button"
                             onClick={() => setPayMethod("card")}
@@ -72,7 +125,7 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                             Pay with card
                         </Button>
 
-                        <Button
+                        {/* <Button
                             type="button"
                             onClick={() => setPayMethod("apple")}
                             aria-pressed={payMethod === "apple"}
@@ -100,7 +153,7 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                             overrideClasses
                         >
                             <img src={googlePay} alt="Google Pay" className="h-5 w-auto" />
-                        </Button>
+                        </Button> */}
                     </div>
 
                 </div>
@@ -125,6 +178,9 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                                         placeholder="Enter an email"
                                         className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none"
                                         label="Email (Optional)"
+                                        name="customerInfo.emailAddress"
+                                        value={reservation?.customerInfo?.emailAddress ?? ""}
+                                        onChange={onReservationChange}
                                     />
 
                                     <div>
@@ -173,8 +229,8 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                                             className="flex h-12 w-full items-center justify-between bg-white px-3"
                                         >
                                             <span className="flex items-center gap-3 text-[15px] font-medium text-[#0A0C0F]">
-                                                <img src={FlagUsa} alt="usa-flag" className="h-6 w-6 rounded-full" />
-                                                <span>United States of America</span>
+                                                <img src={FlagUae} alt="usa-flag" className="h-6 w-6 rounded-full" />
+                                                <span>United Arab Emirates</span>
                                             </span>
 
                                             <CardCollapseToggle open={openAddress} onClick={() => { }} className="pointer-events-none" />
@@ -195,6 +251,9 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                                                             type="text"
                                                             placeholder="Address line 1"
                                                             className="h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none"
+                                                            name="paymentDetails.address.street.0"
+                                                            value={Array.isArray(address.street) ? address.street[0] ?? "" : ""}
+                                                            onChange={onReservationChange}
                                                         />
                                                     </div>
 
@@ -202,11 +261,12 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                                                         <select
                                                             defaultValue=""
                                                             className="h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3"
+                                                            value={address.countryCode ?? ""}
+                                                            name="paymentDetails.address.countryCode"
+                                                            onChange={onReservationChange}
                                                         >
-                                                            <option value="" disabled>Select a state</option>
-                                                            <option value="AL">Alabama</option>
-                                                            <option value="AK">Alaska</option>
-                                                            <option value="AZ">Arizona</option>
+                                                            <option value="" disabled>Select a country</option>
+                                                            <option value="UAE">United Arab Emirates</option>
                                                         </select>
 
                                                         <ChevronDown />
@@ -214,18 +274,32 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
 
 
                                                     <div className="grid grid-cols-2">
-                                                        <div className="px-3">
-                                                            <TailwindCustomInput
-                                                                type="text"
-                                                                placeholder="City"
-                                                                className="h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none"
-                                                            />
+                                                        <div className="px-3 relative">
+                                                            <select
+                                                                defaultValue=""
+                                                                className="h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3"
+                                                                value={address.cityName ?? ""}
+                                                                onChange={onReservationChange}
+                                                                name="paymentDetails.address.cityName"
+                                                            >
+                                                                <option value="" disabled>Select a city</option>
+                                                                {cities?.map((c) => (
+                                                                    <option key={c.code} value={c.code}>
+                                                                        {c.city}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+
+                                                            <ChevronDown />
                                                         </div>
                                                         <div className="border-l border-[#E4E4E7] px-3">
                                                             <TailwindCustomInput
                                                                 type="text"
                                                                 placeholder="Zip code"
                                                                 className="h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none"
+                                                                name="paymentDetails.address.postalCode"
+                                                                value={address.postalCode ?? ""}
+                                                                onChange={onReservationChange}
                                                             />
                                                         </div>
                                                     </div>
@@ -235,14 +309,14 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                                     </div>
 
                                     <div className="mt-8 space-y-1 [font-variant-numeric:tabular-nums]">
-                                        <div className="flex items-center justify-between text-[15px]">
+                                        {/* <div className="flex items-center justify-between text-[15px]">
                                             <span className="font-medium text-[#3D495C]">Subtotal</span>
                                             <span className="font-semibold text-[#0A0C0F] text-right">$852.45</span>
-                                        </div>
+                                        </div> */}
 
                                         <div className="flex items-center justify-between">
                                             <span className="text-[15px] font-semibold text-[#3D495C]">Total</span>
-                                            <span className="text-[22px] font-bold text-[#0A0C0F] text-right">$852.45</span>
+                                            <span className="text-[22px] font-bold text-[#0A0C0F] text-right"> {total != null ? formatMoney(total, currency) : "—"}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -262,8 +336,9 @@ export default function FlightBookingPaymentSection({ trip }: { trip: any }) {
                         type="button"
                         className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold"
                         overrideClasses
+                        onClick={() => handleReservationFlightBooking()}
                     >
-                        Pay
+                        {isPending ? 'Loading...' : 'Pay'}
                     </Button>
 
                     <div className="my-4 text-center text-[12px] text-[#3D495C]">OR</div>

@@ -34,7 +34,7 @@ export const useFlightTypesOptions = (enabled = true) =>
         enabled
     );
 
-export const useCountryOptions = (enabled = true) =>
+export const useCityOptions = (enabled = true) =>
     useListing<CountriesResponse, any, CountryOption>(
         listingTables.countries,
         buildCountryOptions,
