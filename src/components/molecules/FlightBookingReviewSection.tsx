@@ -4,32 +4,17 @@ import entertainmentIcon from "../../assets/svgs/entertainment.svg";
 import mealIcon from "../../assets/svgs/meals.svg";
 import portIcon from "../../assets/svgs/ports.svg";
 import wifiIcon from "../../assets/svgs/wifi.svg";
-import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import { useState } from "react";
-import { flightBookingReviewSeatDetail } from "../../utils/mockData";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
-import TailwindCustomInput from "../common/TailwindCustomInput";
-import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import FLightFareRule from "../atoms/FlightFareRule";
 import {
     buildFlightSegmentFromTrip,
-    formatDateToLocalISO,
     getPriceCabinClassForFlightSummary,
-    parseLocalDateString,
 } from "../../utils/helpers";
-
-function ChevronDown() {
-    return (
-        <img
-            alt="arrow-icon"
-            src={arrownDownwardIcon}
-            className="pointer-events-none absolute right-3 top-4"
-        />
-    );
-}
+import { useNavigate } from "react-router-dom";
 
 const CardShell = ({
     title,
@@ -50,104 +35,47 @@ const CardShell = ({
 );
 
 const HeaderActions = ({
-    editing,
     onEdit,
-    onCancel,
-    onSave,
     editLabel = "Edit",
-    saveLabel = "Save",
-    showSave = true,
 }: {
-    editing: boolean;
     onEdit: () => void;
-    onCancel: () => void;
-    onSave: () => void;
     editLabel?: string;
-    saveLabel?: string;
-    showSave?: boolean;
 }) =>
-    !editing ? (
-        <Button
-            type="button"
-            onClick={onEdit}
-            className="text-[14px] font-medium text-[#5383DA] hover:underline"
-            overrideClasses
-        >
-            {editLabel}
-        </Button>
-    ) : (
-        <div className="flex items-center gap-2">
-            <Button
-                type="button"
-                onClick={onCancel}
-                className="h-8 rounded-lg border border-[#C2CAD6] px-3 text-sm text-[#3D495C]"
-                overrideClasses
-            >
-                Cancel
-            </Button>
-            {showSave && (
-                <Button
-                    type="button"
-                    onClick={onSave}
-                    className="h-8 rounded-lg bg-[#2351A3] px-3 text-sm font-medium text-white"
-                    overrideClasses
-                >
-                    {saveLabel}
-                </Button>
-            )}
-        </div>
-    );
+    <Button
+        type="button"
+        onClick={onEdit}
+        className="text-[14px] font-medium text-[#5383DA] hover:underline"
+        overrideClasses
+    >
+        {editLabel}
+    </Button>
 
 type FlightBookingReviewSectionProps = {
     trip: any;
     fareBookingSearchRules?: any;
     flightBookingPayload?: any;
-    onPassengerFieldChange?: (index: number, path: string, value: any) => void;
     cities?: Array<{ id: string; code: string; label: string; city: string }>;
     onNext?: () => void;
+    onPrevious?: () => void;
 };
 
 export default function FlightBookingReviewSection({
     trip,
     fareBookingSearchRules,
     flightBookingPayload,
-    onPassengerFieldChange,
     cities = [],
     onNext,
+    onPrevious
 }: FlightBookingReviewSectionProps) {
+    const navigate = useNavigate();
     const [openPrice, setOpenPrice] = useState(false);
-
-    const [isEditing, setIsEditing] = useState<{
-        contact: boolean;
-        passenger: boolean;
-        seat: boolean;
-    }>({
-        contact: false,
-        passenger: false,
-        seat: false,
-    });
-
     const passengers = flightBookingPayload?.passengers || [];
 
-    const [values, setValues] = useState({
-        seat: flightBookingReviewSeatDetail,
-    });
-    const [draft, setDraft] = useState(values);
-
     // generic helpers
-    const startEdit = (section: "contact" | "passenger" | "seat") => {
-        if (section === "seat") {
-            setDraft((d) => ({ ...d, [section]: values[section] }));
+    const startEdit = () => {
+        if (typeof onPrevious === "function") {
+            onPrevious();
         }
-        setIsEditing((s) => ({ ...s, [section]: true }));
-    };
-    const cancelEdit = (section: "contact" | "passenger" | "seat") =>
-        setIsEditing((s) => ({ ...s, [section]: false }));
-    const saveEdit = (section: "contact" | "passenger" | "seat") => {
-        if (section === "seat") {
-            setValues((v) => ({ ...v, [section]: draft[section] }));
-        }
-        setIsEditing((s) => ({ ...s, [section]: false }));
     };
 
     const assets = {
@@ -168,7 +96,7 @@ export default function FlightBookingReviewSection({
         value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
         changeText: "Change",
         onChangeClick: () => {
-            console.log("open fare change");
+            navigate('/search_flight');
         },
     };
 
@@ -193,12 +121,8 @@ export default function FlightBookingReviewSection({
                                 )} details`}
                                 right={
                                     <HeaderActions
-                                        editing={isEditing.contact}
-                                        onEdit={() => startEdit("contact")}
-                                        onCancel={() => cancelEdit("contact")}
-                                        onSave={() => saveEdit("contact")}
+                                        onEdit={() => startEdit()}
                                         editLabel="Edit"
-                                        showSave={false}
                                     />
                                 }
                             >
@@ -207,62 +131,19 @@ export default function FlightBookingReviewSection({
                                         {/* Title */}
                                         <dt className="text-[12px] text-[#3D495C]">Title</dt>
                                         <dd className="text-right">
-                                            {!isEditing.contact ? (
-                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                    {p.passengerInfo?.nameTitle || "—"}
-                                                </span>
-                                            ) : (
-                                                <div className="inline-block w-full max-w-[320px] relative">
-                                                    <select
-                                                        value={p.passengerInfo?.nameTitle || ""}
-                                                        onChange={(e) =>
-                                                            onPassengerFieldChange?.(
-                                                                idx,
-                                                                "passengerInfo.nameTitle",
-                                                                e.target.value
-                                                            )
-                                                        }
-                                                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
-                                                    >
-                                                        <option value="">Select title</option>
-                                                        <option value="MR">Mr</option>
-                                                        <option value="MS">Ms</option>
-                                                        <option value="MRS">Mrs</option>
-                                                    </select>
-                                                    <ChevronDown />
-                                                </div>
-                                            )}
+                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                {p.passengerInfo?.nameTitle || "—"}
+                                            </span>
                                         </dd>
 
                                         {/* Full Name */}
                                         <dt className="text-[12px] text-[#3D495C]">Full Name</dt>
                                         <dd className="text-right">
-                                            {!isEditing.contact ? (
-                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                    {p.passengerInfo?.givenName
-                                                        ? `${p.passengerInfo.givenName}`
-                                                        : "—"}
-                                                </span>
-                                            ) : (
-                                                <div className="inline-block w-full max-w-[320px]">
-                                                    <TailwindCustomInput
-                                                        type="text"
-                                                        placeholder="Enter your full name"
-                                                        value={
-                                                            p.passengerInfo?.givenName
-                                                                ? `${p.passengerInfo?.givenName}`
-                                                                : ""
-                                                        }
-                                                        onChange={(e) => {
-                                                            onPassengerFieldChange?.(
-                                                                idx,
-                                                                "passengerInfo.givenName",
-                                                                e.target.value
-                                                            );
-                                                        }}
-                                                    />
-                                                </div>
-                                            )}
+                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                {p.passengerInfo?.givenName
+                                                    ? `${p.passengerInfo.givenName}`
+                                                    : "—"}
+                                            </span>
                                         </dd>
 
                                         {/* Email - only show if required by fare rules */}
@@ -270,31 +151,10 @@ export default function FlightBookingReviewSection({
                                             <>
                                                 <dt className="text-[12px] text-[#3D495C]">Email</dt>
                                                 <dd className="text-right">
-                                                    {!isEditing.contact ? (
-                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                            {p.contact?.contactsProvided?.[0]
-                                                                ?.emailAddress?.[0] || "—"}
-                                                        </span>
-                                                    ) : (
-                                                        <div className="inline-block w-full max-w-[320px]">
-                                                            <TailwindCustomInput
-                                                                type="email"
-                                                                placeholder="Enter an email"
-                                                                value={
-                                                                    p.contact?.contactsProvided?.[0]
-                                                                        ?.emailAddress?.[0] || ""
-                                                                }
-                                                                onChange={(e) =>
-                                                                    onPassengerFieldChange?.(
-                                                                        idx,
-                                                                        "contact.contactsProvided.0.emailAddress.0",
-                                                                        e.target.value
-                                                                    )
-                                                                }
-                                                                className="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                                                            />
-                                                        </div>
-                                                    )}
+                                                    <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                        {p.contact?.contactsProvided?.[0]
+                                                            ?.emailAddress?.[0] || "—"}
+                                                    </span>
                                                 </dd>
                                             </>
                                         )}
@@ -304,32 +164,10 @@ export default function FlightBookingReviewSection({
                                             <>
                                                 <dt className="text-[12px] text-[#3D495C]">Phone</dt>
                                                 <dd className="text-right">
-                                                    {!isEditing.contact ? (
-                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                            {p.contact?.contactsProvided?.[0]?.phone?.[0]
-                                                                ?.phoneNumber
-                                                                ? `${p.contact.contactsProvided[0].phone[0].phoneNumber}`
-                                                                : "—"}
-                                                        </span>
-                                                    ) : (
-                                                        <div className="inline-block w-full max-w-[320px]">
-                                                            <TailwindCustomInput
-                                                                type="tel"
-                                                                placeholder="Phone"
-                                                                value={
-                                                                    p.contact?.contactsProvided?.[0]?.phone?.[0]
-                                                                        ?.phoneNumber || ""
-                                                                }
-                                                                onChange={(e) =>
-                                                                    onPassengerFieldChange?.(
-                                                                        idx,
-                                                                        "contact.contactsProvided.0.phone.0.phoneNumber",
-                                                                        e.target.value
-                                                                    )
-                                                                }
-                                                            />
-                                                        </div>
-                                                    )}
+                                                    {p.contact?.contactsProvided?.[0]?.phone?.[0]
+                                                        ?.phoneNumber
+                                                        ? `${p.contact.contactsProvided[0].phone[0].phoneNumber}`
+                                                        : "—"}
                                                 </dd>
                                             </>
                                         )}
@@ -341,12 +179,8 @@ export default function FlightBookingReviewSection({
                                 title={`Passenger ${String(idx + 1).padStart(2, "0")} details`}
                                 right={
                                     <HeaderActions
-                                        editing={isEditing.passenger}
-                                        onEdit={() => startEdit("passenger")}
-                                        onCancel={() => cancelEdit("passenger")}
-                                        onSave={() => saveEdit("passenger")}
+                                        onEdit={() => startEdit()}
                                         editLabel="Edit"
-                                        showSave={false}
                                     />
                                 }
                             >
@@ -368,28 +202,9 @@ export default function FlightBookingReviewSection({
                                                         Passport number
                                                     </dt>
                                                     <dd className="text-right">
-                                                        {!isEditing.passenger ? (
-                                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                                {p.identityDocuments?.[0]?.idDocumentNumber || "—"}
-                                                            </span>
-                                                        ) : (
-                                                            <div className="inline-block w-full max-w-[320px]">
-                                                                <TailwindCustomInput
-                                                                    type="text"
-                                                                    placeholder="Enter passport number"
-                                                                    value={
-                                                                        p.identityDocuments?.[0]?.idDocumentNumber || ""
-                                                                    }
-                                                                    onChange={(e) =>
-                                                                        onPassengerFieldChange?.(
-                                                                            idx,
-                                                                            "identityDocuments.0.idDocumentNumber",
-                                                                            e.target.value
-                                                                        )
-                                                                    }
-                                                                />
-                                                            </div>
-                                                        )}
+                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                            {p.identityDocuments?.[0]?.idDocumentNumber || "—"}
+                                                        </span>
                                                     </dd>
                                                 </>
                                             )}
@@ -401,56 +216,15 @@ export default function FlightBookingReviewSection({
                                                         Issuing country
                                                     </dt>
                                                     <dd className="text-right">
-                                                        {!isEditing.passenger ? (
-                                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                                {cities.find(
-                                                                    (c) =>
-                                                                        c.code ===
-                                                                        p.identityDocuments?.[0]?.issuingCountryCode
-                                                                )?.city ||
-                                                                    p.identityDocuments?.[0]?.issuingCountryCode ||
-                                                                    "—"}
-                                                            </span>
-                                                        ) : (
-                                                            <div className="inline-block w-full max-w-[320px] relative">
-                                                                <select
-                                                                    value={
-                                                                        p.identityDocuments?.[0]?.issuingCountryCode ||
-                                                                        ""
-                                                                    }
-                                                                    onChange={(e) =>
-                                                                        onPassengerFieldChange?.(
-                                                                            idx,
-                                                                            "identityDocuments.0.issuingCountryCode",
-                                                                            e.target.value
-                                                                        )
-                                                                    }
-                                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
-                                                                >
-                                                                    <option value="">Select country</option>
-                                                                    {cities?.map((c) => (
-                                                                        <option key={c.code} value={c.code}>
-                                                                            {c.city}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                                <svg
-                                                                    width="12"
-                                                                    height="7"
-                                                                    viewBox="0 0 12 7"
-                                                                    fill="none"
-                                                                    className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                                                                >
-                                                                    <path
-                                                                        d="M11.354 1.354L6.354 6.354a1 1 0 0 1-1.414 0L0.646 1.354"
-                                                                        stroke="#3D495C"
-                                                                        strokeWidth="1"
-                                                                        strokeLinecap="round"
-                                                                        strokeLinejoin="round"
-                                                                    />
-                                                                </svg>
-                                                            </div>
-                                                        )}
+                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                            {cities.find(
+                                                                (c) =>
+                                                                    c.code ===
+                                                                    p.identityDocuments?.[0]?.issuingCountryCode
+                                                            )?.city ||
+                                                                p.identityDocuments?.[0]?.issuingCountryCode ||
+                                                                "—"}
+                                                        </span>
                                                     </dd>
                                                 </>
                                             )}
@@ -462,24 +236,9 @@ export default function FlightBookingReviewSection({
                                                         Expiry date
                                                     </dt>
                                                     <dd className="text-right">
-                                                        {!isEditing.passenger ? (
-                                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                                {p.identityDocuments?.[0]?.expiryDate || "—"}
-                                                            </span>
-                                                        ) : (
-                                                            <div className="inline-block w-full max-w-[320px]">
-                                                                <TailiwindCustomDatePicker
-                                                                    value={p.identityDocuments?.[0]?.expiryDate ? parseLocalDateString(p.identityDocuments?.[0]?.expiryDate) : null}
-                                                                    onChange={(date) => {
-                                                                        const iso = formatDateToLocalISO(date);
-                                                                        onPassengerFieldChange?.(idx, "identityDocuments.0.expiryDate", iso);
-                                                                    }}
-                                                                    placeholder="Please select"
-                                                                    overridesClass
-                                                                    inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-                                                                />
-                                                            </div>
-                                                        )}
+                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                            {p.identityDocuments?.[0]?.expiryDate || "—"}
+                                                        </span>
                                                     </dd>
                                                 </>
                                             )}
@@ -563,7 +322,7 @@ export default function FlightBookingReviewSection({
                         </div>
                     </CardShell> */}
 
-                    <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
+                    {/* <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
                         <div className="px-4 py-3 border-b border-[#E4E4E7]">
                             <h3 className="text-[15px] font-medium text-[#0A0C0F]">
                                 Got a promo code?
@@ -636,17 +395,17 @@ export default function FlightBookingReviewSection({
                                 </Button>
                             </div>
                         </div>
-                    </div>
+                    </div> */}
                 </div>
 
                 {/* RIGHT: Trip details */}
                 <div>
                     <FlightSummaryCard
                         title="Flight details"
-                        headerActionText="View all"
-                        onHeaderActionClick={() => {
-                            /* handle view all */
-                        }}
+                        // headerActionText="View all"
+                        // onHeaderActionClick={() => {
+                        //     /* handle view all */
+                        // }}
                         segments={segments}
                         fare={priceFareFamily}
                     />
@@ -661,7 +420,8 @@ export default function FlightBookingReviewSection({
                 </div>
             </div>
 
-            <div className="mt-14 flex justify-center w-full">
+            <div className="mt-5 flex justify-center w-full">
+                {/* <div className="mt-14 flex justify-center w-full"> */}
                 <Button
                     type="button"
                     className="h-10 w-full max-w-[420px] rounded-lg bg-[#2351A3] px-8 text-[15px] font-semibold text-[#F2F2F3]"

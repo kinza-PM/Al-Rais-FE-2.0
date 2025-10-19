@@ -26,6 +26,7 @@ import { validatePassengersForFlightProvisionalBooking } from "../../utils/fligh
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import LoginModal from "../common/LoginModal";
 import { useAuth } from "../../features/auth/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 type FlightBookingBookSectionProps = {
     trip: any;
@@ -60,6 +61,7 @@ export default function FlightBookingBookSection({
     onUpdateFlightRaw,
 }: FlightBookingBookSectionProps) {
     const { isAuthenticated } = useAuth();
+    const navigate = useNavigate();
     const [openPrice, setOpenPrice] = useState(false);
     // const [openBaggage, setOpenBaggage] = useState(true);
     // const [openSeats, setOpenSeats] = useState(true);
@@ -84,7 +86,7 @@ export default function FlightBookingBookSection({
         value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
         changeText: "Change",
         onChangeClick: () => {
-            console.log("open fare change");
+            navigate('/search_flight');
         },
     };
 
@@ -498,8 +500,8 @@ export default function FlightBookingBookSection({
                 <div>
                     <FlightSummaryCard
                         title="Trip details"
-                        headerActionText="View all"
-                        onHeaderActionClick={() => {/* handle view all */ }}
+                        // headerActionText="View all"
+                        // onHeaderActionClick={() => {/* handle view all */ }}
                         segments={segments}
                         fare={priceFareFamily}
                     />

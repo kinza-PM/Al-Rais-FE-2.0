@@ -42,6 +42,7 @@ import type { FlightSearchRequest } from "../../services/api/flightSearch";
 import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
 import { buildFilterPreferenceForFlightSearchRequest, formatDate, formatTime, timeToMinutesFromAnyString } from "../../utils/helpers";
 import { filterFlightsByTimeAndAirlines } from "../../utils/flightFilters";
+import dayjs from "dayjs";
 
 
 
@@ -268,21 +269,21 @@ const FlightDetailTemplate: React.FC = () => {
     const passengersForRequest = buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts);
     const flightSegments: any[] = [
       {
-        departureAirportCode: fromCode,
-        // departureAirportCode: "DXB",
+        // departureAirportCode: fromCode,
+        departureAirportCode: "DXB",
         departureDate: departDate,
-        arrivalAirportCode: toCode,
-        // arrivalAirportCode: "DEL",
+        // arrivalAirportCode: toCode,
+        arrivalAirportCode: "DEL",
         cabinPreferences: [selectedCabinClassId]
       }
     ];
     if (trip === "roundtrip") {
       flightSegments.push({
-        // departureAirportCode: "DEL",
-        departureAirportCode: toCode,
+        departureAirportCode: "DEL",
+        // departureAirportCode: toCode,
         departureDate: returnDate,
-        arrivalAirportCode: fromCode,
-        // arrivalAirportCode: "DXB",
+        // arrivalAirportCode: fromCode,
+        arrivalAirportCode: "DXB",
         cabinPreferences: [selectedCabinClassId]
       });
     }
@@ -627,6 +628,10 @@ const FlightDetailTemplate: React.FC = () => {
   useEffect(() => {
     setResponseData([]);
     setRoundResponseData([]);
+    setDepartDate("");
+    setReturnDate("");
+    setSelectedCabinClassId("");
+    setPaxCounts({});
     setHasMore(false);
     setIoReady(false);
     setHasSearched(false);
@@ -790,6 +795,7 @@ const FlightDetailTemplate: React.FC = () => {
                 format={"dddd, DD MMM YYYY "}
                 style={{ width: "100%", height: 44 }}
                 className="header-input-common ant-input-select"
+                value={departDate ? dayjs(departDate) : null}
                 onChange={(value) => {
                   handleDate(value, "depart");
                 }}
@@ -802,6 +808,7 @@ const FlightDetailTemplate: React.FC = () => {
                   format={"dddd, DD MMM YYYY "}
                   style={{ width: "100%", height: 44 }}
                   className="header-input-common ant-input-select"
+                  value={returnDate ? dayjs(returnDate) : null}
                   onChange={(value) => {
                     handleDate(value, "return");
                   }}
@@ -812,7 +819,7 @@ const FlightDetailTemplate: React.FC = () => {
               <label className="header-labels-common ">Passengers</label>
               <div style={{ minWidth: "100%", height: 44 }}>
                 <PassengerCounterDropdown
-                value={paxCounts}
+                  value={paxCounts}
                   schema={passengers as PassengerSchema}
                   maxTotal={9}
                   onChange={(value) => {

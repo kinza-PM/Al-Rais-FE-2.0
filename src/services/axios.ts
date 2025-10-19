@@ -12,7 +12,7 @@ export const FLIGHT_API_BASE =
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
-  timeout: 15000,
+  timeout: 35000,
   headers: { "Content-Type": "application/json" },
 });
 

@@ -2,7 +2,7 @@ import React from "react";
 import "../../assets/css/travel.css";
 
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
-import colSeparater from "../../assets/svgs/Lineseparater.svg";
+// import colSeparater from "../../assets/svgs/Lineseparater.svg";
 
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
@@ -58,21 +58,21 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
   const navigate = useNavigate();
 
-  const showModalCompare = ({
-    modalType,
-    id,
-  }: {
-    modalType: "compare" | "share";
-    id: number | undefined;
-  }) => {
-    if (modalType === "compare") {
-      setIsModalOpen(true);
-    } else {
-      setshareModal(true);
-      const filtered = travelData.filter((item) => item.id === id);
-      setFilterData(filtered);
-    }
-  };
+  // const showModalCompare = ({
+  //   modalType,
+  //   id,
+  // }: {
+  //   modalType: "compare" | "share";
+  //   id: number | undefined;
+  // }) => {
+  //   if (modalType === "compare") {
+  //     setIsModalOpen(true);
+  //   } else {
+  //     setshareModal(true);
+  //     const filtered = travelData.filter((item) => item.id === id);
+  //     setFilterData(filtered);
+  //   }
+  // };
 
   const getRandomItemsExcluding = (arr: any[], excludeId: any, limit = 4) => {
     if (!Array.isArray(arr) || arr.length === 0) return [];
@@ -93,10 +93,12 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
     const filtered = passData.filter((item) => item.id === id);
-    console.log('price---------------', filtered)
+    // console.log('price---------------', filtered)
     // console.log('id', id);
     // console.log('passData==========', passData);
     setFilterDetail(filtered);
+
+    setFilterData([])
   };
 
   const HandleCompareOption = ({ id }: { id: number | undefined }) => {
@@ -112,6 +114,38 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     }
   };
 
+  const mapItemForRandomFlightsAndCurrentFlightForCompareItem = (f: any) => {
+    if (!f) return null;
+    const raw = f.raw ?? {};
+    const seg = raw?.journey?.[0]?.flightSegments?.[0] ?? raw?.outbound?.rawSegment ?? null;
+    const checked = seg?.baggageAllowance?.checkedInBaggage?.[0];
+    const checkedBaggage = checked ? `${checked.value}${checked.unit ?? ""}` : null;
+    const carry = seg?.baggageAllowance?.carryOnBaggage?.[0];
+    const carryBaggage = carry ? `${carry.value}${carry.unit ?? ""}` : null;
+    const totalFare = raw?.fare?.totalFare ?? f?.price?.economyLite?.price ?? null;
+    const currency = raw?.fare?.currencyCode ?? f?.currency ?? "AED";
+
+    return {
+      id: f.id ?? f.offerId ?? raw?.offerId,
+      logo: f.logo,
+      name: f.name,
+      flight_detail: f.flight_detail,
+      price: f.price,
+      totalFare,
+      currency,
+      duration: f.flight_detail?.duration ?? raw?.journey?.[0]?.flight?.flightInfo?.duration ?? null,
+      equipment: seg?.equipmentName ?? seg?.equipmentType ?? null,
+      seatsAvailable: seg?.seatsAvailable ?? null,
+      baggageChecked: checkedBaggage,
+      baggageCarry: carryBaggage,
+      refundable: raw?.fare?.fareType?.refundable ?? false,
+      rawMinimal: {
+        offerId: raw?.offerId ?? f.offerId ?? f.id,
+        supplier: raw?.financialInfo?.supplier ?? raw?.financialInfo,
+      },
+    };
+  };
+
   const pickRandomFlights = (all: any[] = [], excludeId: any, count = 4) => {
     if (!Array.isArray(all) || all.length === 0) return [];
     const candidates = all.filter((f) => f && f.id !== excludeId);
@@ -121,48 +155,17 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
       [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
     }
 
-    return candidates.slice(0, count).map((f) => {
-      const raw = f.raw || {};
-      const seg = raw?.journey?.[0]?.flightSegments?.[0] || raw?.outbound?.rawSegment || null;
-      const checked = seg?.baggageAllowance?.checkedInBaggage?.[0];
-      const checkedBaggage = checked ? `${checked.value}${checked.unit ?? ""}` : null;
-
-      const carry = seg?.baggageAllowance?.carryOnBaggage?.[0];
-      const carryBaggage = carry ? `${carry.value}${carry.unit ?? ""}` : null;
-
-      const totalFare = raw?.fare?.totalFare ?? f?.price?.economyLite?.price ?? null;
-      const currency = raw?.fare?.currencyCode ?? (f?.raw?.fare?.currencyCode) ?? "AED";
-
-      return {
-        id: f.id,
-        logo: f.logo,
-        name: f.name,
-        flight_detail: f.flight_detail,
-        price: f.price,
-        totalFare,
-        currency,
-        duration: f.flight_detail?.duration ?? raw?.journey?.[0]?.flight?.flightInfo?.duration ?? null,
-        equipment: seg?.equipmentName ?? seg?.equipmentType ?? null,
-        seatsAvailable: seg?.seatsAvailable ?? null,
-        baggageChecked: checkedBaggage,
-        baggageCarry: carryBaggage,
-        refundable: raw?.fare?.fareType?.refundable ?? false,
-        rawMinimal: {
-          offerId: raw?.offerId ?? raw?.offerId,
-          supplier: raw?.financialInfo?.supplier ?? raw?.financialInfo,
-        },
-      };
-    });
+    return candidates.slice(0, count).map((f) => mapItemForRandomFlightsAndCurrentFlightForCompareItem(f)).filter(Boolean);
   };
 
   const handleOfferSelection = (offerId: string, item: any) => {
     // console.log(offerId);
-    navigate('/flight-booking', { 
-      state: { 
-        offerId, 
+    navigate('/flight-booking', {
+      state: {
+        offerId,
         flightDetail: item,
         passengersForRequest: passengersForRequest || []
-      } 
+      }
     })
   }
 
@@ -178,6 +181,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
       </div>
     );
   }
+  // console.log('pass data------', passData);
 
   return (
     <div className="">
@@ -201,41 +205,69 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 <FlightTimingAndStops passSome={item} />
               </div>
 
-              <div className="featureIcons">
-                <div className="featureIconTooltipWrap">
-                  <img src={cabinIcon} alt="Cabin" />
-                  <span className="tooltip">Cabin: 1PC</span>
-                </div>
+              {
+                (() => {
+                  const cabinRaw =
+                    item?.flight_detail?.flight_class ??
+                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.cabin ??
+                    null;
 
-                <div className="featureIconTooltipWrap">
-                  <img src={baggageIcon} alt="Baggage" />
-                  <span className="tooltip">Baggage: 20KG</span>
-                </div>
+                  const baggageNode =
+                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.baggageAllowance?.checkedInBaggage?.[0] ??
+                    null;
+                  const baggageVal = baggageNode ? `${baggageNode.value}${baggageNode.unit ?? ""}` : null;
 
-                <div className="featureIconTooltipWrap">
-                  <img src={mealIcon} alt="Meal" />
-                  <span className="tooltip">Meal Included</span>
-                </div>
+                  const mealVal = item?.raw?.fare?.fareType?.refundable ? 'Refundable' : 'Non Refundable'
 
-                <div className="featureIconTooltipWrap">
-                  <img src={wifiIcon} alt="WiFi" />
-                  <span className="tooltip">WiFi Available</span>
-                </div>
+                  const durationVal =
+                    item?.flight_detail?.duration ??
+                    item?.raw?.journey?.[0]?.flight?.flightInfo?.duration ??
+                    null;
 
-                <div className="featureIconTooltipWrap">
-                  <img src={portsIcon} alt="Ports" />
-                  <span className="tooltip">USB Ports</span>
-                </div>
+                  const seatsVal =
+                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.seatsAvailable ?? null;
 
-                <div className="featureIconTooltipWrap">
-                  <img src={entertainmentIcon} alt="Entertainment" />
-                  <span className="tooltip">Entertainment</span>
-                </div>
-              </div>
+                  const equipmentVal =
+                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.equipmentName ??
+                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.equipmentType ??
+                    null;
+
+                  const features = [
+                    { key: "cabin", icon: cabinIcon, value: cabinRaw, label: `Cabin: ${cabinRaw}` },
+                    { key: "baggage", icon: baggageIcon, value: baggageVal, label: `Baggage: ${baggageVal}` },
+                    { key: "meal", icon: mealIcon, value: mealVal, label: `${mealVal}` },
+                    { key: "duration", icon: wifiIcon, value: durationVal, label: `Duration: ${durationVal}` },
+                    { key: "seats", icon: portsIcon, value: seatsVal, label: `Seats: ${seatsVal}` },
+                    { key: "equipment", icon: entertainmentIcon, value: equipmentVal, label: `${equipmentVal}` },
+                  ];
+
+                  const visible = features.filter(
+                    (f) =>
+                      f.value !== null &&
+                      f.value !== undefined &&
+                      String(f.value).trim() !== "" &&
+                      String(f.value).trim() !== "—"
+                  );
+
+                  if (!visible.length) return null;
+
+                  return (
+                    <div className="featureIcons">
+                      {visible.map((f) => (
+                        <div className="featureIconTooltipWrap" key={f.key}>
+                          <img src={f.icon} alt={f.key} />
+                          <span className="tooltip">{f.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()
+              }
+
 
               <div className="StartingPrice">
                 <p>Start from</p>
-                <h5>${item.rawTotalStartingFare}</h5>
+                <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}</h5>
               </div>
             </div>
             <div className="stopsOnSmall">
@@ -316,7 +348,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 >
                   Compare
                 </p> */}
-                <img
+                {/* <img
                   src={colSeparater}
                   alt=""
                   style={{ width: 1, height: 30 }}
@@ -328,7 +360,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                   }}
                 >
                   Share
-                </p>
+                </p> */}
               </div>
               <div className="selectPriceBtn" onClick={() => handleOfferSelection(item?.offerId, item)}>
                 <CustomButton>Select Price</CustomButton>
@@ -340,6 +372,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
               <FlightDetailsCard details={item} />
             ) : active?.name == "compare" && active?.id == index ? (
               <CompareCard
+                currentFlight={mapItemForRandomFlightsAndCurrentFlightForCompareItem(item)}
                 availableFlights={pickRandomFlights(passData || [], item.id, 4)}
               />
             ) : (
@@ -586,7 +619,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 </div>
                 <div className="StartingPrice">
                   <p>Start from</p>
-                  <h5>${item.rawTotalStartingFare}/per seat</h5>
+                  <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}/per seat</h5>
                 </div>
               </div>
             </div>

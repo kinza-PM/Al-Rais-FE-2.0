@@ -281,9 +281,17 @@ const FlightBooking = () => {
                             trip={offerData.flightDetail}
                             fareBookingSearchRules={fareBookingSearchRules}
                             flightBookingPayload={flightBookingPayload}
-                            onPassengerFieldChange={updatePassengerField}
                             cities={cityOptions}
                             onNext={() => setCurrentStep(2)}
+                            onPrevious={() => {
+                                setCurrentStep(0);
+                                setOfferData(initialOfferData);
+                                setFlightBookingPayload((prev) => ({
+                                    ...prev,
+                                    offerId: initialOfferData.offerId ?? prev.offerId,
+                                    journey: initialOfferData.flightDetail?.raw?.journey ?? prev.journey,
+                                }))
+                            }}
                         />
                     )}
                     {currentStep === 2 && (

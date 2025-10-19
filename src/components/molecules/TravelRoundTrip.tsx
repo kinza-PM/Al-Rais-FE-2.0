@@ -2,7 +2,7 @@ import React from "react";
 import "../../assets/css/travel.css";
 
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
-import colSeparater from "../../assets/svgs/Lineseparater.svg";
+// import colSeparater from "../../assets/svgs/Lineseparater.svg";
 
 import { Modal } from "antd";
 
@@ -21,7 +21,7 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import { travelData } from "../../utils/mockData";
 import FlightDetailsCard from "./FlightDetailsCard";
 import CompareCard from "./CompareCard";
-import { formatDate, formatTime } from "../../utils/helpers";
+// import { formatDate, formatTime } from "../../utils/helpers";
 import { useNavigate } from "react-router-dom";
 
 type TravelRoundTripProps = {
@@ -50,26 +50,27 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
   const navigate = useNavigate();
 
-  const showModalCompare = ({
-    modalType,
-    id,
-  }: {
-    modalType: "compare" | "share";
-    id: number | undefined;
-  }) => {
-    if (modalType === "compare") {
-      setIsModalOpen(true);
-    } else {
-      setshareModal(true);
-      const filtered = travelData.filter((item) => item.id === id);
-      setFilterData(filtered);
-    }
-  };
+  // const showModalCompare = ({
+  //   modalType,
+  //   id,
+  // }: {
+  //   modalType: "compare" | "share";
+  //   id: number | undefined;
+  // }) => {
+  //   if (modalType === "compare") {
+  //     setIsModalOpen(true);
+  //   } else {
+  //     setshareModal(true);
+  //     const filtered = travelData.filter((item) => item.id === id);
+  //     setFilterData(filtered);
+  //   }
+  // };
 
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
     const filtered = passData.filter((item) => item.id === id);
-    console.log('flitered-------', filtered);
+    // console.log('flitered-------', filtered);
     setFilterDetail(filtered);
+    setFilterData([])
   };
 
   const handleCancelCompare = (modalType: "compare" | "share") => {
@@ -79,6 +80,70 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       setshareModal(false);
     }
   };
+
+  const mapItemForRandomFlightsAndCurrentFlightForCompareItem = (f: any) => {
+    if (!f) return null;
+    const raw = f.raw ?? {};
+
+    const outSeg = f.outbound?.rawSegment ?? raw?.journey?.[0]?.flightSegments?.[0] ?? null;
+    const inSeg = f.inbound?.rawSegment ?? raw?.journey?.[1]?.flightSegments?.[0] ?? null;
+
+    const briefForSeg = (seg: any, wrapper?: any) =>
+      seg
+        ? {
+          flight_number: seg.flightNumber ?? seg.flight_number ?? wrapper?.flight_detail?.flight_number ?? null,
+          flight_class: seg.cabinClass ?? seg.cabin_class ?? wrapper?.flight_detail?.flight_class ?? null,
+          start_time: wrapper?.flight_detail?.start_time ?? seg.departureDateTime ?? null,
+          start_date: wrapper?.flight_detail?.start_date ?? seg.departureDateTime ?? null,
+          end_time: wrapper?.flight_detail?.end_time ?? seg.arrivalDateTime ?? null,
+          end_date: wrapper?.flight_detail?.end_date ?? seg.arrivalDateTime ?? null,
+          duration: wrapper?.flight_detail?.duration ?? seg.duration ?? null,
+          equipment: seg.equipmentName ?? seg.equipmentType ?? null,
+          seatsAvailable: seg.seatsAvailable ?? null,
+          baggageChecked: seg?.baggageAllowance?.checkedInBaggage?.[0]
+            ? `${seg.baggageAllowance.checkedInBaggage[0].value}${seg.baggageAllowance.checkedInBaggage[0].unit ?? ""}`
+            : null,
+          baggageCarry: seg?.baggageAllowance?.carryOnBaggage?.[0]
+            ? `${seg.baggageAllowance.carryOnBaggage[0].value}${seg.baggageAllowance.carryOnBaggage[0].unit ?? ""}`
+            : null,
+          marketingAirline: seg.marketingAirline ?? seg.operatingAirline ?? null,
+          rawSegment: seg,
+        }
+        : null;
+
+    const outboundBrief = f.outbound
+      ? { ...f.outbound, brief: briefForSeg(f.outbound.rawSegment, f.outbound) }
+      : outSeg
+        ? { logo: `/airlines/${outSeg?.marketingAirline}.png`, brief: briefForSeg(outSeg) }
+        : null;
+
+    const inboundBrief = f.inbound
+      ? { ...f.inbound, brief: briefForSeg(f.inbound.rawSegment, f.inbound) }
+      : inSeg
+        ? { logo: `/airlines/${inSeg?.marketingAirline}.png`, brief: briefForSeg(inSeg) }
+        : null;
+
+    const totalFare = raw?.fare?.totalFare ?? f?.price?.economyLite?.price ?? null;
+    const currency = raw?.fare?.currencyCode ?? f?.currency ?? "AED";
+    const refundable = !!(raw?.fare?.fareType?.refundable || f?.refundable);
+
+    return {
+      id: f.id ?? f.offerId ?? raw?.offerId,
+      offerId: raw?.offerId ?? f.offerId ?? f.id,
+      logo: f.logo ?? outboundBrief?.logo ?? `/airlines/${outSeg?.marketingAirline ?? "default"}.png`,
+      name: f.name ?? raw?.offerId ?? `Offer ${f.id}`,
+      outbound: outboundBrief,
+      inbound: inboundBrief,
+      price: f.price ?? { economyLite: { price: totalFare } },
+      totalFare,
+      currency,
+      refundable,
+      rawMinimal: {
+        supplier: raw?.financialInfo?.supplier ?? null,
+      },
+    };
+  };
+
 
   // returns up to `count` random round-trip items (lightweight, with outbound/inbound info)
   const pickRandomFlightsRound = (all: any[] = [], excludeId: any, count = 4) => {
@@ -93,74 +158,17 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
     }
 
-    return candidates.slice(0, count).map((f) => {
-      const raw = f.raw ?? {};
-      // support both shapes: some sources may already have outbound/inbound, others may be single
-      const outSeg = f.outbound?.rawSegment ?? raw?.journey?.[0]?.flightSegments?.[0] ?? null;
-      const inSeg = f.inbound?.rawSegment ?? raw?.journey?.[1]?.flightSegments?.[0] ?? null;
-
-      const briefForSeg = (seg: any, segmentWrapper?: any) =>
-        seg
-          ? {
-            flight_number: seg.flightNumber ?? seg.flight_number ?? segmentWrapper?.flight_detail?.flight_number ?? null,
-            flight_class: seg.cabinClass ?? seg.cabin_class ?? segmentWrapper?.flight_detail?.flight_class ?? null,
-            start_time: segmentWrapper?.flight_detail?.start_time ?? formatTime?.(seg.departureDateTime) ?? seg.departureDateTime,
-            start_date: segmentWrapper?.flight_detail?.start_date ?? formatDate?.(seg.departureDateTime) ?? seg.departureDateTime,
-            end_time: segmentWrapper?.flight_detail?.end_time ?? formatTime?.(seg.arrivalDateTime) ?? seg.arrivalDateTime,
-            end_date: segmentWrapper?.flight_detail?.end_date ?? formatDate?.(seg.arrivalDateTime) ?? seg.arrivalDateTime,
-            duration: segmentWrapper?.flight_detail?.duration ?? (seg.duration ?? raw?.journey?.[0]?.flight?.flightInfo?.duration) ?? null,
-            equipment: seg.equipmentName ?? seg.equipmentType ?? null,
-            seatsAvailable: seg.seatsAvailable ?? null,
-            baggageChecked: seg?.baggageAllowance?.checkedInBaggage?.[0]
-              ? `${seg.baggageAllowance.checkedInBaggage[0].value}${seg.baggageAllowance.checkedInBaggage[0].unit ?? ""}`
-              : null,
-            baggageCarry: seg?.baggageAllowance?.carryOnBaggage?.[0]
-              ? `${seg.baggageAllowance.carryOnBaggage[0].value}${seg.baggageAllowance.carryOnBaggage[0].unit ?? ""}`
-              : null,
-            marketingAirline: seg.marketingAirline ?? seg.operatingAirline ?? null,
-            rawSegment: seg,
-          }
-          : null;
-
-      const outboundBrief = f.outbound
-        ? { ...f.outbound, brief: briefForSeg(f.outbound.rawSegment, f.outbound) }
-        : briefForSeg(outSeg) ? { logo: `/airlines/${outSeg?.marketingAirline}.png`, brief: briefForSeg(outSeg) } : null;
-
-      const inboundBrief = f.inbound
-        ? { ...f.inbound, brief: briefForSeg(f.inbound.rawSegment, f.inbound) }
-        : briefForSeg(inSeg) ? { logo: `/airlines/${inSeg?.marketingAirline}.png`, brief: briefForSeg(inSeg) } : null;
-
-      const totalFare = raw?.fare?.totalFare ?? f?.price?.economyLite?.price ?? null;
-      const currency = raw?.fare?.currencyCode ?? f?.currency ?? "AED";
-      const refundable = !!(raw?.fare?.fareType?.refundable || f?.refundable);
-
-      return {
-        id: f.id,
-        offerId: raw?.offerId ?? f.offerId ?? f.id,
-        logo: f.logo ?? outboundBrief?.logo ?? `/airlines/${outSeg?.marketingAirline ?? "default"}.png`,
-        name: f.name ?? raw?.offerId ?? `Offer ${f.id}`,
-        outbound: outboundBrief,
-        inbound: inboundBrief,
-        price: f.price ?? { economyLite: { price: totalFare } },
-        totalFare,
-        currency,
-        refundable,
-        // small raw pointer
-        rawMinimal: {
-          supplier: raw?.financialInfo?.supplier ?? null,
-        },
-      };
-    });
+    return candidates.slice(0, count).map((f) => mapItemForRandomFlightsAndCurrentFlightForCompareItem(f)).filter(Boolean);
   };
 
   const handleOfferSelection = (offerId: string, item: any) => {
     // console.log(offerId);
-    navigate('/flight-booking', { 
-      state: { 
-        offerId, 
+    navigate('/flight-booking', {
+      state: {
+        offerId,
         flightDetail: item,
         passengersForRequest: passengersForRequest || []
-      } 
+      }
     })
   }
 
@@ -238,41 +246,91 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 </div>
               </div>
 
-              <div className="featureIcons">
-                <div className="featureIconTooltipWrap">
-                  <img src={cabinIcon} alt="Cabin" />
-                  <span className="tooltip">Cabin: 1PC</span>
-                </div>
+              {(() => {
+                const src = d ?? parent ?? {};
+                const raw = src.raw ?? parent?.raw ?? {};
 
-                <div className="featureIconTooltipWrap">
-                  <img src={baggageIcon} alt="Baggage" />
-                  <span className="tooltip">Baggage: 20KG</span>
-                </div>
+                const seg =
+                  src?.brief?.rawSegment ??
+                  src?.rawSegment ??
+                  raw?.journey?.[0]?.flightSegments?.[0] ??
+                  src?.flight_detail ??
+                  null;
 
-                <div className="featureIconTooltipWrap">
-                  <img src={mealIcon} alt="Meal" />
-                  <span className="tooltip">Meal Included</span>
-                </div>
+                // values
+                const cabinVal =
+                  src?.brief?.flight_class ??
+                  src?.flight_detail?.flight_class ??
+                  seg?.cabinClass ??
+                  null;
 
-                <div className="featureIconTooltipWrap">
-                  <img src={wifiIcon} alt="WiFi" />
-                  <span className="tooltip">WiFi Available</span>
-                </div>
+                const baggageNode =
+                  seg?.baggageAllowance?.checkedInBaggage?.[0] ??
+                  seg?.baggageAllowance?.carryOnBaggage?.[0] ??
+                  null;
+                const baggageVal = baggageNode ? `${baggageNode.value}${baggageNode.unit ?? ""}` : null;
 
-                <div className="featureIconTooltipWrap">
-                  <img src={portsIcon} alt="Ports" />
-                  <span className="tooltip">USB Ports</span>
-                </div>
+                const seatsVal =
+                  src?.brief?.seatsAvailable ??
+                  seg?.seatsAvailable ??
+                  null;
 
-                <div className="featureIconTooltipWrap">
-                  <img src={entertainmentIcon} alt="Entertainment" />
-                  <span className="tooltip">Entertainment</span>
-                </div>
-              </div>
+                const durationVal =
+                  src?.brief?.duration ??
+                  src?.flight_detail?.duration ??
+                  seg?.duration ??
+                  null;
+
+                const refundableFlag =
+                  (parent?.refundable ?? parent?.raw?.fare?.fareType?.refundable) ??
+                  (src?.refundable ?? raw?.fare?.fareType?.refundable) ??
+                  null;
+                const refundableLabel = refundableFlag ? "Refundable" : "Non-Refundable";
+
+                const entFlag =
+                  seg?.inflightEntertainment ??
+                  seg?.hasEntertainment ??
+                  src?.inflightEntertainment ??
+                  src?.hasEntertainment ??
+                  raw?.hasEntertainment ??
+                  null;
+                const equipmentVal =
+                  entFlag === true || String(entFlag).toLowerCase() === "true"
+                    ? "Entertainment"
+                    : src?.brief?.equipment ??
+                    seg?.equipmentName ??
+                    seg?.equipmentType ??
+                    null;
+
+                const features = [
+                  { key: "cabin", icon: cabinIcon, label: cabinVal ? `Cabin: ${cabinVal}` : null },
+                  { key: "baggage", icon: baggageIcon, label: baggageVal ? `Baggage: ${baggageVal}` : null },
+                  { key: "refundable", icon: mealIcon, label: refundableFlag !== null ? refundableLabel : null },
+                  { key: "duration", icon: wifiIcon, label: durationVal ? `Duration: ${durationVal}` : (src?.wifiAvailable || raw?.hasWifi ? "WiFi Available" : null) },
+                  { key: "ports", icon: portsIcon, label: seatsVal ? `Seats: ${seatsVal}` : (seg?.hasUsb || seg?.usbAvailable ? "USB Ports" : null) },
+                  { key: "entertainment", icon: entertainmentIcon, label: equipmentVal ?? (entFlag ?? null) },
+                ];
+
+                const visible = features.filter(f => f.label && String(f.label).trim() !== "" && String(f.label).trim() !== "—");
+
+                if (!visible.length) return null;
+
+                return (
+                  <div className="featureIcons">
+                    {visible.map(f => (
+                      <div className="featureIconTooltipWrap" key={f.key}>
+                        <img src={f.icon} alt={f.key} />
+                        <span className="tooltip">{f.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
 
               <div className="StartingPrice">
                 <span>Start from</span>
-                <h5>${price}</h5>
+                <h5>{item?.raw?.fare?.currencyCode ?? "$"}{price}</h5>
               </div>
             </div>
           );
@@ -359,7 +417,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 >
                   Compare
                 </p> */}
-                  <img
+                  {/* <img
                     src={colSeparater}
                     alt=""
                     style={{ width: 1, height: 30 }}
@@ -371,7 +429,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     }}
                   >
                     Share
-                  </p>
+                  </p> */}
                 </div>
                 <div className="selectPriceBtn" onClick={() => handleOfferSelection(item?.offerId, item)}>
                   <CustomButton>Select Price</CustomButton>
@@ -383,6 +441,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 <FlightDetailsCard details={item} />
               ) : active?.name == "compare" && active?.id == index ? (
                 <CompareCard
+                  currentFlight={mapItemForRandomFlightsAndCurrentFlightForCompareItem(item)}
                   availableFlights={pickRandomFlightsRound(passData || [], item.id, 4)}
                 />
               ) : (
@@ -601,7 +660,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 </div>
                 <div className="StartingPrice">
                   <p>Start from</p>
-                  <h5>${item.rawTotalStartingFare}/per seat</h5>
+                  <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}</h5>
                   {/* <h5>${item.price.economyLite.price}/per seat</h5> */}
                 </div>
               </div>

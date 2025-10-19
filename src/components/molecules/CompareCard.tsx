@@ -13,44 +13,85 @@ import seaticon from "../../assets/svgs/seatsicon.svg";
 
 import circlePlus from "../../assets/svgs/plus-circle.svg";
 type CompareCardProps = {
-  availableFlights?: any[]; // items can be one-way (flight_detail) or round-trip (outbound+inbound)
+  availableFlights?: any[];
+  currentFlight?: any;
 };
 
-const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [] }) => {
+const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], currentFlight = null }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newFlightData, setNewFlightData] = useState<any[]>([]);
   const [localAvailable, setLocalAvailable] = useState<any[]>([]);
+  const [isCurrentPinned, setIsCurrentPinned] = useState(false);
+
+  const normalize = (x: any) => (x == null ? x : String(x));
 
   useEffect(() => {
-    setLocalAvailable(Array.isArray(availableFlights) ? [...availableFlights] : []);
-  }, [availableFlights]);
+    const base = Array.isArray(availableFlights) ? [...availableFlights] : [];
+    const excludeId = normalize(currentFlight?.id ?? currentFlight?.offerId ?? currentFlight?.rawMinimal?.offerId);
+    const filtered = base.filter((f) => {
+      const fid = normalize(f?.id ?? f?.offerId ?? f?.raw?.offerId);
+      return fid !== excludeId;
+    });
+
+    setLocalAvailable(filtered);
+    setNewFlightData([]);
+    setIsCurrentPinned(false);
+  }, [availableFlights, currentFlight]);
 
   const showModalCompare = () => setIsModalOpen(true);
   const handleCancelCompare = () => setIsModalOpen(false);
 
   const addFlightToCompare = (item: any) => {
     if (!item) return;
-    // avoid duplicates
+    const itemId = normalize(item.id ?? item.offerId ?? item.rawMinimal?.offerId);
+
     setNewFlightData((prev) => {
-      if (prev.some((p) => p.id === item.id)) return prev;
+      if (prev.some((p) => normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) === itemId)) return prev;
+
+      if (!isCurrentPinned && currentFlight) {
+        const newArr = [currentFlight, item];
+        setIsCurrentPinned(true);
+        return newArr;
+      }
       return [...prev, item];
     });
-    // remove from modal list
-    setLocalAvailable((prev) => prev.filter((p) => p.id !== item.id));
+    setLocalAvailable((prev) => prev.filter((p) => normalize(p.id ?? p.offerId ?? p.raw?.offerId) !== itemId));
     setIsModalOpen(false);
   };
 
-  const removeFromCompare = (itemId: any) => {
+  const removeFromCompare = (itemIdRaw: any) => {
+    const itemId = normalize(itemIdRaw);
+    const currentId = currentFlight ? normalize(currentFlight.id ?? currentFlight.offerId ?? currentFlight.rawMinimal?.offerId) : null;
+
+    if (isCurrentPinned && currentId && itemId === currentId) {
+      return;
+    }
+
     setNewFlightData((prev) => {
-      const removedItem = prev.find((p) => p.id === itemId);
-      const remaining = prev.filter((p) => p.id !== itemId);
+      const removedItem = prev.find((p) => normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) === itemId);
+      const remaining = prev.filter((p) => normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) !== itemId);
+      if (isCurrentPinned && currentId) {
+        if (
+          remaining.length === 0 ||
+          (remaining.length === 1 && normalize(remaining[0].id ?? remaining[0].offerId ?? remaining[0].rawMinimal?.offerId) === currentId)
+        ) {
+          setLocalAvailable((availPrev) => {
+            if (!currentFlight) return availPrev;
+            const curId = currentId;
+            if (availPrev.some((a) => normalize(a.id ?? a.offerId ?? a.raw?.offerId) === curId)) return availPrev;
+            return [currentFlight, ...availPrev];
+          });
+          setIsCurrentPinned(false);
+          return [];
+        }
+      }
       if (removedItem) {
         setLocalAvailable((availPrev) => {
-          // if it's already present in modal, don't duplicate
-          if (availPrev.some((a) => a.id === removedItem.id)) return availPrev;
+          if (availPrev.some((a) => normalize(a.id ?? a.offerId ?? a.raw?.offerId) === itemId)) return availPrev;
           return [removedItem, ...availPrev];
         });
       }
+
       return remaining;
     });
   };
@@ -110,12 +151,15 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [] }) => {
   const renderCompareCard = (item: any) => {
     const isRound = !!(item as any).outbound || !!(item as any).inbound;
     const idKey = item.id ?? Math.random().toString(36).slice(2, 9);
-    const segClass = (seg: any) => seg?.flight_detail?.flight_class ?? seg?.cabinClass ?? "Economy";
-    const segBaggage = (seg: any) =>
-      seg?.baggageChecked ?? seg?.baggageCarry ?? seg?.rawSegment?.baggageAllowance?.checkedInBaggage?.[0]?.value ?? "—";
-    const segSeats = (seg: any) => seg?.seatsAvailable ?? seg?.rawSegment?.seatsAvailable ?? null;
-    const segDuration = (seg: any) => seg?.flight_detail?.duration ?? seg?.duration ?? "—";
-    const segEquipment = (seg: any) => seg?.equipment ?? seg?.rawSegment?.equipmentName ?? null;
+    const removeId = item.id ?? item.offerId;
+    const isCurrent = currentFlight && ((currentFlight.id ?? currentFlight.offerId) === removeId);
+
+    // const segClass = (seg: any) => seg?.flight_detail?.flight_class ?? seg?.cabinClass ?? "Economy";
+    // const segBaggage = (seg: any) =>
+    //   seg?.baggageChecked ?? seg?.baggageCarry ?? seg?.rawSegment?.baggageAllowance?.checkedInBaggage?.[0]?.value ?? "—";
+    // const segSeats = (seg: any) => seg?.seatsAvailable ?? seg?.rawSegment?.seatsAvailable ?? null;
+    // const segDuration = (seg: any) => seg?.flight_detail?.duration ?? seg?.duration ?? "—";
+    // const segEquipment = (seg: any) => seg?.equipment ?? seg?.rawSegment?.equipmentName ?? null;
 
 
     if (isRound) {
@@ -129,26 +173,28 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [] }) => {
       const currency = (item as any).currency ?? item.price?.currency ?? item.fare?.currencyCode ?? "";
 
       // choose representative small-values for the feature row (prefer outbound, fallback inbound)
-      const repSeg = outbound ?? inbound ?? item;
-      const cabin = segClass(repSeg);
-      const baggage = segBaggage(repSeg);
-      const seats = segSeats(repSeg);
-      const duration = segDuration(repSeg);
-      const equipment = segEquipment(repSeg);
+      // const repSeg = outbound ?? inbound ?? item;
+      // const cabin = segClass(repSeg);
+      // const baggage = segBaggage(repSeg);
+      // const seats = segSeats(repSeg);
+      // const duration = segDuration(repSeg);
+      // const equipment = segEquipment(repSeg);
 
       return (
         <Col span={8} key={idKey} className="">
           <div className="compareCard">
             <div className="cardHeader">
-              This Flight
-              <button
-                style={{ float: "right", background: "transparent", border: "none", cursor: "pointer" }}
-                onClick={() => removeFromCompare(item.id ?? item.offerId)}
-                aria-label="Remove"
-                title="Remove"
-              >
-                ✕
-              </button>
+              {isCurrent ? 'Chosen Flight' : 'Comparison Flight'}
+              {!isCurrent && (
+                <button
+                  style={{ float: "right", background: "transparent", border: "none", cursor: "pointer" }}
+                  onClick={() => removeFromCompare(removeId)}
+                  aria-label="Remove"
+                  title="Remove"
+                >
+                  ✕
+                </button>
+              )}
             </div>
 
             <div className="cardBody">
@@ -162,7 +208,7 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [] }) => {
               </div>
 
               {/* featureImgs — same layout as your one-way block but using representative segs */}
-              <div className="featureImgs" style={{ marginTop: 10 }}>
+              {/* <div className="featureImgs" style={{ marginTop: 10 }}>
                 <Row className="featureImgsFlex">
                   <Col span={10} className="featureIconText">
                     <img src={cabinIcon} alt="" />
@@ -206,7 +252,7 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [] }) => {
                     ) : null}
                   </Col>
                 </Row>
-              </div>
+              </div> */}
 
               {/* small summary / seat layout */}
               <div className="flightSeats" style={{ marginTop: 12 }}>
@@ -242,15 +288,17 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [] }) => {
       <Col span={8} key={idKey} className="">
         <div className="compareCard">
           <div className="cardHeader">
-            This Flight
-            <button
-              style={{ float: "right", background: "transparent", border: "none", cursor: "pointer" }}
-              onClick={() => removeFromCompare(item.id)}
-              aria-label="Remove"
-              title="Remove"
-            >
-              ✕
-            </button>
+            {isCurrent ? 'Chosen Flight' : 'Comparison Flight'}
+            {!isCurrent && (
+              <button
+                style={{ float: "right", background: "transparent", border: "none", cursor: "pointer" }}
+                onClick={() => removeFromCompare(removeId)}
+                aria-label="Remove"
+                title="Remove"
+              >
+                ✕
+              </button>
+            )}
           </div>
 
           <div className="cardBody">
@@ -269,7 +317,7 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [] }) => {
                 <p>Start from</p>
                 <h5>
                   {item.currency ?? ""} {item.price?.economyLite?.price ?? item.totalFare ?? "—"}
-                  <span>/per seat</span>
+                  {/* <span>/per seat</span> */}
                 </h5>
               </div>
             </div>
@@ -396,7 +444,7 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [] }) => {
                               <span style={{ marginLeft: 6 }}>{item.baggageChecked ?? item.baggageCarry ?? "-"}</span>
                             </div> */}
                             <div>
-                              <strong>{item.currency ?? ""} {item.price?.economyLite?.price ?? item.totalFare ?? "-"}</strong>/per seat
+                              <strong>{item.currency ?? ""} {item.price?.economyLite?.price ?? item.totalFare ?? "-"}</strong>
                               {/* <div style={{ fontSize: 12 }}>{item.refundable ? "Refundable" : "Non-refundable"}</div> */}
                             </div>
                           </div>
