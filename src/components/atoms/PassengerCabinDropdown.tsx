@@ -5,7 +5,7 @@ import type {
   PassengerSchema,
   CabinClassOption,
 } from "../../features/flights/types";
-import CustomDropdownError from "../common/CustomDropdownError";
+import SearchableDropdown from "../common/SearchableDropdown";
 
 type Pax = { adults: number; kids: number; infants: number; seniors?: number };
 
@@ -15,7 +15,7 @@ type Props = {
   loadingPassengers?: boolean;
   maxTotal?: number;
   value?: Pax;
-  onChangePax?: (p: Pax) => void;
+  onChangePax?: (p: Pax, order: string[]) => void;
 
   // Cabin
   cabinClasses?: CabinClassOption[]; // 👈 made optional
@@ -42,26 +42,18 @@ const PassengerCabinDropdown: React.FC<Props> = ({
   widthClass = "w-[190px]",
 }) => {
   const [open, setOpen] = useState(false);
-  const [openCabinError, setOpenCabinError] = React.useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
+  const passengerRequestOrder = useRef<string[]>([]);
+  const prevCountsRef = useRef<Pax>({ adults: 0, kids: 0, infants: 0, seniors: undefined });
 
   const cabinError =
     !loadingCabinClasses && (!cabinClasses || cabinClasses.length === 0)
       ? "Cabin classes are not available right now. Please try again later."
       : null;
 
-  const handleCabinToggle = (
-    e: React.MouseEvent<HTMLSelectElement> | React.KeyboardEvent<HTMLSelectElement>
-  ) => {
-    if (!cabinError) return;
-    e.preventDefault();
-    setOpenCabinError((v) => !v);
-    (e.currentTarget as HTMLSelectElement).blur();
-  };
-
   const [paxLocal, setPaxLocal] = useState<Pax>({
-    adults: 1,
+    adults: 0,
     kids: 0,
     infants: 0,
     seniors: undefined,
@@ -95,6 +87,51 @@ const PassengerCabinDropdown: React.FC<Props> = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
+
+  // keep prev counts in sync with current pax (handles initial mount and controlled updates)
+  useEffect(() => {
+    prevCountsRef.current = pax;
+  }, [pax]);
+
+  const handleInternalChange = (nextRaw: Partial<Pax> | undefined) => {
+    const next = toStrictPax(nextRaw);
+    const prev = prevCountsRef.current; // use stable last counts
+    const schemaKeys = (schema || []).map((s) => (s as any).key);
+    const keys = Array.from(new Set([...Object.keys(prev || {}), ...Object.keys(next || {}), ...schemaKeys]));
+
+    const order = passengerRequestOrder.current.slice();
+
+    for (const k of keys) {
+      const prevCount = (prev as any)?.[k] ?? 0;
+      const nextCount = (next as any)[k] ?? 0;
+      const diff = nextCount - prevCount;
+      if (diff > 0) {
+        for (let i = 0; i < diff; i++) order.push(k);
+      } else if (diff < 0) {
+        for (let i = 0; i < -diff; i++) {
+          const li = order.lastIndexOf(k);
+          if (li >= 0) order.splice(li, 1);
+        }
+      }
+    }
+
+    // compare before setting to prevent loops with controlled child
+    const allKeys = Array.from(new Set([...Object.keys(prev || {}), ...Object.keys(next || {})]));
+    const changed = allKeys.some((k) => (prev as any)?.[k] !== (next as any)[k]);
+
+    if (!changed) return; // nothing to do
+
+    passengerRequestOrder.current = order;
+    prevCountsRef.current = next;
+
+    // uncontrolled -> update local state
+    if (value === undefined) {
+      setPaxLocal(next);
+    }
+
+    // emit both next and order
+    onChangePax?.(next, order);
+  };
 
   return (
     <div className={`relative ${widthClass}`} ref={ref}>
@@ -140,15 +177,16 @@ const PassengerCabinDropdown: React.FC<Props> = ({
           <div className="mb-3">
             <div className="text-[12px] text-[#3D495C] mb-1">Passengers</div>
             <PassengerCounterDropdown
-              value={value}
-              onChange={(p) => {
-                const normalized = toStrictPax(p);
-                onChangePax ? onChangePax(normalized) : setPaxLocal(normalized);
-              }}
+              value={pax}
+              // onChange={(p) => {
+              //   const normalized = toStrictPax(p);
+              //   onChangePax ? onChangePax(normalized) : setPaxLocal(normalized);
+              // }}
+              onChange={(p) => handleInternalChange(p)}
               maxTotal={maxTotal}
               schema={schema}
               errorMessage={
-                (!loadingPassengers && (!schema || schema.length === 0))
+                !loadingPassengers && (!schema || schema.length === 0)
                   ? "Passenger types are not available right now. Please try again later."
                   : null
               }
@@ -160,56 +198,20 @@ const PassengerCabinDropdown: React.FC<Props> = ({
           {/* Cabin class */}
           <div>
             <div className="text-[12px] text-[#3D495C] mb-1">Cabin class</div>
-            <div className="relative">
-              <select
-                value={selectedCabinClassId}
-                onChange={(e) => onChangeCabinClassId(e.target.value)}
-                disabled={loadingCabinClasses}
-                className="appearance-none h-11 w-full rounded-xl border border-[#DFE7F3] px-4 pr-8 text-[14px]
-                           text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20"
-                aria-invalid={!!cabinError}
-                aria-describedby={cabinError && openCabinError ? "cabin-error" : undefined}
-                onMouseDown={handleCabinToggle}
-                onKeyDown={(e) => {
-                  if (cabinError && (e.key === " " || e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp")) {
-                    handleCabinToggle(e);
-                  }
-                  if (e.key === "Escape") setOpenCabinError(false);
-                }}
-              >
-                <option value="">Please select</option>
-                {cabinClasses.map((cc) => (
-                  <option key={cc.id} value={cc.id}>
-                    {cc.label}
-                  </option>
-                ))}
-              </select>
-              <svg
-                className="pointer-events-none absolute right-3 top-1/3"
-                width="16"
-                height="16"
-                viewBox="0 0 20 20"
-                fill="none"
-              >
-                <path
-                  d="M5 7.5l5 5 5-5"
-                  stroke="#2351A3"
-                  strokeWidth="1.6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              {cabinError && openCabinError && (
-                // <div className="absolute z-30 mt-2 w-[220px]">
-                  <CustomDropdownError
-                    id="cabin-error"
-                    title="Nothing found!"
-                    message={cabinError}
-                  />
-                // </div>
-              )}
-            </div>
+            <SearchableDropdown
+              options={cabinClasses.map(cc => ({
+                id: cc.id,
+                value: cc.id,
+                label: cc.label
+              }))}
+              value={selectedCabinClassId}
+              onChange={onChangeCabinClassId}
+              placeholder="Please select"
+              disabled={loadingCabinClasses}
+              error={cabinError}
+              widthClass="w-full"
+              searchPlaceholder="Search cabin classes..."
+            />
           </div>
         </div>
       )}

@@ -11,7 +11,7 @@ import noFlights from "../../assets/svgs/no-flights.svg";
 import { Segmented, Tabs, Select, Flex, Drawer, Button, Grid } from "antd";
 // import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
-import CustomSelect from "../common/CustomSelect";
+// import CustomSelect from "../common/CustomSelect";
 import CustomDatePicker from "../common/CustomDatePicker";
 import FlightSearchFilter from "../atoms/FlightSearchFilter";
 import TravelOneWay from "./TravelOneWay";
@@ -33,18 +33,22 @@ import type {
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import Loader from "../atoms/Loader";
-// import { useFlightStore } from "../../store/UseFlightStore";
+import { useFlightStore } from "../../store/UseFlightStore";
 // import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 import { useFlightSearch } from "../../hooks/useFlightSearch";
 import { useLoadMoreFlights } from "../../hooks/useLoadMoreFlights";
 import type { FlightSearchRequest } from "../../services/api/flightSearch";
 import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
-import { buildFilterPreferenceForFlightSearchRequest, formatDate, formatTime, timeToMinutesFromAnyString } from "../../utils/helpers";
+import {
+  buildFilterPreferenceForFlightSearchRequest,
+  formatDate,
+  formatTime,
+  timeToMinutesFromAnyString,
+} from "../../utils/helpers";
 import { filterFlightsByTimeAndAirlines } from "../../utils/flightFilters";
 import dayjs from "dayjs";
-
-
+import SearchableDropdown from "../common/SearchableDropdown";
 
 const onChange = (key: string) => {
   console.log(key);
@@ -62,7 +66,11 @@ const baggageHandler: CheckboxProps["onChange"] = (e) => {
   console.log(`checked = ${e.target.checked}`);
 };
 
-const buildPassengersArrayForFlightSearch = (order: string[], schema: PassengerSchema, paxState: any) => {
+const buildPassengersArrayForFlightSearch = (
+  order: string[],
+  schema: PassengerSchema,
+  paxState: any
+) => {
   const keyToPtc = new Map((schema || []).map((s: any) => [s.key, s.ptc]));
   const arr: { id: string; ptc: string }[] = [];
   let idCounter = 1;
@@ -71,13 +79,17 @@ const buildPassengersArrayForFlightSearch = (order: string[], schema: PassengerS
     const ptc = keyToPtc.get(key) ?? "ADT";
     arr.push({ id: String(idCounter++), ptc });
   }
-  const totalCounts = Object.values(paxState || {}).reduce((a: number, b: any) => a + (Number(b) || 0), 0);
+  const totalCounts = Object.values(paxState || {}).reduce(
+    (a: number, b: any) => a + (Number(b) || 0),
+    0
+  );
   if (arr.length !== totalCounts) {
     const fallback: { id: string; ptc: string }[] = [];
     let idx = 1;
     for (const s of schema || []) {
       const cnt = paxState?.[s.key] ?? 0;
-      for (let i = 0; i < cnt; i++) fallback.push({ id: String(idx++), ptc: s.ptc });
+      for (let i = 0; i < cnt; i++)
+        fallback.push({ id: String(idx++), ptc: s.ptc });
     }
     return fallback;
   }
@@ -88,6 +100,7 @@ const buildPassengersArrayForFlightSearch = (order: string[], schema: PassengerS
 const FlightDetailTemplate: React.FC = () => {
   const { mutateAsync, isPending } = useFlightSearch();
   const { loadMoreAsync, isLoadingMore } = useLoadMoreFlights();
+  const { flight } = useFlightStore();
 
   const [responseData, setResponseData] = useState<any[]>([]);
   const [roundResponseData, setRoundResponseData] = useState<any[]>([]);
@@ -104,17 +117,29 @@ const FlightDetailTemplate: React.FC = () => {
   const [ioReady, setIoReady] = useState(false);
 
   const [hasSearched, setHasSearched] = useState(false);
-  const [selectedMaxConnections, setSelectedMaxConnections] = useState<number>(0);
-  const [departureFlightRange, setDepartureFlightRange] = useState({ start: "", end: "" });
-  const [arrivalFlightRange, setArrivalFlightRange] = useState({ start: "", end: "" });
+  const [selectedMaxConnections, setSelectedMaxConnections] =
+    useState<number>(0);
+  const [departureFlightRange, setDepartureFlightRange] = useState({
+    start: "",
+    end: "",
+  });
+  const [arrivalFlightRange, setArrivalFlightRange] = useState({
+    start: "",
+    end: "",
+  });
   const [selectedAirlineIds, setSelectedAirlineIds] = useState<string[]>([]);
-  const [selectedTransitRange, setSelectedTransitRange] = useState<string | null>(null);
-  const [priceRangeBounds, setPriceRangeBounds] = React.useState<[number, number]>([0, 1000]);
-  const [selectedPriceRange, setSelectedPriceRange] = React.useState<[number, number]>([0, 1000]);
+  const [selectedTransitRange, setSelectedTransitRange] = useState<
+    string | null
+  >(null);
+  const [priceRangeBounds, setPriceRangeBounds] = React.useState<
+    [number, number]
+  >([0, 1000]);
+  const [selectedPriceRange, setSelectedPriceRange] = React.useState<
+    [number, number]
+  >([0, 1000]);
   const PRICE_STEP = 50;
   const filterChangeDebounceRef = useRef<number | null>(null);
   const timeRefs = useRef<Record<string, HTMLInputElement | null>>({});
-
 
   const handleDate = (date: any, which: "depart" | "return" = "depart") => {
     if (!date) {
@@ -134,12 +159,16 @@ const FlightDetailTemplate: React.FC = () => {
     else setReturnDate(formatted);
   };
 
+  // (moved init-from-store further below after loading is declared)
+
   const handlePassenger = (passanger: any) => {
     const prev = paxCounts || {};
     const next = passanger || {};
 
-    const schemaKeys = (passengers as any[] || []).map((s) => s.key);
-    const keys = Array.from(new Set([...Object.keys(prev), ...Object.keys(next), ...schemaKeys]));
+    const schemaKeys = ((passengers as any[]) || []).map((s) => s.key);
+    const keys = Array.from(
+      new Set([...Object.keys(prev), ...Object.keys(next), ...schemaKeys])
+    );
 
     const order = passengerRequestOrder.current.slice(); // clone
 
@@ -198,7 +227,8 @@ const FlightDetailTemplate: React.FC = () => {
     };
   };
 
-  const logoFromFlightSegment = (seg: any) => (seg ? `/airlines/${seg.marketingAirline}.png` : "");
+  const logoFromFlightSegment = (seg: any) =>
+    seg ? `/airlines/${seg.marketingAirline}.png` : "";
 
   const mapFlightRawResponseToFormats = (item: any, idx: number) => {
     const journeys = item?.journey || [];
@@ -227,12 +257,23 @@ const FlightDetailTemplate: React.FC = () => {
       raw: item,
     };
 
-    const roundId = item?.offerId ?? outbound?.id ?? `offer-${idx}-${item?.offerId ?? ""}`;
+    const roundId =
+      item?.offerId ?? outbound?.id ?? `offer-${idx}-${item?.offerId ?? ""}`;
     const roundObj = {
       id: roundId,
       offerId: item?.offerId,
-      outbound: outbound ? { ...outbound, logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment) } : null,
-      inbound: inbound ? { ...inbound, logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment) } : null,
+      outbound: outbound
+        ? {
+          ...outbound,
+          logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment),
+        }
+        : null,
+      inbound: inbound
+        ? {
+          ...inbound,
+          logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment),
+        }
+        : null,
       // price: { economyLite: { price: item?.fare?.totalFare } },
       price: priceOptions,
       rawTotalStartingFare: item?.fare?.totalFare ?? null,
@@ -255,18 +296,29 @@ const FlightDetailTemplate: React.FC = () => {
     return { oneWayFormatted, roundFormatted };
   };
 
-  const appendUniqueItemsForLoadMoreFlights = (prevArray: any[], newArray: any[]) => {
+  const appendUniqueItemsForLoadMoreFlights = (
+    prevArray: any[],
+    newArray: any[]
+  ) => {
     const existing = new Set(prevArray.map((p) => p.id));
     const toAdd = newArray.filter((n) => !existing.has(n.id));
     return toAdd.length ? [...prevArray, ...toAdd] : prevArray;
   };
 
-  const handleSearch = async (searchFilters: { maxConnections?: number } = {}) => {
+  const handleSearch = async (
+    searchFilters: { maxConnections?: number } = {}
+  ) => {
     // const sortedPrice = typeof searchFilters.priceId !== "undefined" ? searchFilters.priceId : selectedPriceId;
     const sortedMaxConnections =
-      typeof searchFilters.maxConnections !== "undefined" ? searchFilters.maxConnections : (selectedMaxConnections ?? 0);
+      typeof searchFilters.maxConnections !== "undefined"
+        ? searchFilters.maxConnections
+        : selectedMaxConnections ?? 0;
 
-    const passengersForRequest = buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts);
+    const passengersForRequest = buildPassengersArrayForFlightSearch(
+      passengerRequestOrder.current,
+      passengers as PassengerSchema,
+      paxCounts
+    );
     const flightSegments: any[] = [
       {
         // departureAirportCode: fromCode,
@@ -274,8 +326,8 @@ const FlightDetailTemplate: React.FC = () => {
         departureDate: departDate,
         // arrivalAirportCode: toCode,
         arrivalAirportCode: "DEL",
-        cabinPreferences: [selectedCabinClassId]
-      }
+        cabinPreferences: [selectedCabinClassId],
+      },
     ];
     if (trip === "roundtrip") {
       flightSegments.push({
@@ -284,14 +336,18 @@ const FlightDetailTemplate: React.FC = () => {
         departureDate: returnDate,
         // arrivalAirportCode: fromCode,
         arrivalAirportCode: "DXB",
-        cabinPreferences: [selectedCabinClassId]
+        cabinPreferences: [selectedCabinClassId],
       });
     }
 
     const baseBody: any = { flightSegments, passengers: passengersForRequest };
-    const searchFilterObj = buildFilterPreferenceForFlightSearchRequest(Number(sortedMaxConnections ?? 0));
+    const searchFilterObj = buildFilterPreferenceForFlightSearchRequest(
+      Number(sortedMaxConnections ?? 0)
+    );
     // const searchFilterObj = buildFilterPreferenceForFlightSearchRequest(sortedPrice, Number(sortedMaxConnections ?? 0));
-    const requestBody = searchFilterObj ? { ...baseBody, ...searchFilterObj } : baseBody;
+    const requestBody = searchFilterObj
+      ? { ...baseBody, ...searchFilterObj }
+      : baseBody;
 
     lastRequestRef.current = requestBody;
     // setHasMore(true);
@@ -303,7 +359,8 @@ const FlightDetailTemplate: React.FC = () => {
       const response = await mutateAsync(requestBody);
       const raw = response.data || [];
 
-      const { oneWayFormatted, roundFormatted } = processFLightSearchResults(raw);
+      const { oneWayFormatted, roundFormatted } =
+        processFLightSearchResults(raw);
 
       originalResponseRef.current = oneWayFormatted;
       originalRoundResponseRef.current = roundFormatted;
@@ -311,9 +368,13 @@ const FlightDetailTemplate: React.FC = () => {
       setRoundResponseData(roundFormatted);
 
       const fares: number[] = [
-        ...oneWayFormatted.map(it => Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN)),
-        ...roundFormatted.map(it => Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN)),
-      ].filter(n => !Number.isNaN(n) && isFinite(n));
+        ...oneWayFormatted.map((it) =>
+          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN)
+        ),
+        ...roundFormatted.map((it) =>
+          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN)
+        ),
+      ].filter((n) => !Number.isNaN(n) && isFinite(n));
 
       const minFare = fares.length ? Math.min(...fares) : 0;
       const maxFare = fares.length ? Math.max(...fares) : 1000;
@@ -322,7 +383,9 @@ const FlightDetailTemplate: React.FC = () => {
       setPriceRangeBounds([roundedMin, roundedMax]);
       setSelectedPriceRange([roundedMin, roundedMax]);
 
-      const anyHasMore = (raw || []).some((it: any) => !!it?.detail?.moreFaresAvailable);
+      const anyHasMore = (raw || []).some(
+        (it: any) => !!it?.detail?.moreFaresAvailable
+      );
       // console.log("anyHasMore", anyHasMore, (raw.length > 0 && anyHasMore));
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);
@@ -334,7 +397,6 @@ const FlightDetailTemplate: React.FC = () => {
       setHasSearched(true);
     }
   };
-
 
   const handleLoadMore = async () => {
     // console.log("handleLoadMore", hasMore, isLoadingMore);
@@ -349,13 +411,20 @@ const FlightDetailTemplate: React.FC = () => {
         return;
       }
 
-      const { oneWayFormatted, roundFormatted } = processFLightSearchResults(raw);
+      const { oneWayFormatted, roundFormatted } =
+        processFLightSearchResults(raw);
 
       // append only unique items
-      setResponseData((prev) => appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted));
-      setRoundResponseData((prev) => appendUniqueItemsForLoadMoreFlights(prev, roundFormatted));
+      setResponseData((prev) =>
+        appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted)
+      );
+      setRoundResponseData((prev) =>
+        appendUniqueItemsForLoadMoreFlights(prev, roundFormatted)
+      );
 
-      const anyHasMore = (raw || []).some((it: any) => !!it?.detail?.moreFaresAvailable);
+      const anyHasMore = (raw || []).some(
+        (it: any) => !!it?.detail?.moreFaresAvailable
+      );
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);
       setIoReady(true);
@@ -364,8 +433,6 @@ const FlightDetailTemplate: React.FC = () => {
       setHasMore(false);
     }
   };
-
-
 
   const {
     flightTypes,
@@ -399,7 +466,6 @@ const FlightDetailTemplate: React.FC = () => {
   const [toCode, setToCode] = useState<string>("");
   const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("");
 
-
   // const [showFilters, setShowFilters] = useState(false);
 
   const [open, setOpen] = useState(false);
@@ -416,6 +482,51 @@ const FlightDetailTemplate: React.FC = () => {
       setToCode((countries as CountryOption[])[1].code);
     }
   }, [countries, fromCode, toCode]);
+
+  // initialize from store once after listings load
+  const didInitFromStore = useRef(false);
+  const isHydratingFromStore = useRef(false);
+  useEffect(() => {
+    if (didInitFromStore.current) return;
+    if (!flight) return;
+    if (loading) return;
+
+    // trip
+    if (
+      flight.trip === "roundtrip" ||
+      flight.trip === "oneway" ||
+      flight.trip === "multicity"
+    ) {
+      isHydratingFromStore.current = true;
+      setTrip(flight.trip as TripType);
+    }
+    // from/to
+    setFromCode(flight?.fromCode);
+    setToCode(flight?.toCode);
+
+    setSelectedCabinClassId(String(flight?.selectedCabinClassId));
+    if (typeof flight?.departure === "string") setDepartDate(flight?.departure);
+    if (typeof flight?.arrival === "string") setReturnDate(flight?.arrival);
+    setPaxCounts(flight?.next);
+    if (flight?.order) passengerRequestOrder.current = flight?.order.slice();
+
+    didInitFromStore.current = true;
+    console.log("[FlightStore] initial search:", flight, fromCode);
+  }, [flight, loading]);
+
+  // auto-trigger search when valid filters are present after hydration
+  useEffect(() => {
+    if (!didInitFromStore.current) return;
+    if (isPending) return;
+    const hasBasicFilters = Boolean(
+      fromCode && toCode && selectedCabinClassId && departDate && (trip !== "roundtrip" || returnDate)
+    );
+    if (!hasBasicFilters) return;
+    // Trigger once per hydrated set
+    if (!lastRequestRef.current) {
+      handleSearch();
+    }
+  }, [didInitFromStore.current, fromCode, toCode, selectedCabinClassId, departDate, returnDate, trip, isPending]);
 
   useEffect(() => {
     if (fromCode && toCode && fromCode === toCode) {
@@ -441,8 +552,12 @@ const FlightDetailTemplate: React.FC = () => {
   );
 
   const handleAirlineToggle = (airlineCode: string, checked: boolean) => {
-    const code = String(airlineCode || "").trim().toUpperCase();
-    const next = checked ? Array.from(new Set([...selectedAirlineIds, code])) : selectedAirlineIds.filter((c) => c !== code);
+    const code = String(airlineCode || "")
+      .trim()
+      .toUpperCase();
+    const next = checked
+      ? Array.from(new Set([...selectedAirlineIds, code]))
+      : selectedAirlineIds.filter((c) => c !== code);
     setSelectedAirlineIds(next);
     handleSearchFiltersChange({ selectedAirlines: next });
   };
@@ -451,8 +566,8 @@ const FlightDetailTemplate: React.FC = () => {
     // priceId?: string | null;
     priceRange?: [number, number] | null;
     maxConnections?: number | null;
-    departureFlightRange?: { start?: string, end?: string };
-    arrivalFlightRange?: { start?: string, end?: string };
+    departureFlightRange?: { start?: string; end?: string };
+    arrivalFlightRange?: { start?: string; end?: string };
     selectedAirlines?: string[] | null;
   }) => {
     if (
@@ -481,7 +596,7 @@ const FlightDetailTemplate: React.FC = () => {
 
       const newRange =
         typeof changes.priceRange !== "undefined"
-          ? (changes.priceRange ?? priceRangeBounds)
+          ? changes.priceRange ?? priceRangeBounds
           : selectedPriceRange;
 
       if (typeof changes.priceRange !== "undefined") {
@@ -491,8 +606,10 @@ const FlightDetailTemplate: React.FC = () => {
       applyFlightSearchFilters(
         changes.departureFlightRange ?? departureFlightRange,
         changes.arrivalFlightRange ?? arrivalFlightRange,
-        typeof changes.selectedAirlines !== "undefined" ? changes.selectedAirlines : selectedAirlineIds,
-        newRange,
+        typeof changes.selectedAirlines !== "undefined"
+          ? changes.selectedAirlines
+          : selectedAirlineIds,
+        newRange
       );
 
       return;
@@ -509,7 +626,10 @@ const FlightDetailTemplate: React.FC = () => {
     filterChangeDebounceRef.current = window.setTimeout(() => {
       handleSearch({
         // priceId: changes.priceId ?? undefined,
-        maxConnections: typeof changes.maxConnections !== "undefined" ? Number(changes.maxConnections) : undefined,
+        maxConnections:
+          typeof changes.maxConnections !== "undefined"
+            ? Number(changes.maxConnections)
+            : undefined,
       });
     }, 300);
   };
@@ -536,7 +656,9 @@ const FlightDetailTemplate: React.FC = () => {
       if (!priceRange) return list.slice();
       const [minP, maxP] = priceRange;
       return (list || []).filter((it) => {
-        const fare = Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN);
+        const fare = Number(
+          it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN
+        );
         if (Number.isNaN(fare)) return false;
         return fare >= minP && fare <= maxP;
       });
@@ -596,15 +718,24 @@ const FlightDetailTemplate: React.FC = () => {
     </div>
   );
 
-  const renderLoadMoreApiLoader = (state: { isLoadingMore?: boolean; hasMore?: boolean }) => {
+  const renderLoadMoreApiLoader = (state: {
+    isLoadingMore?: boolean;
+    hasMore?: boolean;
+  }) => {
     if (state.isLoadingMore) {
       return (
-        <div className="py-4 flex flex-col items-center justify-center" role="status" aria-live="polite">
+        <div
+          className="py-4 flex flex-col items-center justify-center"
+          role="status"
+          aria-live="polite"
+        >
           <div
             className="w-10 h-10 rounded-full border-4 border-gray-200 border-t-[##2351A3] animate-spin"
             style={{ borderTopColor: "#2351A3" }}
           />
-          <div className="mt-2 text-sm text-gray-600">Loading more flights…</div>
+          <div className="mt-2 text-sm text-gray-600">
+            Loading more flights…
+          </div>
           <span className="sr-only">Loading more flights</span>
         </div>
       );
@@ -617,15 +748,18 @@ const FlightDetailTemplate: React.FC = () => {
     return hasSearched ? (
       <div className="py-16 flex flex-col items-center text-center">
         <img src={noFlights} alt="globe-icon" className="w-8 h-8" />
-        <p className="mt-2 text-[14px] text-[#0F172A]">No flights found for your route and specifications.</p>
-        <p className="mt-2 text-[14px] text-[#3D495C]">
-          Try searching again.
+        <p className="mt-2 text-[14px] text-[#0F172A]">
+          No flights found for your route and specifications.
         </p>
+        <p className="mt-2 text-[14px] text-[#3D495C]">Try searching again.</p>
       </div>
-    ) : null
-  }
+    ) : null;
+  };
 
   useEffect(() => {
+    // Skip resetting when we're hydrating values from the store
+    if (isHydratingFromStore.current) return;
+
     setResponseData([]);
     setRoundResponseData([]);
     setDepartDate("");
@@ -638,6 +772,16 @@ const FlightDetailTemplate: React.FC = () => {
     lastRequestRef.current = null;
   }, [trip]);
 
+  // turn off hydration guard after one commit so trip-reset doesn't run during hydration
+  useEffect(() => {
+    if (!didInitFromStore.current) return;
+    if (!isHydratingFromStore.current) return;
+    const id = window.setTimeout(() => {
+      isHydratingFromStore.current = false;
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [trip, fromCode, toCode, selectedCabinClassId, departDate, returnDate, paxCounts]);
+
   const openTimePicker = (key: string) => {
     timeRefs.current[key]?.showPicker?.() || timeRefs.current[key]?.click();
   };
@@ -645,7 +789,10 @@ const FlightDetailTemplate: React.FC = () => {
   return (
     <div className="">
       <Loader show={loading} />
-      <Loader show={isPending} label="Please wait while we are looking for available flights" />
+      <Loader
+        show={isPending}
+        label="Please wait while we are looking for available flights"
+      />
       <div className="topHeaderSetting">
         <div className="topHeaderSettingInner">
           <div className="tadioButtonGroupWrap py-pxTopHeader">
@@ -654,11 +801,7 @@ const FlightDetailTemplate: React.FC = () => {
                 value={trip}
                 style={{ marginBottom: 0 }}
                 onChange={(v) => setTrip(v as TripType)}
-                options={
-                  segOptions.length
-                    ? segOptions
-                    : []
-                }
+                options={segOptions.length ? segOptions : []}
                 disabled={loading && !segOptions.length}
               />
             </div>
@@ -801,7 +944,7 @@ const FlightDetailTemplate: React.FC = () => {
                 }}
               />
             </Flex>
-            {trip === 'roundtrip' && (
+            {trip === "roundtrip" && (
               <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
                 <label className="header-labels-common ">Arrival Date</label>
                 <CustomDatePicker
@@ -830,19 +973,27 @@ const FlightDetailTemplate: React.FC = () => {
             </Flex>
             <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
               <label className="header-labels-common ">Cabin Class</label>
-              <CustomSelect
+              <SearchableDropdown
+                options={cabinSelectOptions.map(option => ({
+                  id: option.value || 'placeholder',
+                  value: option.value,
+                  label: option.label,
+                  disabled: 'disabled' in option ? option.disabled : false
+                }))}
+                value={selectedCabinClassId || ""}
+                onChange={(value) => setSelectedCabinClassId(value)}
                 placeholder={loading ? "Loading…" : "Please select"}
-                options={cabinSelectOptions}
-                className="header-sub-inputs-common"
-                style={{ minWidth: "100%", height: 44 }}
-                // value={findedCabine}
-                value={selectedCabinClassId || undefined}
-                onChange={(v: string) => setSelectedCabinClassId(v)}
                 disabled={loading}
+                widthClass="w-full"
+                // className="header-sub-inputs-common"
+                searchPlaceholder="Search cabin classes..."
               />
             </Flex>
           </Flex>
-          <CustomButton className="searchFilterBtn" onClick={() => handleSearch()}>
+          <CustomButton
+            className="searchFilterBtn"
+            onClick={() => handleSearch()}
+          >
             {isPending ? "Searching..." : "Search flights"}
           </CustomButton>
         </div>
@@ -870,12 +1021,14 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     next,
-                    selectedTransitRange,
+                    selectedTransitRange
                   );
                 }}
                 numberStops={numberStops}
                 selectedMaxConnections={selectedMaxConnections}
-                onMaxConnectionsChange={(next) => handleSearchFiltersChange({ maxConnections: next })}
+                onMaxConnectionsChange={(next) =>
+                  handleSearchFiltersChange({ maxConnections: next })
+                }
                 baggage={baggage}
                 baggageHandler={baggageHandler}
                 transitHours={transitHours}
@@ -887,18 +1040,24 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     selectedPriceRange,
-                    val,
+                    val
                   );
                 }}
                 departureFlightRange={departureFlightRange}
                 arrivalFlightRange={arrivalFlightRange}
-                onDepartureRangeChange={(next) => handleSearchFiltersChange({ departureFlightRange: next })}
-                onArrivalRangeChange={(next) => handleSearchFiltersChange({ arrivalFlightRange: next })}
+                onDepartureRangeChange={(next) =>
+                  handleSearchFiltersChange({ departureFlightRange: next })
+                }
+                onArrivalRangeChange={(next) =>
+                  handleSearchFiltersChange({ arrivalFlightRange: next })
+                }
                 openTimePicker={openTimePicker}
                 timeRefs={timeRefs}
                 airline={airline}
                 selectedAirlineIds={selectedAirlineIds}
-                onAirlineToggle={(code, checked) => handleAirlineToggle(code, checked)}
+                onAirlineToggle={(code, checked) =>
+                  handleAirlineToggle(code, checked)
+                }
                 onReset={() => {
                   setSelectedAirlineIds([]);
                   setSelectedMaxConnections(0);
@@ -911,7 +1070,7 @@ const FlightDetailTemplate: React.FC = () => {
                     { start: "", end: "" },
                     [],
                     priceRangeBounds,
-                    null,
+                    null
                   );
                 }}
               />
@@ -935,12 +1094,14 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     next,
-                    selectedTransitRange,
+                    selectedTransitRange
                   );
                 }}
                 numberStops={numberStops}
                 selectedMaxConnections={selectedMaxConnections}
-                onMaxConnectionsChange={(next) => handleSearchFiltersChange({ maxConnections: next })}
+                onMaxConnectionsChange={(next) =>
+                  handleSearchFiltersChange({ maxConnections: next })
+                }
                 baggage={baggage}
                 baggageHandler={baggageHandler}
                 transitHours={transitHours}
@@ -952,18 +1113,24 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     selectedPriceRange,
-                    val,
+                    val
                   );
                 }}
                 departureFlightRange={departureFlightRange}
                 arrivalFlightRange={arrivalFlightRange}
-                onDepartureRangeChange={(next) => handleSearchFiltersChange({ departureFlightRange: next })}
-                onArrivalRangeChange={(next) => handleSearchFiltersChange({ arrivalFlightRange: next })}
+                onDepartureRangeChange={(next) =>
+                  handleSearchFiltersChange({ departureFlightRange: next })
+                }
+                onArrivalRangeChange={(next) =>
+                  handleSearchFiltersChange({ arrivalFlightRange: next })
+                }
                 openTimePicker={openTimePicker}
                 timeRefs={timeRefs}
                 airline={airline}
                 selectedAirlineIds={selectedAirlineIds}
-                onAirlineToggle={(code, checked) => handleAirlineToggle(code, checked)}
+                onAirlineToggle={(code, checked) =>
+                  handleAirlineToggle(code, checked)
+                }
                 onReset={() => {
                   setSelectedAirlineIds([]);
                   setSelectedMaxConnections(0);
@@ -976,14 +1143,13 @@ const FlightDetailTemplate: React.FC = () => {
                     { start: "", end: "" },
                     [],
                     priceRangeBounds,
-                    null,
+                    null
                   );
                 }}
               />
             </div>
           )}
           <div className="flightDetailMainContent" style={{ width: "100%" }}>
-
             {(!hasSearched || (responseData && responseData.length > 0)) && (
               <>
                 <div className="relative w-full max-w-[1040px] m-auto">
@@ -1029,7 +1195,6 @@ const FlightDetailTemplate: React.FC = () => {
                   </div>
                 </div>
               </>
-
             )}
 
             {!screens.lg && (
@@ -1046,22 +1211,32 @@ const FlightDetailTemplate: React.FC = () => {
               <>
                 <TravelOneWay
                   passData={responseData || []}
-                  passengersForRequest={buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts)}
+                  passengersForRequest={buildPassengersArrayForFlightSearch(
+                    passengerRequestOrder.current,
+                    passengers as PassengerSchema,
+                    paxCounts
+                  )}
                   isLoadingMore={isLoadingMore}
                   hasMore={hasMore}
                   renderLoader={renderLoadMoreApiLoader}
                   loadMoreRef={loadMoreRef}
-                  emptyState={noFlightsDataAvailable} />
+                  emptyState={noFlightsDataAvailable}
+                />
               </>
             ) : trip === "roundtrip" ? (
               <TravelRoundTrip
                 passData={roundResponseData || []}
-                passengersForRequest={buildPassengersArrayForFlightSearch(passengerRequestOrder.current, passengers as PassengerSchema, paxCounts)}
+                passengersForRequest={buildPassengersArrayForFlightSearch(
+                  passengerRequestOrder.current,
+                  passengers as PassengerSchema,
+                  paxCounts
+                )}
                 isLoadingMore={isLoadingMore}
                 hasMore={hasMore}
                 renderLoader={renderLoadMoreApiLoader}
                 loadMoreRef={loadMoreRef}
-                emptyState={noFlightsDataAvailable} />
+                emptyState={noFlightsDataAvailable}
+              />
             ) : (
               <TravelMultiCity />
             )}

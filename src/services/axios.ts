@@ -1,7 +1,7 @@
 import axios from "axios";
 import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
 
-const flightApis = ["/flightSearch", "/moreFareSearch", "/flightProvBooking", "/fareRuleSearch", "reservationFlightBooking"];
+const flightApis = ["/flightSearch", "/moreFareSearch", "/flightProvBooking", "/fareRuleSearch", "/reservationFlightBooking"];
 
 export const API_BASE =
   import.meta.env.VITE_API_BASE ||

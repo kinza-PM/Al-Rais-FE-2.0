@@ -7,7 +7,7 @@ import type {
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
-import CustomDropdownError from "../common/CustomDropdownError";
+import SearchableDropdown from "../common/SearchableDropdown";
 
 type Props = {
   countries?: CountryOption[];
@@ -22,6 +22,9 @@ type Props = {
   loadingCabinClasses?: boolean;
   selectedCabinClassId?: string; // empty string means none selected
   onChangeCabinClassId?: (id: string) => void;
+  // lifted state callbacks
+  onChangePassengers?: (p: { [k: string]: number }, order: string[]) => void;
+  onChangeDepartDate?: (d: Date | null) => void;
 };
 
 const OneWayForm: React.FC<Props> = ({
@@ -37,24 +40,50 @@ const OneWayForm: React.FC<Props> = ({
   loadingCabinClasses = false,
   selectedCabinClassId = "",
   onChangeCabinClassId = () => { },
+  onChangePassengers,
+  onChangeDepartDate,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
-  const [departDate, setDepartDate] = React.useState<Date | null>(new Date());
-  const [openCabinError, setOpenCabinError] = React.useState(false);
+  const [departDate, setDepartDate] = React.useState<Date | null>(null);
+
+  // track pax counts to compute order diffs like FlightDetailTemplate
+  const [paxCounts, setPaxCounts] = React.useState<{ [k: string]: number }>({});
+  const passengerRequestOrder = React.useRef<string[]>([]);
 
   const cabinError =
     !loadingCabinClasses && (!cabinClasses || cabinClasses.length === 0)
       ? "Cabin classes are not available right now. Please try again later."
       : null;
 
-  const handleCabinToggle = (
-    e: React.MouseEvent<HTMLSelectElement> | React.KeyboardEvent<HTMLSelectElement>
-  ) => {
-    if (!cabinError) return;
-    e.preventDefault();
-    setOpenCabinError((v) => !v);
-    (e.currentTarget as HTMLSelectElement).blur();
-  };
+  const prevCountsRef = React.useRef<{ [k: string]: number }>({});
+
+  // keep prev counts in sync with current local snapshot
+  React.useEffect(() => {
+    prevCountsRef.current = paxCounts;
+  }, [paxCounts]);
+  const handlePaxChange = React.useCallback((p: any) => {
+    const next = p || {};
+    const schemaKeys = (passengerSchema as any[] || []).map((s: any) => s.key);
+    const keys = Array.from(new Set([...Object.keys(prevCountsRef.current || {}), ...Object.keys(next), ...schemaKeys]));
+    const order = passengerRequestOrder.current.slice();
+    for (const k of keys) {
+      const prevCount = (prevCountsRef.current as any)?.[k] ?? 0;
+      const nextCount = (next as any)[k] ?? 0;
+      const diff = nextCount - prevCount;
+      if (diff > 0) {
+        for (let i = 0; i < diff; i++) order.push(k);
+      } else if (diff < 0) {
+        for (let i = 0; i < -diff; i++) {
+          const li = order.lastIndexOf(k);
+          if (li >= 0) order.splice(li, 1);
+        }
+      }
+    }
+    passengerRequestOrder.current = order;
+    prevCountsRef.current = next as any;
+    setPaxCounts(next as any);
+    onChangePassengers?.(next as any, order);
+  }, [passengerSchema, onChangePassengers]);
 
   return (
     <div className="flex items-end gap-4">
@@ -90,7 +119,10 @@ const OneWayForm: React.FC<Props> = ({
         </label>
         <TailiwindCustomDatePicker
           value={departDate}
-          onChange={(d) => setDepartDate(d)}
+          onChange={(d) => {
+            setDepartDate(d);
+            onChangeDepartDate?.(d);
+          }}
           placeholder="Please select"
           buttonIconSrc={true}
         />
@@ -123,7 +155,7 @@ const OneWayForm: React.FC<Props> = ({
         </label>
         <PassengerCounterDropdown
           maxTotal={9}
-          onChange={(p) => console.log(p)}
+          onChange={handlePaxChange}
           schema={passengerSchema}
           errorMessage={
             (!loadingPassengers && (!passengerSchema || passengerSchema.length === 0))
@@ -135,62 +167,21 @@ const OneWayForm: React.FC<Props> = ({
 
       {/* Cabin class */}
       <div className="w-[150px]">
-        <label className="block text-[12px] text-[#3D495C] mb-1">
-          Cabin class
-        </label>
-        <div className="relative">
-          <select
-            disabled={!!loadingCabinClasses}
-            value={selectedCabinClassId}
-            onChange={(e) => onChangeCabinClassId(e.target.value)}
-            className=" appearance-none h-11 w-full rounded-xl border px-4 pr-8 text-[14px] text-[#0F172A] outline-none focus:ring-2border-[#DFE7F3] focus:ring-[#2351A3]/20"
-            aria-invalid={!!cabinError}
-            aria-describedby={cabinError && openCabinError ? "cabin-error" : undefined}
-            onMouseDown={handleCabinToggle}
-            onKeyDown={(e) => {
-              if (cabinError && (e.key === " " || e.key === "Enter" || e.key === "ArrowDown" || e.key === "ArrowUp")) {
-                handleCabinToggle(e);
-              }
-              if (e.key === "Escape") setOpenCabinError(false);
-            }}
-          >
-            <option value="" disabled>
-              Please select
-            </option>
-            {cabinClasses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-
-          <svg
-            className="pointer-events-none absolute right-3 top-1/3"
-            width="16"
-            height="16"
-            viewBox="0 0 20 20"
-            fill="none"
-            aria-hidden="true"
-          >
-            <path
-              d="M5 7.5l5 5 5-5"
-              stroke="#2351A3"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-
-          {cabinError && openCabinError && (
-            <div className="absolute z-30 mt-2 w-[220px]">
-              <CustomDropdownError
-                id="cabin-error"
-                title="Nothing found!"
-                message={cabinError}
-              />
-            </div>
-          )}
-        </div>
+        <SearchableDropdown
+          options={cabinClasses.map(cc => ({
+            id: cc.id,
+            value: cc.id,
+            label: cc.label
+          }))}
+          value={selectedCabinClassId}
+          onChange={onChangeCabinClassId}
+          placeholder="Please select"
+          label="Cabin class"
+          disabled={!!loadingCabinClasses}
+          error={cabinError}
+          widthClass="w-full"
+          searchPlaceholder="Search cabin classes..."
+        />
       </div>
 
     </div>

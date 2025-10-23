@@ -22,6 +22,9 @@ type Props = {
   loadingCabinClasses?: boolean;
   selectedCabinClassId?: string;
   onChangeCabinClassId?: (id: string) => void;
+  onChangePassengers?: (p: { [k: string]: number }, order: string[]) => void;
+  onChangeDepartDate?: (d: Date | null) => void;
+  onChangeArrivalDate?: (d: Date | null) => void;
 };
 
 const RoundTripForm: React.FC<Props> = ({
@@ -49,11 +52,26 @@ const RoundTripForm: React.FC<Props> = ({
   loadingCabinClasses = false,
   selectedCabinClassId = "",
   onChangeCabinClassId = () => { },
+  onChangePassengers,
+  onChangeDepartDate,
+  onChangeArrivalDate,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   // const arrRef = useRef<HTMLInputElement>(null);
   const [departDate, setDepartDate] = React.useState<Date | null>(new Date());
   const [arrivalDate, setArrivalDate] = React.useState<Date | null>(new Date());
+  const [, setPaxCounts] = React.useState<{ [k: string]: number }>({});
+  const passengerRequestOrder = React.useRef<string[]>(
+    (passengerSchema as any[] || []).map((s: any) => s.key)
+  );
+
+  const handlePaxChange = React.useCallback((p: any, childOrder: string[]) => {
+    const next = p || {};
+    // Use fresh order coming from PassengerCabinDropdown (already fresh expansion)
+    passengerRequestOrder.current = childOrder || [];
+    setPaxCounts(next as any);
+    onChangePassengers?.(next as any, childOrder || []);
+  }, [onChangePassengers]);
 
   return (
     <div className="flex items-end gap-4">
@@ -90,7 +108,7 @@ const RoundTripForm: React.FC<Props> = ({
         </label>
         <TailiwindCustomDatePicker
           value={departDate}
-          onChange={(d) => setDepartDate(d)}
+          onChange={(d) => { setDepartDate(d); onChangeDepartDate?.(d); }}
           placeholder="Please select"
           buttonIconSrc={true}
         />
@@ -122,7 +140,7 @@ const RoundTripForm: React.FC<Props> = ({
         </label>
         <TailiwindCustomDatePicker
           value={arrivalDate}
-          onChange={(d) => setArrivalDate(d)}
+          onChange={(d) => { setArrivalDate(d); onChangeArrivalDate?.(d); }}
           placeholder="Please select"
           buttonIconSrc={true}
         />
@@ -157,6 +175,7 @@ const RoundTripForm: React.FC<Props> = ({
         selectedCabinClassId={selectedCabinClassId}
         onChangeCabinClassId={onChangeCabinClassId}
         widthClass="w-[190px]"
+        onChangePax={handlePaxChange}
       />
     </div>
   );

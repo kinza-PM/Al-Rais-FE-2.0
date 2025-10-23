@@ -18,6 +18,7 @@ import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import TailwindCustomInput from "../common/TailwindCustomInput";
+import SearchableDropdown from "../common/SearchableDropdown";
 import FLightFareRule from "../atoms/FlightFareRule";
 import { buildFlightSegmentFromTrip, formatDateToLocalISO, getPriceCabinClassForFlightSummary, parseLocalDateString } from "../../utils/helpers";
 import { useFlightInitialBooking } from "../../hooks/useFlightBooking";
@@ -146,17 +147,19 @@ export default function FlightBookingBookSection({
                                 <div className="px-4 py-4">
                                     <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
                                         <div className="relative w-full">
-                                            <label className="mb-1 block text-[12px] text-[#3D495C]">Title</label>
-                                            <select
-                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                            <SearchableDropdown
+                                                options={[
+                                                    { id: "mr", value: "MR", label: "Mr" },
+                                                    { id: "ms", value: "MS", label: "Ms" },
+                                                    { id: "mrs", value: "MRS", label: "Mrs" }
+                                                ]}
                                                 value={p.passengerInfo?.nameTitle ?? ""}
-                                                onChange={(e) => onPassengerFieldChange(idx, "passengerInfo.nameTitle", e.target.value)}>
-                                                <option value="">Select title</option>
-                                                <option value="MR">Mr</option>
-                                                <option value="MS">Ms</option>
-                                                <option value="MRS">Mrs</option>
-                                            </select>
-                                            <ChevronDown />
+                                                onChange={(value) => onPassengerFieldChange(idx, "passengerInfo.nameTitle", value)}
+                                                placeholder="Select title"
+                                                label="Title"
+                                                widthClass="w-full"
+                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                            />
                                         </div>
                                         <TailwindCustomInput
                                             type="text"
@@ -181,17 +184,18 @@ export default function FlightBookingBookSection({
                                         />
 
                                         <div className="relative w-full">
-                                            <label className="mb-1 block text-[12px] text-[#3D495C]">Gender</label>
-                                            <select
-                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                            <SearchableDropdown
+                                                options={[
+                                                    { id: "male", value: "M", label: "Male" },
+                                                    { id: "female", value: "F", label: "Female" }
+                                                ]}
                                                 value={p.passengerInfo?.gender ?? ""}
-                                                onChange={(e) => onPassengerFieldChange(idx, "passengerInfo.gender", e.target.value)}
-                                            >
-                                                <option value="">Select gender</option>
-                                                <option value="M">Male</option>
-                                                <option value="F">Female</option>
-                                            </select>
-                                            <ChevronDown />
+                                                onChange={(value) => onPassengerFieldChange(idx, "passengerInfo.gender", value)}
+                                                placeholder="Select gender"
+                                                label="Gender"
+                                                widthClass="w-full"
+                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -220,15 +224,17 @@ export default function FlightBookingBookSection({
 
                                         {pRules.isIdTypeMandatory && (
                                             <div className="relative w-full">
-                                                <label className="mb-1 block text-[12px] text-[#3D495C]">ID type</label>
-                                                <select
-                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                <SearchableDropdown
+                                                    options={[
+                                                        { id: "passport", value: "PT", label: "Passport (PT)" }
+                                                    ]}
                                                     value={p.identityDocuments?.[0]?.idType ?? "PT"}
-                                                    onChange={(e) => onPassengerFieldChange(idx, "identityDocuments.0.idType", e.target.value)}
-                                                >
-                                                    <option value="PT">Passport (PT)</option>
-                                                </select>
-                                                <ChevronDown />
+                                                    onChange={(value) => onPassengerFieldChange(idx, "identityDocuments.0.idType", value)}
+                                                    placeholder="Select ID type"
+                                                    label="ID type"
+                                                    widthClass="w-full"
+                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                />
                                             </div>
                                         )}
 
@@ -247,16 +253,20 @@ export default function FlightBookingBookSection({
 
                                         {pRules.isIssuingCountryCodeMandatory && (
                                             <div className="relative w-full">
-                                                <label className="mb-1 block text-[12px] text-[#3D495C]">Issuing country</label>
-                                                <select
-                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                <SearchableDropdown
+                                                    options={cities?.map((c) => ({
+                                                        id: c.id,
+                                                        value: c.code,
+                                                        label: c.city
+                                                    })) || []}
                                                     value={p.identityDocuments?.[0]?.issuingCountryCode ?? ""}
-                                                    onChange={(e) => onPassengerFieldChange(idx, "identityDocuments.0.issuingCountryCode", e.target.value)}
-                                                >
-                                                    <option value="">Select issuing country</option>
-                                                    {cities?.map((c) => <option key={c.code} value={c.code}>{c.city}</option>)}
-                                                </select>
-                                                <ChevronDown />
+                                                    onChange={(value) => onPassengerFieldChange(idx, "identityDocuments.0.issuingCountryCode", value)}
+                                                    placeholder="Select issuing country"
+                                                    label="Issuing country"
+                                                    widthClass="w-full"
+                                                    searchPlaceholder="Search countries..."
+                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                />
                                             </div>
                                         )}
 
@@ -294,16 +304,20 @@ export default function FlightBookingBookSection({
 
                                         {pRules.isResidenceCountryCodeMandatory && (
                                             <div className="relative w-full">
-                                                <label className="mb-1 block text-[12px] text-[#3D495C]">Residence Country</label>
-                                                <select
-                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                <SearchableDropdown
+                                                    options={cities?.map((c) => ({
+                                                        id: c.id,
+                                                        value: c.code,
+                                                        label: c.city
+                                                    })) || []}
                                                     value={p.identityDocuments?.[0]?.residenceCountryCode ?? ""}
-                                                    onChange={(e) => onPassengerFieldChange(idx, "identityDocuments.0.residenceCountryCode", e.target.value)}
-                                                >
-                                                    <option value="">Select residence country</option>
-                                                    {cities?.map((c) => <option key={c.code} value={c.code}>{c.city}</option>)}
-                                                </select>
-                                                <ChevronDown />
+                                                    onChange={(value) => onPassengerFieldChange(idx, "identityDocuments.0.residenceCountryCode", value)}
+                                                    placeholder="Select residence country"
+                                                    label="Residence Country"
+                                                    widthClass="w-full"
+                                                    searchPlaceholder="Search countries..."
+                                                    className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                                />
                                             </div>
                                         )}
 

@@ -4,6 +4,12 @@ type Flight = {
   fromCode: string;
   toCode: string;
   selectedCabinClassId: number | string;
+  trip: string;
+  order?: string[];
+  next?: Record<string, number>;
+  departure?: string | null;
+  arrival?: string | null;
+  flight_filters?: Record<string, any>;
 };
 
 type Store = {
