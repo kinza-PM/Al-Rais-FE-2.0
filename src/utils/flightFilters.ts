@@ -1,3 +1,5 @@
+import axios from "axios";
+
 export type TimeRange = { start?: string; end?: string } | null;
 
 export interface FilterResult {
@@ -300,3 +302,37 @@ function applyTransitHoursFilter(oneWay: any[] = [], round: any[] = [], range?: 
 
     return { one: oneFiltered, round: roundFiltered };
 }
+
+export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+export async function callWithRetries<T>(
+    fn: () => Promise<T>,
+    retries = 2,
+    baseDelayMs = 500
+): Promise<T> {
+    let attempt = 0;
+    while (true) {
+        try {
+            return await fn();
+        } catch (err: any) {
+            attempt++;
+            const msg = (err && (err.message ?? String(err))) || "";
+            const isSocketProblem =
+                /socket hang up/i.test(msg) ||
+                (axios.isAxiosError(err) &&
+                    (err.code === "ECONNRESET" || err.code === "ECONNABORTED"));
+
+            // If not a socket problem or we exhausted retries -> rethrow
+            if (!isSocketProblem || attempt > retries) {
+                throw err;
+            }
+
+            // backoff: increase delay with attempt count
+            const delay = baseDelayMs * attempt;
+            console.warn(
+                `callWithRetries: attempt ${attempt} failed with socket issue — retrying after ${delay}ms...`
+            );
+            await sleep(delay);
+            // loop to retry
+        }
+    }
+} 

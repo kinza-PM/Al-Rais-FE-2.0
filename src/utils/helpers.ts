@@ -1,3 +1,5 @@
+import toast from "react-hot-toast";
+
 export type AssetBundle = {
   EmirateLogo?: string;
   cabinIcon?: string;
@@ -90,12 +92,31 @@ export function mapFlightSegment(item: any, assets: AssetBundle = {}, defaultHea
   const flightNumber = fd?.flight_number ?? fd?.flightNo ?? firstSeg?.flightNumber ?? "—";
   const flightClass = fd?.flight_class ?? fd?.cabinClass ?? firstSeg?.cabinClass ?? "—";
 
-  const cabinTitle =
+  const cabinRaw =
+    fd?.flight_class ??
+    firstSeg?.cabin ??
     fd?.cabin_allowance ??
     (firstSeg?.baggageAllowance?.carryOnBaggage?.[0]?.value ? `${firstSeg.baggageAllowance.carryOnBaggage[0].value}${firstSeg.baggageAllowance.carryOnBaggage[0].unit ?? ""}` : "1PC");
-  const baggageTitle =
-    fd?.baggage ??
-    (firstSeg?.baggageAllowance?.checkedInBaggage?.[0]?.value ? `${firstSeg.baggageAllowance.checkedInBaggage[0].value}${firstSeg.baggageAllowance.checkedInBaggage[0].unit ?? ""}` : "20KG");
+
+  const baggageNode =
+    firstSeg?.baggageAllowance?.checkedInBaggage?.[0] ??
+    null;
+  const baggageVal = baggageNode ? `${baggageNode.value}${baggageNode.unit ?? ""}` : null;
+
+  const mealVal = fd?.raw?.fare?.fareType?.refundable ? 'Refundable' : 'Non Refundable';
+
+  const durationVal =
+    fd?.duration ??
+    item?.flight?.flightInfo?.duration ??
+    null;
+
+  const seatsVal =
+    firstSeg?.seatsAvailable ?? null;
+
+  const equipmentVal =
+    firstSeg?.equipmentName ??
+    firstSeg?.equipmentType ??
+    null;
 
   const stopCount =
     (Array.isArray(item?.stop) && item.stop.length) ||
@@ -115,13 +136,18 @@ export function mapFlightSegment(item: any, assets: AssetBundle = {}, defaultHea
     airlineName: item?.name ?? item?.airlineName ?? item?.outbound?.name ?? "Airline",
     flightMeta: `${flightNumber} – ${flightClass}`,
     amenities: [
-      { src: assets.cabinIcon ?? "", alt: "Cabin", title: `Cabin: ${cabinTitle}` },
-      { src: assets.baggageIcon ?? "", alt: "Baggage", title: `Baggage: ${baggageTitle}` },
-      { src: assets.mealIcon ?? "", alt: "Meal", title: fd?.meal ? "Meal Included" : "No meal" },
-      { src: assets.wifiIcon ?? "", alt: "Wi-Fi", title: fd?.wifi ? "WiFi Available" : "—" },
-      { src: assets.portIcon ?? "", alt: "Ports", title: "USB Ports" },
-      { src: assets.entertainmentIcon ?? "", alt: "Entertainment", title: "Entertainment" },
-    ],
+      { key: "cabin", src: assets.cabinIcon ?? "", alt: "Cabin", title: `Cabin: ${cabinRaw}`, value: cabinRaw },
+      { key: "baggage", src: assets.baggageIcon ?? "", alt: "Baggage", title: `Baggage: ${baggageVal}`, value: baggageVal },
+      { key: "meal", src: assets.mealIcon ?? "", alt: "Meal", title: `${mealVal}`, value: mealVal },
+      { key: "duration", src: assets.wifiIcon ?? "", alt: "Wi-Fi", title: `Duration: ${durationVal}`, value: durationVal },
+      { key: "seats", src: assets.portIcon ?? "", alt: "Ports", title: `Seats: ${seatsVal}`, value: seatsVal },
+      { key: "equipment", src: assets.entertainmentIcon ?? "", alt: "Entertainment", title: `${equipmentVal}`, value: equipmentVal },
+    ].filter(amenity =>
+      amenity.value !== null &&
+      amenity.value !== undefined &&
+      String(amenity.value).trim() !== "" &&
+      String(amenity.value).trim() !== "—"
+    ),
     dep: {
       time: depTime,
       date: depDate,
@@ -213,4 +239,10 @@ export const formatMoney = (value: number | undefined | null, currency = "USD") 
   } catch {
     return `${value} ${currency}`;
   }
+};
+
+export const warningToast = (message: string) => {
+  toast(message, {
+    icon: "⚠️",
+  });
 };

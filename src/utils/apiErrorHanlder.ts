@@ -10,6 +10,13 @@ export function extractServerMessageFromAny(data: any): string | null {
     if (!data) return null;
 
     const candidates = [
+        // New nested error format
+        data?.message?.errorDetails?.message,
+        data?.error?.errorDetails?.message,
+        data?.response?.data?.message?.errorDetails?.message,
+        data?.response?.data?.error?.errorDetails?.message,
+        
+        // Original error format
         data?.response?.errorDetails?.message,
         data?.response?.errorDetails?.title,
         data?.details?.errorDetails?.message,
@@ -18,19 +25,41 @@ export function extractServerMessageFromAny(data: any): string | null {
         data?.errorDetails?.title,
         data?.response?.data?.details?.errorDetails?.message,
         data?.response?.data?.details?.errorDetails?.title,
+        
+        // Simple error format
+        data?.error,
         data?.message,
     ];
 
     for (const c of candidates) {
         if (c === null || c === undefined) continue;
-        if (typeof c === "string" && c.trim()) return stripTagsSafe(c);
+        if (typeof c === "string" && c.trim()) {
+            const cleaned = stripTagsSafe(c);
+            // Special handling for parameter validation errors
+            if (cleaned.includes("departureAirportCode, departureDate, and arrivalAirportCode are required")) {
+                return "Invalid Parameters";
+            }
+            return cleaned;
+        }
         if (Array.isArray(c) && c.length) {
             const first = c.find((x) => typeof x === "string" && x.trim());
-            if (first) return stripTagsSafe(first);
+            if (first) {
+                const cleaned = stripTagsSafe(first);
+                if (cleaned.includes("departureAirportCode, departureDate, and arrivalAirportCode are required")) {
+                    return "Invalid Parameters";
+                }
+                return cleaned;
+            }
         }
         if (typeof c === "object" && c !== null) {
             const nested = c.message ?? c.title ?? null;
-            if (typeof nested === "string" && nested.trim()) return stripTagsSafe(nested);
+            if (typeof nested === "string" && nested.trim()) {
+                const cleaned = stripTagsSafe(nested);
+                if (cleaned.includes("departureAirportCode, departureDate, and arrivalAirportCode are required")) {
+                    return "Invalid Parameters";
+                }
+                return cleaned;
+            }
         }
     }
 

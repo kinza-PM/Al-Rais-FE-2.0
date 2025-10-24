@@ -159,8 +159,8 @@ const FlightBooking = () => {
   const handleFlightReservationBookingChange = (
     eOrPath:
       | React.ChangeEvent<
-          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-        >
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
       | string,
     maybeValue?: any
   ) => {
@@ -239,7 +239,17 @@ const FlightBooking = () => {
       {showTimerBanner && (
         <BookingBannerAlert
           message="Please complete your booking"
-          time="00:35:49"
+          time="00:10:00"
+          onExpire={() => {
+            setCurrentStep(0);
+            setOfferData(initialOfferData);
+            setFlightBookingPayload((prev) => ({
+              ...prev,
+              offerId: initialOfferData.offerId ?? prev.offerId,
+              journey:
+                initialOfferData.flightDetail?.raw?.journey ?? prev.journey,
+            }));
+          }}
         />
       )}
       <Loader

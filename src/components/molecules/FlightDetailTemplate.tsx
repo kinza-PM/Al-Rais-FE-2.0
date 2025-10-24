@@ -46,9 +46,10 @@ import {
   formatTime,
   timeToMinutesFromAnyString,
 } from "../../utils/helpers";
-import { filterFlightsByTimeAndAirlines } from "../../utils/flightFilters";
+import { callWithRetries, filterFlightsByTimeAndAirlines } from "../../utils/flightFilters";
 import dayjs from "dayjs";
 import SearchableDropdown from "../common/SearchableDropdown";
+import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 
 const onChange = (key: string) => {
   console.log(key);
@@ -100,7 +101,7 @@ const buildPassengersArrayForFlightSearch = (
 const FlightDetailTemplate: React.FC = () => {
   const { mutateAsync, isPending } = useFlightSearch();
   const { loadMoreAsync, isLoadingMore } = useLoadMoreFlights();
-  const { flight } = useFlightStore();
+  const { flight, clearFlight } = useFlightStore();
 
   const [responseData, setResponseData] = useState<any[]>([]);
   const [roundResponseData, setRoundResponseData] = useState<any[]>([]);
@@ -117,6 +118,7 @@ const FlightDetailTemplate: React.FC = () => {
   const [ioReady, setIoReady] = useState(false);
 
   const [hasSearched, setHasSearched] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedMaxConnections, setSelectedMaxConnections] =
     useState<number>(0);
   const [departureFlightRange, setDepartureFlightRange] = useState({
@@ -354,9 +356,11 @@ const FlightDetailTemplate: React.FC = () => {
     setResponseData([]);
     setRoundResponseData([]);
     setHasSearched(false);
+    setSearchError(null);
 
     try {
-      const response = await mutateAsync(requestBody);
+      // const response = await mutateAsync(requestBody);
+      const response = await callWithRetries(() => mutateAsync(requestBody), 2, 500);
       const raw = response.data || [];
 
       const { oneWayFormatted, roundFormatted } =
@@ -390,8 +394,12 @@ const FlightDetailTemplate: React.FC = () => {
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);
       setIoReady(true);
+      // Clear flight store after first successful search to prevent auto-trigger on tab changes
+      clearFlight();
     } catch (error) {
-      console.error("Flight search failed:", error);
+      const err = extractErrorFromAxiosApiError(error);
+      console.error("Flight search failed:", err);
+      setSearchError(err);
       setHasMore(false);
     } finally {
       setHasSearched(true);
@@ -511,19 +519,20 @@ const FlightDetailTemplate: React.FC = () => {
     if (flight?.order) passengerRequestOrder.current = flight?.order.slice();
 
     didInitFromStore.current = true;
-    console.log("[FlightStore] initial search:", flight, fromCode);
+    console.log("[FlightStore] initial search:", flight, didInitFromStore.current);
   }, [flight, loading]);
 
   // auto-trigger search when valid filters are present after hydration
   useEffect(() => {
     if (!didInitFromStore.current) return;
     if (isPending) return;
-    const hasBasicFilters = Boolean(
-      fromCode && toCode && selectedCabinClassId && departDate && (trip !== "roundtrip" || returnDate)
-    );
-    if (!hasBasicFilters) return;
+    // const hasBasicFilters = Boolean(
+    //   fromCode && toCode && selectedCabinClassId && departDate && (trip !== "roundtrip" || returnDate)
+    // );
+    // if (!hasBasicFilters) return;
     // Trigger once per hydrated set
     if (!lastRequestRef.current) {
+      didInitFromStore.current = false;    
       handleSearch();
     }
   }, [didInitFromStore.current, fromCode, toCode, selectedCabinClassId, departDate, returnDate, trip, isPending]);
@@ -748,10 +757,21 @@ const FlightDetailTemplate: React.FC = () => {
     return hasSearched ? (
       <div className="py-16 flex flex-col items-center text-center">
         <img src={noFlights} alt="globe-icon" className="w-8 h-8" />
-        <p className="mt-2 text-[14px] text-[#0F172A]">
-          No flights found for your route and specifications.
-        </p>
-        <p className="mt-2 text-[14px] text-[#3D495C]">Try searching again.</p>
+        {searchError ? (
+          <>
+            <p className="mt-2 text-[14px] text-[#0F172A]">
+              {searchError.charAt(0).toUpperCase() + searchError.slice(1)}
+            </p>
+            <p className="mt-2 text-[14px] text-[#3D495C]">Please try again.</p>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 text-[14px] text-[#0F172A]">
+              No flights found for your route and specifications.
+            </p>
+            <p className="mt-2 text-[14px] text-[#3D495C]">Try searching again.</p>
+          </>
+        )}
       </div>
     ) : null;
   };
@@ -769,6 +789,7 @@ const FlightDetailTemplate: React.FC = () => {
     setHasMore(false);
     setIoReady(false);
     setHasSearched(false);
+    setSearchError(null);
     lastRequestRef.current = null;
   }, [trip]);
 

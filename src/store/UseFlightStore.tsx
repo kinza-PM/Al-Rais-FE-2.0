@@ -15,9 +15,11 @@ type Flight = {
 type Store = {
   flight: Flight | null;
   setFlight: (flight: Flight) => void;
+  clearFlight: () => void;
 };
 
 export const useFlightStore = create<Store>((set) => ({
   flight: null, // initially empty
   setFlight: (flight) => set({ flight }), // update with new flight
+  clearFlight: () => set({ flight: null }), // clear flight data
 }));
