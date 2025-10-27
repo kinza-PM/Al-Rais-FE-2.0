@@ -160,11 +160,11 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                   />
                   <Flex vertical>
                     <CustomTypography
-                      style={{ marginBottom: 0 }}
+                      style={{ marginBottom: 0, whiteSpace: 'nowrap' }}
                       className="prefix_headings"
                       variant="title"
                     >
-                      Seats Layout
+                      Seats<br />Layout
                     </CustomTypography>
                     <CustomTypography
                       className="common_typography_fd"

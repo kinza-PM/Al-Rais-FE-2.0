@@ -181,7 +181,7 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
       // const equipment = segEquipment(repSeg);
 
       return (
-        <Col span={8} key={idKey} className="">
+        <Col span={8} key={idKey} className="mb-5">
           <div className="compareCard">
             <div className="cardHeader">
               {isCurrent ? 'Chosen Flight' : 'Comparison Flight'}
@@ -285,7 +285,7 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
 
     // one-way card (legacy style)
     return (
-      <Col span={8} key={idKey} className="">
+      <Col span={8} key={idKey} className="mb-5">
         <div className="compareCard">
           <div className="cardHeader">
             {isCurrent ? 'Chosen Flight' : 'Comparison Flight'}

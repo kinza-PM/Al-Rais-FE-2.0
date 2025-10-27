@@ -59,7 +59,9 @@
 }
 
 .ant-input-select {
-  font-weight: bold !important;
+  font-weight: normal !important;
+  font-size: 14px !important;
+  color: #0F172A !important;
 }
 
 .radioButtonGroup {
@@ -1017,6 +1019,9 @@
   border: 1px solid var(--white-300, #e4e4e7);
   max-width: 360px;
   margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .cardHeader {
@@ -1033,6 +1038,9 @@
 
 .cardBody {
   padding: 10px;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .featureImgs {
@@ -1147,8 +1155,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 121px 0px;
+  justify-content: center;
   margin-top: 15px;
+  padding: 121px 0px;
+  height: 100%;
 }
 
 .compareModalButton p {
@@ -1158,6 +1168,8 @@
 }
 
 .compareCardsFlex {
+  display: flex;
+  align-items: stretch;
   /* gap: 4px; */
 }
 
