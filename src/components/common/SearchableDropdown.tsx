@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import CustomDropdownError from "./CustomDropdownError";
-import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
+// import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 
 export interface DropdownOption {
     id: string;
@@ -143,13 +143,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                         {loading ? 'Loading...' : displayValue}
                     </span>
 
-                    <img
+                    {/* <img
                         src={arrownDownwardIcon}
                         alt="dropdown arrow"
-                        className={`pointer-events-none shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
-                    />
-                    {/* <svg
-                        className={`pointer-events-none shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                        className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                    /> */}
+                    <svg
+                        className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                         width="16"
                         height="16"
                         viewBox="0 0 20 20"
@@ -162,7 +162,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                             strokeLinecap="round"
                             strokeLinejoin="round"
                         /> 
-                    </svg>*/}
+                    </svg>
                 </button>
 
                 {isOpen && (

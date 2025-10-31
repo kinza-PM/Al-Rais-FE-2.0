@@ -778,7 +778,7 @@ const FlightDetailTemplate: React.FC = () => {
 
   useEffect(() => {
     // Skip resetting when we're hydrating values from the store
-    if (isHydratingFromStore.current) return;
+    // if (isHydratingFromStore.current) return;
 
     setResponseData([]);
     setRoundResponseData([]);

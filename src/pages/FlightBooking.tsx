@@ -233,6 +233,7 @@ const FlightBooking = () => {
       }));
     }
   }, [offerData?.passengersForRequest]);
+  // console.log("offerData", offerData);
 
   return (
     <>

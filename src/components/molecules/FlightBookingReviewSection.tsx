@@ -147,7 +147,7 @@ export default function FlightBookingReviewSection({
                                         </dd>
 
                                         {/* Email - only show if required by fare rules */}
-                                        {fareBookingSearchRules?.isLeadEmailAddressMandatory && (
+                                        {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
                                             <>
                                                 <dt className="text-[12px] text-[#3D495C]">Email</dt>
                                                 <dd className="text-right">
@@ -157,10 +157,10 @@ export default function FlightBookingReviewSection({
                                                     </span>
                                                 </dd>
                                             </>
-                                        )}
+                                        {/* )} */}
 
                                         {/* Phone - only show if required by fare rules */}
-                                        {fareBookingSearchRules?.isLeadPhoneNumberMandatory && (
+                                        {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
                                             <>
                                                 <dt className="text-[12px] text-[#3D495C]">Phone</dt>
                                                 <dd className="text-right">
@@ -170,7 +170,7 @@ export default function FlightBookingReviewSection({
                                                         : "—"}
                                                 </dd>
                                             </>
-                                        )}
+                                        {/* )} */}
                                     </dl>
                                 </div>
                             </CardShell>

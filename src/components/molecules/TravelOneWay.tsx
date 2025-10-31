@@ -16,11 +16,13 @@ import CustomButton from "../common/CustomButton";
 
 import { useState } from "react";
 import { travelData } from "../../utils/mockData";
-import PricingDetailCard from "./PricingDetailCard";
-import CompareCard from "./CompareCard";
-import FlightDetailsCard from "./FlightDetailsCard";
+const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
+const CompareCard = React.lazy(() => import("./CompareCard"));
+const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 import { useNavigate } from "react-router-dom";
+// removed: format helpers are handled in utilities
+import { buildPerSegmentFlightDetail, mapOfferForCompareOneWay, pickRandomFlightsForCompare } from "../../utils/searchFlightListingHelpers";
 
 type TravelOneWayProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
@@ -91,7 +93,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     return result;
   };
 
-  const HandlePriceOption = ({ id }: { id: number | undefined }) => {
+  const HandlePriceOption = React.useCallback(({ id }: { id: number | undefined }) => {
     const filtered = passData.filter((item) => item.id === id);
     // console.log('price---------------', filtered)
     // console.log('id', id);
@@ -99,12 +101,12 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     setFilterDetail(filtered);
 
     setFilterData([])
-  };
+  }, [passData]);
 
-  const HandleCompareOption = ({ id }: { id: number | undefined }) => {
+  const HandleCompareOption = React.useCallback(({ id }: { id: number | undefined }) => {
     const randomFour = getRandomItemsExcluding(passData || [], id, 4);
     setFilterDetail(randomFour);
-  };
+  }, [passData]);
 
   const handleCancelCompare = (modalType: "compare" | "share") => {
     if (modalType == "compare") {
@@ -114,51 +116,9 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     }
   };
 
-  const mapItemForRandomFlightsAndCurrentFlightForCompareItem = (f: any) => {
-    if (!f) return null;
-    const raw = f.raw ?? {};
-    const seg = raw?.journey?.[0]?.flightSegments?.[0] ?? raw?.outbound?.rawSegment ?? null;
-    const checked = seg?.baggageAllowance?.checkedInBaggage?.[0];
-    const checkedBaggage = checked ? `${checked.value}${checked.unit ?? ""}` : null;
-    const carry = seg?.baggageAllowance?.carryOnBaggage?.[0];
-    const carryBaggage = carry ? `${carry.value}${carry.unit ?? ""}` : null;
-    const totalFare = raw?.fare?.totalFare ?? f?.price?.economyLite?.price ?? null;
-    const currency = raw?.fare?.currencyCode ?? f?.currency ?? "AED";
+  // moved to helpers: mapOfferForCompareOneWay and pickRandomFlightsForCompare
 
-    return {
-      id: f.id ?? f.offerId ?? raw?.offerId,
-      logo: f.logo,
-      name: f.name,
-      flight_detail: f.flight_detail,
-      price: f.price,
-      totalFare,
-      currency,
-      duration: f.flight_detail?.duration ?? raw?.journey?.[0]?.flight?.flightInfo?.duration ?? null,
-      equipment: seg?.equipmentName ?? seg?.equipmentType ?? null,
-      seatsAvailable: seg?.seatsAvailable ?? null,
-      baggageChecked: checkedBaggage,
-      baggageCarry: carryBaggage,
-      refundable: raw?.fare?.fareType?.refundable ?? false,
-      rawMinimal: {
-        offerId: raw?.offerId ?? f.offerId ?? f.id,
-        supplier: raw?.financialInfo?.supplier ?? raw?.financialInfo,
-      },
-    };
-  };
-
-  const pickRandomFlights = (all: any[] = [], excludeId: any, count = 4) => {
-    if (!Array.isArray(all) || all.length === 0) return [];
-    const candidates = all.filter((f) => f && f.id !== excludeId);
-
-    for (let i = candidates.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
-    }
-
-    return candidates.slice(0, count).map((f) => mapItemForRandomFlightsAndCurrentFlightForCompareItem(f)).filter(Boolean);
-  };
-
-  const handleOfferSelection = (offerId: string, item: any) => {
+  const handleOfferSelection = React.useCallback((offerId: string, item: any) => {
     // console.log(offerId);
     navigate('/flight-booking', {
       state: {
@@ -167,7 +127,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
         passengersForRequest: passengersForRequest || []
       }
     })
-  }
+  }, [navigate, passengersForRequest]);
 
 
   const [active, setActive] = useState({ name: "", id: 0 });
@@ -188,91 +148,101 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
       {passData?.map((item, index) => (
         <div className="flightDetailCards" key={index}>
           <div className="topHalfCardWrap">
-            <div className="topHalfCard">
-              <div className="fightTitle">
-                <div className="flightIcon">
-                  <img src={item?.logo} alt="" />
-                </div>
-                <div className="nameAndDetails">
-                  <h5>{item?.name}</h5>
-                  <p>
-                    {item?.flight_detail?.flight_number} -
-                    {item?.flight_detail?.flight_class}
-                  </p>
-                </div>
-              </div>
-              <div className="stopsOnLarge">
-                <FlightTimingAndStops passSome={item} />
-              </div>
+            {(() => {
+              const segs: any[] = item?.raw?.journey?.[0]?.flightSegments ?? [];
+              const isMulti = Array.isArray(segs) && segs.length > 1;
+              const loop = isMulti ? segs : [segs?.[0] ?? null];
+              return loop.map((seg, segIdx) => {
+                const currentSeg = seg || (item?.raw?.journey?.[0]?.flightSegments?.[0] ?? null);
+                const routeText = isMulti && currentSeg
+                  ? `${currentSeg?.departureAirportCode ?? ""} to ${currentSeg?.arrivalAirportCode ?? ""}`
+                  : null;
 
-              {
-                (() => {
-                  const cabinRaw =
-                    item?.flight_detail?.flight_class ??
-                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.cabin ??
-                    null;
+               const perSegFlightDetail = buildPerSegmentFlightDetail(item?.flight_detail || {}, currentSeg);
+               const itemForTiming = currentSeg
+                   ? {
+                     ...item,
+                     flight_detail: perSegFlightDetail,
+                     stop: [],
+                     raw: {
+                       ...item.raw,
+                       journey: [
+                         {
+                           ...(item.raw?.journey?.[0] || {}),
+                           flightSegments: [currentSeg],
+                         },
+                       ],
+                     },
+                   }
+                   : item;
 
-                  const baggageNode =
-                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.baggageAllowance?.checkedInBaggage?.[0] ??
-                    null;
-                  const baggageVal = baggageNode ? `${baggageNode.value}${baggageNode.unit ?? ""}` : null;
+                const cabinRaw = item?.flight_detail?.flight_class ?? currentSeg?.cabinClass ?? currentSeg?.cabin ?? null;
+                const baggageNode = currentSeg?.baggageAllowance?.checkedInBaggage?.[0] ?? null;
+                const baggageVal = baggageNode ? `${baggageNode.value}${baggageNode.unit ?? ""}` : null;
+                const mealVal = item?.raw?.fare?.fareType?.refundable ? 'Refundable' : 'Non Refundable'
+               const durationVal = perSegFlightDetail?.duration ?? item?.raw?.journey?.[0]?.flight?.flightInfo?.duration ?? null;
+                const seatsVal = currentSeg?.seatsAvailable ?? null;
+                const equipmentVal = currentSeg?.equipmentName ?? currentSeg?.equipmentType ?? null;
 
-                  const mealVal = item?.raw?.fare?.fareType?.refundable ? 'Refundable' : 'Non Refundable'
+                const features = [
+                  { key: "cabin", icon: cabinIcon, value: cabinRaw, label: `Cabin: ${cabinRaw}` },
+                  { key: "baggage", icon: baggageIcon, value: baggageVal, label: `Baggage: ${baggageVal}` },
+                  { key: "meal", icon: mealIcon, value: mealVal, label: `${mealVal}` },
+                  { key: "duration", icon: wifiIcon, value: durationVal, label: `Duration: ${durationVal}` },
+                  { key: "seats", icon: portsIcon, value: seatsVal, label: `Seats: ${seatsVal}` },
+                  { key: "equipment", icon: entertainmentIcon, value: equipmentVal, label: `${equipmentVal}` },
+                ];
 
-                  const durationVal =
-                    item?.flight_detail?.duration ??
-                    item?.raw?.journey?.[0]?.flight?.flightInfo?.duration ??
-                    null;
+                const visible = features.filter(
+                  (f) =>
+                    f.value !== null &&
+                    f.value !== undefined &&
+                    String(f.value).trim() !== "" &&
+                    String(f.value).trim() !== "—"
+                );
 
-                  const seatsVal =
-                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.seatsAvailable ?? null;
-
-                  const equipmentVal =
-                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.equipmentName ??
-                    item?.raw?.journey?.[0]?.flightSegments?.[0]?.equipmentType ??
-                    null;
-
-                  const features = [
-                    { key: "cabin", icon: cabinIcon, value: cabinRaw, label: `Cabin: ${cabinRaw}` },
-                    { key: "baggage", icon: baggageIcon, value: baggageVal, label: `Baggage: ${baggageVal}` },
-                    { key: "meal", icon: mealIcon, value: mealVal, label: `${mealVal}` },
-                    { key: "duration", icon: wifiIcon, value: durationVal, label: `Duration: ${durationVal}` },
-                    { key: "seats", icon: portsIcon, value: seatsVal, label: `Seats: ${seatsVal}` },
-                    { key: "equipment", icon: entertainmentIcon, value: equipmentVal, label: `${equipmentVal}` },
-                  ];
-
-                  const visible = features.filter(
-                    (f) =>
-                      f.value !== null &&
-                      f.value !== undefined &&
-                      String(f.value).trim() !== "" &&
-                      String(f.value).trim() !== "—"
-                  );
-
-                  if (!visible.length) return null;
-
-                  return (
-                    <div className="featureIcons">
-                      {visible.map((f) => (
-                        <div className="featureIconTooltipWrap" key={f.key}>
-                          <img src={f.icon} alt={f.key} />
-                          <span className="tooltip">{f.label}</span>
+                return (
+                  <div className="" key={`seg-${segIdx}-${currentSeg?.segmentKey || '0'}`}>
+                    <div className="topHalfCard">
+                      <div className="fightTitle">
+                        <div className="flightIcon">
+                          <img src={item?.logo} alt="" />
                         </div>
-                      ))}
+                        <div className="nameAndDetails">
+                          <h5>{item?.name}{routeText ? <> - <strong>({routeText})</strong></> : null}</h5>
+                          <p>
+                            {itemForTiming?.flight_detail?.flight_number} -
+                            {itemForTiming?.flight_detail?.flight_class}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="stopsOnLarge">
+                        <FlightTimingAndStops passSome={itemForTiming} />
+                      </div>
+
+                      {visible.length ? (
+                        <div className="featureIcons">
+                          {visible.map((f) => (
+                            <div className="featureIconTooltipWrap" key={f.key}>
+                              <img src={f.icon} alt={f.key} />
+                              <span className="tooltip">{f.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="StartingPrice">
+                        <p>Start from</p>
+                        <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}</h5>
+                      </div>
                     </div>
-                  );
-                })()
-              }
-
-
-              <div className="StartingPrice">
-                <p>Start from</p>
-                <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}</h5>
-              </div>
-            </div>
-            <div className="stopsOnSmall">
-              <FlightTimingAndStops passSome={item} />
-            </div>
+                    <div className="stopsOnSmall">
+                      <FlightTimingAndStops passSome={itemForTiming} />
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
 
           <div className="bottomHalfCard">
@@ -366,18 +336,20 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 <CustomButton>Select Price</CustomButton>
               </div>
             </div>
-            {active?.name == "price" && active?.id == index ? (
-              <PricingDetailCard passSome={filterDetail} />
-            ) : active?.name == "flight" && active?.id == index ? (
-              <FlightDetailsCard details={item} />
-            ) : active?.name == "compare" && active?.id == index ? (
-              <CompareCard
-                currentFlight={mapItemForRandomFlightsAndCurrentFlightForCompareItem(item)}
-                availableFlights={pickRandomFlights(passData || [], item.id, 4)}
-              />
-            ) : (
-              ""
-            )}
+            <React.Suspense fallback={null}>
+              {active?.name == "price" && active?.id == index ? (
+                <PricingDetailCard passSome={filterDetail} />
+              ) : active?.name == "flight" && active?.id == index ? (
+                <FlightDetailsCard details={item} />
+              ) : active?.name == "compare" && active?.id == index ? (
+                <CompareCard
+                  currentFlight={mapOfferForCompareOneWay(item)}
+                  availableFlights={pickRandomFlightsForCompare(passData || [], item.id, 4, mapOfferForCompareOneWay)}
+                />
+              ) : (
+                ""
+              )}
+            </React.Suspense>
           </div>
         </div>
       ))}

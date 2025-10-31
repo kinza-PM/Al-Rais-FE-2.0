@@ -31,7 +31,6 @@ export function calculateFlightDuration(
   return `${hours}h ${minutes}min`;
 }
 
-
 export function formatTime(dateStr: string) {
   if (!dateStr) return "";
   return new Date(dateStr).toLocaleTimeString("en-US", {
@@ -54,12 +53,17 @@ export function formatDate(dateStr: string) {
 export function buildFilterPreferenceForFlightSearchRequest(
   selectedMaxConnections?: number | null
 ) {
-  const maxConnections = typeof selectedMaxConnections === "number" ? selectedMaxConnections : 0;
+  const maxConnections =
+    typeof selectedMaxConnections === "number" ? selectedMaxConnections : 0;
 
   return { maxConnections };
 }
 
-export function mapFlightSegment(item: any, assets: AssetBundle = {}, defaultHeading = "Flight") {
+export function mapFlightSegment(
+  item: any,
+  assets: AssetBundle = {},
+  defaultHeading = "Flight"
+) {
   const fd = item?.flight_detail ?? item ?? {};
 
   const journeySegments =
@@ -68,55 +72,84 @@ export function mapFlightSegment(item: any, assets: AssetBundle = {}, defaultHea
     item?.flightSegments ??
     [];
 
-  const firstSeg = Array.isArray(journeySegments) && journeySegments.length > 0 ? journeySegments[0] : null;
-  const lastSeg = Array.isArray(journeySegments) && journeySegments.length > 0 ? journeySegments[journeySegments.length - 1] : null;
+  const firstSeg =
+    Array.isArray(journeySegments) && journeySegments.length > 0
+      ? journeySegments[0]
+      : null;
+  const lastSeg =
+    Array.isArray(journeySegments) && journeySegments.length > 0
+      ? journeySegments[journeySegments.length - 1]
+      : null;
+  const singleSeg =
+    Array.isArray(journeySegments) && journeySegments.length === 1
+      ? journeySegments[0]
+      : null;
 
   const departureCode =
-    fd?.departureCode ||
-    fd?.dep_code ||
+    singleSeg?.departureAirportCode ||
+    singleSeg?.departureAirport ||
     firstSeg?.departureAirportCode ||
     firstSeg?.departureAirport ||
+    fd?.departureCode ||
+    fd?.dep_code ||
     fd?.originCode ||
     "";
 
   const arrivalCode =
-    fd?.arrivalCode ||
-    fd?.arr_code ||
+    singleSeg?.arrivalAirportCode ||
+    singleSeg?.arrivalAirport ||
     lastSeg?.arrivalAirportCode ||
     lastSeg?.arrivalAirport ||
+    fd?.arrivalCode ||
+    fd?.arr_code ||
     fd?.destinationCode ||
     "";
 
   const route = `${departureCode || "—"} → ${arrivalCode || "—"}`;
 
-  const flightNumber = fd?.flight_number ?? fd?.flightNo ?? firstSeg?.flightNumber ?? "—";
-  const flightClass = fd?.flight_class ?? fd?.cabinClass ?? firstSeg?.cabinClass ?? "—";
+  const flightNumber =
+    singleSeg?.flightNumber ??
+    firstSeg?.flightNumber ??
+    fd?.flight_number ??
+    fd?.flightNo ??
+    "—";
+  const flightClass =
+    singleSeg?.cabinClass ??
+    firstSeg?.cabinClass ??
+    fd?.flight_class ??
+    fd?.cabinClass ??
+    "—";
 
   const cabinRaw =
-    fd?.flight_class ??
+    singleSeg?.cabin ??
     firstSeg?.cabin ??
+    fd?.flight_class ??
     fd?.cabin_allowance ??
-    (firstSeg?.baggageAllowance?.carryOnBaggage?.[0]?.value ? `${firstSeg.baggageAllowance.carryOnBaggage[0].value}${firstSeg.baggageAllowance.carryOnBaggage[0].unit ?? ""}` : "1PC");
+    (firstSeg?.baggageAllowance?.carryOnBaggage?.[0]?.value
+      ? `${firstSeg.baggageAllowance.carryOnBaggage[0].value}${
+          firstSeg.baggageAllowance.carryOnBaggage[0].unit ?? ""
+        }`
+      : "1PC");
 
-  const baggageNode =
-    firstSeg?.baggageAllowance?.checkedInBaggage?.[0] ??
-    null;
-  const baggageVal = baggageNode ? `${baggageNode.value}${baggageNode.unit ?? ""}` : null;
+  const baggageNode = firstSeg?.baggageAllowance?.checkedInBaggage?.[0] ?? null;
+  const baggageVal = baggageNode
+    ? `${baggageNode.value}${baggageNode.unit ?? ""}`
+    : null;
 
-  const mealVal = fd?.raw?.fare?.fareType?.refundable ? 'Refundable' : 'Non Refundable';
+  const mealVal = fd?.raw?.fare?.fareType?.refundable
+    ? "Refundable"
+    : "Non Refundable";
 
   const durationVal =
+    singleSeg?.duration ??
     fd?.duration ??
     item?.flight?.flightInfo?.duration ??
     null;
 
-  const seatsVal =
-    firstSeg?.seatsAvailable ?? null;
+  const seatsVal = firstSeg?.seatsAvailable ?? null;
 
   const equipmentVal =
-    firstSeg?.equipmentName ??
-    firstSeg?.equipmentType ??
-    null;
+    firstSeg?.equipmentName ?? firstSeg?.equipmentType ?? null;
 
   const stopCount =
     (Array.isArray(item?.stop) && item.stop.length) ||
@@ -124,29 +157,99 @@ export function mapFlightSegment(item: any, assets: AssetBundle = {}, defaultHea
     item?.stopQuantity ||
     0;
 
-  const depTime = fd?.start_time ?? fd?.dep_time ?? (firstSeg?.departureDateTime ? formatTime(firstSeg.departureDateTime) : null) ?? "—";
-  const depDate = fd?.start_date ?? fd?.dep_date ?? (firstSeg?.departureDateTime ? formatDate(firstSeg.departureDateTime) : null) ?? "—";
-  const arrTime = fd?.end_time ?? fd?.arr_time ?? (lastSeg?.arrivalDateTime ? formatTime(lastSeg.arrivalDateTime) : null) ?? "—";
-  const arrDate = fd?.end_date ?? fd?.arr_date ?? (lastSeg?.arrivalDateTime ? formatDate(lastSeg.arrivalDateTime) : null) ?? "—";
+  const depTime =
+    (singleSeg?.departureDateTime
+      ? formatTime(singleSeg.departureDateTime)
+      : null) ??
+    (firstSeg?.departureDateTime
+      ? formatTime(firstSeg.departureDateTime)
+      : null) ??
+    fd?.start_time ??
+    fd?.dep_time ??
+    "—";
+  const depDate =
+    (singleSeg?.departureDateTime
+      ? formatDate(singleSeg.departureDateTime)
+      : null) ??
+    (firstSeg?.departureDateTime
+      ? formatDate(firstSeg.departureDateTime)
+      : null) ??
+    fd?.start_date ??
+    fd?.dep_date ??
+    "—";
+  const arrTime =
+    (singleSeg?.arrivalDateTime
+      ? formatTime(singleSeg.arrivalDateTime)
+      : null) ??
+    (lastSeg?.arrivalDateTime ? formatTime(lastSeg.arrivalDateTime) : null) ??
+    fd?.end_time ??
+    fd?.arr_time ??
+    "—";
+  const arrDate =
+    (singleSeg?.arrivalDateTime
+      ? formatDate(singleSeg.arrivalDateTime)
+      : null) ??
+    (lastSeg?.arrivalDateTime ? formatDate(lastSeg.arrivalDateTime) : null) ??
+    fd?.end_date ??
+    fd?.arr_date ??
+    "—";
 
   return {
     heading: defaultHeading,
     route,
     airlineLogo: item?.logo ?? item?.outbound?.logo ?? assets.EmirateLogo ?? "",
-    airlineName: item?.name ?? item?.airlineName ?? item?.outbound?.name ?? "Airline",
+    airlineName:
+      item?.name ?? item?.airlineName ?? item?.outbound?.name ?? "Airline",
     flightMeta: `${flightNumber} – ${flightClass}`,
     amenities: [
-      { key: "cabin", src: assets.cabinIcon ?? "", alt: "Cabin", title: `Cabin: ${cabinRaw}`, value: cabinRaw },
-      { key: "baggage", src: assets.baggageIcon ?? "", alt: "Baggage", title: `Baggage: ${baggageVal}`, value: baggageVal },
-      { key: "meal", src: assets.mealIcon ?? "", alt: "Meal", title: `${mealVal}`, value: mealVal },
-      { key: "duration", src: assets.wifiIcon ?? "", alt: "Wi-Fi", title: `Duration: ${durationVal}`, value: durationVal },
-      { key: "seats", src: assets.portIcon ?? "", alt: "Ports", title: `Seats: ${seatsVal}`, value: seatsVal },
-      { key: "equipment", src: assets.entertainmentIcon ?? "", alt: "Entertainment", title: `${equipmentVal}`, value: equipmentVal },
-    ].filter(amenity =>
-      amenity.value !== null &&
-      amenity.value !== undefined &&
-      String(amenity.value).trim() !== "" &&
-      String(amenity.value).trim() !== "—"
+      {
+        key: "cabin",
+        src: assets.cabinIcon ?? "",
+        alt: "Cabin",
+        title: `Cabin: ${cabinRaw}`,
+        value: cabinRaw,
+      },
+      {
+        key: "baggage",
+        src: assets.baggageIcon ?? "",
+        alt: "Baggage",
+        title: `Baggage: ${baggageVal}`,
+        value: baggageVal,
+      },
+      {
+        key: "meal",
+        src: assets.mealIcon ?? "",
+        alt: "Meal",
+        title: `${mealVal}`,
+        value: mealVal,
+      },
+      {
+        key: "duration",
+        src: assets.wifiIcon ?? "",
+        alt: "Wi-Fi",
+        title: `Duration: ${durationVal}`,
+        value: durationVal,
+      },
+      {
+        key: "seats",
+        src: assets.portIcon ?? "",
+        alt: "Ports",
+        title: `Seats: ${seatsVal}`,
+        value: seatsVal,
+      },
+      {
+        key: "equipment",
+        src: assets.entertainmentIcon ?? "",
+        alt: "Entertainment",
+        title: `${equipmentVal}`,
+        value: equipmentVal,
+      },
+    ].filter(
+      (amenity) =>
+        amenity.value !== null &&
+        amenity.value !== undefined &&
+        String(amenity.value).trim() !== "" &&
+        String(amenity.value).trim() !== "—"
     ),
     dep: {
       time: depTime,
@@ -156,20 +259,75 @@ export function mapFlightSegment(item: any, assets: AssetBundle = {}, defaultHea
       time: arrTime,
       date: arrDate,
     },
-    durationLabel: fd?.duration ?? fd?.flight_time ?? item?.flight?.flightInfo?.duration ?? "—",
+    durationLabel:
+      singleSeg?.duration ??
+      fd?.duration ??
+      item?.flight?.flightInfo?.duration ??
+      "—",
     tag: stopCount > 0 ? `${stopCount} stop(s)` : "Direct",
   };
 }
 
-export function buildFlightSegmentFromTrip(trip: any, assets: AssetBundle = {}) {
+export function buildFlightSegmentFromTrip(
+  trip: any,
+  assets: AssetBundle = {}
+) {
   if (!trip) return [];
-  if (trip.outbound || trip.inbound) {
-    const segments: any[] = [];
-    if (trip.outbound) segments.push(mapFlightSegment(trip.outbound, assets, "Departure flight"));
-    if (trip.inbound) segments.push(mapFlightSegment(trip.inbound, assets, "Return flight"));
-    return segments;
+  const expandBySegments = (part: any, baseLabel: string) => {
+    const journeys = part?.raw?.journey ?? part?.journey ?? [];
+
+    if (Array.isArray(journeys) && journeys.length > 0) {
+      const results: any[] = [];
+      journeys.forEach((j: any, jIdx: number) => {
+        const segs = j?.flightSegments ?? [];
+        if (Array.isArray(segs) && segs.length > 0) {
+          const isSingleJourney = journeys.length === 1;
+          const journeyLabel = isSingleJourney
+            ? "Departure flight"
+            : jIdx === 0
+              ? "Departure flight"
+              : jIdx === 1
+                ? "Return flight"
+                : `Journey ${jIdx + 1}`;
+          segs.forEach((seg: any, sIdx: number) => {
+            const partClone = {
+              ...part,
+              raw: {
+                ...(part?.raw || {}),
+                journey: [
+                  {
+                    ...(j || {}),
+                    flightSegments: [seg],
+                  },
+                ],
+              },
+              journey: [
+                {
+                  ...(j || {}),
+                  flightSegments: [seg],
+                },
+              ],
+            };
+            const label = segs.length > 1
+              ? `${journeyLabel} - Segment ${sIdx + 1}`
+              : journeyLabel;
+            results.push(mapFlightSegment(partClone, assets, label));
+          });
+        }
+      });
+      if (results.length > 0) return results;
+    }
+
+    // Fallback: single or missing journeys/segments
+    return [mapFlightSegment(part, assets, baseLabel)];
+  };
+
+  // Prefer using top-level RAW journeys directly when present
+  if (Array.isArray(trip?.raw?.journey) && trip.raw.journey.length > 0) {
+    return expandBySegments(trip, "Trip");
   }
-  return [mapFlightSegment(trip, assets, "Departure flight")];
+
+  return expandBySegments(trip, "Departure flight");
 }
 
 export function getPriceCabinClassForFlightSummary(trip: any) {
@@ -207,13 +365,15 @@ export function timeToMinutesFromAnyString(t?: string | null) {
   }
 
   const fallback = new Date(t);
-  if (!isNaN(fallback.getTime())) return fallback.getHours() * 60 + fallback.getMinutes();
+  if (!isNaN(fallback.getTime()))
+    return fallback.getHours() * 60 + fallback.getMinutes();
 
   return null;
 }
 
 export const generateUUID = () =>
-  typeof crypto !== "undefined" && typeof (crypto as any).randomUUID === "function"
+  typeof crypto !== "undefined" &&
+  typeof (crypto as any).randomUUID === "function"
     ? (crypto as any).randomUUID()
     : `uuid-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
@@ -225,17 +385,25 @@ export function formatDateToLocalISO(date: Date | null): string | null {
   return `${y}-${m}-${d}`;
 }
 
-export function parseLocalDateString(dateStr: string | null | undefined): Date | null {
+export function parseLocalDateString(
+  dateStr: string | null | undefined
+): Date | null {
   if (!dateStr) return null;
   const [y, m, d] = dateStr.split("-");
   if (!y || !m || !d) return null;
   return new Date(Number(y), Number(m) - 1, Number(d)); // local midnight
 }
 
-export const formatMoney = (value: number | undefined | null, currency = "USD") => {
+export const formatMoney = (
+  value: number | undefined | null,
+  currency = "USD"
+) => {
   if (value == null || Number.isNaN(value)) return "—";
   try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(value);
+    return new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+    }).format(value);
   } catch {
     return `${value} ${currency}`;
   }

@@ -83,12 +83,18 @@ export const validatePassengersForFlightProvisionalBooking = (
     const contactProvided = p?.contact?.contactsProvided?.[0] ?? {};
     const phone = contactProvided?.phone?.[0] ?? {};
     const email = contactProvided?.emailAddress?.[0];
+    const phoneValue =
+      phone && phone.areaCode && phone.phoneNumber
+        ? `${phone.areaCode}${phone.phoneNumber}`
+        : undefined;
 
     const alwaysRequired = [
       { value: pi.nameTitle, msg: "Title is required." },
       { value: pi.givenName, msg: "Full name is required." },
       { value: pi.surname, msg: "Surname is required." },
       { value: pi.gender, msg: "Gender is required." },
+      { value: email, msg: "Email address is required." },
+      { value: phoneValue, msg: "Phone (country code and number) is required." },
     ];
     for (const r of alwaysRequired) {
       if (isEmpty(r.value)) return { valid: false, error: prefixFor(i, r.msg) };
@@ -148,18 +154,18 @@ export const validatePassengersForFlightProvisionalBooking = (
         id.residenceCountryCode,
         "Residence country is required.",
       ],
-      [
-        fareBookingRules?.isLeadEmailAddressMandatory,
-        email,
-        "Email is required.",
-      ],
-      [
-        fareBookingRules?.isLeadPhoneNumberMandatory,
-        phone && (phone.areaCode || phone.phoneNumber)
-          ? `${phone.areaCode || ""}${phone.phoneNumber || ""}`
-          : undefined,
-        "Phone (country code and number) is required.",
-      ],
+      // [
+      //   fareBookingRules?.isLeadEmailAddressMandatory,
+      //   email,
+      //   "Email is required.",
+      // ],
+      // [
+      //   // fareBookingRules?.isLeadPhoneNumberMandatory,
+      //   phone && (phone.areaCode || phone.phoneNumber)
+      //     ? `${phone.areaCode || ""}${phone.phoneNumber || ""}`
+      //     : undefined,
+      //   "Phone (country code and number) is required.",
+      // ],
       [pRules.isPANMandatory, pi.PAN, "PAN is required."],
       [
         pRules.isAdditionalIdTypeMandatory,

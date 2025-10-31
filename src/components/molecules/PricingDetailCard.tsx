@@ -36,9 +36,8 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
     if (segs && segs.length > 1) {
       return (
         <div className="parahAlign">
-          {segs.map((s: any) => (
-            <>
-              <div key={`${featureKey}-${s.index}`} className="pricingCardRouteSegments">
+          {segs.map((s: any, i: number) => (
+              <div key={`${featureKey}-${i}-${s?.flightNumber ?? s?.segmentKey ?? "seg"}`} className="pricingCardRouteSegments">
                 {showRouteLabel && (
                   <span>
                     {s.label}
@@ -50,7 +49,6 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                 />
                 <p style={{ margin: 0 }}>{s[featureKey] ?? "—"}</p>
               </div>
-            </>
           ))}
         </div>
       );
@@ -83,7 +81,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
 
           <Col span={21}>
             {passSome.map((item, idx) => (
-              <Row key={idx}>
+              <Row key={`${item?.id ?? item?.offerId ?? idx}`}>
                 {headers.map((hk) => {
                   const plan = item.price?.[hk] ?? {};
                   // const hasSegments = Array.isArray(plan?.segments) && plan.segments.length > 0;
@@ -140,7 +138,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
   );
 };
 
-export default PricingDetailCard;
+export default React.memo(PricingDetailCard);
 
 // import React, { useEffect, useMemo, useState } from "react";
 // import "../../assets/css/travel.css";

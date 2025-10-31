@@ -73,10 +73,10 @@ export function buildFlightSearchPriceOptions(raw: any) {
     const journeys = raw?.journey || [];
     const firstSegOfJourney = (j: any) => j?.flightSegments?.[0] ?? null;
 
-    const perJourneyPriceClasses: string[] = journeys.map((j: any) => {
-        const seg = firstSegOfJourney(j);
-        return seg?.priceClassName ?? seg?.cabinClass ?? "";
-    }).filter(Boolean);
+    // Collect class names from ALL segments across all journeys (not just first segment)
+    const perJourneyPriceClasses: string[] = (journeys || [])
+        .flatMap((j: any) => (j?.flightSegments || []).map((seg: any) => seg?.priceClassName ?? seg?.cabinClass ?? ""))
+        .filter(Boolean);
 
     const uniqueClasses: string[] = [];
     for (const c of perJourneyPriceClasses) {
@@ -93,28 +93,30 @@ export function buildFlightSearchPriceOptions(raw: any) {
 
     const planPrice = Number(findFareForClass(raw?.fare, uniqueClasses[0] ?? undefined) ?? raw?.fare?.totalFare ?? 0);
 
-    // build segments array: one item per journey
-    const segments: any[] = journeys.map((j: any, i: number) => {
-        const seg = firstSegOfJourney(j);
-        const features = extractFeaturesFromSegment(seg);
-        const on = j?.flight?.segmentReference?.onPoint ?? seg?.departureAirportCode ?? "";
-        const off = j?.flight?.segmentReference?.offPoint ?? seg?.arrivalAirportCode ?? "";
-        const segPriceClass = seg?.priceClassName ?? seg?.cabinClass ?? "";
-        // const date = seg?.departureDateTime ? new Date(seg.departureDateTime).toLocaleDateString() : "";
-        // const routeName = (journeys.length === 2) ? (i === 0 ? "Outbound" : "Inbound") : `Route ${i + 1}`;
-        const label = `${on} → ${off}` + (segPriceClass ? ` (${segPriceClass})` : "");
-        // const label = `${routeName}: ${on} → ${off}` + (date ? ` (${date})` : "") + (segPriceClass ? ` — ${segPriceClass}` : "");
-
-        return {
-            index: i,
-            label,
-            priceClassName: segPriceClass,
-            personalItem: features?.baggageCarry ?? "—",
-            baggage: features?.baggageChecked ?? "—",
-            seatSelection: features?.seatSelection ?? "—",
-            Changes: features?.changes ?? "—",
-            Refundable: (raw?.fare?.fareType?.refundable ?? false) ? "Yes" : "No",
-        };
+    // build segments array: include ALL flightSegments across journeys
+    let segCounter = 0;
+    const segments: any[] = (journeys || []).flatMap((j: any, jIdx: number) => {
+        const fs: any[] = j?.flightSegments || [];
+        return fs.map((seg: any, sIdx: number) => {
+            const features = extractFeaturesFromSegment(seg);
+            // For per-segment rows, always use the segment's own endpoints
+            const on = seg?.departureAirportCode ?? j?.flight?.segmentReference?.onPoint ?? "";
+            const off = seg?.arrivalAirportCode ?? j?.flight?.segmentReference?.offPoint ?? "";
+            const segPriceClass = seg?.priceClassName ?? seg?.cabinClass ?? "";
+            const label = `${on} → ${off}` + (segPriceClass ? ` (${segPriceClass})` : "");
+            return {
+                index: segCounter++,
+                journeyIndex: jIdx,
+                segmentIndex: sIdx,
+                label,
+                priceClassName: segPriceClass,
+                personalItem: features?.baggageCarry ?? "—",
+                baggage: features?.baggageChecked ?? "—",
+                seatSelection: features?.seatSelection ?? "—",
+                Changes: features?.changes ?? "—",
+                Refundable: (raw?.fare?.fareType?.refundable ?? false) ? "Yes" : "No",
+            };
+        });
     });
 
     // top-level label: "Cabin - CLASS" or "Cabin - CLASS1 / CLASS2"

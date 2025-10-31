@@ -7,7 +7,7 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import FlagUsa from "../../assets/images/Flag-usa.png";
-import { useState } from "react";
+import React, { useState } from "react";
 // import FlightBookingBaggageSection from "../atoms/FlightBookingBaggageSection";
 // import FlightBookingMealsSection from "../atoms/FlightBookingMealsSection";
 // import FlightBookingComfortAirportAndTravelSection from "../atoms/FlightBookingComfortAirportAndTravelSection";
@@ -131,8 +131,8 @@ export default function FlightBookingBookSection({
             <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
                 <div className="space-y-4">
                     {passengers.map((p, idx) => (
-                        <>
-                            <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm" key={p.passengerKey || idx}>
+                        <React.Fragment key={p.passengerKey || idx}>
+                            <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
                                 <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
                                     <h3 className="text-[15px] font-medium text-[#0A0C0F]">
                                         Contact person {String(idx + 1).padStart(2, "0")} details
@@ -321,7 +321,7 @@ export default function FlightBookingBookSection({
                                             </div>
                                         )}
 
-                                        {fareBookingSearchRules?.isLeadEmailAddressMandatory && (
+                                        {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
                                             <TailwindCustomInput
                                                 type="email"
                                                 placeholder="Enter an email"
@@ -332,7 +332,7 @@ export default function FlightBookingBookSection({
                                                     onPassengerFieldChange(idx, "contact.contactsProvided.0.emailAddress.0", v ?? "");
                                                 }}
                                             />
-                                        )}
+                                        {/* )} */}
 
                                         {pRules.isDateOfBirthMandatory && (
                                             <div className="w-full">
@@ -430,7 +430,7 @@ export default function FlightBookingBookSection({
                                             />
                                         )}
 
-                                        {fareBookingSearchRules?.isLeadPhoneNumberMandatory && (
+                                        {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
                                             <div className="w-full">
                                                 <label className="mb-1 block text-[12px] text-[#3D495C]">Phone</label>
                                                 <div className="flex gap-2">
@@ -462,12 +462,12 @@ export default function FlightBookingBookSection({
                                                     />
                                                 </div>
                                             </div>
-                                        )}
+                                        {/* )} */}
 
                                     </div>
                                 </div>
                             </div>
-                        </>
+                        </React.Fragment>
                     ))}
 
                     {/* <div className="mt-6 rounded-2xl border border-[#E4E4E7] bg-white">
