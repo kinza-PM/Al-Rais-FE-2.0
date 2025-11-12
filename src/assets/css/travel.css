@@ -4,6 +4,23 @@
   --black-200: #3d495c;
 }
 
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  /* Removes any default margin that might be present */
+}
+
+/* For Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* General property for other browsers, if needed */
+input[type="number"] {
+  appearance: textfield;
+}
+
 .topHeaderSetting {
   /* border-top: 1px solid var(--white-300); */
   border-bottom: 1px solid var(--white-300);
@@ -611,7 +628,7 @@
   background: var(--primary-100, #a7c0ec);
   max-width: 400px;
   margin: auto;
-  min-width: 200px;
+  min-width: 300px;
   height: 2px;
   display: flex;
   justify-content: space-between;
@@ -1075,8 +1092,9 @@
 }
 
 .flight_detail_card {
-  /* min-height: 35vh; */
-  height: fit-content;
+  max-height: 35vh;
+  overflow-y: auto;
+  /* height: fit-content; */
   border-top: 1px solid #e5e7eb;
 }
 

@@ -97,7 +97,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
         }
         
         // Auto-reload for clean state
-        window.location.reload();
+        // window.location.reload();
         
         return { success: true, message: 'Login successful!' };
       } else {
@@ -296,6 +296,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       // Clear all authentication state
       resetAuthState();
       UserService.clearGuestData();
+      StorageService.clearAuth();
       
       // Create new guest user after logout
       resetAuthCheckCompleted(); // Allow re-initialization
@@ -310,6 +311,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       resetAuthState();
       UserService.clearGuestData();
       resetAuthCheckCompleted();
+      StorageService.clearAuth();
       // Try to create guest user even if logout had errors
       try {
         await initializeGuestUser();

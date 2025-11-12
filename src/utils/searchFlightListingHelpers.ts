@@ -159,4 +159,46 @@ export const pickRandomFlightsForCompare = (
   return candidates.slice(0, count).map((f) => mapper(f)).filter(Boolean);
 };
 
+// Extract flight features/amenities from segment - used across TravelOneWay, TravelRoundTrip, and FlightDetailsCard
+export const extractFlightFeatures = (
+  segment: any,
+  flightDetail: any = {},
+  rawFare: any = {},
+  icons: {
+    cabinIcon: string;
+    baggageIcon: string;
+    mealIcon: string;
+    wifiIcon: string;
+    portsIcon: string;
+    entertainmentIcon: string;
+  }
+) => {
+  const cabinRaw = flightDetail?.flight_class ?? segment?.cabinClass ?? segment?.cabin ?? null;
+  const baggageNode = segment?.baggageAllowance?.checkedInBaggage?.[0] ?? null;
+  const baggageVal = baggageNode ? `${baggageNode.value}${baggageNode.unit ?? ""}` : null;
+  const mealVal = rawFare?.fareType?.refundable ? 'Refundable' : 'Non Refundable';
+  const durationVal = segment?.duration ?? flightDetail?.duration ?? null;
+  const seatsVal = segment?.seatsAvailable ?? null;
+  const equipmentVal = segment?.equipmentName ?? segment?.equipmentType ?? null;
+
+  const features = [
+    { key: "cabin", icon: icons.cabinIcon, value: cabinRaw, label: `Cabin: ${cabinRaw}` },
+    { key: "baggage", icon: icons.baggageIcon, value: baggageVal, label: `Baggage: ${baggageVal}` },
+    { key: "meal", icon: icons.mealIcon, value: mealVal, label: `${mealVal}` },
+    { key: "duration", icon: icons.wifiIcon, value: durationVal, label: `Duration: ${durationVal}` },
+    { key: "seats", icon: icons.portsIcon, value: seatsVal, label: `Seats: ${seatsVal}` },
+    { key: "equipment", icon: icons.entertainmentIcon, value: equipmentVal, label: `${equipmentVal}` },
+  ];
+
+  const visibleFeatures = features.filter(
+    (f) =>
+      f.value !== null &&
+      f.value !== undefined &&
+      String(f.value).trim() !== "" &&
+      String(f.value).trim() !== "—"
+  );
+
+  return visibleFeatures;
+};
+
 

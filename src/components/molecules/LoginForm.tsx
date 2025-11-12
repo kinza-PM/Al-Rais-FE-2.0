@@ -5,6 +5,8 @@ import { useAuth } from '../../features/auth/hooks/useAuth';
 import Logo from '../atoms/Logo';
 import logoImg from '../../assets/images/logo.jpg';
 import { getEmailError } from '../../utils/validators';
+import FlagUsa from '../../assets/images/Flag-usa.png';
+import arrownDownwardIcon from '../../assets/svgs/arrow-downwards.svg';
 interface LoginFormProps {
   onSignupClick: () => void;
   onLoginSuccess?: () => void;
@@ -18,9 +20,17 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   });
 
   const [usePhone, setUsePhone] = useState(false);
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const [touched, setTouched] = useState({ email: false, password: false });
   const { login, loading, error } = useAuth();
+
+  function ChevronDown() {
+    return (
+      <img alt="arrow-icon" src={arrownDownwardIcon} className="pointer-events-none absolute right-3 top-3/5" />
+    );
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,6 +40,10 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
     const { name } = e.target;
     setTouched(prev => ({ ...prev, [name]: true }));
+  };
+
+  const handlePhoneBlur = () => {
+    setTouched(prev => ({ ...prev, email: true }));
   };
 
   const isEmailValid = (value: string) => {
@@ -46,9 +60,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
       return;
     }
 
-    if (!formData.email || !formData.password) return;
+    // Combine phone country code and number if using phone
+    const loginData = usePhone
+      ? { email: `${phoneCountryCode}${phoneNumber}`, password: formData.password }
+      : formData;
 
-    const result = await login(formData);
+    if (!loginData.email || !loginData.password) return;
+
+    const result = await login(loginData);
     if (result.success) {
       setTimeout(() => {
         onLoginSuccess?.();
@@ -57,18 +76,25 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   };
 
   const isFormValid = useMemo(() => {
-    const emailTrim = formData.email.trim();
     const passTrim = formData.password.trim();
+    if (!passTrim) return false;
 
-    if (!emailTrim || !passTrim) return false;
-    if (!usePhone && !isEmailValid(emailTrim)) return false;
-    return true;
-  }, [formData, usePhone]);
+    if (usePhone) {
+      const phoneTrim = phoneNumber.trim();
+      return phoneTrim.length > 0;
+    } else {
+      const emailTrim = formData.email.trim();
+      if (!emailTrim) return false;
+      return isEmailValid(emailTrim);
+    }
+  }, [formData, usePhone, phoneNumber]);
 
-  const emailError = useMemo(
-    () => getEmailError(formData.email, usePhone),
-    [formData.email, usePhone]
-  );
+  const emailError = useMemo(() => {
+    if (usePhone) {
+      return phoneNumber.trim() === '' ? 'Phone number is required' : null;
+    }
+    return getEmailError(formData.email, usePhone);
+  }, [formData.email, usePhone, phoneNumber]);
 
   const emailHasError = Boolean(emailError);
 
@@ -87,13 +113,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
         <div className="flex justify-center mb-6">
           <button
             className={`px-6 py-2 text-sm rounded-l-full border ${!usePhone ? 'bg-primary text-white' : 'bg-white text-gray-700 border-gray-300'}`}
-            onClick={() => setUsePhone(false)}
+            onClick={() => {
+              setUsePhone(false);
+              setTouched(prev => ({ ...prev, email: false }));
+            }}
           >
             Email
           </button>
           <button
             className={`px-6 py-2 text-sm rounded-r-full border ${usePhone ? 'bg-primary text-white' : 'bg-white text-gray-700 border-gray-300'}`}
-            onClick={() => setUsePhone(true)}
+            onClick={() => {
+              setUsePhone(true);
+              setTouched(prev => ({ ...prev, email: false }));
+            }}
           >
             Phone
           </button>
@@ -104,16 +136,47 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
             <label className="text-sm font-medium text-gray-700">
               {usePhone ? 'Phone' : 'Email'}
             </label>
-            <Input
-              type={usePhone ? 'tel' : 'email'}
-              name="email"
-              placeholder={usePhone ? 'Enter your phone number' : 'Enter your email'}
-              value={formData.email}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              touched={touched.email}
-              error={emailHasError}
-            />
+            {usePhone ? (
+              <div className="flex gap-2">
+                <div className="relative">
+                  <select
+                    aria-label="Country code"
+                    style={{ backgroundImage: `url(${FlagUsa})` }}
+                    className="h-10 w-24 appearance-none rounded-lg border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none bg-[var(--flag-url)] bg-no-repeat bg-[length:30px_28px] bg-[position:8px_center] pl-[55px]"
+                    value={phoneCountryCode}
+                    onChange={(e) => setPhoneCountryCode(e.target.value)}
+                  >
+                    <option value="+1">+1</option>
+                    <option value="+92">+92</option>
+                    <option value="+971">+971</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                    <ChevronDown />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Phone"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    onBlur={handlePhoneBlur}
+
+                  />
+                </div>
+              </div>
+            ) : (
+              <Input
+                type="email"
+                name="email"
+                placeholder="Enter your email"
+                value={formData.email}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                touched={touched.email}
+                error={emailHasError}
+              />
+            )}
             {touched.email && emailHasError && (
               <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
                 {emailError}
@@ -135,7 +198,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
             />
             {touched.password && formData.password.trim() === '' && (
               <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
-                This field is required.
+                Password is required.
               </p>
             )}
           </div>

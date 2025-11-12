@@ -240,7 +240,7 @@ const FlightBooking = () => {
       {showTimerBanner && (
         <BookingBannerAlert
           message="Please complete your booking"
-          time="00:10:00"
+          time="00:15:00"
           onExpire={() => {
             setCurrentStep(0);
             setOfferData(initialOfferData);

@@ -7,6 +7,7 @@ type DatePickerProps = {
     placeholder?: string;
     buttonIconSrc?: boolean; // calendar svg
     overridesClass?: boolean;
+    showCalendarIconRight?: boolean;
     inputClass?: string;
 };
 
@@ -50,6 +51,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
     placeholder = "Please select",
     buttonIconSrc,
     overridesClass = false,
+    showCalendarIconRight = true,
     inputClass = null
 }) => {
     const [open, setOpen] = useState(false);
@@ -108,13 +110,14 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
                     value={fmtLong(value) || ""}
                     placeholder={placeholder}
                     onClick={() => setOpen(true)}
-                    className={`${overridesClass ? inputClass : "h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20 cursor-pointer"}`}
+                    className={`${overridesClass ? inputClass : "h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer"}`}
+                    // className={`${overridesClass ? inputClass : "h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20 cursor-pointer"}`}
                 />
                 <button
                     type="button"
                     onClick={() => setOpen(o => !o)}
                     aria-label="Open calendar"
-                    className="absolute inset-y-0 right-3 flex items-center"
+                    className={`absolute inset-y-0 ${showCalendarIconRight ? "right-3" : "left-3"} flex items-center`}
                 >
                     {buttonIconSrc ? (
                         <img src={Calendar} alt="calendar" className="w-[16px] h-[16px]" />

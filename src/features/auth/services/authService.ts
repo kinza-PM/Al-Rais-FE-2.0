@@ -7,10 +7,18 @@ export class AuthService {
    */
   static async signIn(credentials: LoginForm): Promise<AuthResponse> {
     try {
-      const { isSignedIn } = await signIn({
+      const { isSignedIn, nextStep } = await signIn({
         username: credentials.email,
         password: credentials.password,
       });
+      // signIn function doesn't throw an exception for UserNotConfirmedException - instead, it returns { isSignedIn: false } and provides the error information in a different way.
+      if (nextStep.signInStep === 'CONFIRM_SIGN_UP') {
+        return {
+          success: false,
+          message: 'Account not confirmed. Please check your email.',
+        };
+      }
+
       if (isSignedIn) {
         const user = await this.getCurrentUser();
         return {
@@ -22,12 +30,12 @@ export class AuthService {
 
       return {
         success: false,
-        message: 'Login failed',
+        message: 'Invalid credentials',
       };
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage = (errorObj.message as string) || (error as Error).message || 'Login failed';
-      
+
       // Handle specific AWS Cognito errors
       if (errorObj.name === 'UserNotConfirmedException') {
         return {
@@ -35,14 +43,14 @@ export class AuthService {
           message: 'Account not confirmed. Please check your email.',
         };
       }
-      
+
       if (errorObj.name === 'NotAuthorizedException') {
         return {
           success: false,
           message: 'Invalid credentials or user not confirmed.',
         };
       }
-      
+
       return {
         success: false,
         message: errorMessage,
@@ -65,7 +73,7 @@ export class AuthService {
           },
         },
       });
-      
+
       // Check if user needs confirmation
       if (result.nextStep?.signUpStep === 'CONFIRM_SIGN_UP') {
         return {
@@ -82,7 +90,7 @@ export class AuthService {
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage = (errorObj.message as string) || (error as Error).message || 'Signup failed';
-      
+
       // Handle specific signup errors
       if (errorMessage.includes('SignUp is not permitted')) {
         return {
@@ -90,7 +98,7 @@ export class AuthService {
           message: 'Self-registration is disabled. Please contact support or check your AWS Cognito User Pool settings.',
         };
       }
-      
+
       return {
         success: false,
         message: errorMessage,
@@ -122,23 +130,23 @@ export class AuthService {
   static async getCurrentUser(): Promise<User | null> {
     try {
       const { userId } = await getCurrentUser();
-      
+
       const session = await fetchAuthSession();
-      
+
       if (session.tokens) {
         const idToken = session.tokens.idToken;
         const payload = idToken?.payload;
-        
+
         const user = {
           id: userId,
           email: payload?.email as string,
           emailVerified: payload?.email_verified as boolean,
           name: payload?.name as string,
         };
-        
+
         return user;
       }
-      
+
       return null;
     } catch (error) {
       console.error(error);
@@ -164,7 +172,7 @@ export class AuthService {
       console.error(error);
       const errorObj = error as Record<string, unknown>;
       const errorMessage = (errorObj.message as string) || (error as Error).message || 'Confirmation failed';
-      
+
       // Handle specific AWS Cognito errors
       if (errorObj.name === 'CodeMismatchException') {
         return {
@@ -172,14 +180,14 @@ export class AuthService {
           message: 'Invalid confirmation code. Please try again.',
         };
       }
-      
+
       if (errorObj.name === 'ExpiredCodeException') {
         return {
           success: false,
           message: 'Confirmation code has expired. Please request a new one.',
         };
       }
-      
+
       return {
         success: false,
         message: errorMessage,
@@ -215,7 +223,7 @@ export class AuthService {
   static async isAuthenticated(): Promise<boolean> {
     try {
       const session = await fetchAuthSession();
-      
+
       const isAuth = session.tokens !== undefined;
       return isAuth;
     } catch (error) {
@@ -241,7 +249,7 @@ export class AuthService {
       console.error(' AuthService: forgotPassword error:', error);
       const errorObj = error as Record<string, unknown>;
       const errorMessage = (errorObj.message as string) || (error as Error).message || 'Failed to send reset code';
-      
+
       // Handle specific AWS Cognito errors
       if (errorObj.name === 'UserNotFoundException') {
         return {
@@ -249,14 +257,14 @@ export class AuthService {
           message: 'No account found with this email address.',
         };
       }
-      
+
       if (errorObj.name === 'LimitExceededException') {
         return {
           success: false,
           message: 'Too many requests. Please try again later.',
         };
       }
-      
+
       return {
         success: false,
         message: errorMessage,
@@ -271,7 +279,7 @@ export class AuthService {
     try {
       // AWS Amplify doesn't have a separate verify method, so we'll use this for validation
       // The actual verification happens in confirmResetPassword
-      
+
       if (!otpData.otp || otpData.otp.length !== 6) {
         return {
           success: false,
@@ -318,7 +326,7 @@ export class AuthService {
       console.error(' AuthService: resetPasswordWithCode error:', error);
       const errorObj = error as Record<string, unknown>;
       const errorMessage = (errorObj.message as string) || (error as Error).message || 'Failed to reset password';
-      
+
       // Handle specific AWS Cognito errors
       if (errorObj.name === 'CodeMismatchException') {
         return {
@@ -326,21 +334,21 @@ export class AuthService {
           message: 'Invalid verification code. Please try again.',
         };
       }
-      
+
       if (errorObj.name === 'ExpiredCodeException') {
         return {
           success: false,
           message: 'Verification code has expired. Please request a new one.',
         };
       }
-      
+
       if (errorObj.name === 'InvalidPasswordException') {
         return {
           success: false,
           message: 'Password does not meet requirements. Please try a stronger password.',
         };
       }
-      
+
       return {
         success: false,
         message: errorMessage,

@@ -22,7 +22,7 @@ const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 import { useNavigate } from "react-router-dom";
 // removed: format helpers are handled in utilities
-import { buildPerSegmentFlightDetail, mapOfferForCompareOneWay, pickRandomFlightsForCompare } from "../../utils/searchFlightListingHelpers";
+import { buildPerSegmentFlightDetail, mapOfferForCompareOneWay, pickRandomFlightsForCompare, extractFlightFeatures } from "../../utils/searchFlightListingHelpers";
 
 type TravelOneWayProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
@@ -150,98 +150,82 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
           <div className="topHalfCardWrap">
             {(() => {
               const segs: any[] = item?.raw?.journey?.[0]?.flightSegments ?? [];
-              const isMulti = Array.isArray(segs) && segs.length > 1;
-              const loop = isMulti ? segs : [segs?.[0] ?? null];
-              return loop.map((seg, segIdx) => {
-                const currentSeg = seg || (item?.raw?.journey?.[0]?.flightSegments?.[0] ?? null);
-                const routeText = isMulti && currentSeg
-                  ? `${currentSeg?.departureAirportCode ?? ""} to ${currentSeg?.arrivalAirportCode ?? ""}`
-                  : null;
+              const currentSeg = Array.isArray(segs) ? segs[0] : segs?.[0] ?? segs ?? null;
 
-               const perSegFlightDetail = buildPerSegmentFlightDetail(item?.flight_detail || {}, currentSeg);
-               const itemForTiming = currentSeg
-                   ? {
-                     ...item,
-                     flight_detail: perSegFlightDetail,
-                     stop: [],
-                     raw: {
-                       ...item.raw,
-                       journey: [
-                         {
-                           ...(item.raw?.journey?.[0] || {}),
-                           flightSegments: [currentSeg],
-                         },
-                       ],
-                     },
-                   }
-                   : item;
+              const perSegFlightDetail = buildPerSegmentFlightDetail(item?.flight_detail || {}, currentSeg);
+              // Pass all segments to FlightTimingAndStops for proper multi-segment handling
+              const itemForTiming = {
+                ...item,
+                flight_detail: perSegFlightDetail,
+                stop: [],
+                raw: {
+                  ...item.raw,
+                  journey: [
+                    {
+                      ...(item.raw?.journey?.[0] || {}),
+                      flightSegments: Array.isArray(segs) ? segs : (segs ? [segs] : []),
+                    },
+                  ],
+                },
+              };
 
-                const cabinRaw = item?.flight_detail?.flight_class ?? currentSeg?.cabinClass ?? currentSeg?.cabin ?? null;
-                const baggageNode = currentSeg?.baggageAllowance?.checkedInBaggage?.[0] ?? null;
-                const baggageVal = baggageNode ? `${baggageNode.value}${baggageNode.unit ?? ""}` : null;
-                const mealVal = item?.raw?.fare?.fareType?.refundable ? 'Refundable' : 'Non Refundable'
-               const durationVal = perSegFlightDetail?.duration ?? item?.raw?.journey?.[0]?.flight?.flightInfo?.duration ?? null;
-                const seatsVal = currentSeg?.seatsAvailable ?? null;
-                const equipmentVal = currentSeg?.equipmentName ?? currentSeg?.equipmentType ?? null;
+              // Use shared function to extract features
+              const visible = extractFlightFeatures(
+                currentSeg,
+                item?.flight_detail || {},
+                item?.raw?.fare || {},
+                {
+                  cabinIcon,
+                  baggageIcon,
+                  mealIcon,
+                  wifiIcon,
+                  portsIcon,
+                  entertainmentIcon,
+                }
+              );
 
-                const features = [
-                  { key: "cabin", icon: cabinIcon, value: cabinRaw, label: `Cabin: ${cabinRaw}` },
-                  { key: "baggage", icon: baggageIcon, value: baggageVal, label: `Baggage: ${baggageVal}` },
-                  { key: "meal", icon: mealIcon, value: mealVal, label: `${mealVal}` },
-                  { key: "duration", icon: wifiIcon, value: durationVal, label: `Duration: ${durationVal}` },
-                  { key: "seats", icon: portsIcon, value: seatsVal, label: `Seats: ${seatsVal}` },
-                  { key: "equipment", icon: entertainmentIcon, value: equipmentVal, label: `${equipmentVal}` },
-                ];
-
-                const visible = features.filter(
-                  (f) =>
-                    f.value !== null &&
-                    f.value !== undefined &&
-                    String(f.value).trim() !== "" &&
-                    String(f.value).trim() !== "—"
-                );
-
-                return (
-                  <div className="" key={`seg-${segIdx}-${currentSeg?.segmentKey || '0'}`}>
-                    <div className="topHalfCard">
-                      <div className="fightTitle">
-                        <div className="flightIcon">
-                          <img src={item?.logo} alt="" />
-                        </div>
-                        <div className="nameAndDetails">
-                          <h5>{item?.name}{routeText ? <> - <strong>({routeText})</strong></> : null}</h5>
-                          <p>
-                            {itemForTiming?.flight_detail?.flight_number} -
-                            {itemForTiming?.flight_detail?.flight_class}
-                          </p>
-                        </div>
+              return (
+                <div className="" key={`seg-0-${currentSeg?.segmentKey || '0'}`}>
+                  <div className="topHalfCard">
+                    <div className="fightTitle">
+                      <div className="flightIcon">
+                        <img src={item?.logo} alt="" />
                       </div>
-                      <div className="stopsOnLarge">
-                        <FlightTimingAndStops passSome={itemForTiming} />
-                      </div>
-
-                      {visible.length ? (
-                        <div className="featureIcons">
-                          {visible.map((f) => (
-                            <div className="featureIconTooltipWrap" key={f.key}>
-                              <img src={f.icon} alt={f.key} />
-                              <span className="tooltip">{f.label}</span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      <div className="StartingPrice">
-                        <p>Start from</p>
-                        <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}</h5>
+                      <div className="nameAndDetails">
+                        <h5>{item?.name}</h5>
+                        <p>
+                          {itemForTiming?.flight_detail?.flight_number} -
+                          {itemForTiming?.flight_detail?.flight_class}
+                        </p>
                       </div>
                     </div>
-                    <div className="stopsOnSmall">
+
+                    <div className="stopsOnLarge">
                       <FlightTimingAndStops passSome={itemForTiming} />
                     </div>
+
+                    {visible.length ? (
+                      <div className="featureIcons">
+                        {visible.map((f) => (
+                          <div className="featureIconTooltipWrap" key={f.key}>
+                            <img src={f.icon} alt={f.key} />
+                            <span className="tooltip">{f.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+
+                    <div className="StartingPrice">
+                      <p>Start from</p>
+                      <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}</h5>
+                    </div>
                   </div>
-                );
-              });
+
+                  <div className="stopsOnSmall">
+                    <FlightTimingAndStops passSome={itemForTiming} />
+                  </div>
+                </div>
+              );
             })()}
           </div>
 

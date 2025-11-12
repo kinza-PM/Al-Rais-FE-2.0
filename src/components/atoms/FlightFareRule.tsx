@@ -1,3 +1,5 @@
+import React from "react";
+
 export default function FLightFareRule({ trip }: { trip: any }) {
     const fare = trip?.fare;
 
@@ -39,7 +41,7 @@ export default function FLightFareRule({ trip }: { trip: any }) {
 
             <ul className="px-4 py-1">
                 {list.map((e, idx) => (
-                    <>
+                    <React.Fragment key={`fare-rule-${idx}`}>
                         {e.checked ? (
                             <li key={`checked-${idx}`} className="flex items-center justify-between py-1">
                                 <span className="text-[#3D495C] text-[12px]">Checked baggage ({e.route})</span>
@@ -52,7 +54,7 @@ export default function FLightFareRule({ trip }: { trip: any }) {
                                 <span className="text-[#0A0C0F] text-[15px] font-medium">{formatWeight(e.carryOn)}</span>
                             </li>
                         ) : null}
-                    </>
+                    </React.Fragment>
                 ))}
 
                 <li className="flex items-center justify-between py-1">

@@ -18,9 +18,9 @@ type FeaturesRenderProp = {
   };
 };
 
-const FeaturesRender: React.FC<FeaturesRenderProp> = ({ featuresObj }) => {
-  const { cabin, baggage, usb_power, free_meal, wifi, entertainment } =
-    featuresObj || {};
+const FeaturesRender: React.FC<FeaturesRenderProp> = () => {
+  // const { cabin, baggage, usb_power, free_meal, wifi, entertainment } =
+  //   featuresObj || {};
 
   return (
     <Flex
@@ -31,7 +31,6 @@ const FeaturesRender: React.FC<FeaturesRenderProp> = ({ featuresObj }) => {
         rowGap: "10px",
       }}
     >
-      {cabin && (
         <Flex
           style={{
             width: "30%",
@@ -41,12 +40,11 @@ const FeaturesRender: React.FC<FeaturesRenderProp> = ({ featuresObj }) => {
         >
           <img src={CABIN_ICON} alt="cabin" />
           <CustomTypography className="common_typography_fd">
-            Cabin: {cabin} PC
+            Cabin: 1 PC
           </CustomTypography>
         </Flex>
-      )}
+    
 
-      {baggage && (
         <Flex
           style={{
             width: "30%",
@@ -56,12 +54,10 @@ const FeaturesRender: React.FC<FeaturesRenderProp> = ({ featuresObj }) => {
         >
           <img src={BAGGAGE_ICON} alt="baggage" />
           <CustomTypography className="common_typography_fd">
-            Baggage: up to {baggage}
+            Baggage: up to 30kg
           </CustomTypography>
         </Flex>
-      )}
 
-      {usb_power && (
         <Flex
           style={{
             width: "30%",
@@ -74,34 +70,27 @@ const FeaturesRender: React.FC<FeaturesRenderProp> = ({ featuresObj }) => {
             Power/USB Ports
           </CustomTypography>
         </Flex>
-      )}
 
-      {free_meal && (
         <Flex style={{ width: "30%" }} gap={5} align="center">
           <img src={MEAL_ICON} alt="meal" />
           <CustomTypography className="common_typography_fd">
             Free in-flight meal
           </CustomTypography>
         </Flex>
-      )}
 
-      {wifi && (
         <Flex style={{ width: "30%" }} gap={5} align="center">
           <img src={WIFI_ICON} alt="wifi" />
           <CustomTypography className="common_typography_fd">
             WiFi
           </CustomTypography>
         </Flex>
-      )}
 
-      {entertainment && (
         <Flex style={{ width: "30%" }} gap={5} align="center">
           <img src={ENTERTAINMENT_ICON} alt="entertainment" />
           <CustomTypography className="common_typography_fd">
             In-flight Entertainment
           </CustomTypography>
         </Flex>
-      )}
     </Flex>
   );
 };

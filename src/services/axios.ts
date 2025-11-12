@@ -1,5 +1,7 @@
 import axios from "axios";
 import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
+import { StorageService } from "../utils/storage";
+import { hashString } from "../utils/crypto";
 
 const flightApis = ["/flightSearch", "/moreFareSearch", "/flightProvBooking", "/fareRuleSearch", "/reservationFlightBooking"];
 
@@ -12,7 +14,7 @@ export const FLIGHT_API_BASE =
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
-  timeout: 50000,
+  timeout: 120000,
   headers: { "Content-Type": "application/json" },
 });
 
@@ -26,6 +28,25 @@ axiosClient.interceptors.request.use((config) => {
 
   return config;
 });
+
+export const userGuestOrLoginHeaders = async () => {
+  const isAuthenticated = StorageService.isAuthenticated();
+
+  if (isAuthenticated) {
+    const user = StorageService.getUser();
+    const userId = user?.id ?? "";
+    const secret = import.meta.env.VITE_HASH_SECRET || "";
+    const hashedUserId = userId ? await hashString(userId, secret) : "";
+    return {
+      user_type: "user",
+      user_id: hashedUserId,
+    } as Record<string, string>;
+  }
+
+  return {
+    user_type: "guest",
+  } as Record<string, string>;
+};
 
 export function toApiError(source: string, err: unknown): Error {
   if (axios.isAxiosError(err)) {
@@ -55,9 +76,13 @@ export const api = {
   post: async <T>(
     url: string,
     data?: Record<string, any>,
-    signal?: AbortSignal
+    // signal?: AbortSignal
+    options?: { signal?: AbortSignal; headers?: Record<string, string> }
   ) => {
-    const res = await axiosClient.post<T>(url, data, { signal });
+    const res = await axiosClient.post<T>(url, data, {
+      signal: options?.signal,
+      headers: options?.headers,
+    });
     return res.data;
   },
 };

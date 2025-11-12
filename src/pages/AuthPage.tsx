@@ -9,10 +9,11 @@ import {
   SignupForm
 } from "../components";
 import type { AuthMode } from "../types/AuthTypes";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const AuthPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const initialMode = (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
@@ -73,7 +74,7 @@ const AuthPage = () => {
             {mode === "login" && (
               <LoginForm
                 onSignupClick={handleModeSwitch}
-                onLoginSuccess={handleBackToLogin}
+                onLoginSuccess={() => navigate("/")}
                 onForgotPasswordClick={handleForgotPassword}
               />
             )}

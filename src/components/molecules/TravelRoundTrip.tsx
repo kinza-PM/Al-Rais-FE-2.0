@@ -23,7 +23,8 @@ const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
 const CompareCard = React.lazy(() => import("./CompareCard"));
 // removed: format helpers are handled in utilities
 import { useNavigate } from "react-router-dom";
-import { buildPerSegmentFlightDetail, mapOfferForCompareRoundTrip, pickRandomFlightsForCompare } from "../../utils/searchFlightListingHelpers";
+import { buildPerSegmentFlightDetail, mapOfferForCompareRoundTrip, pickRandomFlightsForCompare, extractFlightFeatures } from "../../utils/searchFlightListingHelpers";
+import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 
 type TravelRoundTripProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
@@ -133,181 +134,87 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
           }
           const segs = raw?.journey?.[journeyIndex]?.flightSegments ?? [];
           const hasSegs = Array.isArray(segs) && segs.length > 0;
-          const isMulti = hasSegs && segs.length > 1;
-          // fallback: if no segments array, try to use the single segment or flight_detail
-          const fallbackSeg =
-            raw?.journey?.[journeyIndex]?.flightSegments?.[0] ??
-            d?.brief?.rawSegment ??
-            d?.rawSegment ??
-            d?.flight_detail ??
-            null;
+          const currentSeg = hasSegs ? segs[0] : null;
 
-          const loop = hasSegs ? segs : [fallbackSeg];
+          // build per-segment flight_detail for timings/FlightTimingAndStops
+          const perSegFlightDetail = buildPerSegmentFlightDetail(d?.flight_detail || {}, currentSeg);
+          
+          // Pass all segments to FlightTimingAndStops for proper multi-segment handling
+          const itemForTiming = {
+            ...d,
+            flight_detail: perSegFlightDetail,
+            stop: [],
+            raw: {
+              ...raw,
+              journey: [
+                {
+                  ...(raw?.journey?.[journeyIndex] || {}),
+                  flightSegments: Array.isArray(segs) ? segs : (segs ? [segs] : []),
+                },
+              ],
+            },
+          };
+
+          // Use shared function to extract features
+          const baseFeatures = extractFlightFeatures(
+            currentSeg,
+            d?.flight_detail || {},
+            parent?.raw?.fare || d?.raw?.fare || {},
+            {
+              cabinIcon,
+              baggageIcon,
+              mealIcon,
+              wifiIcon,
+              portsIcon,
+              entertainmentIcon,
+            }
+          );
+
+          // Convert to label format for TravelRoundTrip (which uses label instead of value)
+          const visible = baseFeatures.map((f) => ({
+            ...f,
+            label: f.label,
+          }));
 
           return (
-            <>
-              {loop.map((seg: any, segIdx: number) => {
-                const currentSeg = seg || fallbackSeg || null;
+            <div className="topHalfCard RoundTripCardDetail" key={`round-${d?.id || parent?.id || Math.random()}`}>
+              <div className="fightTitle">
+                <div className="flightIcon">
+                  <img src={d?.logo} alt="" />
+                </div>
+                <div className="nameAndDetails">
+                  <h5>{d?.name}</h5>
+                  <p>
+                    {itemForTiming?.flight_detail?.flight_number} -{" "}
+                    {itemForTiming?.flight_detail?.flight_class}
+                  </p>
+                </div>
+              </div>
 
+              <div className="stopsOnLarge">
+                <FlightTimingAndStops passSome={itemForTiming} />
+              </div>
 
-                // build per-segment flight_detail for timings/FlightTimingAndStops
-                const perSegFlightDetail = buildPerSegmentFlightDetail(d?.flight_detail || {}, currentSeg);
-
-                // itemForTiming mirrors your one-way implementation so FlightTimingAndStops works
-                // const itemForTiming = {
-                //   ...d,
-                //   flight_detail: perSegFlightDetail,
-                //   stop: [], // keep segment isolated for the timing component
-                //   raw: {
-                //     ...d.raw,
-                //     journey: [
-                //       {
-                //         ...(d.raw?.journey?.[0] || {}),
-                //         flightSegments: [currentSeg],
-                //       },
-                //     ],
-                //   },
-                // };
-
-                // feature extraction (mirrors your existing logic)
-                const cabinVal =
-                  d?.brief?.flight_class ??
-                  d?.flight_detail?.flight_class ??
-                  currentSeg?.cabinClass ??
-                  null;
-
-                const baggageNode =
-                  currentSeg?.baggageAllowance?.checkedInBaggage?.[0] ??
-                  currentSeg?.baggageAllowance?.carryOnBaggage?.[0] ??
-                  null;
-                const baggageVal = baggageNode
-                  ? `${baggageNode.value}${baggageNode.unit ?? ""}`
-                  : null;
-
-                const seatsVal =
-                  d?.brief?.seatsAvailable ?? currentSeg?.seatsAvailable ?? null;
-
-                const durationVal =
-                  d?.brief?.duration ??
-                  d?.flight_detail?.duration ??
-                  currentSeg?.duration ??
-                  null;
-
-                const refundableFlag =
-                  (parent?.refundable ?? parent?.raw?.fare?.fareType?.refundable) ??
-                  (d?.refundable ?? d?.raw?.fare?.fareType?.refundable) ??
-                  null;
-                const refundableLabel =
-                  refundableFlag === true ? "Refundable" : "Non-Refundable";
-
-                const entFlag =
-                  currentSeg?.inflightEntertainment ??
-                  currentSeg?.hasEntertainment ??
-                  d?.inflightEntertainment ??
-                  d?.hasEntertainment ??
-                  raw?.hasEntertainment ??
-                  null;
-                const equipmentVal =
-                  entFlag === true || String(entFlag).toLowerCase() === "true"
-                    ? "Entertainment"
-                    : d?.brief?.equipment ??
-                    currentSeg?.equipmentName ??
-                    currentSeg?.equipmentType ??
-                    null;
-
-                const features = [
-                  { key: "cabin", icon: cabinIcon, label: cabinVal ? `Cabin: ${cabinVal}` : null },
-                  { key: "baggage", icon: baggageIcon, label: baggageVal ? `Baggage: ${baggageVal}` : null },
-                  { key: "refundable", icon: mealIcon, label: refundableFlag !== null ? refundableLabel : null },
-                  { key: "duration", icon: wifiIcon, label: durationVal ? `Duration: ${durationVal}` : (d?.wifiAvailable || raw?.hasWifi ? "WiFi Available" : null) },
-                  { key: "ports", icon: portsIcon, label: seatsVal ? `Seats: ${seatsVal}` : (currentSeg?.hasUsb || currentSeg?.usbAvailable ? "USB Ports" : null) },
-                  { key: "entertainment", icon: entertainmentIcon, label: equipmentVal ?? (entFlag ?? null) },
-                ];
-
-                const visible = features.filter(
-                  (f) => f.label && String(f.label).trim() !== "" && String(f.label).trim() !== "—"
-                );
-                const routeText = isMulti && currentSeg
-                  ? `${currentSeg?.departureAirportCode ?? ""} to ${currentSeg?.arrivalAirportCode ?? ""}`
-                  : null;
-                return (
-                  <div
-                    className="topHalfCard RoundTripCardDetail"
-                    key={`round-${d?.id || parent?.id || Math.random()}-${segIdx}`}
-                  >
-                    <div className="fightTitle">
-                      <div className="flightIcon">
-                        <img src={d?.logo} alt="" />
-                      </div>
-                      <div className="nameAndDetails">
-                        <h5>{d?.name}{routeText ? <> - <strong>({routeText})</strong></> : null}</h5>
-                        <p>
-                          {perSegFlightDetail?.flight_number} -{" "}
-                          {perSegFlightDetail?.flight_class}
-                        </p>
-                      </div>
+              {visible.length ? (
+                <div className="featureIcons">
+                  {visible.map((f) => (
+                    <div className="featureIconTooltipWrap" key={f.key}>
+                      <img src={f.icon} alt={f.key} />
+                      <span className="tooltip">{f.label}</span>
                     </div>
+                  ))}
+                </div>
+              ) : null}
 
-                    <div className="flightTiming">
-                      <div className="startTime">
-                        <h5>{perSegFlightDetail?.start_time}</h5>
-                        <p>{perSegFlightDetail?.start_date}</p>
-                      </div>
+              <div className="StartingPrice">
+                <span>Start from</span>
+                <h5>{d?.raw?.fare?.currencyCode ?? "$"}{price}</h5>
+              </div>
 
-                      <div className="FlightDirection">
-                        <div className="visualGuid">
-                          <div className="stopPoint"></div>
-
-                          {d?.stop?.length > 0 ? (
-                            d.stop.map((stopStayTime: any, i: number) => (
-                              <div className="stopsDetail" key={i}>
-                                <span>{stopStayTime?.stayTime}</span>
-                                <div className="stopPoint stopDots"></div>
-                                <span>{stopStayTime?.name}</span>
-                              </div>
-                            ))
-                          ) : (
-                            <div className="stopsDetail">
-                              <span>{perSegFlightDetail?.duration ?? "—"}</span>
-                              <div className=""></div>
-                              <span>Direct</span>
-                            </div>
-                          )}
-
-                          <div className="stopPoint"></div>
-                        </div>
-                      </div>
-
-                      <div className="EndTime">
-                        <h5>{perSegFlightDetail?.end_time}</h5>
-                        <p>{perSegFlightDetail?.end_date}</p>
-                      </div>
-                    </div>
-
-                    {visible.length ? (
-                      <div className="featureIcons">
-                        {visible.map((f) => (
-                          <div className="featureIconTooltipWrap" key={f.key}>
-                            <img src={f.icon} alt={f.key} />
-                            <span className="tooltip">{f.label}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-
-                    <div className="StartingPrice">
-                      <span>Start from</span>
-                      <h5>{d?.raw?.fare?.currencyCode ?? "$"}{price}</h5>
-                    </div>
-
-                    {/* If you want a small/mobile timing view like the one-way 'stopsOnSmall',
-                you can include it here similarly:
-                <div className="stopsOnSmall"><FlightTimingAndStops passSome={itemForTiming} /></div>
-            */}
-                  </div>
-                );
-              })}
-            </>
+              <div className="stopsOnSmall">
+                <FlightTimingAndStops passSome={itemForTiming} />
+              </div>
+            </div>
           );
         };
 

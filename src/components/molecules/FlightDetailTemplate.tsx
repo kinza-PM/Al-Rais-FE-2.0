@@ -118,6 +118,7 @@ const FlightDetailTemplate: React.FC = () => {
   const [ioReady, setIoReady] = useState(false);
 
   const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedMaxConnections, setSelectedMaxConnections] =
     useState<number>(0);
@@ -323,21 +324,21 @@ const FlightDetailTemplate: React.FC = () => {
     );
     const flightSegments: any[] = [
       {
-        // departureAirportCode: fromCode,
-        departureAirportCode: "DXB",
+        departureAirportCode: fromCode,
+        // departureAirportCode: "DXB",
         departureDate: departDate,
-        // arrivalAirportCode: toCode,
-        arrivalAirportCode: "DEL",
+        arrivalAirportCode: toCode,
+        // arrivalAirportCode: "DEL",
         cabinPreferences: [selectedCabinClassId],
       },
     ];
     if (trip === "roundtrip") {
       flightSegments.push({
-        departureAirportCode: "DEL",
-        // departureAirportCode: toCode,
+        // departureAirportCode: "DEL",
+        departureAirportCode: toCode,
         departureDate: returnDate,
-        // arrivalAirportCode: fromCode,
-        arrivalAirportCode: "DXB",
+        arrivalAirportCode: fromCode,
+        // arrivalAirportCode: "DXB",
         cabinPreferences: [selectedCabinClassId],
       });
     }
@@ -356,6 +357,7 @@ const FlightDetailTemplate: React.FC = () => {
     setResponseData([]);
     setRoundResponseData([]);
     setHasSearched(false);
+    setIsSearching(true);
     setSearchError(null);
 
     try {
@@ -403,6 +405,7 @@ const FlightDetailTemplate: React.FC = () => {
       setHasMore(false);
     } finally {
       setHasSearched(true);
+      setIsSearching(false);
     }
   };
 
@@ -532,7 +535,7 @@ const FlightDetailTemplate: React.FC = () => {
     // if (!hasBasicFilters) return;
     // Trigger once per hydrated set
     if (!lastRequestRef.current) {
-      didInitFromStore.current = false;    
+      didInitFromStore.current = false;
       handleSearch();
     }
   }, [didInitFromStore.current, fromCode, toCode, selectedCabinClassId, departDate, returnDate, trip, isPending]);
@@ -811,7 +814,7 @@ const FlightDetailTemplate: React.FC = () => {
     <div className="">
       <Loader show={loading} />
       <Loader
-        show={isPending}
+        show={isPending || isSearching}
         label="Please wait while we are looking for available flights"
       />
       <div className="topHeaderSetting">

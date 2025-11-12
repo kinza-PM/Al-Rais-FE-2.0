@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import { Amplify } from "aws-amplify";
+import { ConsoleLogger } from 'aws-amplify/utils';
 import awsconfig from "./aws-exports";
 import type { ThemeConfig } from "antd";
 import { ConfigProvider } from "antd";
@@ -42,6 +43,7 @@ const theme: ThemeConfig = {
 
 // Initialize AWS Amplify
 Amplify.configure(awsconfig);
+ConsoleLogger.LOG_LEVEL = 'ERROR';
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(
@@ -55,8 +57,8 @@ createRoot(document.getElementById("root")!).render(
       toastOptions={{
         duration: 4000,
         style: {
-          background: "#0b1220", 
-          color: "#E6EEF8", 
+          background: "#0b1220",
+          color: "#E6EEF8",
           boxShadow: "0 6px 18px rgba(2,6,23,0.6)",
           borderRadius: "10px",
         },

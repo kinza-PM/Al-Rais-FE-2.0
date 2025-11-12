@@ -29,7 +29,9 @@ const IconBtn: React.FC<{
     className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-[14px] ${disabled ? "bg-[#E6EEFF] text-[#9BB3E8] cursor-not-allowed" : "bg-[#2351A3]"
       }`}
   >
-    {children}
+    <span className="block leading-none transform -translate-y-px">
+      {children}
+    </span>
   </button>
 );
 
@@ -149,7 +151,8 @@ const PassengerCounterDropdown: React.FC<Props> = ({
             handleToggle();
           }
         }}
-        className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] focus:ring-2 flex items-center justify-between leading-none border-[#DFE7F3] focus:ring-[#2351A3]/20`}
+        className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none border-[#DFE7F3]`}
+        // className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] focus:ring-2 flex items-center justify-between leading-none border-[#DFE7F3] focus:ring-[#2351A3]/20`}
         aria-haspopup="dialog"
         aria-expanded={open || showError}
         aria-invalid={showError}
