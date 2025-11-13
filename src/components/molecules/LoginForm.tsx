@@ -100,7 +100,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
 
   return (
     <div className="flex items-center justify-center">
-      <div className="bg-white rounded-xl border border-gray-200 w-full px-4 py-10">
+      <div className="bg-white rounded-xl border border-[#E4E4E7] w-full px-4 py-10">
         {/* Logo */}
         <div className="flex justify-center mb-6">
           <Logo src={logoImg} alt="Logo" size="modal" />
@@ -111,29 +111,39 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
 
         {/* Toggle Buttons */}
         <div className="flex justify-center mb-6">
-          <button
-            className={`px-6 py-2 text-sm rounded-l-full border ${!usePhone ? 'bg-primary text-white' : 'bg-white text-gray-700 border-gray-300'}`}
-            onClick={() => {
-              setUsePhone(false);
-              setTouched(prev => ({ ...prev, email: false }));
-            }}
-          >
-            Email
-          </button>
-          <button
-            className={`px-6 py-2 text-sm rounded-r-full border ${usePhone ? 'bg-primary text-white' : 'bg-white text-gray-700 border-gray-300'}`}
-            onClick={() => {
-              setUsePhone(true);
-              setTouched(prev => ({ ...prev, email: false }));
-            }}
-          >
-            Phone
-          </button>
+          <div className="flex items-center rounded-xl ring-1 ring-[#C2CAD6] px-2 py-1">
+            <button
+              type="button"
+              onClick={() => {
+                setUsePhone(false);
+                setTouched(prev => ({ ...prev, email: false }));
+              }}
+              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${!usePhone
+                ? "bg-[#2351A3] text-white"
+                : "text-[#3D495C]"
+                }`}
+            >
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setUsePhone(true);
+                setTouched(prev => ({ ...prev, email: false }));
+              }}
+              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${usePhone
+                ? "bg-[#2351A3] text-white"
+                : "text-[#3D495C]"
+                }`}
+            >
+              Phone
+            </button>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-medium text-gray-700">
+            <label className="text-xs font-normal text-[#3D495C]">
               {usePhone ? 'Phone' : 'Email'}
             </label>
             {usePhone ? (
@@ -142,7 +152,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
                   <select
                     aria-label="Country code"
                     style={{ backgroundImage: `url(${FlagUsa})` }}
-                    className="h-10 w-24 appearance-none rounded-lg border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none bg-[var(--flag-url)] bg-no-repeat bg-[length:30px_28px] bg-[position:8px_center] pl-[55px]"
+                    className="px-3 py-2 w-24 h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent bg-[var(--flag-url)] bg-no-repeat bg-[length:26px_26px] bg-[position:8px_center] pl-[40px]"
                     value={phoneCountryCode}
                     onChange={(e) => setPhoneCountryCode(e.target.value)}
                   >
@@ -161,7 +171,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
                     value={phoneNumber}
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     onBlur={handlePhoneBlur}
-
+                    rounded="xl"
                   />
                 </div>
               </div>
@@ -175,6 +185,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
                 onBlur={handleBlur}
                 touched={touched.email}
                 error={emailHasError}
+                rounded="xl"
               />
             )}
             {touched.email && emailHasError && (
@@ -185,7 +196,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
           </div>
 
           <div>
-            <label className="text-sm font-medium text-gray-700">Password</label>
+            <label className="text-xs font-normal text-[#3D495C]">Password</label>
             <Input
               type="password"
               name="password"
@@ -195,6 +206,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
               onBlur={handleBlur}
               touched={touched.password}
               error={formData.password.trim() === ''}
+              rounded="xl"
             />
             {touched.password && formData.password.trim() === '' && (
               <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
@@ -224,20 +236,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
           </Button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-600">
+        <div className="mt-6 text-center text-sm text-[#3D495C]">
           Don’t have an account?{' '}
-          <button onClick={onSignupClick} className="text-blue-600 hover:underline">
+          <button onClick={onSignupClick} className="text-[#5383DA] hover:underline font-semibold">
             Sign up
           </button>
         </div>
 
-        <p className="mt-6 text-xs text-center text-gray-400">
+        <p className="mt-6 text-xs text-center text-[#3D495C]">
           By continuing, you agree to our{' '}
-          <a href="#" className="underline">
+          <a href="#" className="underline text-[#5383DA] font-medium">
             Terms
           </a>{' '}
           and{' '}
-          <a href="#" className="underline">
+          <a href="#" className="underline text-[#5383DA] font-medium">
             Privacy policy
           </a>
         </p>

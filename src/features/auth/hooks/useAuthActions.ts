@@ -248,7 +248,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
             syncUserWithBackend(loginResponse.user).catch(() => {});
             
             // Auto-reload page
-            window.location.reload();
+            // window.location.reload();
             
             return { success: true, message: 'Account confirmed and logged in successfully!' };
           } else {

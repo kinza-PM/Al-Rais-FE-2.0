@@ -7,15 +7,23 @@ export class AuthService {
    */
   static async signIn(credentials: LoginForm): Promise<AuthResponse> {
     try {
+      // Use email or phone as username (phone numbers should be in E.164 format)
+      const username = credentials.email;
+      
       const { isSignedIn, nextStep } = await signIn({
-        username: credentials.email,
+        username: username,
         password: credentials.password,
       });
       // signIn function doesn't throw an exception for UserNotConfirmedException - instead, it returns { isSignedIn: false } and provides the error information in a different way.
       if (nextStep.signInStep === 'CONFIRM_SIGN_UP') {
+        const isPhoneNumber = username.startsWith('+');
+        const message = isPhoneNumber
+          ? 'Account not confirmed. Please check your phone for any messages.'
+          : 'Account not confirmed. Please check your email.';
+        
         return {
           success: false,
-          message: 'Account not confirmed. Please check your email.',
+          message: message,
         };
       }
 
@@ -38,9 +46,14 @@ export class AuthService {
 
       // Handle specific AWS Cognito errors
       if (errorObj.name === 'UserNotConfirmedException') {
+        const isPhoneNumber = credentials.email.startsWith('+');
+        const message = isPhoneNumber
+          ? 'Account not confirmed. Please check your phone for the confirmation code.'
+          : 'Account not confirmed. Please check your email.';
+        
         return {
           success: false,
-          message: 'Account not confirmed. Please check your email.',
+          message: message,
         };
       }
 
@@ -63,22 +76,38 @@ export class AuthService {
    */
   static async signUp(userData: SignupForm): Promise<AuthResponse> {
     try {
+      // Check if email is actually a phone number (starts with +)
+      const isPhoneNumber = userData.email.startsWith('+');
+      
+      // Prepare user attributes
+      const userAttributes: Record<string, string> = {
+        name: userData.name,
+      };
+      
+      // If it's a phone number, use phone_number attribute, otherwise use email
+      if (isPhoneNumber) {
+        userAttributes.phone_number = userData.email; // Phone in E.164 format
+      } else {
+        userAttributes.email = userData.email;
+      }
+      
       const result = await signUp({
-        username: userData.email,
+        username: userData.email, // Use email or phone as username
         password: userData.password,
         options: {
-          userAttributes: {
-            email: userData.email,
-            name: userData.name,
-          },
+          userAttributes: userAttributes,
         },
       });
 
       // Check if user needs confirmation
       if (result.nextStep?.signUpStep === 'CONFIRM_SIGN_UP') {
+        const confirmationMessage = isPhoneNumber
+          ? 'Account created! Please check your phone for the confirmation code.'
+          : 'Account created! Please check your email to confirm your account.';
+        
         return {
           success: true,
-          message: 'Account created! Please check your email to confirm your account.',
+          message: confirmationMessage,
           requiresConfirmation: true
         };
       }
@@ -90,7 +119,6 @@ export class AuthService {
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
       const errorMessage = (errorObj.message as string) || (error as Error).message || 'Signup failed';
-
       // Handle specific signup errors
       if (errorMessage.includes('SignUp is not permitted')) {
         return {
@@ -140,6 +168,7 @@ export class AuthService {
         const user = {
           id: userId,
           email: payload?.email as string,
+          phone: payload?.phone_number as string,
           emailVerified: payload?.email_verified as boolean,
           name: payload?.name as string,
         };
@@ -157,10 +186,10 @@ export class AuthService {
   /**
    * Confirm signup with OTP code
    */
-  static async confirmSignUp(email: string, confirmationCode: string): Promise<AuthResponse> {
+  static async confirmSignUp(emailOrPhone: string, confirmationCode: string): Promise<AuthResponse> {
     try {
       await confirmSignUp({
-        username: email,
+        username: emailOrPhone, // Can be email or phone number
         confirmationCode: confirmationCode,
       });
 
@@ -198,15 +227,20 @@ export class AuthService {
   /**
    * Resend confirmation code
    */
-  static async resendConfirmationCode(email: string): Promise<AuthResponse> {
+  static async resendConfirmationCode(emailOrPhone: string): Promise<AuthResponse> {
     try {
       await resendSignUpCode({
-        username: email,
+        username: emailOrPhone, // Can be email or phone number
       });
+      
+      const isPhoneNumber = emailOrPhone.startsWith('+');
+      const message = isPhoneNumber
+        ? 'Confirmation code sent to your phone!'
+        : 'Confirmation code sent to your email!';
 
       return {
         success: true,
-        message: 'Confirmation code sent to your email!',
+        message: message,
       };
     } catch (error: unknown) {
       console.error(' AuthService: resendConfirmationCode error:', error);
@@ -238,12 +272,17 @@ export class AuthService {
   static async forgotPassword(forgotPasswordData: ForgotPasswordForm): Promise<AuthResponse> {
     try {
       await resetPassword({
-        username: forgotPasswordData.email,
+        username: forgotPasswordData.email, // Can be email or phone
       });
 
+      const isPhoneNumber = forgotPasswordData.email.startsWith('+');
+      const message = isPhoneNumber
+        ? 'Password reset code sent to your phone!'
+        : 'Password reset code sent to your email!';
+      
       return {
         success: true,
-        message: 'Password reset code sent to your email!',
+        message: message,
       };
     } catch (error: unknown) {
       console.error(' AuthService: forgotPassword error:', error);

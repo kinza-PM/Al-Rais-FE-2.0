@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Input from '../atoms/Input';
 import Button from '../atoms/Button';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import Logo from '../atoms/Logo';
 import logoImg from '../../assets/images/logo.jpg';
 import CustomToggle from '../common/CustomToggle';
+import { getEmailError } from '../../utils/validators';
+import FlagUsa from '../../assets/images/Flag-usa.png';
+import arrownDownwardIcon from '../../assets/svgs/arrow-downwards.svg';
 
 interface SignupFormProps {
   onLoginClick: () => void;
@@ -28,8 +31,18 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
   const [countdown, setCountdown] = useState(60); // 1 minute countdown
   const [canResend, setCanResend] = useState(false);
   const [emailUpdates, setEmailUpdates] = useState(false);
+  const [touched, setTouched] = useState({ name: false, email: false, password: false, confirmPassword: false });
+  const [usePhone, setUsePhone] = useState(false);
+  const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
+  const [phoneNumber, setPhoneNumber] = useState('');
 
   const { signup, confirmSignUp, resendConfirmationCode, loading, error } = useAuth();
+
+  function ChevronDown() {
+    return (
+      <img alt="arrow-icon" src={arrownDownwardIcon} className="pointer-events-none absolute right-3 top-3/5" />
+    );
+  }
 
   // Countdown timer effect
   useEffect(() => {
@@ -57,6 +70,20 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+  };
+
+  const handlePhoneBlur = () => {
+    setTouched(prev => ({ ...prev, email: true }));
+  };
+
+  const isEmailValid = (value: string) => {
+    const trimmed = value.trim();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
   };
 
   const handleOtpSubmit = async (e: React.FormEvent) => {
@@ -102,26 +129,66 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
     }
   };
 
+  // Validation logic
+  const nameError = useMemo(() => {
+    return formData.name.trim() === '' ? 'Name is required.' : null;
+  }, [formData.name]);
+
+  const emailError = useMemo(() => {
+    if (usePhone) {
+      return phoneNumber.trim() === '' ? 'Phone number is required' : null;
+    }
+    return getEmailError(formData.email, false);
+  }, [formData.email, usePhone, phoneNumber]);
+
+  const passwordError = useMemo(() => {
+    if (formData.password.trim() === '') return 'Password is required.';
+    // Add password strength validation if needed
+    return null;
+  }, [formData.password]);
+
+  const confirmPasswordError = useMemo(() => {
+    if (formData.confirmPassword.trim() === '') return 'Please confirm your password.';
+    if (formData.password !== formData.confirmPassword) return 'Passwords do not match.';
+    return null;
+  }, [formData.password, formData.confirmPassword]);
+
+  const isFormValid = useMemo(() => {
+    if (nameError || passwordError || confirmPasswordError) return false;
+
+    if (usePhone) {
+      const phoneTrim = phoneNumber.trim();
+      return phoneTrim.length > 0;
+    } else {
+      const emailTrim = formData.email.trim();
+      if (!emailTrim) return false;
+      return isEmailValid(emailTrim);
+    }
+  }, [nameError, emailError, passwordError, confirmPasswordError, usePhone, phoneNumber, formData.email]);
+
+  const emailHasError = Boolean(emailError);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSignupMessage(null);
 
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!isFormValid) {
+      setTouched({ name: true, email: true, password: true, confirmPassword: true });
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      return;
-    }
+    // Combine phone country code and number if using phone
+    const signupData = usePhone
+      ? { ...formData, email: `${phoneCountryCode}${phoneNumber}` }
+      : formData;
 
-    const result = await signup(formData);
-
+    const result = await signup(signupData);
     if (result.success) {
       if (result.requiresConfirmation) {
         // User needs to confirm with OTP
         setShowOtpInput(true);
-        setUserCredentials({ email: formData.email, password: formData.password });
-        setSignupMessage('Please check your email and enter the confirmation code below.');
+        setUserCredentials({ email: signupData.email, password: formData.password });
+        setSignupMessage(`Please check your ${userCredentials?.email?.includes('+') ? 'phone' : 'email'} and enter the confirmation code below.`);
       } else if (result.message && result.message.includes('logged in successfully')) {
         // Auto-login was successful
         onSignupSuccess?.();
@@ -132,10 +199,11 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
         // Still call onSignupSuccess after a delay to let user see the message
         setTimeout(() => {
           onSignupSuccess?.();
-        }, 2000);
+        }, 1000);
       }
     } else {
-      setSignupMessage(result.message || 'Signup failed. Please try again.');
+      //error already coming through useAuth.ts
+      // setSignupMessage(result.message || 'Signup failed. Please try again.');
     }
   };
 
@@ -159,29 +227,118 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
           </div>
 
           <h2 className="text-center text-2xl font-semibold mb-1">Welcome</h2>
-          <p className="text-center text-sm text-gray-500 mb-6">Let’s setup an account</p>
+          <p className="text-center text-sm text-gray-500 mb-6">Let's setup an account</p>
+
+          {/* Toggle Buttons */}
+          <div className="flex justify-center mb-6">
+            <div className="flex items-center rounded-xl ring-1 ring-[#C2CAD6] px-2 py-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setUsePhone(false);
+                  setTouched(prev => ({ ...prev, email: false }));
+                }}
+                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${!usePhone
+                  ? "bg-[#2351A3] text-white"
+                  : "text-[#3D495C]"
+                  }`}
+              >
+                Email
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setUsePhone(true);
+                  setTouched(prev => ({ ...prev, email: false }));
+                }}
+                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${usePhone
+                  ? "bg-[#2351A3] text-white"
+                  : "text-[#3D495C]"
+                  }`}
+              >
+                Phone
+              </button>
+            </div>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              type="text"
-              name="name"
-              label="Full Name"
-              placeholder="Enter your full name"
-              value={formData.name}
-              onChange={handleInputChange}
-              rounded="xl"
-              required
-            />
-            <div className="space-y-2">
+            <div>
               <Input
-                type="email"
-                name="email"
-                label="Email"
-                placeholder="Enter your email"
-                value={formData.email}
+                type="text"
+                name="name"
+                label="Full Name"
+                placeholder="Enter your full name"
+                value={formData.name}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
+                touched={touched.name}
+                error={Boolean(nameError)}
                 rounded="xl"
                 required
               />
+              {touched.name && nameError && (
+                <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
+                  {nameError}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <div>
+                <label className="text-sm text-xs font-normal text-[#3D495C]">
+                  {usePhone ? 'Phone' : 'Email'}
+                </label>
+                {usePhone ? (
+                  <div className="flex gap-2 mt-1">
+                    <div className="relative">
+                      <select
+                        aria-label="Country code"
+                        style={{ backgroundImage: `url(${FlagUsa})` }}
+                        className="px-3 py-2 w-24 h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent bg-[var(--flag-url)] bg-no-repeat bg-[length:26px_26px] bg-[position:8px_center] pl-[40px]"
+                        value={phoneCountryCode}
+                        onChange={(e) => setPhoneCountryCode(e.target.value)}
+                      >
+                        <option value="+1">+1</option>
+                        <option value="+92">+92</option>
+                        <option value="+971">+971</option>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                        <ChevronDown />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <Input
+                        type="number"
+                        placeholder="Phone"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        onBlur={handlePhoneBlur}
+                        touched={touched.email}
+                        error={emailHasError}
+                        rounded="xl"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <Input
+                    type="email"
+                    name="email"
+                    label=""
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    touched={touched.email}
+                    error={emailHasError}
+                    rounded="xl"
+                    required
+                  />
+                )}
+                {touched.email && emailHasError && (
+                  <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
+                    {emailError}
+                  </p>
+                )}
+              </div>
 
               <div className="flex items-center justify-between text-[11px] text-[#3D495C]">
                 <p>
@@ -201,9 +358,17 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
                 placeholder="Create a password"
                 value={formData.password}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
+                touched={touched.password}
+                error={Boolean(passwordError)}
                 rounded="xl"
                 required
               />
+              {touched.password && passwordError && (
+                <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
+                  {passwordError}
+                </p>
+              )}
               <PasswordRequirement />
             </div>
             <div className='space-y-1'>
@@ -214,9 +379,17 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
                 placeholder="Confirm your password"
                 value={formData.confirmPassword}
                 onChange={handleInputChange}
+                onBlur={handleBlur}
+                touched={touched.confirmPassword}
+                error={Boolean(confirmPasswordError)}
                 rounded="xl"
                 required
               />
+              {touched.confirmPassword && confirmPasswordError && (
+                <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
+                  {confirmPasswordError}
+                </p>
+              )}
               <PasswordRequirement />
             </div>
 
@@ -228,17 +401,11 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
               <div className="text-green-600 text-sm text-center">{signupMessage}</div>
             )}
 
-            {formData.password !== formData.confirmPassword && formData.confirmPassword && (
-              <div className="text-red-500 text-sm text-center">
-                Passwords do not match
-              </div>
-            )}
-
             <div className="flex justify-center">
               <Button
                 type="submit"
                 variant="primary"
-                disabled={loading.signup || formData.password !== formData.confirmPassword}
+                disabled={!isFormValid || loading.signup}
               >
                 {loading.signup ? 'Creating Account...' : 'Sign Up'}
               </Button>
@@ -248,7 +415,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
       ) : (
         <form onSubmit={handleOtpSubmit} className="space-y-4">
           <div className="text-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Verify Your Email</h3>
+            <h3 className="text-lg font-medium text-gray-900">Verify Your {userCredentials?.email?.includes('+') ? 'Phone' : 'Email'}</h3>
             <p className="text-sm text-gray-600 mt-2">
               We sent a verification code to <strong>{userCredentials?.email}</strong>
             </p>
@@ -314,12 +481,12 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
       {!showOtpInput && (
         <>
           <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-[#3D495C]">
               Already have an account?{' '}
               <button
                 type="button"
                 onClick={onLoginClick}
-                className="text-[#5383DA] hover:underline"
+                className="text-[#5383DA] hover:underline font-semibold"
               >
                 Login
               </button>
@@ -327,7 +494,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
           </div>
           <div className="mt-8 text-center">
             <p
-              className="text-gray-600"
+              className="text-[#3D495C]"
               style={{
                 fontFamily: 'Inter',
                 fontWeight: 400,
@@ -341,7 +508,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
               By continuing, you agree to our{' '}
               <button
                 type="button"
-                className="hover:underline"
+                className="hover:underline font-medium"
                 style={{ color: '#5383DA' }}
               >
                 Terms
@@ -349,7 +516,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
               {' '}and{' '}
               <button
                 type="button"
-                className="hover:underline"
+                className="hover:underline font-medium"
                 style={{ color: '#5383DA' }}
               >
                 Privacy policy

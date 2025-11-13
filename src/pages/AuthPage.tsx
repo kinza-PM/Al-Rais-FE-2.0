@@ -69,7 +69,7 @@ const AuthPage = () => {
       onSignupClick={onSignupClick}
     >
       <div className="flex flex-1 h-screen max-h-screen">
-        <div className="w-1/3 h-full justify-center items-center flex overflow-y-auto">
+        <div className="w-1/3 h-full justify-center items-center flex overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
           <div className="w-full max-w-md px-8 py-10">
             {mode === "login" && (
               <LoginForm
@@ -81,7 +81,8 @@ const AuthPage = () => {
             {mode === "signup" && (
               <SignupForm
                 onLoginClick={handleModeSwitch}
-                onSignupSuccess={handleBackToLogin}
+                onSignupSuccess={() => navigate("/")}
+              // onSignupSuccess={handleBackToLogin}
               />
             )}
             {mode === "forgot-password" && (
