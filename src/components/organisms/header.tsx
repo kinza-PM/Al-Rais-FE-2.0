@@ -212,11 +212,11 @@ const AppHeader: React.FC<HeaderProps> = ({
     { key: "about", label: <Link to="/about">About</Link> },
     ...(isAuthenticated
       ? [
-          {
-            key: "my-bookings",
-            label: <Link to="/my-bookings">My bookings</Link>,
-          },
-        ]
+        {
+          key: "my-bookings",
+          label: <Link to="/my-bookings">My bookings</Link>,
+        },
+      ]
       : []),
   ];
 
@@ -232,7 +232,10 @@ const AppHeader: React.FC<HeaderProps> = ({
     >
       {/* Logo */}
       <div>
-        <Link to="/">
+        <Link to="/"
+          aria-label="Go to home page"
+          className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
           <Logo src={logoSrc} alt="Al Rais Travel logo" size="small" />
         </Link>
       </div>

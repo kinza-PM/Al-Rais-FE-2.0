@@ -8,6 +8,8 @@ import CustomToggle from '../common/CustomToggle';
 import { getEmailError } from '../../utils/validators';
 import FlagUsa from '../../assets/images/Flag-usa.png';
 import arrownDownwardIcon from '../../assets/svgs/arrow-downwards.svg';
+import { Link } from 'react-router-dom';
+import { useNetworkStatus } from '../../context/NetworkStatusContext';
 
 interface SignupFormProps {
   onLoginClick: () => void;
@@ -37,6 +39,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
   const [phoneNumber, setPhoneNumber] = useState('');
 
   const { signup, confirmSignUp, resendConfirmationCode, loading, error } = useAuth();
+  const { isOnline } = useNetworkStatus();
 
   function ChevronDown() {
     return (
@@ -223,7 +226,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
       {!showOtpInput ? (
         <div>
           <div className="flex justify-center mb-6">
-            <Logo src={logoImg} alt="Logo" size="modal" />
+            <Link
+              to="/"
+              aria-label="Go to home page"
+              className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            >
+              <Logo src={logoImg} alt="Brand name" size="modal" />
+            </Link>
           </div>
 
           <h2 className="text-center text-2xl font-semibold mb-1">Welcome</h2>
@@ -405,7 +414,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
               <Button
                 type="submit"
                 variant="primary"
-                disabled={!isFormValid || loading.signup}
+                disabled={!isFormValid || loading.signup || !isOnline}
               >
                 {loading.signup ? 'Creating Account...' : 'Sign Up'}
               </Button>
@@ -444,7 +453,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
             <Button
               type="submit"
               variant="primary"
-              disabled={!otpCode || otpCode.length !== 6 || otpLoading}
+              disabled={!otpCode || otpCode.length !== 6 || otpLoading || !isOnline}
             >
               {otpLoading ? 'Verifying...' : 'Verify Account'}
             </Button>
@@ -454,7 +463,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onLoginClick, onSignupSuccess }
             <button
               type="button"
               onClick={handleResendCode}
-              disabled={!canResend || resendLoading}
+              disabled={!canResend || resendLoading || !isOnline}
               className={`text-sm underline ${canResend && !resendLoading
                 ? 'text-blue-600 hover:text-blue-800'
                 : 'text-gray-400 cursor-not-allowed'

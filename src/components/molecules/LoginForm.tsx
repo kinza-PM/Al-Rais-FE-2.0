@@ -7,6 +7,8 @@ import logoImg from '../../assets/images/logo.jpg';
 import { getEmailError } from '../../utils/validators';
 import FlagUsa from '../../assets/images/Flag-usa.png';
 import arrownDownwardIcon from '../../assets/svgs/arrow-downwards.svg';
+import { Link } from 'react-router-dom';
+import { useNetworkStatus } from '../../context/NetworkStatusContext';
 interface LoginFormProps {
   onSignupClick: () => void;
   onLoginSuccess?: () => void;
@@ -25,6 +27,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const [touched, setTouched] = useState({ email: false, password: false });
   const { login, loading, error } = useAuth();
+  const { isOnline } = useNetworkStatus();
 
   function ChevronDown() {
     return (
@@ -101,9 +104,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   return (
     <div className="flex items-center justify-center">
       <div className="bg-white rounded-xl border border-[#E4E4E7] w-full px-4 py-10">
-        {/* Logo */}
         <div className="flex justify-center mb-6">
-          <Logo src={logoImg} alt="Logo" size="modal" />
+          <Link
+            to="/"
+            aria-label="Go to home page"
+            className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          >
+            <Logo src={logoImg} alt="Brand name" size="modal" />
+          </Link>
         </div>
 
         <h2 className="text-center text-2xl font-semibold mb-1">Welcome back</h2>
@@ -172,6 +180,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
                     onChange={(e) => setPhoneNumber(e.target.value)}
                     onBlur={handlePhoneBlur}
                     rounded="xl"
+                    touched={touched.email}
+                    error={emailHasError}
                   />
                 </div>
               </div>
@@ -229,8 +239,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
           </div>
 
           <Button type="submit" className="w-full"
-            disabled={!isFormValid || !!loading?.login}
-            aria-disabled={!isFormValid || !!loading?.login}
+            disabled={!isFormValid || !!loading?.login || !isOnline}
+            aria-disabled={!isFormValid || !!loading?.login || !isOnline}
           >
             {loading?.login ? 'Logging in...' : 'Login'}
           </Button>

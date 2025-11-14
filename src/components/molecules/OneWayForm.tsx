@@ -63,6 +63,24 @@ const OneWayForm: React.FC<Props> = ({
   }, [paxCounts]);
   const handlePaxChange = React.useCallback((p: any) => {
     const next = p || {};
+    
+    // Check if the value actually changed compared to current state to prevent infinite loops
+    const allKeys = Array.from(new Set([
+      ...Object.keys(paxCounts || {}),
+      ...Object.keys(next || {}),
+      ...((passengerSchema as any[] || []).map((s: any) => s.key))
+    ]));
+    const hasChanged = allKeys.some((k) => {
+      const prevCount = (paxCounts as any)?.[k] ?? 0;
+      const nextCount = (next as any)[k] ?? 0;
+      return prevCount !== nextCount;
+    });
+    
+    // If nothing changed, don't update state
+    if (!hasChanged) {
+      return;
+    }
+    
     const schemaKeys = (passengerSchema as any[] || []).map((s: any) => s.key);
     const keys = Array.from(new Set([...Object.keys(prevCountsRef.current || {}), ...Object.keys(next), ...schemaKeys]));
     const order = passengerRequestOrder.current.slice();
@@ -83,7 +101,7 @@ const OneWayForm: React.FC<Props> = ({
     prevCountsRef.current = next as any;
     setPaxCounts(next as any);
     onChangePassengers?.(next as any, order);
-  }, [passengerSchema, onChangePassengers]);
+  }, [passengerSchema, onChangePassengers, paxCounts]);
 
   return (
     <div className="flex items-end gap-4">

@@ -61,7 +61,7 @@ const Input: React.FC<InputProps> = ({
           onChange={onChange}
           required={required}
           onBlur={onBlur}
-          className={`w-full px-3 py-2 border ${hasError ? 'border-red-500 focus:ring-red-200' : 'border-[#C2CAD6'} ${roundedClasses[rounded]} focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent ${isPasswordType ? 'pr-10' : ''}`}
+          className={`w-full px-3 py-2 border ${hasError ? 'border-red-500 focus:ring-red-200' : 'border-[#C2CAD6]'} ${roundedClasses[rounded]} focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent ${isPasswordType ? 'pr-10' : ''}`}
         />
         {isPasswordType && (
           <button
