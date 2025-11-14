@@ -18,7 +18,7 @@ const NetworkStatusBanner: React.FC = () => {
       role="status"
       aria-live="polite"
       aria-hidden={!visible}
-      className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 pointer-events-none"
+      className="fixed top-4 inset-x-0 z-50 pointer-events-none flex justify-center"
     >
       <div
         className={
