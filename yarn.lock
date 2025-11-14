@@ -2137,6 +2137,13 @@
   resolved "https://registry.npmjs.org/@types/raf/-/raf-3.4.3.tgz"
   integrity sha512-c4YAvMedbPZ5tEyxzQdMoOhhJ4RD3rngZIdwC2/qDN3d7JpEhB6fiBRKVY1lg5B7Wk+uPBjn5f39j1/2MY1oOw==
 
+"@types/react-detect-offline@^2.4.5":
+  version "2.4.5"
+  resolved "https://registry.npmjs.org/@types/react-detect-offline/-/react-detect-offline-2.4.5.tgz"
+  integrity sha512-fx8h8ShYZWGaku3RkpCMveuST9H25/twXddauBR0kWBrB0QTRTkhvLc92ihe1Xa8Yk6pKAXtccqqEtQr2e55Dg==
+  dependencies:
+    "@types/react" "*"
+
 "@types/react-dom@*", "@types/react-dom@^19.1.6":
   version "19.1.6"
   resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.6.tgz"
