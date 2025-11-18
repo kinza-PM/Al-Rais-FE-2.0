@@ -1,7 +1,9 @@
 import axios from "axios";
 import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
+// import { StorageService } from "../utils/storage";
+// import { hashString } from "../utils/crypto";
+import { TokenService } from "./tokenService";
 import { StorageService } from "../utils/storage";
-import { hashString } from "../utils/crypto";
 
 const flightApis = ["/flightSearch", "/moreFareSearch", "/flightProvBooking", "/fareRuleSearch", "/reservationFlightBooking"];
 
@@ -18,9 +20,11 @@ export const axiosClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-axiosClient.interceptors.request.use((config) => {
-  // const token = yourAuthStore.getState().token;
-  // if (token) config.headers.Authorization = `Bearer ${token}`;
+axiosClient.interceptors.request.use(async (config) => {
+  const token = await TokenService.getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
 
   if (flightApis.some(prefix => config.url?.startsWith(prefix))) {
     config.baseURL = FLIGHT_API_BASE;
@@ -29,24 +33,60 @@ axiosClient.interceptors.request.use((config) => {
   return config;
 });
 
-export const userGuestOrLoginHeaders = async () => {
-  const isAuthenticated = StorageService.isAuthenticated();
+axiosClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const serverMsg =
+      error.response?.data?.message ||
+      (typeof error.response?.data === "string" ? error.response.data : "") ||
+      "";
+    console.log({ serverMsg });
+    console.log({ error });
+    if (error.response?.status === 401 && serverMsg.includes("Unauthorized: Invalid or expired token")) {
+      const isAuthenticated = StorageService.isAuthenticated?.() ?? false;
+      console.log({ isAuthenticated });
+      if (!isAuthenticated) {
+        if (!originalRequest._guestRetry) {
+          originalRequest._guestRetry = true;
+          try {
+            const newGuestToken = await TokenService.getGuestToken();
 
-  if (isAuthenticated) {
-    const user = StorageService.getUser();
-    const userId = user?.id ?? "";
-    const secret = import.meta.env.VITE_HASH_SECRET || "";
-    const hashedUserId = userId ? await hashString(userId, secret) : "";
-    return {
-      user_type: "user",
-      user_id: hashedUserId,
-    } as Record<string, string>;
+            if (newGuestToken) {
+              originalRequest.headers = originalRequest.headers || {};
+              originalRequest.headers.Authorization = `Bearer ${newGuestToken}`;
+              return axiosClient(originalRequest);
+            } else {
+              TokenService.clearToken();
+            }
+          } catch (guestErr) {
+            console.error("Guest token regeneration failed:", guestErr);
+            TokenService.clearToken();
+          }
+        }
+
+        return Promise.reject(error);
+      }
+
+      if (isAuthenticated) {
+        console.warn("Authenticated user token invalid/expired — forcing logout.");
+
+        try {
+          TokenService.clearToken();
+          StorageService.clearAuth?.();
+          window.location.href = "/auth";
+          return new Promise(() => { });
+        } catch (logoutErr) {
+          console.error("Error during forced logout:", logoutErr);
+        }
+
+        return Promise.reject(error);
+      }
+    }
+
+    return Promise.reject(error);
   }
-
-  return {
-    user_type: "guest",
-  } as Record<string, string>;
-};
+);
 
 export function toApiError(source: string, err: unknown): Error {
   if (axios.isAxiosError(err)) {
