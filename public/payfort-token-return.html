@@ -1,0 +1,149 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Processing Payment...</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      backdrop-filter: blur(6px);
+    }
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.3);
+      border-top: 3px solid white;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
+    }
+    @keyframes spin { 0%{ transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="spinner"></div>
+    <h2>Processing Payment...</h2>
+    <p>Please wait — you will be redirected shortly.</p>
+  </div>
+
+  <script>
+    (function () {
+      try {
+        const params = {};
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.forEach((v, k) => params[k] = v);
+        const payload = params;
+
+        try {
+          window.parent.postMessage(payload, "*");
+        } catch (e) {
+          console.error("postMessage failed:", e);
+        }
+
+      } catch (err) {
+        console.error("Callback error:", err);
+        const cont = document.querySelector('.container');
+        if (cont) cont.innerHTML = '<h2>Error</h2><p>An error occurred while processing the payment.</p>';
+      }
+    })();
+  </script>
+</body>
+</html> -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Processing Payment...</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        backdrop-filter: blur(6px);
+      }
+      .spinner {
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top: 3px solid white;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        animation: spin 1s linear infinite;
+        margin: 20px auto;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="spinner"></div>
+      <h2>Processing Payment...</h2>
+      <p>Please wait — you will be redirected shortly.</p>
+    </div>
+
+    <script>
+      (function () {
+        try {
+          // Extract parameters from URL (after redirect)
+          const urlParams = new URLSearchParams(window.location.search);
+          const payload = {};
+
+          // Convert URLSearchParams to object
+          for (const [key, value] of urlParams.entries()) {
+            payload[key] = value;
+          }
+
+          // console.log("🔄 Sending payload to parent:", payload);
+
+          // Send to parent window
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage(payload, "*");
+          } else {
+            console.error("No parent window found");
+          }
+        } catch (err) {
+          console.error("Callback error:", err);
+          const cont = document.querySelector(".container");
+          if (cont) {
+            cont.innerHTML =
+              "<h2>Error</h2><p>An error occurred while processing the payment.</p>";
+          }
+        }
+      })();
+    </script>
+  </body>
+</html>

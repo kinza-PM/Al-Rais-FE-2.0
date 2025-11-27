@@ -5,7 +5,7 @@ import mealIcon from "../../assets/svgs/meals.svg";
 import portIcon from "../../assets/svgs/ports.svg";
 import wifiIcon from "../../assets/svgs/wifi.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
-import { useState } from "react";
+import React, { useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
@@ -112,9 +112,8 @@ export default function FlightBookingReviewSection({
                 {/* LEFT: Forms */}
                 <div className="space-y-4">
                     {passengers.map((p: any, idx: number) => (
-                        <>
+                        <React.Fragment key={p.passengerKey || idx}>
                             <CardShell
-                                key={p.passengerKey || idx}
                                 title={`Contact person ${String(idx + 1).padStart(
                                     2,
                                     "0"
@@ -148,28 +147,28 @@ export default function FlightBookingReviewSection({
 
                                         {/* Email - only show if required by fare rules */}
                                         {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
-                                            <>
-                                                <dt className="text-[12px] text-[#3D495C]">Email</dt>
-                                                <dd className="text-right">
-                                                    <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                        {p.contact?.contactsProvided?.[0]
-                                                            ?.emailAddress?.[0] || "—"}
-                                                    </span>
-                                                </dd>
-                                            </>
+                                        <>
+                                            <dt className="text-[12px] text-[#3D495C]">Email</dt>
+                                            <dd className="text-right">
+                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                    {p.contact?.contactsProvided?.[0]
+                                                        ?.emailAddress?.[0] || "—"}
+                                                </span>
+                                            </dd>
+                                        </>
                                         {/* )} */}
 
                                         {/* Phone - only show if required by fare rules */}
                                         {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
-                                            <>
-                                                <dt className="text-[12px] text-[#3D495C]">Phone</dt>
-                                                <dd className="text-right">
-                                                    {p.contact?.contactsProvided?.[0]?.phone?.[0]
-                                                        ?.phoneNumber
-                                                        ? `${p.contact.contactsProvided[0].phone[0].phoneNumber}`
-                                                        : "—"}
-                                                </dd>
-                                            </>
+                                        <>
+                                            <dt className="text-[12px] text-[#3D495C]">Phone</dt>
+                                            <dd className="text-right">
+                                                {p.contact?.contactsProvided?.[0]?.phone?.[0]
+                                                    ?.phoneNumber
+                                                    ? `${p.contact.contactsProvided[0].phone[0].phoneNumber}`
+                                                    : "—"}
+                                            </dd>
+                                        </>
                                         {/* )} */}
                                     </dl>
                                 </div>
@@ -245,7 +244,7 @@ export default function FlightBookingReviewSection({
                                     </dl>
                                 </div>
                             </CardShell>
-                        </>
+                        </React.Fragment>
                     ))}
 
                     {/* <CardShell

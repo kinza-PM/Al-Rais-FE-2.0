@@ -16,7 +16,7 @@ import EmirateLogo from "../../assets/images/emirates.png";
 import FlagUae from "../../assets/svgs/Flag-uae.svg";
 import Tabby from "../../assets/images/tabby.png";
 import Tamara from "../../assets/images/tamara.png";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import CardCollapseToggle from "../common/CardCollapseToggle";
 import Button from "../atoms/Button";
@@ -26,11 +26,22 @@ import {
   buildFlightSegmentFromTrip,
   formatMoney,
   getPriceCabinClassForFlightSummary,
+  warningToast,
 } from "../../utils/helpers";
-import { useFlightReservationBooking } from "../../hooks/useFlightBooking";
+import {
+  useFlightReservationBooking,
+  useRetrieveFlightBooking,
+} from "../../hooks/useFlightBooking";
 import toast from "react-hot-toast";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
-import type { FlightFinalReservedBooking } from "../../utils/flightBookingHelper";
+import {
+  openBlankPopupAndCheckWebisteAllowPopup,
+  validateReservationFlightBookingData,
+  waitFor3DSecurePaymentPopupReturnResponse,
+  type FlightFinalReservedBooking,
+} from "../../utils/flightBookingHelper";
+import { usePayfortPayment } from "../../hooks/usePayment";
+import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
 
 type PaymentMethod = "card" | "apple" | "google";
 
@@ -73,8 +84,29 @@ export default function FlightBookingPaymentSection({
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
   const [openAddress, setOpenAddress] = useState(true);
   const [openPrice, setOpenPrice] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  //retrieve flight booking
+  const [isPolling, setIsPolling] = useState(false);
+  const timeoutRef = useRef<number | null>(null);
+
+  const [cardDetails, setCardDetails] = useState({
+    number: "",
+    expiryDisplay: "",
+    expiry: "",
+    cvv: "",
+    holderName: "",
+  });
 
   const { mutateAsync, isPending } = useFlightReservationBooking();
+  const {
+    mutateAsync: retrieveFlightBookingMutateAsync,
+    isPending: retrieveFlightBookingPending,
+  } = useRetrieveFlightBooking();
+  const { mutateAsync: paymentMutateAsync, isPending: paymentPending } =
+    usePayfortPayment();
+
+  const { initiateTokenization, isLoading: isTokenizing } =
+    usePayFortTokenization();
 
   const assets = {
     EmirateLogo,
@@ -99,28 +131,251 @@ export default function FlightBookingPaymentSection({
     value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
   };
 
-  const handleReservationFlightBooking = async () => {
+  const handleCardFieldChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    const { name, value } = e.target;
+
+    if (name === "number") {
+      const digits = value.replace(/\D/g, "").slice(0, 16);
+      const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+
+      setCardDetails((prev) => ({
+        ...prev,
+        number: formatted,
+      }));
+      return;
+    }
+    if (name === "expiry") {
+      const digits = value.replace(/\D/g, "").slice(0, 4);
+      const mm = digits.slice(0, 2);
+      const yy = digits.slice(2, 4);
+
+      let display = mm;
+      if (yy.length) display = `${mm}/${yy}`;
+
+      const stored = yy.length === 2 && mm.length === 2 ? `${yy}${mm}` : "";
+
+      setCardDetails((prev) => ({
+        ...prev,
+        expiryDisplay: display,
+        expiry: stored,
+      }));
+      return;
+    }
+
+    if (name === "cvv") {
+      const digits = value.replace(/\D/g, "").slice(0, 4);
+      setCardDetails((prev) => ({ ...prev, cvv: digits }));
+      return;
+    }
+
+    setCardDetails((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const generatePayfortPaymentTokenization = async () => {
+    const { valid, error } = validateReservationFlightBookingData(
+      reservation,
+      cardDetails
+    );
+    if (!valid) {
+      toast.error(error || "Validation failed.");
+      return;
+    }
+    setIsProcessing(true);
     try {
-      const response = await mutateAsync(reservation);
-      if (
-        response?.meta?.success &&
-        response?.meta?.statusMessage == "SUCCESS"
-      ) {
-        toast.success(response?.meta?.actionType);
-        const updated = response?.data?.[0];
+      const cleanCardNumber = (cardDetails.number || "").replace(/\s+/g, "");
+      const expiry = cardDetails.expiry || ""; // 'YYMM'
+      const cvv = cardDetails.cvv || "";
+      const cardHolder =
+        cardDetails.holderName || reservation?.customerInfo?.name || "Customer";
+
+      const payload = await initiateTokenization({
+        cardNumber: cleanCardNumber,
+        expiry,
+        cvv,
+        cardHolder,
+      });
+      if (payload?.response_message === "Success") {
+        onReservationChange?.("paymentDetails.cardInfo", payload?.token_name);
+        await handlePayfortFlightPayment(payload?.token_name);
+        return;
+      }
+      toast.error(payload?.response_message || "Tokenization failed.");
+    } catch (err: any) {
+      console.error("Tokenize error (component):", err);
+      toast.error(err?.message || "Tokenization failed.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayfortFlightPayment = async (tokenization: string) => {
+    let popup: Window | null = null;
+    setIsProcessing(true);
+    try {
+      //check popup allows or not before actual payment
+      try {
+        popup = openBlankPopupAndCheckWebisteAllowPopup(
+          "payfort3dsWindow",
+          600,
+          800
+        );
+      } catch (err: any) {
+        toast.error(err?.message || "Please allow popups for this site.");
+        return;
+      }
+
+      const threeDsMessagePromise =
+        waitFor3DSecurePaymentPopupReturnResponse(120000);
+
+      const paymentPayload = {
+        token_name: tokenization ?? null,
+        amount: reservation?.paymentDetails?.transactionAmount,
+        email: reservation?.customerInfo?.emailAddress,
+      };
+      const response = await paymentMutateAsync(paymentPayload);
+
+      const threeDsUrl = response?.["3ds_url"];
+      if (threeDsUrl) {
+        try {
+          popup!.location.href = threeDsUrl;
+        } catch (err) {
+          try {
+            popup!.location.assign(threeDsUrl);
+          } catch (_) {
+            /* ignore */
+          }
+        }
+
+        const threeDsResult = await threeDsMessagePromise;
+
+        const respMsg = String(
+          threeDsResult?.response_message || ""
+        ).toLowerCase();
+        const acqMsg = String(
+          threeDsResult?.acquirer_response_message || ""
+        ).toLowerCase();
+
+        if (respMsg.includes("success") && acqMsg.includes("success")) {
+          toast.success("Payment successful!");
+          await handleReservationFlightBooking(tokenization);
+        } else {
+          toast.error(
+            threeDsResult?.response_message || "3DS authentication failed"
+          );
+        }
+      } else {
         if (
-          updated &&
-          typeof onFinalReservationFlightBookingSuccess === "function"
+          String(response?.message || "")
+            .toLowerCase()
+            .includes("success")
         ) {
-          onFinalReservationFlightBookingSuccess(updated);
+          toast.success("Payment successful!");
+          await handleReservationFlightBooking(tokenization);
+        } else {
+          toast.error(response?.response_message || "Payment failed");
         }
-        if (typeof onNext === "function") {
-          onNext();
-        }
+      }
+      return;
+    } catch (error) {
+      const err = extractErrorFromAxiosApiError(error);
+      toast.error(err);
+    } finally {
+      // always cleanup/close popup if still open
+      try {
+        if (popup && !popup.closed) popup.close();
+      } catch (_) {}
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReservationFlightBooking = async (tokenization: string) => {
+    try {
+      setTimeout(() => {
+        warningToast("Initializing reservation booking request...");
+      }, 500);
+      const reservationWithToken = {
+        ...reservation,
+        paymentDetails: {
+          ...(reservation?.paymentDetails || {}),
+          cardInfo: tokenization,
+        },
+      };
+      const response = await mutateAsync(reservationWithToken);
+
+      if (!response?.meta?.success) {
+        toast.error("Booking failed");
+        return;
+      }
+
+      const { statusMessage, actionType } = response.meta;
+      const updated = response?.data?.[0];
+
+      switch (statusMessage) {
+        case "SUCCESS":
+          handleBookingSuccess(updated, actionType);
+          break;
+        case "FETCH LATER":
+          setIsPolling(true);
+          timeoutRef.current = setTimeout(() => {
+            retrieveFlightBooking(reservationWithToken.offerId);
+          }, 110000);
+          break;
+
+        default:
+          toast.error("Unknown response status");
       }
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
+      setIsPolling(false);
+    }
+  };
+
+  // Retrieve flight booking - separate function
+  const retrieveFlightBooking = async (offerId: string) => {
+    try {
+      const retrieveFlightResponse = await retrieveFlightBookingMutateAsync({
+        offerId,
+      });
+      if (
+        retrieveFlightResponse?.meta?.success &&
+        retrieveFlightResponse?.meta?.statusMessage === "SUCCESS"
+      ) {
+        handleBookingSuccess(
+          retrieveFlightResponse?.data?.[0],
+          "Flight booked successfully"
+        );
+      } else {
+        toast.error("Failed to retrieve flight booking");
+      }
+    } catch (error) {
+      const err = extractErrorFromAxiosApiError(error);
+      toast.error(err);
+    } finally {
+      setIsPolling(false);
+      timeoutRef.current = null;
+    }
+  };
+
+  // Success handler - repeated logic ko extract kiya
+  const handleBookingSuccess = (updated: any, successMessage?: string) => {
+    if (successMessage) {
+      toast.success(successMessage);
+    }
+
+    if (
+      updated &&
+      typeof onFinalReservationFlightBookingSuccess === "function"
+    ) {
+      onFinalReservationFlightBookingSuccess(updated);
+    }
+
+    if (typeof onNext === "function") {
+      onNext();
     }
   };
 
@@ -135,6 +390,33 @@ export default function FlightBookingPaymentSection({
     reservation?.paymentDetails?.transactionAmount,
     onReservationChange,
   ]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  const isPayButtonLoading =
+    isProcessing ||
+    isTokenizing ||
+    paymentPending ||
+    isPending ||
+    retrieveFlightBookingPending ||
+    isPolling;
+
+  const getPayButtonText = () => {
+    if (isTokenizing) return "Preparing secure payment…";
+    if (paymentPending) return "Processing your payment…";
+    if (isPending) return "Confirming your flight booking…";
+    if (retrieveFlightBookingPending || isPolling)
+      return "Retrieving booking details…";
+    return "Pay";
+  };
 
   return (
     <section className="mt-10 flex items-center justify-center px-4">
@@ -220,7 +502,7 @@ export default function FlightBookingPaymentSection({
                     type="email"
                     placeholder="Enter an email"
                     className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none"
-                    label="Email (Optional)"
+                    label="Email"
                     name="customerInfo.emailAddress"
                     value={reservation?.customerInfo?.emailAddress ?? ""}
                     onChange={onReservationChange}
@@ -232,9 +514,12 @@ export default function FlightBookingPaymentSection({
                     </label>
                     <div className="relative">
                       <TailwindCustomInput
-                        type="email"
+                        type="text"
                         placeholder="0000 0000 0000 0000"
-                        className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 pr-20 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none"
+                        className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 pr-20 text-[14px] ..."
+                        name="number"
+                        value={cardDetails.number}
+                        onChange={handleCardFieldChange}
                       />
                       <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-3">
                         <img
@@ -253,24 +538,31 @@ export default function FlightBookingPaymentSection({
 
                   <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
                     <TailwindCustomInput
-                      type="email"
+                      type="text"
                       placeholder="MM/YY"
-                      className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none"
-                      label="Expiry date"
+                      className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
+                      name="expiry"
+                      value={cardDetails.expiryDisplay}
+                      onChange={handleCardFieldChange}
                     />
                     <TailwindCustomInput
-                      type="email"
+                      type="text"
                       placeholder="000"
-                      className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none"
-                      label="Security code"
+                      className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
+                      name="cvv"
+                      value={cardDetails.cvv}
+                      onChange={handleCardFieldChange}
                     />
                   </div>
 
                   <TailwindCustomInput
-                    type="email"
+                    type="text"
                     placeholder="Enter cardholder name"
-                    className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none"
+                    className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
                     label="Cardholder name"
+                    name="holderName"
+                    value={cardDetails.holderName}
+                    onChange={handleCardFieldChange}
                   />
 
                   <div className="rounded-xl border border-[#C2CAD6] overflow-hidden">
@@ -416,9 +708,12 @@ export default function FlightBookingPaymentSection({
             type="button"
             className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold"
             overrideClasses
-            onClick={() => handleReservationFlightBooking()}
+            disabled={isPayButtonLoading}
+            onClick={() => generatePayfortPaymentTokenization()}
+            // onClick={() => handleReservationFlightBooking()}
           >
-            {isPending ? "Loading..." : "Pay"}
+            {/* {isTokenizing ? "Loading..." : "Pay"} */}
+            {getPayButtonText()}
           </Button>
 
           <div className="my-4 text-center text-[12px] text-[#3D495C]">OR</div>

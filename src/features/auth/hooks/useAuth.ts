@@ -3,6 +3,8 @@ import { useAuthActions } from './useAuthActions';
 import { usePasswordRecovery } from './usePasswordRecovery';
 import { useGuestUser } from './useGuestUser';
 import { useSessionManager } from './useSessionManager';
+import { authServiceSingleton } from '../../../services/authServiceSingleton';
+import { useEffect } from 'react';
 
 export const useAuth = () => {
   // Initialize auth state
@@ -53,6 +55,22 @@ export const useAuth = () => {
     setError: authState.setError,
   });
 
+  useEffect(() => {
+    const wrapper = async (): Promise<void> => {
+      try {
+        await authActions.signOut();
+      } catch (err) {
+        console.error('global signOut wrapper failed:', err);
+      }
+    };
+
+    authServiceSingleton.registerSignOutCallback(wrapper);
+
+    return () => {
+      authServiceSingleton.registerSignOutCallback(null);
+    };
+  }, [authActions.signOut]);
+
   return {
     // State
     user: authState.user,
@@ -63,7 +81,7 @@ export const useAuth = () => {
     // Guest user state
     isGuest: authState.isGuest,
     session: authState.session,
-    
+
     // Authentication actions
     login: authActions.login,
     signup: authActions.signup,
@@ -72,16 +90,16 @@ export const useAuth = () => {
     signOut: authActions.signOut,
     refreshAuth: authActions.refreshAuth,
     clearError: authState.clearError,
-    
+
     // Password recovery actions
     forgotPassword: passwordRecovery.forgotPassword,
     verifyResetCode: passwordRecovery.verifyResetCode,
     resetPassword: passwordRecovery.resetPassword,
-    
+
     // Guest user actions
     initializeGuestUser: guestUserManager.initializeGuestUser,
     convertGuestToRegistered: guestUserManager.convertGuestToRegistered,
-    
+
     // Session management
     checkAuth: sessionManager.checkAuth,
     getCurrentUser: sessionManager.getCurrentUser,

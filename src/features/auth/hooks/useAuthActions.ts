@@ -1,7 +1,7 @@
 import { AuthService } from '../services/authService';
 import { StorageService } from '../../../utils/storage';
 import * as UserService from '../../../services/api/userService';
-import { TokenService } from '../../../services/tokenService';
+// import { TokenService } from '../../../services/tokenService';
 import type { User, LoginForm, SignupForm, UserSession } from '../types';
 
 interface AuthState {
@@ -299,7 +299,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       UserService.clearGuestData();
       StorageService.clearAuth();
       // Clear token
-      TokenService.clearToken();
+      // TokenService.clearToken();
       
       // Create new guest user after logout
       resetAuthCheckCompleted(); // Allow re-initialization
@@ -316,7 +316,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       resetAuthCheckCompleted();
       StorageService.clearAuth();
       // Clear token even on error
-      TokenService.clearToken();
+      // TokenService.clearToken();
       // Try to create guest user even if logout had errors
       try {
         await initializeGuestUser();

@@ -55,7 +55,8 @@ const FlightBooking = () => {
       paymentDetails: {
         paymentMode: "CR",
         transactionAmount: null,
-        cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
+        // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
+        cardInfo: "",
         address: {
           label: "Billing",
           street: [],
@@ -233,7 +234,6 @@ const FlightBooking = () => {
       }));
     }
   }, [offerData?.passengersForRequest]);
-  // console.log("offerData", offerData);
 
   return (
     <>

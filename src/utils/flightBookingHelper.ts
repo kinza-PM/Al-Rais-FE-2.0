@@ -195,3 +195,128 @@ export const validatePassengersForFlightProvisionalBooking = (
 
   return { valid: true };
 };
+
+export const validateReservationFlightBookingData = (
+  reservation: any,
+  card: { number: string; expiry: string; cvv: string; holderName: string }
+) => {
+  const isEmpty = (v: any) =>
+    v === undefined || v === null || String(v).trim() === "";
+
+  if (isEmpty(card.number)) return { valid: false, error: "Card number is required." };
+  const numericCard = card.number.replace(/\s+/g, "");
+  if (!/^\d{12,19}$/.test(numericCard))
+    return { valid: false, error: "Card number looks invalid." };
+  // if (!luhnCheck(numericCard)) return { valid: false, error: "Card number failed validation." };
+
+  if (isEmpty(card.expiry)) return { valid: false, error: "Expiry date is required." };
+  if (!/^\d{4}$/.test(card.expiry))
+    return { valid: false, error: "Expiry date is invalid. Please use MM/YY." };
+
+  const yy = Number(card.expiry.slice(0, 2));
+  const mm = Number(card.expiry.slice(2, 4));
+  if (!(mm >= 1 && mm <= 12)) return { valid: false, error: "Expiry month is invalid." };
+
+  const fullYear = 2000 + yy;
+  const expiryDate = new Date(fullYear, mm, 0);
+  expiryDate.setHours(23, 59, 59, 999);
+  if (expiryDate < new Date())
+    return { valid: false, error: "Card expiry is in the past." };
+
+  if (isEmpty(card.cvv)) return { valid: false, error: "Security code (CVV) is required." };
+  if (!/^\d{3,4}$/.test(card.cvv)) return { valid: false, error: "Security code should be 3 or 4 digits." };
+
+  if (isEmpty(card.holderName)) return { valid: false, error: "Cardholder name is required." };
+
+  const address = reservation?.paymentDetails?.address ?? null;
+  if (!address)
+    return { valid: false, error: "Billing address is required." };
+
+  const street0 = Array.isArray(address.street) ? address.street[0] : address.street;
+  if (isEmpty(street0)) return { valid: false, error: "Billing address line 1 is required." };
+
+  if (isEmpty(address.postalCode)) return { valid: false, error: "Postal code is required." };
+  if (isEmpty(address.cityName)) return { valid: false, error: "City is required." };
+  if (isEmpty(address.countryCode)) return { valid: false, error: "Country is required." };
+  if (isEmpty(reservation?.customerInfo?.emailAddress)) return { valid: false, error: "Email is required." };
+
+
+  return { valid: true };
+};
+
+export const luhnCheck = (num: string) => {
+  const s = num.replace(/\s+/g, "");
+  if (!/^\d+$/.test(s)) return false;
+  let sum = 0;
+  let shouldDouble = false;
+  for (let i = s.length - 1; i >= 0; i--) {
+    let d = Number(s[i]);
+    if (shouldDouble) {
+      d = d * 2;
+      if (d > 9) d -= 9;
+    }
+    sum += d;
+    shouldDouble = !shouldDouble;
+  }
+  return sum % 10 === 0;
+};
+
+export function openBlankPopupAndCheckWebisteAllowPopup(windowName = "payfort3dsWindow", width = 600, height = 800) {
+  const left = Math.max(0, Math.floor((window.innerWidth - width) / 2));
+  const top = Math.max(0, Math.floor((window.innerHeight - height) / 2));
+  const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
+
+  const popup = window.open("", windowName, features);
+  if (!popup) {
+    throw new Error("Popup blocked. Please allow popups for this site.");
+  }
+
+  try {
+    popup.document.title = "Secure Payment";
+    popup.document.body.innerHTML = `
+      <div style="font-family: Arial, sans-serif; display:flex;align-items:center;justify-content:center;height:100vh;">
+        <div style="text-align:center">
+          <div style="font-size:16px;margin-bottom:8px;">Opening secure payment...</div>
+          <div style="font-size:12px;color:#666;">If nothing happens, allow popups or try again.</div>
+        </div>
+      </div>
+    `;
+  } catch (e) {
+  }
+
+  return popup;
+}
+
+export function waitFor3DSecurePaymentPopupReturnResponse(timeoutMs = 120000): Promise<any> {
+  return new Promise((resolve, reject) => {
+    let timeoutId: number | null = null;
+
+    const handler = (e: MessageEvent) => {
+      try {
+        const msg = e.data;
+        if (!msg || msg.source !== "payfort-3ds") return;
+        cleanup();
+        resolve(msg.payload);
+      } catch (err) {
+        cleanup();
+        reject(err);
+      }
+    };
+
+    const cleanup = () => {
+      try { window.removeEventListener("message", handler); } catch (_) { }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    };
+
+    window.addEventListener("message", handler, false);
+
+    timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("3DS flow timed out"));
+    }, timeoutMs);
+  });
+}
+

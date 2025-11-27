@@ -21,16 +21,20 @@ interface TokenData {
  * Token Service to manage authentication tokens
  * - For authenticated users: Gets token from Cognito
  * - For guest users: Fetches token from guest-token API
+ *
+ * Improvements:
+ * - In-memory cache to avoid repeated localStorage reads
+ * - Single-flight promise so concurrent callers share one guest-token request
+ * - ensureGuestToken() helper for app bootstrap/preload
  */
 export class TokenService {
     private static readonly TOKEN_EXPIRY_BUFFER = 5 * 60 * 1000; // 5 minutes before expiry
+    private static _inMemoryToken?: TokenData;
+    private static _fetchingGuestTokenPromise?: Promise<string | null>;
 
-    /**
-     * Get the appropriate token (Cognito for authenticated, guest token for guests)
-     */
     static async getToken(): Promise<string | null> {
         try {
-            const isAuthenticated = StorageService.isAuthenticated();
+            const isAuthenticated = StorageService.isAuthenticated?.() ?? false;
 
             if (isAuthenticated) {
                 return await this.getCognitoToken();
@@ -43,24 +47,25 @@ export class TokenService {
         }
     }
 
-    /**
-     * Get Cognito access token for authenticated users
-     */
     static async getCognitoToken(): Promise<string | null> {
         try {
             const session = await fetchAuthSession();
-
-            if (session.tokens?.accessToken) {
-                const accessToken = session.tokens.accessToken.toString();
+            if (session?.tokens?.idToken) {
+                const idToken = session.tokens.idToken.toString();
                 const tokenData: TokenData = {
-                    token: accessToken,
-                    expiresAt: session.tokens.accessToken.payload?.exp
-                        ? (session.tokens.accessToken.payload.exp as number) * 1000
+                    token: idToken,
+                    expiresAt: session.tokens.idToken.payload?.exp
+                        ? (session.tokens.idToken.payload.exp as number) * 1000
                         : undefined,
                 };
-                LocalStorageService.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenData);
+                this._inMemoryToken = tokenData;
+                try {
+                    LocalStorageService.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenData);
+                } catch (e) {
+                    console.warn('TokenService: Failed to persist Cognito token to localStorage', e);
+                }
 
-                return accessToken;
+                return idToken;
             }
 
             return null;
@@ -72,80 +77,119 @@ export class TokenService {
 
     /**
      * Get or fetch guest token from API
+     * - Returns in-memory token if valid
+     * - Falls back to localStorage if present & valid
+     * - Uses single-flight promise to avoid multiple concurrent API calls
      */
     static async getGuestToken(): Promise<string | null> {
+        // 1) return in-memory if valid
+        if (this._inMemoryToken && this.isTokenValid(this._inMemoryToken)) {
+            return this._inMemoryToken.token;
+        }
+
+        // 2) check localStorage cache
         try {
             const cachedToken = LocalStorageService.getItem<TokenData>(STORAGE_KEYS.AUTH_TOKEN);
-
             if (cachedToken && this.isTokenValid(cachedToken)) {
+                this._inMemoryToken = cachedToken;
                 return cachedToken.token;
             }
-
-            const response = await guestTokenClient.post<{
-                token?: string;
-                access_token?: string;
-                expiresIn?: number | string;
-                expires_in?: number | string;
-            }>(
-                GUEST_TOKEN_API_URL,
-                {}
-            );
-
-            const token = response.data.token || response.data.access_token;
-            if (!token) {
-                console.error('TokenService: No token received from guest-token API');
-                return null;
-            }
-
-            const rawExpires = response.data.expiresIn ?? response.data.expires_in;
-            let expiresAt: number | undefined;
-
-            if (rawExpires !== undefined && rawExpires !== null) {
-                const expiresSeconds = typeof rawExpires === 'string' ? parseInt(rawExpires, 10) : Number(rawExpires);
-                if (!Number.isNaN(expiresSeconds) && expiresSeconds > 0) {
-                    expiresAt = Date.now() + expiresSeconds * 1000;
-                }
-            }
-            if (!expiresAt) {
-                expiresAt = Date.now() + 24 * 60 * 60 * 1000;
-            }
-            const tokenData: TokenData = {
-                token: token,
-                expiresAt,
-            };
-            LocalStorageService.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenData);
-
-            return token;
-        } catch (error) {
-            console.error('TokenService: Error getting guest token:', error);
-            return null;
+        } catch (e) {
+            console.warn('TokenService: error reading cached token from localStorage', e);
         }
+
+        // 3) if a fetch already in progress, wait for it (single-flight)
+        if (this._fetchingGuestTokenPromise) {
+            return this._fetchingGuestTokenPromise;
+        }
+
+        // 4) start fetch and store promise so others await it
+        this._fetchingGuestTokenPromise = (async (): Promise<string | null> => {
+            try {
+                const response = await guestTokenClient.post<{
+                    token?: string;
+                    access_token?: string;
+                    expiresIn?: number | string;
+                    expires_in?: number | string;
+                }>(GUEST_TOKEN_API_URL, {});
+
+                const token = response.data.token || response.data.access_token;
+                if (!token) {
+                    console.error('TokenService: No token received from guest-token API', response.data);
+                    return null;
+                }
+
+                const rawExpires = response.data.expiresIn ?? response.data.expires_in;
+                let expiresAt: number | undefined;
+
+                if (rawExpires !== undefined && rawExpires !== null) {
+                    const expiresSeconds = typeof rawExpires === 'string' ? parseInt(rawExpires, 10) : Number(rawExpires);
+                    if (!Number.isNaN(expiresSeconds) && expiresSeconds > 0) {
+                        expiresAt = Date.now() + expiresSeconds * 1000;
+                    }
+                }
+
+                if (!expiresAt) {
+                    // fallback: 24 hours
+                    expiresAt = Date.now() + 24 * 60 * 60 * 1000;
+                }
+
+                const tokenData: TokenData = {
+                    token,
+                    expiresAt,
+                };
+
+                this._inMemoryToken = tokenData;
+                try {
+                    LocalStorageService.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenData);
+                } catch (e) {
+                    console.warn('TokenService: Failed to persist guest token to localStorage', e);
+                }
+
+                return token;
+            } catch (error) {
+                console.error('TokenService: Error fetching guest token', error);
+                return null;
+            } finally {
+                // clear the in-flight promise so future calls can retry if needed
+                this._fetchingGuestTokenPromise = undefined;
+            }
+        })();
+
+        return this._fetchingGuestTokenPromise;
     }
 
     /**
-     * Check if token is still valid (not expired)
+     * Preload guest token (call on app init to avoid first-request races)
      */
-    private static isTokenValid(tokenData: TokenData): boolean {
-        if (!tokenData.expiresAt) {
-            return true;
+    static async ensureGuestToken(): Promise<void> {
+        try {
+            await this.getGuestToken();
+        } catch (e) {
+            // ignore - requests will fetch when needed
         }
+    }
 
+    static clearToken(): void {
+        try {
+            LocalStorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+        } catch (e) {
+            console.warn('TokenService: clearToken localStorage remove failed', e);
+        }
+        this._inMemoryToken = undefined;
+        this._fetchingGuestTokenPromise = undefined;
+    }
+
+    private static isTokenValid(tokenData: TokenData): boolean {
+        if (!tokenData?.expiresAt) return true;
         return Date.now() < (tokenData.expiresAt - this.TOKEN_EXPIRY_BUFFER);
     }
 
     /**
-     * Clear stored token
-     */
-    static clearToken(): void {
-        LocalStorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-    }
-
-    /**
-     * Refresh token (get new token)
+     * Refresh token simply clears existing token and fetches a new one
      */
     static async refreshToken(): Promise<string | null> {
         this.clearToken();
         return await this.getToken();
     }
 }
-

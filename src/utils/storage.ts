@@ -4,6 +4,7 @@ const STORAGE_KEYS = {
   USER: 'al_rais_user',
   AUTH_STATUS: 'al_rais_auth_status',
   LAST_LOGIN: 'al_rais_last_login',
+  AUTH_TOKEN: 'al_rais_auth_token',
 } as const;
 
 export const StorageService = {
@@ -46,6 +47,7 @@ export const StorageService = {
     try {
       localStorage.removeItem(STORAGE_KEYS.USER);
       localStorage.removeItem(STORAGE_KEYS.AUTH_STATUS);
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.LAST_LOGIN);
     } catch (error) {
       console.error('Failed to clear auth data:', error);
@@ -65,7 +67,7 @@ export const StorageService = {
   isStoredDataValid: (): boolean => {
     const lastLogin = StorageService.getLastLogin();
     if (!lastLogin) return false;
-    
+
     const now = new Date();
     const hoursSinceLogin = (now.getTime() - lastLogin.getTime()) / (1000 * 60 * 60);
     return hoursSinceLogin < 24; // Valid for 24 hours

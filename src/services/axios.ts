@@ -4,15 +4,27 @@ import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
 // import { hashString } from "../utils/crypto";
 import { TokenService } from "./tokenService";
 import { StorageService } from "../utils/storage";
+import { authServiceSingleton } from "./authServiceSingleton";
 
-const flightApis = ["/flightSearch", "/moreFareSearch", "/flightProvBooking", "/fareRuleSearch", "/reservationFlightBooking"];
+const flightApis = [
+  "/flightSearch",
+  "/moreFareSearch",
+  "/flightProvBooking",
+  "/fareRuleSearch",
+  "/reservationFlightBooking",
+  "/retrieveFlightBooking",
+];
+const paymentApis = ["/pay"];
 
 export const API_BASE =
   import.meta.env.VITE_API_BASE ||
   "https://ie7eaxnxpg.execute-api.eu-west-1.amazonaws.com/dev";
 
 export const FLIGHT_API_BASE =
-  "https://kqq3ytqvij.execute-api.eu-west-1.amazonaws.com/dev";
+  "https://y0v4qcjjo5.execute-api.eu-west-1.amazonaws.com/dev2";
+
+export const PAYMENT_API_BASE =
+  "https://3cbnpbnuii.execute-api.eu-west-1.amazonaws.com/dev";
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
@@ -26,8 +38,10 @@ axiosClient.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  if (flightApis.some(prefix => config.url?.startsWith(prefix))) {
+  if (flightApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = FLIGHT_API_BASE;
+  } else if (paymentApis.some((prefix) => config.url?.startsWith(prefix))) {
+    config.baseURL = PAYMENT_API_BASE;
   }
 
   return config;
@@ -41,11 +55,11 @@ axiosClient.interceptors.response.use(
       error.response?.data?.message ||
       (typeof error.response?.data === "string" ? error.response.data : "") ||
       "";
-    console.log({ serverMsg });
-    console.log({ error });
-    if (error.response?.status === 401 && serverMsg.includes("Unauthorized: Invalid or expired token")) {
+    if (
+      error.response?.status === 401 &&
+      serverMsg.includes("Unauthorized: Invalid or expired token")
+    ) {
       const isAuthenticated = StorageService.isAuthenticated?.() ?? false;
-      console.log({ isAuthenticated });
       if (!isAuthenticated) {
         if (!originalRequest._guestRetry) {
           originalRequest._guestRetry = true;
@@ -69,13 +83,14 @@ axiosClient.interceptors.response.use(
       }
 
       if (isAuthenticated) {
-        console.warn("Authenticated user token invalid/expired — forcing logout.");
+        console.warn(
+          "Authenticated user token invalid/expired — forcing logout."
+        );
 
         try {
-          TokenService.clearToken();
-          StorageService.clearAuth?.();
+          await authServiceSingleton.signOut();
           window.location.href = "/auth";
-          return new Promise(() => { });
+          return new Promise(() => {});
         } catch (logoutErr) {
           console.error("Error during forced logout:", logoutErr);
         }
@@ -101,7 +116,6 @@ export function toApiError(source: string, err: unknown): Error {
   }
   return new Error((err as any)?.message || `${source} failed (unknown)`);
 }
-
 
 export const api = {
   get: async <T>(

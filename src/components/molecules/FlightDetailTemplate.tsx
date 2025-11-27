@@ -324,21 +324,21 @@ const FlightDetailTemplate: React.FC = () => {
     );
     const flightSegments: any[] = [
       {
-        departureAirportCode: fromCode,
-        // departureAirportCode: "DXB",
+        // departureAirportCode: fromCode,
+        departureAirportCode: "DXB",
         departureDate: departDate,
-        arrivalAirportCode: toCode,
-        // arrivalAirportCode: "DEL",
+        // arrivalAirportCode: toCode,
+        arrivalAirportCode: "DEL",
         cabinPreferences: [selectedCabinClassId],
       },
     ];
     if (trip === "roundtrip") {
       flightSegments.push({
-        // departureAirportCode: "DEL",
-        departureAirportCode: toCode,
+        departureAirportCode: "DEL",
+        // departureAirportCode: toCode,
         departureDate: returnDate,
-        arrivalAirportCode: fromCode,
-        // arrivalAirportCode: "DXB",
+        // arrivalAirportCode: fromCode,
+        arrivalAirportCode: "DXB",
         cabinPreferences: [selectedCabinClassId],
       });
     }

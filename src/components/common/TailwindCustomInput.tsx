@@ -9,6 +9,7 @@ type TailwindCustomInputProps = {
     onChange?: ((e: React.ChangeEvent<HTMLInputElement>) => void) | undefined;
     name?: string | undefined;
     disabled?: boolean;
+    inputRef?: React.Ref<HTMLInputElement> | null;
 };
 
 export default function TailwindCustomInput({
@@ -22,6 +23,7 @@ export default function TailwindCustomInput({
     onChange = undefined,
     name = undefined,
     disabled = false,
+    inputRef = null
 }: TailwindCustomInputProps) {
 
     const defaultClasses =
@@ -41,6 +43,7 @@ export default function TailwindCustomInput({
             ) : null}
 
             <input
+                ref={inputRef}
                 name={name}
                 type={type}
                 placeholder={placeholder}
