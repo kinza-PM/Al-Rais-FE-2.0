@@ -8,7 +8,7 @@ const awsconfig = {
   "aws_user_pools_web_client_id": "6n1f766l2qiolkqj8su4uq70ld",
   // "aws_user_pools_web_client_id": "4ll37dkksjgjb65cp96fc70k71",
   "aws_cognito_username_attributes": ["EMAIL", "PHONE_NUMBER"], // Support both email and phone
-  "aws_cognito_signup_attributes": ["EMAIL", "PHONE_NUMBER"], // Allow signup with email or phone
+  "aws_cognito_signup_attributes": ["EMAIL", "PHONE_NUMBER"],   // Allow signup with email or phone
   "aws_cognito_mfa_configuration": "OFF",
   "aws_cognito_password_protection_settings": {
     "passwordPolicyMinLength": 8,
@@ -17,4 +17,4 @@ const awsconfig = {
   "aws_cognito_verification_mechanisms": ["EMAIL", "PHONE_NUMBER"] // Support verification via email or phone
 };
 
-export default awsconfig; 
+export default awsconfig;

@@ -1,5 +1,23 @@
-import { signIn, signUp, signOut, getCurrentUser, fetchAuthSession, confirmSignUp, resendSignUpCode, resetPassword, confirmResetPassword } from 'aws-amplify/auth';
-import type { LoginForm, SignupForm, AuthResponse, User, ForgotPasswordForm, OTPVerificationForm, ResetPasswordForm } from '../types';
+import {
+  signIn,
+  signUp,
+  signOut,
+  getCurrentUser,
+  fetchAuthSession,
+  confirmSignUp,
+  resendSignUpCode,
+  resetPassword,
+  confirmResetPassword,
+} from "aws-amplify/auth";
+import type {
+  LoginForm,
+  SignupForm,
+  AuthResponse,
+  User,
+  ForgotPasswordForm,
+  OTPVerificationForm,
+  ResetPasswordForm,
+} from "../types";
 
 export class AuthService {
   /**
@@ -8,22 +26,22 @@ export class AuthService {
   static async signIn(credentials: LoginForm): Promise<AuthResponse> {
     try {
       // Use email or phone as username (phone numbers should be in E.164 format)
-      const username = credentials.email;
-      
+      const username = credentials.email.trim();
+
       const { isSignedIn, nextStep } = await signIn({
-        username: username,
+        username,
         password: credentials.password,
       });
-      // signIn function doesn't throw an exception for UserNotConfirmedException - instead, it returns { isSignedIn: false } and provides the error information in a different way.
-      if (nextStep.signInStep === 'CONFIRM_SIGN_UP') {
-        const isPhoneNumber = username.startsWith('+');
+
+      if (nextStep.signInStep === "CONFIRM_SIGN_UP") {
+        const isPhoneNumber = username.startsWith("+");
         const message = isPhoneNumber
-          ? 'Account not confirmed. Please check your phone for any messages.'
-          : 'Account not confirmed. Please check your email.';
-        
+          ? "Account not confirmed. Please check your phone for any messages."
+          : "Account not confirmed. Please check your email.";
+
         return {
           success: false,
-          message: message,
+          message,
         };
       }
 
@@ -32,35 +50,38 @@ export class AuthService {
         return {
           success: true,
           user: user || undefined,
-          message: 'Login successful',
+          message: "Login successful",
         };
       }
 
       return {
         success: false,
-        message: 'Invalid credentials',
+        message: "Invalid credentials",
       };
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
-      const errorMessage = (errorObj.message as string) || (error as Error).message || 'Login failed';
+      const errorMessage =
+        (errorObj.message as string) ||
+        (error as Error).message ||
+        "Login failed";
 
       // Handle specific AWS Cognito errors
-      if (errorObj.name === 'UserNotConfirmedException') {
-        const isPhoneNumber = credentials.email.startsWith('+');
+      if (errorObj.name === "UserNotConfirmedException") {
+        const isPhoneNumber = credentials.email.trim().startsWith("+");
         const message = isPhoneNumber
-          ? 'Account not confirmed. Please check your phone for the confirmation code.'
-          : 'Account not confirmed. Please check your email.';
-        
+          ? "Account not confirmed. Please check your phone for the confirmation code."
+          : "Account not confirmed. Please check your email.";
+
         return {
           success: false,
-          message: message,
+          message,
         };
       }
 
-      if (errorObj.name === 'NotAuthorizedException') {
+      if (errorObj.name === "NotAuthorizedException") {
         return {
           success: false,
-          message: 'Invalid credentials or user not confirmed.',
+          message: "Invalid credentials or user not confirmed.",
         };
       }
 
@@ -76,54 +97,60 @@ export class AuthService {
    */
   static async signUp(userData: SignupForm): Promise<AuthResponse> {
     try {
+      const identifier = userData.email.trim();
       // Check if email is actually a phone number (starts with +)
-      const isPhoneNumber = userData.email.startsWith('+');
-      
+      const isPhoneNumber = identifier.startsWith("+");
+
       // Prepare user attributes
       const userAttributes: Record<string, string> = {
         name: userData.name,
       };
-      
+
       // If it's a phone number, use phone_number attribute, otherwise use email
       if (isPhoneNumber) {
-        userAttributes.phone_number = userData.email; // Phone in E.164 format
+        userAttributes.phone_number = identifier; // Phone in E.164 format
       } else {
-        userAttributes.email = userData.email;
+        userAttributes.email = identifier;
       }
-      
+
       const result = await signUp({
-        username: userData.email, // Use email or phone as username
+        username: identifier, // Use email or phone as username
         password: userData.password,
         options: {
-          userAttributes: userAttributes,
+          userAttributes,
         },
       });
+      console.log("Cognito signUp response:", result);
 
       // Check if user needs confirmation
-      if (result.nextStep?.signUpStep === 'CONFIRM_SIGN_UP') {
+      if (result.nextStep?.signUpStep === "CONFIRM_SIGN_UP") {
         const confirmationMessage = isPhoneNumber
-          ? 'Account created! Please check your phone for the confirmation code.'
-          : 'Account created! Please check your email to confirm your account.';
-        
+          ? "Account created! Please check your phone for the confirmation code."
+          : "Account created! Please check your email to confirm your account.";
+
         return {
           success: true,
           message: confirmationMessage,
-          requiresConfirmation: true
+          requiresConfirmation: true,
         };
       }
 
       return {
         success: true,
-        message: 'Signup successful',
+        message: "Signup successful",
       };
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
-      const errorMessage = (errorObj.message as string) || (error as Error).message || 'Signup failed';
+      const errorMessage =
+        (errorObj.message as string) ||
+        (error as Error).message ||
+        "Signup failed";
       // Handle specific signup errors
-      if (errorMessage.includes('SignUp is not permitted')) {
+      if (errorMessage.includes("SignUp is not permitted")) {
         return {
           success: false,
-          message: 'Self-registration is disabled. Please contact support or check your AWS Cognito User Pool settings.',
+          message:
+            "Self-registration is disabled. Please contact support or check your AWS Cognito User Pool settings.",
         };
       }
 
@@ -142,12 +169,12 @@ export class AuthService {
       await signOut();
       return {
         success: true,
-        message: 'Logout successful',
+        message: "Logout successful",
       };
     } catch (error: unknown) {
       return {
         success: false,
-        message: (error as Error).message || 'Logout failed',
+        message: (error as Error).message || "Logout failed",
       };
     }
   }
@@ -165,12 +192,12 @@ export class AuthService {
         const idToken = session.tokens.idToken;
         const payload = idToken?.payload;
 
-        const user = {
+        const user: User = {
           id: userId,
-          email: payload?.email as string,
-          phone: payload?.phone_number as string,
-          emailVerified: payload?.email_verified as boolean,
-          name: payload?.name as string,
+          email: (payload?.email as string) || "",
+          phone: (payload?.phone_number as string) || "",
+          emailVerified: (payload?.email_verified as boolean) ?? false,
+          name: (payload?.name as string) || "",
         };
 
         return user;
@@ -186,34 +213,42 @@ export class AuthService {
   /**
    * Confirm signup with OTP code
    */
-  static async confirmSignUp(emailOrPhone: string, confirmationCode: string): Promise<AuthResponse> {
+  static async confirmSignUp(
+    emailOrPhone: string,
+    confirmationCode: string
+  ): Promise<AuthResponse> {
     try {
+      const identifier = emailOrPhone.trim();
+
       await confirmSignUp({
-        username: emailOrPhone, // Can be email or phone number
+        username: identifier, // Can be email or phone number
         confirmationCode: confirmationCode,
       });
 
       return {
         success: true,
-        message: 'Account confirmed successfully!',
+        message: "Account confirmed successfully!",
       };
     } catch (error: unknown) {
       console.error(error);
       const errorObj = error as Record<string, unknown>;
-      const errorMessage = (errorObj.message as string) || (error as Error).message || 'Confirmation failed';
+      const errorMessage =
+        (errorObj.message as string) ||
+        (error as Error).message ||
+        "Confirmation failed";
 
       // Handle specific AWS Cognito errors
-      if (errorObj.name === 'CodeMismatchException') {
+      if (errorObj.name === "CodeMismatchException") {
         return {
           success: false,
-          message: 'Invalid confirmation code. Please try again.',
+          message: "Invalid confirmation code. Please try again.",
         };
       }
 
-      if (errorObj.name === 'ExpiredCodeException') {
+      if (errorObj.name === "ExpiredCodeException") {
         return {
           success: false,
-          message: 'Confirmation code has expired. Please request a new one.',
+          message: "Confirmation code has expired. Please request a new one.",
         };
       }
 
@@ -227,26 +262,31 @@ export class AuthService {
   /**
    * Resend confirmation code
    */
-  static async resendConfirmationCode(emailOrPhone: string): Promise<AuthResponse> {
+  static async resendConfirmationCode(
+    emailOrPhone: string
+  ): Promise<AuthResponse> {
     try {
+      const identifier = emailOrPhone.trim();
+
       await resendSignUpCode({
-        username: emailOrPhone, // Can be email or phone number
+        username: identifier, // Can be email or phone number
       });
-      
-      const isPhoneNumber = emailOrPhone.startsWith('+');
+
+      const isPhoneNumber = identifier.startsWith("+");
       const message = isPhoneNumber
-        ? 'Confirmation code sent to your phone!'
-        : 'Confirmation code sent to your email!';
+        ? "Confirmation code sent to your phone!"
+        : "Confirmation code sent to your email!";
 
       return {
         success: true,
-        message: message,
+        message,
       };
     } catch (error: unknown) {
-      console.error(' AuthService: resendConfirmationCode error:', error);
+      console.error("AuthService: resendConfirmationCode error:", error);
       return {
         success: false,
-        message: (error as Error).message || 'Failed to resend confirmation code',
+        message:
+          (error as Error).message || "Failed to resend confirmation code",
       };
     }
   }
@@ -257,7 +297,6 @@ export class AuthService {
   static async isAuthenticated(): Promise<boolean> {
     try {
       const session = await fetchAuthSession();
-
       const isAuth = session.tokens !== undefined;
       return isAuth;
     } catch (error) {
@@ -269,38 +308,45 @@ export class AuthService {
   /**
    * Initiate forgot password flow
    */
-  static async forgotPassword(forgotPasswordData: ForgotPasswordForm): Promise<AuthResponse> {
+  static async forgotPassword(
+    forgotPasswordData: ForgotPasswordForm
+  ): Promise<AuthResponse> {
     try {
+      const identifier = forgotPasswordData.email.trim();
+
       await resetPassword({
-        username: forgotPasswordData.email, // Can be email or phone
+        username: identifier, // Can be email or phone
       });
 
-      const isPhoneNumber = forgotPasswordData.email.startsWith('+');
+      const isPhoneNumber = identifier.startsWith("+");
       const message = isPhoneNumber
-        ? 'Password reset code sent to your phone!'
-        : 'Password reset code sent to your email!';
-      
+        ? "Password reset code sent to your phone!"
+        : "Password reset code sent to your email!";
+
       return {
         success: true,
-        message: message,
+        message,
       };
     } catch (error: unknown) {
-      console.error(' AuthService: forgotPassword error:', error);
+      console.error("AuthService: forgotPassword error:", error);
       const errorObj = error as Record<string, unknown>;
-      const errorMessage = (errorObj.message as string) || (error as Error).message || 'Failed to send reset code';
+      const errorMessage =
+        (errorObj.message as string) ||
+        (error as Error).message ||
+        "Failed to send reset code";
 
       // Handle specific AWS Cognito errors
-      if (errorObj.name === 'UserNotFoundException') {
+      if (errorObj.name === "UserNotFoundException") {
         return {
           success: false,
-          message: 'No account found with this email address.',
+          message: "No account found with this email address.",
         };
       }
 
-      if (errorObj.name === 'LimitExceededException') {
+      if (errorObj.name === "LimitExceededException") {
         return {
           success: false,
-          message: 'Too many requests. Please try again later.',
+          message: "Too many requests. Please try again later.",
         };
       }
 
@@ -314,27 +360,26 @@ export class AuthService {
   /**
    * Verify OTP code for password reset
    */
-  static async verifyResetCode(otpData: OTPVerificationForm): Promise<AuthResponse> {
+  static async verifyResetCode(
+    otpData: OTPVerificationForm
+  ): Promise<AuthResponse> {
     try {
-      // AWS Amplify doesn't have a separate verify method, so we'll use this for validation
-      // The actual verification happens in confirmResetPassword
-
       if (!otpData.otp || otpData.otp.length !== 6) {
         return {
           success: false,
-          message: 'Please enter a valid 6-digit code.',
+          message: "Please enter a valid 6-digit code.",
         };
       }
 
       return {
         success: true,
-        message: 'Code verified successfully!',
+        message: "Code verified successfully!",
       };
     } catch (error: unknown) {
-      console.error(' AuthService: verifyResetCode error:', error);
+      console.error("AuthService: verifyResetCode error:", error);
       return {
         success: false,
-        message: (error as Error).message || 'Failed to verify code',
+        message: (error as Error).message || "Failed to verify code",
       };
     }
   }
@@ -342,49 +387,58 @@ export class AuthService {
   /**
    * Reset password with OTP code
    */
-  static async resetPasswordWithCode(resetData: ResetPasswordForm): Promise<AuthResponse> {
+  static async resetPasswordWithCode(
+    resetData: ResetPasswordForm
+  ): Promise<AuthResponse> {
     try {
       if (resetData.newPassword !== resetData.confirmPassword) {
         return {
           success: false,
-          message: 'Passwords do not match.',
+          message: "Passwords do not match.",
         };
       }
 
+      const identifier = resetData.email.trim();
+
       await confirmResetPassword({
-        username: resetData.email,
+        username: identifier,
         confirmationCode: resetData.otp,
         newPassword: resetData.newPassword,
       });
 
       return {
         success: true,
-        message: 'Password reset successfully! You can now login with your new password.',
+        message:
+          "Password reset successfully! You can now login with your new password.",
       };
     } catch (error: unknown) {
-      console.error(' AuthService: resetPasswordWithCode error:', error);
+      console.error("AuthService: resetPasswordWithCode error:", error);
       const errorObj = error as Record<string, unknown>;
-      const errorMessage = (errorObj.message as string) || (error as Error).message || 'Failed to reset password';
+      const errorMessage =
+        (errorObj.message as string) ||
+        (error as Error).message ||
+        "Failed to reset password";
 
       // Handle specific AWS Cognito errors
-      if (errorObj.name === 'CodeMismatchException') {
+      if (errorObj.name === "CodeMismatchException") {
         return {
           success: false,
-          message: 'Invalid verification code. Please try again.',
+          message: "Invalid verification code. Please try again.",
         };
       }
 
-      if (errorObj.name === 'ExpiredCodeException') {
+      if (errorObj.name === "ExpiredCodeException") {
         return {
           success: false,
-          message: 'Verification code has expired. Please request a new one.',
+          message: "Verification code has expired. Please request a new one.",
         };
       }
 
-      if (errorObj.name === 'InvalidPasswordException') {
+      if (errorObj.name === "InvalidPasswordException") {
         return {
           success: false,
-          message: 'Password does not meet requirements. Please try a stronger password.',
+          message:
+            "Password does not meet requirements. Please try a stronger password.",
         };
       }
 
@@ -394,4 +448,4 @@ export class AuthService {
       };
     }
   }
-} 
+}
