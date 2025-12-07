@@ -4,12 +4,12 @@ import Button from "../atoms/Button";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import Logo from "../atoms/Logo";
 import logoImg from "../../assets/images/logo.jpg";
-import CustomToggle from "../common/CustomToggle";
 import { getEmailError } from "../../utils/validators";
 import FlagUsa from "../../assets/images/Flag-usa.png";
 import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import { Link } from "react-router-dom";
 import { useNetworkStatus } from "../../context/NetworkStatusContext";
+import type { SignupMethod } from "../../features/auth/types";
 
 interface SignupFormProps {
   onLoginClick: () => void;
@@ -33,12 +33,12 @@ const SignupForm: React.FC<SignupFormProps> = ({
   const [userCredentials, setUserCredentials] = useState<{
     email: string; // this is actually "identifier" (email OR +phone)
     password: string;
+    signupMethod: SignupMethod;
   } | null>(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [countdown, setCountdown] = useState(60); // 1 minute countdown
   const [canResend, setCanResend] = useState(false);
-  const [emailUpdates, setEmailUpdates] = useState(false);
   const [touched, setTouched] = useState({
     name: false,
     email: false,
@@ -118,7 +118,11 @@ const SignupForm: React.FC<SignupFormProps> = ({
     const result = await confirmSignUp(
       userCredentials.email,
       otpCode,
-      userCredentials.password
+      userCredentials.password,
+      {
+        signupMethod: userCredentials.signupMethod,
+        contactValue: userCredentials.email,
+      }
     );
 
     setOtpLoading(false);
@@ -221,9 +225,15 @@ const SignupForm: React.FC<SignupFormProps> = ({
 
     // Build identifier (email or phone in E.164)
     const phoneTrimmed = phoneNumber.trim();
-    const signupData = usePhone
-      ? { ...formData, email: `${phoneCountryCode}${phoneTrimmed}` }
-      : { ...formData, email: formData.email.trim() };
+    const signupMethod: SignupMethod = usePhone ? "PHONE" : "EMAIL";
+    const signupIdentifier = usePhone
+      ? `${phoneCountryCode}${phoneTrimmed}`
+      : formData.email.trim();
+    const signupData = {
+      ...formData,
+      email: signupIdentifier,
+      signupMethod,
+    };
 
     console.log("Signup Data:", signupData);
 
@@ -238,6 +248,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
         setUserCredentials({
           email: signupData.email, // identifier used everywhere (email or +phone)
           password: formData.password,
+          signupMethod,
         });
         setSignupMessage(
           `Please check your ${
@@ -421,15 +432,6 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 )}
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-[#3D495C]">
-                <p>
-                  I would like to receive important updates and exciting deals
-                </p>
-                <CustomToggle
-                  checked={emailUpdates}
-                  onChange={() => setEmailUpdates((v) => !v)}
-                />
-              </div>
             </div>
             <div className="space-y-1">
               <Input

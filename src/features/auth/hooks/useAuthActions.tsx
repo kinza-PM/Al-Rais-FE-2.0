@@ -1,8 +1,11 @@
+import React from 'react';
+import { createRoot } from 'react-dom/client';
 import { AuthService } from '../services/authService';
 import { StorageService } from '../../../utils/storage';
 import * as UserService from '../../../services/api/userService';
 // import { TokenService } from '../../../services/tokenService';
-import type { User, LoginForm, SignupForm, UserSession } from '../types';
+import type { User, LoginForm, SignupForm, SignupMethod, UserSession } from '../types';
+import type { SyncUserResponse } from '../../../services/api/userService';
 
 interface AuthState {
   user: User | null;
@@ -31,6 +34,58 @@ interface AuthActions {
   initializeGuestUser: () => Promise<void>;
 }
 
+const ENABLE_LEGACY_PROFILE_SYNC = false;
+
+interface NotificationConsentModalProps {
+  channel: string;
+  contactDetail?: string | null;
+  onDecision: (allow: boolean) => void;
+}
+
+const NotificationConsentModal: React.FC<NotificationConsentModalProps> = ({
+  channel,
+  contactDetail,
+  onDecision,
+}) => {
+  React.useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, []);
+
+  return (
+    <div className="notification-consent-backdrop" role="dialog" aria-modal="true">
+      <div className="notification-consent-card">
+        <h3 className="notification-consent-title">Stay in the loop</h3>
+        <p className="notification-consent-message">
+          Receive important account notifications and exclusive deals on your {channel}.
+        </p>
+        {contactDetail && (
+          <div className="notification-consent-contact">{contactDetail}</div>
+        )}
+        <div className="notification-consent-actions">
+          <button
+            type="button"
+            className="notification-consent-btn notification-consent-btn--ghost"
+            onClick={() => onDecision(false)}
+          >
+            Not now
+          </button>
+          <button
+            type="button"
+            className="notification-consent-btn notification-consent-btn--primary"
+            onClick={() => onDecision(true)}
+          >
+            Allow notifications
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const useAuthActions = (state: AuthState, actions: AuthActions) => {
   const {
     setAuthenticatedState,
@@ -42,17 +97,91 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
     initializeGuestUser
   } = actions;
 
-  // Sync user with backend
-  const syncUserWithBackend = async (userData: User) => {
+  const resolveSignupMethod = (
+    method?: SignupMethod,
+    identifier?: string
+  ): SignupMethod => {
+    if (method) return method;
+    if (identifier?.trim().startsWith("+")) return "PHONE";
+    return "EMAIL";
+  };
+
+  const requestNotificationConsent = (
+    method: SignupMethod,
+    contactValue?: string
+  ): Promise<boolean> => {
+    if (typeof document === 'undefined') return Promise.resolve(false);
+    const channel = method === 'PHONE' ? 'phone number' : 'email address';
+    const contactDetail =
+      contactValue && contactValue.trim().length > 0 ? contactValue : null;
+
+    return new Promise((resolve) => {
+      const container = document.createElement('div');
+      document.body.appendChild(container);
+      const root = createRoot(container);
+
+      const handleDecision = (allow: boolean) => {
+        resolve(allow);
+        root.unmount();
+        if (container.parentNode) {
+          container.parentNode.removeChild(container);
+        }
+      };
+
+      root.render(
+        <NotificationConsentModal
+          channel={channel}
+          contactDetail={contactDetail}
+          onDecision={handleDecision}
+        />
+      );
+    });
+  };
+
+  const createRemoteUserRecord = async (
+    userData: User,
+    options: { signupMethod?: SignupMethod; contactValue?: string } = {}
+  ) => {
+    if (!userData?.id) {
+      return;
+    }
+
+    const signupMethod = resolveSignupMethod(
+      options.signupMethod,
+      options.contactValue
+    );
+    const defaultContact =
+      signupMethod === "PHONE" ? userData.phone : userData.email;
+    const contactValue = options.contactValue ?? defaultContact ?? undefined;
+
     try {
-      if (userData.email) {
-        await UserService.syncCognitoUser({
-          email: userData.email,
-          name: userData.name || userData.full_name,
-        });
+      const creationResult = await AuthService.createRemoteUserRecord({
+        userId: userData.id,
+        email: userData.email ?? null,
+        phoneNumber: userData.phone ?? null,
+        name: userData.full_name || userData.name || "",
+        signupMethod,
+      });
+
+      if (!creationResult?.userId || !creationResult?.createdAt) {
+        return;
       }
+
+      const allowNotifications = await requestNotificationConsent(
+        signupMethod,
+        contactValue
+      );
+
+      await AuthService.updateRemoteUserNotifications({
+        userId: creationResult.userId,
+        createdAt: creationResult.createdAt,
+        allowNotifications,
+      });
     } catch (error) {
-      console.error(' useAuthActions: Error syncing user with backend:', error);
+      console.error(
+        "useAuthActions: Failed to sync remote user record:",
+        error
+      );
     }
   };
 
@@ -69,10 +198,13 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
         UserService.clearGuestData();
         
         // Sync Cognito user with backend
-        const backendData = await UserService.syncCognitoUser({
-          email: response.user.email || '',
-          name: response.user.name,
-        });
+        let backendData: SyncUserResponse | null = null;
+        if (ENABLE_LEGACY_PROFILE_SYNC) {
+          backendData = await UserService.syncCognitoUser({
+            email: response.user.email || '',
+            name: response.user.name,
+          });
+        }
         
         if (backendData) {
           const authenticatedUser: User = {
@@ -94,7 +226,6 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
         } else {
           // Fallback to AWS Cognito user data
           setAuthenticatedState(response.user);
-          syncUserWithBackend(response.user).catch(() => {});
         }
         
         // Auto-reload for clean state
@@ -174,10 +305,13 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
             UserService.clearGuestData();
             
             // Sync Cognito user with backend
-            const backendData = await UserService.syncCognitoUser({
-              email: loginResponse.user.email || '',
-              name: loginResponse.user.name,
-            });
+            let backendData: SyncUserResponse | null = null;
+            if (ENABLE_LEGACY_PROFILE_SYNC) {
+              backendData = await UserService.syncCognitoUser({
+                email: loginResponse.user.email || '',
+                name: loginResponse.user.name,
+              });
+            }
             
             if (backendData) {
               const authenticatedUser: User = {
@@ -199,8 +333,15 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
             } else {
               // Fallback to AWS Cognito user data
               setAuthenticatedState(loginResponse.user);
-              syncUserWithBackend(loginResponse.user).catch(() => {});
             }
+
+            await createRemoteUserRecord(loginResponse.user, {
+              signupMethod: resolveSignupMethod(
+                userData.signupMethod,
+                userData.email
+              ),
+              contactValue: userData.email,
+            });
             
             // Auto-reload for clean state
             window.location.reload();
@@ -229,7 +370,12 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
   };
 
   // Confirm signup
-  const confirmSignUp = async (email: string, confirmationCode: string, password?: string) => {
+  const confirmSignUp = async (
+    email: string,
+    confirmationCode: string,
+    password?: string,
+    options?: { signupMethod?: SignupMethod; contactValue?: string }
+  ) => {
     setError(null);
     
     try {
@@ -245,8 +391,10 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
           if (loginResponse.success && loginResponse.user) {
             setAuthenticatedState(loginResponse.user);
             
-            // Sync with backend
-            syncUserWithBackend(loginResponse.user).catch(() => {});
+            await createRemoteUserRecord(loginResponse.user, {
+              signupMethod: options?.signupMethod,
+              contactValue: options?.contactValue ?? email,
+            });
             
             // Auto-reload page
             // window.location.reload();

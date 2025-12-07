@@ -12,6 +12,8 @@ export interface User {
   isGuest?: boolean; // Flag to indicate if user is a guest
 }
 
+export type SignupMethod = "EMAIL" | "PHONE";
+
 // Form types
 export interface LoginForm {
   email: string;
@@ -23,6 +25,7 @@ export interface SignupForm {
   email: string;
   password: string;
   confirmPassword: string;
+  signupMethod?: SignupMethod;
 }
 
 // Forgot password form types

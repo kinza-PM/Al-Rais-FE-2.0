@@ -129,25 +129,6 @@ export async function syncCognitoUser(
         LocalStorageService.setUserData(existingUser);
         return { user: existingUser, session };
       }
-    } else {
-      const newUser = await createUserProfile({
-        email: cognitoUser.email,
-        full_name: cognitoUser.name,
-        phone: cognitoUser.phone_number,
-      });
-
-      if (newUser) {
-        const session = await SessionService.createSession({
-          user_id: newUser.id,
-          is_guest: false,
-        });
-        if (session) {
-          LocalStorageService.clearUserData();
-          LocalStorageService.setUserId(newUser.id);
-          LocalStorageService.setUserData(newUser);
-          return { user: newUser, session };
-        }
-      }
     }
 
     return null;

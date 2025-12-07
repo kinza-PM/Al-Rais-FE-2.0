@@ -12,12 +12,32 @@ import {
 import type {
   LoginForm,
   SignupForm,
+  SignupMethod,
   AuthResponse,
   User,
   ForgotPasswordForm,
   OTPVerificationForm,
   ResetPasswordForm,
 } from "../types";
+
+interface RemoteUserPayload {
+  userId: string;
+  email: string | null;
+  phoneNumber: string | null;
+  name: string;
+  signupMethod: SignupMethod;
+}
+
+interface RemoteUserCreationResult {
+  userId: string;
+  createdAt: string;
+}
+
+interface RemoteUserUpdatePayload {
+  userId: string;
+  createdAt: string;
+  allowNotifications: boolean;
+}
 
 export class AuthService {
   /**
@@ -288,6 +308,78 @@ export class AuthService {
         message:
           (error as Error).message || "Failed to resend confirmation code",
       };
+    }
+  }
+
+  /**
+   * Create verified user record in external system
+   */
+  static async createRemoteUserRecord(
+    payload: RemoteUserPayload
+  ): Promise<RemoteUserCreationResult | null> {
+    try {
+      const response = await fetch(
+        "https://yjz5d5q2i0.execute-api.eu-west-1.amazonaws.com/users",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          "AuthService: Failed to create remote user:",
+          errorText
+        );
+        return null;
+      }
+
+      const data = (await response.json()) as RemoteUserCreationResult;
+      return data;
+    } catch (error) {
+      console.error("AuthService: Error creating remote user:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Update remote user preferences
+   */
+  static async updateRemoteUserNotifications(
+    payload: RemoteUserUpdatePayload
+  ): Promise<boolean> {
+    try {
+      const { userId, createdAt, ...body } = payload;
+      const response = await fetch(
+        `https://yjz5d5q2i0.execute-api.eu-west-1.amazonaws.com/users/${encodeURIComponent(
+          userId
+        )}/${encodeURIComponent(createdAt)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(
+          "AuthService: Failed to update remote user:",
+          errorText
+        );
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error("AuthService: Error updating remote user:", error);
+      return false;
     }
   }
 
