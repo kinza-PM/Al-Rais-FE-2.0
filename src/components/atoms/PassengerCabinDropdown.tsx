@@ -32,7 +32,7 @@ const pad2 = (n: number) => String(n).padStart(2, "0");
 const PassengerCabinDropdown: React.FC<Props> = ({
   schema = [],
   loadingPassengers,
-  maxTotal = 9,
+  maxTotal = 100,
   value,
   onChangePax,
   cabinClasses = [], // ✅ default to []

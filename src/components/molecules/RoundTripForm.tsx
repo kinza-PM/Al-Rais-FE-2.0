@@ -25,6 +25,10 @@ type Props = {
   onChangePassengers?: (p: { [k: string]: number }, order: string[]) => void;
   onChangeDepartDate?: (d: Date | null) => void;
   onChangeArrivalDate?: (d: Date | null) => void;
+  departDateError?: string;
+  arrivalDateError?: string;
+  passengersError?: string;
+  cabinClassError?: string;
 };
 
 const RoundTripForm: React.FC<Props> = ({
@@ -44,17 +48,21 @@ const RoundTripForm: React.FC<Props> = ({
   loadingCountries = false,
   fromCode = "",
   toCode = "",
-  onChangeFrom = () => { },
-  onChangeTo = () => { },
+  onChangeFrom = () => {},
+  onChangeTo = () => {},
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => { },
+  onChangeCabinClassId = () => {},
   onChangePassengers,
   onChangeDepartDate,
   onChangeArrivalDate,
+  departDateError = "",
+  arrivalDateError = "",
+  passengersError = "",
+  cabinClassError = "",
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   // const arrRef = useRef<HTMLInputElement>(null);
@@ -62,16 +70,19 @@ const RoundTripForm: React.FC<Props> = ({
   const [arrivalDate, setArrivalDate] = React.useState<Date | null>(null);
   const [, setPaxCounts] = React.useState<{ [k: string]: number }>({});
   const passengerRequestOrder = React.useRef<string[]>(
-    (passengerSchema as any[] || []).map((s: any) => s.key)
+    ((passengerSchema as any[]) || []).map((s: any) => s.key)
   );
 
-  const handlePaxChange = React.useCallback((p: any, childOrder: string[]) => {
-    const next = p || {};
-    // Use fresh order coming from PassengerCabinDropdown (already fresh expansion)
-    passengerRequestOrder.current = childOrder || [];
-    setPaxCounts(next as any);
-    onChangePassengers?.(next as any, childOrder || []);
-  }, [onChangePassengers]);
+  const handlePaxChange = React.useCallback(
+    (p: any, childOrder: string[]) => {
+      const next = p || {};
+      // Use fresh order coming from PassengerCabinDropdown (already fresh expansion)
+      passengerRequestOrder.current = childOrder || [];
+      setPaxCounts(next as any);
+      onChangePassengers?.(next as any, childOrder || []);
+    },
+    [onChangePassengers]
+  );
 
   return (
     <div className="flex items-end gap-4">
@@ -108,10 +119,18 @@ const RoundTripForm: React.FC<Props> = ({
         </label>
         <TailiwindCustomDatePicker
           value={departDate}
-          onChange={(d) => { setDepartDate(d); onChangeDepartDate?.(d); }}
+          onChange={(d) => {
+            setDepartDate(d);
+            onChangeDepartDate?.(d);
+          }}
           placeholder="Please select"
           buttonIconSrc={true}
         />
+        {departDateError && (
+          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
+            {departDateError}
+          </p>
+        )}
         {/* <div className="relative">
           <input
             ref={depRef}
@@ -140,10 +159,18 @@ const RoundTripForm: React.FC<Props> = ({
         </label>
         <TailiwindCustomDatePicker
           value={arrivalDate}
-          onChange={(d) => { setArrivalDate(d); onChangeArrivalDate?.(d); }}
+          onChange={(d) => {
+            setArrivalDate(d);
+            onChangeArrivalDate?.(d);
+          }}
           placeholder="Please select"
           buttonIconSrc={true}
         />
+        {arrivalDateError && (
+          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
+            {arrivalDateError}
+          </p>
+        )}
         {/* <div className="relative">
           <input
             ref={arrRef}
@@ -167,16 +194,23 @@ const RoundTripForm: React.FC<Props> = ({
       </div>
 
       {/* Passengers */}
-      <PassengerCabinDropdown
-        schema={passengerSchema}
-        loadingPassengers={loadingPassengers}
-        cabinClasses={cabinClasses}
-        loadingCabinClasses={loadingCabinClasses}
-        selectedCabinClassId={selectedCabinClassId}
-        onChangeCabinClassId={onChangeCabinClassId}
-        widthClass="w-[190px]"
-        onChangePax={handlePaxChange}
-      />
+      <div>
+        <PassengerCabinDropdown
+          schema={passengerSchema}
+          loadingPassengers={loadingPassengers}
+          cabinClasses={cabinClasses}
+          loadingCabinClasses={loadingCabinClasses}
+          selectedCabinClassId={selectedCabinClassId}
+          onChangeCabinClassId={onChangeCabinClassId}
+          widthClass="w-[190px]"
+          onChangePax={handlePaxChange}
+        />
+        {(passengersError || cabinClassError) && (
+          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
+            {passengersError || cabinClassError}
+          </p>
+        )}
+      </div>
     </div>
   );
 };

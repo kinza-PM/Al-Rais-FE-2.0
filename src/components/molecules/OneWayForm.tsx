@@ -25,6 +25,9 @@ type Props = {
   // lifted state callbacks
   onChangePassengers?: (p: { [k: string]: number }, order: string[]) => void;
   onChangeDepartDate?: (d: Date | null) => void;
+  departDateError?: string;
+  passengersError?: string;
+  cabinClassError?: string;
 };
 
 const OneWayForm: React.FC<Props> = ({
@@ -32,16 +35,19 @@ const OneWayForm: React.FC<Props> = ({
   loadingCountries = false,
   fromCode = "",
   toCode = "",
-  onChangeFrom = () => { },
-  onChangeTo = () => { },
+  onChangeFrom = () => {},
+  onChangeTo = () => {},
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => { },
+  onChangeCabinClassId = () => {},
   onChangePassengers,
   onChangeDepartDate,
+  departDateError = "",
+  passengersError = "",
+  cabinClassError = "",
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   const [departDate, setDepartDate] = React.useState<Date | null>(null);
@@ -61,47 +67,60 @@ const OneWayForm: React.FC<Props> = ({
   React.useEffect(() => {
     prevCountsRef.current = paxCounts;
   }, [paxCounts]);
-  const handlePaxChange = React.useCallback((p: any) => {
-    const next = p || {};
-    
-    // Check if the value actually changed compared to current state to prevent infinite loops
-    const allKeys = Array.from(new Set([
-      ...Object.keys(paxCounts || {}),
-      ...Object.keys(next || {}),
-      ...((passengerSchema as any[] || []).map((s: any) => s.key))
-    ]));
-    const hasChanged = allKeys.some((k) => {
-      const prevCount = (paxCounts as any)?.[k] ?? 0;
-      const nextCount = (next as any)[k] ?? 0;
-      return prevCount !== nextCount;
-    });
-    
-    // If nothing changed, don't update state
-    if (!hasChanged) {
-      return;
-    }
-    
-    const schemaKeys = (passengerSchema as any[] || []).map((s: any) => s.key);
-    const keys = Array.from(new Set([...Object.keys(prevCountsRef.current || {}), ...Object.keys(next), ...schemaKeys]));
-    const order = passengerRequestOrder.current.slice();
-    for (const k of keys) {
-      const prevCount = (prevCountsRef.current as any)?.[k] ?? 0;
-      const nextCount = (next as any)[k] ?? 0;
-      const diff = nextCount - prevCount;
-      if (diff > 0) {
-        for (let i = 0; i < diff; i++) order.push(k);
-      } else if (diff < 0) {
-        for (let i = 0; i < -diff; i++) {
-          const li = order.lastIndexOf(k);
-          if (li >= 0) order.splice(li, 1);
+  const handlePaxChange = React.useCallback(
+    (p: any) => {
+      const next = p || {};
+
+      // Check if the value actually changed compared to current state to prevent infinite loops
+      const allKeys = Array.from(
+        new Set([
+          ...Object.keys(paxCounts || {}),
+          ...Object.keys(next || {}),
+          ...((passengerSchema as any[]) || []).map((s: any) => s.key),
+        ])
+      );
+      const hasChanged = allKeys.some((k) => {
+        const prevCount = (paxCounts as any)?.[k] ?? 0;
+        const nextCount = (next as any)[k] ?? 0;
+        return prevCount !== nextCount;
+      });
+
+      // If nothing changed, don't update state
+      if (!hasChanged) {
+        return;
+      }
+
+      const schemaKeys = ((passengerSchema as any[]) || []).map(
+        (s: any) => s.key
+      );
+      const keys = Array.from(
+        new Set([
+          ...Object.keys(prevCountsRef.current || {}),
+          ...Object.keys(next),
+          ...schemaKeys,
+        ])
+      );
+      const order = passengerRequestOrder.current.slice();
+      for (const k of keys) {
+        const prevCount = (prevCountsRef.current as any)?.[k] ?? 0;
+        const nextCount = (next as any)[k] ?? 0;
+        const diff = nextCount - prevCount;
+        if (diff > 0) {
+          for (let i = 0; i < diff; i++) order.push(k);
+        } else if (diff < 0) {
+          for (let i = 0; i < -diff; i++) {
+            const li = order.lastIndexOf(k);
+            if (li >= 0) order.splice(li, 1);
+          }
         }
       }
-    }
-    passengerRequestOrder.current = order;
-    prevCountsRef.current = next as any;
-    setPaxCounts(next as any);
-    onChangePassengers?.(next as any, order);
-  }, [passengerSchema, onChangePassengers, paxCounts]);
+      passengerRequestOrder.current = order;
+      prevCountsRef.current = next as any;
+      setPaxCounts(next as any);
+      onChangePassengers?.(next as any, order);
+    },
+    [passengerSchema, onChangePassengers, paxCounts]
+  );
 
   return (
     <div className="flex items-end gap-4">
@@ -144,6 +163,11 @@ const OneWayForm: React.FC<Props> = ({
           placeholder="Please select"
           buttonIconSrc={true}
         />
+        {departDateError && (
+          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
+            {departDateError}
+          </p>
+        )}
         {/* <div className="relative">
           <input
             ref={depRef}
@@ -172,24 +196,30 @@ const OneWayForm: React.FC<Props> = ({
           Passengers
         </label>
         <PassengerCounterDropdown
-          maxTotal={9}
+          maxTotal={100}
           onChange={handlePaxChange}
           schema={passengerSchema}
           errorMessage={
-            (!loadingPassengers && (!passengerSchema || passengerSchema.length === 0))
+            !loadingPassengers &&
+            (!passengerSchema || passengerSchema.length === 0)
               ? "Passenger types are not available right now. Please try again later."
               : null
           }
         />
+        {passengersError && (
+          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
+            {passengersError}
+          </p>
+        )}
       </div>
 
       {/* Cabin class */}
       <div className="w-[150px]">
         <SearchableDropdown
-          options={cabinClasses.map(cc => ({
+          options={cabinClasses.map((cc) => ({
             id: cc.id,
             value: cc.id,
-            label: cc.label
+            label: cc.label,
           }))}
           value={selectedCabinClassId}
           onChange={onChangeCabinClassId}
@@ -200,8 +230,12 @@ const OneWayForm: React.FC<Props> = ({
           widthClass="w-full"
           searchPlaceholder="Search cabin classes..."
         />
+        {cabinClassError && (
+          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
+            {cabinClassError}
+          </p>
+        )}
       </div>
-
     </div>
   );
 };

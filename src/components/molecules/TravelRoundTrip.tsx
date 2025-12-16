@@ -8,7 +8,7 @@ import { Modal } from "antd";
 
 import CustomButton from "../common/CustomButton";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
 
 import cabinIcon from "../../assets/svgs/cabin.svg";
@@ -23,7 +23,12 @@ const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
 const CompareCard = React.lazy(() => import("./CompareCard"));
 // removed: format helpers are handled in utilities
 import { useNavigate } from "react-router-dom";
-import { buildPerSegmentFlightDetail, mapOfferForCompareRoundTrip, pickRandomFlightsForCompare, extractFlightFeatures } from "../../utils/searchFlightListingHelpers";
+import {
+  buildPerSegmentFlightDetail,
+  mapOfferForCompareRoundTrip,
+  pickRandomFlightsForCompare,
+  extractFlightFeatures,
+} from "../../utils/searchFlightListingHelpers";
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 
 type TravelRoundTripProps = {
@@ -31,7 +36,10 @@ type TravelRoundTripProps = {
   passengersForRequest?: { id: string; ptc: string }[];
   isLoadingMore?: boolean;
   hasMore?: boolean;
-  renderLoader?: (state: { isLoadingMore?: boolean; hasMore?: boolean }) => React.ReactNode;
+  renderLoader?: (state: {
+    isLoadingMore?: boolean;
+    hasMore?: boolean;
+  }) => React.ReactNode;
   loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   emptyState?: (() => React.ReactNode) | React.ReactNode;
 };
@@ -52,6 +60,23 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // preload tab components to reduce first-click latency
+    import("./PricingDetailCard");
+    import("./FlightDetailsCard");
+    import("./CompareCard");
+  }, []);
+
+  const detailById = useMemo(() => {
+    const lookup: Record<string | number, any[]> = {};
+    (passData || []).forEach((it) => {
+      if (it?.id !== undefined) {
+        lookup[it.id] = [it];
+      }
+    });
+    return lookup;
+  }, [passData]);
+
   // const showModalCompare = ({
   //   modalType,
   //   id,
@@ -69,10 +94,9 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   // };
 
   const HandlePriceOption = ({ id }: { id: number | undefined }) => {
-    const filtered = passData.filter((item) => item.id === id);
-    // console.log('flitered-------', filtered);
+    const filtered = (id !== undefined && detailById[id]) || [];
     setFilterDetail(filtered);
-    setFilterData([])
+    setFilterData([]);
   };
 
   const handleCancelCompare = (modalType: "compare" | "share") => {
@@ -89,17 +113,19 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   // YEH FUNCTION BILKUL THEEK HAI - ISAY MAT HATANA!
   // moved to helper: pickRandomFlightsForCompare
 
-  const handleOfferSelection = React.useCallback((offerId: string, item: any) => {
-    // console.log(offerId);
-    navigate('/flight-booking', {
-      state: {
-        offerId,
-        flightDetail: item,
-        passengersForRequest: passengersForRequest || []
-      }
-    })
-  }, [navigate, passengersForRequest]);
-
+  const handleOfferSelection = React.useCallback(
+    (offerId: string, item: any) => {
+      // console.log(offerId);
+      navigate("/flight-booking", {
+        state: {
+          offerId,
+          flightDetail: item,
+          passengersForRequest: passengersForRequest || [],
+        },
+      });
+    },
+    [navigate, passengersForRequest]
+  );
 
   const [active, setActive] = useState({ name: "", id: 0 });
 
@@ -116,11 +142,15 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     <div className="">
       {passData?.map((item: any, index: number) => {
         // Replace the existing renderRoundTopCard with this version
-        const renderRoundTopCard = (display: any, parent: any) => {
+        const renderRoundTopCard = (
+          display: any,
+          parent: any,
+          showPrice = false
+        ) => {
           const d = display ?? parent;
           const price =
-            (d?.rawTotalStartingFare) ??
-            (parent?.rawTotalStartingFare) ??
+            d?.rawTotalStartingFare ??
+            parent?.rawTotalStartingFare ??
             parent?.totalFare ??
             0;
 
@@ -137,8 +167,11 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
           const currentSeg = hasSegs ? segs[0] : null;
 
           // build per-segment flight_detail for timings/FlightTimingAndStops
-          const perSegFlightDetail = buildPerSegmentFlightDetail(d?.flight_detail || {}, currentSeg);
-          
+          const perSegFlightDetail = buildPerSegmentFlightDetail(
+            d?.flight_detail || {},
+            currentSeg
+          );
+
           // Pass all segments to FlightTimingAndStops for proper multi-segment handling
           const itemForTiming = {
             ...d,
@@ -149,7 +182,11 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
               journey: [
                 {
                   ...(raw?.journey?.[journeyIndex] || {}),
-                  flightSegments: Array.isArray(segs) ? segs : (segs ? [segs] : []),
+                  flightSegments: Array.isArray(segs)
+                    ? segs
+                    : segs
+                    ? [segs]
+                    : [],
                 },
               ],
             },
@@ -177,7 +214,10 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
           }));
 
           return (
-            <div className="topHalfCard RoundTripCardDetail" key={`round-${d?.id || parent?.id || Math.random()}`}>
+            <div
+              className="topHalfCard RoundTripCardDetail"
+              key={`round-${d?.id || parent?.id || Math.random()}`}
+            >
               <div className="fightTitle">
                 <div className="flightIcon">
                   <img src={d?.logo} alt="" />
@@ -206,9 +246,12 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 </div>
               ) : null}
 
-              <div className="StartingPrice">
+              <div className={`StartingPrice ${showPrice ? "" : "invisible"}`}>
                 <span>Start from</span>
-                <h5>{d?.raw?.fare?.currencyCode ?? "$"}{price}</h5>
+                <h5>
+                  {d?.raw?.fare?.currencyCode ?? "$"}
+                  {price}
+                </h5>
               </div>
 
               <div className="stopsOnSmall">
@@ -218,17 +261,21 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
           );
         };
 
-
         const outbound = item?.outbound ?? null;
         const inbound = item?.inbound ?? null;
 
         return (
-          <div key={index} className={`flightDetailCards ${inbound ? "flightDetailRoundTripCards" : ""}`}>
+          <div
+            key={index}
+            className={`flightDetailCards ${
+              inbound ? "flightDetailRoundTripCards" : ""
+            }`}
+          >
             <div className="forBorderBottom">
-              {renderRoundTopCard(outbound ?? item, item)}
+              {renderRoundTopCard(outbound ?? item, item, true)}
 
               {/* inbound (render only when present) */}
-              {inbound && renderRoundTopCard(inbound, item)}
+              {inbound && renderRoundTopCard(inbound, item, false)}
             </div>
 
             <div className="bottomHalfCard">
@@ -236,10 +283,11 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 <div className="modalOptions">
                   <div className="tabs">
                     <div
-                      className={`tab ${active?.name === "price" && active?.id === index
-                        ? "active"
-                        : ""
-                        }`}
+                      className={`tab ${
+                        active?.name === "price" && active?.id === index
+                          ? "active"
+                          : ""
+                      }`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
                         // setActive({ name: "price", id: index });
@@ -255,10 +303,11 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                       Price options
                     </div>
                     <div
-                      className={`tab ${active?.name === "flight" && active?.id === index
-                        ? "active"
-                        : ""
-                        }`}
+                      className={`tab ${
+                        active?.name === "flight" && active?.id === index
+                          ? "active"
+                          : ""
+                      }`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
                         // setActive({ name: "flight", id: index });
@@ -274,10 +323,11 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                       Flight details
                     </div>
                     <div
-                      className={`tab ${active?.name === "compare" && active?.id === index
-                        ? "active"
-                        : ""
-                        }`}
+                      className={`tab ${
+                        active?.name === "compare" && active?.id === index
+                          ? "active"
+                          : ""
+                      }`}
                       onClick={() => {
                         // setActive({ name: "compare", id: index });
                         setActive((prev) => {
@@ -314,11 +364,16 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     Share
                   </p> */}
                 </div>
-                <div className="selectPriceBtn" onClick={() => handleOfferSelection(item?.offerId, item)}>
+                <div
+                  className="selectPriceBtn"
+                  onClick={() => handleOfferSelection(item?.offerId, item)}
+                >
                   <CustomButton>Select Price</CustomButton>
                 </div>
               </div>
-              <React.Suspense fallback={null}>
+              <React.Suspense
+                fallback={<div className="tab-loading-placeholder">Loading…</div>}
+              >
                 {active?.name == "price" && active?.id == index ? (
                   <PricingDetailCard passSome={filterDetail} />
                 ) : active?.name == "flight" && active?.id == index ? (
@@ -326,7 +381,12 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 ) : active?.name == "compare" && active?.id == index ? (
                   <CompareCard
                     currentFlight={mapOfferForCompareRoundTrip(item)}
-                    availableFlights={pickRandomFlightsForCompare(passData || [], item.id, 4, mapOfferForCompareRoundTrip)}
+                    availableFlights={pickRandomFlightsForCompare(
+                      passData || [],
+                      item.id,
+                      4,
+                      mapOfferForCompareRoundTrip
+                    )}
                   />
                 ) : (
                   ""
@@ -545,7 +605,10 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 </div>
                 <div className="StartingPrice">
                   <p>Start from</p>
-                  <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}</h5>
+                  <h5>
+                    {item?.raw?.fare?.currencyCode ?? "$"}
+                    {item.rawTotalStartingFare}
+                  </h5>
                   {/* <h5>${item.price.economyLite.price}/per seat</h5> */}
                 </div>
               </div>

@@ -78,7 +78,7 @@ const HotelHeroSection: React.FC = () => {
                         Guests & Rooms
                     </label>
                     <PassengerCounterDropdown
-                        maxTotal={9}
+                        maxTotal={100}
                         schema={passengers as PassengerSchema}
                     // Add any additional hotel-specific passenger handling
                     />

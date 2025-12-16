@@ -66,7 +66,7 @@ const MultiCityForm: React.FC<Props> = ({
             Passengers
           </label>
           <PassengerCounterDropdown
-            maxTotal={9}
+            maxTotal={100}
             onChange={(p) => console.log(p)}
             schema={passengerSchema}
             errorMessage={

@@ -18,17 +18,24 @@ type CompareCardProps = {
   currentFlight?: any;
 };
 
-const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], currentFlight = null }) => {
+const CompareCard: React.FC<CompareCardProps> = ({
+  availableFlights = [],
+  currentFlight = null,
+}) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newFlightData, setNewFlightData] = useState<any[]>([]);
   const [localAvailable, setLocalAvailable] = useState<any[]>([]);
   const [isCurrentPinned, setIsCurrentPinned] = useState(false);
-
+  console.log("available->", availableFlights);
   const normalize = (x: any) => (x == null ? x : String(x));
 
   useEffect(() => {
     const base = Array.isArray(availableFlights) ? [...availableFlights] : [];
-    const excludeId = normalize(currentFlight?.id ?? currentFlight?.offerId ?? currentFlight?.rawMinimal?.offerId);
+    const excludeId = normalize(
+      currentFlight?.id ??
+        currentFlight?.offerId ??
+        currentFlight?.rawMinimal?.offerId
+    );
     const filtered = base.filter((f) => {
       const fid = normalize(f?.id ?? f?.offerId ?? f?.raw?.offerId);
       return fid !== excludeId;
@@ -42,7 +49,8 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
   // Normalize any leg (outbound/inbound) into an array of segment-shaped items compatible with renderSegmentSummary
   const normalizeLegSegments = (leg: any): any[] => {
     if (!leg) return [];
-    if (Array.isArray(leg.segments) && leg.segments.length > 0) return leg.segments;
+    if (Array.isArray(leg.segments) && leg.segments.length > 0)
+      return leg.segments;
     const rawSegs = leg?.raw?.journey?.[0]?.flightSegments;
     if (Array.isArray(rawSegs) && rawSegs.length > 0) {
       return rawSegs.map((s: any) => ({
@@ -52,11 +60,20 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
         flight_detail: {
           ...(leg.flight_detail || {}),
           flight_number: s?.flightNumber ?? leg.flight_detail?.flight_number,
-          flight_class: s?.cabinClass ?? s?.cabin ?? leg.flight_detail?.flight_class,
-          start_time: s?.departureDateTime ? formatTime(s?.departureDateTime) : leg.flight_detail?.start_time,
-          start_date: s?.departureDateTime ? formatDate(s?.departureDateTime) : leg.flight_detail?.start_date,
-          end_time: s?.arrivalDateTime ? formatTime(s?.arrivalDateTime) : leg.flight_detail?.end_time,
-          end_date: s?.arrivalDateTime ? formatDate(s?.arrivalDateTime) : leg.flight_detail?.end_date,
+          flight_class:
+            s?.cabinClass ?? s?.cabin ?? leg.flight_detail?.flight_class,
+          start_time: s?.departureDateTime
+            ? formatTime(s?.departureDateTime)
+            : leg.flight_detail?.start_time,
+          start_date: s?.departureDateTime
+            ? formatDate(s?.departureDateTime)
+            : leg.flight_detail?.start_date,
+          end_time: s?.arrivalDateTime
+            ? formatTime(s?.arrivalDateTime)
+            : leg.flight_detail?.end_time,
+          end_date: s?.arrivalDateTime
+            ? formatDate(s?.arrivalDateTime)
+            : leg.flight_detail?.end_date,
           duration: s?.duration ?? leg.flight_detail?.duration,
           marketingAirline: s?.marketingAirline,
         },
@@ -65,12 +82,17 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
         toCode: s?.arrivalAirportCode,
         equipment: s?.equipmentName ?? s?.equipmentType ?? null,
         seatsAvailable: s?.seatsAvailable ?? null,
-        refundable: leg?.refundable ?? leg?.raw?.fare?.fareType?.refundable ?? false,
+        refundable:
+          leg?.refundable ?? leg?.raw?.fare?.fareType?.refundable ?? false,
         baggageChecked: s?.baggageAllowance?.checkedInBaggage?.[0]
-          ? `${s?.baggageAllowance?.checkedInBaggage?.[0]?.value}${s?.baggageAllowance?.checkedInBaggage?.[0]?.unit ?? ""}`
+          ? `${s?.baggageAllowance?.checkedInBaggage?.[0]?.value}${
+              s?.baggageAllowance?.checkedInBaggage?.[0]?.unit ?? ""
+            }`
           : null,
         baggageCarry: s?.baggageAllowance?.carryOnBaggage?.[0]
-          ? `${s?.baggageAllowance?.carryOnBaggage?.[0]?.value}${s?.baggageAllowance?.carryOnBaggage?.[0]?.unit ?? ""}`
+          ? `${s?.baggageAllowance?.carryOnBaggage?.[0]?.value}${
+              s?.baggageAllowance?.carryOnBaggage?.[0]?.unit ?? ""
+            }`
           : null,
       }));
     }
@@ -80,7 +102,8 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
   // Normalize a one-way item into segments
   const normalizeOneWaySegments = (it: any): any[] => {
     if (!it) return [];
-    if (Array.isArray(it.segments) && it.segments.length > 0) return it.segments;
+    if (Array.isArray(it.segments) && it.segments.length > 0)
+      return it.segments;
     const rawSegs = it?.raw?.journey?.[0]?.flightSegments;
     if (Array.isArray(rawSegs) && rawSegs.length > 0) {
       return rawSegs.map((s: any) => ({
@@ -90,11 +113,20 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
         flight_detail: {
           ...(it.flight_detail || {}),
           flight_number: s?.flightNumber ?? it.flight_detail?.flight_number,
-          flight_class: s?.cabinClass ?? s?.cabin ?? it.flight_detail?.flight_class,
-          start_time: s?.departureDateTime ? formatTime(s?.departureDateTime) : it.flight_detail?.start_time,
-          start_date: s?.departureDateTime ? formatDate(s?.departureDateTime) : it.flight_detail?.start_date,
-          end_time: s?.arrivalDateTime ? formatTime(s?.arrivalDateTime) : it.flight_detail?.end_time,
-          end_date: s?.arrivalDateTime ? formatDate(s?.arrivalDateTime) : it.flight_detail?.end_date,
+          flight_class:
+            s?.cabinClass ?? s?.cabin ?? it.flight_detail?.flight_class,
+          start_time: s?.departureDateTime
+            ? formatTime(s?.departureDateTime)
+            : it.flight_detail?.start_time,
+          start_date: s?.departureDateTime
+            ? formatDate(s?.departureDateTime)
+            : it.flight_detail?.start_date,
+          end_time: s?.arrivalDateTime
+            ? formatTime(s?.arrivalDateTime)
+            : it.flight_detail?.end_time,
+          end_date: s?.arrivalDateTime
+            ? formatDate(s?.arrivalDateTime)
+            : it.flight_detail?.end_date,
           duration: s?.duration ?? it.flight_detail?.duration,
           marketingAirline: s?.marketingAirline,
         },
@@ -103,12 +135,17 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
         toCode: s?.arrivalAirportCode,
         equipment: s?.equipmentName ?? s?.equipmentType ?? null,
         seatsAvailable: s?.seatsAvailable ?? null,
-        refundable: it?.refundable ?? it?.raw?.fare?.fareType?.refundable ?? false,
+        refundable:
+          it?.refundable ?? it?.raw?.fare?.fareType?.refundable ?? false,
         baggageChecked: s?.baggageAllowance?.checkedInBaggage?.[0]
-          ? `${s?.baggageAllowance?.checkedInBaggage?.[0]?.value}${s?.baggageAllowance?.checkedInBaggage?.[0]?.unit ?? ""}`
+          ? `${s?.baggageAllowance?.checkedInBaggage?.[0]?.value}${
+              s?.baggageAllowance?.checkedInBaggage?.[0]?.unit ?? ""
+            }`
           : null,
         baggageCarry: s?.baggageAllowance?.carryOnBaggage?.[0]
-          ? `${s?.baggageAllowance?.carryOnBaggage?.[0]?.value}${s?.baggageAllowance?.carryOnBaggage?.[0]?.unit ?? ""}`
+          ? `${s?.baggageAllowance?.carryOnBaggage?.[0]?.value}${
+              s?.baggageAllowance?.carryOnBaggage?.[0]?.unit ?? ""
+            }`
           : null,
       }));
     }
@@ -120,10 +157,18 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
 
   const addFlightToCompare = (item: any) => {
     if (!item) return;
-    const itemId = normalize(item.id ?? item.offerId ?? item.rawMinimal?.offerId);
+    const itemId = normalize(
+      item.id ?? item.offerId ?? item.rawMinimal?.offerId
+    );
 
     setNewFlightData((prev) => {
-      if (prev.some((p) => normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) === itemId)) return prev;
+      if (
+        prev.some(
+          (p) =>
+            normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) === itemId
+        )
+      )
+        return prev;
 
       if (!isCurrentPinned && currentFlight) {
         const newArr = [currentFlight, item];
@@ -132,30 +177,54 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
       }
       return [...prev, item];
     });
-    setLocalAvailable((prev) => prev.filter((p) => normalize(p.id ?? p.offerId ?? p.raw?.offerId) !== itemId));
+    setLocalAvailable((prev) =>
+      prev.filter(
+        (p) => normalize(p.id ?? p.offerId ?? p.raw?.offerId) !== itemId
+      )
+    );
     setIsModalOpen(false);
   };
 
   const removeFromCompare = (itemIdRaw: any) => {
     const itemId = normalize(itemIdRaw);
-    const currentId = currentFlight ? normalize(currentFlight.id ?? currentFlight.offerId ?? currentFlight.rawMinimal?.offerId) : null;
+    const currentId = currentFlight
+      ? normalize(
+          currentFlight.id ??
+            currentFlight.offerId ??
+            currentFlight.rawMinimal?.offerId
+        )
+      : null;
 
     if (isCurrentPinned && currentId && itemId === currentId) {
       return;
     }
 
     setNewFlightData((prev) => {
-      const removedItem = prev.find((p) => normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) === itemId);
-      const remaining = prev.filter((p) => normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) !== itemId);
+      const removedItem = prev.find(
+        (p) => normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) === itemId
+      );
+      const remaining = prev.filter(
+        (p) => normalize(p.id ?? p.offerId ?? p.rawMinimal?.offerId) !== itemId
+      );
       if (isCurrentPinned && currentId) {
         if (
           remaining.length === 0 ||
-          (remaining.length === 1 && normalize(remaining[0].id ?? remaining[0].offerId ?? remaining[0].rawMinimal?.offerId) === currentId)
+          (remaining.length === 1 &&
+            normalize(
+              remaining[0].id ??
+                remaining[0].offerId ??
+                remaining[0].rawMinimal?.offerId
+            ) === currentId)
         ) {
           setLocalAvailable((availPrev) => {
             if (!currentFlight) return availPrev;
             const curId = currentId;
-            if (availPrev.some((a) => normalize(a.id ?? a.offerId ?? a.raw?.offerId) === curId)) return availPrev;
+            if (
+              availPrev.some(
+                (a) => normalize(a.id ?? a.offerId ?? a.raw?.offerId) === curId
+              )
+            )
+              return availPrev;
             return [currentFlight, ...availPrev];
           });
           setIsCurrentPinned(false);
@@ -164,7 +233,12 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
       }
       if (removedItem) {
         setLocalAvailable((availPrev) => {
-          if (availPrev.some((a) => normalize(a.id ?? a.offerId ?? a.raw?.offerId) === itemId)) return availPrev;
+          if (
+            availPrev.some(
+              (a) => normalize(a.id ?? a.offerId ?? a.raw?.offerId) === itemId
+            )
+          )
+            return availPrev;
           return [removedItem, ...availPrev];
         });
       }
@@ -180,13 +254,21 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
     const fd = seg.flight_detail ?? {};
     const flightNum = fd.flight_number ?? fd.flightNumber ?? "...";
     const flightClass = fd.flight_class ?? fd.cabinClass ?? "—";
-    const startTime = fd.start_time ?? fd.startTime ?? fd.start_date ?? fd.departureDateTime ?? "—";
+    const startTime =
+      fd.start_time ??
+      fd.startTime ??
+      fd.start_date ??
+      fd.departureDateTime ??
+      "—";
     const endTime = fd.end_time ?? fd.endTime ?? fd.arrivalDateTime ?? "—";
     const startDate = fd.start_date ?? fd.startDate ?? "—";
     const endDate = fd.end_date ?? fd.endDate ?? "—";
     const duration = fd.duration ?? seg.duration ?? "—";
-    const logo = seg.logo ?? `/airlines/${(fd.marketingAirline || seg.name || "default")}.png`;
-    const route = seg.fromCode && seg.toCode ? `${seg.fromCode} → ${seg.toCode}` : null;
+    const logo =
+      seg.logo ??
+      `/airlines/${fd.marketingAirline || seg.name || "default"}.png`;
+    const route =
+      seg.fromCode && seg.toCode ? `${seg.fromCode} → ${seg.toCode}` : null;
 
     return (
       <div className="RoundTripCardDetail" style={{ marginBottom: 8 }}>
@@ -196,12 +278,15 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
           </div>
           <div className="nameAndDetails">
             <h5>
-              {seg.name ?? fd.marketingAirline ?? "Airline"}{route ? ` - (${route})` : ""}
+              {seg.name ?? fd.marketingAirline ?? "Airline"}
+              {route ? ` - (${route})` : ""}
             </h5>
-            <p>{flightNum} • {flightClass}</p>
-           </div>
-           {showIcons && (
-            <div className="featureIcons">
+            <p>
+              {flightNum} • {flightClass}
+            </p>
+          </div>
+          {showIcons && (
+            <div className="featureIcons ml-auto pr-5">
               <span className="featureIconTooltipWrap">
                 <img src={cabinIcon} alt="cabin" />
                 <span className="tooltip">Cabin: {flightClass}</span>
@@ -218,10 +303,12 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
                   <span className="tooltip">Seats: {seg.seatsAvailable}</span>
                 </span>
               )}
-               <span className="featureIconTooltipWrap">
-                 <img src={mealIcon} alt="meal" />
-                 <span className="tooltip">{seg.refundable ? 'Refundable' : 'Non-Refundable'}</span>
-               </span>
+              <span className="featureIconTooltipWrap">
+                <img src={mealIcon} alt="meal" />
+                <span className="tooltip">
+                  {seg.refundable ? "Refundable" : "Non-Refundable"}
+                </span>
+              </span>
               {duration && (
                 <span className="featureIconTooltipWrap">
                   <img src={wifiIcon} alt="duration" />
@@ -250,7 +337,11 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
               <div className="stopsDetail">
                 <span>{duration}</span>
                 <div className="" />
-                <span>{(seg.stop && seg.stop.length > 0) ? `${seg.stop.length} stop(s)` : "Direct"}</span>
+                <span>
+                  {seg.stop && seg.stop.length > 0
+                    ? `${seg.stop.length} stop(s)`
+                    : "Direct"}
+                </span>
               </div>
               <div className="stopPoint" />
             </div>
@@ -265,11 +356,140 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
     );
   };
 
+  // Timing + layover summary similar to FlightTimingAndStops.tsx
+  const renderTimingAndStops = (passSome: any, key: string) => {
+    if (!passSome) return null;
+    const flightSegments =
+      passSome?.segments ??
+      passSome?.raw?.journey?.[0]?.flightSegments ??
+      passSome?.rawMinimal?.journey?.[0]?.flightSegments ??
+      [];
+    const hasMultipleSegments =
+      Array.isArray(flightSegments) && flightSegments.length > 1;
+
+    const firstSegment =
+      Array.isArray(flightSegments) && flightSegments.length > 0
+        ? flightSegments[0]
+        : null;
+    const lastSegment =
+      Array.isArray(flightSegments) && flightSegments.length > 0
+        ? flightSegments[flightSegments.length - 1]
+        : null;
+
+    const startTime = firstSegment?.departureDateTime
+      ? formatTime(firstSegment.departureDateTime)
+      : passSome?.flight_detail?.start_time ?? "";
+    const startDate = firstSegment?.departureDateTime
+      ? formatDate(firstSegment.departureDateTime)
+      : passSome?.flight_detail?.start_date ?? "";
+    const endTime = lastSegment?.arrivalDateTime
+      ? formatTime(lastSegment.arrivalDateTime)
+      : passSome?.flight_detail?.end_time ?? "";
+    const endDate = lastSegment?.arrivalDateTime
+      ? formatDate(lastSegment.arrivalDateTime)
+      : passSome?.flight_detail?.end_date ?? "";
+
+    const secondSegment = hasMultipleSegments ? flightSegments[1] : null;
+    const firstDuration = firstSegment?.duration ?? "";
+    const secondDuration = secondSegment?.duration ?? "";
+    const layoverTime = secondSegment?.layoverTime ?? "";
+    const stopAirport = secondSegment?.departureAirportCode ?? "";
+
+    const marketingAirline =
+      passSome?.flight_detail?.marketingAirline ??
+      firstSegment?.marketingAirline ??
+      passSome?.name ??
+      "Airline";
+    const operatingAirline =
+      passSome?.flight_detail?.operatingAirline ??
+      firstSegment?.operatingAirline ??
+      null;
+    const airlineDisplay = operatingAirline
+      ? `${marketingAirline} / ${operatingAirline}`
+      : marketingAirline;
+    const flightNumber =
+      passSome?.flight_detail?.flight_number ??
+      firstSegment?.flightNumber ??
+      "—";
+    const flightClass =
+      passSome?.flight_detail?.flight_class ?? firstSegment?.cabinClass ?? "—";
+    const logo =
+      passSome?.logo ?? `/airlines/${marketingAirline || "default"}.png`;
+
+    const renderStops = () => {
+      if (passSome?.stop?.length) {
+        return passSome.stop.map((s: any, i: number) => (
+          <div className="stopsDetail" key={`${key}-stop-${i}`}>
+            <span>{s?.stayTime}</span>
+            <div className="stopPoint stopDots" />
+            <span>{s?.name}</span>
+          </div>
+        ));
+      }
+      if (hasMultipleSegments) {
+        return (
+          <>
+            <span className="mb-5">{firstDuration}</span>
+            <div className="stopsDetail mb-4">
+              <span>{layoverTime || "Layover"}</span>
+              <div className="stopPoint stopDots" />
+              <span>{stopAirport}</span>
+            </div>
+            <span className="mb-5">{secondDuration}</span>
+          </>
+        );
+      }
+      return (
+        <div className="stopsDetail">
+          <span>
+            {passSome?.flight_detail?.duration ?? firstDuration ?? "—"}
+          </span>
+          <div />
+          <span>Direct</span>
+        </div>
+      );
+    };
+
+    return (
+      <div style={{ marginTop: 8 }} key={key}>
+        <div className="fightTitle" style={{ marginBottom: 8 }}>
+          <div className="flightIcon">
+            <img src={logo} alt="" />
+          </div>
+          <div className="nameAndDetails">
+            <h5>{airlineDisplay}</h5>
+            <p>
+              {flightNumber} • {flightClass}
+            </p>
+          </div>
+        </div>
+        <div className="flightTiming">
+          <div className="startTime">
+            <h5>{startTime || "—"}</h5>
+            <p>{startDate || ""}</p>
+          </div>
+          <div className="FlightDirection">
+            <div className="visualGuid">
+              <div className="stopPoint" />
+              {renderStops()}
+              <div className="stopPoint" />
+            </div>
+          </div>
+          <div className="EndTime">
+            <h5>{endTime || "—"}</h5>
+            <p>{endDate || ""}</p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderCompareCard = (item: any) => {
     const isRound = !!(item as any).outbound || !!(item as any).inbound;
     const idKey = item.id ?? Math.random().toString(36).slice(2, 9);
     const removeId = item.id ?? item.offerId;
-    const isCurrent = currentFlight && ((currentFlight.id ?? currentFlight.offerId) === removeId);
+    const isCurrent =
+      currentFlight && (currentFlight.id ?? currentFlight.offerId) === removeId;
 
     // const segClass = (seg: any) => seg?.flight_detail?.flight_class ?? seg?.cabinClass ?? "Economy";
     // const segBaggage = (seg: any) =>
@@ -277,7 +497,6 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
     // const segSeats = (seg: any) => seg?.seatsAvailable ?? seg?.rawSegment?.seatsAvailable ?? null;
     // const segDuration = (seg: any) => seg?.flight_detail?.duration ?? seg?.duration ?? "—";
     // const segEquipment = (seg: any) => seg?.equipment ?? seg?.rawSegment?.equipmentName ?? null;
-
 
     if (isRound) {
       const outbound = (item as any).outbound ?? null;
@@ -287,7 +506,11 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
         item.price?.economyLite?.price ??
         item.totalFare ??
         "—";
-      const currency = (item as any).currency ?? item.price?.currency ?? item.fare?.currencyCode ?? "";
+      const currency =
+        (item as any).currency ??
+        item.price?.currency ??
+        item.fare?.currencyCode ??
+        "";
 
       // choose representative small-values for the feature row (prefer outbound, fallback inbound)
       // const repSeg = outbound ?? inbound ?? item;
@@ -304,10 +527,15 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
         <Col span={8} key={idKey} className="mb-5">
           <div className="compareCard">
             <div className="cardHeader">
-              {isCurrent ? 'Chosen Flight' : 'Comparison Flight'}
+              {isCurrent ? "Chosen Flight" : "Comparison Flight"}
               {!isCurrent && (
                 <button
-                  style={{ float: "right", background: "transparent", border: "none", cursor: "pointer" }}
+                  style={{
+                    float: "right",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                   onClick={() => removeFromCompare(removeId)}
                   aria-label="Remove"
                   title="Remove"
@@ -320,15 +548,27 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
             <div className="cardBody">
               {/* outbound + inbound summaries (multi-segment) */}
               {outboundSegs.map((seg, i) => (
-                <div key={`c-out-${i}`}>{renderSegmentSummary(seg, { showIcons: true })}</div>
+                <div key={`c-out-${i}`}>
+                  {renderSegmentSummary(seg, { showIcons: true })}
+                </div>
               ))}
+              {outboundSegs.length > 0 && inboundSegs.length > 0 && (
+                <div className="compareLegDivider cardHeader">
+                  Arrival Flight Group
+                </div>
+                // <hr className="compareLegDivider" />
+              )}
               {inboundSegs.map((seg, i) => (
-                <div key={`c-in-${i}`}>{renderSegmentSummary(seg, { showIcons: true })}</div>
+                <div key={`c-in-${i}`}>
+                  {renderSegmentSummary(seg, { showIcons: true })}
+                </div>
               ))}
 
-              <div className="StartingPrice" style={{ marginTop: 6 }}>
+              <div className="StartingPrice mt-5">
                 <span>Start from</span>
-                <h5>{currency} {displayPrice}</h5>
+                <h5>
+                  {currency} {displayPrice}
+                </h5>
               </div>
 
               {/* feature icons are now shown inline per segment title; removing old summary row */}
@@ -336,19 +576,29 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
               {/* small summary / seat layout */}
               <div className="flightSeats" style={{ marginTop: 12 }}>
                 <div className="flightDetail">
-                  <div className="flighticon"><img src={flightIcon} alt="" /></div>
+                  <div className="flighticon">
+                    <img src={flightIcon} alt="" />
+                  </div>
                   <div>
                     <p className="parahOne">{item.name ?? "Round-trip"}</p>
                     <p className="parahTwo">
-                      {outboundSegs.length > 0 ? `Out segs: ${outboundSegs.length}` : ""}
-                      {outboundSegs.length > 0 && inboundSegs.length > 0 ? <br /> : null}
-                      {inboundSegs.length > 0 ? `In segs: ${inboundSegs.length}` : ""}
+                      {outboundSegs.length > 0
+                        ? `Out segs: ${outboundSegs.length}`
+                        : ""}
+                      {outboundSegs.length > 0 && inboundSegs.length > 0 ? (
+                        <br />
+                      ) : null}
+                      {inboundSegs.length > 0
+                        ? `In segs: ${inboundSegs.length}`
+                        : ""}
                     </p>
                   </div>
                 </div>
 
                 <div className="SeatDetail">
-                  <div className="seatIcon"><img src={seaticon} alt="" /></div>
+                  <div className="seatIcon">
+                    <img src={seaticon} alt="" />
+                  </div>
                   <div>
                     <p className="parahTwo">
                       Segments: {outboundSegs.length} ↔ {inboundSegs.length}
@@ -368,10 +618,15 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
       <Col span={8} key={idKey} className="mb-5">
         <div className="compareCard">
           <div className="cardHeader">
-            {isCurrent ? 'Chosen Flight' : 'Comparison Flight'}
+            {isCurrent ? "Chosen Flight" : "Comparison Flight"}
             {!isCurrent && (
               <button
-                style={{ float: "right", background: "transparent", border: "none", cursor: "pointer" }}
+                style={{
+                  float: "right",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                }}
                 onClick={() => removeFromCompare(removeId)}
                 aria-label="Remove"
                 title="Remove"
@@ -385,11 +640,16 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
             {oneWaySegs.length > 0 ? (
               <>
                 {oneWaySegs.map((seg, i) => (
-                  <div key={`c-ow-${i}`}>{renderSegmentSummary(seg, { showIcons: true })}</div>
+                  <div key={`c-ow-${i}`}>
+                    {renderSegmentSummary(seg, { showIcons: true })}
+                  </div>
                 ))}
-                <div className="StartingPrice" style={{ marginTop: 6 }}>
+                <div className="StartingPrice mt-5">
                   <span>Start from</span>
-                  <h5>{item.currency ?? ""} {item.price?.economyLite?.price ?? item.totalFare ?? "—"}</h5>
+                  <h5>
+                    {item.currency ?? ""}{" "}
+                    {item.price?.economyLite?.price ?? item.totalFare ?? "—"}
+                  </h5>
                 </div>
               </>
             ) : (
@@ -400,21 +660,25 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
                   </div>
                   <div className="nameAndDetails">
                     <h5>{item.name}</h5>
-                    <p>{item.flight_detail?.flight_number} • {item.flight_detail?.flight_class}</p>
+                    <p>
+                      {item.flight_detail?.flight_number} •{" "}
+                      {item.flight_detail?.flight_class}
+                    </p>
                   </div>
                 </div>
 
                 <div className="StartingPrice">
                   <p>Start from</p>
                   <h5>
-                    {item.currency ?? ""} {item.price?.economyLite?.price ?? item.totalFare ?? "—"}
+                    {item.currency ?? ""}{" "}
+                    {item.price?.economyLite?.price ?? item.totalFare ?? "—"}
                   </h5>
                 </div>
               </div>
             )}
 
-            <div className="featureImgs">
-              {/* <Row className="featureImgsFlex">
+            {/*<div className="featureImgs">
+               <Row className="featureImgsFlex">
                 <Col span={10} className="featureIconText">
                   <img src={cabinIcon} alt="" />
                   <p>Cabin: {item.flight_detail?.flight_class ?? "Economy"}</p>
@@ -445,17 +709,21 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
                     <p>{item.equipment}</p>
                   </>}
                 </Col>
-              </Row> */}
-            </div>
+              </Row> 
+            </div>*/}
 
-            <div className="flightSeats">
+            <div className="flightSeats mt-3">
               <div className="flightDetail">
                 <div className="flighticon">
                   <img src={flightIcon} alt="" />
                 </div>
                 <div>
                   <p className="parahOne">{item?.name}</p>
-                  <p className="parahTwo">{oneWaySegs.length > 0 ? `Segments: ${oneWaySegs.length}` : item?.flight_detail?.flight_number}</p>
+                  <p className="parahTwo">
+                    {oneWaySegs.length > 0
+                      ? `Segments: ${oneWaySegs.length}`
+                      : item?.flight_detail?.flight_number}
+                  </p>
                 </div>
               </div>
 
@@ -496,7 +764,9 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
         title={
           <div className="modalHeader" style={{ textAlign: "center" }}>
             <h2>Add another flight</h2>
-            <p>Compare the flights from this listing to see what suits you best</p>
+            <p>
+              Compare the flights from this listing to see what suits you best
+            </p>
           </div>
         }
         closable={{ "aria-label": "Custom Close Button" }}
@@ -507,66 +777,97 @@ const CompareCard: React.FC<CompareCardProps> = ({ availableFlights = [], curren
         className="compareModal"
       >
         <div className="compareModalBody">
-          {(!localAvailable || localAvailable.length === 0) ? (
+          {!localAvailable || localAvailable.length === 0 ? (
             <p>No other flights to show</p>
           ) : (
             localAvailable.map((item, index) => {
-              const isRound = !!(item as any).outbound || !!(item as any).inbound;
+              const isRound =
+                !!(item as any).outbound || !!(item as any).inbound;
               return (
-                <div key={item.id ?? index} className="modalFlightDetailCard" onClick={() => addFlightToCompare(item)}>
+                <div
+                  key={item.id ?? index}
+                  className="modalFlightDetailCard"
+                  onClick={() => addFlightToCompare(item)}
+                >
                   <div className="modalFlightDetail">
-                    {isRound ? (
-                      (() => {
-                        const outbound = (item as any).outbound ?? null;
-                        const inbound = (item as any).inbound ?? null;
-                        const outSegs = normalizeLegSegments(outbound);
-                        const inSegs = normalizeLegSegments(inbound);
-                        return (
-                          <div style={{ display: "flex", gap: 12, flexDirection: "column", alignItems: "stretch" }}>
-                            {outSegs.map((seg, i) => (
-                              <div key={`m-out-${i}`} style={{ flex: 1 }}>{renderSegmentSummary(seg)}</div>
-                            ))}
-                            {inSegs.map((seg, i) => (
-                              <div key={`m-in-${i}`} style={{ flex: 1 }}>{renderSegmentSummary(seg)}</div>
-                            ))}
-                          </div>
-                        );
-                      })()
-                    ) : (
-                      (() => {
-                        const segs = normalizeOneWaySegments(item);
-                        if (segs.length > 0) {
+                    {isRound
+                      ? (() => {
+                          const outbound = (item as any).outbound ?? null;
+                          const inbound = (item as any).inbound ?? null;
+                          const outboundSegs = normalizeLegSegments(outbound);
+                          const inboundSegs = normalizeLegSegments(inbound);
+                          const outBlock =
+                            renderTimingAndStops(outbound, `out-${index}`) ??
+                            (outboundSegs[0]
+                              ? renderSegmentSummary(outboundSegs[0])
+                              : null);
+                          const inBlock =
+                            renderTimingAndStops(inbound, `in-${index}`) ??
+                            (inboundSegs[0]
+                              ? renderSegmentSummary(inboundSegs[0])
+                              : null);
                           return (
-                            <div style={{ display: "flex", gap: 12, flexDirection: "column", alignItems: "stretch" }}>
-                              {segs.map((seg, i) => (
-                                <div key={`m-ow-${i}`} style={{ flex: 1 }}>{renderSegmentSummary(seg)}</div>
-                              ))}
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 12,
+                              }}
+                            >
+                              {outBlock}
+                              {inBlock}
                             </div>
                           );
-                        }
-                        return (
-                          <>
-                            <div className="fightTitle">
-                              <div className="flightIcon">
-                                <img src={item.logo} alt="" />
-                              </div>
-                              <div className="nameAndDetails">
-                                <h5>{item.name}</h5>
-                                <p>{item.flight_detail?.flight_number} - {item.flight_detail?.flight_class}</p>
-                              </div>
-                            </div>
-
-                            <div className="featureIcons" style={{ marginTop: 8 }}>
-                              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-                                <div>
-                                  <strong>{item.currency ?? ""} {item.price?.economyLite?.price ?? item.totalFare ?? "-"}</strong>
+                        })()
+                      : (() => {
+                          const oneWaySegs = normalizeOneWaySegments(item);
+                          const timingBlock = renderTimingAndStops(
+                            item,
+                            `ow-${index}`
+                          );
+                          const fallbackSeg = oneWaySegs[0]
+                            ? renderSegmentSummary(oneWaySegs[0])
+                            : null;
+                          return timingBlock || fallbackSeg ? (
+                            timingBlock || fallbackSeg
+                          ) : (
+                            <>
+                              <div className="fightTitle">
+                                <div className="flightIcon">
+                                  <img src={item.logo} alt="" />
+                                </div>
+                                <div className="nameAndDetails">
+                                  <h5>{item.name}</h5>
+                                  <p>
+                                    {item.flight_detail?.flight_number} -{" "}
+                                    {item.flight_detail?.flight_class}
+                                  </p>
                                 </div>
                               </div>
-                            </div>
-                          </>
-                        );
-                      })()
-                    )}
+                              <div
+                                className="featureIcons"
+                                style={{ marginTop: 8 }}
+                              >
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    gap: 12,
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <div>
+                                    <strong>
+                                      {item.currency ?? ""}{" "}
+                                      {item.price?.economyLite?.price ??
+                                        item.totalFare ??
+                                        "-"}
+                                    </strong>
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          );
+                        })()}
                   </div>
 
                   {/* timing block for single-segment items */}

@@ -61,7 +61,7 @@ type FlightBookingReviewSectionProps = {
 
 export default function FlightBookingReviewSection({
     trip,
-    fareBookingSearchRules,
+    // fareBookingSearchRules,
     flightBookingPayload,
     cities = [],
     onNext,
@@ -194,8 +194,8 @@ export default function FlightBookingReviewSection({
                                         </dd>
 
                                         {/* Passport number - only show if required by fare rules */}
-                                        {fareBookingSearchRules?.passengerRules?.[0]
-                                            ?.isDocumentNumberMandatory && (
+                                        {/* {fareBookingSearchRules?.passengerRules?.[0]
+                                            ?.isDocumentNumberMandatory && ( */}
                                                 <>
                                                     <dt className="text-[12px] text-[#3D495C]">
                                                         Passport number
@@ -206,10 +206,10 @@ export default function FlightBookingReviewSection({
                                                         </span>
                                                     </dd>
                                                 </>
-                                            )}
+                                            {/* )} */}
 
-                                        {fareBookingSearchRules?.passengerRules?.[0]
-                                            ?.isIssuingCountryCodeMandatory && (
+                                        {/* {fareBookingSearchRules?.passengerRules?.[0]
+                                            ?.isIssuingCountryCodeMandatory && ( */}
                                                 <>
                                                     <dt className="text-[12px] text-[#3D495C]">
                                                         Issuing country
@@ -226,10 +226,10 @@ export default function FlightBookingReviewSection({
                                                         </span>
                                                     </dd>
                                                 </>
-                                            )}
+                                            {/* )} */}
 
-                                        {fareBookingSearchRules?.passengerRules?.[0]
-                                            ?.isExpiryDateMandatory && (
+                                        {/* {fareBookingSearchRules?.passengerRules?.[0]
+                                            ?.isExpiryDateMandatory && ( */}
                                                 <>
                                                     <dt className="text-[12px] text-[#3D495C]">
                                                         Expiry date
@@ -240,7 +240,7 @@ export default function FlightBookingReviewSection({
                                                         </span>
                                                     </dd>
                                                 </>
-                                            )}
+                                            {/* )} */}
                                     </dl>
                                 </div>
                             </CardShell>

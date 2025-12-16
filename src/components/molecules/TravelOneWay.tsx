@@ -14,7 +14,7 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import { Switch, Modal } from "antd";
 import CustomButton from "../common/CustomButton";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { travelData } from "../../utils/mockData";
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
 const CompareCard = React.lazy(() => import("./CompareCard"));
@@ -76,6 +76,23 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   //   }
   // };
 
+  useEffect(() => {
+    // preload tab components so first open feels instant
+    import("./PricingDetailCard");
+    import("./FlightDetailsCard");
+    import("./CompareCard");
+  }, []);
+
+  const detailById = useMemo(() => {
+    const lookup: Record<string | number, any[]> = {};
+    (passData || []).forEach((it) => {
+      if (it?.id !== undefined) {
+        lookup[it.id] = [it];
+      }
+    });
+    return lookup;
+  }, [passData]);
+
   const getRandomItemsExcluding = (arr: any[], excludeId: any, limit = 4) => {
     if (!Array.isArray(arr) || arr.length === 0) return [];
     // Filter out current item
@@ -94,14 +111,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   };
 
   const HandlePriceOption = React.useCallback(({ id }: { id: number | undefined }) => {
-    const filtered = passData.filter((item) => item.id === id);
-    // console.log('price---------------', filtered)
-    // console.log('id', id);
-    // console.log('passData==========', passData);
+    const filtered = (id !== undefined && detailById[id]) || [];
     setFilterDetail(filtered);
-
-    setFilterData([])
-  }, [passData]);
+    setFilterData([]);
+  }, [detailById]);
 
   const HandleCompareOption = React.useCallback(({ id }: { id: number | undefined }) => {
     const randomFour = getRandomItemsExcluding(passData || [], id, 4);
@@ -320,7 +333,9 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 <CustomButton>Select Price</CustomButton>
               </div>
             </div>
-            <React.Suspense fallback={null}>
+            <React.Suspense
+              fallback={<div className="tab-loading-placeholder">Loading…</div>}
+            >
               {active?.name == "price" && active?.id == index ? (
                 <PricingDetailCard passSome={filterDetail} />
               ) : active?.name == "flight" && active?.id == index ? (

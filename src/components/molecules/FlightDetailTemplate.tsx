@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useCallback } from "react";
 
 import alraisLogo from "../../assets/images/alraisLogo.png";
 import planeImg from "../../assets/images/travel_plane_image.png";
@@ -46,7 +46,11 @@ import {
   formatTime,
   timeToMinutesFromAnyString,
 } from "../../utils/helpers";
-import { callWithRetries, filterFlightsByTimeAndAirlines } from "../../utils/flightFilters";
+import StatusMessageBanner from "../common/StatusMessageBanner";
+import {
+  callWithRetries,
+  filterFlightsByTimeAndAirlines,
+} from "../../utils/flightFilters";
 import dayjs from "dayjs";
 import SearchableDropdown from "../common/SearchableDropdown";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
@@ -65,6 +69,103 @@ const items: TabsProps["items"] = [
 
 const baggageHandler: CheckboxProps["onChange"] = (e) => {
   console.log(`checked = ${e.target.checked}`);
+};
+
+const INACTIVITY_MINUTES_MS = 15 * 60 * 1000;
+const WARNING_OFFSET_MS = 2 * 60 * 1000;
+const WARNING_TRIGGER_MS = INACTIVITY_MINUTES_MS - WARNING_OFFSET_MS;
+const INACTIVITY_BANNER_DURATION_MS = 2 * 6000;
+
+type InactivityWarningOptions = {
+  warningDelay: number;
+  expiryDelay: number;
+  warningText: string;
+  expiryText: string;
+  onExpire: () => void;
+};
+
+const useResultInactivityWarning = ({
+  warningDelay,
+  expiryDelay,
+  warningText,
+  expiryText,
+  onExpire,
+}: InactivityWarningOptions) => {
+  const [message, setMessage] = useState<string | null>(null);
+  const [isBannerVisible, setBannerVisible] = useState(false);
+
+  const warningTimeoutRef = useRef<number | null>(null);
+  const expiryTimeoutRef = useRef<number | null>(null);
+  const hideTimeoutRef = useRef<number | null>(null);
+
+  const clearTimerRef = (ref: React.MutableRefObject<number | null>) => {
+    if (ref.current) {
+      window.clearTimeout(ref.current);
+      ref.current = null;
+    }
+  };
+
+  const hideBanner = useCallback(() => {
+    setBannerVisible(false);
+    setMessage(null);
+  }, []);
+
+  const clearAllTimers = useCallback(() => {
+    clearTimerRef(warningTimeoutRef);
+    clearTimerRef(expiryTimeoutRef);
+    clearTimerRef(hideTimeoutRef);
+    hideBanner();
+  }, [hideBanner]);
+
+  const showBanner = useCallback(
+    (text: string) => {
+      setMessage(text);
+      setBannerVisible(true);
+
+      clearTimerRef(hideTimeoutRef);
+      hideTimeoutRef.current = window.setTimeout(() => {
+        hideBanner();
+        hideTimeoutRef.current = null;
+      }, INACTIVITY_BANNER_DURATION_MS);
+    },
+    [hideBanner]
+  );
+
+  const scheduleTimers = useCallback(() => {
+    clearAllTimers();
+
+    warningTimeoutRef.current = window.setTimeout(() => {
+      showBanner(warningText);
+      warningTimeoutRef.current = null;
+    }, warningDelay);
+
+    expiryTimeoutRef.current = window.setTimeout(() => {
+      onExpire();
+      showBanner(expiryText);
+      expiryTimeoutRef.current = null;
+    }, expiryDelay);
+  }, [
+    clearAllTimers,
+    expiryDelay,
+    expiryText,
+    onExpire,
+    showBanner,
+    warningDelay,
+    warningText,
+  ]);
+
+  useEffect(() => {
+    return () => {
+      clearAllTimers();
+    };
+  }, [clearAllTimers]);
+
+  return {
+    warningMessage: message,
+    isBannerVisible,
+    startCountdown: scheduleTimers,
+    resetCountdown: clearAllTimers,
+  };
 };
 
 const buildPassengersArrayForFlightSearch = (
@@ -267,15 +368,15 @@ const FlightDetailTemplate: React.FC = () => {
       offerId: item?.offerId,
       outbound: outbound
         ? {
-          ...outbound,
-          logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment),
-        }
+            ...outbound,
+            logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment),
+          }
         : null,
       inbound: inbound
         ? {
-          ...inbound,
-          logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment),
-        }
+            ...inbound,
+            logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment),
+          }
         : null,
       // price: { economyLite: { price: item?.fare?.totalFare } },
       price: priceOptions,
@@ -308,9 +409,46 @@ const FlightDetailTemplate: React.FC = () => {
     return toAdd.length ? [...prevArray, ...toAdd] : prevArray;
   };
 
+  const validateSearchFields = (): string | null => {
+    const validationErrors: string[] = [];
+
+    if (!departDate) validationErrors.push("departure");
+    if (trip === "roundtrip" && !returnDate) validationErrors.push("return");
+
+    const totalPassengers = Object.values(paxCounts).reduce(
+      (sum: number, count: any) => sum + (Number(count) || 0),
+      0
+    );
+    if (totalPassengers === 0) validationErrors.push("passengers");
+    if (!selectedCabinClassId) validationErrors.push("cabin");
+
+    if (validationErrors.length === 0) return null;
+
+    if (validationErrors.length > 1) {
+      return "Please complete all required fields before searching.";
+    }
+
+    const error = validationErrors[0];
+    const messages: Record<string, string> = {
+      departure: "Please select a departure date to continue.",
+      return: "Please select a return date to continue.",
+      passengers: "Please select at least one passenger before searching.",
+      cabin: "Please select a cabin class to continue.",
+    };
+
+    return messages[error] || "Please complete all required fields.";
+  };
+
   const handleSearch = async (
     searchFilters: { maxConnections?: number } = {}
   ) => {
+    const validationError = validateSearchFields();
+    if (validationError) {
+      setSearchError(validationError);
+      setHasSearched(true);
+      setIsSearching(false);
+      return;
+    }
     // const sortedPrice = typeof searchFilters.priceId !== "undefined" ? searchFilters.priceId : selectedPriceId;
     const sortedMaxConnections =
       typeof searchFilters.maxConnections !== "undefined"
@@ -353,16 +491,20 @@ const FlightDetailTemplate: React.FC = () => {
       : baseBody;
 
     lastRequestRef.current = requestBody;
-    // setHasMore(true);
+    // reset current results & inactivity timers before a fresh search
+    resetInactivityCountdown();
     setResponseData([]);
     setRoundResponseData([]);
     setHasSearched(false);
     setIsSearching(true);
     setSearchError(null);
-
     try {
       // const response = await mutateAsync(requestBody);
-      const response = await callWithRetries(() => mutateAsync(requestBody), 2, 500);
+      const response = await callWithRetries(
+        () => mutateAsync(requestBody),
+        2,
+        500
+      );
       const raw = response.data || [];
 
       const { oneWayFormatted, roundFormatted } =
@@ -372,6 +514,8 @@ const FlightDetailTemplate: React.FC = () => {
       originalRoundResponseRef.current = roundFormatted;
       setResponseData(oneWayFormatted);
       setRoundResponseData(roundFormatted);
+      // start inactivity timers only based on API results
+      startResultInactivityTimers();
 
       const fares: number[] = [
         ...oneWayFormatted.map((it) =>
@@ -495,50 +639,153 @@ const FlightDetailTemplate: React.FC = () => {
   }, [countries, fromCode, toCode]);
 
   // initialize from store once after listings load
-  const didInitFromStore = useRef(false);
   const isHydratingFromStore = useRef(false);
+  const hydratedFlightSnapshotRef = useRef<string | null>(null);
+  const shouldAutoSearchRef = useRef(false);
   useEffect(() => {
-    if (didInitFromStore.current) return;
     if (!flight) return;
     if (loading) return;
 
-    // trip
+    const snapshot = JSON.stringify({
+      trip: flight.trip,
+      fromCode: flight?.fromCode ?? "",
+      toCode: flight?.toCode ?? "",
+      cabin: flight?.selectedCabinClassId ?? "",
+      departure: flight?.departure ?? "",
+      arrival: flight?.arrival ?? "",
+      pax: flight?.next ?? {},
+      order: flight?.order ?? [],
+    });
+
+    if (hydratedFlightSnapshotRef.current === snapshot) return;
+
+    hydratedFlightSnapshotRef.current = snapshot;
+    isHydratingFromStore.current = true;
+
     if (
       flight.trip === "roundtrip" ||
       flight.trip === "oneway" ||
       flight.trip === "multicity"
     ) {
-      isHydratingFromStore.current = true;
       setTrip(flight.trip as TripType);
     }
-    // from/to
-    setFromCode(flight?.fromCode);
-    setToCode(flight?.toCode);
 
-    setSelectedCabinClassId(String(flight?.selectedCabinClassId));
-    if (typeof flight?.departure === "string") setDepartDate(flight?.departure);
-    if (typeof flight?.arrival === "string") setReturnDate(flight?.arrival);
-    setPaxCounts(flight?.next);
-    if (flight?.order) passengerRequestOrder.current = flight?.order.slice();
+    setFromCode(flight?.fromCode ?? "");
+    setToCode(flight?.toCode ?? "");
+    setSelectedCabinClassId(String(flight?.selectedCabinClassId ?? ""));
+    setDepartDate(
+      typeof flight?.departure === "string" ? flight.departure : ""
+    );
+    setReturnDate(typeof flight?.arrival === "string" ? flight.arrival : "");
+    setPaxCounts(flight?.next ?? {});
+    passengerRequestOrder.current = Array.isArray(flight?.order)
+      ? flight.order.slice()
+      : [];
 
-    didInitFromStore.current = true;
-    console.log("[FlightStore] initial search:", flight, didInitFromStore.current);
+    setResponseData([]);
+    setRoundResponseData([]);
+    setHasMore(false);
+    setIoReady(false);
+    setHasSearched(false);
+    setSearchError(null);
+    lastRequestRef.current = null;
+    shouldAutoSearchRef.current = true;
+
+    const timeoutId = window.setTimeout(() => {
+      isHydratingFromStore.current = false;
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [flight, loading]);
+
+  const hasBasicFilters = useCallback(() => {
+    const totalPassengers = Object.values(paxCounts || {}).reduce<number>(
+      (sum, count) => sum + Number(count || 0),
+      0
+    );
+    const hasReturnDate = trip !== "roundtrip" || Boolean(returnDate);
+    return (
+      Boolean(fromCode) &&
+      Boolean(toCode) &&
+      Boolean(selectedCabinClassId) &&
+      Boolean(departDate) &&
+      hasReturnDate &&
+      totalPassengers > 0
+    );
+  }, [
+    fromCode,
+    toCode,
+    selectedCabinClassId,
+    departDate,
+    returnDate,
+    trip,
+    paxCounts,
+  ]);
+
+  const clearResultsForInactivity = useCallback(() => {
+    setResponseData([]);
+    setRoundResponseData([]);
+    setHasSearched(false);
+    setHasMore(false);
+    setIoReady(false);
+    setSearchError(null);
+    originalResponseRef.current = [];
+    originalRoundResponseRef.current = [];
+    lastRequestRef.current = null;
+  }, []);
+
+  const {
+    warningMessage: inactivityWarning,
+    isBannerVisible: showInactivityBanner,
+    startCountdown: startInactivityCountdown,
+    resetCountdown: resetInactivityCountdown,
+  } = useResultInactivityWarning({
+    warningDelay: WARNING_TRIGGER_MS,
+    expiryDelay: INACTIVITY_MINUTES_MS,
+    warningText:
+      "Kindly select a flight in the next 2 minutes or the results will be cleared.",
+    expiryText:
+      "Flight results cleared after 15 minutes of inactivity. Please search again.",
+    onExpire: clearResultsForInactivity,
+  });
+
+  const startResultInactivityTimers = useCallback(() => {
+    const hasResults =
+      (originalResponseRef.current?.length ?? 0) > 0 ||
+      (originalRoundResponseRef.current?.length ?? 0) > 0;
+
+    if (!hasResults) {
+      resetInactivityCountdown();
+      return;
+    }
+
+    startInactivityCountdown();
+  }, [
+    originalResponseRef,
+    originalRoundResponseRef,
+    resetInactivityCountdown,
+    startInactivityCountdown,
+  ]);
 
   // auto-trigger search when valid filters are present after hydration
   useEffect(() => {
-    if (!didInitFromStore.current) return;
+    if (!shouldAutoSearchRef.current) return;
     if (isPending) return;
-    // const hasBasicFilters = Boolean(
-    //   fromCode && toCode && selectedCabinClassId && departDate && (trip !== "roundtrip" || returnDate)
-    // );
-    // if (!hasBasicFilters) return;
-    // Trigger once per hydrated set
-    if (!lastRequestRef.current) {
-      didInitFromStore.current = false;
-      handleSearch();
-    }
-  }, [didInitFromStore.current, fromCode, toCode, selectedCabinClassId, departDate, returnDate, trip, isPending]);
+    if (!hasBasicFilters()) return;
+
+    shouldAutoSearchRef.current = false;
+    handleSearch();
+  }, [
+    fromCode,
+    toCode,
+    selectedCabinClassId,
+    departDate,
+    returnDate,
+    trip,
+    paxCounts,
+    isPending,
+    hasBasicFilters,
+  ]);
 
   useEffect(() => {
     if (fromCode && toCode && fromCode === toCode) {
@@ -772,7 +1019,9 @@ const FlightDetailTemplate: React.FC = () => {
             <p className="mt-2 text-[14px] text-[#0F172A]">
               No flights found for your route and specifications.
             </p>
-            <p className="mt-2 text-[14px] text-[#3D495C]">Try searching again.</p>
+            <p className="mt-2 text-[14px] text-[#3D495C]">
+              Try searching again.
+            </p>
           </>
         )}
       </div>
@@ -781,7 +1030,7 @@ const FlightDetailTemplate: React.FC = () => {
 
   useEffect(() => {
     // Skip resetting when we're hydrating values from the store
-    // if (isHydratingFromStore.current) return;
+    if (isHydratingFromStore.current) return;
 
     setResponseData([]);
     setRoundResponseData([]);
@@ -794,17 +1043,8 @@ const FlightDetailTemplate: React.FC = () => {
     setHasSearched(false);
     setSearchError(null);
     lastRequestRef.current = null;
-  }, [trip]);
-
-  // turn off hydration guard after one commit so trip-reset doesn't run during hydration
-  useEffect(() => {
-    if (!didInitFromStore.current) return;
-    if (!isHydratingFromStore.current) return;
-    const id = window.setTimeout(() => {
-      isHydratingFromStore.current = false;
-    }, 0);
-    return () => window.clearTimeout(id);
-  }, [trip, fromCode, toCode, selectedCabinClassId, departDate, returnDate, paxCounts]);
+    resetInactivityCountdown();
+  }, [trip, resetInactivityCountdown]);
 
   const openTimePicker = (key: string) => {
     timeRefs.current[key]?.showPicker?.() || timeRefs.current[key]?.click();
@@ -816,6 +1056,12 @@ const FlightDetailTemplate: React.FC = () => {
       <Loader
         show={isPending || isSearching}
         label="Please wait while we are looking for available flights"
+      />
+      <StatusMessageBanner
+        visible={!!inactivityWarning && showInactivityBanner}
+        message={inactivityWarning ?? ""}
+        variant="warning"
+        containerClassName="top-6 z-40"
       />
       <div className="topHeaderSetting">
         <div className="topHeaderSettingInner">
@@ -837,7 +1083,7 @@ const FlightDetailTemplate: React.FC = () => {
               items={items}
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
-            // indicator={{ size: (origin) => origin - 20, align: alignValue }}
+              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
             />
           </div>
           <div className="countrySelectAndGetHelp py-pxTopHeader">
@@ -988,7 +1234,7 @@ const FlightDetailTemplate: React.FC = () => {
                 <PassengerCounterDropdown
                   value={paxCounts}
                   schema={passengers as PassengerSchema}
-                  maxTotal={9}
+                  maxTotal={100}
                   onChange={(value) => {
                     handlePassenger(value);
                   }}
@@ -998,11 +1244,11 @@ const FlightDetailTemplate: React.FC = () => {
             <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
               <label className="header-labels-common ">Cabin Class</label>
               <SearchableDropdown
-                options={cabinSelectOptions.map(option => ({
-                  id: option.value || 'placeholder',
+                options={cabinSelectOptions.map((option) => ({
+                  id: option.value || "placeholder",
                   value: option.value,
                   label: option.label,
-                  disabled: 'disabled' in option ? option.disabled : false
+                  disabled: "disabled" in option ? option.disabled : false,
                 }))}
                 value={selectedCabinClassId || ""}
                 onChange={(value) => setSelectedCabinClassId(value)}

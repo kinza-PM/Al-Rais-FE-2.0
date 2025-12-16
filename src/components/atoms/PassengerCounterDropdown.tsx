@@ -60,7 +60,7 @@ const Row: React.FC<{
 const PassengerCounterDropdown: React.FC<Props> = ({
   value,
   onChange,
-  maxTotal = 9,
+  maxTotal = 100,
   schema,
   errorMessage,
 }) => {

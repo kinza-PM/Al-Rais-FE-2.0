@@ -15,6 +15,7 @@ const flightApis = [
   "/retrieveFlightBooking",
 ];
 const paymentApis = ["/pay"];
+const flightAncillaryApis = ["/ancillarySearch", "/bookAncillary"];
 
 export const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -25,6 +26,9 @@ export const FLIGHT_API_BASE =
 
 export const PAYMENT_API_BASE =
   "https://3cbnpbnuii.execute-api.eu-west-1.amazonaws.com/dev";
+
+export const FLIGHT_ANCILLARY_API_BASE =
+  "https://4wt7s595a8.execute-api.eu-west-1.amazonaws.com/dev";
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
@@ -40,6 +44,10 @@ axiosClient.interceptors.request.use(async (config) => {
 
   if (flightApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = FLIGHT_API_BASE;
+  } else if (
+    flightAncillaryApis.some((prefix) => config.url?.startsWith(prefix))
+  ) {
+    config.baseURL = FLIGHT_ANCILLARY_API_BASE;
   } else if (paymentApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = PAYMENT_API_BASE;
   }

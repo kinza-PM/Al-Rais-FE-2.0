@@ -11,6 +11,25 @@ export type FlightInitialBooking = {
   };
 };
 
+export type FlightAncillaryBooking = {
+  data: {
+    offerId: string;
+    selectedAncillaries: Array<{
+      ancillaryOfferId: string;
+      passengerKey: string;
+      segmentKey: string;
+    }>;
+  };
+};
+
+export type FlightAncillarySearch = {
+  offerId: string;
+  seatMapRequested: boolean;
+  otherAncillaryRequested: boolean;
+  formOfPayment: string;
+  travelType: string;
+};
+
 export type FlightFareRuleSearch = {
   offerId: string;
 };
@@ -51,6 +70,17 @@ export async function postInitialFlightProvBooking<TResp = any>(
   }
 }
 
+export async function postAncillaryBooking<TResp = any>(
+  body: FlightAncillaryBooking
+): Promise<TResp> {
+  const source = "postAncillaryBooking";
+  try {
+    return await api.post<TResp>("/bookAncillary", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}
+
 export async function postFlightFareRuleSearch<TResp = any>(
   body: FlightFareRuleSearch
 ): Promise<TResp> {
@@ -79,6 +109,17 @@ export async function postRetrieveFlightBooking<TResp = any>(
   const source = "postRetrieveFlightBooking";
   try {
     return await api.post<TResp>("/retrieveFlightBooking", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}
+
+export async function postFlightAncillarySearch<TResp = any>(
+  body: FlightAncillarySearch
+): Promise<TResp> {
+  const source = "postFlightAncillarySearch";
+  try {
+    return await api.post<TResp>("/ancillarySearch", body);
   } catch (err) {
     throw toApiError(source, err);
   }

@@ -21,7 +21,9 @@ export const mapOfferForCompareOneWay = (f: any) => {
 
   const allSegments: any[] = Array.isArray(raw?.journey?.[0]?.flightSegments)
     ? raw.journey[0].flightSegments
-    : (raw?.outbound?.rawSegment ? [raw.outbound.rawSegment] : []);
+    : Array.isArray(raw?.outbound?.flightSegments)
+      ? raw.outbound.flightSegments
+      : (raw?.outbound?.rawSegment ? [raw.outbound.rawSegment] : []);
 
   const mappedSegments = allSegments.map((s: any) => {
     const checked = s?.baggageAllowance?.checkedInBaggage?.[0];
@@ -31,6 +33,7 @@ export const mapOfferForCompareOneWay = (f: any) => {
       logo: f.logo,
       flight_detail: buildPerSegmentFlightDetail(f?.flight_detail || {}, s),
       duration: s?.duration ?? null,
+      layoverTime: s?.layoverTime ?? null,
       fromCode: s?.departureAirportCode,
       toCode: s?.arrivalAirportCode,
       equipment: s?.equipmentName ?? s?.equipmentType ?? null,
@@ -74,11 +77,15 @@ export const mapOfferForCompareRoundTrip = (f: any) => {
 
   const outboundSegments = Array.isArray(raw?.journey?.[0]?.flightSegments)
     ? raw.journey[0].flightSegments
-    : (f.outbound?.rawSegment ? [f.outbound.rawSegment] : []);
+    : Array.isArray(f?.outbound?.segments)
+      ? f.outbound.segments
+      : (f.outbound?.rawSegment ? [f.outbound.rawSegment] : []);
 
   const inboundSegments = Array.isArray(raw?.journey?.[1]?.flightSegments)
     ? raw.journey[1].flightSegments
-    : (f.inbound?.rawSegment ? [f.inbound.rawSegment] : []);
+    : Array.isArray(f?.inbound?.segments)
+      ? f.inbound.segments
+      : (f.inbound?.rawSegment ? [f.inbound.rawSegment] : []);
 
   const mappedOutbound = outboundSegments.map((seg: any) => {
     const checked = seg?.baggageAllowance?.checkedInBaggage?.[0];
@@ -88,6 +95,7 @@ export const mapOfferForCompareRoundTrip = (f: any) => {
       logo: f.logo,
       flight_detail: buildPerSegmentFlightDetail(f?.outbound?.flight_detail || {}, seg),
       duration: seg?.duration ?? null,
+      layoverTime: seg?.layoverTime ?? null,
       fromCode: seg?.departureAirportCode,
       toCode: seg?.arrivalAirportCode,
       equipment: seg?.equipmentName ?? seg?.equipmentType ?? null,
@@ -106,6 +114,7 @@ export const mapOfferForCompareRoundTrip = (f: any) => {
       logo: f.logo,
       flight_detail: buildPerSegmentFlightDetail(f?.inbound?.flight_detail || {}, seg),
       duration: seg?.duration ?? null,
+      layoverTime: seg?.layoverTime ?? null,
       fromCode: seg?.departureAirportCode,
       toCode: seg?.arrivalAirportCode,
       equipment: seg?.equipmentName ?? seg?.equipmentType ?? null,
@@ -129,10 +138,14 @@ export const mapOfferForCompareRoundTrip = (f: any) => {
     outbound: {
       segments: mappedOutbound,
       logo: f.logo ?? chooseLogo(outboundSegments),
+      name: f.name,
+      flight_detail: buildPerSegmentFlightDetail(f?.outbound?.flight_detail || f?.flight_detail || {}, outboundSegments?.[0]),
     },
     inbound: {
       segments: mappedInbound,
       logo: f.logo ?? chooseLogo(inboundSegments),
+      name: f.name,
+      flight_detail: buildPerSegmentFlightDetail(f?.inbound?.flight_detail || f?.flight_detail || {}, inboundSegments?.[0]),
     },
     price: f.price ?? { economyLite: { price: totalFare } },
     totalFare,

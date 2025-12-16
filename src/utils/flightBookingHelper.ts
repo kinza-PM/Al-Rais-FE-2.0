@@ -1,4 +1,5 @@
 import type { FlightInitialBooking } from "../services/api/flightBooking";
+import type { AllSelections, AncillaryEntry } from "../store/useAncillaryStore";
 import { generateUUID } from "./helpers";
 
 export type FlightFinalReservedBooking = {
@@ -11,6 +12,20 @@ export type FlightFinalReservedBooking = {
   passengers: any[];
   fare: any;
   ticketDocument: any[];
+};
+
+export type SegmentSummary = {
+  segmentKey: string;
+  departureDateTime?: string;
+  arrivalDateTime?: string;
+  departureTerminal?: string;
+  arrivalTerminal?: string;
+  duration?: string;
+  marketingAirline?: string;
+  operatingAirline?: string;
+  cabinClass?: string;
+  priceClassName?: string;
+  flightNumber?: string;
 };
 
 export const buildInitialFlightBookingPassengersPayload = (
@@ -94,7 +109,10 @@ export const validatePassengersForFlightProvisionalBooking = (
       { value: pi.surname, msg: "Surname is required." },
       { value: pi.gender, msg: "Gender is required." },
       { value: email, msg: "Email address is required." },
-      { value: phoneValue, msg: "Phone (country code and number) is required." },
+      {
+        value: phoneValue,
+        msg: "Phone (country code and number) is required.",
+      },
     ];
     for (const r of alwaysRequired) {
       if (isEmpty(r.value)) return { valid: false, error: prefixFor(i, r.msg) };
@@ -113,34 +131,36 @@ export const validatePassengersForFlightProvisionalBooking = (
         };
     }
 
-    if (pRules.isExpiryDateMandatory) {
-      const exp = id.expiryDate ?? null;
-      if (!exp)
-        return {
-          valid: false,
-          error: prefixFor(i, "Expiry date is required."),
-        };
-      const expDate = new Date(`${exp}T00:00:00`);
-      expDate.setHours(0, 0, 0, 0);
-      if (expDate < today)
-        return {
-          valid: false,
-          error: prefixFor(
-            i,
-            "Expiry date must be booking date or a future date."
-          ),
-        };
-    }
+    // if (pRules.isExpiryDateMandatory) {
+    const exp = id.expiryDate ?? null;
+    if (!exp)
+      return {
+        valid: false,
+        error: prefixFor(i, "Expiry date is required."),
+      };
+    const expDate = new Date(`${exp}T00:00:00`);
+    expDate.setHours(0, 0, 0, 0);
+    if (expDate < today)
+      return {
+        valid: false,
+        error: prefixFor(
+          i,
+          "Expiry date must be booking date or a future date."
+        ),
+      };
+    // }
 
     const ruleChecks: Array<[boolean, any, string]> = [
       [pRules.isIdTypeMandatory, id.idType, "ID type is required."],
       [
-        pRules.isDocumentNumberMandatory,
+        // pRules.isDocumentNumberMandatory,
+        true,
         id.idDocumentNumber,
         "Document number is required.",
       ],
       [
-        pRules.isIssuingCountryCodeMandatory,
+        // pRules.isIssuingCountryCodeMandatory,
+        true,
         id.issuingCountryCode,
         "Issuing country is required.",
       ],
@@ -150,7 +170,8 @@ export const validatePassengersForFlightProvisionalBooking = (
         "Date of issue is required.",
       ],
       [
-        pRules.isResidenceCountryCodeMandatory,
+        // pRules.isResidenceCountryCodeMandatory,
+        true,
         id.residenceCountryCode,
         "Residence country is required.",
       ],
@@ -203,19 +224,22 @@ export const validateReservationFlightBookingData = (
   const isEmpty = (v: any) =>
     v === undefined || v === null || String(v).trim() === "";
 
-  if (isEmpty(card.number)) return { valid: false, error: "Card number is required." };
+  if (isEmpty(card.number))
+    return { valid: false, error: "Card number is required." };
   const numericCard = card.number.replace(/\s+/g, "");
   if (!/^\d{12,19}$/.test(numericCard))
     return { valid: false, error: "Card number looks invalid." };
   // if (!luhnCheck(numericCard)) return { valid: false, error: "Card number failed validation." };
 
-  if (isEmpty(card.expiry)) return { valid: false, error: "Expiry date is required." };
+  if (isEmpty(card.expiry))
+    return { valid: false, error: "Expiry date is required." };
   if (!/^\d{4}$/.test(card.expiry))
     return { valid: false, error: "Expiry date is invalid. Please use MM/YY." };
 
   const yy = Number(card.expiry.slice(0, 2));
   const mm = Number(card.expiry.slice(2, 4));
-  if (!(mm >= 1 && mm <= 12)) return { valid: false, error: "Expiry month is invalid." };
+  if (!(mm >= 1 && mm <= 12))
+    return { valid: false, error: "Expiry month is invalid." };
 
   const fullYear = 2000 + yy;
   const expiryDate = new Date(fullYear, mm, 0);
@@ -223,23 +247,31 @@ export const validateReservationFlightBookingData = (
   if (expiryDate < new Date())
     return { valid: false, error: "Card expiry is in the past." };
 
-  if (isEmpty(card.cvv)) return { valid: false, error: "Security code (CVV) is required." };
-  if (!/^\d{3,4}$/.test(card.cvv)) return { valid: false, error: "Security code should be 3 or 4 digits." };
+  if (isEmpty(card.cvv))
+    return { valid: false, error: "Security code (CVV) is required." };
+  if (!/^\d{3,4}$/.test(card.cvv))
+    return { valid: false, error: "Security code should be 3 or 4 digits." };
 
-  if (isEmpty(card.holderName)) return { valid: false, error: "Cardholder name is required." };
+  if (isEmpty(card.holderName))
+    return { valid: false, error: "Cardholder name is required." };
 
   const address = reservation?.paymentDetails?.address ?? null;
-  if (!address)
-    return { valid: false, error: "Billing address is required." };
+  if (!address) return { valid: false, error: "Billing address is required." };
 
-  const street0 = Array.isArray(address.street) ? address.street[0] : address.street;
-  if (isEmpty(street0)) return { valid: false, error: "Billing address line 1 is required." };
+  const street0 = Array.isArray(address.street)
+    ? address.street[0]
+    : address.street;
+  if (isEmpty(street0))
+    return { valid: false, error: "Billing address line 1 is required." };
 
-  if (isEmpty(address.postalCode)) return { valid: false, error: "Postal code is required." };
-  if (isEmpty(address.cityName)) return { valid: false, error: "City is required." };
-  if (isEmpty(address.countryCode)) return { valid: false, error: "Country is required." };
-  if (isEmpty(reservation?.customerInfo?.emailAddress)) return { valid: false, error: "Email is required." };
-
+  if (isEmpty(address.postalCode))
+    return { valid: false, error: "Postal code is required." };
+  if (isEmpty(address.cityName))
+    return { valid: false, error: "City is required." };
+  if (isEmpty(address.countryCode))
+    return { valid: false, error: "Country is required." };
+  if (isEmpty(reservation?.customerInfo?.emailAddress))
+    return { valid: false, error: "Email is required." };
 
   return { valid: true };
 };
@@ -261,7 +293,11 @@ export const luhnCheck = (num: string) => {
   return sum % 10 === 0;
 };
 
-export function openBlankPopupAndCheckWebisteAllowPopup(windowName = "payfort3dsWindow", width = 600, height = 800) {
+export function openBlankPopupAndCheckWebisteAllowPopup(
+  windowName = "payfort3dsWindow",
+  width = 600,
+  height = 800
+) {
   const left = Math.max(0, Math.floor((window.innerWidth - width) / 2));
   const top = Math.max(0, Math.floor((window.innerHeight - height) / 2));
   const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
@@ -281,13 +317,14 @@ export function openBlankPopupAndCheckWebisteAllowPopup(windowName = "payfort3ds
         </div>
       </div>
     `;
-  } catch (e) {
-  }
+  } catch (e) {}
 
   return popup;
 }
 
-export function waitFor3DSecurePaymentPopupReturnResponse(timeoutMs = 120000): Promise<any> {
+export function waitFor3DSecurePaymentPopupReturnResponse(
+  timeoutMs = 120000
+): Promise<any> {
   return new Promise((resolve, reject) => {
     let timeoutId: number | null = null;
 
@@ -304,7 +341,9 @@ export function waitFor3DSecurePaymentPopupReturnResponse(timeoutMs = 120000): P
     };
 
     const cleanup = () => {
-      try { window.removeEventListener("message", handler); } catch (_) { }
+      try {
+        window.removeEventListener("message", handler);
+      } catch (_) {}
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
@@ -320,3 +359,108 @@ export function waitFor3DSecurePaymentPopupReturnResponse(timeoutMs = 120000): P
   });
 }
 
+export function transformFlightJourneysToObjects(
+  journeys?: any[]
+): Array<{ flightSegments: SegmentSummary[] }> {
+  if (!Array.isArray(journeys)) return [];
+
+  return journeys.map((journey) => {
+    const segments = Array.isArray(journey?.flightSegments)
+      ? journey.flightSegments
+      : [];
+    return {
+      flightSegments: segments.map((s: any) => ({
+        segmentKey: s.segmentKey,
+        departureDateTime: s.departureDateTime,
+        arrivalDateTime: s.arrivalDateTime,
+        departureTerminal: s.departureTerminal,
+        arrivalTerminal: s.arrivalTerminal,
+        duration: s.duration,
+        marketingAirline: s.marketingAirline,
+        operatingAirline: s.operatingAirline,
+        cabinClass: s.cabinClass,
+        priceClassName: s.priceClassName,
+        flightNumber: s.flightNumber,
+      })),
+    };
+  });
+}
+
+export const buildAncillaryPayload = (all: AllSelections, offerId = "") => {
+  const selectedAncillaries: AncillaryEntry[] = [];
+
+  if (!all) {
+    return { data: { offerId, selectedAncillaries } };
+  }
+
+  // 1) Baggage: segmentKey -> passengerKey -> ancillaryOfferId | null
+  const baggage = all.baggage ?? {};
+  Object.entries(baggage).forEach(([segmentKey, passengers]) => {
+    Object.entries(passengers ?? {}).forEach(
+      ([passengerKey, ancillaryOfferId]) => {
+        if (ancillaryOfferId) {
+          selectedAncillaries.push({
+            ancillaryOfferId,
+            passengerKey,
+            segmentKey,
+          });
+        }
+      }
+    );
+  });
+
+  // 2) Meals: segmentKey -> passengerKey -> mealTypeKey -> { ancillaryOfferId -> quantity }
+  const meals = all.meals ?? {};
+  Object.entries(meals).forEach(([segmentKey, passengers]) => {
+    Object.entries(passengers ?? {}).forEach(([passengerKey, mealTypes]) => {
+      Object.values(mealTypes ?? {}).forEach((ancillaryMap) => {
+        // ancillaryMap: Record<string, number>
+        Object.entries(ancillaryMap ?? {}).forEach(
+          ([ancillaryOfferId, quantity]) => {
+            const qty = Number(quantity) || 0;
+            for (let i = 0; i < qty; i++) {
+              selectedAncillaries.push({
+                ancillaryOfferId,
+                passengerKey,
+                segmentKey,
+              });
+            }
+          }
+        );
+      });
+    });
+  });
+
+  // 3) Seats: segmentKey -> passengerKey -> { seatNumber, ancillaryOfferId? }
+  const seats = all.seats ?? {};
+  Object.entries(seats).forEach(([segmentKey, passengers]) => {
+    Object.entries(passengers ?? {}).forEach(([passengerKey, seatInfo]) => {
+      const ancillaryOfferId = seatInfo?.ancillaryOfferId;
+      if (ancillaryOfferId) {
+        selectedAncillaries.push({
+          ancillaryOfferId,
+          passengerKey,
+          segmentKey,
+        });
+      }
+    });
+  });
+
+  // 4) Other ancillaries: segmentKey -> passengerKey -> ancillaryOfferId -> boolean
+  const other = all.otherAncillaries ?? {};
+  Object.entries(other).forEach(([segmentKey, passengers]) => {
+    Object.entries(passengers ?? {}).forEach(([passengerKey, services]) => {
+      Object.entries(services ?? {}).forEach(([ancillaryOfferId, selected]) => {
+        if (selected) {
+          selectedAncillaries.push({
+            ancillaryOfferId,
+            passengerKey,
+            segmentKey,
+          });
+        }
+      });
+    });
+  });
+
+  return { data: { offerId, selectedAncillaries } };
+};
