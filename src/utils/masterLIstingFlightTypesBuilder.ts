@@ -57,11 +57,13 @@ export function buildFlightTypeOptions(items: FlightTypeItem[]): FlightTypeOptio
 
 export function buildCountryOptions(items: CountryItem[]): CountryOption[] {
     return (items || [])
-        .filter(i => i.status === 1)
-        .map(i => ({
-            id: i.id,
-            label: `${i.city} (${i.cityCode}), ${i.country}`,
-            code: i.cityCode,
+        // .filter(i => i.status === 1)
+        .map((i, key) => ({
+            id: `${key}`,
+            label: `${i.city}, ${i.country}`,
+            // label: `${i.city} (${i.cityCode}), ${i.country}`,
+            code: i.iataCode,
+            // code: i.cityCode,
             city: i.city,
             country: i.country
         }))
