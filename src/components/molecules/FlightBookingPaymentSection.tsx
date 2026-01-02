@@ -420,7 +420,7 @@ export default function FlightBookingPaymentSection({
 
   return (
     <section className="mt-10 flex items-center justify-center px-4">
-      <div className="w-full max-w-[520px]">
+      <div className="w-full max-w-[550px]">
         <FlightSummaryCard
           title="Flight details"
           segments={segments}

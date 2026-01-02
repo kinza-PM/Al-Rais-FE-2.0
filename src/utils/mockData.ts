@@ -1,4 +1,7 @@
-import type { Booking, BookingStatus } from "../components/molecules/UserBookingsListing";
+import type {
+  Booking,
+  BookingStatus,
+} from "../components/molecules/UserBookingsListing";
 
 export const travelData = [
   {
@@ -235,7 +238,7 @@ export const flightBookingComfortAndEntertainment = {
   wifi: [
     {
       leg: "Departure flight",
-      logo: 'src/assets/images/emirates.png',
+      logo: "src/assets/images/emirates.png",
       airline: "Emirates Airlines",
       flight: "EK 1234 – Economy class",
       passenger: "01 Adult",
@@ -245,7 +248,7 @@ export const flightBookingComfortAndEntertainment = {
     },
     {
       leg: "Return flight",
-      logo: 'src/assets/images/air-india.png',
+      logo: "src/assets/images/air-india.png",
       airline: "Air India",
       flight: "AI 1452 – Economy class",
       passenger: "01 Adult",
@@ -257,7 +260,7 @@ export const flightBookingComfortAndEntertainment = {
   movies: [
     {
       leg: "Departure flight",
-      logo: 'src/assets/images/emirates.png',
+      logo: "src/assets/images/emirates.png",
       airline: "Emirates Airlines",
       flight: "EK 1234 – Economy class",
       passenger: "01 Adult",
@@ -267,7 +270,7 @@ export const flightBookingComfortAndEntertainment = {
     },
     {
       leg: "Return flight",
-      logo: 'src/assets/images/air-india.png',
+      logo: "src/assets/images/air-india.png",
       airline: "Air India",
       flight: "AI 1452 – Economy class",
       passenger: "01 Adult",
@@ -279,7 +282,7 @@ export const flightBookingComfortAndEntertainment = {
   music: [
     {
       leg: "Departure flight",
-      logo: 'src/assets/images/emirates.png',
+      logo: "src/assets/images/emirates.png",
       airline: "Emirates Airlines",
       flight: "EK 1234 – Economy class",
       passenger: "01 Adult",
@@ -289,7 +292,7 @@ export const flightBookingComfortAndEntertainment = {
     },
     {
       leg: "Return flight",
-      logo: 'src/assets/images/air-india.png',
+      logo: "src/assets/images/air-india.png",
       airline: "Air India",
       flight: "AI 1452 – Economy class",
       passenger: "01 Adult",
@@ -298,33 +301,33 @@ export const flightBookingComfortAndEntertainment = {
       checked: true,
     },
   ],
-}
+};
 
 export const flightBookingAirportServices = {
   lounge_access: [
     {
       leg: "Departure flight",
-      logo: 'src/assets/images/emirates.png',
+      logo: "src/assets/images/emirates.png",
       airline: "Emirates Airlines",
       flight: "EK 1234 – Economy class",
       passenger: "01 Adult",
-      cost: 62.50,
+      cost: 62.5,
       checked: true,
     },
     {
       leg: "Return flight",
-      logo: 'src/assets/images/air-india.png',
+      logo: "src/assets/images/air-india.png",
       airline: "Air India",
       flight: "AI 1452 – Economy class",
       passenger: "01 Adult",
-      cost: 55.70,
+      cost: 55.7,
       checked: true,
     },
   ],
   fast_track: [
     {
       leg: "Departure flight",
-      logo: 'src/assets/images/emirates.png',
+      logo: "src/assets/images/emirates.png",
       airline: "Emirates Airlines",
       flight: "EK 1234 – Economy class",
       passenger: "01 Adult",
@@ -333,18 +336,18 @@ export const flightBookingAirportServices = {
     },
     {
       leg: "Return flight",
-      logo: 'src/assets/images/air-india.png',
+      logo: "src/assets/images/air-india.png",
       airline: "Air India",
       flight: "AI 1452 – Economy class",
       passenger: "01 Adult",
-      cost: 75.50,
+      cost: 75.5,
       checked: false,
     },
   ],
   priority_boarding: [
     {
       leg: "Departure flight",
-      logo: 'src/assets/images/emirates.png',
+      logo: "src/assets/images/emirates.png",
       airline: "Emirates Airlines",
       flight: "EK 1234 – Economy class",
       passenger: "01 Adult",
@@ -353,7 +356,7 @@ export const flightBookingAirportServices = {
     },
     {
       leg: "Return flight",
-      logo: 'src/assets/images/air-india.png',
+      logo: "src/assets/images/air-india.png",
       airline: "Air India",
       flight: "AI 1452 – Economy class",
       passenger: "01 Adult",
@@ -361,7 +364,7 @@ export const flightBookingAirportServices = {
       checked: true,
     },
   ],
-}
+};
 
 export const flightBookingReviewContactDetail = {
   title: "Mr.",
@@ -390,12 +393,21 @@ export const userBookingListings: Booking[] = [
       name: "Emirates Airlines",
       code: "EK",
       flightNo: "1234",
-      logoUrl:
-        "src/assets/images/emirates.png",
+      logoUrl: "src/assets/images/emirates.png",
       cabin: "Economy class",
     },
-    from: { city: "Dubai", code: "DXB", time: "10:45 AM", dateLabel: "Mon, 16 June 2025" },
-    to: { city: "Mumbai", code: "BOM", time: "02:00 PM", dateLabel: "Mon, 16 June 2025" },
+    from: {
+      city: "Dubai",
+      code: "DXB",
+      time: "10:45 AM",
+      dateLabel: "Mon, 16 June 2025",
+    },
+    to: {
+      city: "Mumbai",
+      code: "BOM",
+      time: "02:00 PM",
+      dateLabel: "Mon, 16 June 2025",
+    },
     durationLabel: "03 hours 15 minutes",
     isDirect: true,
     passengersLabel: "01 Adult",
@@ -409,12 +421,21 @@ export const userBookingListings: Booking[] = [
       name: "Emirates Airlines",
       code: "EK",
       flightNo: "1234",
-      logoUrl:
-        "src/assets/images/emirates.png",
+      logoUrl: "src/assets/images/emirates.png",
       cabin: "Economy class",
     },
-    from: { city: "Dubai", code: "DXB", time: "10:45 AM", dateLabel: "Mon, 16 June 2025" },
-    to: { city: "Mumbai", code: "BOM", time: "02:00 PM", dateLabel: "Mon, 16 June 2025" },
+    from: {
+      city: "Dubai",
+      code: "DXB",
+      time: "10:45 AM",
+      dateLabel: "Mon, 16 June 2025",
+    },
+    to: {
+      city: "Mumbai",
+      code: "BOM",
+      time: "02:00 PM",
+      dateLabel: "Mon, 16 June 2025",
+    },
     durationLabel: "03 hours 15 minutes",
     isDirect: true,
     passengersLabel: "01 Adult",
@@ -431,12 +452,21 @@ export const userBookingListings: Booking[] = [
       name: "Emirates Airlines",
       code: "EK",
       flightNo: "5678",
-      logoUrl:
-        "src/assets/images/emirates.png",
+      logoUrl: "src/assets/images/emirates.png",
       cabin: "Economy class",
     },
-    from: { city: "Dubai", code: "DXB", time: "06:20 AM", dateLabel: "Tue, 17 June 2025" },
-    to: { city: "Karachi", code: "KHI", time: "07:40 AM", dateLabel: "Tue, 17 June 2025" },
+    from: {
+      city: "Dubai",
+      code: "DXB",
+      time: "06:20 AM",
+      dateLabel: "Tue, 17 June 2025",
+    },
+    to: {
+      city: "Karachi",
+      code: "KHI",
+      time: "07:40 AM",
+      dateLabel: "Tue, 17 June 2025",
+    },
     durationLabel: "01 hour 20 minutes",
     isDirect: true,
     passengersLabel: "02 Adults",
@@ -444,3 +474,173 @@ export const userBookingListings: Booking[] = [
     status: "Expired" as BookingStatus,
   },
 ];
+
+export const hotelAmeneties = [
+  {
+    title: "Great for your stay",
+    items: [
+      "Restaurant",
+      "Air conditioning",
+      "Private bathroom",
+      "Parking",
+      "Free Wifi",
+      "Airport Shuttle (free)",
+      "Family rooms",
+      "Flat-screen TV",
+      "Fitness center",
+      "Room service",
+    ],
+  },
+  {
+    title: "Bathroom",
+    items: [
+      "Toilet paper",
+      "Towels",
+      "Guest bathroom",
+      "Slippers",
+      "Private bathroom",
+      "Free toiletries",
+      "Bathrobe",
+      "Hairdryer",
+      "Shower",
+    ],
+  },
+  {
+    title: "Media & Technology",
+    items: [
+      "Flat screen TV",
+      "Cable channels",
+      "Satellite channels",
+      "Video",
+      "Telephone",
+      "TV",
+    ],
+  },
+  {
+    title: "Food & Drink",
+    items: ["Minibar", "Restaurant", "Tea/Coffee maker"],
+  },
+  {
+    title: "Cleaning services",
+    items: [
+      "Daily housekeeping",
+      "Suit press",
+      "Ironing service",
+      "Dry cleaning",
+      "Laundry",
+    ],
+  },
+  {
+    title: "Safety & Security",
+    items: [
+      "Fire extinguishers",
+      "CCTV outside property",
+      "CCTV in common areas",
+      "Smoke alarms",
+      "Security alarm",
+    ],
+  },
+  {
+    title: "Kitchen",
+    items: ["Electric kettle", "Refrigerator"],
+  },
+  {
+    title: "Bathroom",
+    items: [
+      "Restaurant",
+      "Air conditioning",
+      "Private bathroom",
+      "Parking",
+      "Free Wifi",
+      "Airport Shuttle (free)",
+      "Family rooms",
+      "Flat-screen TV",
+      "Fitness center",
+      "Room service",
+    ],
+  },
+  {
+    title: "Bedrooms",
+    items: ["Linens", "Wardrobe or closet"],
+  },
+];
+
+export const hotelRoomDetails = {
+  title: "Royal Suite",
+  roomSize: "30 m²",
+  amenities: {
+    greatForYourStay: [
+      "Restaurant",
+      "Air conditioning",
+      "Private bathroom",
+      "Airport Shuttle (free)",
+      "Family rooms",
+      "Flat-screen TV",
+      "Room service",
+    ],
+    kitchen: ["Electric kettle", "Refrigerator"],
+    bedrooms: ["Linens", "Wardrobe or closet"],
+    mediaAndTechnology: [
+      "Flat screen TV",
+      "Cable channels",
+      "Satellite channels",
+      "Video",
+      "Telephone",
+      "TV",
+    ],
+    bathroom: [
+      "Toilet paper",
+      "Towels",
+      "Guest bathroom",
+      "Slippers",
+      "Private bathroom",
+      "Free toiletries",
+      "Bathrobe",
+      "Hairdryer",
+      "Shower",
+    ],
+  },
+  roomOptions: [
+    {
+      key: "roomOnly",
+      title: "Room Only",
+      benefits: [
+        { text: "Very good breakfast", available: false },
+        { text: "High speed internet", available: true },
+        { text: "Includes free parking", available: true },
+      ],
+      description:
+        "This spacious suite consists of 1 living room, 1 separate bedroom and 1 bathroom with a walk-in shower and free toiletries. This suite features air conditioning, soundproof walls, flat-screen TV with cable channels, as well as chocolate for guests. The unit offers 1 bed.",
+      people: "2 Adults",
+      qty: 0,
+    },
+    {
+      key: "bedAndBreakfast",
+      title: "Bed and Breakfast",
+      benefits: [
+        { text: "Very good breakfast", available: true },
+        { text: "High speed internet", available: true },
+        { text: "Includes free parking", available: true },
+      ],
+      description:
+        "This spacious suite consists of 1 living room, 1 separate bedroom and 1 bathroom with a walk-in shower and free toiletries. This suite features air conditioning, soundproof walls, flat-screen TV with cable channels, as well as chocolate for guests. The unit offers 1 bed.",
+      people: "2 Adults",
+      qty: 0,
+    },
+    {
+      key: "halfBoard",
+      title: "Half Board",
+      benefits: [
+        { text: "Very good breakfast", available: true },
+        { text: "Lunch", available: true },
+        { text: "Dinner", available: true },
+        { text: "High speed internet", available: true },
+        { text: "Includes free parking", available: true },
+      ],
+      description:
+        "This spacious suite consists of 1 living room, 1 separate bedroom and 1 bathroom with a walk-in shower and free toiletries. This suite features air conditioning, soundproof walls, flat-screen TV with cable channels, as well as chocolate for guests. The unit offers 1 bed.",
+      people: "2 Adults",
+      qty: 1,
+    },
+  ],
+};

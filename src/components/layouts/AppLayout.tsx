@@ -2,10 +2,13 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
+import { useState } from "react";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+
+  const [hideHeader, setHideHeader] = useState<boolean>(false);
 
   const openLogin = () => {
     navigate("/auth", { state: { mode: "login" } });
@@ -52,7 +55,7 @@ const AppLayout: React.FC = () => {
           .hide-date-icon { color-scheme: light; }
         `}</style>
 
-        {location.pathname !== "/auth" && (
+        {location.pathname !== "/auth" && !hideHeader && (
           <AppHeader
             logoSrc={AlRaisLogo}
             onLoginClick={openLogin}
@@ -62,7 +65,11 @@ const AppLayout: React.FC = () => {
 
         <main className="min-h-screen">
           <Outlet
-            context={{ onLoginClick: openLogin, onSignupClick: openSignup }}
+            context={{
+              onLoginClick: openLogin,
+              onSignupClick: openSignup,
+              setHideHeader,
+            }}
           />
         </main>
         <Footer />

@@ -4,6 +4,14 @@
   --black-200: #3d495c;
 }
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
@@ -335,6 +343,12 @@ input[type="number"] {
   flex: auto;
 }
 
+.baggageCheckbox {
+  color: #3d495c;
+  font-size: 14px;
+  font-weight: 500;
+}
+
 .baggageCheckbox .ant-checkbox-inner {
   border-radius: 6px !important;
 }
@@ -652,6 +666,18 @@ input[type="number"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.hotelVisualGuid {
+  background: var(--primary-100, #a7c0ec);
+  max-width: 280px;
+  margin: auto;
+  min-width: 150px;
+  height: 2px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-left: -1.2rem;
 }
 
 .stopPoint {

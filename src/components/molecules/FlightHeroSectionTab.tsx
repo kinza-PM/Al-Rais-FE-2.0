@@ -32,6 +32,7 @@ const FlightHeroSection: React.FC = () => {
     passengers: "",
     cabinClass: "",
   });
+  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
 
   const handlePassengers = useCallback(
     (next: Record<string, number>, order: string[]) => {
@@ -95,6 +96,13 @@ const FlightHeroSection: React.FC = () => {
     setSelectedCabinClassId("");
     setDepartDate(null);
     setArrivalDate(null);
+    setHasAttemptedValidation(false);
+    setValidationErrors({
+      departDate: "",
+      arrivalDate: "",
+      passengers: "",
+      cabinClass: "",
+    });
   }, [trip]);
 
   const validateForm = (): boolean => {
@@ -129,7 +137,41 @@ const FlightHeroSection: React.FC = () => {
     return isValid;
   };
 
+  // Clear errors when values are filled
+  useEffect(() => {
+    if (!hasAttemptedValidation) return;
+
+    setValidationErrors((prev) => {
+      const updated = { ...prev };
+      if (departDate && prev.departDate) {
+        updated.departDate = "";
+      }
+      if (trip === "roundtrip" && arrivalDate && prev.arrivalDate) {
+        updated.arrivalDate = "";
+      }
+      const totalPassengers = Object.values(paxCounts).reduce(
+        (sum, count) => sum + count,
+        0
+      );
+      if (totalPassengers > 0 && prev.passengers) {
+        updated.passengers = "";
+      }
+      if (selectedCabinClassId && prev.cabinClass) {
+        updated.cabinClass = "";
+      }
+      return updated;
+    });
+  }, [
+    departDate,
+    arrivalDate,
+    paxCounts,
+    selectedCabinClassId,
+    trip,
+    hasAttemptedValidation,
+  ]);
+
   const handleSearch = () => {
+    setHasAttemptedValidation(true);
     if (!validateForm()) {
       return;
     }
@@ -219,9 +261,15 @@ const FlightHeroSection: React.FC = () => {
                 onChangePassengers={handlePassengers}
                 onChangeDepartDate={handleDepartDate}
                 //ERRORS
-                departDateError={validationErrors.departDate}
-                passengersError={validationErrors.passengers}
-                cabinClassError={validationErrors.cabinClass}
+                departDateError={
+                  hasAttemptedValidation ? validationErrors.departDate : ""
+                }
+                passengersError={
+                  hasAttemptedValidation ? validationErrors.passengers : ""
+                }
+                cabinClassError={
+                  hasAttemptedValidation ? validationErrors.cabinClass : ""
+                }
               />
             )}
 
@@ -243,10 +291,18 @@ const FlightHeroSection: React.FC = () => {
                 onChangeDepartDate={handleDepartDate}
                 onChangeArrivalDate={handleArrivalDate}
                 //ERRORS
-                departDateError={validationErrors.departDate}
-                arrivalDateError={validationErrors.arrivalDate}
-                passengersError={validationErrors.passengers}
-                cabinClassError={validationErrors.cabinClass}
+                departDateError={
+                  hasAttemptedValidation ? validationErrors.departDate : ""
+                }
+                arrivalDateError={
+                  hasAttemptedValidation ? validationErrors.arrivalDate : ""
+                }
+                passengersError={
+                  hasAttemptedValidation ? validationErrors.passengers : ""
+                }
+                cabinClassError={
+                  hasAttemptedValidation ? validationErrors.cabinClass : ""
+                }
               />
             )}
 

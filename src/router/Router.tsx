@@ -3,6 +3,8 @@ import { lazy } from "react";
 import AppLayout from "../components/layouts/AppLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import SearchFlight from "../pages/SearchFlight";
+import SearchHotel from "../pages/SearchHotel";
+import HotellDetailListing from "../pages/HotellDetailListing";
 const LandingPage = lazy(() => import("../pages/LandingPage"));
 // const TravelPage = lazy(() => import("../pages/TravelPage"));
 const AuthPage = lazy(() => import("../pages/AuthPage"));
@@ -17,6 +19,7 @@ const ProfilePage = lazy(() => import("../pages/ProfilePage"));
 const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 const Travellers = lazy(() => import("../pages/Travellers"));
 const FlightBooking = lazy(() => import("../pages/FlightBooking"));
+const HotelBooking = lazy(() => import("../pages/HotelBooking"));
 
 const router = createBrowserRouter([
   {
@@ -41,6 +44,14 @@ const router = createBrowserRouter([
         element: <SearchFlight />,
       },
       {
+        path: "search-hotel",
+        element: <SearchHotel />,
+      },
+      {
+        path: "hotel-detail",
+        element: <HotellDetailListing />,
+      },
+      {
         path: "packages",
         element: <PackagesPage />,
       },
@@ -51,6 +62,10 @@ const router = createBrowserRouter([
       {
         path: "flight-booking",
         element: <FlightBooking />,
+      },
+      {
+        path: "hotel-booking",
+        element: <HotelBooking />,
       },
       {
         path: "my-bookings",
