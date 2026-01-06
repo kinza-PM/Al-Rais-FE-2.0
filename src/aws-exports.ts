@@ -15,6 +15,16 @@ const awsconfig = {
     "passwordPolicyCharacters": []
   },
   "aws_cognito_verification_mechanisms": ["EMAIL", "PHONE_NUMBER"] // Support verification via email or phone
+  ,
+  // AppSync Notification API
+  API: {
+    GraphQL: {
+      endpoint: "https://q24kjogjhbaufln5mlqcajiwmq.appsync-api.eu-west-1.amazonaws.com/graphql",
+      region: "eu-west-1",
+      defaultAuthMode: "userPool",
+      additionalAuthModes: ["iam"],
+    },
+  },
 };
 
 export default awsconfig;

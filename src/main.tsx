@@ -1,10 +1,8 @@
-// import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
-import { Amplify } from "aws-amplify";
+import "./amplify";
 import { ConsoleLogger } from 'aws-amplify/utils';
-import awsconfig from "./aws-exports";
 import type { ThemeConfig } from "antd";
 import { ConfigProvider } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -41,8 +39,6 @@ const theme: ThemeConfig = {
   },
 };
 
-// Initialize AWS Amplify
-Amplify.configure(awsconfig);
 ConsoleLogger.LOG_LEVEL = 'ERROR';
 const queryClient = new QueryClient();
 

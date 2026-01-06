@@ -88,7 +88,7 @@ export default function FlightBookingPaymentSection({
   const [isProcessing, setIsProcessing] = useState(false);
   //retrieve flight booking
   const [isPolling, setIsPolling] = useState(false);
-  const timeoutRef = useRef<number | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [cardDetails, setCardDetails] = useState({
     number: "",

@@ -146,16 +146,24 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Layout, Menu, Dropdown, Avatar, Drawer } from "antd";
+import { Layout, Menu, Dropdown, Avatar, Drawer, Badge, Modal, Typography } from "antd";
 import {
   MenuOutlined,
   // UserOutlined,
   LogoutOutlined,
   ProfileOutlined,
+  BellOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import Logo from "../atoms/Logo";
 import Button from "../atoms/Button";
+import toast from "react-hot-toast";
+import {
+  fetchNotificationsPage,
+  markNotificationRead,
+  subscribeToNotifications,
+  type NotificationItem,
+} from "../../services/notificationService";
 
 const { Header } = Layout;
 
@@ -173,6 +181,10 @@ const AppHeader: React.FC<HeaderProps> = ({
   const { isAuthenticated, user, signOut } = useAuth();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [notifNextToken, setNotifNextToken] = useState<string | null>(null);
+  const [notifLoadingMore, setNotifLoadingMore] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -184,6 +196,104 @@ const AppHeader: React.FC<HeaderProps> = ({
   const handleLogout = async () => {
     await signOut();
     navigate("/");
+  };
+
+  useEffect(() => {
+    let subscription: { unsubscribe?: () => void } | undefined;
+
+    const init = async () => {
+      if (!isAuthenticated || !user?.id) return;
+      try {
+        const page = await fetchNotificationsPage(user.id, 20, null);
+        setNotifications(page.items ?? []);
+        setNotifNextToken(page.nextToken ?? null);
+      } catch (err) {
+        console.error("Failed to load notifications", err);
+      }
+
+      subscription = subscribeToNotifications(
+        user.id,
+        (notification) => {
+          setNotifications((prev) => {
+            const exists = prev.some((n) => n.notificationId === notification.notificationId);
+            return exists ? prev : [notification, ...prev];
+          });
+          toast.success(notification.title || "New notification");
+        },
+        (err) => {
+          console.error("Notification subscription error", err);
+          toast.error("Real-time notifications disconnected");
+        }
+      );
+    };
+
+    void init();
+
+    return () => {
+      subscription?.unsubscribe?.();
+    };
+  }, [isAuthenticated, user?.id]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+  const topNotifications = notifications.slice(0, 5);
+  const hasMoreNotifications = notifications.length > 5;
+
+  const formatTimestamp = (iso?: string) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return isNaN(d.getTime()) ? "" : d.toLocaleString();
+  };
+
+  const handleMarkRead = async (notification: NotificationItem) => {
+    if (!user?.id) return;
+    if (notification.read) return;
+
+    // Optimistic UI update
+    setNotifications((prev) =>
+      prev.map((n) =>
+        n.notificationId === notification.notificationId ? { ...n, read: true } : n
+      )
+    );
+
+    try {
+      await markNotificationRead(user.id, notification.notificationId);
+    } catch (err) {
+      // Rollback on failure
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.notificationId === notification.notificationId
+            ? { ...n, read: false }
+            : n
+        )
+      );
+      console.error("Failed to mark notification read", err);
+      toast.error("Failed to mark as read");
+    }
+  };
+
+  const loadMoreNotifications = async () => {
+    if (!user?.id) return;
+    if (!notifNextToken) return;
+    if (notifLoadingMore) return;
+
+    setNotifLoadingMore(true);
+    try {
+      const page = await fetchNotificationsPage(user.id, 20, notifNextToken);
+      setNotifications((prev) => {
+        const seen = new Set(prev.map((n) => n.notificationId));
+        const merged = [...prev];
+        for (const n of page.items ?? []) {
+          if (!seen.has(n.notificationId)) merged.push(n);
+        }
+        return merged;
+      });
+      setNotifNextToken(page.nextToken ?? null);
+    } catch (err) {
+      console.error("Failed to load more notifications", err);
+      toast.error("Failed to load more notifications");
+    } finally {
+      setNotifLoadingMore(false);
+    }
   };
 
   // Dropdown menu for authenticated user
@@ -205,6 +315,82 @@ const AppHeader: React.FC<HeaderProps> = ({
     ],
   };
 
+  const notificationMenu = {
+    items:
+      topNotifications.length > 0
+        ? [
+            ...topNotifications.map((notification) => ({
+              key: notification.notificationId,
+              label: (
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 4,
+                    minWidth: 240,
+                    padding: 8,
+                    borderRadius: 8,
+                    marginBottom: 6,
+                    backgroundColor: notification.read ? "#ffffff" : "#E0F2FF",
+                    border: notification.read
+                      ? "1px solid #f3f4f6"
+                      : "1px solid #bfdbfe",
+                  }}
+                >
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ fontWeight: 600, color: "#0f172a" }}>
+                      {notification.title}
+                    </span>
+                    {!notification.read && (
+                      <span style={{ fontSize: 10, color: "#2563eb" }}>Unread</span>
+                    )}
+                  </div>
+                  <span style={{ color: "#4b5563" }}>{notification.message}</span>
+                  <span style={{ fontSize: 12, color: "#9ca3af" }}>
+                    {formatTimestamp(notification.createdAt)}
+                  </span>
+                </div>
+              ),
+            })),
+            ...(hasMoreNotifications
+              ? [
+                  {
+                    key: "show-more",
+                    label: (
+                      <div
+                        style={{
+                          padding: "8px 10px",
+                          color: "#2563eb",
+                          fontWeight: 600,
+                        }}
+                      >
+                        Show more
+                      </div>
+                    ),
+                    onClick: () => setShowAllNotifications(true),
+                  },
+                ]
+              : []),
+          ]
+        : [
+          {
+            key: "empty",
+            label: (
+              <div style={{ color: "#6b7280" }}>No new notifications</div>
+            ),
+            disabled: true,
+          },
+        ],
+    onClick: ({ key }: { key: string }) => {
+      if (key === "show-more") {
+        setShowAllNotifications(true);
+        return;
+      }
+      const n = notifications.find((x) => x.notificationId === key);
+      if (n) void handleMarkRead(n);
+    },
+  };
+
   // Navigation links
   const navItems = [
     { key: "travel", label: <Link to="/travel">Travel</Link> },
@@ -219,6 +405,26 @@ const AppHeader: React.FC<HeaderProps> = ({
       ]
       : []),
   ];
+
+  const notificationTrigger = (
+    <Dropdown
+      menu={notificationMenu}
+      placement="bottomRight"
+      trigger={["click"]}
+    >
+      <Badge
+        count={unreadCount || null}
+        overflowCount={9}
+        size="small"
+        showZero={false}
+      >
+        <BellOutlined
+          style={{ fontSize: 20, color: "#1f2937", cursor: "pointer" }}
+          aria-label="Notifications"
+        />
+      </Badge>
+    </Dropdown>
+  );
 
   return (
     <Header
@@ -249,7 +455,8 @@ const AppHeader: React.FC<HeaderProps> = ({
         </div>
       )}
       {!isMobile && (
-        <div>
+        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
+          {notificationTrigger}
           {/* Auth Section */}
           {isAuthenticated && user ? (
             <Dropdown menu={userMenu} placement="bottomRight" arrow>
@@ -270,13 +477,6 @@ const AppHeader: React.FC<HeaderProps> = ({
             </Dropdown>
           ) : (
             <div style={{ display: "flex", gap: "10px" }}>
-              {/* <Button onClick={onLoginClick} variant="primary">
-                Login
-              </Button>
-              <Button onClick={onSignupClick} variant="secondary">
-                Sign up
-              </Button> */}
-
               <Button
                 onClick={onLoginClick}
                 variant="primary"
@@ -296,12 +496,91 @@ const AppHeader: React.FC<HeaderProps> = ({
         </div>
       )}
 
+      <Modal
+        title="Notifications"
+        open={showAllNotifications}
+        onCancel={() => setShowAllNotifications(false)}
+        footer={null}
+        width={520}
+      >
+        {notifications.length === 0 ? (
+          <div style={{ color: "#6b7280" }}>No notifications</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {notifications.map((n) => (
+              <div
+                key={n.notificationId}
+                onClick={() => void handleMarkRead(n)}
+                style={{
+                  cursor: "pointer",
+                  padding: 12,
+                  borderRadius: 12,
+                  background: n.read ? "#ffffff" : "#E0F2FF",
+                  border: n.read ? "1px solid #f3f4f6" : "1px solid #bfdbfe",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "baseline",
+                    gap: 12,
+                    marginBottom: 6,
+                  }}
+                >
+                  <Typography.Text strong style={{ fontSize: 16 }}>
+                    {n.title}
+                  </Typography.Text>
+                  {!n.read && (
+                    <Typography.Text style={{ color: "#2563eb", fontSize: 12 }}>
+                      Unread
+                    </Typography.Text>
+                  )}
+                </div>
+                <Typography.Text style={{ color: "#4b5563", display: "block" }}>
+                  {n.message}
+                </Typography.Text>
+                <Typography.Text
+                  style={{ color: "#9ca3af", fontSize: 12, display: "block", marginTop: 6 }}
+                >
+                  {formatTimestamp(n.createdAt)}
+                </Typography.Text>
+              </div>
+            ))}
+
+            {notifNextToken && (
+              <div style={{ display: "flex", justifyContent: "center", paddingTop: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => void loadMoreNotifications()}
+                  disabled={notifLoadingMore}
+                  style={{
+                    border: "1px solid #bfdbfe",
+                    background: "#ffffff",
+                    color: "#2563eb",
+                    fontWeight: 700,
+                    borderRadius: 10,
+                    padding: "8px 14px",
+                    cursor: notifLoadingMore ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {notifLoadingMore ? "Loading..." : "Load more"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
       {/* Mobile Hamburger Button */}
       {isMobile && (
-        <MenuOutlined
-          style={{ fontSize: 22, cursor: "pointer" }}
-          onClick={() => setDrawerVisible(true)}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          {notificationTrigger}
+          <MenuOutlined
+            style={{ fontSize: 22, cursor: "pointer" }}
+            onClick={() => setDrawerVisible(true)}
+          />
+        </div>
       )}
 
       {/* Mobile Drawer */}
