@@ -1,4 +1,5 @@
 import type { ApiResponse, RequestOptions } from "../../types/ApiClientTypes";
+import { TokenService } from "../tokenService";
 
 // apiClient.ts
 const API_BASE_URL =
@@ -21,11 +22,25 @@ export async function request<T>(
 
   const url = `${baseUrl}${endpoint}`;
 
+  let authToken: string | null = null;
+  try {
+    authToken = await TokenService.getToken();
+  } catch (error) {
+    console.warn("ApiClient: Failed to load auth token:", error);
+  }
+
   const defaultHeaders: Record<string, string> = {
     "Content-Type": "application/json",
     "User-Agent": navigator.userAgent,
     ...headers,
   };
+
+  const hasAuthHeader = Object.keys(defaultHeaders).some(
+    (key) => key.toLowerCase() === "authorization"
+  );
+  if (authToken && !hasAuthHeader) {
+    defaultHeaders.Authorization = `Bearer ${authToken}`;
+  }
 
   const requestOptions: RequestInit = {
     method,

@@ -42,9 +42,9 @@ export default function LoginModal({ showModal }: { showModal?: boolean }) {
 
         const result = await login(formData);
         if (result.success) {
-            setTimeout(() => {
-                window.location.reload();
-            }, 2000);
+            // Don't hard-reload the app; it causes jarring UX and can re-trigger bootstrap calls.
+            // Close happens naturally because parent drives `showModal` from auth state.
+            setLoginMessage("Login successful");
         }
     };
 

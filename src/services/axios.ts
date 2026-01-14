@@ -4,7 +4,7 @@ import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
 // import { hashString } from "../utils/crypto";
 import { TokenService } from "./tokenService";
 import { StorageService } from "../utils/storage";
-import { authServiceSingleton } from "./authServiceSingleton";
+import { fetchAuthSession } from "aws-amplify/auth";
 
 const flightApis = [
   "/flightSearch",
@@ -41,6 +41,24 @@ export const axiosClient = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
+async function hasCognitoSession(): Promise<boolean> {
+  try {
+    const t = await TokenService.getCognitoToken();
+    return !!t;
+  } catch {
+    return false;
+  }
+}
+
+async function refreshCognitoToken(): Promise<string | null> {
+  try {
+    await fetchAuthSession({ forceRefresh: true });
+    return await TokenService.getCognitoToken();
+  } catch {
+    return null;
+  }
+}
+
 axiosClient.interceptors.request.use(async (config) => {
   const token = await TokenService.getToken();
   if (token) {
@@ -74,8 +92,22 @@ axiosClient.interceptors.response.use(
       error.response?.status === 401 &&
       serverMsg.includes("Unauthorized: Invalid or expired token")
     ) {
-      const isAuthenticated = StorageService.isAuthenticated?.() ?? false;
-      if (!isAuthenticated) {
+      // IMPORTANT:
+      // We must NOT hard-navigate to /auth on API errors. Instead, refresh tokens if possible,
+      // and propagate the error so the UI can show "Something went wrong".
+      //
+      // Also, localStorage auth flags can be stale. Use Cognito session presence as the source of truth.
+      const cognitoActive = await hasCognitoSession();
+
+      // If Cognito session is not active, always treat this as a guest flow.
+      if (!cognitoActive) {
+        // If Cognito session is not active, always treat this as a guest flow.
+        // Clear any stale auth flags so we don't accidentally force-login on future requests.
+        try {
+          StorageService.clearAuth?.();
+        } catch {
+          // ignore
+        }
         if (!originalRequest._guestRetry) {
           originalRequest._guestRetry = true;
           try {
@@ -97,21 +129,44 @@ axiosClient.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      if (isAuthenticated) {
-        console.warn(
-          "Authenticated user token invalid/expired — forcing logout."
-        );
-
-        try {
-          await authServiceSingleton.signOut();
-          window.location.href = "/auth";
-          return new Promise(() => {});
-        } catch (logoutErr) {
-          console.error("Error during forced logout:", logoutErr);
+      // Cognito is active but the backend rejected the token.
+      // Try to refresh Cognito token once, retry request, otherwise gracefully fall back to guest token.
+      if (!originalRequest._authRetry) {
+        originalRequest._authRetry = true;
+        const refreshed = await refreshCognitoToken();
+        if (refreshed) {
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${refreshed}`;
+          return axiosClient(originalRequest);
         }
-
-        return Promise.reject(error);
       }
+
+      // If we're here, Cognito refresh didn't help; treat as guest so public flows (like flight search)
+      // keep working without forcing a sign-in redirect/toast.
+      try {
+        // Clear stale local auth state; don't hard sign-out (it may trigger extra bootstrap calls).
+        StorageService.clearAuth?.();
+      } catch {
+        // ignore
+      }
+      try {
+        // Clear cached token so guest token will be used next.
+        TokenService.clearToken();
+      } catch {
+        // ignore
+      }
+      if (!originalRequest._guestRetry) {
+        originalRequest._guestRetry = true;
+        const newGuestToken = await TokenService.getGuestToken();
+        if (newGuestToken) {
+          originalRequest.headers = originalRequest.headers || {};
+          originalRequest.headers.Authorization = `Bearer ${newGuestToken}`;
+          return axiosClient(originalRequest);
+        }
+      }
+
+      // If even guest fallback fails, just bubble the error to the UI.
+      return Promise.reject(error);
     }
 
     return Promise.reject(error);

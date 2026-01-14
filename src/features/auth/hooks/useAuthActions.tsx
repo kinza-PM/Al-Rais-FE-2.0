@@ -344,8 +344,8 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
               contactValue: userData.email,
             });
             
-            // Auto-reload for clean state
-            window.location.reload();
+            // Avoid hard reload; it causes jarring UX and can re-trigger bootstrap API calls.
+            // Auth state is already updated above; UI can navigate as needed.
             
             return { success: true, message: 'Account created and logged in successfully!' };
           } else {
