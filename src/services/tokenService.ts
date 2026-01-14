@@ -1,5 +1,4 @@
 import { fetchAuthSession } from 'aws-amplify/auth';
-import { StorageService } from '../utils/storage';
 import { LocalStorageService } from './storage/localStorageService';
 import { STORAGE_KEYS } from '../types/StorageKeysTypes';
 import axios from 'axios';
@@ -34,13 +33,12 @@ export class TokenService {
 
     static async getToken(): Promise<string | null> {
         try {
-            const isAuthenticated = StorageService.isAuthenticated?.() ?? false;
+            // Prefer Cognito token if a session exists (works across refresh & tabs).
+            const cognitoToken = await this.getCognitoToken();
+            if (cognitoToken) return cognitoToken;
 
-            if (isAuthenticated) {
-                return await this.getCognitoToken();
-            } else {
-                return await this.getGuestToken();
-            }
+            // Fallback to guest token.
+            return await this.getGuestToken();
         } catch (error) {
             console.error('TokenService: Error getting token:', error);
             return null;
@@ -89,7 +87,7 @@ export class TokenService {
 
         // 2) check localStorage cache
         try {
-            const cachedToken = LocalStorageService.getItem<TokenData>(STORAGE_KEYS.AUTH_TOKEN);
+            const cachedToken = LocalStorageService.getItem<TokenData>(STORAGE_KEYS.GUEST_TOKEN);
             if (cachedToken && this.isTokenValid(cachedToken)) {
                 this._inMemoryToken = cachedToken;
                 return cachedToken.token;
@@ -141,7 +139,7 @@ export class TokenService {
 
                 this._inMemoryToken = tokenData;
                 try {
-                    LocalStorageService.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenData);
+                    LocalStorageService.setItem(STORAGE_KEYS.GUEST_TOKEN, tokenData);
                 } catch (e) {
                     console.warn('TokenService: Failed to persist guest token to localStorage', e);
                 }
@@ -172,7 +170,9 @@ export class TokenService {
 
     static clearToken(): void {
         try {
+            // Clear both auth + guest tokens (logout / session reset should fully reset token state).
             LocalStorageService.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+            LocalStorageService.removeItem(STORAGE_KEYS.GUEST_TOKEN);
         } catch (e) {
             console.warn('TokenService: clearToken localStorage remove failed', e);
         }

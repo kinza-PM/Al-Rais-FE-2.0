@@ -5,6 +5,7 @@ export const STORAGE_KEYS = {
   SESSION_DATA: 'al_rais_guest_session_data',
   AUTH_USER: 'al_rais_auth_user',
   AUTH_TOKEN: 'al_rais_auth_token',
+  GUEST_TOKEN: 'al_rais_guest_token',
 } as const;
 
 export interface StorageItem<T> {

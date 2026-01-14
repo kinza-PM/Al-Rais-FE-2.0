@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { AuthService } from '../services/authService';
 import { StorageService } from '../../../utils/storage';
 import type { User } from '../types';
@@ -43,7 +43,7 @@ export const useSessionManager = (
   }, [state.authCheckCompleted, markAuthCheckCompleted, setInitializationComplete]);
 
   // Check authentication status
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
     try {
       const isAuth = await AuthService.isAuthenticated();
       
@@ -57,6 +57,8 @@ export const useSessionManager = (
           await initializeGuestUser();
         }
       } else {
+        // ensure any stale auth flags/tokens are removed when session no longer exists
+        StorageService.clearAuth();
         await initializeGuestUser();
       }
     } catch (error) {
@@ -65,7 +67,23 @@ export const useSessionManager = (
     } finally {
       setInitializationComplete();
     }
-  };
+  }, [initializeGuestUser, setAuthenticatedState, setInitializationComplete]);
+
+  // Cross-tab/session synchronization: when auth keys change in another tab, re-check auth.
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key) return;
+      if (
+        e.key === "al_rais_auth_status" ||
+        e.key === "al_rais_user" ||
+        e.key === "al_rais_auth_token"
+      ) {
+        void checkAuth();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [checkAuth]);
 
   // Check if user is authenticated
   const isAuthenticated = async () => {

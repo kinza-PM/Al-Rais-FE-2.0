@@ -131,6 +131,7 @@ export const LocalStorageService = {
       this.removeItem(STORAGE_KEYS.SESSION_DATA);
       this.removeItem(STORAGE_KEYS.AUTH_USER);
       this.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      this.removeItem(STORAGE_KEYS.GUEST_TOKEN);
       return true;
     } catch (error) {
       console.error(" clearUserData:", error);

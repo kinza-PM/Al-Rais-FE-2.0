@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { AuthService } from '../services/authService';
 import { StorageService } from '../../../utils/storage';
 import * as UserService from '../../../services/api/userService';
-// import { TokenService } from '../../../services/tokenService';
+import { TokenService } from '../../../services/tokenService';
 import type { User, LoginForm, SignupForm, SignupMethod, UserSession } from '../types';
 import type { SyncUserResponse } from '../../../services/api/userService';
 
@@ -226,6 +226,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
         } else {
           // Fallback to AWS Cognito user data
           setAuthenticatedState(response.user);
+          StorageService.saveUser(response.user);
         }
         
         // Auto-reload for clean state
@@ -446,8 +447,8 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       resetAuthState();
       UserService.clearGuestData();
       StorageService.clearAuth();
-      // Clear token
-      // TokenService.clearToken();
+      // Clear token(s)
+      TokenService.clearToken();
       
       // Create new guest user after logout
       resetAuthCheckCompleted(); // Allow re-initialization
@@ -464,7 +465,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       resetAuthCheckCompleted();
       StorageService.clearAuth();
       // Clear token even on error
-      // TokenService.clearToken();
+      TokenService.clearToken();
       // Try to create guest user even if logout had errors
       try {
         await initializeGuestUser();

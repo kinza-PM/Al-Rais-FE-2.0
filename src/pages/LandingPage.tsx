@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import { MainLayout } from "../components";
 import HeroSection from "../components/molecules/HeroSection";
+import HeroCarousel from "../components/molecules/HeroCarousel";
 import PartnersSection from "../components/molecules/PartnersSection";
 import WhyChooseUs from "../components/molecules/WhyChooseUsSection";
 import ReadyToFlySection from "../components/molecules/ReadyToFlySection";
@@ -20,6 +21,7 @@ interface LandingPageContext {
 const LandingPage: React.FC = () => {
   const { onLoginClick, onSignupClick } =
     useOutletContext<LandingPageContext>();
+  const [product, setProduct] = useState<"flights" | "hotels" | "cars" | "packages">("flights");
 
   return (
     <MainLayout
@@ -28,12 +30,12 @@ const LandingPage: React.FC = () => {
       addPadding={false}
     >
       <div className="relative justify-center flex flex-col max-w-full p-4">
-        <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-semibold text-black leading-tight mt-10 text-center">
-          Experience the true <span className="text-[#EA0029]">richness</span>{" "}
-          of travel.
-        </h1>
+        <HeroCarousel product={product} onProductChange={setProduct} />
 
-        <HeroSection />
+        <HeroSection
+          activeTab={product === "hotels" ? "hotels" : "flights"}
+          onTabChange={(tab) => setProduct(tab)}
+        />
         {/* <PopularDestination />
         <BestDeals /> */}
       </div>

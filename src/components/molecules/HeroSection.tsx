@@ -3,11 +3,18 @@ import FlightHeroSectionTab from "./FlightHeroSectionTab";
 import HotelHeroSectionTab from "./HotelHeroSectionTab";
 import Celebration from "../../assets/svgs/celebration.svg";
 
-const HeroSection: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<"flights" | "hotels">("flights");
+type Props = {
+  activeTab?: "flights" | "hotels";
+  onTabChange?: (tab: "flights" | "hotels") => void;
+};
+
+const HeroSection: React.FC<Props> = ({ activeTab, onTabChange }) => {
+  const [internalTab, setInternalTab] = useState<"flights" | "hotels">("flights");
+  const selectedTab = activeTab ?? internalTab;
 
   const handleTabChange = (tab: "flights" | "hotels") => {
-    setActiveTab(tab);
+    onTabChange?.(tab);
+    if (!activeTab) setInternalTab(tab);
   };
 
   return (
@@ -20,7 +27,7 @@ const HeroSection: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleTabChange("flights")}
-                className={`font-medium transition-colors cursor-pointer ${activeTab === "flights"
+                className={`font-medium transition-colors cursor-pointer ${selectedTab === "flights"
                   ? "text-[#2351A3]"
                   : "text-[#3D495C] opacity-70"
                   }`}
@@ -30,7 +37,7 @@ const HeroSection: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleTabChange("hotels")}
-                className={`font-medium transition-colors cursor-pointer ${activeTab === "hotels"
+                className={`font-medium transition-colors cursor-pointer ${selectedTab === "hotels"
                   ? "text-[#2351A3]"
                   : "text-[#3D495C] opacity-70"
                   }`}
@@ -44,7 +51,7 @@ const HeroSection: React.FC = () => {
             <span
               className="absolute bottom-0 h-[4px] w-[55px] rounded-full bg-[#5383DA] transition-all duration-300 ease-in-out underline-blur"
               style={{
-                left: activeTab === "flights"
+                left: selectedTab === "flights"
                   ? "calc(48% - 25px)"
                   : "calc(52% + 25px)",
                 transform: "translateX(-50%)",
@@ -53,8 +60,8 @@ const HeroSection: React.FC = () => {
           </div>
 
           {/* Render the appropriate hero section */}
-          {activeTab === "flights" && <FlightHeroSectionTab />}
-          {activeTab === "hotels" && <HotelHeroSectionTab />}
+          {selectedTab === "flights" && <FlightHeroSectionTab />}
+          {selectedTab === "hotels" && <HotelHeroSectionTab />}
         </div>
       </div>
 

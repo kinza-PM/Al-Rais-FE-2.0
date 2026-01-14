@@ -3,6 +3,7 @@ import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
 import { useState } from "react";
+import SessionExpiryWarning from "../../features/auth/components/SessionExpiryWarning";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
@@ -62,6 +63,9 @@ const AppLayout: React.FC = () => {
             onSignupClick={openSignup}
           />
         )}
+
+        {/* Session expiry UX guard (warn before auto-logout) */}
+        <SessionExpiryWarning warningSeconds={120} />
 
         <main className="min-h-screen">
           <Outlet

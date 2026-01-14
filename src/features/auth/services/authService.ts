@@ -40,6 +40,9 @@ interface RemoteUserUpdatePayload {
 }
 
 export class AuthService {
+  private static readonly GENERIC_ERROR =
+    "Something went wrong. Please try again.";
+
   /**
    * Sign in user
    */
@@ -80,12 +83,7 @@ export class AuthService {
       };
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        (errorObj.message as string) ||
-        (error as Error).message ||
-        "Login failed";
-
-      // Handle specific AWS Cognito errors
+      // Handle specific auth errors (user-facing)
       if (errorObj.name === "UserNotConfirmedException") {
         const isPhoneNumber = credentials.email.trim().startsWith("+");
         const message = isPhoneNumber
@@ -107,7 +105,7 @@ export class AuthService {
 
       return {
         success: false,
-        message: errorMessage,
+        message: AuthService.GENERIC_ERROR,
       };
     }
   }
@@ -140,7 +138,7 @@ export class AuthService {
           userAttributes,
         },
       });
-      console.log("Cognito signUp response:", result);
+      // console.log("signUp response:", result);
 
       // Check if user needs confirmation
       if (result.nextStep?.signUpStep === "CONFIRM_SIGN_UP") {
@@ -161,22 +159,18 @@ export class AuthService {
       };
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        (errorObj.message as string) ||
-        (error as Error).message ||
-        "Signup failed";
-      // Handle specific signup errors
+      const errorMessage = (errorObj.message as string) || "";
+      // Handle known signup errors (user-facing)
       if (errorMessage.includes("SignUp is not permitted")) {
         return {
           success: false,
-          message:
-            "Self-registration is disabled. Please contact support or check your AWS Cognito User Pool settings.",
+          message: "Sign up is currently unavailable. Please contact support.",
         };
       }
 
       return {
         success: false,
-        message: errorMessage,
+        message: AuthService.GENERIC_ERROR,
       };
     }
   }
@@ -252,12 +246,7 @@ export class AuthService {
     } catch (error: unknown) {
       console.error(error);
       const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        (errorObj.message as string) ||
-        (error as Error).message ||
-        "Confirmation failed";
-
-      // Handle specific AWS Cognito errors
+      // Handle known confirmation errors (user-facing)
       if (errorObj.name === "CodeMismatchException") {
         return {
           success: false,
@@ -274,7 +263,7 @@ export class AuthService {
 
       return {
         success: false,
-        message: errorMessage,
+        message: AuthService.GENERIC_ERROR,
       };
     }
   }
@@ -305,8 +294,7 @@ export class AuthService {
       console.error("AuthService: resendConfirmationCode error:", error);
       return {
         success: false,
-        message:
-          (error as Error).message || "Failed to resend confirmation code",
+        message: AuthService.GENERIC_ERROR,
       };
     }
   }
@@ -422,12 +410,7 @@ export class AuthService {
     } catch (error: unknown) {
       console.error("AuthService: forgotPassword error:", error);
       const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        (errorObj.message as string) ||
-        (error as Error).message ||
-        "Failed to send reset code";
-
-      // Handle specific AWS Cognito errors
+      // Handle known errors (user-facing)
       if (errorObj.name === "UserNotFoundException") {
         return {
           success: false,
@@ -444,7 +427,7 @@ export class AuthService {
 
       return {
         success: false,
-        message: errorMessage,
+        message: AuthService.GENERIC_ERROR,
       };
     }
   }
@@ -471,7 +454,7 @@ export class AuthService {
       console.error("AuthService: verifyResetCode error:", error);
       return {
         success: false,
-        message: (error as Error).message || "Failed to verify code",
+        message: AuthService.GENERIC_ERROR,
       };
     }
   }
@@ -506,12 +489,7 @@ export class AuthService {
     } catch (error: unknown) {
       console.error("AuthService: resetPasswordWithCode error:", error);
       const errorObj = error as Record<string, unknown>;
-      const errorMessage =
-        (errorObj.message as string) ||
-        (error as Error).message ||
-        "Failed to reset password";
-
-      // Handle specific AWS Cognito errors
+      // Handle known errors (user-facing)
       if (errorObj.name === "CodeMismatchException") {
         return {
           success: false,
@@ -536,7 +514,7 @@ export class AuthService {
 
       return {
         success: false,
-        message: errorMessage,
+        message: AuthService.GENERIC_ERROR,
       };
     }
   }
