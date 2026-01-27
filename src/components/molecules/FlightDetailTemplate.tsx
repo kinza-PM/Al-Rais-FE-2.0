@@ -12,7 +12,7 @@ import { Segmented, Tabs, Select, Flex, Drawer, Button, Grid } from "antd";
 // import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
 // import CustomSelect from "../common/CustomSelect";
-import CustomDatePicker from "../common/CustomDatePicker";
+// import CustomDatePicker from "../common/CustomDatePicker";
 import FlightSearchFilter from "../atoms/FlightSearchFilter";
 import TravelOneWay from "./TravelOneWay";
 import TravelRoundTrip from "./TravelRoundTrip";
@@ -51,9 +51,10 @@ import {
   callWithRetries,
   filterFlightsByTimeAndAirlines,
 } from "../../utils/flightFilters";
-import dayjs from "dayjs";
+// import dayjs from "dayjs";
 import SearchableDropdown from "../common/SearchableDropdown";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 const onChange = (key: string) => {
   console.log(key);
@@ -334,7 +335,11 @@ const FlightDetailTemplate: React.FC = () => {
   const logoFromFlightSegment = (seg: any) =>
     seg ? `/airlines/${seg.marketingAirline}.png` : "";
 
-  const mapFlightRawResponseToFormats = (item: any, idx: number) => {
+  const mapFlightRawResponseToFormats = (
+    item: any,
+    idx: number,
+    commonData?: { searchKey?: string; productCode?: string }
+  ) => {
     const journeys = item?.journey || [];
     const seg0 = journeys[0]?.flightSegments?.[0] ?? null;
     const seg1 = journeys[1]?.flightSegments?.[0] ?? null;
@@ -343,11 +348,13 @@ const FlightDetailTemplate: React.FC = () => {
     const inbound = formatFlightSegmentForTrips(seg1, journeys[1]); // may be null
 
     const priceOptions = buildFlightSearchPriceOptions(item);
+    const searchKey = commonData?.searchKey ?? null;
 
     const oneWayId = outbound?.id ?? `offer-${idx}-${item?.offerId ?? ""}`;
     const oneWayObj = {
       id: oneWayId,
       offerId: item?.offerId,
+      searchKey,
       logo:
         outbound?.logo ??
         logoFromFlightSegment(outbound?.rawSegment) ??
@@ -366,6 +373,7 @@ const FlightDetailTemplate: React.FC = () => {
     const roundObj = {
       id: roundId,
       offerId: item?.offerId,
+      searchKey,
       outbound: outbound
         ? {
             ...outbound,
@@ -387,12 +395,19 @@ const FlightDetailTemplate: React.FC = () => {
     return { oneWayObj, roundObj };
   };
 
-  const processFLightSearchResults = (raw: any[] = []) => {
+  const processFLightSearchResults = (
+    raw: any[] = [],
+    commonData?: { searchKey?: string; productCode?: string }
+  ) => {
     const oneWayFormatted: any[] = [];
     const roundFormatted: any[] = [];
 
     for (const [idx, item] of (raw || []).entries()) {
-      const { oneWayObj, roundObj } = mapFlightRawResponseToFormats(item, idx);
+      const { oneWayObj, roundObj } = mapFlightRawResponseToFormats(
+        item,
+        idx,
+        commonData
+      );
       oneWayFormatted.push(oneWayObj);
       roundFormatted.push(roundObj);
     }
@@ -462,21 +477,21 @@ const FlightDetailTemplate: React.FC = () => {
     );
     const flightSegments: any[] = [
       {
-        // departureAirportCode: fromCode,
-        departureAirportCode: "DXB",
+        departureAirportCode: fromCode,
+        // departureAirportCode: "DXB",
         departureDate: departDate,
-        // arrivalAirportCode: toCode,
-        arrivalAirportCode: "DEL",
+        arrivalAirportCode: toCode,
+        // arrivalAirportCode: "DEL",
         cabinPreferences: [selectedCabinClassId],
       },
     ];
     if (trip === "roundtrip") {
       flightSegments.push({
-        departureAirportCode: "DEL",
-        // departureAirportCode: toCode,
+        // departureAirportCode: "DEL",
+        departureAirportCode: toCode,
         departureDate: returnDate,
-        // arrivalAirportCode: fromCode,
-        arrivalAirportCode: "DXB",
+        arrivalAirportCode: fromCode,
+        // arrivalAirportCode: "DXB",
         cabinPreferences: [selectedCabinClassId],
       });
     }
@@ -506,9 +521,12 @@ const FlightDetailTemplate: React.FC = () => {
         500
       );
       const raw = response.data || [];
+      const commonData = response?.commonData;
 
-      const { oneWayFormatted, roundFormatted } =
-        processFLightSearchResults(raw);
+      const { oneWayFormatted, roundFormatted } = processFLightSearchResults(
+        raw,
+        commonData
+      );
 
       originalResponseRef.current = oneWayFormatted;
       originalRoundResponseRef.current = roundFormatted;
@@ -600,6 +618,9 @@ const FlightDetailTemplate: React.FC = () => {
     baggage,
     airline,
     loading,
+    countriesHasMore,
+    countriesFetchNext,
+    countriesIsFetchingNext,
   } = useMasterListings({
     include: [
       "flightTypes",
@@ -614,12 +635,14 @@ const FlightDetailTemplate: React.FC = () => {
     ],
   });
 
+  const isInitialLoading = loading && (!countries || countries.length === 0);
+
   const { useBreakpoint } = Grid;
 
   const [trip, setTrip] = useState<TripType>("oneway");
   const [fromCode, setFromCode] = useState<string>("");
   const [toCode, setToCode] = useState<string>("");
-  const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("");
+  const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("5");
 
   // const [showFilters, setShowFilters] = useState(false);
 
@@ -644,7 +667,7 @@ const FlightDetailTemplate: React.FC = () => {
   const shouldAutoSearchRef = useRef(false);
   useEffect(() => {
     if (!flight) return;
-    if (loading) return;
+    if (isInitialLoading) return;
 
     const snapshot = JSON.stringify({
       trip: flight.trip,
@@ -672,7 +695,7 @@ const FlightDetailTemplate: React.FC = () => {
 
     setFromCode(flight?.fromCode ?? "");
     setToCode(flight?.toCode ?? "");
-    setSelectedCabinClassId(String(flight?.selectedCabinClassId ?? ""));
+    setSelectedCabinClassId(String(flight?.selectedCabinClassId ?? "5"));
     setDepartDate(
       typeof flight?.departure === "string" ? flight.departure : ""
     );
@@ -696,7 +719,7 @@ const FlightDetailTemplate: React.FC = () => {
     }, 0);
 
     return () => window.clearTimeout(timeoutId);
-  }, [flight, loading]);
+  }, [flight, isInitialLoading]);
 
   const hasBasicFilters = useCallback(() => {
     const totalPassengers = Object.values(paxCounts || {}).reduce<number>(
@@ -801,7 +824,7 @@ const FlightDetailTemplate: React.FC = () => {
 
   const cabinSelectOptions = useMemo(
     () => [
-      { value: "", label: "Please select", disabled: true },
+      { value: "", label: "Select cabin class", disabled: true },
       ...(cabinClasses as CabinClassOption[]).map((c) => ({
         value: c.id,
         label: c.label,
@@ -1036,7 +1059,7 @@ const FlightDetailTemplate: React.FC = () => {
     setRoundResponseData([]);
     setDepartDate("");
     setReturnDate("");
-    setSelectedCabinClassId("");
+    setSelectedCabinClassId("5");
     setPaxCounts({});
     setHasMore(false);
     setIoReady(false);
@@ -1052,7 +1075,7 @@ const FlightDetailTemplate: React.FC = () => {
 
   return (
     <div className="">
-      <Loader show={loading} />
+      <Loader show={isInitialLoading} />
       <Loader
         show={isPending || isSearching}
         label="Please wait while we are looking for available flights"
@@ -1072,7 +1095,7 @@ const FlightDetailTemplate: React.FC = () => {
                 style={{ marginBottom: 0 }}
                 onChange={(v) => setTrip(v as TripType)}
                 options={segOptions.length ? segOptions : []}
-                disabled={loading && !segOptions.length}
+                disabled={isInitialLoading && !segOptions.length}
               />
             </div>
           </div>
@@ -1178,7 +1201,7 @@ const FlightDetailTemplate: React.FC = () => {
           <Flex className="bottomHeaderFlex">
             <TravelRoutePicker
               options={countries as CountryOption[]}
-              loading={loading}
+              loading={isInitialLoading}
               value={{ fromCode, toCode }}
               onChange={({ fromCode: f, toCode: t }) => {
                 setFromCode(f);
@@ -1199,12 +1222,19 @@ const FlightDetailTemplate: React.FC = () => {
                   ? "Please try a different search."
                   : undefined
               }
+              onLoadMore={() => {
+                if (countriesHasMore) {
+                  countriesFetchNext?.();
+                }
+              }}
+              hasMore={countriesHasMore}
+              loadingMore={countriesIsFetchingNext}
             />
           </Flex>
           <Flex className="bottomHeaderFlex">
             <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
               <label className="header-labels-common ">Departure Date</label>
-              <CustomDatePicker
+              {/* <CustomDatePicker
                 format={"dddd, DD MMM YYYY "}
                 style={{ width: "100%", height: 44 }}
                 className="header-input-common ant-input-select"
@@ -1212,12 +1242,21 @@ const FlightDetailTemplate: React.FC = () => {
                 onChange={(value) => {
                   handleDate(value, "depart");
                 }}
+              /> */}
+              <TailiwindCustomDatePicker
+                value={departDate ? new Date(departDate) : null}
+                onChange={(value) => {
+                  handleDate(value, "depart");
+                }}
+                placeholder="Select departure date"
+                buttonIconSrc={true}
+                disablePastDates={true}
               />
             </Flex>
             {trip === "roundtrip" && (
               <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
                 <label className="header-labels-common ">Arrival Date</label>
-                <CustomDatePicker
+                {/* <CustomDatePicker
                   format={"dddd, DD MMM YYYY "}
                   style={{ width: "100%", height: 44 }}
                   className="header-input-common ant-input-select"
@@ -1225,6 +1264,15 @@ const FlightDetailTemplate: React.FC = () => {
                   onChange={(value) => {
                     handleDate(value, "return");
                   }}
+                /> */}
+                <TailiwindCustomDatePicker
+                  value={returnDate ? new Date(returnDate) : null}
+                  onChange={(value) => {
+                    handleDate(value, "return");
+                  }}
+                  placeholder="Select arrival date"
+                  buttonIconSrc={true}
+                  disablePastDates={true}
                 />
               </Flex>
             )}
@@ -1252,8 +1300,8 @@ const FlightDetailTemplate: React.FC = () => {
                 }))}
                 value={selectedCabinClassId || ""}
                 onChange={(value) => setSelectedCabinClassId(value)}
-                placeholder={loading ? "Loading…" : "Please select"}
-                disabled={loading}
+                placeholder={isInitialLoading ? "Loading…" : "Select cabin class"}
+                disabled={isInitialLoading}
                 widthClass="w-full"
                 // className="header-sub-inputs-common"
                 searchPlaceholder="Search cabin classes..."
@@ -1279,7 +1327,7 @@ const FlightDetailTemplate: React.FC = () => {
               width={300}
             >
               <FlightSearchFilter
-                loading={loading}
+                loading={isInitialLoading}
                 headerContent={headerContent}
                 priceRangeBounds={priceRangeBounds}
                 selectedPriceRange={selectedPriceRange}
@@ -1352,7 +1400,7 @@ const FlightDetailTemplate: React.FC = () => {
           {screens.lg && (
             <div className="flightDetailFilter">
               <FlightSearchFilter
-                loading={loading}
+                loading={isInitialLoading}
                 headerContent={headerContent}
                 priceRangeBounds={priceRangeBounds}
                 selectedPriceRange={selectedPriceRange}

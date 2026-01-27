@@ -1725,3 +1725,49 @@ img:hover {
 }
 
 /* Small Screens Filter Toggle */
+
+@media print {
+  /* page sizing — choose A4 or Letter. Change if you prefer Letter (8.5in 11in). */
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  /* hide everything by default, but allow the print-section to be visible */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* show only the print container and its children */
+  #flight-ticket-print,
+  #flight-ticket-print * {
+    visibility: visible !important;
+  }
+
+  /* place the print container at top-left of page */
+  #flight-ticket-print {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm; /* match A4 width minus margins; change to 8.5in for Letter */
+    box-sizing: border-box;
+    overflow: visible !important;
+    pointer-events: auto !important;
+    z-index: 9999 !important;
+  }
+
+  /* hide UI bits that should never print */
+  .share-modal,
+  .no-print,
+  .pdf-hide {
+    display: none !important;
+  }
+
+  /* force page breaks so each .print-page becomes a printed page */
+  .print-page {
+    page-break-after: always; /* legacy */
+    break-after: page; /* modern */
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

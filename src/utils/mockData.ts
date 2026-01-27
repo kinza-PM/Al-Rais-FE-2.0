@@ -1,7 +1,4 @@
-import type {
-  Booking,
-  BookingStatus,
-} from "../components/molecules/UserBookingsListing";
+import type { BookingStatus } from "../components/molecules/UserBookingsListing";
 
 export const travelData = [
   {
@@ -385,7 +382,7 @@ export const flightBookingReviewSeatDetail = {
   seatNo: "B9",
 };
 
-export const userBookingListings: Booking[] = [
+export const userBookingListings: any[] = [
   {
     id: "1",
     type: "flight",

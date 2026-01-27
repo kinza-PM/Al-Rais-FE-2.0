@@ -197,7 +197,8 @@ export function mapFlightSegment(
   return {
     heading: defaultHeading,
     route,
-    airlineLogo: item?.logo ?? item?.outbound?.logo ?? assets.EmirateLogo ?? "",
+    airlineLogo: item?.logo ?? item?.outbound?.logo ?? "",
+    // airlineLogo: item?.logo ?? item?.outbound?.logo ?? assets.EmirateLogo ?? "",
     airlineName:
       item?.name ?? item?.airlineName ?? item?.outbound?.name ?? "Airline",
     flightMeta: `${flightNumber} – ${flightClass}`,
@@ -285,10 +286,10 @@ export function buildFlightSegmentFromTrip(
           const journeyLabel = isSingleJourney
             ? "Departure flight"
             : jIdx === 0
-              ? "Departure flight"
-              : jIdx === 1
-                ? "Return flight"
-                : `Journey ${jIdx + 1}`;
+            ? "Departure flight"
+            : jIdx === 1
+            ? "Return flight"
+            : `Journey ${jIdx + 1}`;
           segs.forEach((seg: any, sIdx: number) => {
             const partClone = {
               ...part,
@@ -308,9 +309,10 @@ export function buildFlightSegmentFromTrip(
                 },
               ],
             };
-            const label = segs.length > 1
-              ? `${journeyLabel} - Segment ${sIdx + 1}`
-              : journeyLabel;
+            const label =
+              segs.length > 1
+                ? `${journeyLabel} - Segment ${sIdx + 1}`
+                : journeyLabel;
             results.push(mapFlightSegment(partClone, assets, label));
           });
         }
@@ -330,12 +332,33 @@ export function buildFlightSegmentFromTrip(
   return expandBySegments(trip, "Departure flight");
 }
 
-export function getPriceCabinClassForFlightSummary(trip: any) {
-  if (!trip?.price) return null;
+export function getPriceCabinClassForFlightSummary(trip: any) {  
+  // Handle new structure from pending bookings (trip.raw.fare.fareBreakdown)
+  // Original logic for normal bookings (trip.price)
+  // if (!trip?.price) return null;
   if (Array.isArray(trip.price) && trip.price.length > 0) return trip.price[0];
   if (typeof trip.price === "object" && trip.price !== null) {
     const values = Object.values(trip.price);
     if (values.length > 0) return values[0];
+  }
+
+  if (trip?.raw?.fare?.fareBreakdown && Array.isArray(trip.raw.fare.fareBreakdown) && trip.raw.fare.fareBreakdown.length > 0) {
+    const fareType = trip.raw.fare.fareBreakdown[0]?.fareType;
+    if (fareType) {
+      // Get cabin class from first segment
+      const firstJourney = trip?.raw?.journey?.[0];
+      const firstSegment = firstJourney?.flightSegments?.[0];
+      const cabinClass = firstSegment?.cabinClass || "Economy";
+      const priceClassName = firstSegment?.priceClassName || "Economy";
+      
+      // Format as "Economy - ECO FLEX" or "Economy - Economy"
+      const formattedLabel = `${cabinClass} - ${priceClassName}`;
+      
+      return {
+        _priceClasses: [fareType],
+        label: formattedLabel,
+      };
+    }
   }
   return null;
 }
@@ -413,4 +436,14 @@ export const warningToast = (message: string) => {
   toast(message, {
     icon: "⚠️",
   });
+};
+
+export const formatTo12Hour = (time?: string) => {
+  if (!time) return "";
+  const [hours, minutes] = time.split(":").map(Number);
+
+  const period = hours >= 12 ? "PM" : "AM";
+  const formattedHours = hours % 12 || 12;
+
+  return `${formattedHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 };

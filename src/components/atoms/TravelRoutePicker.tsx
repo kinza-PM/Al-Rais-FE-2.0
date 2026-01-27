@@ -17,6 +17,9 @@ type Props = {
   widthClass?: string;
   fromError?: string | null;
   toError?: string | null;
+  onLoadMore?: () => void;
+  hasMore?: boolean;
+  loadingMore?: boolean;
 };
 
 const TravelRoutePicker: React.FC<Props> = ({
@@ -31,6 +34,9 @@ const TravelRoutePicker: React.FC<Props> = ({
   widthClass = "w-[190px]",
   fromError,
   toError,
+  onLoadMore = () => {},
+  hasMore = false,
+  loadingMore = false,
 }) => {
   const { fromCode, toCode } = value;
 
@@ -43,22 +49,22 @@ const TravelRoutePicker: React.FC<Props> = ({
   };
 
   // Convert CountryOption to DropdownOption format
-  const dropdownOptions = options.map(option => ({
+  const dropdownOptions = options.map((option) => ({
     id: option.id,
     value: option.code,
     label: option.label,
-    disabled: false
+    disabled: false,
   }));
 
   // Filter options based on disableSameSelection
-  const fromOptions = dropdownOptions.map(option => ({
+  const fromOptions = dropdownOptions.map((option) => ({
     ...option,
-    disabled: disableSameSelection && option.value === toCode
+    disabled: disableSameSelection && option.value === toCode,
   }));
 
-  const toOptions = dropdownOptions.map(option => ({
+  const toOptions = dropdownOptions.map((option) => ({
     ...option,
-    disabled: disableSameSelection && option.value === fromCode
+    disabled: disableSameSelection && option.value === fromCode,
   }));
 
   return (
@@ -74,6 +80,9 @@ const TravelRoutePicker: React.FC<Props> = ({
           error={fromError}
           widthClass="w-full"
           searchPlaceholder="Search destinations..."
+          onLoadMore={onLoadMore}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
         />
       </div>
 
@@ -98,6 +107,9 @@ const TravelRoutePicker: React.FC<Props> = ({
           error={toError}
           widthClass="w-full"
           searchPlaceholder="Search destinations..."
+          onLoadMore={onLoadMore}
+          hasMore={hasMore}
+          loadingMore={loadingMore}
         />
       </div>
     </>

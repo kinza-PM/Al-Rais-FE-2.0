@@ -7,7 +7,7 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import FlagUsa from "../../assets/images/Flag-usa.png";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
 // import CustomToggle from "../common/CustomToggle";
@@ -29,6 +29,7 @@ import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import LoginModal from "../common/LoginModal";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { getUniqueCountries } from "../../utils/dropdownHelper";
 
 type FlightBookingBookSectionProps = {
   trip: any;
@@ -132,6 +133,10 @@ export default function FlightBookingBookSection({
       toast.error(err);
     }
   };
+
+  const countryOptions = useMemo(() => {
+    return getUniqueCountries(cities);
+  }, [cities]);
 
   return (
     <section className="mx-auto max-w-full px-10 flight-booking-section">
@@ -316,11 +321,18 @@ export default function FlightBookingBookSection({
                     {/* {pRules.isIssuingCountryCodeMandatory && ( */}
                     <div className="relative w-full">
                       <SearchableDropdown
+                        // options={
+                        //   cities?.map((c) => ({
+                        //     id: c.id,
+                        //     value: c.code,
+                        //     label: c.city,
+                        //   })) || []
+                        // }
                         options={
-                          cities?.map((c) => ({
+                          countryOptions?.map((c) => ({
                             id: c.id,
-                            value: c.code,
-                            label: c.city,
+                            value: c.countryCode || c.value,
+                            label: c.label,
                           })) || []
                         }
                         value={
@@ -401,11 +413,18 @@ export default function FlightBookingBookSection({
                     {/* {pRules.isResidenceCountryCodeMandatory && ( */}
                     <div className="relative w-full">
                       <SearchableDropdown
+                        // options={
+                        //   cities?.map((c) => ({
+                        //     id: c.id,
+                        //     value: c.code,
+                        //     label: c.city,
+                        //   })) || []
+                        // }
                         options={
-                          cities?.map((c) => ({
+                          countryOptions?.map((c) => ({
                             id: c.id,
-                            value: c.code,
-                            label: c.city,
+                            value: c.countryCode || c.value,
+                            label: c.label,
                           })) || []
                         }
                         value={

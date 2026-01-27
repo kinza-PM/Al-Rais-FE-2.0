@@ -87,12 +87,15 @@ export function buildCountryOptions(items: CountryItem[]): CountryOption[] {
       // .filter(i => i.status === 1)
       .map((i, key) => ({
         id: `${key}`,
-        label: `${i.city}, ${i.country}`,
+        // label: `${i.city}, ${i.country}`,
+        label: `${i.city} (${i.iataCode})`,
+        // label: `${i.airportName}`,
         // label: `${i.city} (${i.cityCode}), ${i.country}`,
         code: i.iataCode,
         // code: i.cityCode,
         city: i.city,
         country: i.country,
+        countryCode: i.countryCode,
       }))
       // optional: stable sort by city
       .sort((a, b) => a.city.localeCompare(b.city))

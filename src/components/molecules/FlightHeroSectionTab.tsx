@@ -20,7 +20,7 @@ const FlightHeroSection: React.FC = () => {
   const [trip, setTrip] = useState<TripType>("oneway");
   const [fromCode, setFromCode] = useState<string>("");
   const [toCode, setToCode] = useState<string>("");
-  const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("");
+  const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("5");
   const [paxCounts, setPaxCounts] = useState<Record<string, number>>({});
   const [paxOrder, setPaxOrder] = useState<string[]>([]);
   const [departDate, setDepartDate] = useState<Date | null>(new Date());
@@ -58,6 +58,9 @@ const FlightHeroSection: React.FC = () => {
     cabinClasses,
     loading,
     errorMap,
+    countriesHasMore,
+    countriesFetchNext,
+    countriesIsFetchingNext,
   } = useMasterListings();
 
   const navigate = useNavigate();
@@ -65,14 +68,16 @@ const FlightHeroSection: React.FC = () => {
 
   const tabs = useMemo<FlightTypeOption[]>(() => flightTypes, [flightTypes]);
 
+  const isInitialLoading = loading && countries.length === 0;
+
   const nsLoading = useMemo(
     () => ({
-      flightTypes: loading,
-      countries: loading,
-      passengers: loading,
-      cabinClasses: loading,
+      flightTypes: isInitialLoading,
+      countries: isInitialLoading,
+      passengers: isInitialLoading,
+      cabinClasses: isInitialLoading,
     }),
-    [loading]
+    [isInitialLoading]
   );
 
   useEffect(() => {
@@ -93,7 +98,7 @@ const FlightHeroSection: React.FC = () => {
   useEffect(() => {
     setPaxCounts({});
     setPaxOrder([]);
-    setSelectedCabinClassId("");
+    setSelectedCabinClassId("5");
     setDepartDate(null);
     setArrivalDate(null);
     setHasAttemptedValidation(false);
@@ -194,7 +199,7 @@ const FlightHeroSection: React.FC = () => {
 
   return (
     <>
-      <Loader show={loading} />
+      <Loader show={isInitialLoading} />
 
       {flightTypesFailed ? (
         <div className="py-16 flex flex-col items-center text-center">
@@ -270,6 +275,9 @@ const FlightHeroSection: React.FC = () => {
                 cabinClassError={
                   hasAttemptedValidation ? validationErrors.cabinClass : ""
                 }
+                countriesHasMore={countriesHasMore}
+                countriesFetchNext={countriesFetchNext}
+                countriesLoadingMore={countriesIsFetchingNext}
               />
             )}
 
@@ -303,6 +311,9 @@ const FlightHeroSection: React.FC = () => {
                 cabinClassError={
                   hasAttemptedValidation ? validationErrors.cabinClass : ""
                 }
+                countriesHasMore={countriesHasMore}
+                countriesFetchNext={countriesFetchNext}
+                countriesLoadingMore={countriesIsFetchingNext}
               />
             )}
 

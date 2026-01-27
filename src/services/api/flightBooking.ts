@@ -34,6 +34,10 @@ export type FlightFareRuleSearch = {
   offerId: string;
 };
 
+export type UserProfileMyBooking = {
+  status: string;
+};
+
 export type RetrieveFlightBooking = {
   offerId: string;
 };
@@ -120,6 +124,17 @@ export async function postFlightAncillarySearch<TResp = any>(
   const source = "postFlightAncillarySearch";
   try {
     return await api.post<TResp>("/ancillarySearch", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}
+
+export async function postMyBooking<TResp = any>(
+  body: UserProfileMyBooking
+): Promise<TResp> {
+  const source = "posMyBooking";
+  try {
+    return await api.post<TResp>("/myBooking", body);
   } catch (err) {
     throw toApiError(source, err);
   }

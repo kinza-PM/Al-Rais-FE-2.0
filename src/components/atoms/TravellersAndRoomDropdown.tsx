@@ -5,6 +5,7 @@ import CustomDropdownError from "../common/CustomDropdownError";
 type Pax = {
   adults?: number;
   kids?: number;
+  children?: number;
   infants?: number;
   seniors?: number;
   rooms?: number;
@@ -16,6 +17,8 @@ type Props = {
   maxTotal?: number;
   schema?: PassengerSchema;
   errorMessage?: string | null;
+  // optional callback to return children ages to parent
+  onChildrenAgesChange?: (ages: Array<number | null>) => void;
 };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -73,33 +76,37 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   maxTotal = 100,
   schema,
   errorMessage,
+  onChildrenAgesChange,
 }) => {
-  // ✅ Only use API schema
+  // schema rows (from API)
   const rows = useMemo(() => schema ?? [], [schema]);
-  // init pax keys from schema (no hardcoded defaults)
+
+  // initial pax state (keeps shape from schema)
   const initialPax = useMemo<Pax>(() => {
     const p: Pax = { rooms: value?.rooms ?? 0 };
     for (const r of rows) (p as any)[r.key] = (value as any)?.[r.key] ?? 0;
     return p;
   }, [rows, value]);
+
   const [pax, setPax] = useState<Pax>(initialPax);
   const [open, setOpen] = useState(false);
   const [showError, setShowError] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isUpdatingFromProps = useRef(false);
+
+  // total passengers (sum of rows keys)
   const total = useMemo(
     () => rows.reduce((acc, r) => acc + ((pax as any)[r.key] || 0), 0),
     [rows, pax]
   );
-  // keep pax shape in sync if schema arrives later
-  // useEffect(() => setPax(initialPax), [initialPax]);
+
   useEffect(() => {
     if (value && JSON.stringify(value) !== JSON.stringify(pax)) {
       isUpdatingFromProps.current = true;
       setPax(initialPax);
     }
   }, [value, initialPax]);
-  // outside click → close panels
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) {
@@ -110,13 +117,14 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-  // useEffect(() => void onChange?.(pax), [pax, onChange]);
+
   useEffect(() => {
     if (onChange && !isUpdatingFromProps.current) {
       onChange(pax);
     }
     isUpdatingFromProps.current = false;
   }, [pax, onChange]);
+
   const canInc = (_k: PaxKey) => total < maxTotal;
   const inc = (k: PaxKey) =>
     canInc(k) && setPax((p) => ({ ...p, [k]: ((p as any)[k] || 0) + 1 }));
@@ -128,7 +136,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   const incRooms = () => setPax((p) => ({ ...p, rooms: (p.rooms ?? 1) + 1 }));
   const decRooms = () =>
     setPax((p) => ({ ...p, rooms: Math.max(1, (p.rooms ?? 1) - 1) }));
-  // block native “menu” (it’s a button) and toggle error vs list
+
   const handleToggle = () => {
     const hasError = !!errorMessage || rows.length === 0;
     if (hasError) {
@@ -139,6 +147,53 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
       setShowError(false);
     }
   };
+
+  // --- CHILDREN AGES HANDLING ---
+  // detect children key in schema (support 'kids' or 'children')
+  const childRowKey = useMemo(
+    () =>
+      rows.find((r) => r.key === "kids")?.key as
+        | (keyof Pax & string)
+        | undefined,
+    [rows]
+  );
+
+  const childCount = (childRowKey && ((pax as any)[childRowKey] || 0)) || 0;
+
+  // local ages array for children (null means not set)
+  const [childAges, setChildAges] = useState<Array<number | null>>([]);
+
+  // sync childAges length when childCount changes
+  useEffect(() => {
+    setChildAges((prev) => {
+      if (childCount > prev.length) {
+        return [...prev, ...Array(childCount - prev.length).fill(null)];
+      } else {
+        return prev.slice(0, childCount);
+      }
+    });
+  }, [childCount]);
+
+  // notify parent ages changed (optional)
+  useEffect(() => {
+    onChildrenAgesChange?.(childAges);
+  }, [childAges, onChildrenAgesChange]);
+
+  const handleChildAgeChange = (index: number, value: string) => {
+    const num = value === "" ? null : Math.max(0, Math.min(17, Number(value)));
+    setChildAges((prev) => {
+      const next = [...prev];
+      next[index] = num;
+      return next;
+    });
+  };
+
+  // --- filter out infants visually ---
+  const visibleRows = useMemo(
+    () => rows.filter((r) => r.key !== "infants"),
+    [rows]
+  );
+
   return (
     <div className="relative" ref={ref}>
       {/* Trigger */}
@@ -156,7 +211,6 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
           }
         }}
         className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none border-[#DFE7F3]`}
-        // className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] focus:ring-2 flex items-center justify-between leading-none border-[#DFE7F3] focus:ring-[#2351A3]/20`}
         aria-haspopup="dialog"
         aria-expanded={open || showError}
         aria-invalid={showError}
@@ -183,33 +237,72 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
           />
         </svg>
       </button>
-      {/* Error panel (like From/To) */}
+
+      {/* Error panel */}
       {showError && (
-        // <div className="absolute z-30 mt-2 w-[250px]">
         <CustomDropdownError
           id="pax-error"
           title="Nothing found!"
           message={errorMessage ?? "Please try again later."}
         />
-        // </div>
       )}
-      {/* Counter list */}
+
+      {/* Counter list + children ages */}
       {open && (
-        <div className="absolute z-30 mt-2 w-[300px] rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] p-3">
-          {rows.map((r, idx) => (
+        <div className="absolute z-30 mt-2 w-[320px] rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] p-3">
+          {visibleRows.map((r, idx) => (
             <React.Fragment key={r.key}>
               <Row
                 title={r.title}
                 count={(pax as any)[r.key] || 0}
-                dec={() => dec(r.key)}
-                inc={() => inc(r.key)}
+                dec={() => dec(r.key as PaxKey)}
+                inc={() => inc(r.key as PaxKey)}
                 disableDec={((pax as any)[r.key] || 0) <= 0}
-                disableInc={!canInc(r.key)}
+                disableInc={!canInc(r.key as PaxKey)}
               />
-              {idx < rows.length - 1 && <div className="h-px bg-[#EDEFF6]" />}
+              {idx < visibleRows.length - 1 && (
+                <div className="h-px bg-[#EDEFF6]" />
+              )}
             </React.Fragment>
           ))}
-          {rows.length > 0 && <div className="h-px bg-[#EDEFF6]" />}
+
+          {childCount > 0 && (
+            <>
+              <div className="h-px bg-[#EDEFF6] mb-2" />
+              <div className="mb-2">
+                <div className="text-xs font-semibold text-[#3D495C]">
+                  How old are your children?
+                </div>
+                <div className="text-xs text-[#3D495C]">
+                  Let us know their ages so we can show how much their stay will
+                  cost you.
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {Array.from({ length: childCount }).map((_, i) => (
+                  <input
+                    key={i}
+                    type="number"
+                    min={0}
+                    max={17}
+                    inputMode="numeric"
+                    aria-label={`child-${i + 1}-age`}
+                    placeholder="Age"
+                    value={
+                      childAges[i] === null || childAges[i] === undefined
+                        ? ""
+                        : String(childAges[i])
+                    }
+                    onChange={(e) => handleChildAgeChange(i, e.target.value)}
+                    className="w-20 h-9 rounded-xl border border-[#EDEFF6] pl-3 text-[14px] text-[#0F172A] bg-white placeholder:text-[#94A3B8] focus:outline-none focus:ring-0"
+                  />
+                ))}
+              </div>
+            </>
+          )}
+          {visibleRows.length > 0 && <div className="h-px bg-[#EDEFF6] mt-1" />}
+
           <Row
             title="Rooms"
             count={pax.rooms ?? 1}

@@ -10,7 +10,7 @@ import shareIcon from "../../assets/svgs/share.svg";
 import secureLockIcon from "../../assets/svgs/secure-lock.svg";
 import visaIcon from "../../assets/svgs/visa.svg";
 import masterCardIcon from "../../assets/svgs/mastercard.svg";
-import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
+// import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 // import FlagUsa from "../../assets/images/Flag-usa.png";
 import FlagUae from "../../assets/svgs/Flag-uae.svg";
@@ -42,6 +42,7 @@ import {
 } from "../../utils/flightBookingHelper";
 import { usePayfortPayment } from "../../hooks/usePayment";
 import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
+import CardOverlaySearchableDropdown from "../common/CardOverlaySearchableDropdown";
 
 type PaymentMethod = "card" | "apple" | "google";
 
@@ -63,15 +64,15 @@ type FlightBookingPaymentSectionProps = {
   ) => void;
 };
 
-function ChevronDown() {
-  return (
-    <img
-      alt="arrow-icon"
-      src={arrownDownwardIcon}
-      className="pointer-events-none absolute right-3 top-4"
-    />
-  );
-}
+// function ChevronDown() {
+//   return (
+//     <img
+//       alt="arrow-icon"
+//       src={arrownDownwardIcon}
+//       className="pointer-events-none absolute right-3 top-4"
+//     />
+//   );
+// }
 
 export default function FlightBookingPaymentSection({
   trip,
@@ -184,6 +185,8 @@ export default function FlightBookingPaymentSection({
       toast.error(error || "Validation failed.");
       return;
     }
+    console.log("cardDetails", cardDetails);
+    console.log("reservation", reservation);
     setIsProcessing(true);
     try {
       const cleanCardNumber = (cardDetails.number || "").replace(/\s+/g, "");
@@ -622,7 +625,7 @@ export default function FlightBookingPaymentSection({
                           </div>
 
                           <div className="relative">
-                            <select
+                            {/* <select
                               defaultValue=""
                               className="h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3"
                               value={address.countryCode ?? ""}
@@ -635,11 +638,29 @@ export default function FlightBookingPaymentSection({
                               <option value="UAE">United Arab Emirates</option>
                             </select>
 
-                            <ChevronDown />
+                            <ChevronDown /> */}
+                            <CardOverlaySearchableDropdown
+                              options={[
+                                {
+                                  id: "UAE",
+                                  value: "UAE",
+                                  label: "United Arab Emirates",
+                                },
+                              ]}
+                              value={address.countryCode ?? ""}
+                              onChange={(val) =>
+                                onReservationChange(
+                                  "paymentDetails.address.countryCode",
+                                  val
+                                )
+                              }
+                              placeholder="Select a country"
+                              className="h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3"
+                            />
                           </div>
 
                           <div className="grid grid-cols-2">
-                            <div className="px-3 relative">
+                            {/* <div className="px-3 relative">
                               <select
                                 defaultValue=""
                                 className="h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3"
@@ -658,6 +679,24 @@ export default function FlightBookingPaymentSection({
                               </select>
 
                               <ChevronDown />
+                            </div> */}
+                            <div className="relative">
+                              <CardOverlaySearchableDropdown
+                                options={cities.map((c) => ({
+                                  id: c.code,
+                                  value: c.code,
+                                  label: c.city,
+                                }))}
+                                value={address.cityName ?? ""}
+                                onChange={(val) =>
+                                  onReservationChange(
+                                    "paymentDetails.address.cityName",
+                                    val
+                                  )
+                                }
+                                placeholder="Select a city"
+                                className="h-11 w-full appearance-none bg-transparent px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                              />
                             </div>
                             <div className="border-l border-[#E4E4E7] px-3">
                               <TailwindCustomInput

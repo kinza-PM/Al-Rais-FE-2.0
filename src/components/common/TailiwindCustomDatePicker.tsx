@@ -10,6 +10,7 @@ type DatePickerProps = {
   showCalendarIconRight?: boolean;
   inputClass?: string;
   //   error?: string;
+  disablePastDates?: boolean;
 };
 
 const WEEKDAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
@@ -56,6 +57,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   showCalendarIconRight = true,
   inputClass = null,
   //   error = "",
+  disablePastDates = false,
 }) => {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<Date>(() => value ?? new Date());
@@ -68,6 +70,17 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
     };
     if (open) document.addEventListener("mousedown", onDocClick);
     return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  // Close on ESC key
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && open) {
+        setOpen(false);
+      }
+    };
+    if (open) document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
   }, [open]);
 
   const monthName = useMemo(
@@ -93,17 +106,23 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
       inMonth: boolean;
       isToday: boolean;
       isSelected: boolean;
+      isPast: boolean;
     }[] = [];
     const today = new Date();
 
     for (let i = 0; i < totalCells; i++) {
       const d = new Date(firstGridDate);
       d.setDate(firstGridDate.getDate() + i);
+      const inMonth = d.getMonth() === view.getMonth();
+      const isToday = isSameDay(d, today);
+      const isSelected = value ? isSameDay(d, value) : false;
+      const isPast = d.getTime() < today.getTime() && !isToday;
       cells.push({
         date: d,
-        inMonth: d.getMonth() === view.getMonth(),
-        isToday: isSameDay(d, today),
-        isSelected: value ? isSameDay(d, value) : false,
+        inMonth,
+        isToday,
+        isSelected,
+        isPast,
       });
     }
     return cells;
@@ -224,7 +243,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
 
           {/* Days grid */}
           <div className="grid grid-cols-7 gap-1 px-3 pb-3 pt-1">
-            {days.map(({ date, inMonth, isToday, isSelected }) => {
+            {days.map(({ date, inMonth, isToday, isSelected, isPast }) => {
               const base =
                 "h-9 w-9 mx-auto flex items-center justify-center rounded-md text-[13px] transition";
               const outMonth = !inMonth ? "text-[#B8C1D1]" : "";
@@ -241,15 +260,22 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
               const todayRing =
                 isToday && !isSelected ? "ring-1 ring-[#2351A3]" : "";
 
+              const pastDisabledVisual =
+                disablePastDates && isPast
+                  ? "opacity-50 cursor-not-allowed hover:bg-transparent"
+                  : "";
+
               return (
                 <button
                   key={date.toISOString()}
                   type="button"
-                  className={`${base} ${outMonth} ${weekendColor} ${selected} ${todayRing}`}
+                  className={`${base} ${outMonth} ${weekendColor} ${selected} ${todayRing} ${pastDisabledVisual}`}
                   onClick={() => {
                     onChange(date);
                     setOpen(false);
                   }}
+                  disabled={disablePastDates && isPast}
+                  aria-disabled={disablePastDates && isPast}
                 >
                   {date.getDate()}
                 </button>

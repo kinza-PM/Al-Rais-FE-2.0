@@ -119,6 +119,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       navigate("/flight-booking", {
         state: {
           offerId,
+          searchKey: item?.searchKey,
           flightDetail: item,
           passengersForRequest: passengersForRequest || [],
         },

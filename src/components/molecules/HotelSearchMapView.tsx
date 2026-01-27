@@ -15,9 +15,12 @@ const redIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-type HotelSearchMapViewProps = {};
-const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = () => {
-  const [favorites, setFavorites] = React.useState<{ [key: number]: boolean }>(
+type HotelSearchMapViewProps = {
+  hotels: Array<any>;
+};
+
+const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(({ hotels }) => {
+  const [favorites, setFavorites] = React.useState<{ [key: string]: boolean }>(
     {}
   );
   const [isMapExpanded, setIsMapExpanded] = React.useState(false);
@@ -32,39 +35,49 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = () => {
     }, 300);
   };
 
-  const toggleFavorite = (index: number) => {
+  const toggleFavorite = (hotelKey: string) => {
     setFavorites((prev) => ({
       ...prev,
-      [index]: !prev[index],
+      [hotelKey]: !prev[hotelKey],
     }));
   };
 
-  const hotelMapItems = [
-    {
-      id: 1,
-      name: "Pearl Continental Hotel",
-      position: [24.8607, 67.0011],
-      price: "$120",
-    },
-    {
-      id: 2,
-      name: "Movenpick Hotel",
-      position: [24.9056, 67.0822],
-      price: "$95",
-    },
-    {
-      id: 3,
-      name: "Avari Towers",
-      position: [24.8138, 67.0294],
-      price: "$110",
-    },
-    {
-      id: 4,
-      name: "Beach Luxury Hotel",
-      position: [24.8256, 66.975],
-      price: "$85",
-    },
-  ];
+  // Calculate map center from hotels
+  const getMapCenter = () => {
+    if (!hotels || hotels.length === 0) {
+      return [24.8607, 67.0011] as [number, number]; // Default center
+    }
+
+    const validHotels = hotels.filter(
+      (hotel) =>
+        hotel.propertyInfo?.latitude && hotel.propertyInfo?.longitude
+    );
+
+    if (validHotels.length === 0) {
+      return [24.8607, 67.0011] as [number, number];
+    }
+
+    const avgLat =
+      validHotels.reduce(
+        (sum, hotel) => sum + parseFloat(hotel.propertyInfo.latitude),
+        0
+      ) / validHotels.length;
+    const avgLng =
+      validHotels.reduce(
+        (sum, hotel) => sum + parseFloat(hotel.propertyInfo.longitude),
+        0
+      ) / validHotels.length;
+
+    return [avgLat, avgLng] as [number, number];
+  };
+
+  if (!hotels || hotels.length === 0) {
+    return (
+      <div className="py-16 flex flex-col items-center text-center">
+        <p className="mt-2 text-[14px] text-[#0F172A]">No hotels found</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -72,12 +85,13 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = () => {
         <div className="grid grid-cols-4 gap-5">
           {!isMapExpanded && (
             <div className="col-span-1 flex flex-col gap-4 transition-all duration-300 ease-in-out">
-              {Array.from({ length: 10 }).map((_, index) => {
+              {hotels.slice(0, 10).map((hotel, index) => {
                 return (
                   <HotellGridCard
+                    key={hotel.hotelKey || index}
+                    hotel={hotel}
                     toggleFavorite={toggleFavorite}
-                    index={index}
-                    key={index}
+                    hotelKey={hotel.hotelKey || index.toString()}
                     favorites={favorites}
                   />
                 );
@@ -113,7 +127,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = () => {
                 </svg>
               </button>
               <MapContainer
-                center={[24.8607, 67.0011]}
+                center={getMapCenter()}
                 zoom={12}
                 style={{ height: "100%", width: "100%" }}
                 zoomControl={false}
@@ -124,23 +138,46 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = () => {
                   attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
-                {hotelMapItems.map((hotel) => (
-                  <Marker
-                    key={hotel.id}
-                    position={hotel.position as [number, number]}
-                    icon={redIcon}
-                  >
-                    <Tooltip permanent direction="top" offset={[0, -41]}>
-                      <div className="text-xs font-semibold">{hotel.name}</div>
-                    </Tooltip>
-                    <Popup>
-                      <div className="text-sm">
-                        <p className="font-semibold">{hotel.name}</p>
-                        <p className="text-gray-600">{hotel.price}/night</p>
-                      </div>
-                    </Popup>
-                  </Marker>
-                ))}
+                {hotels
+                  .filter(
+                    (hotel) =>
+                      hotel.propertyInfo?.latitude &&
+                      hotel.propertyInfo?.longitude
+                  )
+                  .map((hotel) => {
+                    const firstRoom = hotel.rooms?.[0];
+                    const price =
+                      hotel.totalPrice || firstRoom?.roomRate?.netAmount || 0;
+                    const currency =
+                      firstRoom?.roomRate?.currency || "AED";
+                    const lat = parseFloat(hotel.propertyInfo.latitude);
+                    const lng = parseFloat(hotel.propertyInfo.longitude);
+
+                    return (
+                      <Marker
+                        key={hotel.hotelKey}
+                        position={[lat, lng]}
+                        icon={redIcon}
+                      >
+                        <Tooltip permanent direction="top" offset={[0, -41]}>
+                          <div className="text-xs font-semibold">
+                            {hotel.propertyInfo?.hotelName || "Hotel"}
+                          </div>
+                        </Tooltip>
+                        <Popup>
+                          <div className="text-sm">
+                            <p className="font-semibold">
+                              {hotel.propertyInfo?.hotelName || "Hotel"}
+                            </p>
+                            <p className="text-gray-600">
+                              {currency} {price.toFixed(2)}
+                              {/* {currency} {price.toFixed(2)}/night */}
+                            </p>
+                          </div>
+                        </Popup>
+                      </Marker>
+                    );
+                  })}
               </MapContainer>
             </div>
           </div>
@@ -148,5 +185,8 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = () => {
       </div>
     </div>
   );
-};
+});
+
+HotelSearchMapView.displayName = "HotelSearchMapView";
+
 export default HotelSearchMapView;

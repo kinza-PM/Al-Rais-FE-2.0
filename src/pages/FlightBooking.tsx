@@ -10,6 +10,7 @@ import {
   buildInitialFlightBookingPassengersPayload,
   type FlightFinalReservedBooking,
 } from "../utils/flightBookingHelper";
+import { generateUUID } from "../utils/helpers";
 import { useCityOptions } from "../hooks/masterListings/listing";
 import Loader from "../components/atoms/Loader";
 import {
@@ -31,7 +32,7 @@ const FlightBooking = () => {
   const [ancillarySearchData, setAncillarySearchData] = useState<any>(null);
   const [finalReservedFlightBookingData, setFinalReservedFlightBookingData] =
     useState<FlightFinalReservedBooking | null>(null);
-  const [currentStep, setCurrentStep] = useState(0);
+  // const [currentStep, setCurrentStep] = useState(0);
   const [fareBookingSearchRules, setFareBookingSearchRules] =
     useState<any>(null);
   const enhanceAvailable =
@@ -42,43 +43,133 @@ const FlightBooking = () => {
       ? ["Book", "Enhance", "Review", "Pay", "E-ticket"]
       : ["Book", "Review", "Pay", "E-ticket"]
   );
+  
+  // Check if this is a pending booking (skip to payment)
+  const isPendingBooking = initialOfferData?.isPendingBooking || false;
+  
+  const [currentStep, setCurrentStep] = useState(() => {
+    if (isPendingBooking) {
+      const payStep = steps.indexOf("Pay");
+      return payStep >= 0 ? payStep : 0;
+    }
+    return 0;
+  });
   const progressPct =
     steps.length > 1 ? (currentStep / (steps.length - 1)) * 100 : 0;
-
-  const [flightBookingPayload, setFlightBookingPayload] = useState(() => ({
-    offerId: offerData?.offerId,
-    journey: offerData?.flightDetail?.raw?.journey,
-    passengers: buildInitialFlightBookingPassengersPayload(
+  // console.log('offerData------------', offerData);
+  // const [flightBookingPayload, setFlightBookingPayload] = useState(() => ({
+  //   offerId: offerData?.offerId,
+  //   searchKey: offerData?.searchKey,
+  //   journey: offerData?.flightDetail?.raw?.journey,
+  //   passengers: buildInitialFlightBookingPassengersPayload(
+  //     offerData?.passengersForRequest
+  //   ),
+  //   reservationType: "TICKET",
+  //   paymentDetails: {
+  //     paymentMode: "CR",
+  //   },
+  // }));
+  const [flightBookingPayload, setFlightBookingPayload] = useState(() => {
+    // For pending bookings, use passengers data from API
+    let passengers = buildInitialFlightBookingPassengersPayload(
       offerData?.passengersForRequest
-    ),
-    reservationType: "TICKET",
-    paymentDetails: {
-      paymentMode: "CR",
-    },
-  }));
-  // console.log(initialOfferData);
-  const [flightReservationBookingPayload, setFlightReservationBookingPayload] =
-    useState(() => ({
-      bookingReferenceId: "",
-      offerId: flightBookingPayload?.offerId,
-      customerInfo: {
-        emailAddress: "",
-      },
-      passengers: flightBookingPayload?.passengers,
+    );
+    
+    // If pending booking, pre-fill passenger data from API
+    if (isPendingBooking && offerData?.passengersData) {
+      passengers = offerData.passengersData.map((p: any) => ({
+        passengerKey: p.passengerKey || generateUUID(),
+        ptc: p.ptc || "ADT",
+        passengerInfo: p.passengerInfo || {
+          birthDate: null,
+          gender: "",
+          nameTitle: "",
+          givenName: "",
+          surname: "",
+        },
+        identityDocuments: p.identityDocuments || [
+          {
+            idDocumentNumber: "",
+            idType: "PT",
+            issuingCountryCode: "",
+            residenceCountryCode: "",
+            expiryDate: null,
+          },
+        ],
+        contact: p.contact || {
+          contactsProvided: [
+            {
+              emailAddress: [""],
+              phone: [
+                {
+                  label: "Origin",
+                  areaCode: "+1",
+                  phoneNumber: "",
+                },
+              ],
+            },
+          ],
+        },
+      }));
+    }
+    
+    return {
+      offerId: offerData?.offerId,
+      searchKey: offerData?.searchKey,
+      journey: offerData?.flightDetail?.raw?.journey,
+      passengers,
+      reservationType: "TICKET",
       paymentDetails: {
         paymentMode: "CR",
-        transactionAmount: null,
-        // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
-        cardInfo: "",
-        address: {
-          label: "Billing",
-          street: [],
-          postalCode: "",
-          cityName: "",
-          countryCode: "UAE",
-        },
       },
-    }));
+    };
+  });
+  // console.log(initialOfferData);
+  const [flightReservationBookingPayload, setFlightReservationBookingPayload] =
+  // useState(() => ({
+  //   bookingReferenceId: "",
+  //   offerId: flightBookingPayload?.offerId,
+  //   customerInfo: {
+  //     emailAddress: "",
+  //   },
+  //   passengers: flightBookingPayload?.passengers,
+  //   paymentDetails: {
+  //     paymentMode: "CR",
+  //     transactionAmount: null,
+  //     // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
+  //     cardInfo: "",
+  //     address: {
+  //       label: "Billing",
+  //       street: [],
+  //       postalCode: "",
+  //       cityName: "",
+  //       countryCode: "UAE",
+  //     },
+  //   },
+  // }));
+    useState(() => {
+      return {
+        bookingReferenceId: "",
+        offerId: flightBookingPayload?.offerId,
+        customerInfo: {
+          emailAddress: "",
+        },
+        passengers: flightBookingPayload?.passengers,
+        paymentDetails: {
+          paymentMode: "CR",
+          transactionAmount: null,
+          // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
+          cardInfo: "",
+          address: {
+            label: "Billing",
+            street: [],
+            postalCode: "",
+            cityName: "",
+            countryCode: "UAE",
+          },
+        },
+      };
+    });
 
   const { data: cityOptions, isLoading: isCountryLoading } =
     useCityOptions(true);
@@ -225,11 +316,18 @@ const FlightBooking = () => {
   const payStepIndex = steps.indexOf("Pay");
   const eticketStepIndex = steps.indexOf("E-ticket");
   const enhanceStepIndex = steps.indexOf("Enhance");
+  
+  // Set initial step - skip to payment for pending bookings
 
   // const showTimerBanner = [0, 1, 2].includes(currentStep);
   const showTimerBanner = currentStep < eticketStepIndex;
 
   const init = async () => {
+    // Skip fare rule search for pending bookings
+    if (isPendingBooking) {
+      return;
+    }
+    
     if (!offerData?.offerId) return;
     try {
       const response = await mutateAsync({ offerId: offerData?.offerId });
@@ -272,7 +370,7 @@ const FlightBooking = () => {
   }, []);
 
   useEffect(() => {
-    if (offerData?.passengersForRequest) {
+    if (offerData?.passengersForRequest && !isPendingBooking) {
       setFlightBookingPayload((prev) => ({
         ...prev,
         passengers: buildInitialFlightBookingPassengersPayload(
@@ -280,7 +378,8 @@ const FlightBooking = () => {
         ),
       }));
     }
-  }, [offerData?.passengersForRequest]);
+    // For pending bookings, passengers are already set in initial state
+  }, [offerData?.passengersForRequest, isPendingBooking]);
 
   return (
     <>

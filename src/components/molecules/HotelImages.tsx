@@ -1,15 +1,5 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useOutletContext } from "react-router-dom";
-import HotelImage1 from "../../assets/images/HotelImage1.png";
-import HotelImage2 from "../../assets/images/HotelImage2.png";
-import HotelImage3 from "../../assets/images/HotelImage3.png";
-import HotelImage4 from "../../assets/images/HotelImage4.png";
-import HotelImage5 from "../../assets/images/HotelImage5.png";
-import HotelImage6 from "../../assets/images/HotelImage6.png";
-import HotelImage7 from "../../assets/images/HotelImage7.png";
-import HotelImage8 from "../../assets/images/HotelImage8.png";
-import HotelImage9 from "../../assets/images/HotelImage9.png";
-import HotelImage10 from "../../assets/images/HotelImage10.png";
 
 type OutletCtx = {
   setHideHeader?: (v: boolean) => void;
@@ -17,10 +7,30 @@ type OutletCtx = {
 
 type HotelImagesProps = {
   setShowHotelDetailImages: (val: boolean) => void;
+  images?: Array<{ path: string; description?: string }>;
 };
+
+const layoutSpans = [
+  "col-span-1 row-span-1",
+  "col-span-2 row-span-1",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-2",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-2",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-1",
+  "col-span-2 row-span-1",
+  "col-span-2 row-span-1",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-1",
+  "col-span-1 row-span-1",
+];
 
 const HotelImages: React.FC<HotelImagesProps> = ({
   setShowHotelDetailImages,
+  images,
 }) => {
   const { setHideHeader } = useOutletContext() as OutletCtx;
 
@@ -31,71 +41,15 @@ const HotelImages: React.FC<HotelImagesProps> = ({
     };
   }, [setHideHeader]);
 
-  const images = [
-    {
-      url: HotelImage1,
-      span: "col-span-1 row-span-1",
-    },
-    {
-      url: HotelImage2,
-      span: "col-span-2 row-span-1",
-    },
-    {
-      url: HotelImage3,
-      span: "col-span-1 row-span-1",
-    },
-    {
-      url: HotelImage4,
-      span: "col-span-1 row-span-1",
-    },
-
-    {
-      url: HotelImage6,
-      span: "col-span-1 row-span-2",
-    },
-    {
-      url: HotelImage5,
-      span: "col-span-1 row-span-1",
-    },
-    {
-      url: HotelImage7,
-      span: "col-span-1 row-span-1",
-    },
-    {
-      url: HotelImage6,
-      span: "col-span-1 row-span-2",
-    },
-
-    {
-      url: HotelImage1,
-      span: "col-span-1 row-span-1",
-    },
-    {
-      url: HotelImage4,
-      span: "col-span-1 row-span-1",
-    },
-    {
-      url: HotelImage8,
-      span: "col-span-2 row-span-1",
-    },
-
-    {
-      url: HotelImage2,
-      span: "col-span-2 row-span-1",
-    },
-    {
-      url: HotelImage4,
-      span: "col-span-1 row-span-1",
-    },
-    {
-      url: HotelImage9,
-      span: "col-span-1 row-span-1",
-    },
-    {
-      url: HotelImage10,
-      span: "col-span-1 row-span-1",
-    },
-  ];
+  const computedImages = useMemo(
+    () =>
+      (images ?? []).map((img, index) => ({
+        url: img.path,
+        description: img.description,
+        span: layoutSpans[index % layoutSpans.length],
+      })),
+    [images]
+  );
 
   return (
     <div className="bg-[#FFFFFF]">
@@ -130,7 +84,7 @@ const HotelImages: React.FC<HotelImagesProps> = ({
             className="col-span-3 grid grid-cols-4 auto-rows-[190px] gap-3 mt-4"
             style={{ gridAutoFlow: "dense" }}
           >
-            {images.map((img, index) => (
+            {computedImages.map((img, index) => (
               <div
                 key={index}
                 className={`${img.span} overflow-hidden rounded-2xl cursor-pointer hover:opacity-90 transition-opacity`}
@@ -145,7 +99,7 @@ const HotelImages: React.FC<HotelImagesProps> = ({
           </div>
 
           <div className="col-span-1 border-l border-[#E4E4E7] pl-3 -mt-6 pt-2">
-            <div className="py-4">
+            {/* <div className="py-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="bg-[#A7C0EC] text-[#2351A3] font-semibold text-base px-6 py-3 rounded-[50px]">
                   9.1
@@ -192,7 +146,7 @@ const HotelImages: React.FC<HotelImagesProps> = ({
                   </div>
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>
@@ -200,4 +154,4 @@ const HotelImages: React.FC<HotelImagesProps> = ({
   );
 };
 
-export default HotelImages;
+export default React.memo(HotelImages);

@@ -33,6 +33,10 @@ const HotelHeroSection: React.FC = () => {
     // Add more locations as needed
   ];
 
+  const handleStarRatingChange = (value: string[] | string) => {
+    setSelectedValues(Array.isArray(value) ? value : [value]);
+  };
+
   return (
     <div className="px-6 pb-6 pt-6">
       <div className="flex items-end gap-4">
@@ -95,7 +99,8 @@ const HotelHeroSection: React.FC = () => {
           <CheckableDropdown
             options={starRatingOptions}
             value={selectedValues}
-            onChange={setSelectedValues}
+            onChange={handleStarRatingChange}
+            // onChange={setSelectedValues}
             placeholder="Select ratings"
             label="Star Rating"
           />

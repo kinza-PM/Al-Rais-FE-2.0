@@ -136,6 +136,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     navigate('/flight-booking', {
       state: {
         offerId,
+        searchKey: item?.searchKey,
         flightDetail: item,
         passengersForRequest: passengersForRequest || []
       }

@@ -33,7 +33,10 @@ const StatusMessageBanner: React.FC<StatusMessageBannerProps> = ({
       role="status"
       aria-live="polite"
       aria-hidden={!visible}
-      className={`fixed top-4 inset-x-0 z-50 pointer-events-none flex justify-center ${containerClassName}`}
+      // className={`fixed top-4 inset-x-0 z-50 pointer-events-none flex justify-center ${containerClassName}`}
+      className={`fixed top-4 inset-x-0 z-50 flex justify-center ${
+        visible ? "pointer-events-none" : "pointer-events-none invisible"
+      } ${containerClassName}`}
     >
       <div
         className={
@@ -53,5 +56,3 @@ const StatusMessageBanner: React.FC<StatusMessageBannerProps> = ({
 };
 
 export default StatusMessageBanner;
-
-

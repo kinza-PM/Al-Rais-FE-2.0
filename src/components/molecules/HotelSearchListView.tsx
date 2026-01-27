@@ -1,116 +1,179 @@
 import React from "react";
 import HotelImage from "../../../src/assets/images/Hotel Image.png";
-import Heart from "../../../src/assets/svgs/heart.svg";
-import RedHeart from "../../../src/assets/svgs/red-heart.svg";
+// import Heart from "../../../src/assets/svgs/heart.svg";
+// import RedHeart from "../../../src/assets/svgs/red-heart.svg";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import AvailableTick from "../../../src/assets/svgs/available-tick.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
+import { useNavigate } from "react-router-dom";
+import { processHotelSearchListingData } from "../../utils/hotelHelper";
 
-type HotelSearchListViewProps = {};
+type HotelSearchListViewProps = {
+  hotels: Array<any>;
+};
 
-const HotelSearchListView: React.FC<HotelSearchListViewProps> = () => {
-  const [favorites, setFavorites] = React.useState<{ [key: number]: boolean }>(
-    {}
-  );
+const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
+  ({ hotels }) => {
+    const navigate = useNavigate();
+    // const [favorites, setFavorites] = React.useState<{ [key: string]: boolean }>(
+    //   {}
+    // );
 
-  const toggleFavorite = (index: number) => {
-    setFavorites((prev) => ({
-      ...prev,
-      [index]: !prev[index],
-    }));
-  };
+    // const toggleFavorite = (hotelKey: string) => {
+    //   setFavorites((prev) => ({
+    //     ...prev,
+    //     [hotelKey]: !prev[hotelKey],
+    //   }));
+    // };
 
-  return (
-    <div className="min-h-screen">
-      <div className="w-full">
-        {Array.from({ length: 10 }).map((_, index) => {
-          return (
-            <div
-              className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-[#E4E4E7] overflow-hidden mb-4"
-              key={index}
-            >
-              <div className="flex p-2">
-                <div className="relative flex-shrink-0 w-64 self-stretch mr-4">
-                  <img
-                    src={HotelImage}
-                    alt="Hotel"
-                    className="w-full h-full object-cover rounded-xl"
-                  />
-                  <button
+    const renderStars = (rating: string | undefined) => {
+      const numRating = rating ? parseFloat(rating) : 0;
+      const fullStars = Math.floor(numRating);
+      const totalStars = 7; // 7 stars total as per design
+
+      return (
+        <div className="flex items-center gap-1 mb-4">
+          {Array.from({ length: fullStars }).map((_, i) => (
+            <img
+              key={`filled-${i}`}
+              className="cursor-pointer"
+              src={FilledStar}
+              alt="filled"
+            />
+          ))}
+          {Array.from({ length: totalStars - fullStars }).map((_, i) => (
+            <img
+              key={`empty-${i}`}
+              className="cursor-pointer"
+              src={EmptyStar}
+              alt="empty"
+            />
+          ))}
+        </div>
+      );
+    };
+
+    if (!hotels || hotels.length === 0) {
+      return (
+        <div className="py-16 flex flex-col items-center text-center">
+          <p className="mt-2 text-[14px] text-[#0F172A]">No hotels found</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen">
+        <div className="w-full">
+          {hotels.map((hotel, index) => {
+            // Process hotel data using utility function
+            const {
+              hasRooms,
+              isAvailable,
+              bestRoom,
+              currency,
+              price,
+              hasFreeCancellation,
+              totalOriginalPrice: originalPrice,
+              uniqueOfferNames,
+              hasOffer,
+            } = processHotelSearchListingData(hotel);
+
+            const imageUrl = hotel.propertyInfo?.imageUrl || HotelImage;
+            const hotelName = hotel.propertyInfo?.hotelName || "Hotel";
+            const address = hotel.propertyInfo?.address || "";
+            const location = hotel.propertyInfo?.location || "";
+            const starRating = hotel.propertyInfo?.starRating;
+
+            return (
+              <div
+                className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-[#E4E4E7] overflow-hidden mb-4"
+                key={index}
+              >
+                <div className="flex p-2">
+                  <div className="relative flex-shrink-0 w-64 h-48 mr-4">
+                    <img
+                      src={imageUrl}
+                      alt="Hotel"
+                      className="w-full h-full object-cover rounded-xl"
+                      onError={(e) => {
+                        e.currentTarget.src = HotelImage;
+                      }}
+                    />
+                    {/* <button
                     className="absolute top-2 left-2 w-10 h-10 bg-white/60 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white/70 transition"
-                    onClick={() => toggleFavorite(index)}
+                    onClick={() => toggleFavorite(hotel.hotelKey)}
                   >
                     <img
-                      src={favorites[index] ? RedHeart : Heart}
+                      src={favorites[hotel.hotelKey] ? RedHeart : Heart}
                       alt="heart"
                     />
-                  </button>
-                </div>
-
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base font-medium text-[#0A0C0F] mb-1">
-                    The Nishat Hotel
-                  </h3>
-
-                  <p className="text-xs text-[#3D495C] mb-3">
-                    Abdul Haque Road,Johar Town, 54600 Lahore, Pakistan • 11.9
-                    kms from downtown
-                  </p>
-
-                  <div className="flex items-center gap-1 mb-4">
-                    <img
-                      className="cursor-pointer"
-                      src={FilledStar}
-                      alt="filled"
-                    />
-                    <img
-                      className="cursor-pointer"
-                      src={FilledStar}
-                      alt="filled"
-                    />
-                    <img
-                      className="cursor-pointer"
-                      src={FilledStar}
-                      alt="filled"
-                    />
-                    <img
-                      className="cursor-pointer"
-                      src={FilledStar}
-                      alt="filled"
-                    />
-                    <img
-                      className="cursor-pointer"
-                      src={FilledStar}
-                      alt="filled"
-                    />
-                    <img
-                      className="cursor-pointer"
-                      src={EmptyStar}
-                      alt="empty"
-                    />
-                    <img
-                      className="cursor-pointer"
-                      src={EmptyStar}
-                      alt="empty"
-                    />
+                  </button> */}
                   </div>
 
-                  <p className="text-xs text-[#3D495C] leading-relaxed mb-3">
-                    Featuring free WiFi, The Nishat Hotel, Johar Town is city
-                    within a city which features Pakistan biggest "Emporium
-                    Mall" and the most spacious banquet halls, The Nishat
-                    Banquets. Guests can enjoy the on-site restaurant. Free
-                    private parking is available on site. Every room at this
-                    hotel is air conditioned and comes with a flat-screen TV.
-                    Some rooms include a seating area to relax in after a busy
-                    day.
-                  </p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-medium text-[#0A0C0F] mb-1">
+                      {hotelName}
+                    </h3>
 
-                  <span className="block w-full h-px bg-[#E4E4E7] mb-3 -mr-8" />
+                    <p className="text-xs text-[#3D495C] mb-3">
+                      {address} {location && ` • ${location}`}
+                    </p>
 
-                  {index !== 1 && (
+                    {renderStars(starRating)}
+
+                    {bestRoom?.roomTypeDesc && (
+                      <p className="text-xs text-[#3D495C] leading-relaxed mb-3">
+                        {bestRoom.roomTypeDesc}
+                      </p>
+                    )}
+
+                    <span className="block w-full h-px bg-[#E4E4E7] mb-3 -mr-8" />
+                    {hasRooms && isAvailable && bestRoom && (
+                      <>
+                        <div>
+                          <h4 className="text-base font-semibold text-[#0A0C0F]">
+                            {bestRoom.roomTypeName}
+                          </h4>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-4 mt-3">
+                          {hasFreeCancellation && (
+                            <div className="flex items-center gap-1">
+                              <div className="flex items-center justify-center">
+                                <img src={AvailableTick} alt="icon" />
+                              </div>
+                              <p className="text-[#3D495C] text-xs leading-none">
+                                Free cancellation
+                              </p>
+                            </div>
+                          )}
+                          {hotel.propertyInfo?.facilities &&
+                            hotel.propertyInfo.facilities.length > 0 && (
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center justify-center">
+                                  <img src={AvailableTick} alt="icon" />
+                                </div>
+                                <p className="text-[#3D495C] text-xs leading-none">
+                                  Facilities available
+                                </p>
+                              </div>
+                            )}
+                        </div>
+                      </>
+                    )}
+                    {hasRooms && !isAvailable && (
+                      <div className="text-xs flex flex-col gap-2 mt-3">
+                        <p className="text-[#EA0029]">
+                          No rooms are available on the dates you selected!
+                        </p>
+                        <p className="text-[#0A0C0F]">
+                          Please select other dates
+                        </p>
+                      </div>
+                    )}
+                    {/* {index !== 1 && (
                     <>
                       <div>
                         <h4 className="text-base font-semibold text-[#0A0C0F]">
@@ -266,13 +329,13 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = () => {
                         </div>
                       </div>
                     </div>
-                  )}
-                </div>
+                  )} */}
+                  </div>
 
-                <span className="inline-block w-px bg-[#E4E4E7] self-stretch -my-2" />
+                  <span className="inline-block w-px bg-[#E4E4E7] self-stretch -my-2" />
 
-                <div className="flex flex-col items-start w-auto flex-shrink-0 pr-8 pl-4">
-                  <div className="flex items-center gap-4 mb-3">
+                  <div className="flex flex-col items-start w-80 flex-shrink-0 pr-8 pl-4">
+                    {/* <div className="flex items-center gap-4 mb-3">
                     <div className="bg-[#A7C0EC] text-[#2351A3] font-semibold text-base px-6 py-3 rounded-[50px]">
                       9.1
                     </div>
@@ -284,50 +347,75 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = () => {
                         283 guest reviews
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
-                  <div className="mb-3">
-                    <span className="bg-[#00B868] text-[#FFFFFF] text-xs font-semibold px-4 py-1.5 rounded-full">
-                      Smashing deal
-                    </span>
-                  </div>
-
-                  <div className="mb-3 w-full">
-                    <div className="text-xs text-[#3D495C] mb-1">
-                      Starting from (including VAT)
-                    </div>
-                    <div className="flex items-center justify-between gap-1.5">
-                      <div>
-                        <span className="text-[#EA0029] line-through text-lg font-bold">
-                          $110{" "}
-                        </span>
-                        <span className="text-lg font-bold text-[#0A0C0F]">
-                          $80<span className="text-xs">/Night</span>
-                        </span>
+                    {hasOffer && uniqueOfferNames.length > 0 && (
+                      <div className="mb-3 flex flex-wrap gap-2">
+                        {uniqueOfferNames.map((offerName, idx) => (
+                          <span
+                            key={idx}
+                            className="bg-[#00B868] text-[#FFFFFF] text-xs font-semibold px-4 py-1.5 rounded-full inline-block max-w-full break-words"
+                          >
+                            {offerName}
+                          </span>
+                        ))}
                       </div>
-                      <HotelPriceSummaryTooltip />
-                    </div>
-                  </div>
+                    )}
 
-                  <div className="flex items-center gap-4 w-full mt-3">
-                    <button className="p-2.5">
-                      <img src={Share} alt="icon" />
-                    </button>
-                    <button
-                      className="bg-[#2351A3] text-[#F2F2F3] text-base font-semibold py-3 px-10 rounded-lg disabled:bg-[#C2CAD6]"
-                      disabled={index === 1}
-                    >
-                      Check availability
-                    </button>
+                    <div className="mb-3 w-full">
+                      <div className="text-xs text-[#3D495C] mb-1">
+                        Starting from (including VAT)
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex flex-col items-start sm:items-end gap-0.5">
+                          {hasOffer && originalPrice > price && (
+                            <span className="text-[#EA0029] line-through text-lg font-bold whitespace-nowrap">
+                              {currency} {originalPrice.toFixed(2)}
+                            </span>
+                          )}
+                          <span className="text-lg font-bold text-[#0A0C0F] whitespace-nowrap">
+                            {currency} {price.toFixed(2)}
+                            {/* <span className="text-xs align-baseline">
+                              /Night
+                            </span> */}
+                          </span>
+                        </div>
+                        <HotelPriceSummaryTooltip
+                          totalPrice={price}
+                          currency={currency}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 w-full mt-3">
+                      <button className="p-2.5">
+                        <img src={Share} alt="icon" />
+                      </button>
+                      <button
+                        className="bg-[#2351A3] text-[#F2F2F3] text-base font-semibold py-3 px-10 rounded-lg disabled:bg-[#C2CAD6]"
+                        disabled={!isAvailable}
+                        onClick={() => {
+                          navigate(`/hotel-detail/${hotel.hotelKey}`, {
+                            state: {
+                              searchKey: hotel.searchKey,
+                            },
+                          });
+                        }}
+                      >
+                        Check availability
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
-    </div>
-  );
-};
+    );
+  }
+);
+
+HotelSearchListView.displayName = "HotelSearchListView";
 
 export default HotelSearchListView;

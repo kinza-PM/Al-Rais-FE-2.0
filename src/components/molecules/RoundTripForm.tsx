@@ -29,6 +29,9 @@ type Props = {
   arrivalDateError?: string;
   passengersError?: string;
   cabinClassError?: string;
+  countriesHasMore?: boolean;
+  countriesFetchNext?: () => void;
+  countriesLoadingMore?: boolean;
 };
 
 const RoundTripForm: React.FC<Props> = ({
@@ -63,6 +66,9 @@ const RoundTripForm: React.FC<Props> = ({
   arrivalDateError = "",
   passengersError = "",
   cabinClassError = "",
+  countriesHasMore = false,
+  countriesFetchNext = () => {},
+  countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   // const arrRef = useRef<HTMLInputElement>(null);
@@ -110,6 +116,13 @@ const RoundTripForm: React.FC<Props> = ({
             ? "Please try a different search."
             : undefined
         }
+        onLoadMore={() => {
+          if (countriesHasMore) {
+            countriesFetchNext?.();
+          }
+        }}
+        hasMore={countriesHasMore}
+        loadingMore={countriesLoadingMore}
       />
 
       {/* Departure date */}
@@ -123,8 +136,9 @@ const RoundTripForm: React.FC<Props> = ({
             setDepartDate(d);
             onChangeDepartDate?.(d);
           }}
-          placeholder="Please select"
+          placeholder="Select departure date"
           buttonIconSrc={true}
+          disablePastDates={true}
         />
         {departDateError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
@@ -163,8 +177,9 @@ const RoundTripForm: React.FC<Props> = ({
             setArrivalDate(d);
             onChangeArrivalDate?.(d);
           }}
-          placeholder="Please select"
+          placeholder="Select arrival date"
           buttonIconSrc={true}
+          disablePastDates={true}
         />
         {arrivalDateError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">

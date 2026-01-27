@@ -1,24 +1,23 @@
-import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import HotelImage1 from "../assets/images/HotelImage1.png";
-import HotelImage2 from "../assets/images/HotelImage2.png";
-import HotelImage3 from "../assets/images/HotelImage3.png";
-import HotelImage4 from "../assets/images/HotelImage4.png";
-import HotelImage5 from "../assets/images/HotelImage5.png";
-import HotelImage6 from "../assets/images/HotelImage6.png";
+import L from "leaflet";
 import FilledStar from "../assets/svgs/filled_star.svg";
-
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "../components";
 import HotelDetailOverviewSection from "../components/molecules/HotelDetailOverviewSection";
 import HotelDetailGuestReviewSection from "../components/molecules/HotelDetailGuestReviewSection";
 import HotelDetailAmenetiesSection from "../components/molecules/HotelDetailAmenetiesSection";
 import HotelDetailFaqSection from "../components/molecules/HotelDetailFaqSection";
 import HotelDetailRulesSection from "../components/molecules/HotelDetailRulesSection";
-import HotellGridCard from "../components/atoms/HotellGridCard";
+// import HotellGridCard from "../components/atoms/HotellGridCard";
 import HotelImages from "../components/molecules/HotelImages";
 import HotelDetailRoomSection from "../components/molecules/HotelDetailRoomSection";
-import { useMasterListings } from "../hooks/masterListings/useMasterListings";
+// import { useMasterListings } from "../hooks/masterListings/useMasterListings";
+import { useHotelDetail, useHotelGetMoreRooms } from "../hooks/useHotelSearch";
+import Loader from "../components/atoms/Loader";
+import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
+import toast from "react-hot-toast";
+import { useLocation, useParams } from "react-router-dom";
 
 const tabs = [
   "Overview",
@@ -29,100 +28,299 @@ const tabs = [
   "Rules",
 ] as const;
 
+type LocationState = {
+  searchKey?: string;
+};
+
+const redIcon = L.icon({
+  iconUrl:
+    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
+  shadowUrl:
+    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconSize: [20, 30],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41],
+});
+
+const MapAutoFix = ({ lat, lng }: { lat: number; lng: number }) => {
+  const map = useMap();
+
+  useEffect(() => {
+    // multiple passes so layout + images settle
+    map.invalidateSize();
+    map.setView([lat, lng], map.getZoom(), { animate: false });
+
+    const t1 = setTimeout(() => {
+      map.invalidateSize();
+      map.setView([lat, lng], map.getZoom(), { animate: false });
+    }, 250);
+
+    const t2 = setTimeout(() => {
+      map.invalidateSize();
+    }, 600);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [map, lat, lng]);
+
+  return null;
+};
+
 const HotelDetailListing = () => {
+  const params = useParams<{ hotelKey?: string }>();
+  const location = useLocation();
+  const state = (location.state || {}) as LocationState;
+  const [hotelDetail, setHotelDetail] = useState<any>(null);
+  const [hotelMoreRooms, setHotelMoreRooms] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Overview");
   const [showHotelDetailImages, setShowHotelDetailImages] =
     useState<boolean>(false);
 
-  const { passengers } = useMasterListings({
-    include: ["passengers"],
-  });
+  const { mutateAsync, isPending } = useHotelDetail();
+  const {
+    mutateAsync: fetchMoreRoomsAsync,
+    isPending: isHotelMoreRoomsPending,
+  } = useHotelGetMoreRooms();
+
+  // const { passengers } = useMasterListings({
+  //   include: ["passengers"],
+  // });
+
+  const init = async () => {
+    const body = {
+      hotelKey: params.hotelKey ?? "",
+      searchKey: state.searchKey ?? "",
+      culture: "en",
+    };
+
+    try {
+      const results = await Promise.allSettled([
+        mutateAsync(body),
+        fetchMoreRoomsAsync(body),
+      ]);
+
+      const [detailResult, roomsResult] = results;
+
+      if (detailResult.status === "fulfilled") {
+        setHotelDetail(detailResult.value?.data?.[0]);
+      } else {
+        const err = extractErrorFromAxiosApiError(detailResult.reason);
+        toast.error(err);
+      }
+
+      if (roomsResult.status === "fulfilled") {
+        console.log("getMoreRooms response------------", roomsResult.value);
+        setHotelMoreRooms(roomsResult.value?.data?.[0]);
+      }
+      // } else {
+      //   const err = extractErrorFromAxiosApiError(roomsResult.reason);
+      //   toast.error(err);
+      // }
+    } catch (unexpected) {
+      console.log("unsxpected promised failed--------------", unexpected);
+      // toast.error("Unexpected error");
+    }
+  };
+
+  useEffect(() => {
+    init();
+  }, [params.hotelKey, state.searchKey]);
+
+  const primaryImages = useMemo(
+    () => hotelDetail?.images || [],
+    [hotelDetail?.images]
+  );
+  const dynamicImages = useMemo(() => {
+    const totalImages = primaryImages.length;
+    const maxGridImages = 6;
+    return totalImages > 0
+      ? primaryImages.slice(0, Math.min(totalImages, maxGridImages))
+      : [];
+  }, [primaryImages]);
+
+  const coordinates = useMemo(
+    () => ({
+      latitude: hotelDetail?.latitude
+        ? parseFloat(hotelDetail.latitude)
+        : 24.8607,
+      longitude: hotelDetail?.longitude
+        ? parseFloat(hotelDetail.longitude)
+        : 67.0011,
+    }),
+    [hotelDetail?.latitude, hotelDetail?.longitude]
+  );
+
+  const nearbyInfo = useMemo(() => {
+    const firstNearbyArea = hotelDetail?.nearbyAreas?.[0];
+    const nearbyDistanceKm =
+      firstNearbyArea?.distance != null
+        ? (Number(firstNearbyArea.distance) / 1000).toFixed(1)
+        : null;
+    return { firstNearbyArea, nearbyDistanceKm };
+  }, [hotelDetail?.nearbyAreas]);
+
+  const starRatingCount = useMemo(
+    () =>
+      Math.max(
+        0,
+        Math.min(
+          7,
+          Number.isFinite(Number(hotelDetail?.starRating))
+            ? Number(hotelDetail?.starRating)
+            : 0
+        )
+      ),
+    [hotelDetail?.starRating]
+  );
+
+  const handleShowImages = useCallback(() => {
+    setShowHotelDetailImages(true);
+  }, []);
+
+  const handleHideImages = useCallback(() => {
+    setShowHotelDetailImages(false);
+  }, []);
+
+  const handleTabChange = useCallback((tab: (typeof tabs)[number]) => {
+    setActiveTab(tab);
+  }, []);
 
   return !showHotelDetailImages ? (
     <div className="w-full px-16 py-6">
-      {/* IMAGE SECTION */}
+      <Loader
+        show={isPending || isHotelMoreRoomsPending}
+        label="Please wait while we are fetching hotel details"
+      />
       <div className="grid grid-cols-12 gap-2 h-[35vh]">
-        <div className="col-span-5 row-span-2 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
-          <img
-            src={HotelImage1}
-            alt="Hotel room"
-            className="w-full h-full object-cover"
-          />
-        </div>
+        <>
+          {dynamicImages[0] && (
+            <div className="col-span-5 row-span-2 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
+              <img
+                src={dynamicImages[0].path}
+                alt={dynamicImages[0].description || "Hotel image 1"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
-        <div className="col-span-3 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
-          <img
-            src={HotelImage2}
-            alt="Hotel interior"
-            className="w-full h-full object-cover"
-          />
-        </div>
-        <div className="col-span-2 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
-          <img
-            src={HotelImage3}
-            alt="Hotel pool"
-            className="w-full h-full object-cover"
-          />
-        </div>
+          {dynamicImages[1] && (
+            <div className="col-span-3 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
+              <img
+                src={dynamicImages[1].path}
+                alt={dynamicImages[1].description || "Hotel image 2"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
-        <div className="col-span-2 relative overflow-hidden rounded-2xl">
-          <MapContainer
-            center={[24.8607, 67.0011]}
-            zoom={13}
-            style={{ height: "100%", width: "100%" }}
-            zoomControl={false}
-            scrollWheelZoom={false}
-            attributionControl={false}
-          >
-            <TileLayer
-              attribution="&copy; OpenStreetMap"
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
-            <Marker position={[24.8607, 67.0011]}></Marker>
-          </MapContainer>
-          {/* <div className="absolute top-3 right-3 z-[1000]">
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition shadow-lg">
-              Show on map
-            </button>
-          </div> */}
-        </div>
+          {dynamicImages[2] && (
+            <div className="col-span-2 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
+              <img
+                src={dynamicImages[2].path}
+                alt={dynamicImages[2].description || "Hotel image 3"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
-        <div className="col-span-3 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
-          <img
-            src={HotelImage4}
-            alt="Hotel dining"
-            className="w-full h-full object-cover"
-          />
-        </div>
+          {primaryImages.length !== 0 && (
+            <div className="col-span-2 relative overflow-hidden rounded-2xl">
+              <MapContainer
+                center={[coordinates.latitude, coordinates.longitude]}
+                zoom={13}
+                style={{ height: "100%", width: "100%" }}
+                zoomControl={false}
+                scrollWheelZoom={false}
+                attributionControl={false}
+              >
+                <TileLayer
+                  attribution="&copy; OpenStreetMap"
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker
+                  position={[coordinates.latitude, coordinates.longitude]}
+                  icon={redIcon}
+                ></Marker>
+                <MapAutoFix
+                  lat={coordinates.latitude}
+                  lng={coordinates.longitude}
+                />
+              </MapContainer>
+            </div>
+          )}
 
-        <div className="col-span-2 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
-          <img
-            src={HotelImage5}
-            alt="More images"
-            className="w-full h-full object-cover"
-          />
-        </div>
+          {dynamicImages[3] && (
+            <div className="col-span-3 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
+              <img
+                src={dynamicImages[3].path}
+                alt={dynamicImages[3].description || "Hotel image 4"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
-        <div
-          className="col-span-2 relative overflow-hidden rounded-2xl cursor-pointer"
-          onClick={() => setShowHotelDetailImages(true)}
-        >
-          <img
-            src={HotelImage6}
-            alt="More images"
-            className="w-full h-full object-cover blur-[2px]"
-          />
-          <div className="absolute inset-0 bg-[#0A0C0F1A] bg-opacity-10 flex items-center justify-center">
-            <span className="text-[#FFFFFF] text-3xl font-bold">+25</span>
-          </div>
-        </div>
+          {dynamicImages[4] && (
+            <div className="col-span-2 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
+              <img
+                src={dynamicImages[4].path}
+                alt={dynamicImages[4].description || "Hotel image 5"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {dynamicImages[5] && (
+            <div
+              className="col-span-2 relative overflow-hidden rounded-2xl cursor-pointer"
+              onClick={handleShowImages}
+            >
+              <img
+                src={dynamicImages[5].path}
+                alt={dynamicImages[5].description || "Hotel image 6"}
+                className="w-full h-full object-cover blur-[2px]"
+              />
+              {primaryImages.length > 6 && (
+                <div className="absolute inset-0 bg-[#0A0C0F1A] bg-opacity-10 flex items-center justify-center">
+                  <span className="text-[#FFFFFF] text-3xl font-bold">
+                    +{primaryImages.length - 6}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {primaryImages.length === 0 && (
+            <div className="col-span-12 relative overflow-hidden rounded-2xl">
+              <MapContainer
+                center={[coordinates.latitude, coordinates.longitude]}
+                zoom={13}
+                style={{ height: "100%", width: "100%" }}
+                zoomControl={false}
+                scrollWheelZoom={false}
+                attributionControl={false}
+              >
+                <TileLayer
+                  attribution="&copy; OpenStreetMap"
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker
+                  position={[coordinates.latitude, coordinates.longitude]}
+                  icon={redIcon}
+                ></Marker>
+              </MapContainer>
+            </div>
+          )}
+        </>
       </div>
 
       {/* TITLE SECTION/ADD TO FAVORITES */}
       <div className="mt-10 flex items-start justify-between">
         <div className="flex-1">
           <h1 className="text-base font-bold text-[#0A0C0F] mb-1">
-            The Nishat Hotel
+            {hotelDetail?.name}
           </h1>
 
           <div className="flex items-center gap-1 text-[#3D495C] text-xs mb-3">
@@ -139,13 +337,26 @@ const HotelDetailListing = () => {
               />
             </svg>
 
-            <span>Abdul Haque Road, Johar Town, 54690 Lahore, Pakistan</span>
-            <span>•</span>
-            <span>11.9 km from downtown</span>
+            <span>
+              {hotelDetail?.address}
+              {hotelDetail?.city ? `, ${hotelDetail.city}` : ""}
+              {hotelDetail?.postalCode ? `, ${hotelDetail.postalCode}` : ""}
+              {hotelDetail?.country ? `, ${hotelDetail.country}` : ""}
+            </span>
+            {nearbyInfo.nearbyDistanceKm &&
+              nearbyInfo.firstNearbyArea?.name && (
+                <>
+                  <span>•</span>
+                  <span>
+                    {nearbyInfo.nearbyDistanceKm} km from{" "}
+                    {nearbyInfo.firstNearbyArea.name}
+                  </span>
+                </>
+              )}
           </div>
 
           <div className="flex items-center gap-2">
-            {[...Array(5)].map((_, index) => (
+            {Array.from({ length: starRatingCount }, (_, index) => (
               <img src={FilledStar} alt="icon" key={index} />
             ))}
           </div>
@@ -176,7 +387,7 @@ const HotelDetailListing = () => {
                 key={t}
                 type="button"
                 aria-selected={selected}
-                onClick={() => setActiveTab(t)}
+                onClick={() => handleTabChange(t)}
                 className={[
                   "flex-1 rounded-xl px-6 py-2 text-sm max-[625px]:px-3 max-[625px]:py-2 max-[625px]:text-[13px]",
                   selected
@@ -193,18 +404,27 @@ const HotelDetailListing = () => {
       </div>
 
       {/* OVERVIEW SECTION */}
-      {activeTab === "Overview" && <HotelDetailOverviewSection />}
+      {activeTab === "Overview" && (
+        <HotelDetailOverviewSection hotelDetail={hotelDetail} />
+      )}
 
       {/* ROOM SECTION */}
       {activeTab === "Rooms" && (
-        <HotelDetailRoomSection passengers={passengers} />
+        <HotelDetailRoomSection
+          // passengers={passengers}
+          // hotelDetail={hotelDetail}
+          hotelMoreRooms={hotelMoreRooms}
+        />
       )}
 
       {/* GUEST REVIEWS SECTION */}
       {activeTab === "Guest reviews" && <HotelDetailGuestReviewSection />}
 
       {/* AMENETIES SECTION */}
-      {activeTab === "Ameneties" && <HotelDetailAmenetiesSection />}
+      {activeTab === "Ameneties" && (
+        // <HotelDetailAmenetiesSection />
+        <HotelDetailAmenetiesSection hotelDetail={hotelDetail} />
+      )}
 
       {/* FAQ SECTION */}
       {activeTab === "FAQs" && <HotelDetailFaqSection />}
@@ -212,7 +432,7 @@ const HotelDetailListing = () => {
       {/* RULES SECTION */}
       {activeTab === "Rules" && <HotelDetailRulesSection />}
 
-      <div className="mx-auto mt-12 mb-4">
+      {/* <div className="mx-auto mt-12 mb-4">
         <h4 className="text-[#0A0C0F] text-base font-bold">
           Similar properties
         </h4>
@@ -221,7 +441,7 @@ const HotelDetailListing = () => {
             return <HotellGridCard index={index} key={index} />;
           })}
         </div>
-      </div>
+      </div> */}
 
       <div className="fixed bottom-4 left-0 right-0 z-50">
         <div
@@ -260,7 +480,10 @@ const HotelDetailListing = () => {
       </div>
     </div>
   ) : (
-    <HotelImages setShowHotelDetailImages={setShowHotelDetailImages} />
+    <HotelImages
+      setShowHotelDetailImages={handleHideImages}
+      images={primaryImages}
+    />
   );
 };
 

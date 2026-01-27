@@ -53,7 +53,7 @@ const PassengerCabinDropdown: React.FC<Props> = ({
       : null;
 
   const [paxLocal, setPaxLocal] = useState<Pax>({
-    adults: 0,
+    adults: 1,
     kids: 0,
     infants: 0,
     seniors: undefined,
@@ -206,7 +206,7 @@ const PassengerCabinDropdown: React.FC<Props> = ({
               }))}
               value={selectedCabinClassId}
               onChange={onChangeCabinClassId}
-              placeholder="Please select"
+              placeholder="Select cabin class"
               disabled={loadingCabinClasses}
               error={cabinError}
               widthClass="w-full"

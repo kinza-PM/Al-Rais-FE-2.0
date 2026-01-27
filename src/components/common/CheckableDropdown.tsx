@@ -10,8 +10,8 @@ export interface DropdownOption {
 
 interface CheckableDropdownProps {
     options: DropdownOption[];
-    value: string[];
-    onChange: (value: string[]) => void;
+    value: string[] | string;
+    onChange: (value: string[] | string) => void;
     placeholder?: string;
     label?: string;
     disabled?: boolean;
@@ -20,6 +20,7 @@ interface CheckableDropdownProps {
     widthClass?: string;
     noResultsText?: string;
     loading?: boolean;
+    singleSelect?: boolean;
 }
 
 const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
@@ -34,13 +35,16 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
     widthClass = "w-full",
     noResultsText = "No options available",
     loading = false,
+    singleSelect = false,
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [showError, setShowError] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Get selected options labels
-    const selectedOptions = options.filter(option => value.includes(option.value));
+    const isMultiSelect = !singleSelect;
+    const valueArray = isMultiSelect ? (value as string[]) : (value ? [value as string] : []);
+    const selectedOptions = options.filter(option => valueArray.includes(option.value));
     const displayValue = selectedOptions.length > 0
         ? selectedOptions.map(option => option.label).join(", ")
         : placeholder;
@@ -70,11 +74,19 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
     };
 
     const handleOptionToggle = (optionValue: string) => {
-        const newValue = value.includes(optionValue)
-            ? value.filter(val => val !== optionValue) // Remove if already selected
-            : [...value, optionValue]; // Add if not selected
+        if (singleSelect) {
+            // Radio-like behavior: select only this option
+            const newValue = value === optionValue ? "" : optionValue;
+            onChange(newValue);
+        } else {
+            // Multi-select behavior: toggle option
+            const currentValue = value as string[];
+            const newValue = currentValue.includes(optionValue)
+                ? currentValue.filter(val => val !== optionValue) // Remove if already selected
+                : [...currentValue, optionValue]; // Add if not selected
 
-        onChange(newValue);
+            onChange(newValue);
+        }
     };
 
     // const handleSelectAll = () => {
@@ -180,17 +192,21 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
                                         className={`
                                             flex items-center w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
                                             ${option.disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                                            ${value.includes(option.value) ? 'bg-[#2351A3]/5' : ''}
+                                            ${valueArray.includes(option.value) ? 'bg-[#2351A3]/5' : ''}
                                         `}
                                     >
                                         <input
-                                            type="checkbox"
-                                            checked={value.includes(option.value)}
+                                            type={singleSelect ? "radio" : "checkbox"}
+                                            name={singleSelect ? "radio-group" : undefined}
+                                            checked={valueArray.includes(option.value)}
                                             onChange={() => handleOptionToggle(option.value)}
                                             disabled={option.disabled}
-                                            className="h-4 w-4 text-[#2351A3] border-[#DFE7F3] rounded focus:ring-[#2351A3] focus:ring-offset-0"
+                                            className={singleSelect 
+                                                ? "h-4 w-4 text-[#2351A3] border-[#DFE7F3] focus:ring-[#2351A3] focus:ring-offset-0"
+                                                : "h-4 w-4 text-[#2351A3] border-[#DFE7F3] rounded focus:ring-[#2351A3] focus:ring-offset-0"
+                                            }
                                         />
-                                        <span className={`ml-3 ${value.includes(option.value) ? 'text-[#2351A3] font-medium' : 'text-[#0F172A]'}`}>
+                                        <span className={`ml-3 ${valueArray.includes(option.value) ? 'text-[#2351A3] font-medium' : 'text-[#0F172A]'}`}>
                                             {option.label}
                                         </span>
                                     </label>

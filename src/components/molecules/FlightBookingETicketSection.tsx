@@ -5,8 +5,12 @@ import ShareTicketModal from "../atoms/ShareTicketModal";
 import INFO_ICON from "../../assets/svgs/info.svg";
 import Button from "../atoms/Button";
 import { formatDate, formatTime } from "../../utils/helpers";
-import { generateFlightTicketPDF } from "../../utils/pdfGenerator";
+import {
+  generateFlightTicketPDF,
+  // generateFlightTicketPDFBlob,
+} from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
+// import { uploadToS3 } from "../../utils/s3Helper";
 
 type FlightBookingETicketSectionProps = {
   reservedFlightBooking?: any;
@@ -18,6 +22,8 @@ export default function FlightBookingETicketSection({
   const [openShareModal, setOpenShareModal] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  // const [pdfUploaded, setPdfUploaded] = useState(false);
+  // const [s3Url, setS3Url] = useState<string>("");
 
   // Extract data from booking
   const bookingRef = reservedFlightBooking?.bookingReferenceId || "N/A";
@@ -71,7 +77,10 @@ export default function FlightBookingETicketSection({
   const outboundAirlineCode = outboundSegment?.marketingAirline || "EK";
   const outboundFlightNumber = outboundSegment?.flightNumber || "N/A";
   const outboundCabinClass = outboundSegment?.cabinClass || "Economy";
-  const outboundDuration = outboundSegment?.duration || outboundJourney?.flight?.flightInfo?.duration || "N/A";
+  const outboundDuration =
+    outboundSegment?.duration ||
+    outboundJourney?.flight?.flightInfo?.duration ||
+    "N/A";
   const outboundStops = outboundSegment?.stopQuantity
     ? outboundSegment?.stopQuantity === 0
       ? "Direct"
@@ -81,7 +90,10 @@ export default function FlightBookingETicketSection({
   // Return flight info (for roundtrip)
   const returnAirlineCode = returnSegment?.marketingAirline || "EK";
   const returnFlightNumber = returnSegment?.flightNumber || "N/A";
-  const returnDuration = returnSegment?.duration || returnJourney?.flight?.flightInfo?.duration || "N/A";
+  const returnDuration =
+    returnSegment?.duration ||
+    returnJourney?.flight?.flightInfo?.duration ||
+    "N/A";
   const returnStops = returnSegment?.stopQuantity
     ? returnSegment?.stopQuantity === 0
       ? "Direct"
@@ -103,7 +115,6 @@ export default function FlightBookingETicketSection({
   const returnArrTime = returnSegment?.arrivalDateTime || "";
   const returnDepTerminal = returnSegment?.departureTerminal || "";
   const returnArrTerminal = returnSegment?.arrivalTerminal || "";
-
 
   // Extract baggage info - use outbound segment for baggage info
   const baggageAllowance = outboundSegment?.baggageAllowance;
@@ -132,10 +143,10 @@ export default function FlightBookingETicketSection({
     try {
       setIsGeneratingPDF(true);
       await generateFlightTicketPDF(bookingRef);
-      toast.success('PDF downloaded successfully!');
+      toast.success("PDF downloaded successfully!");
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF. Please try again.');
+      console.error("Error generating PDF:", error);
+      toast.error("Failed to generate PDF. Please try again.");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -196,7 +207,10 @@ export default function FlightBookingETicketSection({
 
   const InstructionsCard = () => (
     <>
-      <div id="flight-instructions-content" className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-4 pt-4 pb-2">
+      <div
+        id="flight-instructions-content"
+        className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-4 pt-4 pb-2"
+      >
         <div>
           <InfoRow>
             During various procedures in the airport, passengers must provide
@@ -312,7 +326,10 @@ export default function FlightBookingETicketSection({
   );
 
   const FlightTicketContentCard = () => (
-    <div id="flight-ticket-content" className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-4 pt-4 pb-2">
+    <div
+      id="flight-ticket-content"
+      className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-4 pt-4 pb-2"
+    >
       <div>
         <div className="flex items-center justify-center gap-2 px-6">
           <svg
@@ -329,25 +346,21 @@ export default function FlightBookingETicketSection({
           </svg>
 
           <p className="text-[13px] text-[#3D495C]">
-            We advise you to print out your itinerary and take it with you
-            to ensure your trip goes as smoothly as possible.
+            We advise you to print out your itinerary and take it with you to
+            ensure your trip goes as smoothly as possible.
           </p>
         </div>
 
         <div className="mt-4 mb-4 grid grid-cols-3 gap-10 sm:grid-cols-3">
           <div>
-            <div className="text-[13px] text-[#3D495C]">
-              Booking number
-            </div>
+            <div className="text-[13px] text-[#3D495C]">Booking number</div>
             <div className="text-[15px] font-medium text-[#0A0C0F]">
               {bookingRef}
             </div>
           </div>
 
           <div>
-            <div className="text-[13px] text-[#3D495C]">
-              E-ticket number
-            </div>
+            <div className="text-[13px] text-[#3D495C]">E-ticket number</div>
             <div className="text-[15px] font-medium text-[#0A0C0F]">
               {ticketNumber}
             </div>
@@ -368,9 +381,7 @@ export default function FlightBookingETicketSection({
 
       <div className="mt-4 mb-4 grid grid-cols-3 gap-10 sm:grid-cols-3">
         <div>
-          <div className="text-[13px] text-[#3D495C]">
-            Title & Full Name
-          </div>
+          <div className="text-[13px] text-[#3D495C]">Title & Full Name</div>
           <div className="text-[15px] font-medium text-[#0A0C0F]">
             {getPassengerName(passengers[0])}
           </div>
@@ -450,8 +461,8 @@ export default function FlightBookingETicketSection({
                   {outboundDepCode} Airport ({outboundDepCode})
                 </div>
                 <div className="text-[12px] text-[#3D495C]">
-                  {formatTime(outboundDepTime)} • {formatDate(outboundDepTime)} • Terminal{" "}
-                  {outboundDepTerminal}
+                  {formatTime(outboundDepTime)} • {formatDate(outboundDepTime)}{" "}
+                  • Terminal {outboundDepTerminal}
                 </div>
               </div>
             </div>
@@ -474,8 +485,8 @@ export default function FlightBookingETicketSection({
                   {outboundArrCode} Airport ({outboundArrCode})
                 </div>
                 <div className="text-[12px] text-[#3D495C]">
-                  {formatTime(outboundArrTime)} • {formatDate(outboundArrTime)} • Terminal{" "}
-                  {outboundArrTerminal}
+                  {formatTime(outboundArrTime)} • {formatDate(outboundArrTime)}{" "}
+                  • Terminal {outboundArrTerminal}
                 </div>
               </div>
             </div>
@@ -543,8 +554,8 @@ export default function FlightBookingETicketSection({
                       {returnDepCode} Airport ({returnDepCode})
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
-                      {formatTime(returnDepTime)} • {formatDate(returnDepTime)} • Terminal{" "}
-                      {returnDepTerminal}
+                      {formatTime(returnDepTime)} • {formatDate(returnDepTime)}{" "}
+                      • Terminal {returnDepTerminal}
                     </div>
                   </div>
                 </div>
@@ -567,8 +578,8 @@ export default function FlightBookingETicketSection({
                       {returnArrCode} Airport ({returnArrCode})
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
-                      {formatTime(returnArrTime)} • {formatDate(returnArrTime)} • Terminal{" "}
-                      {returnArrTerminal}
+                      {formatTime(returnArrTime)} • {formatDate(returnArrTime)}{" "}
+                      • Terminal {returnArrTerminal}
                     </div>
                   </div>
                 </div>
@@ -633,19 +644,54 @@ export default function FlightBookingETicketSection({
         </Button>
       </div>
     </div>
-  )
+  );
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  // useEffect(() => {
+  //   const uploadPDFToS3 = async () => {
+  //     // if (pdfUploaded || !bookingRef || bookingRef === "N/A") return;
+
+  //     try {
+  //       setIsGeneratingPDF(true);
+  //       const pdfBlob = await generateFlightTicketPDFBlob(bookingRef);
+  //       const s3Key = `${Date.now()}.pdf`;
+  //       const bucket = import.meta.env.VITE_S3_BUCKET || "your-bucket-name";
+  //       const fileUrl = await uploadToS3({
+  //         bucket,
+  //         key: s3Key,
+  //         file: pdfBlob,
+  //       });
+  //       setS3Url(fileUrl);
+  //       setPdfUploaded(true);
+  //       console.log("PDF uploaded to S3:", fileUrl);
+  //     } catch (error) {
+  //       console.error("Error uploading PDF to S3:", error);
+  //       // toast.error("Failed to upload ticket to cloud storage");
+  //     } finally {
+  //       setIsGeneratingPDF(false);
+  //     }
+  //   };
+
+  //   const timer = setTimeout(() => {
+  //     uploadPDFToS3();
+  //   }, 1000);
+
+  //   return () => clearTimeout(timer);
+  // }, [bookingRef, pdfUploaded]);
 
   return (
     <section className="mt-8 flex items-center justify-center px-4">
       <div className="w-full max-w-[580px]">
-        <div style={{ display: !showInstructions ? 'block' : 'none' }}>
+        <div style={{ display: !showInstructions ? "block" : "none" }}>
           <FlightTicketContentCard />
         </div>
 
-        <div style={{ display: showInstructions ? 'block' : 'none' }}>
+        <div style={{ display: showInstructions ? "block" : "none" }}>
           <InstructionsCard />
         </div>
-
 
         <div
           id="flight-ticket-pdf"
@@ -662,6 +708,28 @@ export default function FlightBookingETicketSection({
         >
           <FlightTicketContentCard />
           <InstructionsCard />
+        </div>
+
+        <div
+          id="flight-ticket-print"
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            left: "-20000px",
+            top: 0,
+            width: "100%", // match your visible width
+            overflow: "visible",
+            pointerEvents: "none",
+            zIndex: -1,
+          }}
+        >
+          <div className="print-page">
+            <FlightTicketContentCard />
+          </div>
+
+          <div className="print-page">
+            <InstructionsCard />
+          </div>
         </div>
 
         <div className="flex items-center justify-center px-12 gap-4 mt-10 mb-12">
@@ -686,7 +754,12 @@ export default function FlightBookingETicketSection({
       </div>
 
       {openShareModal && (
-        <ShareTicketModal closeModal={() => setOpenShareModal(false)} />
+        <ShareTicketModal
+          closeModal={() => setOpenShareModal(false)}
+          bookingRef={bookingRef}
+          passengerName={getPassengerName(passengers[0])}
+          onPrint={handlePrint}
+        />
       )}
     </section>
   );

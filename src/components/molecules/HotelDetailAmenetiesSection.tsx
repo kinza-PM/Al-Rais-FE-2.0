@@ -1,70 +1,94 @@
 import Button from "../atoms/Button";
-import IndoorSwimmingPool from "../../assets/svgs/indoor-swimming.svg";
-import HotelWifi from "../../assets/svgs/hotel-wifi.svg";
-import AirportShuttle from "../../assets/svgs/airport-shuttle.svg";
-import HotelParking from "../../assets/svgs/parking.svg";
-import FamilyRooms from "../../assets/svgs/family-rooms.svg";
-import Fitness from "../../assets/svgs/fitness.svg";
-import Restaurant from "../../assets/svgs/restaurant.svg";
-import RoomService from "../../assets/svgs/room-service.svg";
-import TeaCoffeeMaker from "../../assets/svgs/tea-coffee-maker.svg";
-import HotelBreakfast from "../../assets/svgs/hotel-breakfast.svg";
-import { hotelAmeneties } from "../../utils/mockData";
+import { useMemo } from "react";
+import {
+  categorizeFacilities,
+  FACILITY_KEYWORDS,
+  getFacilityIcon,
+  GREAT_KEYWORDS,
+} from "../../utils/hotelHelper";
 
-const HotelDetailAmenetiesSection = () => {
-  const hotelFacilities = [
-    {
-      icon: IndoorSwimmingPool,
-      name: "Indoor swimming pool",
-    },
-    {
-      icon: HotelWifi,
-      name: "Free Wifi",
-    },
-    {
-      icon: AirportShuttle,
-      name: "Airport shuttle (free)",
-    },
-    {
-      icon: HotelParking,
-      name: "Free Parking",
-    },
-    {
-      icon: FamilyRooms,
-      name: "Family Rooms",
-    },
-    {
-      icon: Fitness,
-      name: "Fitness center",
-    },
-    {
-      icon: Restaurant,
-      name: "Restaurant",
-    },
-    {
-      icon: RoomService,
-      name: "Room service",
-    },
-    {
-      icon: TeaCoffeeMaker,
-      name: "Tea/Coffee maker in all rooms",
-    },
-    {
-      icon: HotelBreakfast,
-      name: "Very good breakfast",
-    },
-  ];
+const HotelDetailAmenetiesSection = ({ hotelDetail }: { hotelDetail: any }) => {
+  const displayPopularFacilities = useMemo(() => {
+    if (!hotelDetail?.hotelFacilities) return [];
+    const unwantedKeywords = [
+      "total number",
+      "hotel",
+      "american express",
+      "mastercard",
+      "visa",
+      "identification",
+      "**",
+      "payment",
+      "card",
+    ];
+    const seenFacilities = new Set<string>();
+    const facilities: Array<{ name: string; icon: string | null }> = [];
+    hotelDetail.hotelFacilities.forEach((facility: any) => {
+      const cleanName = facility.name.replace(/\*\*/g, "").trim();
+      const lowerName = cleanName.toLowerCase();
+      if (unwantedKeywords.some((keyword) => lowerName.includes(keyword))) {
+        return;
+      }
+      if (seenFacilities.has(lowerName)) {
+        return;
+      }
+      const icon = getFacilityIcon(cleanName);
+      if (icon || facilities.length < 10) {
+        seenFacilities.add(lowerName);
+        facilities.push({ name: cleanName, icon });
+      }
+    });
+    // return facilities;
+    return facilities.slice(0, 10); // Limit to 10
+  }, [hotelDetail?.hotelFacilities]);
+
+  const categorizedAmenities = useMemo(() => {
+    const categories = [
+      "greatForYourStay",
+      "bathroom",
+      "mediaAndTechnology",
+      "foodAndDrink",
+      "cleaningServices",
+      "safetyAndSecurity",
+      "kitchen",
+      "bedrooms",
+    ];
+
+    return categorizeFacilities(
+      [hotelDetail?.hotelFacilities, hotelDetail?.roomFacilities],
+      categories,
+      FACILITY_KEYWORDS,
+      GREAT_KEYWORDS
+    );
+  }, [hotelDetail]);
+
+  const categoryCount = Object.entries(categorizedAmenities).filter(
+    ([_, items]) => items.length > 0
+  ).length;
+
+  const columnClass =
+    categoryCount >= 6
+      ? "columns-4"
+      : categoryCount >= 4
+      ? "columns-3"
+      : categoryCount >= 2
+      ? "columns-2"
+      : "columns-1";
+
   return (
     <div className="mt-6">
       <h4 className="text-[#0A0C0F] text-base font-bold">
-        Facilities of The Nishat Hotel Johar Town
+        Facilities of {hotelDetail?.name || "Hotel"}
       </h4>
       <div className="mt-1 flex items-center justify-between">
         <div className="">
           <div className="text-[#00B868] font-semibold text-sm mb-0.5">
             Great facilities
           </div>
-          <div className="text-sm text-[#3D495C]">Review score 9.1</div>
+          <div className="text-sm text-[#3D495C]">
+            Review score{" "}
+            {hotelDetail?.userRating || hotelDetail?.starRating || "N/A"}
+          </div>
         </div>
         <Button
           type="button"
@@ -80,45 +104,53 @@ const HotelDetailAmenetiesSection = () => {
           Most popular facilies
         </h5>
         <div className="mt-5 max-w-3xl text-[#3D495C] text-sm mt-4 flex flex-wrap items-center gap-5">
-          {hotelFacilities.map((facility, index) => {
-            return (
+          {displayPopularFacilities.length > 0 ? (
+            displayPopularFacilities.map((facility, index) => (
               <div className="flex items-center gap-2" key={index}>
-                <img src={facility.icon} alt="icon" />
+                {facility.icon && <img src={facility.icon} alt="icon" />}
                 {facility.name}
               </div>
-            );
-          })}
+            ))
+          ) : (
+            <p>No popular facilities available</p>
+          )}
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto mt-16">
-        <div className="columns-4 gap-10">
-          {hotelAmeneties.map((g, idx) => (
-            <div key={idx} className="mb-8 break-inside-avoid">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="flex items-center justify-center">
-                  <AmenetiesHeadingIcon />
+        <div className={`${columnClass} gap-10`}>
+          {Object.entries(categorizedAmenities)
+            .filter(([_, items]) => items.length > 0)
+            .map(([cat, items], idx) => (
+              <div key={idx} className="mb-12 break-inside-avoid">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="flex items-center justify-center">
+                    <AmenetiesHeadingIcon />
+                  </div>
+                  <h4 className="text-[#0A0C0F] text-sm font-semibold">
+                    {cat.charAt(0).toUpperCase() +
+                      cat
+                        .slice(1)
+                        .replace(/And/g, " & ")
+                        .replace(/([A-Z])/g, " $1")
+                        .trim()}
+                  </h4>
                 </div>
-                <h4 className="text-[#0A0C0F] text-sm font-semibold">
-                  {g.title}
-                </h4>
+                <ul className="space-y-2">
+                  {items.map((it, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-xs text-[#3D495C]"
+                    >
+                      <div className="pt-0.5">
+                        <CheckIcon />
+                      </div>
+                      <span className="leading-snug">{it}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
-
-              <ul className="space-y-2">
-                {g.items.map((it, i) => (
-                  <li
-                    key={i}
-                    className="flex items-start gap-2 text-xs text-[#3D495C]"
-                  >
-                    <div className="pt-0.5">
-                      <CheckIcon />
-                    </div>
-                    <span className="leading-snug">{it}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>

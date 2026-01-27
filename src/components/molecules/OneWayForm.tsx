@@ -28,6 +28,9 @@ type Props = {
   departDateError?: string;
   passengersError?: string;
   cabinClassError?: string;
+  countriesHasMore?: boolean;
+  countriesFetchNext?: () => void;
+  countriesLoadingMore?: boolean;
 };
 
 const OneWayForm: React.FC<Props> = ({
@@ -48,6 +51,9 @@ const OneWayForm: React.FC<Props> = ({
   departDateError = "",
   passengersError = "",
   cabinClassError = "",
+  countriesHasMore = false,
+  countriesFetchNext = () => {},
+  countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   const [departDate, setDepartDate] = React.useState<Date | null>(null);
@@ -147,10 +153,17 @@ const OneWayForm: React.FC<Props> = ({
             ? "Please try a different search."
             : undefined
         }
+        onLoadMore={() => {
+          if (countriesHasMore) {
+            countriesFetchNext?.();
+          }
+        }}
+        hasMore={countriesHasMore}
+        loadingMore={countriesLoadingMore}
       />
 
       {/* Departure date */}
-      <div className="w-[220px]">
+      <div className="w-[195px]">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
@@ -160,8 +173,9 @@ const OneWayForm: React.FC<Props> = ({
             setDepartDate(d);
             onChangeDepartDate?.(d);
           }}
-          placeholder="Please select"
+          placeholder="Select departure date"
           buttonIconSrc={true}
+          disablePastDates={true}
         />
         {departDateError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
@@ -214,7 +228,7 @@ const OneWayForm: React.FC<Props> = ({
       </div>
 
       {/* Cabin class */}
-      <div className="w-[150px]">
+      <div className="w-[185px]">
         <SearchableDropdown
           options={cabinClasses.map((cc) => ({
             id: cc.id,
@@ -223,7 +237,7 @@ const OneWayForm: React.FC<Props> = ({
           }))}
           value={selectedCabinClassId}
           onChange={onChangeCabinClassId}
-          placeholder="Please select"
+          placeholder="Select cabin class"
           label="Cabin class"
           disabled={!!loadingCabinClasses}
           error={cabinError}
