@@ -211,6 +211,7 @@ const PassengerCabinDropdown: React.FC<Props> = ({
               error={cabinError}
               widthClass="w-full"
               searchPlaceholder="Search cabin classes..."
+              tooltip="Select cabin class"
             />
           </div>
         </div>

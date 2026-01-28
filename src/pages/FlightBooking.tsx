@@ -43,10 +43,10 @@ const FlightBooking = () => {
       ? ["Book", "Enhance", "Review", "Pay", "E-ticket"]
       : ["Book", "Review", "Pay", "E-ticket"]
   );
-  
+
   // Check if this is a pending booking (skip to payment)
   const isPendingBooking = initialOfferData?.isPendingBooking || false;
-  
+
   const [currentStep, setCurrentStep] = useState(() => {
     if (isPendingBooking) {
       const payStep = steps.indexOf("Pay");
@@ -74,7 +74,7 @@ const FlightBooking = () => {
     let passengers = buildInitialFlightBookingPassengersPayload(
       offerData?.passengersForRequest
     );
-    
+
     // If pending booking, pre-fill passenger data from API
     if (isPendingBooking && offerData?.passengersData) {
       passengers = offerData.passengersData.map((p: any) => ({
@@ -112,7 +112,7 @@ const FlightBooking = () => {
         },
       }));
     }
-    
+
     return {
       offerId: offerData?.offerId,
       searchKey: offerData?.searchKey,
@@ -126,27 +126,27 @@ const FlightBooking = () => {
   });
   // console.log(initialOfferData);
   const [flightReservationBookingPayload, setFlightReservationBookingPayload] =
-  // useState(() => ({
-  //   bookingReferenceId: "",
-  //   offerId: flightBookingPayload?.offerId,
-  //   customerInfo: {
-  //     emailAddress: "",
-  //   },
-  //   passengers: flightBookingPayload?.passengers,
-  //   paymentDetails: {
-  //     paymentMode: "CR",
-  //     transactionAmount: null,
-  //     // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
-  //     cardInfo: "",
-  //     address: {
-  //       label: "Billing",
-  //       street: [],
-  //       postalCode: "",
-  //       cityName: "",
-  //       countryCode: "UAE",
-  //     },
-  //   },
-  // }));
+    // useState(() => ({
+    //   bookingReferenceId: "",
+    //   offerId: flightBookingPayload?.offerId,
+    //   customerInfo: {
+    //     emailAddress: "",
+    //   },
+    //   passengers: flightBookingPayload?.passengers,
+    //   paymentDetails: {
+    //     paymentMode: "CR",
+    //     transactionAmount: null,
+    //     // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
+    //     cardInfo: "",
+    //     address: {
+    //       label: "Billing",
+    //       street: [],
+    //       postalCode: "",
+    //       cityName: "",
+    //       countryCode: "UAE",
+    //     },
+    //   },
+    // }));
     useState(() => {
       return {
         bookingReferenceId: "",
@@ -266,8 +266,8 @@ const FlightBooking = () => {
   const handleFlightReservationBookingChange = (
     eOrPath:
       | React.ChangeEvent<
-          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-        >
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
       | string,
     maybeValue?: any
   ) => {
@@ -316,7 +316,7 @@ const FlightBooking = () => {
   const payStepIndex = steps.indexOf("Pay");
   const eticketStepIndex = steps.indexOf("E-ticket");
   const enhanceStepIndex = steps.indexOf("Enhance");
-  
+
   // Set initial step - skip to payment for pending bookings
 
   // const showTimerBanner = [0, 1, 2].includes(currentStep);
@@ -327,7 +327,7 @@ const FlightBooking = () => {
     if (isPendingBooking) {
       return;
     }
-    
+
     if (!offerData?.offerId) return;
     try {
       const response = await mutateAsync({ offerId: offerData?.offerId });
@@ -336,6 +336,10 @@ const FlightBooking = () => {
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
+      if (err == 'Offer Id Invalid or Expired') {
+        navigate("/search_flight");
+        // return
+      }
     }
   };
 
@@ -487,7 +491,7 @@ const FlightBooking = () => {
                 }
               }}
               onUpdateFlightRaw={handleUpdateFlightRawDetails}
-              // flightAncillarySearch={ancillarySearchData}
+            // flightAncillarySearch={ancillarySearchData}
             />
           )}
           {currentStep === enhanceStepIndex &&

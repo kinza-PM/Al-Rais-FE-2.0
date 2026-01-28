@@ -15,6 +15,7 @@ import { useNavigate } from "react-router-dom";
 import Loader from "../atoms/Loader";
 import { formatDateToLocalISO } from "../../utils/helpers";
 import noInternet from "../../assets/svgs/no-internet.svg";
+import toast from "react-hot-toast";
 
 const FlightHeroSection: React.FC = () => {
   const [trip, setTrip] = useState<TripType>("oneway");
@@ -26,13 +27,13 @@ const FlightHeroSection: React.FC = () => {
   const [departDate, setDepartDate] = useState<Date | null>(new Date());
   const [arrivalDate, setArrivalDate] = useState<Date | null>(new Date());
 
-  const [validationErrors, setValidationErrors] = useState({
-    departDate: "",
-    arrivalDate: "",
-    passengers: "",
-    cabinClass: "",
-  });
-  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+  // const [validationErrors, setValidationErrors] = useState({
+  //   departDate: "",
+  //   arrivalDate: "",
+  //   passengers: "",
+  //   cabinClass: "",
+  // });
+  // const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
 
   const handlePassengers = useCallback(
     (next: Record<string, number>, order: string[]) => {
@@ -101,82 +102,110 @@ const FlightHeroSection: React.FC = () => {
     setSelectedCabinClassId("5");
     setDepartDate(null);
     setArrivalDate(null);
-    setHasAttemptedValidation(false);
-    setValidationErrors({
-      departDate: "",
-      arrivalDate: "",
-      passengers: "",
-      cabinClass: "",
-    });
+    // setHasAttemptedValidation(false);
+    // setValidationErrors({
+    //   departDate: "",
+    //   arrivalDate: "",
+    //   passengers: "",
+    //   cabinClass: "",
+    // });
   }, [trip]);
 
+  // const validateForm = (): boolean => {
+  //   const errors = {
+  //     departDate: "",
+  //     arrivalDate: "",
+  //     passengers: "",
+  //     cabinClass: "",
+  //   };
+  //   let isValid = true;
+  //   if (!departDate) {
+  //     errors.departDate = "Departure date is required";
+  //     isValid = false;
+  //   }
+  //   if (trip === "roundtrip" && !arrivalDate) {
+  //     errors.arrivalDate = "Arrival date is required";
+  //     isValid = false;
+  //   }
+  //   const totalPassengers = Object.values(paxCounts).reduce(
+  //     (sum, count) => sum + count,
+  //     0
+  //   );
+  //   if (totalPassengers === 0) {
+  //     errors.passengers = "Passenger is required";
+  //     isValid = false;
+  //   }
+  //   if (!selectedCabinClassId) {
+  //     errors.cabinClass = "Cabin class is required";
+  //     isValid = false;
+  //   }
+  //   setValidationErrors(errors);
+  //   return isValid;
+  // };
   const validateForm = (): boolean => {
-    const errors = {
-      departDate: "",
-      arrivalDate: "",
-      passengers: "",
-      cabinClass: "",
-    };
-    let isValid = true;
+    const errors: string[] = [];
+
     if (!departDate) {
-      errors.departDate = "Departure date is required";
-      isValid = false;
+      errors.push("Departure date is required");
     }
     if (trip === "roundtrip" && !arrivalDate) {
-      errors.arrivalDate = "Arrival date is required";
-      isValid = false;
+      errors.push("Arrival date is required");
     }
     const totalPassengers = Object.values(paxCounts).reduce(
       (sum, count) => sum + count,
       0
     );
     if (totalPassengers === 0) {
-      errors.passengers = "Passenger is required";
-      isValid = false;
+      errors.push("Passenger is required");
     }
     if (!selectedCabinClassId) {
-      errors.cabinClass = "Cabin class is required";
-      isValid = false;
+      errors.push("Cabin class is required");
     }
-    setValidationErrors(errors);
-    return isValid;
+    
+    if (errors.length > 1) {
+      toast.error("Please complete all required fields before searching.");
+    } else if (errors.length === 1) {
+      toast.error(errors[0]);
+    }
+
+    return errors.length === 0;
   };
 
   // Clear errors when values are filled
-  useEffect(() => {
-    if (!hasAttemptedValidation) return;
+  // useEffect(() => {
+  //   if (!hasAttemptedValidation) return;
 
-    setValidationErrors((prev) => {
-      const updated = { ...prev };
-      if (departDate && prev.departDate) {
-        updated.departDate = "";
-      }
-      if (trip === "roundtrip" && arrivalDate && prev.arrivalDate) {
-        updated.arrivalDate = "";
-      }
-      const totalPassengers = Object.values(paxCounts).reduce(
-        (sum, count) => sum + count,
-        0
-      );
-      if (totalPassengers > 0 && prev.passengers) {
-        updated.passengers = "";
-      }
-      if (selectedCabinClassId && prev.cabinClass) {
-        updated.cabinClass = "";
-      }
-      return updated;
-    });
-  }, [
-    departDate,
-    arrivalDate,
-    paxCounts,
-    selectedCabinClassId,
-    trip,
-    hasAttemptedValidation,
-  ]);
+  //   setValidationErrors((prev) => {
+  //     const updated = { ...prev };
+  //     if (departDate && prev.departDate) {
+  //       updated.departDate = "";
+  //     }
+  //     if (trip === "roundtrip" && arrivalDate && prev.arrivalDate) {
+  //       updated.arrivalDate = "";
+  //     }
+  //     const totalPassengers = Object.values(paxCounts).reduce(
+  //       (sum, count) => sum + count,
+  //       0
+  //     );
+  //     if (totalPassengers > 0 && prev.passengers) {
+  //       updated.passengers = "";
+  //     }
+  //     if (selectedCabinClassId && prev.cabinClass) {
+  //       updated.cabinClass = "";
+  //     }
+  //     return updated;
+  //   });
+  // }, [
+  //   departDate,
+  //   arrivalDate,
+  //   paxCounts,
+  //   selectedCabinClassId,
+  //   trip,
+  //   hasAttemptedValidation,
+  // ]);
 
   const handleSearch = () => {
-    setHasAttemptedValidation(true);
+    // setHasAttemptedValidation(true);
     if (!validateForm()) {
       return;
     }
@@ -235,11 +264,10 @@ const FlightHeroSection: React.FC = () => {
                     key={t.id}
                     type="button"
                     onClick={() => setTrip(t.key)}
-                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${
-                      trip === t.key
-                        ? "bg-[#2351A3] text-white"
-                        : "text-[#3A4350] hover:bg-[#F4F7FD]"
-                    }`}
+                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${trip === t.key
+                      ? "bg-[#2351A3] text-white"
+                      : "text-[#3A4350] hover:bg-[#F4F7FD]"
+                      }`}
                   >
                     {t.label}
                   </button>
@@ -266,15 +294,15 @@ const FlightHeroSection: React.FC = () => {
                 onChangePassengers={handlePassengers}
                 onChangeDepartDate={handleDepartDate}
                 //ERRORS
-                departDateError={
-                  hasAttemptedValidation ? validationErrors.departDate : ""
-                }
-                passengersError={
-                  hasAttemptedValidation ? validationErrors.passengers : ""
-                }
-                cabinClassError={
-                  hasAttemptedValidation ? validationErrors.cabinClass : ""
-                }
+                // departDateError={
+                //   hasAttemptedValidation ? validationErrors.departDate : ""
+                // }
+                // passengersError={
+                //   hasAttemptedValidation ? validationErrors.passengers : ""
+                // }
+                // cabinClassError={
+                //   hasAttemptedValidation ? validationErrors.cabinClass : ""
+                // }
                 countriesHasMore={countriesHasMore}
                 countriesFetchNext={countriesFetchNext}
                 countriesLoadingMore={countriesIsFetchingNext}
@@ -299,18 +327,18 @@ const FlightHeroSection: React.FC = () => {
                 onChangeDepartDate={handleDepartDate}
                 onChangeArrivalDate={handleArrivalDate}
                 //ERRORS
-                departDateError={
-                  hasAttemptedValidation ? validationErrors.departDate : ""
-                }
-                arrivalDateError={
-                  hasAttemptedValidation ? validationErrors.arrivalDate : ""
-                }
-                passengersError={
-                  hasAttemptedValidation ? validationErrors.passengers : ""
-                }
-                cabinClassError={
-                  hasAttemptedValidation ? validationErrors.cabinClass : ""
-                }
+                // departDateError={
+                //   hasAttemptedValidation ? validationErrors.departDate : ""
+                // }
+                // arrivalDateError={
+                //   hasAttemptedValidation ? validationErrors.arrivalDate : ""
+                // }
+                // passengersError={
+                //   hasAttemptedValidation ? validationErrors.passengers : ""
+                // }
+                // cabinClassError={
+                //   hasAttemptedValidation ? validationErrors.cabinClass : ""
+                // }
                 countriesHasMore={countriesHasMore}
                 countriesFetchNext={countriesFetchNext}
                 countriesLoadingMore={countriesIsFetchingNext}

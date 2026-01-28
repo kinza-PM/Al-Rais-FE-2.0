@@ -34,7 +34,7 @@ const TravelRoutePicker: React.FC<Props> = ({
   widthClass = "w-[190px]",
   fromError,
   toError,
-  onLoadMore = () => {},
+  onLoadMore = () => { },
   hasMore = false,
   loadingMore = false,
 }) => {
@@ -83,6 +83,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           onLoadMore={onLoadMore}
           hasMore={hasMore}
           loadingMore={loadingMore}
+          tooltip="Select where you’re flying from"
         />
       </div>
 
@@ -110,6 +111,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           onLoadMore={onLoadMore}
           hasMore={hasMore}
           loadingMore={loadingMore}
+          tooltip="Select where you’re flying to"
         />
       </div>
     </>

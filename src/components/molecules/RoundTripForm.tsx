@@ -25,10 +25,10 @@ type Props = {
   onChangePassengers?: (p: { [k: string]: number }, order: string[]) => void;
   onChangeDepartDate?: (d: Date | null) => void;
   onChangeArrivalDate?: (d: Date | null) => void;
-  departDateError?: string;
-  arrivalDateError?: string;
-  passengersError?: string;
-  cabinClassError?: string;
+  // departDateError?: string;
+  // arrivalDateError?: string;
+  // passengersError?: string;
+  // cabinClassError?: string;
   countriesHasMore?: boolean;
   countriesFetchNext?: () => void;
   countriesLoadingMore?: boolean;
@@ -62,10 +62,10 @@ const RoundTripForm: React.FC<Props> = ({
   onChangePassengers,
   onChangeDepartDate,
   onChangeArrivalDate,
-  departDateError = "",
-  arrivalDateError = "",
-  passengersError = "",
-  cabinClassError = "",
+  // departDateError = "",
+  // arrivalDateError = "",
+  // passengersError = "",
+  // cabinClassError = "",
   countriesHasMore = false,
   countriesFetchNext = () => {},
   countriesLoadingMore = false,
@@ -139,12 +139,13 @@ const RoundTripForm: React.FC<Props> = ({
           placeholder="Select departure date"
           buttonIconSrc={true}
           disablePastDates={true}
+          tooltip="Select departure date"
         />
-        {departDateError && (
+        {/* {departDateError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
             {departDateError}
           </p>
-        )}
+        )} */}
         {/* <div className="relative">
           <input
             ref={depRef}
@@ -180,12 +181,13 @@ const RoundTripForm: React.FC<Props> = ({
           placeholder="Select arrival date"
           buttonIconSrc={true}
           disablePastDates={true}
+          tooltip="Select arrival date"
         />
-        {arrivalDateError && (
+        {/* {arrivalDateError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
             {arrivalDateError}
           </p>
-        )}
+        )} */}
         {/* <div className="relative">
           <input
             ref={arrRef}
@@ -220,11 +222,11 @@ const RoundTripForm: React.FC<Props> = ({
           widthClass="w-[190px]"
           onChangePax={handlePaxChange}
         />
-        {(passengersError || cabinClassError) && (
+        {/* {(passengersError || cabinClassError) && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
             {passengersError || cabinClassError}
           </p>
-        )}
+        )} */}
       </div>
     </div>
   );

@@ -376,15 +376,15 @@ const FlightDetailTemplate: React.FC = () => {
       searchKey,
       outbound: outbound
         ? {
-            ...outbound,
-            logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment),
-          }
+          ...outbound,
+          logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment),
+        }
         : null,
       inbound: inbound
         ? {
-            ...inbound,
-            logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment),
-          }
+          ...inbound,
+          logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment),
+        }
         : null,
       // price: { economyLite: { price: item?.fare?.totalFare } },
       price: priceOptions,
@@ -477,11 +477,11 @@ const FlightDetailTemplate: React.FC = () => {
     );
     const flightSegments: any[] = [
       {
-        departureAirportCode: fromCode,
-        // departureAirportCode: "DXB",
+        // departureAirportCode: fromCode,
+        departureAirportCode: "DXB",
         departureDate: departDate,
-        arrivalAirportCode: toCode,
-        // arrivalAirportCode: "DEL",
+        // arrivalAirportCode: toCode,
+        arrivalAirportCode: "DEL",
         cabinPreferences: [selectedCabinClassId],
       },
     ];
@@ -1106,7 +1106,7 @@ const FlightDetailTemplate: React.FC = () => {
               items={items}
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
-              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
+            // indicator={{ size: (origin) => origin - 20, align: alignValue }}
             />
           </div>
           <div className="countrySelectAndGetHelp py-pxTopHeader">
@@ -1249,6 +1249,7 @@ const FlightDetailTemplate: React.FC = () => {
                   handleDate(value, "depart");
                 }}
                 placeholder="Select departure date"
+                tooltip="Select departure date"
                 buttonIconSrc={true}
                 disablePastDates={true}
               />
@@ -1271,6 +1272,7 @@ const FlightDetailTemplate: React.FC = () => {
                     handleDate(value, "return");
                   }}
                   placeholder="Select arrival date"
+                  tooltip="Select arrival date"
                   buttonIconSrc={true}
                   disablePastDates={true}
                 />
@@ -1305,6 +1307,7 @@ const FlightDetailTemplate: React.FC = () => {
                 widthClass="w-full"
                 // className="header-sub-inputs-common"
                 searchPlaceholder="Search cabin classes..."
+                tooltip="Select cabin class"
               />
             </Flex>
           </Flex>

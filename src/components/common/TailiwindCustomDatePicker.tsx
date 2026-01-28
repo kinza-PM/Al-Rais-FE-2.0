@@ -11,6 +11,7 @@ type DatePickerProps = {
   inputClass?: string;
   //   error?: string;
   disablePastDates?: boolean;
+  tooltip?: string | null;
 };
 
 const WEEKDAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
@@ -50,7 +51,7 @@ function fmtLong(d?: Date | null) {
 
 const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   value = null,
-  onChange = () => {},
+  onChange = () => { },
   placeholder = "Please select",
   buttonIconSrc,
   overridesClass = false,
@@ -58,6 +59,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   inputClass = null,
   //   error = "",
   disablePastDates = false,
+  tooltip = null,
 }) => {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<Date>(() => value ?? new Date());
@@ -131,7 +133,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   return (
     <div ref={rootRef} className="relative">
       {/* Display input */}
-      <div className="relative">
+      <div className="group relative">
         <input
           readOnly
           value={fmtLong(value) || ""}
@@ -144,19 +146,17 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
           //           error ? "border-[#E65959]" : "border-[#DFE7F3]"
           //         } pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer`
           //   }`}
-          className={`${
-            overridesClass
-              ? inputClass
-              : "h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer"
-          }`}
+          className={`${overridesClass
+            ? inputClass
+            : "h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer"
+            }`}
         />
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-label="Open calendar"
-          className={`absolute inset-y-0 ${
-            showCalendarIconRight ? "right-3" : "left-3"
-          } flex items-center`}
+          className={`absolute inset-y-0 ${showCalendarIconRight ? "right-3" : "left-3"
+            } flex items-center`}
         >
           {buttonIconSrc ? (
             <img src={Calendar} alt="calendar" className="w-[16px] h-[16px]" />
@@ -172,6 +172,25 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
             </svg>
           )}
         </button>
+        {tooltip && (
+          <div
+            className={`
+            pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-3
+            hidden group-hover:block z-50
+            px-3 py-2 text-xs leading-5 text-white
+            bg-[#1E293B] rounded-lg shadow-lg
+            whitespace-nowrap
+            transition-all duration-150 opacity-0 group-hover:opacity-100
+            before:content-[''] before:absolute before:top-full before:left-1/2
+            before:-translate-x-1/2 before:border-6 before:border-transparent
+            before:border-t-[#1E293B]
+          `}
+          >
+            <div className="text-center">
+              {tooltip}
+            </div>
+          </div>
+        )}
       </div>
       {/* {error && (
         <p className="absolute left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
@@ -232,9 +251,8 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
             {WEEKDAY_LABELS.map((w, idx) => (
               <div
                 key={w}
-                className={`py-1 ${
-                  idx >= 5 ? "text-[#E65959]" : "text-[#8A94A6]"
-                }`}
+                className={`py-1 ${idx >= 5 ? "text-[#E65959]" : "text-[#8A94A6]"
+                  }`}
               >
                 {w}
               </div>

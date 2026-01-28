@@ -25,9 +25,9 @@ type Props = {
   // lifted state callbacks
   onChangePassengers?: (p: { [k: string]: number }, order: string[]) => void;
   onChangeDepartDate?: (d: Date | null) => void;
-  departDateError?: string;
-  passengersError?: string;
-  cabinClassError?: string;
+  // departDateError?: string;
+  // passengersError?: string;
+  // cabinClassError?: string;
   countriesHasMore?: boolean;
   countriesFetchNext?: () => void;
   countriesLoadingMore?: boolean;
@@ -48,9 +48,9 @@ const OneWayForm: React.FC<Props> = ({
   onChangeCabinClassId = () => {},
   onChangePassengers,
   onChangeDepartDate,
-  departDateError = "",
-  passengersError = "",
-  cabinClassError = "",
+  // departDateError = "",
+  // passengersError = "",
+  // cabinClassError = "",
   countriesHasMore = false,
   countriesFetchNext = () => {},
   countriesLoadingMore = false,
@@ -174,14 +174,16 @@ const OneWayForm: React.FC<Props> = ({
             onChangeDepartDate?.(d);
           }}
           placeholder="Select departure date"
+          tooltip="Select departure date"
           buttonIconSrc={true}
           disablePastDates={true}
+
         />
-        {departDateError && (
+        {/* {departDateError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
             {departDateError}
           </p>
-        )}
+        )} */}
         {/* <div className="relative">
           <input
             ref={depRef}
@@ -220,11 +222,11 @@ const OneWayForm: React.FC<Props> = ({
               : null
           }
         />
-        {passengersError && (
+        {/* {passengersError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
             {passengersError}
           </p>
-        )}
+        )} */}
       </div>
 
       {/* Cabin class */}
@@ -238,17 +240,18 @@ const OneWayForm: React.FC<Props> = ({
           value={selectedCabinClassId}
           onChange={onChangeCabinClassId}
           placeholder="Select cabin class"
+          tooltip="Select cabin class"
           label="Cabin class"
           disabled={!!loadingCabinClasses}
           error={cabinError}
           widthClass="w-full"
           searchPlaceholder="Search cabin classes..."
         />
-        {cabinClassError && (
+        {/* {cabinClassError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
             {cabinClassError}
           </p>
-        )}
+        )} */}
       </div>
     </div>
   );
