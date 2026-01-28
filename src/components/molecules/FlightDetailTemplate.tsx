@@ -477,11 +477,11 @@ const FlightDetailTemplate: React.FC = () => {
     );
     const flightSegments: any[] = [
       {
-        // departureAirportCode: fromCode,
-        departureAirportCode: "DXB",
+        departureAirportCode: fromCode,
+        // departureAirportCode: "DXB",
         departureDate: departDate,
-        // arrivalAirportCode: toCode,
-        arrivalAirportCode: "DEL",
+        arrivalAirportCode: toCode,
+        // arrivalAirportCode: "DEL",
         cabinPreferences: [selectedCabinClassId],
       },
     ];
