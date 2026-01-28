@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import travelMain1 from "../../assets/images/travel_main_img.png";
 import travelMain2 from "../../assets/images/travel_main_img2.png";
 import travelPlane from "../../assets/images/travel_plane_image.png";
+import { fetchPublicHeroCarousel, type HeroCarouselSlide } from "../../services/content/contentService";
 
 type Product = "flights" | "hotels" | "cars" | "packages";
 
@@ -43,6 +44,9 @@ const HeroCarousel: React.FC<Props> = ({ product, onProductChange }) => {
   const [isNarrow, setIsNarrow] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth < 768 : false
   );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [remoteSlides, setRemoteSlides] = useState<HeroCarouselSlide[]>([]);
 
   useEffect(() => {
     const onResize = () => setIsNarrow(window.innerWidth < 768);
@@ -50,17 +54,71 @@ const HeroCarousel: React.FC<Props> = ({ product, onProductChange }) => {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const items = await fetchPublicHeroCarousel();
+        if (!mounted) return;
+        setRemoteSlides(items);
+      } catch (e: any) {
+        if (!mounted) return;
+        setError(e?.message || "Failed to load hero carousel");
+      } finally {
+        if (!mounted) return;
+        setLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const slides = useMemo(
     () => [
-      { image: travelMain1 },
-      { image: travelMain2 },
-      { image: travelPlane },
+      ...(remoteSlides.length
+        ? remoteSlides.map((s) => ({
+            imageUrl: s.imageUrl,
+            title: s.title,
+            message: s.message,
+            overlayColor: s.overlayColor,
+            ctaTabs: s.ctaTabs,
+            altText: s.altText,
+          }))
+        : [
+            {
+              imageUrl: travelMain1,
+              title: "Experience",
+              message: "the true richness of travel.",
+              overlayColor: "#B30017",
+              ctaTabs: ["FLIGHTS", "HOTELS", "PACKAGES"],
+              altText: "Hero image",
+            },
+            {
+              imageUrl: travelMain2,
+              title: "Discover",
+              message: "your next adventure.",
+              overlayColor: "#B30017",
+              ctaTabs: ["FLIGHTS", "HOTELS", "PACKAGES"],
+              altText: "Hero image",
+            },
+            {
+              imageUrl: travelPlane,
+              title: "Travel",
+              message: "made effortless.",
+              overlayColor: "#B30017",
+              ctaTabs: ["FLIGHTS", "HOTELS", "PACKAGES"],
+              altText: "Hero image",
+            },
+          ]),
     ],
-    []
+    [remoteSlides]
   );
 
   const handleProductClick = (p: Product) => {
-    if (p === "cars" || p === "packages") {
+    if (p === "cars") {
       toast("Coming soon");
       return;
     }
@@ -73,10 +131,16 @@ const HeroCarousel: React.FC<Props> = ({ product, onProductChange }) => {
         className="relative w-full max-w-[1200px] overflow-hidden"
         style={{ borderRadius: 28 }}
       >
+        {error ? (
+          <div style={{ padding: 16, background: "rgba(255,255,255,0.92)" }}>
+            <div style={{ fontWeight: 700, color: "#111827" }}>Hero carousel unavailable</div>
+            <div style={{ color: "#6B7280", marginTop: 4 }}>{error}</div>
+          </div>
+        ) : null}
         <Carousel
           ref={sliderRef}
           dots={false}
-          autoplay
+          autoplay={!loading}
           autoplaySpeed={6000}
           beforeChange={(_, next) => setActiveSlide(next)}
         >
@@ -87,8 +151,8 @@ const HeroCarousel: React.FC<Props> = ({ product, onProductChange }) => {
                 style={{ height: 420, width: "100%", overflow: "hidden" }}
               >
                 <img
-                  src={s.image}
-                  alt={`hero-slide-${idx + 1}`}
+                  src={s.imageUrl}
+                  alt={s.altText || `hero-slide-${idx + 1}`}
                   style={{
                     width: "100%",
                     height: "100%",
@@ -107,7 +171,7 @@ const HeroCarousel: React.FC<Props> = ({ product, onProductChange }) => {
                     top: 0,
                     bottom: 0,
                     width: "58%",
-                    background: "#B30017",
+                    background: String(s.overlayColor || "#B30017"),
                     // Match Figma: diagonal wedge with rounded end
                     clipPath:
                       "polygon(0% 0%, 68% 0%, 88% 50%, 68% 100%, 0% 100%)",
@@ -129,9 +193,10 @@ const HeroCarousel: React.FC<Props> = ({ product, onProductChange }) => {
                     lineHeight: "1.05",
                   }}
                 >
-                  <div>Experience</div>
-                  <div>the true richness</div>
-                  <div>of travel.</div>
+                  <div>{s.title || "Experience"}</div>
+                  <div style={{ fontWeight: 600, fontSize: 28, marginTop: 10, maxWidth: 520 }}>
+                    {s.message || "the true richness of travel."}
+                  </div>
                 </div>
 
                 {/* Top-right badge */}
@@ -212,34 +277,21 @@ const HeroCarousel: React.FC<Props> = ({ product, onProductChange }) => {
                     gap: 10,
                   }}
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleProductClick("flights")}
-                    style={pillStyle(product === "flights")}
-                  >
-                    FLIGHTS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleProductClick("hotels")}
-                    style={pillStyle(product === "hotels")}
-                  >
-                    HOTELS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleProductClick("cars")}
-                    style={pillStyle(product === "cars")}
-                  >
-                    CARS
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleProductClick("packages")}
-                    style={pillStyle(product === "packages")}
-                  >
-                    PACKAGES
-                  </button>
+                  {(Array.isArray(s.ctaTabs) && s.ctaTabs.length ? s.ctaTabs : ["FLIGHTS", "HOTELS", "PACKAGES"]).map((tab) => {
+                    const t = String(tab || "").toUpperCase();
+                    const mapped: Product =
+                      t === "HOTELS" ? "hotels" : t === "PACKAGES" ? "packages" : t === "CARS" ? "cars" : "flights";
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => handleProductClick(mapped)}
+                        style={pillStyle(product === mapped)}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -4,3 +4,21 @@ export const getEmailError = (raw: string, usePhone: boolean): string | null => 
     if (!usePhone && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Email is not valid.';
     return null;
 };
+
+export const getPasswordError = (raw: string): string | null => {
+    if (raw.trim() === '') return 'Password is required.';
+
+    // Cognito commonly rejects passwords with leading/trailing whitespace.
+    if (raw !== raw.trim()) return "Password can’t start or end with spaces.";
+
+    // Keep this aligned with the helper text in the Sign Up UI.
+    const hasLower = /[a-z]/.test(raw);
+    const hasUpper = /[A-Z]/.test(raw);
+    const hasNumber = /[0-9]/.test(raw);
+    const hasSpecial = /[^A-Za-z0-9]/.test(raw);
+    if (!hasLower || !hasUpper || !hasNumber || !hasSpecial) {
+        return 'Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.';
+    }
+
+    return null;
+};

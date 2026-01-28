@@ -4,7 +4,7 @@ import Button from "../atoms/Button";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import Logo from "../atoms/Logo";
 import logoImg from "../../assets/images/logo.jpg";
-import { getEmailError } from "../../utils/validators";
+import { getEmailError, getPasswordError } from "../../utils/validators";
 import FlagUsa from "../../assets/images/Flag-usa.png";
 import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import { Link } from "react-router-dom";
@@ -173,9 +173,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
   }, [formData.email, usePhone, phoneNumber]);
 
   const passwordError = useMemo(() => {
-    if (formData.password.trim() === "") return "Password is required.";
-    // Add password strength validation if needed
-    return null;
+    return getPasswordError(formData.password);
   }, [formData.password]);
 
   const confirmPasswordError = useMemo(() => {
@@ -291,7 +289,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
             fill="#C2CAD6"
           />
         </svg>
-        Contains letters (A-Z, a-z), digits 0-9 AND special characters.
+        Password must include at least one uppercase letter, one lowercase letter,
+        one number, and one special character.
       </div>
     );
   };

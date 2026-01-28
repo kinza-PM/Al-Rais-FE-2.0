@@ -43,6 +43,28 @@ export class AuthService {
   private static readonly GENERIC_ERROR =
     "Something went wrong. Please try again.";
 
+  private static getFriendlyPasswordMessage(errorMessage: string): string {
+    const msg = (errorMessage || "").toLowerCase();
+
+    // Cognito sometimes returns very technical validation messages; never show those verbatim.
+    if (
+      msg.includes("failed to satisfy constraint") ||
+      msg.includes("regular expression pattern")
+    ) {
+      return "Password must include at least one uppercase letter, one lowercase letter, one number, and one special character.";
+    }
+
+    if (msg.includes("password") && msg.includes("not long enough")) {
+      return "Password is too short. Please use a longer password.";
+    }
+
+    if (msg.includes("password") && msg.includes("conform with policy")) {
+      return "Password does not meet requirements. Please try a stronger password.";
+    }
+
+    return "Password does not meet requirements. Please try a stronger password.";
+  }
+
   /**
    * Sign in user
    */
@@ -96,10 +118,19 @@ export class AuthService {
         };
       }
 
+      if (errorObj.name === "UserNotFoundException") {
+        return {
+          success: false,
+          message:
+            "We couldn’t log you in. Check your email and password, or sign up if you don’t have an account.",
+        };
+      }
+
       if (errorObj.name === "NotAuthorizedException") {
         return {
           success: false,
-          message: "Invalid credentials or user not confirmed.",
+          message:
+            "We couldn’t log you in. Check your email and password, reset your password, or sign up if you don’t have an account.",
         };
       }
 
@@ -161,6 +192,23 @@ export class AuthService {
       const errorObj = error as Record<string, unknown>;
       const errorMessage = (errorObj.message as string) || "";
       // Handle known signup errors (user-facing)
+      if (
+        errorObj.name === "InvalidPasswordException" ||
+        errorMessage.toLowerCase().includes("password")
+      ) {
+        return {
+          success: false,
+          message: AuthService.getFriendlyPasswordMessage(errorMessage),
+        };
+      }
+
+      if (errorObj.name === "UsernameExistsException") {
+        return {
+          success: false,
+          message: "An account already exists with this email/phone. Please log in instead.",
+        };
+      }
+
       if (errorMessage.includes("SignUp is not permitted")) {
         return {
           success: false,
