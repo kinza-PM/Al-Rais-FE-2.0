@@ -151,10 +151,14 @@ const FlightHeroSection: React.FC = () => {
     if (trip === "roundtrip" && !arrivalDate) {
       errors.push("Arrival date is required");
     }
-    const totalPassengers = Object.values(paxCounts).reduce(
+    // If no passenger selection has been propagated yet, treat default UI (1 adult) as selected
+    const totalPassengersRaw = Object.values(paxCounts).reduce(
       (sum, count) => sum + count,
       0
     );
+    const totalPassengers =
+      Object.keys(paxCounts).length === 0 ? 1 : totalPassengersRaw;
+
     if (totalPassengers === 0) {
       errors.push("Passenger is required");
     }
