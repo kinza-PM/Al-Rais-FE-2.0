@@ -607,6 +607,8 @@ const FlightDetailTemplate: React.FC = () => {
     }
   };
 
+  const [countriesSearchTerm, setCountriesSearchTerm] = useState<string>("");
+
   const {
     flightTypes,
     countries,
@@ -618,6 +620,7 @@ const FlightDetailTemplate: React.FC = () => {
     baggage,
     airline,
     loading,
+    loadingMap,
     countriesHasMore,
     countriesFetchNext,
     countriesIsFetchingNext,
@@ -633,9 +636,30 @@ const FlightDetailTemplate: React.FC = () => {
       "baggage",
       "airline",
     ],
+    countriesSearchTerm,
   });
 
-  const isInitialLoading = loading && (!countries || countries.length === 0);
+  const isInitialLoading =
+    !countriesSearchTerm.trim() && loading && (!countries || countries.length === 0);
+  const countriesLoading = loadingMap?.countries ?? isInitialLoading;
+
+  const countriesForPicker = useMemo(() => {
+    const base = (countries as CountryOption[]) || [];
+    const merged: CountryOption[] = [];
+
+    const addUnique = (opt: CountryOption | null | undefined) => {
+      if (!opt?.code) return;
+      if (merged.some((x) => x.code === opt.code)) return;
+      merged.push(opt);
+    };
+
+    // Ensure selected options coming from hero/store are present
+    addUnique(flight?.fromOption as any);
+    addUnique(flight?.toOption as any);
+
+    for (const c of base) addUnique(c);
+    return merged;
+  }, [countries, flight?.fromOption, flight?.toOption]);
 
   const { useBreakpoint } = Grid;
 
@@ -1200,8 +1224,9 @@ const FlightDetailTemplate: React.FC = () => {
         <div className="bottomHeaderSetting">
           <Flex className="bottomHeaderFlex">
             <TravelRoutePicker
-              options={countries as CountryOption[]}
-              loading={isInitialLoading}
+              options={countriesForPicker as CountryOption[]}
+              loading={countriesLoading}
+              onSearchChange={setCountriesSearchTerm}
               value={{ fromCode, toCode }}
               onChange={({ fromCode: f, toCode: t }) => {
                 setFromCode(f);
@@ -1256,7 +1281,7 @@ const FlightDetailTemplate: React.FC = () => {
             </Flex>
             {trip === "roundtrip" && (
               <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                <label className="header-labels-common ">Arrival Date</label>
+                <label className="header-labels-common ">Return Date</label>
                 {/* <CustomDatePicker
                   format={"dddd, DD MMM YYYY "}
                   style={{ width: "100%", height: 44 }}
@@ -1271,8 +1296,8 @@ const FlightDetailTemplate: React.FC = () => {
                   onChange={(value) => {
                     handleDate(value, "return");
                   }}
-                  placeholder="Select arrival date"
-                  tooltip="Select arrival date"
+                  placeholder="Select return date"
+                  tooltip="Select return date"
                   buttonIconSrc={true}
                   disablePastDates={true}
                 />

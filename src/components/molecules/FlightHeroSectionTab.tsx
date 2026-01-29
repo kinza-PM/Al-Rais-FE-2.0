@@ -26,6 +26,7 @@ const FlightHeroSection: React.FC = () => {
   const [paxOrder, setPaxOrder] = useState<string[]>([]);
   const [departDate, setDepartDate] = useState<Date | null>(new Date());
   const [arrivalDate, setArrivalDate] = useState<Date | null>(new Date());
+  const [countriesSearchTerm, setCountriesSearchTerm] = useState<string>("");
 
   // const [validationErrors, setValidationErrors] = useState({
   //   departDate: "",
@@ -58,27 +59,32 @@ const FlightHeroSection: React.FC = () => {
     passengers,
     cabinClasses,
     loading,
+    loadingMap,
     errorMap,
     countriesHasMore,
     countriesFetchNext,
     countriesIsFetchingNext,
-  } = useMasterListings();
+  } = useMasterListings({ countriesSearchTerm });
 
   const navigate = useNavigate();
   const { setFlight } = useFlightStore();
 
   const tabs = useMemo<FlightTypeOption[]>(() => flightTypes, [flightTypes]);
 
-  const isInitialLoading = loading && countries.length === 0;
+  // Don't block the whole page with loader while user is typing/searching in From/To.
+  const isInitialLoading =
+    !countriesSearchTerm.trim() && loading && countries.length === 0;
 
   const nsLoading = useMemo(
     () => ({
       flightTypes: isInitialLoading,
-      countries: isInitialLoading,
+      // For countries, use field-level loading so the dropdown
+      // can show a loading state during search as well.
+      countries: loadingMap?.countries ?? isInitialLoading,
       passengers: isInitialLoading,
       cabinClasses: isInitialLoading,
     }),
-    [isInitialLoading]
+    [isInitialLoading, loadingMap]
   );
 
   useEffect(() => {
@@ -102,6 +108,7 @@ const FlightHeroSection: React.FC = () => {
     setSelectedCabinClassId("5");
     setDepartDate(null);
     setArrivalDate(null);
+    setCountriesSearchTerm("");
     // setHasAttemptedValidation(false);
     // setValidationErrors({
     //   departDate: "",
@@ -216,9 +223,14 @@ const FlightHeroSection: React.FC = () => {
     const departureStr = formatDateToLocalISO(departDate);
     const arrivalStr = formatDateToLocalISO(arrivalDate);
 
+    const fromOpt = (countries as CountryOption[]).find((c) => c.code === fromCode) ?? null;
+    const toOpt = (countries as CountryOption[]).find((c) => c.code === toCode) ?? null;
+
     setFlight({
       fromCode,
       toCode,
+      fromOption: fromOpt,
+      toOption: toOpt,
       selectedCabinClassId,
       trip,
       order: paxOrder,
@@ -285,6 +297,7 @@ const FlightHeroSection: React.FC = () => {
               <OneWayForm
                 countries={countries as CountryOption[]}
                 loadingCountries={nsLoading.countries}
+                onSearchCountries={setCountriesSearchTerm}
                 fromCode={fromCode}
                 toCode={toCode}
                 onChangeFrom={setFromCode}
@@ -317,6 +330,7 @@ const FlightHeroSection: React.FC = () => {
               <RoundTripForm
                 countries={countries as CountryOption[]}
                 loadingCountries={nsLoading.countries}
+                onSearchCountries={setCountriesSearchTerm}
                 fromCode={fromCode}
                 toCode={toCode}
                 onChangeFrom={setFromCode}

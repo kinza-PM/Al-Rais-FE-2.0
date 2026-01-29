@@ -3,7 +3,8 @@ import { api, toApiError } from "../axios";
 export async function getMasterListingData<TResp = any>(
   tableName: string,
   signal?: AbortSignal,
-  nextToken?: string | null
+  nextToken?: string | null,
+  extraParams?: Record<string, any>
 ): Promise<TResp> {
   const source = "getMasterListingData";
   try {
@@ -13,6 +14,7 @@ export async function getMasterListingData<TResp = any>(
       {
         tableName,
         ...(nextToken ? { nextToken } : {}),
+        ...(extraParams ?? {}),
       },
       signal
     );

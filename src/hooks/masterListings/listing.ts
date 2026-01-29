@@ -50,11 +50,13 @@ export const useFlightTypesOptions = (enabled = true) =>
 //         buildCountryOptions,
 //         enabled
 //     );
-export const useCityOptions = (enabled = true) =>
+export const useCityOptions = (enabled = true, searchTerm?: string) =>
   useInfiniteListing<CountriesResponse, CountryItem, CountryOption>(
     listingTables.countries,
     buildCountryOptions,
-    enabled
+    enabled,
+    // Backend expects: country=<term>
+    searchTerm?.trim() ? { search: searchTerm.trim() } : undefined
   );
 
 export const usePassengerSchema = (enabled = true) =>

@@ -12,6 +12,12 @@ import SearchableDropdown from "../common/SearchableDropdown";
 type Props = {
   countries?: CountryOption[];
   loadingCountries?: boolean;
+  /**
+   * Optional callback: if provided, the travel route picker's
+   * search box will use this for API-based search instead of
+   * doing local filtering on the already-loaded list.
+   */
+  onSearchCountries?: (term: string) => void;
   fromCode?: string;
   toCode?: string;
   onChangeFrom?: (code: string) => void;
@@ -36,6 +42,7 @@ type Props = {
 const OneWayForm: React.FC<Props> = ({
   countries = [],
   loadingCountries = false,
+  onSearchCountries,
   fromCode = "",
   toCode = "",
   onChangeFrom = () => {},
@@ -133,6 +140,7 @@ const OneWayForm: React.FC<Props> = ({
       <TravelRoutePicker
         options={countries}
         loading={loadingCountries}
+        onSearchChange={onSearchCountries}
         value={{ fromCode, toCode }}
         onChange={({ fromCode: f, toCode: t }) => {
           onChangeFrom(f);

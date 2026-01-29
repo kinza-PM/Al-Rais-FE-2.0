@@ -25,7 +25,14 @@ type Key =
 
 type Include = Key[];
 
-export function useMasterListings(opts?: { include?: Include }) {
+export function useMasterListings(opts?: {
+  include?: Include;
+  /**
+   * Optional search term for the countries listing.
+   * If provided, countries will be fetched via API search (and paginated).
+   */
+  countriesSearchTerm?: string;
+}) {
   const include = useMemo<Set<Key>>(
     () =>
       new Set(
@@ -40,7 +47,10 @@ export function useMasterListings(opts?: { include?: Include }) {
   );
 
   const qFlightTypes = useFlightTypesOptions(include.has("flightTypes"));
-  const qCountries = useCityOptions(include.has("countries"));
+  const qCountries = useCityOptions(
+    include.has("countries"),
+    opts?.countriesSearchTerm
+  );
   const qPassengers = usePassengerSchema(include.has("passengers"));
   const qCabin = useCabinClassOptions(include.has("cabinClasses"));
   const qPrice = usePriceSortOptions(include.has("priceSort"));

@@ -8,6 +8,12 @@ type Value = { fromCode: string; toCode: string };
 type Props = {
   options: CountryOption[];
   loading?: boolean;
+  /**
+   * Optional callback to perform API-based searching.
+   * When provided, local filtering inside the dropdown is disabled
+   * and this callback will be invoked with the current search term.
+   */
+  onSearchChange?: (term: string) => void;
   value: Value;
   onChange: (v: Value) => void;
   showSwap?: boolean;
@@ -25,6 +31,7 @@ type Props = {
 const TravelRoutePicker: React.FC<Props> = ({
   options,
   loading,
+  onSearchChange,
   value,
   onChange,
   showSwap = true,
@@ -74,9 +81,10 @@ const TravelRoutePicker: React.FC<Props> = ({
           options={fromOptions}
           value={fromCode}
           onChange={handleFrom}
+          onSearchChange={onSearchChange}
           placeholder={placeholders.from}
           label={labels.from}
-          disabled={!!loading}
+          loading={!!loading}
           error={fromError}
           widthClass="w-full"
           searchPlaceholder="Search destinations..."
@@ -102,9 +110,10 @@ const TravelRoutePicker: React.FC<Props> = ({
           options={toOptions}
           value={toCode}
           onChange={handleTo}
+          onSearchChange={onSearchChange}
           placeholder={placeholders.to}
           label={labels.to}
-          disabled={!!loading}
+          loading={!!loading}
           error={toError}
           widthClass="w-full"
           searchPlaceholder="Search destinations..."

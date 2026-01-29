@@ -12,6 +12,12 @@ import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 type Props = {
   countries?: CountryOption[];
   loadingCountries?: boolean;
+  /**
+   * Optional callback: if provided, the travel route picker's
+   * search box will use this for API-based search instead of
+   * doing local filtering on the already-loaded list.
+   */
+  onSearchCountries?: (term: string) => void;
   fromCode?: string;
   toCode?: string;
   onChangeFrom?: (code: string) => void;
@@ -49,6 +55,7 @@ const RoundTripForm: React.FC<Props> = ({
   // onChangeCabinClassId,
   countries = [],
   loadingCountries = false,
+  onSearchCountries,
   fromCode = "",
   toCode = "",
   onChangeFrom = () => {},
@@ -96,6 +103,7 @@ const RoundTripForm: React.FC<Props> = ({
       <TravelRoutePicker
         options={countries}
         loading={loadingCountries}
+        onSearchChange={onSearchCountries}
         value={{ fromCode, toCode }}
         onChange={({ fromCode: f, toCode: t }) => {
           onChangeFrom(f);
@@ -170,7 +178,7 @@ const RoundTripForm: React.FC<Props> = ({
 
       <div className="w-[200px]">
         <label className="block text-[12px] text-[#3D495C] mb-1">
-          Arrival date
+          Return date
         </label>
         <TailiwindCustomDatePicker
           value={arrivalDate}
@@ -178,10 +186,10 @@ const RoundTripForm: React.FC<Props> = ({
             setArrivalDate(d);
             onChangeArrivalDate?.(d);
           }}
-          placeholder="Select arrival date"
+          placeholder="Select return date"
           buttonIconSrc={true}
           disablePastDates={true}
-          tooltip="Select arrival date"
+          tooltip="Select return date"
         />
         {/* {arrivalDateError && (
           <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">

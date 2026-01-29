@@ -13,6 +13,14 @@ interface SearchableDropdownProps {
   options: DropdownOption[];
   value: string;
   onChange: (value: string) => void;
+  /**
+   * Optional callback for remote/API-based searching.
+   * When provided, local filtering is disabled and this callback
+   * is invoked with the latest search term (debounced).
+   * The parent component is then responsible for updating `options`
+   * from the API response.
+   */
+  onSearchChange?: (term: string) => void;
   placeholder?: string;
   label?: string;
   disabled?: boolean;
@@ -25,13 +33,14 @@ interface SearchableDropdownProps {
   onLoadMore?: () => void;
   hasMore?: boolean;
   loadingMore?: boolean;
-  tooltip?: string | null
+  tooltip?: string | null;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   options = [],
   value,
   onChange,
+  onSearchChange,
   placeholder = "Please select",
   label,
   disabled = false,
@@ -44,17 +53,35 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   onLoadMore = () => { },
   hasMore = false,
   loadingMore = false,
-  tooltip = null
+  tooltip = null,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showError, setShowError] = useState(false);
+  const [searchPending, setSearchPending] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchBaseRef = useRef<DropdownOption[]>([]);
+  const optionCacheRef = useRef<Map<string, DropdownOption>>(new Map());
+
+  const remoteSearch = !!onSearchChange;
+
+  // Cache options by value so selected label doesn't disappear
+  // when remote search results don't contain the selected option.
+  useEffect(() => {
+    for (const opt of options) {
+      optionCacheRef.current.set(opt.value, opt);
+    }
+  }, [options]);
 
   // Filter options based on search term
   const filteredOptions = useMemo(() => {
+    // In remote/API search mode, we trust the caller to provide
+    // already-filtered options, so we skip local filtering.
+    if (remoteSearch) {
+      return options;
+    }
+
     const baseOptions = searchTerm.trim() ? searchBaseRef.current : options;
 
     if (!searchTerm.trim()) return baseOptions;
@@ -64,11 +91,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
         option.value.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [options, searchTerm]);
+  }, [options, searchTerm, remoteSearch]);
 
   // Get selected option label
-  const selectedOption = options.find((option) => option.value === value);
-  const displayValue = selectedOption?.label || placeholder;
+  const selectedOption =
+    options.find((option) => option.value === value) ??
+    optionCacheRef.current.get(value);
+  const displayValue = selectedOption?.label || (value ? value : placeholder);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -113,7 +142,10 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   }, [isOpen]);
 
   const handleToggle = () => {
-    if (disabled || loading) return;
+    // In remote search mode we should not disable the dropdown while loading,
+    // otherwise it feels "jerky" while typing/searching.
+    if (disabled) return;
+    if (!remoteSearch && loading) return;
 
     if (error) {
       setShowError(!showError);
@@ -162,10 +194,12 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   };
 
   useEffect(() => {
+    if (remoteSearch) return;
+
     if (searchTerm.trim()) {
       searchBaseRef.current = options;
     }
-  }, [searchTerm]);
+  }, [searchTerm, options, remoteSearch]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -173,6 +207,25 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       setSearchTerm("");
     }
   }, [isOpen]);
+
+  // Notify parent of search term changes for remote/API search.
+  useEffect(() => {
+    if (!remoteSearch || !onSearchChange) return;
+
+    // Avoid showing "No results" immediately while user is typing.
+    if (searchTerm.trim()) {
+      setSearchPending(true);
+    } else {
+      setSearchPending(false);
+    }
+
+    const handle = setTimeout(() => {
+      onSearchChange(searchTerm);
+      setSearchPending(false);
+    }, 300);
+
+    return () => clearTimeout(handle);
+  }, [searchTerm, remoteSearch, onSearchChange]);
 
   const baseClasses = `
     appearance-none h-11 w-full rounded-xl border pl-4 pr-8 text-[14px] text-[#0F172A] 
@@ -192,7 +245,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           type="button"
           onClick={handleToggle}
           onKeyDown={handleKeyDown}
-          disabled={disabled || loading}
+          disabled={disabled}
           className={`${className ? className : baseClasses
             } flex items-center justify-between`}
           aria-haspopup="listbox"
@@ -200,8 +253,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           aria-invalid={!!error}
           aria-describedby={error && showError ? "dropdown-error" : undefined}
         >
-          <span className={`${!selectedOption ? "text-[#98A4B3]" : ""}`}>
-            {loading ? "Loading..." : displayValue}
+          <span>
+          {/* <span className={`${!selectedOption ? "text-[#98A4B3]" : ""}`}> */}
+            {displayValue}
           </span>
 
           {/* <img
@@ -263,14 +317,14 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
             {/* Options List */}
             <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
-              {filteredOptions.length > 0 ? (
-                filteredOptions.map((option) => (
-                  <button
-                    key={`${option.value}-${option.id}`}
-                    type="button"
-                    onClick={() => handleOptionSelect(option.value)}
-                    disabled={option.disabled}
-                    className={`
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option) => (
+                <button
+                  key={`${option.value}-${option.id}`}
+                  type="button"
+                  onClick={() => handleOptionSelect(option.value)}
+                  disabled={option.disabled}
+                  className={`
                       w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
                       ${option.disabled
                         ? "opacity-50 cursor-not-allowed"
@@ -281,15 +335,15 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                         : "text-[#0F172A]"
                       }
                     `}
-                  >
-                    {option.label}
-                  </button>
-                ))
-              ) : (
-                <div className="px-4 py-3 text-sm text-[#98A4B3] text-center">
-                  {noResultsText}
-                </div>
-              )}
+                >
+                  {option.label}
+                </button>
+              ))
+            ) : (
+              <div className="px-4 py-3 text-sm text-[#98A4B3] text-center">
+                {loading || searchPending ? "Loading..." : noResultsText}
+              </div>
+            )}
 
               {loadingMore && (
                 <div className="px-4 py-3 text-center text-sm text-[#98A4B3]">

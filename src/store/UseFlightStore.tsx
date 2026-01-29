@@ -3,6 +3,20 @@ import { create } from "zustand";
 type Flight = {
   fromCode: string;
   toCode: string;
+  fromOption?: {
+    id: string;
+    label: string;
+    code: string;
+    city: string;
+    country: string;
+  } | null;
+  toOption?: {
+    id: string;
+    label: string;
+    code: string;
+    city: string;
+    country: string;
+  } | null;
   selectedCabinClassId: number | string;
   trip: string;
   order?: string[];
