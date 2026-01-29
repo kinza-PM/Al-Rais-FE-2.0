@@ -6,7 +6,7 @@ import portIcon from "../../assets/svgs/ports.svg";
 import wifiIcon from "../../assets/svgs/wifi.svg";
 import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
-import FlagUsa from "../../assets/images/Flag-usa.png";
+// import FlagUsa from "../../assets/images/Flag-usa.png";
 import React, { useMemo, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
@@ -49,15 +49,15 @@ type FlightBookingBookSectionProps = {
   }) => void;
 };
 
-function ChevronDown() {
-  return (
-    <img
-      alt="arrow-icon"
-      src={arrownDownwardIcon}
-      className="pointer-events-none absolute right-3 top-3/5"
-    />
-  );
-}
+// function ChevronDown() {
+//   return (
+//     <img
+//       alt="arrow-icon"
+//       src={arrownDownwardIcon}
+//       className="pointer-events-none absolute right-3 top-3/5"
+//     />
+//   );
+// }
 
 export default function FlightBookingBookSection({
   trip,
