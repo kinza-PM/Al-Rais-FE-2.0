@@ -4,7 +4,7 @@ import entertainmentIcon from "../../assets/svgs/entertainment.svg";
 import mealIcon from "../../assets/svgs/meals.svg";
 import portIcon from "../../assets/svgs/ports.svg";
 import wifiIcon from "../../assets/svgs/wifi.svg";
-import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
+// import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 // import FlagUsa from "../../assets/images/Flag-usa.png";
 import React, { useMemo, useState } from "react";
