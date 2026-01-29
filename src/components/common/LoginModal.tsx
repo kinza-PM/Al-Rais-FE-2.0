@@ -45,6 +45,9 @@ export default function LoginModal({ showModal }: { showModal?: boolean }) {
             // Don't hard-reload the app; it causes jarring UX and can re-trigger bootstrap calls.
             // Close happens naturally because parent drives `showModal` from auth state.
             setLoginMessage("Login successful");
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
         }
     };
 

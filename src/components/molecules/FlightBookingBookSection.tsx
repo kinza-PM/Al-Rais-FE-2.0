@@ -30,6 +30,8 @@ import LoginModal from "../common/LoginModal";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { getUniqueCountries } from "../../utils/dropdownHelper";
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
 
 type FlightBookingBookSectionProps = {
   trip: any;
@@ -289,20 +291,18 @@ export default function FlightBookingBookSection({
                     {/* {pRules.isDocumentNumberMandatory && ( */}
                     <TailwindCustomInput
                       type="text"
-                      placeholder={`Enter ${
-                        p.identityDocuments?.[0]?.idType === "PT"
-                          ? "Passport number"
-                          : p.identityDocuments?.[0]?.idType === "DL"
+                      placeholder={`Enter ${p.identityDocuments?.[0]?.idType === "PT"
+                        ? "Passport number"
+                        : p.identityDocuments?.[0]?.idType === "DL"
                           ? "Driving licence"
                           : "National ID"
-                      }`}
-                      label={`${
-                        p.identityDocuments?.[0]?.idType === "PT"
-                          ? "Passport number"
-                          : p.identityDocuments?.[0]?.idType === "DL"
+                        }`}
+                      label={`${p.identityDocuments?.[0]?.idType === "PT"
+                        ? "Passport number"
+                        : p.identityDocuments?.[0]?.idType === "DL"
                           ? "Driving licence"
                           : "National ID"
-                      }`}
+                        }`}
                       value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
                       onChange={(evOrVal) => {
                         const v =
@@ -363,8 +363,8 @@ export default function FlightBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.dateOfIssue
                               ? parseLocalDateString(
-                                  p.identityDocuments?.[0]?.dateOfIssue
-                                )
+                                p.identityDocuments?.[0]?.dateOfIssue
+                              )
                               : null
                           }
                           onChange={(date) => {
@@ -391,8 +391,8 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.expiryDate
                             ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.expiryDate
-                              )
+                              p.identityDocuments?.[0]?.expiryDate
+                            )
                             : null
                         }
                         onChange={(date) => {
@@ -621,7 +621,7 @@ export default function FlightBookingBookSection({
                     )}
 
                     {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
-                    <div className="w-full">
+                    {/* <div className="w-full">
                       <label className="mb-1 block text-[12px] text-[#3D495C]">
                         Phone
                       </label>
@@ -672,6 +672,42 @@ export default function FlightBookingBookSection({
                           }}
                         />
                       </div>
+                    </div> */}
+                    <div className="w-full">
+                    <label className="mb-1 block text-[12px] text-[#3D495C]">
+                        Phone
+                      </label>
+                      <PhoneInput
+                        defaultCountry="us"
+                        value={
+                          (p.contact?.contactsProvided?.[0]?.phone?.[0]?.areaCode || '') +
+                          (p.contact?.contactsProvided?.[0]?.phone?.[0]?.phoneNumber || '')
+                        }
+                        onChange={(phone, meta) => {
+                          const dialCode = `+${meta.country.dialCode}`;
+                          const phoneNumber = phone.replace(dialCode, '');
+                          onPassengerFieldChange(
+                            idx,
+                            "contact.contactsProvided.0.phone.0.areaCode",
+                            dialCode
+                          );
+                          onPassengerFieldChange(
+                            idx,
+                            "contact.contactsProvided.0.phone.0.phoneNumber",
+                            phoneNumber
+                          );
+                        }}
+                        forceDialCode={true}
+                        hideDropdown={false}
+                        disableCountryGuess={false}
+                        className="custom-phone-wrapper"
+                        countrySelectorStyleProps={{
+                          buttonClassName: "country-selector-btn"
+                        }}
+                        inputProps={{
+                          placeholder: 'Phone'
+                        }}
+                      />
                     </div>
                     {/* )} */}
                   </div>

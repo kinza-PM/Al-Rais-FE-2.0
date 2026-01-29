@@ -5,11 +5,13 @@ import { useAuth } from "../../features/auth/hooks/useAuth";
 import Logo from "../atoms/Logo";
 import logoImg from "../../assets/images/logo.jpg";
 import { getEmailError, getPasswordError } from "../../utils/validators";
-import FlagUsa from "../../assets/images/Flag-usa.png";
-import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
+// import FlagUsa from "../../assets/images/Flag-usa.png";
+// import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import { Link } from "react-router-dom";
 import { useNetworkStatus } from "../../context/NetworkStatusContext";
 import type { SignupMethod } from "../../features/auth/types";
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
 
 interface SignupFormProps {
   onLoginClick: () => void;
@@ -49,19 +51,19 @@ const SignupForm: React.FC<SignupFormProps> = ({
   const [phoneCountryCode, setPhoneCountryCode] = useState("+1");
   const [phoneNumber, setPhoneNumber] = useState("");
 
-  const { signup, confirmSignUp, resendConfirmationCode, loading, error } =
+  const { signup, confirmSignUp, resendConfirmationCode, loading, error, clearError } =
     useAuth();
   const { isOnline } = useNetworkStatus();
 
-  function ChevronDown() {
-    return (
-      <img
-        alt="arrow-icon"
-        src={arrownDownwardIcon}
-        className="pointer-events-none absolute right-3 top-3/5"
-      />
-    );
-  }
+  // function ChevronDown() {
+  //   return (
+  //     <img
+  //       alt="arrow-icon"
+  //       src={arrownDownwardIcon}
+  //       className="pointer-events-none absolute right-3 top-3/5"
+  //     />
+  //   );
+  // }
 
   // Countdown timer effect
   useEffect(() => {
@@ -249,8 +251,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
           signupMethod,
         });
         setSignupMessage(
-          `Please check your ${
-            isPhone ? "phone" : "email"
+          `Please check your ${isPhone ? "phone" : "email"
           } and enter the confirmation code below.`
         );
       } else if (
@@ -273,6 +274,27 @@ const SignupForm: React.FC<SignupFormProps> = ({
       // setSignupMessage(result.message || 'Signup failed. Please try again.');
     }
   };
+
+  useEffect(() => {
+    clearError();
+    setTouched({
+      name: false,
+      email: false,
+      password: false,
+      confirmPassword: false,
+    });
+  
+    setFormData({
+      name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    });
+    setPhoneNumber("");
+    setPhoneCountryCode("+1");
+  
+    setSignupMessage(null);
+  }, [usePhone]);
 
   const PasswordRequirement = () => {
     return (
@@ -323,9 +345,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   setUsePhone(false);
                   setTouched((prev) => ({ ...prev, email: false }));
                 }}
-                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                  !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                }`}
+                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${!usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                  }`}
               >
                 Email
               </button>
@@ -335,9 +356,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   setUsePhone(true);
                   setTouched((prev) => ({ ...prev, email: false }));
                 }}
-                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                  usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                }`}
+                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                  }`}
               >
                 Phone
               </button>
@@ -375,36 +395,84 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   {usePhone ? "Phone" : "Email"}
                 </label>
                 {usePhone ? (
-                  <div className="flex gap-2 mt-1">
-                    <div className="relative">
-                      <select
-                        aria-label="Country code"
-                        style={{ backgroundImage: `url(${FlagUsa})` }}
-                        className="px-3 py-2 w-24 h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent bg-[var(--flag-url)] bg-no-repeat bg-[length:26px_26px] bg-[position:8px_center] pl-[40px]"
-                        value={phoneCountryCode}
-                        onChange={(e) => setPhoneCountryCode(e.target.value)}
-                      >
-                        <option value="+1">+1</option>
-                        <option value="+92">+92</option>
-                        <option value="+971">+971</option>
-                      </select>
-                      <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                        <ChevronDown />
+                  <>
+                    {/* <div className="flex gap-2 mt-1">
+                      <div className="relative">
+                        <select
+                          aria-label="Country code"
+                          style={{ backgroundImage: `url(${FlagUsa})` }}
+                          className="px-3 py-2 w-24 h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent bg-[var(--flag-url)] bg-no-repeat bg-[length:26px_26px] bg-[position:8px_center] pl-[40px]"
+                          value={phoneCountryCode}
+                          onChange={(e) => setPhoneCountryCode(e.target.value)}
+                        >
+                          <option value="+1">+1</option>
+                          <option value="+92">+92</option>
+                          <option value="+971">+971</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                          <ChevronDown />
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex-1">
-                      <Input
-                        type="number"
-                        placeholder="Phone"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
+                      <div className="flex-1">
+                        <Input
+                          type="number"
+                          placeholder="Phone"
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          onBlur={handlePhoneBlur}
+                          touched={touched.email}
+                          error={emailHasError}
+                          rounded="xl"
+                        />
+                      </div>
+                    </div> */}
+                    <div className="flex gap-2 mt-1">
+                      <PhoneInput
+                        defaultCountry="us"
+                        value={`${phoneCountryCode}${phoneNumber}`}
+                        onChange={(phone, meta) => {
+                          setPhoneCountryCode(`+${meta.country.dialCode}`);
+                          setPhoneNumber(phone.replace(`+${meta.country.dialCode}`, ''));
+                        }}
                         onBlur={handlePhoneBlur}
-                        touched={touched.email}
-                        error={emailHasError}
-                        rounded="xl"
+                        hideDropdown={false}
+                        forceDialCode={true}
+                        style={{
+                          width: '100%',
+                          display: 'flex',
+                          gap: '8px'
+                        }}
+                        countrySelectorStyleProps={{
+                          buttonStyle: {
+                            width: '96px',
+                            height: '40px',
+                            borderRadius: '12px',
+                            border: '1px solid #C2CAD6',
+                            background: 'white',
+                            padding: '8px 12px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            gap: '8px'
+                          }
+                        }}
+                        inputStyle={{
+                          width: '100%',
+                          flex: 1,
+                          height: '40px',
+                          borderRadius: '12px',
+                          border: (touched.email && emailHasError) ? '1px solid #ef4444' :'1px solid #C2CAD6',
+                          padding: '8px 12px',
+                          fontSize: '14px',
+                          color: '#3D495C',
+                          fontFamily: 'inherit'
+                        }}
+                        inputProps={{
+                          placeholder: 'Phone'
+                        }}
                       />
                     </div>
-                  </div>
+                  </>
                 ) : (
                   <Input
                     type="email"
@@ -555,17 +623,16 @@ const SignupForm: React.FC<SignupFormProps> = ({
               type="button"
               onClick={handleResendCode}
               disabled={!canResend || resendLoading || !isOnline}
-              className={`text-sm underline ${
-                canResend && !resendLoading
-                  ? "text-blue-600 hover:text-blue-800"
-                  : "text-gray-400 cursor-not-allowed"
-              }`}
+              className={`text-sm underline ${canResend && !resendLoading
+                ? "text-blue-600 hover:text-blue-800"
+                : "text-gray-400 cursor-not-allowed"
+                }`}
             >
               {resendLoading
                 ? "Sending..."
                 : canResend
-                ? "Resend Code"
-                : `Resend Code (${countdown}s)`}
+                  ? "Resend Code"
+                  : `Resend Code (${countdown}s)`}
             </button>
             <br />
             <button

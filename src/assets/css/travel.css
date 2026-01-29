@@ -1385,6 +1385,66 @@ img:hover {
   padding: 0px 32px;
 }
 
+.custom-phone-wrapper .react-international-phone-country-selector-button {
+  width: 112px !important;
+  height: 40px !important;
+  border-radius: 8px !important;
+  border: 1px solid #C2CAD6 !important;
+  background: white !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+.custom-phone-wrapper .react-international-phone-input {
+  flex: 1 !important;
+  height: 40px !important;
+  width: 100% !important;
+  border-radius: 8px !important;
+  border: 1px solid #C2CAD6 !important;
+  padding: 0 12px !important;
+  font-size: 14px !important;
+  color: #0A0C0F !important;
+}
+
+.custom-phone-wrapper .react-international-phone-input::placeholder {
+  color: #C2CAD6 !important;
+}
+
+.custom-phone-wrapper .react-international-phone-input:focus {
+  outline: none !important;
+  border-color: #5383DA !important;
+  box-shadow: 0 0 0 2px rgba(83, 131, 218, 0.2) !important;
+}
+
+.custom-phone-wrapper {
+  display: flex !important;
+  gap: 8px !important;
+}
+
+.custom-phone-wrapper .react-international-phone-country-selector-dropdown {
+  max-height: 300px !important;
+  border-radius: 8px !important;
+  border: 1px solid #C2CAD6 !important;
+  margin-top: 4px !important;
+}
+
+.custom-phone-wrapper .react-international-phone-country-selector-dropdown__list-item-search-input {
+  width: calc(100% - 16px) !important;
+  margin: 8px !important;
+  padding: 8px 12px !important;
+  border: 1px solid #C2CAD6 !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  color: #3D495C !important;
+}
+
+.custom-phone-wrapper .react-international-phone-country-selector-dropdown__list-item:hover {
+  background-color: #F3F4F6 !important;
+}
+
 @media (min-width: 993px) {
   .filterToggleBtn {
     display: none !important;

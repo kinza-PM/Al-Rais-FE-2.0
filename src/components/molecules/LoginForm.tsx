@@ -1,14 +1,17 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Input from '../atoms/Input';
 import Button from '../atoms/Button';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import Logo from '../atoms/Logo';
 import logoImg from '../../assets/images/logo.jpg';
 import { getEmailError } from '../../utils/validators';
-import FlagUsa from '../../assets/images/Flag-usa.png';
-import arrownDownwardIcon from '../../assets/svgs/arrow-downwards.svg';
+// import FlagUsa from '../../assets/images/Flag-usa.png';
+// import arrownDownwardIcon from '../../assets/svgs/arrow-downwards.svg';
 import { Link } from 'react-router-dom';
 import { useNetworkStatus } from '../../context/NetworkStatusContext';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
+
 interface LoginFormProps {
   onSignupClick: () => void;
   onLoginSuccess?: () => void;
@@ -26,14 +29,14 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
   const [touched, setTouched] = useState({ email: false, password: false });
-  const { login, loading, error } = useAuth();
+  const { login, loading, error, clearError } = useAuth();
   const { isOnline } = useNetworkStatus();
 
-  function ChevronDown() {
-    return (
-      <img alt="arrow-icon" src={arrownDownwardIcon} className="pointer-events-none absolute right-3 top-3/5" />
-    );
-  }
+  // function ChevronDown() {
+  //   return (
+  //     <img alt="arrow-icon" src={arrownDownwardIcon} className="pointer-events-none absolute right-3 top-3/5" />
+  //   );
+  // }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -91,6 +94,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
       return isEmailValid(emailTrim);
     }
   }, [formData, usePhone, phoneNumber]);
+
+  useEffect(() => {
+    setTouched({ email: false, password: false });
+
+    setFormData({
+      email: '',
+      password: '',
+    });
+    setPhoneNumber('');
+    setPhoneCountryCode('+1');
+
+    setLoginMessage(null);
+    clearError();
+  }, [usePhone]);
 
   const emailError = useMemo(() => {
     if (usePhone) {
@@ -156,7 +173,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
             </label>
             {usePhone ? (
               <div className="flex gap-2">
-                <div className="relative">
+                {/* <div className="relative">
                   <select
                     aria-label="Country code"
                     style={{ backgroundImage: `url(${FlagUsa})` }}
@@ -183,7 +200,51 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
                     touched={touched.email}
                     error={emailHasError}
                   />
-                </div>
+                </div> */}
+                <PhoneInput
+                  defaultCountry="us"
+                  value={`${phoneCountryCode}${phoneNumber}`}
+                  onChange={(phone, meta) => {
+                    setPhoneCountryCode(`+${meta.country.dialCode}`);
+                    setPhoneNumber(phone.replace(`+${meta.country.dialCode}`, ''));
+                  }}
+                  hideDropdown={false}
+                  forceDialCode={true}
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    gap: '8px'
+                  }}
+                  onBlur={handlePhoneBlur}
+                  countrySelectorStyleProps={{
+                    buttonStyle: {
+                      width: '96px',
+                      height: '40px',
+                      borderRadius: '12px',
+                      border: '1px solid #C2CAD6',
+                      background: 'white',
+                      padding: '8px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '8px'
+                    }
+                  }}
+                  inputStyle={{
+                    width: '100%',
+                    flex: 1,
+                    height: '40px',
+                    borderRadius: '12px',
+                    border: (touched.email && emailHasError) ? '1px solid #ef4444' :'1px solid #C2CAD6',
+                    padding: '8px 12px',
+                    fontSize: '14px',
+                    color: '#3D495C',
+                    fontFamily: 'inherit'
+                  }}
+                  inputProps={{
+                    placeholder: 'Phone'
+                  }}
+                />
               </div>
             ) : (
               <Input
