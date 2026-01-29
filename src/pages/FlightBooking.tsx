@@ -151,6 +151,7 @@ const FlightBooking = () => {
       return {
         bookingReferenceId: "",
         offerId: flightBookingPayload?.offerId,
+        searchKey: offerData?.searchKey,
         customerInfo: {
           emailAddress: "",
         },
