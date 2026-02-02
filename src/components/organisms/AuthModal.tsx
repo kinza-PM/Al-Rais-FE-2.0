@@ -3,10 +3,9 @@ import Logo from '../atoms/Logo';
 import LoginForm from '../molecules/LoginForm';
 import SignupForm from '../molecules/SignupForm';
 import ForgotPasswordForm from '../molecules/ForgotPasswordForm';
-import OTPVerificationForm from '../molecules/OTPVerificationForm';
 import ResetPasswordForm from '../molecules/ResetPasswordForm';
 
-type AuthMode = 'login' | 'signup' | 'forgot-password' | 'otp-verification' | 'reset-password';
+type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -25,7 +24,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   // State for forgot password flow
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
-  const [forgotPasswordOTP, setForgotPasswordOTP] = useState('');
 
   if (!isOpen) return null;
 
@@ -44,17 +42,10 @@ const AuthModal: React.FC<AuthModalProps> = ({
   const handleBackToLogin = () => {
     onModeChange('login');
     setForgotPasswordEmail('');
-    setForgotPasswordOTP('');
   };
 
   const handleOTPSent = (email: string) => {
     setForgotPasswordEmail(email);
-    onModeChange('otp-verification');
-  };
-
-  const handleOTPVerified = (email: string, otp: string) => {
-    setForgotPasswordEmail(email);
-    setForgotPasswordOTP(otp);
     onModeChange('reset-password');
   };
 
@@ -66,11 +57,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleBackToForgotPassword = () => {
     onModeChange('forgot-password');
-    setForgotPasswordOTP('');
-  };
-
-  const handleBackToOTP = () => {
-    onModeChange('otp-verification');
   };
 
   return (
@@ -93,7 +79,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
             {mode === 'login' ? 'Welcome Back' : 
              mode === 'signup' ? 'Welcome' : 
              mode === 'forgot-password' ? 'Password Reset' : 
-             mode === 'otp-verification' ? 'Verify Code' : 
              'Reset Password'}
           </h2>
         </div>
@@ -114,18 +99,11 @@ const AuthModal: React.FC<AuthModalProps> = ({
             onBackToLogin={handleBackToLogin}
             onOTPSent={handleOTPSent}
           />
-        ) : mode === 'otp-verification' ? (
-          <OTPVerificationForm 
-            email={forgotPasswordEmail}
-            onBackToForgotPassword={handleBackToForgotPassword}
-            onOTPVerified={handleOTPVerified}
-          />
         ) : mode === 'reset-password' ? (
           <ResetPasswordForm 
             email={forgotPasswordEmail}
-            otp={forgotPasswordOTP}
             onPasswordReset={handlePasswordReset}
-            onBackToOTP={handleBackToOTP}
+            onBackToForgotPassword={handleBackToForgotPassword}
           />
         ) : null}
       </div>

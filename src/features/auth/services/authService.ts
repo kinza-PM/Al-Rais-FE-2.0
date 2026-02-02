@@ -648,6 +648,13 @@ export class AuthService {
     resetData: ResetPasswordForm
   ): Promise<AuthResponse> {
     try {
+      if (!resetData.otp || resetData.otp.length !== 6) {
+        return {
+          success: false,
+          message: "Please enter a valid 6-digit verification code.",
+        };
+      }
+
       if (resetData.newPassword !== resetData.confirmPassword) {
         return {
           success: false,

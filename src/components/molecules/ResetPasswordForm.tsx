@@ -6,20 +6,18 @@ import type { ResetPasswordForm as ResetPasswordFormType } from "../../features/
 
 interface ResetPasswordFormProps {
   email: string;
-  otp: string;
   onPasswordReset: () => void;
-  onBackToOTP: () => void;
+  onBackToForgotPassword: () => void;
 }
 
 const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   email,
-  otp,
   onPasswordReset,
-  onBackToOTP,
+  onBackToForgotPassword,
 }) => {
   const [formData, setFormData] = useState<ResetPasswordFormType>({
     email: email,
-    otp: otp,
+    otp: "",
     newPassword: "",
     confirmPassword: "",
   });
@@ -34,7 +32,15 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === "otp") {
+      // Only allow numbers and limit to 6 digits
+      const numericValue = value.replace(/\D/g, "");
+      if (numericValue.length <= 6) {
+        setFormData((prev) => ({ ...prev, [name]: numericValue }));
+      }
+    } else {
+      setFormData((prev) => ({ ...prev, [name]: value }));
+    }
     if (error) setError(null);
   };
 
@@ -93,11 +99,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   };
 
   const isFormValid = useMemo(() => {
+    if (!formData.otp || formData.otp.length !== 6) return false;
     if (!formData.newPassword || !formData.confirmPassword) return false;
     if (formData.newPassword !== formData.confirmPassword) return false;
     const passwordError = validatePassword(formData.newPassword);
     return passwordError === null;
-  }, [formData.newPassword, formData.confirmPassword]);
+  }, [formData.otp, formData.newPassword, formData.confirmPassword]);
 
   useEffect(() => {
     const password = formData.newPassword;
@@ -116,9 +123,21 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           Reset Password
         </h3>
         <p className="text-sm text-gray-600">
-          Create a new password for your account
+          Enter the verification code and create a new password
         </p>
       </div>
+
+      <Input
+        type="text"
+        name="otp"
+        label="Verification Code"
+        placeholder="Enter 6-digit code"
+        value={formData.otp}
+        onChange={handleInputChange}
+        rounded="xl"
+        required
+        className="text-center text-lg tracking-widest"
+      />
 
       <Input
         type="password"
@@ -224,10 +243,10 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       <div className="text-center">
         <button
           type="button"
-          onClick={onBackToOTP}
+          onClick={onBackToForgotPassword}
           className="text-sm text-gray-600 hover:underline"
         >
-          Back to Verification Code
+          Request a new code
         </button>
       </div>
     </form>

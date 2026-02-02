@@ -4,7 +4,6 @@ import {
   ForgotPasswordForm,
   LoginForm,
   MainLayout,
-  OTPVerificationForm,
   ResetPasswordForm,
   SignupForm
 } from "../components";
@@ -17,7 +16,6 @@ const AuthPage = () => {
   const initialMode = (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
-  const [forgotPasswordOTP, setForgotPasswordOTP] = useState("");
   const handleModeSwitch = () => {
     setMode(mode === "login" ? "signup" : "login");
   };
@@ -29,17 +27,10 @@ const AuthPage = () => {
   const handleBackToLogin = () => {
     setMode("login");
     setForgotPasswordEmail("");
-    setForgotPasswordOTP("");
   };
 
   const handleOTPSent = (email: string) => {
     setForgotPasswordEmail(email);
-    setMode("otp-verification");
-  };
-
-  const handleOTPVerified = (email: string, otp: string) => {
-    setForgotPasswordEmail(email);
-    setForgotPasswordOTP(otp);
     setMode("reset-password");
   };
 
@@ -50,12 +41,8 @@ const AuthPage = () => {
 
   const handleBackToForgotPassword = () => {
     setMode("forgot-password");
-    setForgotPasswordOTP("");
   };
 
-  const handleBackToOTP = () => {
-    setMode("otp-verification");
-  };
   const onLoginClick = () => {
     setMode("login");
   };
@@ -91,19 +78,11 @@ const AuthPage = () => {
                 onOTPSent={handleOTPSent}
               />
             )}
-            {mode === "otp-verification" && (
-              <OTPVerificationForm
-                email={forgotPasswordEmail}
-                onBackToForgotPassword={handleBackToForgotPassword}
-                onOTPVerified={handleOTPVerified}
-              />
-            )}
             {mode === "reset-password" && (
               <ResetPasswordForm
                 email={forgotPasswordEmail}
-                otp={forgotPasswordOTP}
                 onPasswordReset={handlePasswordReset}
-                onBackToOTP={handleBackToOTP}
+                onBackToForgotPassword={handleBackToForgotPassword}
               />
             )}
           </div>

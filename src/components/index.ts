@@ -7,7 +7,6 @@ export { default as Logo } from './atoms/Logo';
 export { default as LoginForm } from './molecules/LoginForm';
 export { default as SignupForm } from './molecules/SignupForm';
 export { default as ForgotPasswordForm } from './molecules/ForgotPasswordForm';
-export { default as OTPVerificationForm } from './molecules/OTPVerificationForm';
 export { default as ResetPasswordForm } from './molecules/ResetPasswordForm';
 
 // Organisms
