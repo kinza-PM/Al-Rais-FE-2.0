@@ -26,7 +26,7 @@ import { FilterOutlined } from "@ant-design/icons";
 
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {
-  CountryOption,
+  AirportOption,
   PassengerSchema,
   CabinClassOption,
   TripType,
@@ -644,16 +644,16 @@ const FlightDetailTemplate: React.FC = () => {
   const countriesLoading = loadingMap?.countries ?? isInitialLoading;
 
   const countriesForPicker = useMemo(() => {
-    const base = (countries as CountryOption[]) || [];
-    const merged: CountryOption[] = [];
+    const base = (countries as AirportOption[]) || [];
+    const merged: AirportOption[] = [];
 
-    const addUnique = (opt: CountryOption | null | undefined) => {
+    const addUnique = (opt: AirportOption | null | undefined) => {
       if (!opt?.code) return;
       if (merged.some((x) => x.code === opt.code)) return;
       merged.push(opt);
     };
 
-    // Ensure selected options coming from hero/store are present
+    // Ensure selected options coming from hero/store  are present
     addUnique(flight?.fromOption as any);
     addUnique(flight?.toOption as any);
 
@@ -677,11 +677,11 @@ const FlightDetailTemplate: React.FC = () => {
   const onClose = () => setOpen(false);
 
   useEffect(() => {
-    if (!fromCode && (countries as CountryOption[])[0]) {
-      setFromCode((countries as CountryOption[])[0].code);
+    if (!fromCode && (countries as AirportOption[])[0]) {
+      setFromCode((countries as AirportOption[])[0].code);
     }
-    if (!toCode && (countries as CountryOption[])[1]) {
-      setToCode((countries as CountryOption[])[1].code);
+    if (!toCode && (countries as AirportOption[])[1]) {
+      setToCode((countries as AirportOption[])[1].code);
     }
   }, [countries, fromCode, toCode]);
 
@@ -1224,7 +1224,7 @@ const FlightDetailTemplate: React.FC = () => {
         <div className="bottomHeaderSetting">
           <Flex className="bottomHeaderFlex">
             <TravelRoutePicker
-              options={countriesForPicker as CountryOption[]}
+              options={countriesForPicker as AirportOption[]}
               loading={countriesLoading}
               onSearchChange={setCountriesSearchTerm}
               value={{ fromCode, toCode }}

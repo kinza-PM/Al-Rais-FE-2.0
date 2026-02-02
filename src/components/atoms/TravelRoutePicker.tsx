@@ -1,12 +1,12 @@
 import React from "react";
 import DoubledArrow from "../../assets/svgs/doubled-arrow.svg";
-import type { CountryOption } from "../../features/flights/types";
+import type { AirportOption } from "../../features/flights/types";
 import SearchableDropdown from "../common/SearchableDropdown";
 
 type Value = { fromCode: string; toCode: string };
 
 type Props = {
-  options: CountryOption[];
+  options: AirportOption[];
   loading?: boolean;
   /**
    * Optional callback to perform API-based searching.

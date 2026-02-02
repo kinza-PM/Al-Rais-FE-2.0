@@ -15,6 +15,7 @@ import {
     getPriceCabinClassForFlightSummary,
 } from "../../utils/helpers";
 import { useNavigate } from "react-router-dom";
+import type { CountryOption } from "../../features/flights/types";
 
 const CardShell = ({
     title,
@@ -54,7 +55,8 @@ type FlightBookingReviewSectionProps = {
     trip: any;
     fareBookingSearchRules?: any;
     flightBookingPayload?: any;
-    cities?: Array<{ id: string; code: string; label: string; city: string }>;
+    // cities?: Array<{ id: string; code: string; label: string; city: string }>;
+    countries: CountryOption[];
     onNext?: () => void;
     onPrevious?: () => void;
 };
@@ -63,7 +65,7 @@ export default function FlightBookingReviewSection({
     trip,
     // fareBookingSearchRules,
     flightBookingPayload,
-    cities = [],
+    countries = [],
     onNext,
     onPrevious
 }: FlightBookingReviewSectionProps) {
@@ -216,11 +218,12 @@ export default function FlightBookingReviewSection({
                                                     </dt>
                                                     <dd className="text-right">
                                                         <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                            {cities.find(
+                                                            {countries.find(
                                                                 (c) =>
-                                                                    c.code ===
+                                                                    c.iso3 ===
                                                                     p.identityDocuments?.[0]?.issuingCountryCode
-                                                            )?.city ||
+                                                            // )?.label ||
+                                                        )?.iso3 ||
                                                                 p.identityDocuments?.[0]?.issuingCountryCode ||
                                                                 "—"}
                                                         </span>

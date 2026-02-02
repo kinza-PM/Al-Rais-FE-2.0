@@ -13,10 +13,10 @@ import masterCardIcon from "../../assets/svgs/mastercard.svg";
 // import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 // import FlagUsa from "../../assets/images/Flag-usa.png";
-import FlagUae from "../../assets/svgs/Flag-uae.svg";
+// import FlagUae from "../../assets/svgs/Flag-uae.svg";
 import Tabby from "../../assets/images/tabby.png";
 import Tamara from "../../assets/images/tamara.png";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import CardCollapseToggle from "../common/CardCollapseToggle";
 import Button from "../atoms/Button";
@@ -43,12 +43,16 @@ import {
 import { usePayfortPayment } from "../../hooks/usePayment";
 import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
 import CardOverlaySearchableDropdown from "../common/CardOverlaySearchableDropdown";
+import type { CountryOption } from "../../features/flights/types";
+import Loader from "../atoms/Loader";
+import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
 
 type PaymentMethod = "card" | "apple" | "google";
 
 type FlightBookingPaymentSectionProps = {
   trip: any;
-  cities: Array<{ id: string; code: string; label: string; city: string }>;
+  // cities: Array<{ id: string; code: string; label: string; city: string }>;
+  countries: CountryOption[];
   reservation?: any;
   onReservationChange: (
     eOrPath:
@@ -56,11 +60,11 @@ type FlightBookingPaymentSectionProps = {
           HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
         >
       | string,
-    maybeValue?: any
+    maybeValue?: any,
   ) => void;
   onNext?: () => void;
   onFinalReservationFlightBookingSuccess?: (
-    data: FlightFinalReservedBooking
+    data: FlightFinalReservedBooking,
   ) => void;
 };
 
@@ -76,7 +80,8 @@ type FlightBookingPaymentSectionProps = {
 
 export default function FlightBookingPaymentSection({
   trip,
-  cities,
+  // cities,
+  countries = [],
   reservation,
   onReservationChange,
   onNext,
@@ -132,10 +137,23 @@ export default function FlightBookingPaymentSection({
     value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
   };
 
+  const selectedCountry = useMemo(
+    () =>
+      countries.find(
+        (c) => c.iso3 === reservation?.paymentDetails?.address?.countryCode,
+      ),
+    [countries, reservation?.paymentDetails?.address?.countryCode],
+  );
+
+  const { data: citiesData, isLoading: isCitiesLoading } = useCitiesOptions(
+    selectedCountry?.label || "",
+    !!selectedCountry?.label,
+  );
+
   const handleCardFieldChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ) => {
     const { name, value } = e.target;
 
@@ -179,7 +197,7 @@ export default function FlightBookingPaymentSection({
   const generatePayfortPaymentTokenization = async () => {
     const { valid, error } = validateReservationFlightBookingData(
       reservation,
-      cardDetails
+      cardDetails,
     );
     if (!valid) {
       toast.error(error || "Validation failed.");
@@ -224,7 +242,7 @@ export default function FlightBookingPaymentSection({
         popup = openBlankPopupAndCheckWebisteAllowPopup(
           "payfort3dsWindow",
           600,
-          800
+          800,
         );
       } catch (err: any) {
         toast.error(err?.message || "Please allow popups for this site.");
@@ -256,10 +274,10 @@ export default function FlightBookingPaymentSection({
         const threeDsResult = await threeDsMessagePromise;
 
         const respMsg = String(
-          threeDsResult?.response_message || ""
+          threeDsResult?.response_message || "",
         ).toLowerCase();
         const acqMsg = String(
-          threeDsResult?.acquirer_response_message || ""
+          threeDsResult?.acquirer_response_message || "",
         ).toLowerCase();
 
         if (respMsg.includes("success") && acqMsg.includes("success")) {
@@ -267,7 +285,7 @@ export default function FlightBookingPaymentSection({
           await handleReservationFlightBooking(tokenization);
         } else {
           toast.error(
-            threeDsResult?.response_message || "3DS authentication failed"
+            threeDsResult?.response_message || "3DS authentication failed",
           );
         }
       } else {
@@ -350,7 +368,7 @@ export default function FlightBookingPaymentSection({
       ) {
         handleBookingSuccess(
           retrieveFlightResponse?.data?.[0],
-          "Flight booked successfully"
+          "Flight booked successfully",
         );
       } else {
         toast.error("Failed to retrieve flight booking");
@@ -423,6 +441,23 @@ export default function FlightBookingPaymentSection({
 
   return (
     <section className="mt-10 flex items-center justify-center px-4">
+      <Loader
+        show={
+          isCitiesLoading ||
+          isPending ||
+          retrieveFlightBookingPending ||
+          isPolling
+        }
+        label={
+          isCitiesLoading
+            ? "Loading cities..."
+            : isPending
+              ? "Confirming your flight booking…"
+              : retrieveFlightBookingPending || isPolling
+                ? "Retrieving booking details…"
+                : "Please wait while we are fetching records..."
+        }
+      />
       <div className="w-full max-w-[550px]">
         <FlightSummaryCard
           title="Flight details"
@@ -580,12 +615,13 @@ export default function FlightBookingPaymentSection({
                       className="flex h-12 w-full items-center justify-between bg-white px-3"
                     >
                       <span className="flex items-center gap-3 text-[15px] font-medium text-[#0A0C0F]">
-                        <img
+                        {/* <img
                           src={FlagUae}
                           alt="usa-flag"
                           className="h-6 w-6 rounded-full"
-                        />
-                        <span>United Arab Emirates</span>
+                        /> */}
+                        {/* <span>United Arab Emirates</span> */}
+                        {selectedCountry?.label || "Select a country"}
                       </span>
 
                       <CardCollapseToggle
@@ -617,7 +653,7 @@ export default function FlightBookingPaymentSection({
                               name="paymentDetails.address.street.0"
                               value={
                                 Array.isArray(address.street)
-                                  ? address.street[0] ?? ""
+                                  ? (address.street[0] ?? "")
                                   : ""
                               }
                               onChange={onReservationChange}
@@ -640,18 +676,18 @@ export default function FlightBookingPaymentSection({
 
                             <ChevronDown /> */}
                             <CardOverlaySearchableDropdown
-                              options={[
-                                {
-                                  id: "UAE",
-                                  value: "UAE",
-                                  label: "United Arab Emirates",
-                                },
-                              ]}
+                              options={
+                                countries?.map((c) => ({
+                                  id: c.iso2,
+                                  value: c.iso3,
+                                  label: c.label,
+                                })) || []
+                              }
                               value={address.countryCode ?? ""}
                               onChange={(val) =>
                                 onReservationChange(
                                   "paymentDetails.address.countryCode",
-                                  val
+                                  val,
                                 )
                               }
                               placeholder="Select a country"
@@ -682,16 +718,16 @@ export default function FlightBookingPaymentSection({
                             </div> */}
                             <div className="relative">
                               <CardOverlaySearchableDropdown
-                                options={cities.map((c) => ({
-                                  id: c.code,
-                                  value: c.code,
-                                  label: c.city,
+                                options={citiesData.map((c, index) => ({
+                                  id: `${index}-${c.value}`,
+                                  value: c.value,
+                                  label: c.label,
                                 }))}
                                 value={address.cityName ?? ""}
                                 onChange={(val) =>
                                   onReservationChange(
                                     "paymentDetails.address.cityName",
-                                    val
+                                    val,
                                   )
                                 }
                                 placeholder="Select a city"

@@ -20,7 +20,7 @@ export interface FlightTypeOption {
     key: TripType;      // Normalized key to use in code
 }
 
-export interface CountryItem {
+export interface AirportItem {
     // id: string;
     // city: string;        // e.g., "Dubai"
     // cityCode: string;    // e.g., "DXB"
@@ -36,12 +36,12 @@ export interface CountryItem {
     iataCode: string;
 }
 
-export interface CountriesResponse {
-    items: CountryItem[];
+export interface AirportsResponse {
+    items: AirportItem[];
     nextToken: string | null;
 }
 
-export interface CountryOption {
+export interface AirportOption {
     id: string;
     label: string;      // e.g. "Dubai (DXB), UAE"
     code: string;       // "DXB"
@@ -147,4 +147,34 @@ export interface AirlineOption {
     id: string;
     label: string;
     code: string;
+}
+
+export interface CountryItem {
+    iso2: string;
+    iso3: string;
+    country: string;
+    cities: string[];
+}
+
+export interface CountriesResponse {
+    error: boolean;
+    msg: string;
+    data: CountryItem[];
+}
+
+export interface CountryOption {
+    iso2: string;
+    iso3: string;
+    label: string;  // country name
+}
+
+export interface CitiesResponse {
+    error: boolean;
+    msg: string;
+    data: string[];  // Array of city names
+}
+
+export interface CityOption {
+    value: string;   // city name
+    label: string;   // city name (for display)
 }

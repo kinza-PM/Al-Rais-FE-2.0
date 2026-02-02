@@ -3,7 +3,7 @@ import {
   buildAirlineOptions,
   buildBaggageOptions,
   buildCabinClassOptions,
-  buildCountryOptions,
+  buildAirportOptions,
   buildFlightTypeOptions,
   buildNumberStopsOptions,
   buildPassengerSchema,
@@ -16,8 +16,6 @@ import type {
   BaggageOption,
   CabinClassesResponse,
   CabinClassOption,
-  CountriesResponse,
-  CountryOption,
   FlightTypesResponse,
   FlightTypeOption,
   NumberStopsResponse,
@@ -30,18 +28,20 @@ import type {
   TransitHoursOption,
   AirlinesResponse,
   AirlineOption,
-  CountryItem,
+  AirportsResponse,
+  AirportItem,
+  AirportOption,
 } from "../../features/flights/types";
 
 import { listingTables } from "../../config/apiRoute";
-import { useListing } from "./useQueryListing";
+import { useCountriesOptionsListing, useListing } from "./useQueryListing";
 import { useInfiniteListing } from "./useInfiniteListing";
 
 export const useFlightTypesOptions = (enabled = true) =>
   useListing<FlightTypesResponse, any, FlightTypeOption>(
     listingTables.flightTypes,
     buildFlightTypeOptions,
-    enabled
+    enabled,
   );
 
 // export const useCityOptions = (enabled = true) =>
@@ -50,13 +50,13 @@ export const useFlightTypesOptions = (enabled = true) =>
 //         buildCountryOptions,
 //         enabled
 //     );
-export const useCityOptions = (enabled = true, searchTerm?: string) =>
-  useInfiniteListing<CountriesResponse, CountryItem, CountryOption>(
-    listingTables.countries,
-    buildCountryOptions,
+export const useAiprortOptions = (enabled = true, searchTerm?: string) =>
+  useInfiniteListing<AirportsResponse, AirportItem, AirportOption>(
+    listingTables.airports,
+    buildAirportOptions,
     enabled,
     // Backend expects: country=<term>
-    searchTerm?.trim() ? { search: searchTerm.trim() } : undefined
+    searchTerm?.trim() ? { search: searchTerm.trim() } : undefined,
   );
 
 export const usePassengerSchema = (enabled = true) =>
@@ -64,49 +64,52 @@ export const usePassengerSchema = (enabled = true) =>
     listingTables.passengers,
     (items) =>
       buildPassengerSchema(
-        items as any
+        items as any,
       ) as unknown as PassengerSchema[number][],
-    enabled
+    enabled,
   );
 
 export const useCabinClassOptions = (enabled = true) =>
   useListing<CabinClassesResponse, any, CabinClassOption>(
     listingTables.cabinClasses,
     buildCabinClassOptions,
-    enabled
+    enabled,
   );
 
 export const usePriceSortOptions = (enabled = true) =>
   useListing<PriceSortResponse, any, PriceSortOption>(
     listingTables.priceSorted,
     buildPriceSortOptions,
-    enabled
+    enabled,
   );
 
 export const useNumberStopsOptions = (enabled = true) =>
   useListing<NumberStopsResponse, any, NumberStopsOption>(
     listingTables.numberStops,
     buildNumberStopsOptions,
-    enabled
+    enabled,
   );
 
 export const useTransitHoursOptions = (enabled = true) =>
   useListing<TransitHoursResponse, any, TransitHoursOption>(
     listingTables.transitHours,
     buildTransitHourOptions,
-    enabled
+    enabled,
   );
 
 export const useBaggageOptions = (enabled = true) =>
   useListing<BaggageResponse, any, BaggageOption>(
     listingTables.baggage,
     buildBaggageOptions,
-    enabled
+    enabled,
   );
 
 export const useAirlineOptions = (enabled = true) =>
   useListing<AirlinesResponse, any, AirlineOption>(
     listingTables.airlines,
     buildAirlineOptions,
-    enabled
+    enabled,
   );
+
+export const useCountriesOptions = (enabled = true) =>
+  useCountriesOptionsListing(enabled);

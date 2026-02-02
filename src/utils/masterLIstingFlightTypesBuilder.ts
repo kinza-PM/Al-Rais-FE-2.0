@@ -5,8 +5,8 @@ import type {
   BaggageOption,
   CabinClassItem,
   CabinClassOption,
-  CountryItem,
-  CountryOption,
+  AirportItem,
+  AirportOption,
   FlightTypeItem,
   FlightTypeOption,
   NumberStopsItem,
@@ -19,6 +19,9 @@ import type {
   TransitHoursItem,
   TransitHoursOption,
   TripType,
+  CountryItem,
+  CountryOption,
+  CityOption,
 } from "../features/flights/types/index";
 
 export function normalizeTripKey(name: string): TripType | null {
@@ -81,7 +84,7 @@ export function buildFlightTypeOptions(
   return options;
 }
 
-export function buildCountryOptions(items: CountryItem[]): CountryOption[] {
+export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
   return (
     (items || [])
       // .filter(i => i.status === 1)
@@ -219,5 +222,24 @@ export function buildAirlineOptions(items: AirlineItem[]): AirlineOption[] {
   return (items || [])
     .filter((i) => i.status === 1 && i.name?.trim())
     .map((i) => ({ id: i.id, label: i.name.trim(), code: i.code.trim() }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export function buildCountryOptions(items: CountryItem[]): CountryOption[] {
+  return (items || [])
+    .map((item) => ({
+      iso2: item.iso2,
+      iso3: item.iso3,
+      label: item.country,
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export function buildCityOptions(cities: string[]): CityOption[] {
+  return (cities || [])
+    .map((city) => ({
+      value: city,
+      label: city,
+    }))
     .sort((a, b) => a.label.localeCompare(b.label));
 }

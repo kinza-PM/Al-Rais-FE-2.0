@@ -2,7 +2,7 @@ import React from "react";
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {
   CabinClassOption,
-  CountryOption,
+  AirportOption,
   PassengerSchema,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
@@ -10,7 +10,7 @@ import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import SearchableDropdown from "../common/SearchableDropdown";
 
 type Props = {
-  countries?: CountryOption[];
+  countries?: AirportOption[];
   loadingCountries?: boolean;
   /**
    * Optional callback: if provided, the travel route picker's

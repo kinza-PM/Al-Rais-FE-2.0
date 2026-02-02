@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {
   CabinClassOption,
-  CountryOption,
+  AirportOption,
   PassengerSchema,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
@@ -13,7 +13,7 @@ import SearchableDropdown from "../common/SearchableDropdown";
 type Leg = { fromCode: string; toCode: string; date: Date | null };
 
 type Props = {
-  countries?: CountryOption[];
+  countries?: AirportOption[];
   loadingCountries?: boolean;
   passengerSchema?: PassengerSchema;
   loadingPassengers?: boolean;

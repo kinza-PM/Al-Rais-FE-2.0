@@ -7,7 +7,7 @@ import wifiIcon from "../../assets/svgs/wifi.svg";
 // import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 // import FlagUsa from "../../assets/images/Flag-usa.png";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
 // import CustomToggle from "../common/CustomToggle";
@@ -29,14 +29,15 @@ import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import LoginModal from "../common/LoginModal";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { getUniqueCountries } from "../../utils/dropdownHelper";
-import { PhoneInput } from 'react-international-phone';
-import 'react-international-phone/style.css';
+// import { getUniqueCountries } from "../../utils/dropdownHelper";
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
+import type { CountryOption } from "../../features/flights/types";
 
 type FlightBookingBookSectionProps = {
   trip: any;
   passengers: Array<any>;
-  cities: Array<{ id: string; code: string; label: string; city: string }>;
+  countries: CountryOption[];
   flightBookingPayload: any;
   onPassengerFieldChange: (index: number, path: string, value: any) => void;
   fareBookingSearchRules?: any;
@@ -62,7 +63,7 @@ type FlightBookingBookSectionProps = {
 export default function FlightBookingBookSection({
   trip,
   passengers = [],
-  cities = [],
+  countries = [],
   flightBookingPayload,
   onPassengerFieldChange,
   fareBookingSearchRules,
@@ -99,7 +100,7 @@ export default function FlightBookingBookSection({
     if (typeof validatePassengersForFlightProvisionalBooking === "function") {
       const { valid, error } = validatePassengersForFlightProvisionalBooking(
         fareBookingSearchRules,
-        flightBookingPayload
+        flightBookingPayload,
       );
       if (!valid) {
         toast.error(error || "Validation failed.");
@@ -136,9 +137,9 @@ export default function FlightBookingBookSection({
     }
   };
 
-  const countryOptions = useMemo(() => {
-    return getUniqueCountries(cities);
-  }, [cities]);
+  // const countryOptions = useMemo(() => {
+  //   return getUniqueCountries(cities);
+  // }, [cities]);
 
   return (
     <section className="mx-auto max-w-full px-10 flight-booking-section">
@@ -172,7 +173,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "passengerInfo.nameTitle",
-                            value
+                            value,
                           )
                         }
                         placeholder="Select title"
@@ -194,7 +195,7 @@ export default function FlightBookingBookSection({
                         onPassengerFieldChange(
                           idx,
                           "passengerInfo.givenName",
-                          v ?? ""
+                          v ?? "",
                         );
                       }}
                     />
@@ -212,7 +213,7 @@ export default function FlightBookingBookSection({
                         onPassengerFieldChange(
                           idx,
                           "passengerInfo.surname",
-                          v ?? ""
+                          v ?? "",
                         );
                       }}
                     />
@@ -228,7 +229,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "passengerInfo.gender",
-                            value
+                            value,
                           )
                         }
                         placeholder="Select gender"
@@ -277,7 +278,7 @@ export default function FlightBookingBookSection({
                             onPassengerFieldChange(
                               idx,
                               "identityDocuments.0.idType",
-                              value
+                              value,
                             )
                           }
                           placeholder="Select ID type"
@@ -291,18 +292,20 @@ export default function FlightBookingBookSection({
                     {/* {pRules.isDocumentNumberMandatory && ( */}
                     <TailwindCustomInput
                       type="text"
-                      placeholder={`Enter ${p.identityDocuments?.[0]?.idType === "PT"
-                        ? "Passport number"
-                        : p.identityDocuments?.[0]?.idType === "DL"
-                          ? "Driving licence"
-                          : "National ID"
-                        }`}
-                      label={`${p.identityDocuments?.[0]?.idType === "PT"
-                        ? "Passport number"
-                        : p.identityDocuments?.[0]?.idType === "DL"
-                          ? "Driving licence"
-                          : "National ID"
-                        }`}
+                      placeholder={`Enter ${
+                        p.identityDocuments?.[0]?.idType === "PT"
+                          ? "Passport number"
+                          : p.identityDocuments?.[0]?.idType === "DL"
+                            ? "Driving licence"
+                            : "National ID"
+                      }`}
+                      label={`${
+                        p.identityDocuments?.[0]?.idType === "PT"
+                          ? "Passport number"
+                          : p.identityDocuments?.[0]?.idType === "DL"
+                            ? "Driving licence"
+                            : "National ID"
+                      }`}
                       value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
                       onChange={(evOrVal) => {
                         const v =
@@ -312,7 +315,7 @@ export default function FlightBookingBookSection({
                         onPassengerFieldChange(
                           idx,
                           "identityDocuments.0.idDocumentNumber",
-                          v ?? ""
+                          v ?? "",
                         );
                       }}
                     />
@@ -329,9 +332,9 @@ export default function FlightBookingBookSection({
                         //   })) || []
                         // }
                         options={
-                          countryOptions?.map((c) => ({
-                            id: c.id,
-                            value: c.countryCode || c.value,
+                          countries?.map((c) => ({
+                            id: c.iso2,
+                            value: c.iso3,
                             label: c.label,
                           })) || []
                         }
@@ -342,7 +345,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "identityDocuments.0.issuingCountryCode",
-                            value
+                            value,
                           )
                         }
                         placeholder="Select issuing country"
@@ -363,8 +366,8 @@ export default function FlightBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.dateOfIssue
                               ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.dateOfIssue
-                              )
+                                  p.identityDocuments?.[0]?.dateOfIssue,
+                                )
                               : null
                           }
                           onChange={(date) => {
@@ -372,7 +375,7 @@ export default function FlightBookingBookSection({
                             onPassengerFieldChange(
                               idx,
                               "identityDocuments.0.dateOfIssue",
-                              iso
+                              iso,
                             );
                           }}
                           placeholder="Please select"
@@ -391,8 +394,8 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.expiryDate
                             ? parseLocalDateString(
-                              p.identityDocuments?.[0]?.expiryDate
-                            )
+                                p.identityDocuments?.[0]?.expiryDate,
+                              )
                             : null
                         }
                         onChange={(date) => {
@@ -400,7 +403,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "identityDocuments.0.expiryDate",
-                            iso
+                            iso,
                           );
                         }}
                         placeholder="Please select"
@@ -421,9 +424,9 @@ export default function FlightBookingBookSection({
                         //   })) || []
                         // }
                         options={
-                          countryOptions?.map((c) => ({
-                            id: c.id,
-                            value: c.countryCode || c.value,
+                          countries?.map((c) => ({
+                            id: c.iso2,
+                            value: c.iso3,
                             label: c.label,
                           })) || []
                         }
@@ -434,7 +437,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "identityDocuments.0.residenceCountryCode",
-                            value
+                            value,
                           )
                         }
                         placeholder="Select residence country"
@@ -463,7 +466,7 @@ export default function FlightBookingBookSection({
                         onPassengerFieldChange(
                           idx,
                           "contact.contactsProvided.0.emailAddress.0",
-                          v ?? ""
+                          v ?? "",
                         );
                       }}
                     />
@@ -486,7 +489,7 @@ export default function FlightBookingBookSection({
                             onPassengerFieldChange(
                               idx,
                               "passengerInfo.birthDate",
-                              iso
+                              iso,
                             );
                           }}
                           overridesClass
@@ -509,7 +512,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "passengerInfo.PAN",
-                            v ?? ""
+                            v ?? "",
                           );
                         }}
                       />
@@ -529,7 +532,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "additionalId.type",
-                            v ?? ""
+                            v ?? "",
                           );
                         }}
                       />
@@ -549,7 +552,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "additionalId.number",
-                            v ?? ""
+                            v ?? "",
                           );
                         }}
                       />
@@ -566,7 +569,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "seat",
-                            evOrVal.target?.value ?? evOrVal
+                            evOrVal.target?.value ?? evOrVal,
                           )
                         }
                       />
@@ -582,7 +585,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "meal",
-                            evOrVal.target?.value ?? evOrVal
+                            evOrVal.target?.value ?? evOrVal,
                           )
                         }
                       />
@@ -598,7 +601,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "baggage",
-                            evOrVal.target?.value ?? evOrVal
+                            evOrVal.target?.value ?? evOrVal,
                           )
                         }
                       />
@@ -614,7 +617,7 @@ export default function FlightBookingBookSection({
                           onPassengerFieldChange(
                             idx,
                             "otherAncillary",
-                            evOrVal.target?.value ?? evOrVal
+                            evOrVal.target?.value ?? evOrVal,
                           )
                         }
                       />
@@ -674,27 +677,29 @@ export default function FlightBookingBookSection({
                       </div>
                     </div> */}
                     <div className="w-full">
-                    <label className="mb-1 block text-[12px] text-[#3D495C]">
+                      <label className="mb-1 block text-[12px] text-[#3D495C]">
                         Phone
                       </label>
                       <PhoneInput
                         defaultCountry="us"
                         value={
-                          (p.contact?.contactsProvided?.[0]?.phone?.[0]?.areaCode || '') +
-                          (p.contact?.contactsProvided?.[0]?.phone?.[0]?.phoneNumber || '')
+                          (p.contact?.contactsProvided?.[0]?.phone?.[0]
+                            ?.areaCode || "") +
+                          (p.contact?.contactsProvided?.[0]?.phone?.[0]
+                            ?.phoneNumber || "")
                         }
                         onChange={(phone, meta) => {
                           const dialCode = `+${meta.country.dialCode}`;
-                          const phoneNumber = phone.replace(dialCode, '');
+                          const phoneNumber = phone.replace(dialCode, "");
                           onPassengerFieldChange(
                             idx,
                             "contact.contactsProvided.0.phone.0.areaCode",
-                            dialCode
+                            dialCode,
                           );
                           onPassengerFieldChange(
                             idx,
                             "contact.contactsProvided.0.phone.0.phoneNumber",
-                            phoneNumber
+                            phoneNumber,
                           );
                         }}
                         forceDialCode={true}
@@ -702,10 +707,10 @@ export default function FlightBookingBookSection({
                         disableCountryGuess={false}
                         className="custom-phone-wrapper"
                         countrySelectorStyleProps={{
-                          buttonClassName: "country-selector-btn"
+                          buttonClassName: "country-selector-btn",
                         }}
                         inputProps={{
-                          placeholder: 'Phone'
+                          placeholder: "Phone",
                         }}
                       />
                     </div>

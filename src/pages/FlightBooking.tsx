@@ -11,7 +11,10 @@ import {
   type FlightFinalReservedBooking,
 } from "../utils/flightBookingHelper";
 import { generateUUID } from "../utils/helpers";
-import { useCityOptions } from "../hooks/masterListings/listing";
+import {
+  // useAiprortOptions,
+  useCountriesOptions,
+} from "../hooks/masterListings/listing";
 import Loader from "../components/atoms/Loader";
 import {
   useFlightAncillarySearch,
@@ -41,7 +44,7 @@ const FlightBooking = () => {
   const [steps, _] = useState<string[]>(
     enhanceAvailable
       ? ["Book", "Enhance", "Review", "Pay", "E-ticket"]
-      : ["Book", "Review", "Pay", "E-ticket"]
+      : ["Book", "Review", "Pay", "E-ticket"],
   );
 
   // Check if this is a pending booking (skip to payment)
@@ -72,7 +75,7 @@ const FlightBooking = () => {
   const [flightBookingPayload, setFlightBookingPayload] = useState(() => {
     // For pending bookings, use passengers data from API
     let passengers = buildInitialFlightBookingPassengersPayload(
-      offerData?.passengersForRequest
+      offerData?.passengersForRequest,
     );
 
     // If pending booking, pre-fill passenger data from API
@@ -172,8 +175,10 @@ const FlightBooking = () => {
       };
     });
 
-  const { data: cityOptions, isLoading: isCountryLoading } =
-    useCityOptions(true);
+  // const { data: cityOptions, isLoading: isCountryLoading } =
+  //   useAiprortOptions(true);
+  const { data: countriesOptions, isLoading: isCountriesLoading } =
+    useCountriesOptions();
 
   const { mutateAsync, isPending } = useFlightFareRuleSearch();
   const { mutateAsync: mutateAsyncAncillary, isPending: isPendingAncillary } =
@@ -182,7 +187,7 @@ const FlightBooking = () => {
   const setPassengerFlightInitialPayload = (
     obj: any,
     path: string,
-    value: any
+    value: any,
   ) => {
     const parts = path.split(".");
     let cur = obj;
@@ -224,7 +229,7 @@ const FlightBooking = () => {
       financialInfo: any;
       journey: any;
       offerId?: string | number;
-    }>
+    }>,
   ) => {
     setOfferData((prev: any) => {
       if (!prev) return prev;
@@ -267,10 +272,10 @@ const FlightBooking = () => {
   const handleFlightReservationBookingChange = (
     eOrPath:
       | React.ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >
+          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
       | string,
-    maybeValue?: any
+    maybeValue?: any,
   ) => {
     let path: string;
     let value: any;
@@ -286,7 +291,7 @@ const FlightBooking = () => {
       path = target.name;
       if (!path) {
         console.warn(
-          "Input missing `name` attribute for generic reservation handler."
+          "Input missing `name` attribute for generic reservation handler.",
         );
         return;
       }
@@ -308,7 +313,7 @@ const FlightBooking = () => {
   };
 
   const onFinalReservationFlightBookingSuccess = (
-    payload: FlightFinalReservedBooking
+    payload: FlightFinalReservedBooking,
   ) => {
     setFinalReservedFlightBookingData(payload);
   };
@@ -337,7 +342,7 @@ const FlightBooking = () => {
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
-      if (err == 'Offer Id Invalid or Expired') {
+      if (err == "Offer Id Invalid or Expired") {
         navigate("/search_flight");
         // return
       }
@@ -379,7 +384,7 @@ const FlightBooking = () => {
       setFlightBookingPayload((prev) => ({
         ...prev,
         passengers: buildInitialFlightBookingPassengersPayload(
-          offerData.passengersForRequest
+          offerData.passengersForRequest,
         ),
       }));
     }
@@ -406,7 +411,7 @@ const FlightBooking = () => {
         />
       )}
       <Loader
-        show={isCountryLoading || isPending || isPendingAncillary}
+        show={isCountriesLoading || isPending || isPendingAncillary}
         // show={isCountryLoading || isPending}
         label="Please wait while we are fetching records..."
       />
@@ -471,7 +476,7 @@ const FlightBooking = () => {
               passengers={flightBookingPayload.passengers}
               flightBookingPayload={flightBookingPayload}
               onPassengerFieldChange={updatePassengerField}
-              cities={cityOptions}
+              countries={countriesOptions}
               fareBookingSearchRules={fareBookingSearchRules}
               // onNext={() => setCurrentStep(hasAncillaries ? 1 : 2)}
               onNext={async (newOfferId?: string) => {
@@ -492,7 +497,7 @@ const FlightBooking = () => {
                 }
               }}
               onUpdateFlightRaw={handleUpdateFlightRawDetails}
-            // flightAncillarySearch={ancillarySearchData}
+              // flightAncillarySearch={ancillarySearchData}
             />
           )}
           {currentStep === enhanceStepIndex &&
@@ -511,7 +516,8 @@ const FlightBooking = () => {
               trip={offerData.flightDetail}
               fareBookingSearchRules={fareBookingSearchRules}
               flightBookingPayload={flightBookingPayload}
-              cities={cityOptions}
+              // cities={cityOptions}
+              countries={countriesOptions}
               onNext={() => setCurrentStep(enhanceAvailable ? 3 : 2)}
               // onNext={() => setCurrentStep(3)}
               onPrevious={() => {
@@ -529,7 +535,8 @@ const FlightBooking = () => {
           {currentStep === payStepIndex && (
             <FlightBookingPaymentSection
               trip={offerData.flightDetail}
-              cities={cityOptions}
+              // cities={cityOptions}
+              countries={countriesOptions}
               reservation={flightReservationBookingPayload}
               onReservationChange={handleFlightReservationBookingChange}
               onNext={() => setCurrentStep(4)}

@@ -18,6 +18,7 @@ const flightApis = [
 const paymentApis = ["/pay"];
 const flightAncillaryApis = ["/ancillarySearch", "/bookAncillary"];
 const hotelApis = ["/hotelSearch", "/hotelDetail", "/getMoreRooms"];
+const locationApis = ["/countries/cities", "/countries"];
 
 export const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -34,6 +35,8 @@ export const FLIGHT_ANCILLARY_API_BASE =
 
 export const HOTEL_API_BASE =
   "https://hfus5c7uw2.execute-api.eu-west-1.amazonaws.com/dev";
+
+export const LOCATION_API_BASE = "https://countriesnow.space/api/v0.1";
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
@@ -75,6 +78,8 @@ axiosClient.interceptors.request.use(async (config) => {
     config.baseURL = PAYMENT_API_BASE;
   } else if (hotelApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = HOTEL_API_BASE;
+  } else if (locationApis.some((prefix) => config.url?.startsWith(prefix))) {
+    config.baseURL = LOCATION_API_BASE;
   }
 
   return config;
@@ -170,7 +175,7 @@ axiosClient.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export function toApiError(source: string, err: unknown): Error {
@@ -191,7 +196,7 @@ export const api = {
   get: async <T>(
     url: string,
     params?: Record<string, any>,
-    signal?: AbortSignal
+    signal?: AbortSignal,
   ) => {
     const res = await axiosClient.get<T>(url, { params, signal });
     return res.data;
@@ -201,7 +206,7 @@ export const api = {
     url: string,
     data?: Record<string, any>,
     // signal?: AbortSignal
-    options?: { signal?: AbortSignal; headers?: Record<string, string> }
+    options?: { signal?: AbortSignal; headers?: Record<string, string> },
   ) => {
     const res = await axiosClient.post<T>(url, data, {
       signal: options?.signal,

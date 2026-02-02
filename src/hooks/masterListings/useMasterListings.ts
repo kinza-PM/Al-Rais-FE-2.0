@@ -2,7 +2,7 @@
 import { useMemo } from "react";
 import {
   useFlightTypesOptions,
-  useCityOptions,
+  useAiprortOptions,
   usePassengerSchema,
   useCabinClassOptions,
   usePriceSortOptions,
@@ -47,7 +47,7 @@ export function useMasterListings(opts?: {
   );
 
   const qFlightTypes = useFlightTypesOptions(include.has("flightTypes"));
-  const qCountries = useCityOptions(
+  const qAirports = useAiprortOptions(
     include.has("countries"),
     opts?.countriesSearchTerm
   );
@@ -66,7 +66,7 @@ export function useMasterListings(opts?: {
     ),
     countries: !!(
       include.has("countries") &&
-      (qCountries.isLoading || qCountries.isFetching)
+      (qAirports.isLoading || qAirports.isFetching)
     ),
     passengers: !!(
       include.has("passengers") &&
@@ -100,7 +100,7 @@ export function useMasterListings(opts?: {
 
   const errorMap = {
     flightTypes: qFlightTypes.error?.message ?? null,
-    countries: qCountries.error?.message ?? null,
+    countries: qAirports.error?.message ?? null,
     passengers: qPassengers.error?.message ?? null,
     cabinClasses: qCabin.error?.message ?? null,
     priceSort: qPrice.error?.message ?? null,
@@ -114,7 +114,7 @@ export function useMasterListings(opts?: {
 
   return {
     flightTypes: qFlightTypes.data,
-    countries: qCountries.data,
+    countries: qAirports.data,
     passengers: qPassengers.data as any,
     cabinClasses: qCabin.data,
     priceSort: qPrice.data,
@@ -123,9 +123,9 @@ export function useMasterListings(opts?: {
     baggage: qBaggage.data,
     airline: qAirline.data,
 
-    countriesHasMore: qCountries.hasNextPage,
-    countriesFetchNext: qCountries.fetchNextPage,
-    countriesIsFetchingNext: qCountries.isFetchingNextPage,
+    countriesHasMore: qAirports.hasNextPage,
+    countriesFetchNext: qAirports.fetchNextPage,
+    countriesIsFetchingNext: qAirports.isFetchingNextPage,
 
     // status (unchanged semantics)
     loading: loadingAny,

@@ -5,7 +5,7 @@ import MultiCityForm from "./MultiCityForm";
 import type {
   TripType,
   FlightTypeOption,
-  CountryOption,
+  AirportOption,
   PassengerSchema,
   CabinClassOption,
 } from "../../features/flights/types";
@@ -156,7 +156,7 @@ const FlightHeroSection: React.FC = () => {
       errors.push("Departure date is required");
     }
     if (trip === "roundtrip" && !arrivalDate) {
-      errors.push("Arrival date is required");
+      errors.push("Return date is required");
     }
     // If no passenger selection has been propagated yet, treat default UI (1 adult) as selected
     const totalPassengersRaw = Object.values(paxCounts).reduce(
@@ -223,8 +223,8 @@ const FlightHeroSection: React.FC = () => {
     const departureStr = formatDateToLocalISO(departDate);
     const arrivalStr = formatDateToLocalISO(arrivalDate);
 
-    const fromOpt = (countries as CountryOption[]).find((c) => c.code === fromCode) ?? null;
-    const toOpt = (countries as CountryOption[]).find((c) => c.code === toCode) ?? null;
+    const fromOpt = (countries as AirportOption[]).find((c) => c.code === fromCode) ?? null;
+    const toOpt = (countries as AirportOption[]).find((c) => c.code === toCode) ?? null;
 
     setFlight({
       fromCode,
@@ -295,7 +295,7 @@ const FlightHeroSection: React.FC = () => {
           <div className="px-6 pb-6 pt-6">
             {trip === "oneway" && (
               <OneWayForm
-                countries={countries as CountryOption[]}
+                countries={countries as AirportOption[]}
                 loadingCountries={nsLoading.countries}
                 onSearchCountries={setCountriesSearchTerm}
                 fromCode={fromCode}
@@ -328,7 +328,7 @@ const FlightHeroSection: React.FC = () => {
 
             {trip === "roundtrip" && (
               <RoundTripForm
-                countries={countries as CountryOption[]}
+                countries={countries as AirportOption[]}
                 loadingCountries={nsLoading.countries}
                 onSearchCountries={setCountriesSearchTerm}
                 fromCode={fromCode}
@@ -365,7 +365,7 @@ const FlightHeroSection: React.FC = () => {
 
             {trip === "multicity" && (
               <MultiCityForm
-                countries={countries as CountryOption[]}
+                countries={countries as AirportOption[]}
                 loadingCountries={nsLoading.countries}
                 passengerSchema={passengers as PassengerSchema}
                 loadingPassengers={nsLoading.passengers}

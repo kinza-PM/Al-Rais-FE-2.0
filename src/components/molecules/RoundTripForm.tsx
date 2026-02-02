@@ -2,7 +2,7 @@ import React from "react";
 // import Calendar from "../../assets/svgs/calendar.svg";
 import type {
   CabinClassOption,
-  CountryOption,
+  AirportOption,
   PassengerSchema,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
@@ -10,7 +10,7 @@ import PassengerCabinDropdown from "../atoms/PassengerCabinDropdown";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 type Props = {
-  countries?: CountryOption[];
+  countries?: AirportOption[];
   loadingCountries?: boolean;
   /**
    * Optional callback: if provided, the travel route picker's
