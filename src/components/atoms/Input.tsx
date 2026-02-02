@@ -13,6 +13,7 @@ interface InputProps {
   required?: boolean;
   touched?: boolean;
   error?: boolean;
+  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -27,7 +28,8 @@ const Input: React.FC<InputProps> = ({
   name,
   required,
   touched,
-  error
+  error,
+  inputProps
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -62,6 +64,7 @@ const Input: React.FC<InputProps> = ({
           required={required}
           onBlur={onBlur}
           className={`w-full px-3 py-2 border ${hasError ? 'border-red-500 focus:ring-red-200' : 'border-[#C2CAD6]'} ${roundedClasses[rounded]} focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent ${isPasswordType ? 'pr-10' : ''}`}
+          {...inputProps}
         />
         {isPasswordType && (
           <button

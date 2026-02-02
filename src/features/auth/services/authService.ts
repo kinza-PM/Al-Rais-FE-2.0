@@ -42,6 +42,57 @@ interface RemoteUserUpdatePayload {
 export class AuthService {
   private static readonly GENERIC_ERROR =
     "Something went wrong. Please try again.";
+  private static readonly USED_RESET_CODES_KEY = "usedResetCodes";
+
+  private static loadUsedResetCodes(): Record<string, string[]> {
+    if (typeof window === "undefined" || !window.sessionStorage) {
+      return {};
+    }
+
+    try {
+      const raw = window.sessionStorage.getItem(
+        AuthService.USED_RESET_CODES_KEY
+      );
+      const parsed = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch {
+      return {};
+    }
+  }
+
+  private static saveUsedResetCodes(data: Record<string, string[]>): void {
+    if (typeof window === "undefined" || !window.sessionStorage) {
+      return;
+    }
+
+    try {
+      window.sessionStorage.setItem(
+        AuthService.USED_RESET_CODES_KEY,
+        JSON.stringify(data)
+      );
+    } catch {
+      // Ignore storage errors (private mode, quota, etc.)
+    }
+  }
+
+  static isResetCodeUsed(email: string, otp: string): boolean {
+    if (!email || !otp) return false;
+    const identifier = email.trim().toLowerCase();
+    const used = AuthService.loadUsedResetCodes();
+    return Array.isArray(used[identifier]) && used[identifier].includes(otp);
+  }
+
+  static markResetCodeUsed(email: string, otp: string): void {
+    if (!email || !otp) return;
+    const identifier = email.trim().toLowerCase();
+    const used = AuthService.loadUsedResetCodes();
+    const list = Array.isArray(used[identifier]) ? used[identifier] : [];
+    if (!list.includes(otp)) {
+      list.push(otp);
+      used[identifier] = list;
+      AuthService.saveUsedResetCodes(used);
+    }
+  }
 
   private static getFriendlyPasswordMessage(errorMessage: string): string {
     const msg = (errorMessage || "").toLowerCase();
@@ -87,6 +138,18 @@ export class AuthService {
         return {
           success: false,
           message,
+          errorCode: "USER_NOT_CONFIRMED",
+          nextStep: nextStep.signInStep,
+        };
+      }
+
+      if (nextStep.signInStep && nextStep.signInStep !== "DONE") {
+        return {
+          success: false,
+          message:
+            "Additional verification is required to complete sign in. Please follow the verification steps.",
+          errorCode: "MFA_REQUIRED",
+          nextStep: nextStep.signInStep,
         };
       }
 
@@ -101,10 +164,15 @@ export class AuthService {
 
       return {
         success: false,
-        message: "Invalid credentials",
+        message: "Incorrect email or password. Please try again.",
+        errorCode: "INVALID_CREDENTIALS",
       };
     } catch (error: unknown) {
       const errorObj = error as Record<string, unknown>;
+      const metadata = errorObj?.$metadata as
+        | { httpStatusCode?: number; requestId?: string }
+        | undefined;
+      const requestId = metadata?.requestId;
       // Handle specific auth errors (user-facing)
       if (errorObj.name === "UserNotConfirmedException") {
         const isPhoneNumber = credentials.email.trim().startsWith("+");
@@ -115,28 +183,87 @@ export class AuthService {
         return {
           success: false,
           message,
+          errorCode: "USER_NOT_CONFIRMED",
+          errorRef: requestId,
         };
       }
 
       if (errorObj.name === "UserNotFoundException") {
         return {
           success: false,
-          message:
-            "We couldn’t log you in. Check your email and password, or sign up if you don’t have an account.",
+          message: "No account found with this email or phone number.",
+          errorCode: "USER_NOT_FOUND",
+          errorRef: requestId,
         };
       }
 
       if (errorObj.name === "NotAuthorizedException") {
         return {
           success: false,
+          message: "Incorrect email or password. Please try again.",
+          errorCode: "INVALID_CREDENTIALS",
+          errorRef: requestId,
+        };
+      }
+
+      if (errorObj.name === "PasswordResetRequiredException") {
+        return {
+          success: false,
+          message: "Password reset required. Please reset your password.",
+          errorCode: "PASSWORD_RESET_REQUIRED",
+          errorRef: requestId,
+        };
+      }
+
+      if (errorObj.name === "UserDisabledException") {
+        return {
+          success: false,
+          message: "Your account is disabled. Please contact support.",
+          errorCode: "USER_DISABLED",
+          errorRef: requestId,
+        };
+      }
+
+      if (
+        errorObj.name === "LimitExceededException" ||
+        errorObj.name === "TooManyRequestsException"
+      ) {
+        return {
+          success: false,
+          message: "Too many attempts. Please try again later.",
+          errorCode: "TOO_MANY_REQUESTS",
+          errorRef: requestId,
+        };
+      }
+
+      if (errorObj.name === "NetworkError") {
+        return {
+          success: false,
           message:
-            "We couldn’t log you in. Check your email and password, reset your password, or sign up if you don’t have an account.",
+            "No internet connection. Check your connection and try again.",
+          errorCode: "NETWORK_ERROR",
+          errorRef: requestId,
+        };
+      }
+
+      if (
+        typeof metadata?.httpStatusCode === "number" &&
+        metadata.httpStatusCode >= 500
+      ) {
+        return {
+          success: false,
+          message:
+            "Something went wrong on our side. Please try again later.",
+          errorCode: "SERVER_ERROR",
+          errorRef: requestId,
         };
       }
 
       return {
         success: false,
         message: AuthService.GENERIC_ERROR,
+        errorCode: "UNKNOWN_ERROR",
+        errorRef: requestId,
       };
     }
   }
@@ -494,6 +621,13 @@ export class AuthService {
         };
       }
 
+      if (AuthService.isResetCodeUsed(otpData.email, otpData.otp)) {
+        return {
+          success: false,
+          message: "This code has expired. Please request a new one.",
+        };
+      }
+
       return {
         success: true,
         message: "Code verified successfully!",
@@ -523,11 +657,20 @@ export class AuthService {
 
       const identifier = resetData.email.trim();
 
+      if (AuthService.isResetCodeUsed(identifier, resetData.otp)) {
+        return {
+          success: false,
+          message: "This code has expired. Please request a new one.",
+        };
+      }
+
       await confirmResetPassword({
         username: identifier,
         confirmationCode: resetData.otp,
         newPassword: resetData.newPassword,
       });
+
+      AuthService.markResetCodeUsed(identifier, resetData.otp);
 
       return {
         success: true,

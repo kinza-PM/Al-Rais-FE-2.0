@@ -1,10 +1,9 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Input from '../atoms/Input';
 import Button from '../atoms/Button';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import Logo from '../atoms/Logo';
 import logoImg from '../../assets/images/logo.jpg';
-import { getEmailError } from '../../utils/validators';
 // import FlagUsa from '../../assets/images/Flag-usa.png';
 // import arrownDownwardIcon from '../../assets/svgs/arrow-downwards.svg';
 import { Link } from 'react-router-dom';
@@ -28,9 +27,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   const [phoneCountryCode, setPhoneCountryCode] = useState('+1');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loginMessage, setLoginMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<{
+    message: string;
+    code?: string;
+    ref?: string;
+  } | null>(null);
+  const [resendLoading, setResendLoading] = useState(false);
   const [touched, setTouched] = useState({ email: false, password: false });
-  const { login, loading, error, clearError } = useAuth();
+  const { login, loading, error, clearError, resendConfirmationCode } = useAuth();
   const { isOnline } = useNetworkStatus();
+  const errorSummaryRef = useRef<HTMLDivElement | null>(null);
 
   // function ChevronDown() {
   //   return (
@@ -41,6 +47,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (submitError) setSubmitError(null);
+    if (error) clearError();
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -60,6 +68,15 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginMessage(null);
+    setSubmitError(null);
+
+    if (!isOnline) {
+      setSubmitError({
+        message: 'No internet connection. Check your connection and try again.',
+        code: 'NETWORK_ERROR',
+      });
+      return;
+    }
 
     if (!isFormValid) {
       setTouched({ email: true, password: true });
@@ -67,9 +84,13 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
     }
 
     // Combine phone country code and number if using phone
-    const loginData = usePhone
-      ? { email: `${phoneCountryCode}${phoneNumber}`, password: formData.password }
-      : formData;
+    const identifier = usePhone
+      ? `${phoneCountryCode}${phoneNumber.trim()}`
+      : formData.email.trim();
+    const loginData = {
+      email: identifier,
+      password: formData.password,
+    };
 
     if (!loginData.email || !loginData.password) return;
 
@@ -78,22 +99,48 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
       setTimeout(() => {
         onLoginSuccess?.();
       }, 2000);
+    } else {
+      setSubmitError({
+        message: result.message || 'Login failed. Please try again.',
+        code: result.errorCode,
+        ref: result.errorRef,
+      });
     }
   };
 
-  const isFormValid = useMemo(() => {
-    const passTrim = formData.password.trim();
-    if (!passTrim) return false;
-
+  const emailError = useMemo(() => {
     if (usePhone) {
       const phoneTrim = phoneNumber.trim();
-      return phoneTrim.length > 0;
-    } else {
-      const emailTrim = formData.email.trim();
-      if (!emailTrim) return false;
-      return isEmailValid(emailTrim);
+      if (!phoneTrim) return 'Phone number is required.';
+      if (!/^[0-9]+$/.test(phoneTrim)) return 'Enter a valid phone number with country code.';
+      if (phoneTrim.length < 7 || phoneTrim.length > 15) {
+        return 'Enter a valid phone number with country code.';
+      }
+      return null;
     }
-  }, [formData, usePhone, phoneNumber]);
+
+    if (!formData.email.trim()) return 'Email is required.';
+    if (formData.email !== formData.email.trim()) {
+      return 'Remove spaces at the beginning or end of your email.';
+    }
+    if (!isEmailValid(formData.email)) return 'Enter a valid email address.';
+    return null;
+  }, [formData.email, usePhone, phoneNumber]);
+
+  const passwordError = useMemo(() => {
+    if (!formData.password.trim()) return 'Password is required.';
+    if (formData.password !== formData.password.trim()) {
+      return 'Remove spaces at the beginning or end of your password.';
+    }
+    if (formData.password.length < 8) {
+      return 'Password must be at least 8 characters.';
+    }
+    return null;
+  }, [formData.password]);
+
+  const isFormValid = useMemo(() => {
+    return !emailError && !passwordError;
+  }, [emailError, passwordError]);
 
   useEffect(() => {
     setTouched({ email: false, password: false });
@@ -106,17 +153,39 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
     setPhoneCountryCode('+1');
 
     setLoginMessage(null);
+    setSubmitError(null);
     clearError();
   }, [usePhone]);
 
-  const emailError = useMemo(() => {
-    if (usePhone) {
-      return phoneNumber.trim() === '' ? 'Phone number is required' : null;
-    }
-    return getEmailError(formData.email, usePhone);
-  }, [formData.email, usePhone, phoneNumber]);
-
   const emailHasError = Boolean(emailError);
+  const passwordHasError = Boolean(passwordError);
+
+  useEffect(() => {
+    if (!submitError && !error) return;
+    errorSummaryRef.current?.focus();
+  }, [submitError, error]);
+
+  const handleResendConfirmation = async () => {
+    if (resendLoading) return;
+    const identifier = usePhone
+      ? `${phoneCountryCode}${phoneNumber.trim()}`
+      : formData.email.trim();
+    if (!identifier) return;
+    setResendLoading(true);
+    setSubmitError(null);
+    const result = await resendConfirmationCode(identifier);
+    setResendLoading(false);
+    if (result.success) {
+      setLoginMessage('Verification code sent.');
+    } else {
+      setSubmitError({
+        message: result.message || 'Failed to resend verification code.',
+        code: 'RESEND_FAILED',
+      });
+    }
+  };
+
+  const showError = submitError?.message || error;
 
   return (
     <div className="flex items-center justify-center">
@@ -167,6 +236,67 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {showError && (
+            <div
+              ref={errorSummaryRef}
+              tabIndex={-1}
+              role="alert"
+              aria-live="assertive"
+              className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700"
+            >
+              <p>{showError}</p>
+              {submitError?.ref && (
+                <p className="mt-1 text-xs text-red-600">
+                  Reference ID: {submitError.ref}
+                </p>
+              )}
+              {submitError?.code === 'INVALID_CREDENTIALS' && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={onForgotPasswordClick}
+                    className="text-sm text-blue-700 hover:underline"
+                  >
+                    Reset password
+                  </button>
+                </div>
+              )}
+              {submitError?.code === 'PASSWORD_RESET_REQUIRED' && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={onForgotPasswordClick}
+                    className="text-sm text-blue-700 hover:underline"
+                  >
+                    Reset password
+                  </button>
+                </div>
+              )}
+              {submitError?.code === 'USER_NOT_FOUND' && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={onSignupClick}
+                    className="text-sm text-blue-700 hover:underline"
+                  >
+                    Sign up
+                  </button>
+                </div>
+              )}
+              {submitError?.code === 'USER_NOT_CONFIRMED' && (
+                <div className="mt-2">
+                  <button
+                    type="button"
+                    onClick={handleResendConfirmation}
+                    className="text-sm text-blue-700 hover:underline disabled:opacity-50"
+                    disabled={resendLoading}
+                  >
+                    {resendLoading ? 'Resending...' : 'Resend verification code'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           <div>
             <label className="text-xs font-normal text-[#3D495C]">
               {usePhone ? 'Phone' : 'Email'}
@@ -207,6 +337,8 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
                   onChange={(phone, meta) => {
                     setPhoneCountryCode(`+${meta.country.dialCode}`);
                     setPhoneNumber(phone.replace(`+${meta.country.dialCode}`, ''));
+                    if (submitError) setSubmitError(null);
+                    if (error) clearError();
                   }}
                   hideDropdown={false}
                   forceDialCode={true}
@@ -242,7 +374,9 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
                     fontFamily: 'inherit'
                   }}
                   inputProps={{
-                    placeholder: 'Phone'
+                    placeholder: 'Phone',
+                    'aria-invalid': touched.email && emailHasError ? 'true' : 'false',
+                    'aria-describedby': touched.email && emailHasError ? 'login-email-error' : undefined,
                   }}
                 />
               </div>
@@ -257,10 +391,19 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
                 touched={touched.email}
                 error={emailHasError}
                 rounded="xl"
+                inputProps={{
+                  'aria-invalid': touched.email && emailHasError ? 'true' : 'false',
+                  'aria-describedby': touched.email && emailHasError ? 'login-email-error' : undefined,
+                }}
               />
             )}
             {touched.email && emailHasError && (
-              <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
+              <p
+                id="login-email-error"
+                role="alert"
+                aria-live="assertive"
+                className="mt-1 text-sm text-red-600"
+              >
                 {emailError}
               </p>
             )}
@@ -276,17 +419,25 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
               onChange={handleInputChange}
               onBlur={handleBlur}
               touched={touched.password}
-              error={formData.password.trim() === ''}
+              error={passwordHasError}
               rounded="xl"
+              inputProps={{
+                'aria-invalid': touched.password && passwordHasError ? 'true' : 'false',
+                'aria-describedby': touched.password && passwordHasError ? 'login-password-error' : undefined,
+              }}
             />
-            {touched.password && formData.password.trim() === '' && (
-              <p role="alert" aria-live="assertive" className="mt-1 text-sm text-red-600">
-                Password is required.
+            {touched.password && passwordHasError && (
+              <p
+                id="login-password-error"
+                role="alert"
+                aria-live="assertive"
+                className="mt-1 text-sm text-red-600"
+              >
+                {passwordError}
               </p>
             )}
           </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
           {loginMessage && <p className="text-green-500 text-sm">{loginMessage}</p>}
 
           <div className="text-right">

@@ -232,16 +232,32 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
         // Auto-reload for clean state
         // window.location.reload();
         
-        return { success: true, message: 'Login successful!' };
+        return {
+          success: true,
+          message: 'Login successful!',
+          errorCode: response.errorCode,
+          errorRef: response.errorRef,
+          nextStep: response.nextStep,
+        };
       } else {
         setError(response.message || 'Login failed');
-        return { success: false, message: response.message };
+        return {
+          success: false,
+          message: response.message,
+          errorCode: response.errorCode,
+          errorRef: response.errorRef,
+          nextStep: response.nextStep,
+        };
       }
     } catch (error) {
       console.error('Login error:', error);
       const errorMessage = 'Login failed. Please try again.';
       setError(errorMessage);
-      return { success: false, message: errorMessage };
+      return {
+        success: false,
+        message: errorMessage,
+        errorCode: 'UNKNOWN_ERROR',
+      };
     } finally {
       updateLoading('login', false);
     }

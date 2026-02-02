@@ -65,6 +65,9 @@ export interface AuthResponse {
   user?: User;
   session?: UserSession;
   message?: string;
+  errorCode?: string;
+  errorRef?: string;
+  nextStep?: string;
   requiresConfirmation?: boolean;
   isGuest?: boolean;
 } 

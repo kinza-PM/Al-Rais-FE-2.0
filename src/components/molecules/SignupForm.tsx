@@ -88,6 +88,45 @@ const SignupForm: React.FC<SignupFormProps> = ({
     }
   }, [showOtpInput]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handlePopState = (event: PopStateEvent) => {
+      const step = (event.state as { authStep?: string } | null)?.authStep;
+      setShowOtpInput(step === "verify");
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const currentStep = showOtpInput ? "verify" : "signup";
+    const state = window.history.state as { authStep?: string } | null;
+
+    if (currentStep === "signup") {
+      if (state?.authStep !== "signup") {
+        window.history.replaceState(
+          { ...(state || {}), authStep: "signup" },
+          "",
+          window.location.href
+        );
+      }
+      return;
+    }
+
+    if (state?.authStep !== "verify") {
+      window.history.pushState(
+        { ...(state || {}), authStep: "verify" },
+        "",
+        window.location.href
+      );
+    }
+  }, [showOtpInput]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
