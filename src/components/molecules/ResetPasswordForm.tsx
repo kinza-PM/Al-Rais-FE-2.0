@@ -3,6 +3,8 @@ import Input from "../atoms/Input";
 import Button from "../atoms/Button";
 import { AuthService } from "../../features/auth/services/authService";
 import type { ResetPasswordForm as ResetPasswordFormType } from "../../features/auth/types";
+import toast from "react-hot-toast";
+import { getPasswordError } from "../../utils/validators";
 
 interface ResetPasswordFormProps {
   email: string;
@@ -29,6 +31,16 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [touched, setTouched] = useState({
+    otp: false,
+    newPassword: false,
+    confirmPassword: false,
+  });
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name } = e.target;
+    setTouched((prev) => ({ ...prev, [name]: true }));
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -64,19 +76,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     e.preventDefault();
     setError(null);
 
-    if (!formData.newPassword || !formData.confirmPassword) {
-      setError("Please fill in all fields");
-      return;
-    }
-
-    if (formData.newPassword !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
-    const passwordError = validatePassword(formData.newPassword);
-    if (passwordError) {
-      setError(passwordError);
+    if (!isFormValid) {
+      setTouched({
+        otp: true,
+        newPassword: true,
+        confirmPassword: true,
+      });
       return;
     }
 
@@ -98,6 +103,26 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     }
   };
 
+  const otpError = useMemo(() => {
+    if (!formData.otp.trim()) return "Verification code is required.";
+    if (!/^[0-9]+$/.test(formData.otp))
+      return "Code must contain only numbers.";
+    if (formData.otp.length !== 6) return "Code must be 6 digits.";
+    return null;
+  }, [formData.otp]);
+
+  const passwordError = useMemo(() => {
+    return getPasswordError(formData.newPassword);
+  }, [formData.newPassword]);
+
+  const confirmPasswordError = useMemo(() => {
+    if (formData.confirmPassword.trim() === "")
+      return "Confirm password is required.";
+    if (formData.newPassword !== formData.confirmPassword)
+      return "Passwords do not match.";
+    return null;
+  }, [formData.newPassword, formData.confirmPassword]);
+
   const isFormValid = useMemo(() => {
     if (!formData.otp || formData.otp.length !== 6) return false;
     if (!formData.newPassword || !formData.confirmPassword) return false;
@@ -116,6 +141,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     });
   }, [formData.newPassword]);
 
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="text-center mb-6">
@@ -127,49 +158,83 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
         </p>
       </div>
 
-      <Input
-        type="text"
-        name="otp"
-        label="Verification Code"
-        placeholder="Enter 6-digit code"
-        value={formData.otp}
-        onChange={handleInputChange}
-        rounded="xl"
-        required
-        className="text-center text-lg tracking-widest"
-      />
+      <div>
+        <Input
+          type="text"
+          name="otp"
+          label="Verification Code"
+          placeholder="Enter 6-digit code"
+          value={formData.otp}
+          onChange={handleInputChange}
+          rounded="xl"
+          required
+          className="text-center text-lg tracking-widest"
+          onBlur={handleBlur}
+          touched={touched.otp}
+          error={Boolean(otpError)}
+        />
+        {touched.otp && otpError && (
+          <p
+            id="reset-otp-error"
+            role="alert"
+            aria-live="assertive"
+            className="mt-1 text-sm text-red-600"
+          >
+            {otpError}
+          </p>
+        )}
+      </div>
+      <div>
+        <Input
+          type="password"
+          name="newPassword"
+          label="New Password"
+          placeholder="Enter new password"
+          value={formData.newPassword}
+          onChange={handleInputChange}
+          rounded="xl"
+          required
+          onBlur={handleBlur}
+          touched={touched.newPassword}
+          error={Boolean(passwordError)}
+        />
+        {touched.newPassword && passwordError && (
+          <p
+            id="reset-new-password-error"
+            role="alert"
+            aria-live="assertive"
+            className="mt-1 text-sm text-red-600"
+          >
+            {passwordError}
+          </p>
+        )}
+      </div>
+      <div>
+        <Input
+          type="password"
+          name="confirmPassword"
+          label="Confirm New Password"
+          placeholder="Confirm new password"
+          value={formData.confirmPassword}
+          onChange={handleInputChange}
+          rounded="xl"
+          required
+          onBlur={handleBlur}
+          touched={touched.confirmPassword}
+          error={Boolean(confirmPasswordError)}
+        />
+        {touched.confirmPassword && confirmPasswordError && (
+          <p
+            id="reset-confirm-password-error"
+            role="alert"
+            aria-live="assertive"
+            className="mt-1 text-sm text-red-600"
+          >
+            {confirmPasswordError}
+          </p>
+        )}
+      </div>
 
-      <Input
-        type="password"
-        name="newPassword"
-        label="New Password"
-        placeholder="Enter new password"
-        value={formData.newPassword}
-        onChange={handleInputChange}
-        rounded="xl"
-        required
-      />
-
-      <Input
-        type="password"
-        name="confirmPassword"
-        label="Confirm New Password"
-        placeholder="Confirm new password"
-        value={formData.confirmPassword}
-        onChange={handleInputChange}
-        rounded="xl"
-        required
-      />
-
-      {/* <div className="text-xs text-gray-500 space-y-1">
-        <p>Password requirements:</p>
-        <ul className="list-disc pl-4 space-y-1">
-          <li>At least 8 characters long</li>
-          <li>Contains uppercase and lowercase letters</li>
-          <li>Contains at least one number</li>
-          <li>Contains at least one special character (!@#$%^&*)</li>
-        </ul>
-      </div> */}
       <div className="text-xs text-gray-500 space-y-1">
         <p>Password requirements:</p>
         <ul className="space-y-1">
@@ -228,7 +293,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
         </ul>
       </div>
 
-      {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+      {/* {error && <div className="text-red-500 text-sm text-center">{error}</div>} */}
 
       <div className="flex justify-center">
         <Button

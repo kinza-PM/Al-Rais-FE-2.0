@@ -10,8 +10,10 @@ import { getEmailError, getPasswordError } from "../../utils/validators";
 import { Link } from "react-router-dom";
 import { useNetworkStatus } from "../../context/NetworkStatusContext";
 import type { SignupMethod } from "../../features/auth/types";
-import { PhoneInput } from 'react-international-phone';
-import 'react-international-phone/style.css';
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
+import { filterEmailInput } from "../../utils/helpers";
+import toast from "react-hot-toast";
 
 interface SignupFormProps {
   onLoginClick: () => void;
@@ -29,7 +31,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
     confirmPassword: "",
   });
 
-  const [signupMessage, setSignupMessage] = useState<string | null>(null);
+  // const [signupMessage, setSignupMessage] = useState<string | null>(null);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpCode, setOtpCode] = useState("");
   const [userCredentials, setUserCredentials] = useState<{
@@ -46,13 +48,20 @@ const SignupForm: React.FC<SignupFormProps> = ({
     email: false,
     password: false,
     confirmPassword: false,
+    otp: false,
   });
   const [usePhone, setUsePhone] = useState(false);
   const [phoneCountryCode, setPhoneCountryCode] = useState("+1");
   const [phoneNumber, setPhoneNumber] = useState("");
 
-  const { signup, confirmSignUp, resendConfirmationCode, loading, error, clearError } =
-    useAuth();
+  const {
+    signup,
+    confirmSignUp,
+    resendConfirmationCode,
+    loading,
+    error,
+    clearError,
+  } = useAuth();
   const { isOnline } = useNetworkStatus();
 
   // function ChevronDown() {
@@ -112,7 +121,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
         window.history.replaceState(
           { ...(state || {}), authStep: "signup" },
           "",
-          window.location.href
+          window.location.href,
         );
       }
       return;
@@ -122,14 +131,17 @@ const SignupForm: React.FC<SignupFormProps> = ({
       window.history.pushState(
         { ...(state || {}), authStep: "verify" },
         "",
-        window.location.href
+        window.location.href,
       );
     }
   }, [showOtpInput]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({
+      ...prev,
+      [name]: name === "email" ? filterEmailInput(value) : value,
+    }));
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -150,11 +162,12 @@ const SignupForm: React.FC<SignupFormProps> = ({
     e.preventDefault();
 
     if (!otpCode || !userCredentials) {
+      setTouched((prev) => ({ ...prev, otp: true }));
       return;
     }
 
     setOtpLoading(true);
-    setSignupMessage(null);
+    // setSignupMessage(null);
 
     const result = await confirmSignUp(
       userCredentials.email,
@@ -163,20 +176,20 @@ const SignupForm: React.FC<SignupFormProps> = ({
       {
         signupMethod: userCredentials.signupMethod,
         contactValue: userCredentials.email,
-      }
+      },
     );
 
     setOtpLoading(false);
 
     if (result.success) {
       // Fallback: if page doesn't reload in 2 seconds, close modal
+      toast.success("Account verified successfully!");
       setTimeout(() => {
         onSignupSuccess?.();
       }, 2000);
     } else {
-      setSignupMessage(
-        result.message || "Invalid verification code. Please try again."
-      );
+      //useeffect error will handle this (useAuth)
+      // toast.error(result.message || "Invalid verification code...");
     }
   };
 
@@ -184,20 +197,18 @@ const SignupForm: React.FC<SignupFormProps> = ({
     if (!userCredentials?.email || !canResend) return;
 
     setResendLoading(true);
-    setSignupMessage(null);
+    // setSignupMessage(null);
 
     const result = await resendConfirmationCode(userCredentials.email);
 
     setResendLoading(false);
 
     if (result.success) {
-      setSignupMessage("New verification code sent!");
+      toast.success("New verification code sent!");
       setCountdown(60);
       setCanResend(false);
     } else {
-      setSignupMessage(
-        result.message || "Failed to resend code. Please try again."
-      );
+      toast.error(result.message || "Failed to resend code. Please try again.");
     }
   };
 
@@ -219,7 +230,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
 
   const confirmPasswordError = useMemo(() => {
     if (formData.confirmPassword.trim() === "")
-      return "Please confirm your password.";
+      return "Confirm password is required.";
     if (formData.password !== formData.confirmPassword)
       return "Passwords do not match.";
     return null;
@@ -246,11 +257,25 @@ const SignupForm: React.FC<SignupFormProps> = ({
     formData.email,
   ]);
 
+  const otpError = useMemo(() => {
+    if (!otpCode.trim()) return "Verification code is required.";
+    if (!/^[0-9]+$/.test(otpCode)) return "Code must contain only numbers.";
+    if (otpCode.length !== 6) return "Code must be 6 digits.";
+    return null;
+  }, [otpCode]);
+
   const emailHasError = Boolean(emailError);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSignupMessage(null);
+    // setSignupMessage(null);
+
+    if (!isOnline) {
+      toast.error(
+        "No internet connection. Check your connection and try again.",
+      );
+      return;
+    }
 
     if (!isFormValid) {
       setTouched({
@@ -258,6 +283,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
         email: true,
         password: true,
         confirmPassword: true,
+        otp: false,
       });
       return;
     }
@@ -274,7 +300,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
       signupMethod,
     };
 
-    console.log("Signup Data:", signupData);
+    // console.log("Signup Data:", signupData);
 
     const result = await signup(signupData);
 
@@ -289,20 +315,18 @@ const SignupForm: React.FC<SignupFormProps> = ({
           password: formData.password,
           signupMethod,
         });
-        setSignupMessage(
-          `Please check your ${isPhone ? "phone" : "email"
-          } and enter the confirmation code below.`
+        toast.success(
+          `Verification code sent to your ${isPhone ? "phone" : "email"}!`,
         );
       } else if (
         result.message &&
         result.message.includes("logged in successfully")
       ) {
         // Auto-login was successful
+        toast.success("Account created and logged in successfully!");
         onSignupSuccess?.();
       } else {
-        // Signup successful but auto-login failed, show message
-        setSignupMessage(result.message || "Account created successfully!");
-
+        toast.success(result.message || "Account created successfully!");
         // Still call onSignupSuccess after a delay to let user see the message
         setTimeout(() => {
           onSignupSuccess?.();
@@ -321,8 +345,9 @@ const SignupForm: React.FC<SignupFormProps> = ({
       email: false,
       password: false,
       confirmPassword: false,
+      otp: false,
     });
-  
+
     setFormData({
       name: "",
       email: "",
@@ -331,9 +356,15 @@ const SignupForm: React.FC<SignupFormProps> = ({
     });
     setPhoneNumber("");
     setPhoneCountryCode("+1");
-  
-    setSignupMessage(null);
+
+    // setSignupMessage(null);
   }, [usePhone]);
+
+  useEffect(() => {
+    if (error) {
+      toast.error(error);
+    }
+  }, [error]);
 
   const PasswordRequirement = () => {
     return (
@@ -350,8 +381,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
             fill="#C2CAD6"
           />
         </svg>
-        Password must include at least one uppercase letter, one lowercase letter,
-        one number, and one special character.
+        Password must include at least one uppercase letter, one lowercase
+        letter, one number, and one special character.
       </div>
     );
   };
@@ -384,8 +415,9 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   setUsePhone(false);
                   setTouched((prev) => ({ ...prev, email: false }));
                 }}
-                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${!usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                  }`}
+                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
+                  !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                }`}
               >
                 Email
               </button>
@@ -395,8 +427,9 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   setUsePhone(true);
                   setTouched((prev) => ({ ...prev, email: false }));
                 }}
-                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                  }`}
+                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
+                  usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                }`}
               >
                 Phone
               </button>
@@ -435,79 +468,54 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 </label>
                 {usePhone ? (
                   <>
-                    {/* <div className="flex gap-2 mt-1">
-                      <div className="relative">
-                        <select
-                          aria-label="Country code"
-                          style={{ backgroundImage: `url(${FlagUsa})` }}
-                          className="px-3 py-2 w-24 h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent bg-[var(--flag-url)] bg-no-repeat bg-[length:26px_26px] bg-[position:8px_center] pl-[40px]"
-                          value={phoneCountryCode}
-                          onChange={(e) => setPhoneCountryCode(e.target.value)}
-                        >
-                          <option value="+1">+1</option>
-                          <option value="+92">+92</option>
-                          <option value="+971">+971</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
-                          <ChevronDown />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <Input
-                          type="number"
-                          placeholder="Phone"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          onBlur={handlePhoneBlur}
-                          touched={touched.email}
-                          error={emailHasError}
-                          rounded="xl"
-                        />
-                      </div>
-                    </div> */}
                     <div className="flex gap-2 mt-1">
                       <PhoneInput
                         defaultCountry="us"
                         value={`${phoneCountryCode}${phoneNumber}`}
                         onChange={(phone, meta) => {
                           setPhoneCountryCode(`+${meta.country.dialCode}`);
-                          setPhoneNumber(phone.replace(`+${meta.country.dialCode}`, ''));
+                          setPhoneNumber(
+                            phone.replace(`+${meta.country.dialCode}`, ""),
+                          );
                         }}
                         onBlur={handlePhoneBlur}
                         hideDropdown={false}
                         forceDialCode={true}
                         style={{
-                          width: '100%',
-                          display: 'flex',
-                          gap: '8px'
+                          width: "100%",
+                          display: "flex",
+                          gap: "8px",
                         }}
                         countrySelectorStyleProps={{
                           buttonStyle: {
-                            width: '96px',
-                            height: '40px',
-                            borderRadius: '12px',
-                            border: '1px solid #C2CAD6',
-                            background: 'white',
-                            padding: '8px 12px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: '8px'
-                          }
+                            width: "96px",
+                            height: "40px",
+                            borderRadius: "12px",
+                            border: "1px solid #C2CAD6",
+                            background: "white",
+                            padding: "8px 12px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            gap: "8px",
+                          },
                         }}
                         inputStyle={{
-                          width: '100%',
+                          width: "100%",
                           flex: 1,
-                          height: '40px',
-                          borderRadius: '12px',
-                          border: (touched.email && emailHasError) ? '1px solid #ef4444' :'1px solid #C2CAD6',
-                          padding: '8px 12px',
-                          fontSize: '14px',
-                          color: '#3D495C',
-                          fontFamily: 'inherit'
+                          height: "40px",
+                          borderRadius: "12px",
+                          border:
+                            touched.email && emailHasError
+                              ? "1px solid #ef4444"
+                              : "1px solid #C2CAD6",
+                          padding: "8px 12px",
+                          fontSize: "14px",
+                          color: "#3D495C",
+                          fontFamily: "inherit",
                         }}
                         inputProps={{
-                          placeholder: 'Phone'
+                          placeholder: "Phone",
                         }}
                       />
                     </div>
@@ -537,7 +545,6 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   </p>
                 )}
               </div>
-
             </div>
             <div className="space-y-1">
               <Input
@@ -590,7 +597,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
               <PasswordRequirement />
             </div>
 
-            {error && (
+            {/* {error && (
               <div className="text-red-500 text-sm text-center">{error}</div>
             )}
 
@@ -598,7 +605,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
               <div className="text-green-600 text-sm text-center">
                 {signupMessage}
               </div>
-            )}
+            )} */}
 
             <div className="flex justify-center">
               <Button
@@ -624,26 +631,40 @@ const SignupForm: React.FC<SignupFormProps> = ({
             </p>
           </div>
 
-          <Input
-            type="text"
-            name="otpCode"
-            label="Verification Code"
-            placeholder="Enter 6-digit code"
-            value={otpCode}
-            onChange={(e) => setOtpCode(e.target.value)}
-            rounded="xl"
-            required
-          />
+          <div>
+            <Input
+              type="text"
+              name="otpCode"
+              label="Verification Code"
+              placeholder="Enter 6-digit code"
+              onBlur={() => {
+                setTouched((prev) => ({ ...prev, otp: true }));
+              }}
+              touched={touched.otp}
+              error={Boolean(otpError)}
+              value={otpCode}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, ""); // Only allow digits
+                if (value.length <= 6) {
+                  setOtpCode(value);
+                }
+                if (error) clearError();
+              }}
+              rounded="xl"
+              required
+            />
 
-          {error && (
-            <div className="text-red-500 text-sm text-center">{error}</div>
-          )}
-
-          {signupMessage && (
-            <div className="text-blue-600 text-sm text-center">
-              {signupMessage}
-            </div>
-          )}
+            {touched.otp && otpError && (
+              <p
+                id="otp-error"
+                role="alert"
+                aria-live="assertive"
+                className="mt-1 text-sm text-red-600"
+              >
+                {otpError}
+              </p>
+            )}
+          </div>
 
           <div className="flex justify-center">
             <Button
@@ -662,10 +683,11 @@ const SignupForm: React.FC<SignupFormProps> = ({
               type="button"
               onClick={handleResendCode}
               disabled={!canResend || resendLoading || !isOnline}
-              className={`text-sm underline ${canResend && !resendLoading
-                ? "text-blue-600 hover:text-blue-800"
-                : "text-gray-400 cursor-not-allowed"
-                }`}
+              className={`text-sm underline ${
+                canResend && !resendLoading
+                  ? "text-blue-600 hover:text-blue-800"
+                  : "text-gray-400 cursor-not-allowed"
+              }`}
             >
               {resendLoading
                 ? "Sending..."
@@ -679,7 +701,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
               onClick={() => {
                 setShowOtpInput(false);
                 setOtpCode("");
-                setSignupMessage(null);
+                // setSignupMessage(null);
               }}
               className="text-sm text-gray-600 hover:text-gray-800"
             >

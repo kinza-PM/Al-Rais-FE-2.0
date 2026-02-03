@@ -447,3 +447,8 @@ export const formatTo12Hour = (time?: string) => {
 
   return `${formattedHours}:${minutes.toString().padStart(2, "0")} ${period}`;
 };
+
+export const filterEmailInput = (value: string): string => {
+  // Allow only alphanumeric characters and common email special chars: @ . _ - +
+  return value.replace(/[^a-zA-Z0-9@._+\-]/g, '');
+};

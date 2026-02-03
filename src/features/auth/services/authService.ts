@@ -51,7 +51,7 @@ export class AuthService {
 
     try {
       const raw = window.sessionStorage.getItem(
-        AuthService.USED_RESET_CODES_KEY
+        AuthService.USED_RESET_CODES_KEY,
       );
       const parsed = raw ? (JSON.parse(raw) as Record<string, string[]>) : {};
       return parsed && typeof parsed === "object" ? parsed : {};
@@ -68,7 +68,7 @@ export class AuthService {
     try {
       window.sessionStorage.setItem(
         AuthService.USED_RESET_CODES_KEY,
-        JSON.stringify(data)
+        JSON.stringify(data),
       );
     } catch {
       // Ignore storage errors (private mode, quota, etc.)
@@ -252,8 +252,7 @@ export class AuthService {
       ) {
         return {
           success: false,
-          message:
-            "Something went wrong on our side. Please try again later.",
+          message: "Something went wrong on our side. Please try again later.",
           errorCode: "SERVER_ERROR",
           errorRef: requestId,
         };
@@ -332,7 +331,8 @@ export class AuthService {
       if (errorObj.name === "UsernameExistsException") {
         return {
           success: false,
-          message: "An account already exists with this email/phone. Please log in instead.",
+          message:
+            "An account already exists with this email/phone. Please log in instead.",
         };
       }
 
@@ -404,7 +404,7 @@ export class AuthService {
    */
   static async confirmSignUp(
     emailOrPhone: string,
-    confirmationCode: string
+    confirmationCode: string,
   ): Promise<AuthResponse> {
     try {
       const identifier = emailOrPhone.trim();
@@ -447,7 +447,7 @@ export class AuthService {
    * Resend confirmation code
    */
   static async resendConfirmationCode(
-    emailOrPhone: string
+    emailOrPhone: string,
   ): Promise<AuthResponse> {
     try {
       const identifier = emailOrPhone.trim();
@@ -478,7 +478,7 @@ export class AuthService {
    * Create verified user record in external system
    */
   static async createRemoteUserRecord(
-    payload: RemoteUserPayload
+    payload: RemoteUserPayload,
   ): Promise<RemoteUserCreationResult | null> {
     try {
       const response = await fetch(
@@ -489,15 +489,12 @@ export class AuthService {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(payload),
-        }
+        },
       );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(
-          "AuthService: Failed to create remote user:",
-          errorText
-        );
+        console.error("AuthService: Failed to create remote user:", errorText);
         return null;
       }
 
@@ -513,13 +510,13 @@ export class AuthService {
    * Update remote user preferences
    */
   static async updateRemoteUserNotifications(
-    payload: RemoteUserUpdatePayload
+    payload: RemoteUserUpdatePayload,
   ): Promise<boolean> {
     try {
       const { userId, createdAt, ...body } = payload;
       const response = await fetch(
         `https://yjz5d5q2i0.execute-api.eu-west-1.amazonaws.com/users/${encodeURIComponent(
-          userId
+          userId,
         )}/${encodeURIComponent(createdAt)}`,
         {
           method: "PATCH",
@@ -527,15 +524,12 @@ export class AuthService {
             "Content-Type": "application/json",
           },
           body: JSON.stringify(body),
-        }
+        },
       );
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(
-          "AuthService: Failed to update remote user:",
-          errorText
-        );
+        console.error("AuthService: Failed to update remote user:", errorText);
         return false;
       }
 
@@ -564,7 +558,7 @@ export class AuthService {
    * Initiate forgot password flow
    */
   static async forgotPassword(
-    forgotPasswordData: ForgotPasswordForm
+    forgotPasswordData: ForgotPasswordForm,
   ): Promise<AuthResponse> {
     try {
       const identifier = forgotPasswordData.email.trim();
@@ -600,6 +594,18 @@ export class AuthService {
         };
       }
 
+      if (
+        errorObj.name === "InvalidParameterException" &&
+        typeof errorObj.message === "string" &&
+        errorObj.message.toLowerCase().includes("verified")
+      ) {
+        return {
+          success: false,
+          message:
+            "Your email address is not verified. Please verify it first.",
+        };
+      }
+
       return {
         success: false,
         message: AuthService.GENERIC_ERROR,
@@ -611,7 +617,7 @@ export class AuthService {
    * Verify OTP code for password reset
    */
   static async verifyResetCode(
-    otpData: OTPVerificationForm
+    otpData: OTPVerificationForm,
   ): Promise<AuthResponse> {
     try {
       if (!otpData.otp || otpData.otp.length !== 6) {
@@ -645,7 +651,7 @@ export class AuthService {
    * Reset password with OTP code
    */
   static async resetPasswordWithCode(
-    resetData: ResetPasswordForm
+    resetData: ResetPasswordForm,
   ): Promise<AuthResponse> {
     try {
       if (!resetData.otp || resetData.otp.length !== 6) {

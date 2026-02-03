@@ -5,15 +5,17 @@ import {
   LoginForm,
   MainLayout,
   ResetPasswordForm,
-  SignupForm
+  SignupForm,
 } from "../components";
 import type { AuthMode } from "../types/AuthTypes";
 import { useLocation, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const AuthPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const initialMode = (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
+  const initialMode =
+    (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
   const handleModeSwitch = () => {
@@ -35,8 +37,12 @@ const AuthPage = () => {
   };
 
   const handlePasswordReset = () => {
-    alert("Password reset successfully! Please log in with your new password.");
-    handleBackToLogin();
+    toast.success(
+      "Password reset successfully! Please log in with your new password.",
+    );
+    setTimeout(() => {
+      handleBackToLogin();
+    }, 500);
   };
 
   const handleBackToForgotPassword = () => {
@@ -69,7 +75,7 @@ const AuthPage = () => {
               <SignupForm
                 onLoginClick={handleModeSwitch}
                 onSignupSuccess={() => navigate("/")}
-              // onSignupSuccess={handleBackToLogin}
+                // onSignupSuccess={handleBackToLogin}
               />
             )}
             {mode === "forgot-password" && (
