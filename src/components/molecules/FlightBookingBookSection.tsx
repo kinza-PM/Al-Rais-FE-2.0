@@ -6,8 +6,16 @@ import baggageIcon from "../../assets/svgs/baggage.svg";
 // import wifiIcon from "../../assets/svgs/wifi.svg";
 // import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
-// import FlagUsa from "../../assets/images/Flag-usa.png";
-import React, { useState } from "react";
+import FlagUsa from "../../assets/images/Flag-usa.png";
+import FlagUae from "../../assets/svgs/Flag-uae.svg";
+import FlagPakistan from "../../assets/svgs/Flag-pakistan.svg";
+import React, { useMemo, useState } from "react";
+
+const COUNTRY_CODE_FLAGS: Record<string, string> = {
+  "+1": FlagUsa,
+  "+92": FlagPakistan,
+  "+971": FlagUae,
+};
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
 // import CustomToggle from "../common/CustomToggle";
@@ -637,11 +645,16 @@ export default function FlightBookingBookSection({
                         Phone
                       </label>
                       <div className="flex gap-2">
-                        <div className="relative">
+                        <div className="relative flex items-center">
+                          <img
+                            src={COUNTRY_CODE_FLAGS[p.contact?.contactsProvided?.[0]?.phone?.[0]?.areaCode ?? ""] ?? FlagUsa}
+                            alt=""
+                            aria-hidden
+                            className="pointer-events-none absolute left-2 h-[26px] w-[26px] shrink-0 rounded-full object-cover object-center"
+                          />
                           <select
                             aria-label="Country code"
-                            style={{ backgroundImage: `url(${FlagUsa})` }}
-                            className="h-10 w-28 appearance-none rounded-lg border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none bg-[var(--flag-url)] bg-no-repeat bg-[length:30px_28px] bg-[position:8px_center] pl-[55px]"
+                            className="h-10 w-28 appearance-none rounded-lg border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none pl-[40px]"
                             value={
                               p.contact?.contactsProvided?.[0]?.phone?.[0]
                                 ?.areaCode ?? ""

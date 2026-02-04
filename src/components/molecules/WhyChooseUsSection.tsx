@@ -1,14 +1,26 @@
 const WhyChooseUsSection: React.FC = () => {
   return (
-    <section className="bg-[#FFFFFF]">
+    <section
+      className="w-full"
+      style={{
+        background:
+          "linear-gradient(90deg, rgb(210, 244, 254) 0%, rgb(255, 255, 255) 100%)",
+        padding: "2rem",
+      }}
+    >
       <div className="w-full w-full max-w-[1040px] !mt-20 m-auto">
-        <h6 className="text-[12px] opacity-80">Why choose us?</h6>
+        <h6 className="text-[12px] font-medium text-[#3D495C] opacity-80">
+          Why choose us?
+        </h6>
         <div className="flex flex-row gap-[70px]">
           <div className="base-1/3">
             <div>
-              <h5 className="leading-[100%] text-[40px] text-[rgba(10, 12, 15, 1)] mt-1 mb-4">
+              <h2
+                className="mt-1 mb-4 text-[40px] font-bold leading-[100%] text-[rgba(10,12,15,1)]"
+                style={{ boxSizing: "border-box" }}
+              >
                 Passion-driven services
-              </h5>
+              </h2>
 
               <p className="text-[12px] text-[#3D495C] opacity-80">
                 We prioritize user experience, offering a seamless interface
@@ -20,7 +32,7 @@ const WhyChooseUsSection: React.FC = () => {
           </div>
           <div className="base-2/3">
             <div className="grid grid-cols-2 gap-2">
-              <div className="border border-[#E4E4E7] p-3 rounded-[8px]">
+              <div className="rounded-[8px] border-2 border-[#E4E4E7] bg-white p-3">
                 <div className="">
                   <svg
                     width="50"
@@ -47,7 +59,7 @@ const WhyChooseUsSection: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="border border-[#E4E4E7] p-3 rounded-[8px]">
+              <div className="rounded-[8px] border-2 border-[#E4E4E7] bg-white p-3">
                 <div className="">
                   <svg
                     width="52"
@@ -73,7 +85,7 @@ const WhyChooseUsSection: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="border border-[#E4E4E7] p-3 rounded-[8px]">
+              <div className="rounded-[8px] border-2 border-[#E4E4E7] bg-white p-3">
                 <div className="">
                   <svg
                     width="52"
@@ -100,7 +112,7 @@ const WhyChooseUsSection: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="border border-[#E4E4E7] p-3 rounded-[8px] flex items-center justify-center">
+              <div className="flex items-center justify-center rounded-[8px] p-3">
                 <div className="">
                   <p className="text-[12px] text-[#3D495C] opacity-80">
                     and much more...

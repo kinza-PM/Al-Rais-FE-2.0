@@ -277,7 +277,7 @@ const FlightHeroSection: React.FC = () => {
         <>
           {/* Trip type segmented control */}
           <div className="flex justify-center mt-4">
-            <div className="flex items-center rounded-xl ring-1 ring-[#D9E2EF] p-1">
+            <div className="flex items-center rounded-xl ring-1 ring-[#D9E2EF] p-1 bg-white">
               {nsLoading.flightTypes && (
                 <div className="px-6 py-2 text-[14px] rounded-xl text-[#3A4350] opacity-60">
                   Loading…
@@ -302,7 +302,7 @@ const FlightHeroSection: React.FC = () => {
           </div>
 
           {/* Form row */}
-          <div className="px-6 pb-6 pt-6">
+          <div className="px-10 pb-8 pt-6">
             {trip === "oneway" && (
               <OneWayForm
                 countries={countries as AirportOption[]}
@@ -389,7 +389,15 @@ const FlightHeroSection: React.FC = () => {
             {/* Search */}
             <div className="flex justify-center mt-8">
               <button
-                className="h-10 px-8 rounded-md bg-[#2351A3] text-white text-[14px] font-medium shadow-sm"
+                className="text-[16px] font-medium text-white"
+                style={{
+                  width: 137,
+                  height: 47,
+                  borderRadius: 100,
+                  padding: "14px 40px",
+                  background:
+                    "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                }}
                 onClick={handleSearch}
               >
                 Search

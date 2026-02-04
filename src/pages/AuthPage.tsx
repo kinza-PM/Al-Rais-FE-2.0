@@ -1,7 +1,7 @@
 import { useState } from "react";
-import bgImage from "../assets/images/bgImage.png";
 import {
   ForgotPasswordForm,
+  LoginFailedCard,
   LoginForm,
   MainLayout,
   ResetPasswordForm,
@@ -10,6 +10,7 @@ import {
 import type { AuthMode } from "../types/AuthTypes";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import OTPVerificationForm from "../components/molecules/OTPVerificationForm";
 
 const AuthPage = () => {
   const location = useLocation();
@@ -18,6 +19,9 @@ const AuthPage = () => {
     (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordOTP, setForgotPasswordOTP] = useState("");
+  const [showLoginError, setShowLoginError] = useState(false);
+
   const handleModeSwitch = () => {
     setMode(mode === "login" ? "signup" : "login");
   };
@@ -29,10 +33,25 @@ const AuthPage = () => {
   const handleBackToLogin = () => {
     setMode("login");
     setForgotPasswordEmail("");
+    setForgotPasswordOTP("");
+    setShowLoginError(false);
+  };
+
+  const handleLoginError = () => {
+    setShowLoginError(true);
+  };
+
+  const handleTryAgain = () => {
+    setShowLoginError(false);
   };
 
   const handleOTPSent = (email: string) => {
     setForgotPasswordEmail(email);
+    setMode("otp-verification");
+  };
+
+  const handleOTPVerified = (otp: string) => {
+    setForgotPasswordOTP(otp);
     setMode("reset-password");
   };
 
@@ -49,12 +68,17 @@ const AuthPage = () => {
     setMode("forgot-password");
   };
 
+  const handleBackToOTP = () => {
+    setMode("otp-verification");
+  };
+
   const onLoginClick = () => {
     setMode("login");
   };
   const onSignupClick = () => {
     setMode("signup");
   };
+
   return (
     <MainLayout
       addPadding={false}
@@ -62,40 +86,104 @@ const AuthPage = () => {
       onSignupClick={onSignupClick}
     >
       <div className="flex flex-1 h-screen max-h-screen">
-        <div className="w-1/3 h-full justify-center items-center flex overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-          <div className="w-full max-w-md px-8 py-10">
-            {mode === "login" && (
+        {/* Signup: full-width dark background, centered card (Figma 468×976) */}
+        {mode === "signup" ? (
+          <div
+            className="flex min-h-screen w-full flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:py-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ background: "#3D495C" }}
+          >
+            <div className="my-auto w-full max-w-[468px] shrink-0 py-4 sm:py-6">
+              <SignupForm
+                onLoginClick={handleModeSwitch}
+                onSignupSuccess={() => navigate("/")}
+              />
+            </div>
+          </div>
+        ) : mode === "forgot-password" ? (
+          /* Reset password (forgot) flow: light background like Verify email, centered card, back button top-left */
+          <div
+            className="relative flex min-h-screen w-full flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:py-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ background: "#F2F2F3" }}
+          >
+            {/* Back to login button - top-left corner of page */}
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="absolute left-6 top-6 text-sm text-[#0A0C0F] hover:opacity-80 sm:left-8 sm:top-8"
+            >
+              ← Back to login
+            </button>
+            
+            <ForgotPasswordForm
+              onBackToLogin={handleBackToLogin}
+              onOTPSent={handleOTPSent}
+            />
+          </div>
+        ) : mode === "otp-verification" ? (
+          /* OTP Verification: light background, centered card, back button top-left */
+          <div
+            className="relative flex min-h-screen w-full flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:py-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ background: "#F2F2F3" }}
+          >
+            {/* Back to login button - top-left corner of page */}
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="absolute left-6 top-6 text-sm text-[#0A0C0F] hover:opacity-80 sm:left-8 sm:top-8"
+            >
+              ← Back to login
+            </button>
+            
+            <OTPVerificationForm
+              email={forgotPasswordEmail}
+              onBackToForgotPassword={handleBackToForgotPassword}
+              onOTPVerified={handleOTPVerified}
+            />
+          </div>
+        ) : mode === "reset-password" ? (
+          /* Set new password: light background, centered card, back button top-left */
+          <div
+            className="relative flex min-h-screen w-full flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:py-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ background: "#F2F2F3" }}
+          >
+            {/* Back to login button - top-left corner of page */}
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="absolute left-6 top-6 text-sm text-[#0A0C0F] hover:opacity-80 sm:left-8 sm:top-8"
+            >
+              ← Back to login
+            </button>
+            
+            <ResetPasswordForm
+              email={forgotPasswordEmail}
+              otp={forgotPasswordOTP}
+              onPasswordReset={handlePasswordReset}
+              onBackToOTP={handleBackToOTP}
+            />
+          </div>
+        ) : (
+          /* Login page: dark background, centered form */
+          <div
+            className="relative flex min-h-screen w-full flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ background: "#3D495C" }}
+          >
+            {/* Centered layout: Login form and error card side by side when error exists */}
+            <div className="flex w-full min-h-full items-center justify-center gap-8 py-6 px-4 sm:py-8 sm:px-8">
               <LoginForm
                 onSignupClick={handleModeSwitch}
                 onLoginSuccess={() => navigate("/")}
                 onForgotPasswordClick={handleForgotPassword}
+                onLoginError={handleLoginError}
               />
-            )}
-            {mode === "signup" && (
-              <SignupForm
-                onLoginClick={handleModeSwitch}
-                onSignupSuccess={() => navigate("/")}
-                // onSignupSuccess={handleBackToLogin}
-              />
-            )}
-            {mode === "forgot-password" && (
-              <ForgotPasswordForm
-                onBackToLogin={handleBackToLogin}
-                onOTPSent={handleOTPSent}
-              />
-            )}
-            {mode === "reset-password" && (
-              <ResetPasswordForm
-                email={forgotPasswordEmail}
-                onPasswordReset={handlePasswordReset}
-                onBackToForgotPassword={handleBackToForgotPassword}
-              />
-            )}
+
+              {/* Login failed card (shown on right when error occurs) */}
+              {showLoginError && (
+                <LoginFailedCard onTryAgain={handleTryAgain} />
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex-1">
-          <img src={bgImage} alt="" className="h-full w-full" />
-        </div>
+        )}
       </div>
     </MainLayout>
   );

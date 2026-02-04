@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Input from "../atoms/Input";
-import Button from "../atoms/Button";
 import { AuthService } from "../../features/auth/services/authService";
 import type { ResetPasswordForm as ResetPasswordFormType } from "../../features/auth/types";
 import toast from "react-hot-toast";
@@ -8,68 +7,38 @@ import { getPasswordError } from "../../utils/validators";
 
 interface ResetPasswordFormProps {
   email: string;
+  otp: string;
   onPasswordReset: () => void;
-  onBackToForgotPassword: () => void;
+  onBackToOTP: () => void;
 }
 
 const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   email,
+  otp,
   onPasswordReset,
-  onBackToForgotPassword,
+  onBackToOTP,
 }) => {
   const [formData, setFormData] = useState<ResetPasswordFormType>({
     email: email,
-    otp: "",
+    otp: otp,
     newPassword: "",
     confirmPassword: "",
-  });
-  const [passwordRequirements, setPasswordRequirements] = useState({
-    minLength: false,
-    hasUpperAndLower: false,
-    hasNumber: false,
-    hasSpecialChar: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState({
-    otp: false,
     newPassword: false,
     confirmPassword: false,
   });
 
-  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-    const { name } = e.target;
-    setTouched((prev) => ({ ...prev, [name]: true }));
+  const handleBlur = (field: 'newPassword' | 'confirmPassword') => {
+    setTouched(prev => ({ ...prev, [field]: true }));
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === "otp") {
-      // Only allow numbers and limit to 6 digits
-      const numericValue = value.replace(/\D/g, "");
-      if (numericValue.length <= 6) {
-        setFormData((prev) => ({ ...prev, [name]: numericValue }));
-      }
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (error) setError(null);
-  };
-
-  const validatePassword = (password: string): string | null => {
-    if (password.length < 8) {
-      return "Password must be at least 8 characters long";
-    }
-    if (!/(?=.*[a-z])(?=.*[A-Z])/.test(password)) {
-      return "Password must contain both uppercase and lowercase letters";
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      return "Password must contain at least one number";
-    }
-    if (!/(?=.*[!@#$%^&*])/.test(password)) {
-      return "Password must contain at least one special character (!@#$%^&*)";
-    }
-    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,7 +47,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
     if (!isFormValid) {
       setTouched({
-        otp: true,
         newPassword: true,
         confirmPassword: true,
       });
@@ -103,14 +71,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     }
   };
 
-  const otpError = useMemo(() => {
-    if (!formData.otp.trim()) return "Verification code is required.";
-    if (!/^[0-9]+$/.test(formData.otp))
-      return "Code must contain only numbers.";
-    if (formData.otp.length !== 6) return "Code must be 6 digits.";
-    return null;
-  }, [formData.otp]);
-
   const passwordError = useMemo(() => {
     return getPasswordError(formData.newPassword);
   }, [formData.newPassword]);
@@ -124,21 +84,21 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   }, [formData.newPassword, formData.confirmPassword]);
 
   const isFormValid = useMemo(() => {
-    if (!formData.otp || formData.otp.length !== 6) return false;
     if (!formData.newPassword || !formData.confirmPassword) return false;
     if (formData.newPassword !== formData.confirmPassword) return false;
-    const passwordError = validatePassword(formData.newPassword);
-    return passwordError === null;
-  }, [formData.otp, formData.newPassword, formData.confirmPassword]);
+    return !passwordError;
+  }, [formData.newPassword, formData.confirmPassword, passwordError]);
 
-  useEffect(() => {
+  const passwordsMatch = formData.newPassword && formData.confirmPassword && formData.newPassword === formData.confirmPassword;
+  const showMismatchError = touched.confirmPassword && formData.confirmPassword && !passwordsMatch;
+
+  // Check if password meets all requirements (for green checkmark display)
+  const passwordMeetsAllRequirements = useMemo(() => {
     const password = formData.newPassword;
-    setPasswordRequirements({
-      minLength: password.length >= 8,
-      hasUpperAndLower: /(?=.*[a-z])(?=.*[A-Z])/.test(password),
-      hasNumber: /(?=.*\d)/.test(password),
-      hasSpecialChar: /(?=.*[!@#$%^&*])/.test(password),
-    });
+    return password.length >= 8 &&
+           /(?=.*[a-z])(?=.*[A-Z])/.test(password) &&
+           /(?=.*\d)/.test(password) &&
+           /(?=.*[!@#$%^&*])/.test(password);
   }, [formData.newPassword]);
 
   useEffect(() => {
@@ -148,173 +108,86 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   }, [error]);
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="text-center mb-6">
-        <h3 className="text-lg font-medium text-gray-800 mb-2">
-          Reset Password
-        </h3>
-        <p className="text-sm text-gray-600">
-          Enter the verification code and create a new password
-        </p>
-      </div>
+    <div className="w-full shrink-0" style={{ maxWidth: '576px' }}>
+      <div className="rounded-xl sm:rounded-2xl bg-white shadow-lg px-6 py-8 sm:px-8" style={{ minHeight: '369px' }}>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Figma: Title "Set a new password" bold #0A0C0F */}
+          <h3 className="text-center text-xl font-bold text-[#0A0C0F] sm:text-2xl">
+            Set a new password
+          </h3>
 
-      <div>
-        <Input
-          type="text"
-          name="otp"
-          label="Verification Code"
-          placeholder="Enter 6-digit code"
-          value={formData.otp}
-          onChange={handleInputChange}
-          rounded="xl"
-          required
-          className="text-center text-lg tracking-widest"
-          onBlur={handleBlur}
-          touched={touched.otp}
-          error={Boolean(otpError)}
-        />
-        {touched.otp && otpError && (
-          <p
-            id="reset-otp-error"
-            role="alert"
-            aria-live="assertive"
-            className="mt-1 text-sm text-red-600"
-          >
-            {otpError}
+          {/* Figma: Subtitle "Make sure it's strong and unique." */}
+          <p className="text-center text-sm text-[#3D495C] mb-6">
+            Make sure it's strong and unique.
           </p>
-        )}
-      </div>
-      <div>
-        <Input
-          type="password"
-          name="newPassword"
-          label="New Password"
-          placeholder="Enter new password"
-          value={formData.newPassword}
-          onChange={handleInputChange}
-          rounded="xl"
-          required
-          onBlur={handleBlur}
-          touched={touched.newPassword}
-          error={Boolean(passwordError)}
-        />
-        {touched.newPassword && passwordError && (
-          <p
-            id="reset-new-password-error"
-            role="alert"
-            aria-live="assertive"
-            className="mt-1 text-sm text-red-600"
-          >
-            {passwordError}
-          </p>
-        )}
-      </div>
-      <div>
-        <Input
-          type="password"
-          name="confirmPassword"
-          label="Confirm New Password"
-          placeholder="Confirm new password"
-          value={formData.confirmPassword}
-          onChange={handleInputChange}
-          rounded="xl"
-          required
-          onBlur={handleBlur}
-          touched={touched.confirmPassword}
-          error={Boolean(confirmPasswordError)}
-        />
-        {touched.confirmPassword && confirmPasswordError && (
-          <p
-            id="reset-confirm-password-error"
-            role="alert"
-            aria-live="assertive"
-            className="mt-1 text-sm text-red-600"
-          >
-            {confirmPasswordError}
-          </p>
-        )}
-      </div>
 
-      <div className="text-xs text-gray-500 space-y-1">
-        <p>Password requirements:</p>
-        <ul className="space-y-1">
-          <li className="flex items-center gap-2">
-            {passwordRequirements.minLength ? (
-              <span className="text-green-600">✓</span>
-            ) : (
-              <span className="text-gray-400">•</span>
+          <div className="space-y-1">
+            <Input
+              type="password"
+              name="newPassword"
+              label="New password"
+              placeholder="••••••••••"
+              value={formData.newPassword}
+              onChange={handleInputChange}
+              onBlur={() => handleBlur('newPassword')}
+              rounded="xl"
+              required
+              touched={touched.newPassword}
+              error={false}
+            />
+            {/* Figma: Green checkmark when password meets all requirements */}
+            {passwordMeetsAllRequirements && (
+              <div className="flex items-start gap-2 mt-2">
+                <svg className="w-5 h-5 text-green-600 mt-0.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                <p className="text-sm text-green-600">
+                  Contains letters (A-Z, a-z), digits 0-9 AND special characters.
+                </p>
+              </div>
             )}
-            <span
-              className={passwordRequirements.minLength ? "text-green-600" : ""}
-            >
-              At least 8 characters long
-            </span>
-          </li>
-          <li className="flex items-center gap-2">
-            {passwordRequirements.hasUpperAndLower ? (
-              <span className="text-green-600">✓</span>
-            ) : (
-              <span className="text-gray-400">•</span>
-            )}
-            <span
-              className={
-                passwordRequirements.hasUpperAndLower ? "text-green-600" : ""
-              }
-            >
-              Contains uppercase and lowercase letters
-            </span>
-          </li>
-          <li className="flex items-center gap-2">
-            {passwordRequirements.hasNumber ? (
-              <span className="text-green-600">✓</span>
-            ) : (
-              <span className="text-gray-400">•</span>
-            )}
-            <span
-              className={passwordRequirements.hasNumber ? "text-green-600" : ""}
-            >
-              Contains at least one number
-            </span>
-          </li>
-          <li className="flex items-center gap-2">
-            {passwordRequirements.hasSpecialChar ? (
-              <span className="text-green-600">✓</span>
-            ) : (
-              <span className="text-gray-400">•</span>
-            )}
-            <span
-              className={
-                passwordRequirements.hasSpecialChar ? "text-green-600" : ""
-              }
-            >
-              Contains at least one special character (!@#$%^&*)
-            </span>
-          </li>
-        </ul>
-      </div>
+          </div>
 
-      {/* {error && <div className="text-red-500 text-sm text-center">{error}</div>} */}
+          <div className="space-y-1">
+            <Input
+              type="password"
+              name="confirmPassword"
+              label="Confirm password"
+              placeholder="••••••••••"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              onBlur={() => handleBlur('confirmPassword')}
+              rounded="xl"
+              required
+              touched={touched.confirmPassword}
+              error={showMismatchError}
+              errorBorderColor="#FF5270"
+            />
+            {/* Figma: "Password doesn't match" error in red */}
+            {showMismatchError && (
+              <p role="alert" className="mt-1 text-sm font-medium text-[#FF5270]">
+                Password doesn't match
+              </p>
+            )}
+          </div>
 
-      <div className="flex justify-center">
-        <Button
-          type="submit"
-          variant="primary"
-          disabled={!isFormValid || loading}
-        >
-          {loading ? "Resetting..." : "Reset Password"}
-        </Button>
-      </div>
+          {/* Backend API errors */}
+          {error && <div className="text-[#FF5270] text-sm text-center font-medium">{error}</div>}
 
-      <div className="text-center">
-        <button
-          type="button"
-          onClick={onBackToForgotPassword}
-          className="text-sm text-gray-600 hover:underline"
-        >
-          Request a new code
-        </button>
+          {/* Figma: "Update password" button - #C2CAD6, pill */}
+          <div className="flex justify-center pt-2">
+            <button
+              type="submit"
+              disabled={!isFormValid || loading}
+              className="flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+              style={{ background: '#C2CAD6' }}
+            >
+              {loading ? 'Updating...' : 'Update password'}
+            </button>
+          </div>
+        </form>
       </div>
-    </form>
+    </div>
   );
 };
 

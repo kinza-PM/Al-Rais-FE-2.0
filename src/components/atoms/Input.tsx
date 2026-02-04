@@ -14,6 +14,8 @@ interface InputProps {
   touched?: boolean;
   error?: boolean;
   inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+  /** Override error border color (e.g. #FF5270 for Reset password page) */
+  errorBorderColor?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -29,7 +31,8 @@ const Input: React.FC<InputProps> = ({
   required,
   touched,
   error,
-  inputProps
+  inputProps,
+  errorBorderColor = '#EA0029'
 }) => {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -63,7 +66,8 @@ const Input: React.FC<InputProps> = ({
           onChange={onChange}
           required={required}
           onBlur={onBlur}
-          className={`w-full px-3 py-2 border ${hasError ? 'border-red-500 focus:ring-red-200' : 'border-[#C2CAD6]'} ${roundedClasses[rounded]} focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent ${isPasswordType ? 'pr-10' : ''}`}
+          className={`w-full px-3 py-2 border ${hasError ? 'focus:ring-[#FFB8C4]' : 'border-[#C2CAD6]'} ${roundedClasses[rounded]} focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent ${isPasswordType ? 'pr-10' : ''}`}
+          style={hasError ? { borderColor: errorBorderColor } : undefined}
           {...inputProps}
         />
         {isPasswordType && (

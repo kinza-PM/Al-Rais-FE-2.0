@@ -1,27 +1,22 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Input from "../atoms/Input";
-import Button from "../atoms/Button";
 import { useAuth } from "../../features/auth/hooks/useAuth";
-import Logo from "../atoms/Logo";
-import logoImg from "../../assets/images/logo.jpg";
 import { Link } from "react-router-dom";
 import { useNetworkStatus } from "../../context/NetworkStatusContext";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import { filterEmailInput } from "../../utils/helpers";
 import toast from "react-hot-toast";
+import logoSmall from '../../assets/images/logo-small.png';
 
 interface LoginFormProps {
   onSignupClick: () => void;
   onLoginSuccess?: () => void;
   onForgotPasswordClick?: () => void;
+  onLoginError?: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({
-  onSignupClick,
-  onLoginSuccess,
-  onForgotPasswordClick,
-}) => {
+const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, onForgotPasswordClick, onLoginError }) => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -93,6 +88,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
       }, 2000);
     } else {
       handleLoginError(result);
+      onLoginError?.();
     }
   };
 
@@ -215,11 +211,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
       : formData.email.trim();
     if (!identifier) return;
     setResendLoading(true);
-    // setSubmitError(null);
     const result = await resendConfirmationCode(identifier);
     setResendLoading(false);
     if (result.success) {
-      // setLoginMessage("Verification code sent.");
       toast.success("Verification code sent.");
     } else {
       toast.error(result.message || "Failed to resend verification code.");
@@ -228,23 +222,19 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   return (
     <div className="flex items-center justify-center">
-      <div className="bg-white rounded-xl border border-[#E4E4E7] w-full px-4 py-10">
+      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg w-full max-w-[468px] px-6 py-10 sm:px-8">
         <div className="flex justify-center mb-6">
           <Link
             to="/"
             aria-label="Go to home page"
-            className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+            className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <Logo src={logoImg} alt="Brand name" size="modal" />
+            <img src={logoSmall} alt="Al Rais Travel" className="h-11 w-[60px] object-contain" />
           </Link>
         </div>
 
-        <h2 className="text-center text-2xl font-semibold mb-1">
-          Welcome back
-        </h2>
-        <p className="text-center text-sm text-gray-500 mb-6">
-          Please login to continue
-        </p>
+        <h2 className="text-center text-xl font-bold text-[#0A0C0F] mb-1 sm:text-2xl">Welcome back</h2>
+        <p className="text-center text-sm text-[#3D495C] mb-6">Please login to continue</p>
 
         {/* Toggle Buttons */}
         <div className="flex justify-center mb-6">
@@ -291,7 +281,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
                     setPhoneNumber(
                       phone.replace(`+${meta.country.dialCode}`, ""),
                     );
-                    // if (submitError) setSubmitError(null);
                     if (error) clearError();
                   }}
                   hideDropdown={false}
@@ -323,7 +312,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                     borderRadius: "12px",
                     border:
                       touched.email && emailHasError
-                        ? "1px solid #ef4444"
+                        ? "1px solid #EA0029"
                         : "1px solid #C2CAD6",
                     padding: "8px 12px",
                     fontSize: "14px",
@@ -367,7 +356,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 id="login-email-error"
                 role="alert"
                 aria-live="assertive"
-                className="mt-1 text-sm text-red-600"
+                className="mt-1 text-sm font-medium text-[#EA0029]"
               >
                 {emailError}
               </p>
@@ -402,39 +391,35 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 id="login-password-error"
                 role="alert"
                 aria-live="assertive"
-                className="mt-1 text-sm text-red-600"
+                className="mt-1 text-sm font-medium text-[#EA0029]"
               >
                 {passwordError}
               </p>
             )}
           </div>
 
-          {/* {loginMessage && (
-            <p className="text-green-500 text-sm">{loginMessage}</p>
-          )} */}
-
-          <div className="text-right">
+          <div className="text-left">
             <button
               type="button"
               onClick={onForgotPasswordClick}
-              className="text-sm text-blue-600 hover:underline"
+              className="text-sm text-[#5383DA] hover:underline font-medium"
             >
               Forgot password?
             </button>
           </div>
 
-          <Button
+          <button
             type="submit"
-            className="w-full"
             disabled={!isFormValid || !!loading?.login || !isOnline}
-            aria-disabled={!isFormValid || !!loading?.login || !isOnline}
+            className="flex w-full min-h-[47px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-[#0A0C0F] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
+            style={{ background: '#C2CAD6' }}
           >
-            {loading?.login ? "Logging in..." : "Login"}
-          </Button>
+            {loading?.login ? 'Logging in...' : 'Login'}
+          </button>
         </form>
 
         <div className="mt-6 text-center text-sm text-[#3D495C]">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <button
             onClick={onSignupClick}
             className="text-[#5383DA] hover:underline font-semibold"

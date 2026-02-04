@@ -21,6 +21,7 @@ html, body {
   --color-primary: #2351A3;
 }
 
+/* Notification consent modal styles */
 .notification-consent-backdrop {
   position: fixed;
   inset: 0;
@@ -108,4 +109,28 @@ html, body {
 .notification-consent-btn--ghost:focus {
   border-color: #2351a3;
   color: #2351a3;
+}
+
+/* Best deals: price filters row — disable vertical center at sm */
+@media (min-width: 640px) {
+  .best-deals-filters-row {
+    /* align-items: center; */
+    align-items: flex-start;
+  }
+}
+
+/* Partners: continuous infinite marquee — no pause */
+@keyframes partners-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+.animate-partners-marquee {
+  animation: partners-marquee 45s linear infinite;
+}
+.animate-partners-marquee:hover {
+  animation-play-state: paused;
 }

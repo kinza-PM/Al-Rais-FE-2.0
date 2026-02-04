@@ -38,7 +38,7 @@ const HotelHeroSection: React.FC = () => {
   };
 
   return (
-    <div className="px-6 pb-6 pt-6">
+    <div className="px-10 pb-8 pt-6">
       <div className="flex items-end gap-4">
         <div className="w-[250px]">
           <SearchableDropdown
@@ -107,9 +107,17 @@ const HotelHeroSection: React.FC = () => {
         </div>
       </div>
 
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center mt-8">
         <button
-          className="h-10 px-8 rounded-md bg-[#2351A3] text-white text-[14px] font-medium shadow-sm"
+          className="text-[16px] font-medium text-white"
+          style={{
+            width: 137,
+            height: 47,
+            borderRadius: 100,
+            padding: "14px 40px",
+            background:
+              "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+          }}
           onClick={() => navigate("/search-hotel")}
         >
           Search
