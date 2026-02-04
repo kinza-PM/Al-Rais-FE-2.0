@@ -5,6 +5,7 @@ import {
   Marker,
   Polyline,
   useMap,
+  Tooltip,
   Pane,
 } from "react-leaflet";
 import * as L from "leaflet";
@@ -21,9 +22,7 @@ type MapInfoProps = {
   locations: Location[];
 };
 
-const AutoZoomAndAddTooltips: React.FC<{ locations: Location[] }> = ({
-  locations,
-}) => {
+const AutoZoom: React.FC<{ locations: Location[] }> = ({ locations }) => {
   const map = useMap();
 
   useEffect(() => {
@@ -33,41 +32,12 @@ const AutoZoomAndAddTooltips: React.FC<{ locations: Location[] }> = ({
       locations.map<L.LatLngExpression>((loc) => [loc.lat, loc.lng])
     );
     map.fitBounds(bounds, { padding: [80, 80], maxZoom: 5 });
-
-    // Add permanent tooltipped markers
-    const created: L.Marker[] = locations.map((loc) => {
-      const marker = L.marker([loc.lat, loc.lng]).addTo(map);
-      const flagHtml = loc.countryFlag 
-        ? `<img src="${loc.countryFlag}" alt="Flag" style="width:20px;height:15px;object-fit:cover;margin-right:5px"/>` 
-        : '';
-      marker
-        .bindTooltip(
-          `<div style="display:flex;justify-content:center;align-items:center;gap:5px;padding:2px 25px">
-            ${flagHtml}
-            <span style="font-weight:500;font-size:12px">${loc.destinationName}</span>
-          </div>`,
-          {
-            permanent: true,
-            direction: "top",
-            offset: L.point(0, -10),
-            opacity: 1,
-            className: "custom-tooltip",
-          }
-        )
-        .openTooltip();
-      return marker;
-    });
-
-    // Clean up on re-render
-    return () => {
-      created.forEach((m) => m.remove());
-    };
   }, [locations, map]);
 
   return null;
 };
 
-// Default Leaflet icon (so markers show in many bundlers)
+// Default Leaflet icon
 const customIcon = new L.Icon({
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   iconRetinaUrl:
@@ -104,21 +74,50 @@ const MapInfo: React.FC<MapInfoProps> = ({ locations }) => {
           <TileLayer url="https://cartodb-basemaps-{s}.global.ssl.fastly.net/light_only_labels/{z}/{x}/{y}.png" />
         </Pane>
 
-        <AutoZoomAndAddTooltips locations={locations} />
+        <AutoZoom locations={locations} />
 
+        {/* Markers with tooltips */}
         {locations.map((loc, idx) => (
-          <Marker key={idx} position={[loc.lat, loc.lng]} icon={customIcon} />
+          <Marker key={idx} position={[loc.lat, loc.lng]} icon={customIcon}>
+            <Tooltip
+              permanent
+              direction="top"
+              offset={[0, -35]}
+              opacity={1}
+              className="custom-tooltip"
+            >
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '5px', padding: '2px 25px' }}>
+                {loc.countryFlag && (
+                  <img
+                    src={loc.countryFlag}
+                    alt="Flag"
+                    style={{ width: '20px', height: '15px', objectFit: 'cover', marginRight: '5px' }}
+                  />
+                )}
+                <span style={{ fontWeight: 500, fontSize: '12px' }}>{loc.destinationName}</span>
+              </div>
+            </Tooltip>
+          </Marker>
         ))}
 
-        {locations.length > 1 && (
-          <Polyline
-            positions={locations.map<L.LatLngExpression>((loc) => [
-              loc.lat,
-              loc.lng,
-            ])}
-            pathOptions={{ color: "#FFA500", weight: 3, opacity: 0.9 }}
-          />
-        )}
+        {/* Straight lines connecting locations */}
+        {locations.length > 1 && locations.map((_, idx) => {
+          if (idx === locations.length - 1) return null;
+
+          const start = locations[idx];
+          const end = locations[idx + 1];
+
+          return (
+            <Polyline
+              key={`path-${idx}`}
+              positions={[
+                [start.lat, start.lng],
+                [end.lat, end.lng]
+              ]}
+              pathOptions={{ color: "#FFA500", weight: 3, opacity: 0.9 }}
+            />
+          );
+        })}
       </MapContainer>
 
       <style>{`
