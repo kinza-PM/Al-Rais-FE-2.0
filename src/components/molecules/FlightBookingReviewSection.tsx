@@ -1,9 +1,13 @@
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-import mealIcon from "../../assets/svgs/meals.svg";
-import portIcon from "../../assets/svgs/ports.svg";
-import wifiIcon from "../../assets/svgs/wifi.svg";
+// import entertainmentIcon from "../../assets/svgs/entertainment.svg";
+// import mealIcon from "../../assets/svgs/meals.svg";
+// import portIcon from "../../assets/svgs/ports.svg";
+// import wifiIcon from "../../assets/svgs/wifi.svg";
+import durationIcon from "../../assets/svgs/duration.svg";
+import refundableIcon from "../../assets/svgs/redundable.svg";
+import SEAT_ICON from "../../assets/svgs/seat.svg";
+import PLANE_ICON from "../../assets/svgs/plane.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import React, { useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
@@ -84,10 +88,10 @@ export default function FlightBookingReviewSection({
         EmirateLogo,
         cabinIcon,
         baggageIcon,
-        mealIcon,
-        wifiIcon,
-        portIcon,
-        entertainmentIcon,
+        mealIcon: refundableIcon,
+        wifiIcon: durationIcon,
+        portIcon: SEAT_ICON,
+        entertainmentIcon: PLANE_ICON
     };
     const segments = buildFlightSegmentFromTrip(trip, assets);
 
@@ -198,52 +202,52 @@ export default function FlightBookingReviewSection({
                                         {/* Passport number - only show if required by fare rules */}
                                         {/* {fareBookingSearchRules?.passengerRules?.[0]
                                             ?.isDocumentNumberMandatory && ( */}
-                                                <>
-                                                    <dt className="text-[12px] text-[#3D495C]">
-                                                        Passport number
-                                                    </dt>
-                                                    <dd className="text-right">
-                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                            {p.identityDocuments?.[0]?.idDocumentNumber || "—"}
-                                                        </span>
-                                                    </dd>
-                                                </>
-                                            {/* )} */}
+                                        <>
+                                            <dt className="text-[12px] text-[#3D495C]">
+                                                Passport number
+                                            </dt>
+                                            <dd className="text-right">
+                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                    {p.identityDocuments?.[0]?.idDocumentNumber || "—"}
+                                                </span>
+                                            </dd>
+                                        </>
+                                        {/* )} */}
 
                                         {/* {fareBookingSearchRules?.passengerRules?.[0]
                                             ?.isIssuingCountryCodeMandatory && ( */}
-                                                <>
-                                                    <dt className="text-[12px] text-[#3D495C]">
-                                                        Issuing country
-                                                    </dt>
-                                                    <dd className="text-right">
-                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                            {countries.find(
-                                                                (c) =>
-                                                                    c.iso3 ===
-                                                                    p.identityDocuments?.[0]?.issuingCountryCode
-                                                            // )?.label ||
-                                                        )?.iso3 ||
-                                                                p.identityDocuments?.[0]?.issuingCountryCode ||
-                                                                "—"}
-                                                        </span>
-                                                    </dd>
-                                                </>
-                                            {/* )} */}
+                                        <>
+                                            <dt className="text-[12px] text-[#3D495C]">
+                                                Issuing country
+                                            </dt>
+                                            <dd className="text-right">
+                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                    {countries.find(
+                                                        (c) =>
+                                                            c.iso3 ===
+                                                            p.identityDocuments?.[0]?.issuingCountryCode
+                                                        // )?.label ||
+                                                    )?.iso3 ||
+                                                        p.identityDocuments?.[0]?.issuingCountryCode ||
+                                                        "—"}
+                                                </span>
+                                            </dd>
+                                        </>
+                                        {/* )} */}
 
                                         {/* {fareBookingSearchRules?.passengerRules?.[0]
                                             ?.isExpiryDateMandatory && ( */}
-                                                <>
-                                                    <dt className="text-[12px] text-[#3D495C]">
-                                                        Expiry date
-                                                    </dt>
-                                                    <dd className="text-right">
-                                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                            {p.identityDocuments?.[0]?.expiryDate || "—"}
-                                                        </span>
-                                                    </dd>
-                                                </>
-                                            {/* )} */}
+                                        <>
+                                            <dt className="text-[12px] text-[#3D495C]">
+                                                Expiry date
+                                            </dt>
+                                            <dd className="text-right">
+                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                                    {p.identityDocuments?.[0]?.expiryDate || "—"}
+                                                </span>
+                                            </dd>
+                                        </>
+                                        {/* )} */}
                                     </dl>
                                 </div>
                             </CardShell>

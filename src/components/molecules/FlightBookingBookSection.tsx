@@ -1,9 +1,9 @@
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-import mealIcon from "../../assets/svgs/meals.svg";
-import portIcon from "../../assets/svgs/ports.svg";
-import wifiIcon from "../../assets/svgs/wifi.svg";
+// import entertainmentIcon from "../../assets/svgs/entertainment.svg";
+// import mealIcon from "../../assets/svgs/meals.svg";
+// import portIcon from "../../assets/svgs/ports.svg";
+// import wifiIcon from "../../assets/svgs/wifi.svg";
 // import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 // import FlagUsa from "../../assets/images/Flag-usa.png";
@@ -33,6 +33,11 @@ import { useNavigate } from "react-router-dom";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import type { CountryOption } from "../../features/flights/types";
+// import seaticon from "../../assets/svgs/seatsicon.svg";
+import durationIcon from "../../assets/svgs/duration.svg";
+import refundableIcon from "../../assets/svgs/redundable.svg";
+import SEAT_ICON from "../../assets/svgs/seat.svg";
+import PLANE_ICON from "../../assets/svgs/plane.svg";
 
 type FlightBookingBookSectionProps = {
   trip: any;
@@ -80,10 +85,10 @@ export default function FlightBookingBookSection({
     EmirateLogo,
     cabinIcon,
     baggageIcon,
-    mealIcon,
-    wifiIcon,
-    portIcon,
-    entertainmentIcon,
+    mealIcon: refundableIcon,
+    wifiIcon: durationIcon,
+    portIcon: SEAT_ICON,
+    entertainmentIcon: PLANE_ICON
   };
   const segments = buildFlightSegmentFromTrip(trip, assets);
   const firstPrice = getPriceCabinClassForFlightSummary(trip);
@@ -292,20 +297,18 @@ export default function FlightBookingBookSection({
                     {/* {pRules.isDocumentNumberMandatory && ( */}
                     <TailwindCustomInput
                       type="text"
-                      placeholder={`Enter ${
-                        p.identityDocuments?.[0]?.idType === "PT"
+                      placeholder={`Enter ${p.identityDocuments?.[0]?.idType === "PT"
                           ? "Passport number"
                           : p.identityDocuments?.[0]?.idType === "DL"
                             ? "Driving licence"
                             : "National ID"
-                      }`}
-                      label={`${
-                        p.identityDocuments?.[0]?.idType === "PT"
+                        }`}
+                      label={`${p.identityDocuments?.[0]?.idType === "PT"
                           ? "Passport number"
                           : p.identityDocuments?.[0]?.idType === "DL"
                             ? "Driving licence"
                             : "National ID"
-                      }`}
+                        }`}
                       value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
                       onChange={(evOrVal) => {
                         const v =
@@ -366,8 +369,8 @@ export default function FlightBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.dateOfIssue
                               ? parseLocalDateString(
-                                  p.identityDocuments?.[0]?.dateOfIssue,
-                                )
+                                p.identityDocuments?.[0]?.dateOfIssue,
+                              )
                               : null
                           }
                           onChange={(date) => {
@@ -394,8 +397,8 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.expiryDate
                             ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.expiryDate,
-                              )
+                              p.identityDocuments?.[0]?.expiryDate,
+                            )
                             : null
                         }
                         onChange={(date) => {

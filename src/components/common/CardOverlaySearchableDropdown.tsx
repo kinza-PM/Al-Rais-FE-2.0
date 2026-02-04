@@ -81,8 +81,18 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
 
   // focus search
   useEffect(() => {
+    // if (isOpen && searchInputRef.current) {
+    //   searchInputRef.current.focus();
+    // }
     if (isOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
+      const currentScrollY = window.scrollY;
+      const currentScrollX = window.scrollX;
+      searchInputRef.current.focus({ preventScroll: true });
+      requestAnimationFrame(() => {
+        if (window.scrollY !== currentScrollY || window.scrollX !== currentScrollX) {
+          window.scrollTo(currentScrollX, currentScrollY);
+        }
+      });
     }
   }, [isOpen]);
 
@@ -98,7 +108,11 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
   const selectedOption = options.find((o) => o.value === value);
   const displayValue = selectedOption?.label || placeholder;
 
-  const handleToggle = () => {
+  const handleToggle = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+
     if (disabled || loading) return;
 
     if (error) {
@@ -134,9 +148,8 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
         type="button"
         onClick={handleToggle}
         disabled={disabled || loading}
-        className={`${
-          className || baseClasses
-        } flex items-center justify-between relative`}
+        className={`${className || baseClasses
+          } flex items-center justify-between relative`}
         aria-expanded={isOpen}
       >
         <span className={!selectedOption ? "text-[#98A4B3]" : ""}>
@@ -144,9 +157,8 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
         </span>
 
         <svg
-          className={`pointer-events-none absolute right-3 transition-transform ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`pointer-events-none absolute right-3 transition-transform ${isOpen ? "rotate-180" : ""
+            }`}
           width="16"
           height="16"
           viewBox="0 0 20 20"
@@ -198,16 +210,14 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
                     onClick={() => handleSelect(opt.value)}
                     className={`
                         w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC]
-                        ${
-                          opt.disabled
-                            ? "opacity-50 cursor-not-allowed"
-                            : "cursor-pointer"
-                        }
-                        ${
-                          opt.value === value
-                            ? "bg-[#2351A3]/10 text-[#2351A3]"
-                            : "text-[#0F172A]"
-                        }
+                        ${opt.disabled
+                        ? "opacity-50 cursor-not-allowed"
+                        : "cursor-pointer"
+                      }
+                        ${opt.value === value
+                        ? "bg-[#2351A3]/10 text-[#2351A3]"
+                        : "text-[#0F172A]"
+                      }
                       `}
                   >
                     {opt.label}

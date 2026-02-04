@@ -6,12 +6,16 @@ import {
   postFlightReservationBooking,
   postInitialFlightProvBooking,
   postRetrieveFlightBooking,
+  postUploadImagePreSignedUrl,
+  postUploadTicket,
   type FlightAncillaryBooking,
   type FlightAncillarySearch,
   type FlightFareRuleSearch,
   type FlightInitialBooking,
   type FlightReservationBooking,
   type RetrieveFlightBooking,
+  type UploadImagePreSignedUrlRequest,
+  type UploadTicketRequest,
 } from "../services/api/flightBooking";
 
 export function useFlightInitialBooking() {
@@ -51,5 +55,18 @@ export function useFlightAncillarySearch() {
   return useMutation({
     mutationFn: (body: FlightAncillarySearch) =>
       postFlightAncillarySearch(body),
+  });
+}
+
+export function useUploadImagePreSignedUrl() {
+  return useMutation({
+    mutationFn: (body: UploadImagePreSignedUrlRequest) =>
+      postUploadImagePreSignedUrl(body),
+  });
+}
+
+export function useUploadTicket() {
+  return useMutation({
+    mutationFn: (body: UploadTicketRequest) => postUploadTicket(body),
   });
 }

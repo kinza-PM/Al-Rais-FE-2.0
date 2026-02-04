@@ -1,5 +1,5 @@
-import { useState } from "react";
-import EmirateLogo from "../../assets/images/emirates.png";
+import { useState, useEffect, useRef } from "react";
+// import EmirateLogo from "../../assets/images/emirates.png";
 import AlRaisLogo from "../../assets/images/al-rais-logo.png";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import INFO_ICON from "../../assets/svgs/info.svg";
@@ -7,23 +7,36 @@ import Button from "../atoms/Button";
 import { formatDate, formatTime } from "../../utils/helpers";
 import {
   generateFlightTicketPDF,
-  // generateFlightTicketPDFBlob,
+  generateFlightTicketPDFBlob,
 } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
+import {
+  useUploadImagePreSignedUrl,
+  useUploadTicket,
+} from "../../hooks/useFlightBooking";
+import Loader from "../atoms/Loader";
 // import { uploadToS3 } from "../../utils/s3Helper";
+
+/** Base URL for uploaded ticket PDFs on S3 (bucket + region) */
+const S3_TICKET_BASE = "https://booked-ticket-dev2.s3.eu-west-1.amazonaws.com";
 
 type FlightBookingETicketSectionProps = {
   reservedFlightBooking?: any;
+  offerId?: string | number;
 };
 
 export default function FlightBookingETicketSection({
   reservedFlightBooking,
+  offerId,
 }: FlightBookingETicketSectionProps) {
   const [openShareModal, setOpenShareModal] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  // const [pdfUploaded, setPdfUploaded] = useState(false);
-  // const [s3Url, setS3Url] = useState<string>("");
+  const [uploadedPdfUrl, setUploadedPdfUrl] = useState<string | null>(null);
+  const [isFetchingTicket, setIsFetchingTicket] = useState(true);
+  const uploadToS3Attempted = useRef(false);
+  const { mutateAsync: getPreSignedUrl } = useUploadImagePreSignedUrl();
+  const { mutateAsync: uploadTicket } = useUploadTicket();
 
   // Extract data from booking
   const bookingRef = reservedFlightBooking?.bookingReferenceId || "N/A";
@@ -123,10 +136,10 @@ export default function FlightBookingETicketSection({
   const getBaggageForPassenger = (passenger: any) => {
     const ptc = passenger?.ptc || "ADT";
     const carryOnForPax = baggageAllowance?.carryOnBaggage?.find(
-      (item: any) => item.paxType === ptc
+      (item: any) => item.paxType === ptc,
     );
     const checkedInForPax = baggageAllowance?.checkedInBaggage?.find(
-      (item: any) => item.paxType === ptc
+      (item: any) => item.paxType === ptc,
     );
 
     return {
@@ -138,6 +151,63 @@ export default function FlightBookingETicketSection({
         : "None",
     };
   };
+
+  // When E-ticket page is shown: get pre-signed URL, upload ticket PDF to S3, then register via uploadTicket API
+  useEffect(() => {
+    const offerIdStr =
+      offerId != null && offerId !== ""
+        ? String(offerId)
+        : reservedFlightBooking?.offerId;
+    // console.log("offerIdStr", offerIdStr, offerId, reservedFlightBooking);
+    if (!offerIdStr || !reservedFlightBooking || uploadToS3Attempted.current) {
+      setIsFetchingTicket(false);
+      return;
+    }
+    uploadToS3Attempted.current = true;
+
+    const runUploadFlow = async () => {
+      try {
+        const { uploadUrl, fileKey } = await getPreSignedUrl({
+          offerId: offerIdStr,
+          contentType: "application/pdf",
+        });
+        if (!uploadUrl) {
+          setIsFetchingTicket(false);
+          return;
+        }
+
+        const pdfBlob = await generateFlightTicketPDFBlob();
+        const res = await fetch(uploadUrl, {
+          method: "PUT",
+          body: pdfBlob,
+          headers: { "Content-Type": "application/pdf" },
+        });
+        if (!res.ok) {
+          throw new Error(`Upload failed: ${res.status}`);
+        }
+
+        const pdfUrl = fileKey ? `${S3_TICKET_BASE}/${fileKey}` : null;
+        setUploadedPdfUrl(pdfUrl);
+
+        if (pdfUrl) {
+          await uploadTicket({
+            ticketImage: pdfUrl,
+            offerId: offerIdStr,
+          });
+        }
+      } catch (err) {
+        console.error("Ticket upload failed:", err);
+        toast.error(
+          "Failed to upload ticket to cloud. You can still download it.",
+        );
+      } finally {
+        setIsFetchingTicket(false);
+      }
+    };
+
+    const t = setTimeout(runUploadFlow, 500);
+    return () => clearTimeout(t);
+  }, [offerId, reservedFlightBooking, getPreSignedUrl, uploadTicket]);
 
   const handleDownloadPDF = async () => {
     try {
@@ -412,11 +482,11 @@ export default function FlightBookingETicketSection({
           </div>
           <div className="grid grid-cols-3 gap-10">
             <div className="flex items-center gap-2">
-              <img
+              {/* <img
                 src={EmirateLogo}
                 alt="Airline"
                 className="h-10 w-10 rounded-full object-cover"
-              />
+              /> */}
               <div>
                 <div className="text-[14px] text-nowrap font-medium text-[#0A0C0F]">
                   {outboundAirlineCode} Airlines
@@ -505,11 +575,11 @@ export default function FlightBookingETicketSection({
               </div>
               <div className="grid grid-cols-3 gap-10">
                 <div className="flex items-center gap-2">
-                  <img
+                  {/* <img
                     src={EmirateLogo}
                     alt="Airline"
                     className="h-10 w-10 rounded-full object-cover"
-                  />
+                  /> */}
                   <div>
                     <div className="text-[14px] text-nowrap font-medium text-[#0A0C0F]">
                       {returnAirlineCode} Airlines
@@ -650,117 +720,92 @@ export default function FlightBookingETicketSection({
     window.print();
   };
 
-  // useEffect(() => {
-  //   const uploadPDFToS3 = async () => {
-  //     // if (pdfUploaded || !bookingRef || bookingRef === "N/A") return;
-
-  //     try {
-  //       setIsGeneratingPDF(true);
-  //       const pdfBlob = await generateFlightTicketPDFBlob(bookingRef);
-  //       const s3Key = `${Date.now()}.pdf`;
-  //       const bucket = import.meta.env.VITE_S3_BUCKET || "your-bucket-name";
-  //       const fileUrl = await uploadToS3({
-  //         bucket,
-  //         key: s3Key,
-  //         file: pdfBlob,
-  //       });
-  //       setS3Url(fileUrl);
-  //       setPdfUploaded(true);
-  //       console.log("PDF uploaded to S3:", fileUrl);
-  //     } catch (error) {
-  //       console.error("Error uploading PDF to S3:", error);
-  //       // toast.error("Failed to upload ticket to cloud storage");
-  //     } finally {
-  //       setIsGeneratingPDF(false);
-  //     }
-  //   };
-
-  //   const timer = setTimeout(() => {
-  //     uploadPDFToS3();
-  //   }, 1000);
-
-  //   return () => clearTimeout(timer);
-  // }, [bookingRef, pdfUploaded]);
-
   return (
-    <section className="mt-8 flex items-center justify-center px-4">
-      <div className="w-full max-w-[580px]">
-        <div style={{ display: !showInstructions ? "block" : "none" }}>
-          <FlightTicketContentCard />
-        </div>
-
-        <div style={{ display: showInstructions ? "block" : "none" }}>
-          <InstructionsCard />
-        </div>
-
-        <div
-          id="flight-ticket-pdf"
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: "-20000px",
-            top: 0,
-            width: "580px", // match your visible width
-            overflow: "visible",
-            pointerEvents: "none",
-            zIndex: -1,
-          }}
-        >
-          <FlightTicketContentCard />
-          <InstructionsCard />
-        </div>
-
-        <div
-          id="flight-ticket-print"
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: "-20000px",
-            top: 0,
-            width: "100%", // match your visible width
-            overflow: "visible",
-            pointerEvents: "none",
-            zIndex: -1,
-          }}
-        >
-          <div className="print-page">
+    <>
+      <Loader
+        show={isFetchingTicket}
+        label="Please wait while we are fetching your ticket."
+      />
+      <section className="mt-8 flex items-center justify-center px-4">
+        <div className="w-full max-w-[580px]">
+          <div style={{ display: !showInstructions ? "block" : "none" }}>
             <FlightTicketContentCard />
           </div>
 
-          <div className="print-page">
+          <div style={{ display: showInstructions ? "block" : "none" }}>
             <InstructionsCard />
+          </div>
+
+          <div
+            id="flight-ticket-pdf"
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: "-20000px",
+              top: 0,
+              width: "580px", // match your visible width
+              overflow: "visible",
+              pointerEvents: "none",
+              zIndex: -1,
+            }}
+          >
+            <FlightTicketContentCard />
+            <InstructionsCard />
+          </div>
+
+          <div
+            id="flight-ticket-print"
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              left: "-20000px",
+              top: 0,
+              width: "100%", // match your visible width
+              overflow: "visible",
+              pointerEvents: "none",
+              zIndex: -1,
+            }}
+          >
+            <div className="print-page">
+              <FlightTicketContentCard />
+            </div>
+
+            <div className="print-page">
+              <InstructionsCard />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center px-12 gap-4 mt-10 mb-12">
+            <Button
+              type="button"
+              overrideClasses
+              className="h-11 w-full rounded-xl bg-white border-2 border-[#2351A3] text-[#2351A3] text-[16px] font-semibold"
+              onClick={() => setOpenShareModal(true)}
+            >
+              Share your ticket
+            </Button>
+            <Button
+              type="button"
+              className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              overrideClasses
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPDF}
+            >
+              {isGeneratingPDF ? "Generating PDF..." : "Download your ticket"}
+            </Button>
           </div>
         </div>
 
-        <div className="flex items-center justify-center px-12 gap-4 mt-10 mb-12">
-          <Button
-            type="button"
-            overrideClasses
-            className="h-11 w-full rounded-xl bg-white border-2 border-[#2351A3] text-[#2351A3] text-[16px] font-semibold"
-            onClick={() => setOpenShareModal(true)}
-          >
-            Share your ticket
-          </Button>
-          <Button
-            type="button"
-            className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            overrideClasses
-            onClick={handleDownloadPDF}
-            disabled={isGeneratingPDF}
-          >
-            {isGeneratingPDF ? "Generating PDF..." : "Download your ticket"}
-          </Button>
-        </div>
-      </div>
-
-      {openShareModal && (
-        <ShareTicketModal
-          closeModal={() => setOpenShareModal(false)}
-          bookingRef={bookingRef}
-          passengerName={getPassengerName(passengers[0])}
-          onPrint={handlePrint}
-        />
-      )}
-    </section>
+        {openShareModal && (
+          <ShareTicketModal
+            closeModal={() => setOpenShareModal(false)}
+            bookingRef={bookingRef}
+            passengerName={getPassengerName(passengers[0])}
+            onPrint={handlePrint}
+            ticketPdfUrl={uploadedPdfUrl}
+          />
+        )}
+      </section>
+    </>
   );
 }

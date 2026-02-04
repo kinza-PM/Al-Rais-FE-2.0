@@ -548,6 +548,7 @@ const FlightBooking = () => {
           {currentStep === eticketStepIndex && (
             <FlightBookingETicketSection
               reservedFlightBooking={finalReservedFlightBookingData}
+              offerId={offerData?.offerId}
             />
           )}
         </div>

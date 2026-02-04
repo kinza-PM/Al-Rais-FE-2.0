@@ -1,9 +1,13 @@
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-import mealIcon from "../../assets/svgs/meals.svg";
-import portIcon from "../../assets/svgs/ports.svg";
-import wifiIcon from "../../assets/svgs/wifi.svg";
+// import entertainmentIcon from "../../assets/svgs/entertainment.svg";
+// import mealIcon from "../../assets/svgs/meals.svg";
+// import portIcon from "../../assets/svgs/ports.svg";
+// import wifiIcon from "../../assets/svgs/wifi.svg";
+import durationIcon from "../../assets/svgs/duration.svg";
+import refundableIcon from "../../assets/svgs/redundable.svg";
+import SEAT_ICON from "../../assets/svgs/seat.svg";
+import PLANE_ICON from "../../assets/svgs/plane.svg";
 // import applePay from "../../assets/svgs/ApplePay.svg";
 // import googlePay from "../../assets/svgs/GooglePay.svg";
 import shareIcon from "../../assets/svgs/share.svg";
@@ -57,8 +61,8 @@ type FlightBookingPaymentSectionProps = {
   onReservationChange: (
     eOrPath:
       | React.ChangeEvent<
-          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-        >
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
       | string,
     maybeValue?: any,
   ) => void;
@@ -118,10 +122,10 @@ export default function FlightBookingPaymentSection({
     EmirateLogo,
     cabinIcon,
     baggageIcon,
-    mealIcon,
-    wifiIcon,
-    portIcon,
-    entertainmentIcon,
+    mealIcon: refundableIcon,
+    wifiIcon: durationIcon,
+    portIcon: SEAT_ICON,
+    entertainmentIcon: PLANE_ICON
   };
   const segments = buildFlightSegmentFromTrip(trip, assets);
   const address = reservation?.paymentDetails?.address ?? {};
@@ -203,8 +207,8 @@ export default function FlightBookingPaymentSection({
       toast.error(error || "Validation failed.");
       return;
     }
-    console.log("cardDetails", cardDetails);
-    console.log("reservation", reservation);
+    // console.log("cardDetails", cardDetails);
+    // console.log("reservation", reservation);
     setIsProcessing(true);
     try {
       const cleanCardNumber = (cardDetails.number || "").replace(/\s+/g, "");
@@ -308,7 +312,7 @@ export default function FlightBookingPaymentSection({
       // always cleanup/close popup if still open
       try {
         if (popup && !popup.closed) popup.close();
-      } catch (_) {}
+      } catch (_) { }
       setIsProcessing(false);
     }
   };
@@ -626,7 +630,7 @@ export default function FlightBookingPaymentSection({
 
                       <CardCollapseToggle
                         open={openAddress}
-                        onClick={() => {}}
+                        onClick={() => { }}
                         className="pointer-events-none"
                       />
                     </div>
@@ -785,7 +789,7 @@ export default function FlightBookingPaymentSection({
             overrideClasses
             disabled={isPayButtonLoading}
             onClick={() => generatePayfortPaymentTokenization()}
-            // onClick={() => handleReservationFlightBooking()}
+          // onClick={() => handleReservationFlightBooking()}
           >
             {/* {isTokenizing ? "Loading..." : "Pay"} */}
             {getPayButtonText()}

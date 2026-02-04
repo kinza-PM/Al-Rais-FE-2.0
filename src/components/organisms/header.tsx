@@ -319,59 +319,59 @@ const AppHeader: React.FC<HeaderProps> = ({
     items:
       topNotifications.length > 0
         ? [
-            ...topNotifications.map((notification) => ({
-              key: notification.notificationId,
-              label: (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                    minWidth: 240,
-                    padding: 8,
-                    borderRadius: 8,
-                    marginBottom: 6,
-                    backgroundColor: notification.read ? "#ffffff" : "#E0F2FF",
-                    border: notification.read
-                      ? "1px solid #f3f4f6"
-                      : "1px solid #bfdbfe",
-                  }}
-                >
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span style={{ fontWeight: 600, color: "#0f172a" }}>
-                      {notification.title}
-                    </span>
-                    {!notification.read && (
-                      <span style={{ fontSize: 10, color: "#2563eb" }}>Unread</span>
-                    )}
-                  </div>
-                  <span style={{ color: "#4b5563" }}>{notification.message}</span>
-                  <span style={{ fontSize: 12, color: "#9ca3af" }}>
-                    {formatTimestamp(notification.createdAt)}
+          ...topNotifications.map((notification) => ({
+            key: notification.notificationId,
+            label: (
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  minWidth: 240,
+                  padding: 8,
+                  borderRadius: 8,
+                  marginBottom: 6,
+                  backgroundColor: notification.read ? "#ffffff" : "#E0F2FF",
+                  border: notification.read
+                    ? "1px solid #f3f4f6"
+                    : "1px solid #bfdbfe",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontWeight: 600, color: "#0f172a" }}>
+                    {notification.title}
                   </span>
+                  {!notification.read && (
+                    <span style={{ fontSize: 10, color: "#2563eb" }}>Unread</span>
+                  )}
                 </div>
-              ),
-            })),
-            ...(hasMoreNotifications
-              ? [
-                  {
-                    key: "show-more",
-                    label: (
-                      <div
-                        style={{
-                          padding: "8px 10px",
-                          color: "#2563eb",
-                          fontWeight: 600,
-                        }}
-                      >
-                        Show more
-                      </div>
-                    ),
-                    onClick: () => setShowAllNotifications(true),
-                  },
-                ]
-              : []),
-          ]
+                <span style={{ color: "#4b5563" }}>{notification.message}</span>
+                <span style={{ fontSize: 12, color: "#9ca3af" }}>
+                  {formatTimestamp(notification.createdAt)}
+                </span>
+              </div>
+            ),
+          })),
+          ...(hasMoreNotifications
+            ? [
+              {
+                key: "show-more",
+                label: (
+                  <div
+                    style={{
+                      padding: "8px 10px",
+                      color: "#2563eb",
+                      fontWeight: 600,
+                    }}
+                  >
+                    Show more
+                  </div>
+                ),
+                onClick: () => setShowAllNotifications(true),
+              },
+            ]
+            : []),
+        ]
         : [
           {
             key: "empty",
@@ -393,9 +393,12 @@ const AppHeader: React.FC<HeaderProps> = ({
 
   // Navigation links
   const navItems = [
-    { key: "travel", label: <Link to="/travel">Travel</Link> },
-    { key: "packages", label: <Link to="/packages">Packages</Link> },
-    { key: "about", label: <Link to="/about">About</Link> },
+    // { key: "travel", label: <Link to="/travel">Travel</Link> },
+    // { key: "packages", label: <Link to="/packages">Packages</Link> },
+    // { key: "about", label: <Link to="/about">About</Link> },
+    { key: "travel", label: <Link to="#">Travel</Link> },
+    { key: "packages", label: <Link to="#">Packages</Link> },
+    { key: "about", label: <Link to="#">About</Link> },
     ...(isAuthenticated
       ? [
         {

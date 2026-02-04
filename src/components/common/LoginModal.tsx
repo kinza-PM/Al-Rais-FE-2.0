@@ -3,7 +3,7 @@ import Button from "../atoms/Button";
 import TailwindCustomInput from "./TailwindCustomInput";
 import { useMemo, useState } from "react";
 import { useAuth } from "../../features/auth/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 
 export default function LoginModal({ showModal }: { showModal?: boolean }) {
     const [formData, setFormData] = useState({
@@ -15,6 +15,7 @@ export default function LoginModal({ showModal }: { showModal?: boolean }) {
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
     const { login, loading, error } = useAuth();
+    const location = useLocation();
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -61,7 +62,15 @@ export default function LoginModal({ showModal }: { showModal?: boolean }) {
     }, [formData, usePhone]);
 
     const openSignupPage = () => {
-        navigate("/auth", { state: { mode: "signup" } });
+        // navigate("/auth", { state: { mode: "signup" } });
+        const currentState = location.state;
+        navigate("/auth", { 
+            state: { 
+                mode: "signup",
+                returnUrl: location.pathname,
+                bookingData: currentState
+            } 
+        });
     };
 
     return (

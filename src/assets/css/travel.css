@@ -131,6 +131,8 @@ input[type="number"] {
 .countrySelectAndGetHelp {
   display: flex;
   align-items: center;
+  /* Reserve space when dropdown/get-help are hidden so tab position does not shift */
+  min-width: 260px;
 }
 
 .topHeaderTabs {
@@ -1090,12 +1092,12 @@ input[type="number"] {
 .compareCard {
   border-radius: 12px;
   border: 1px solid var(--white-300, #e4e4e7);
-  max-width: 95%;
-  /* max-width: 360px; */
+  max-width: 100%;
   margin-top: 15px;
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-width: 0;
 }
 
 .cardHeader {
@@ -1229,8 +1231,10 @@ input[type="number"] {
 .compareModalButton {
   border: 1px solid var(--primary-100, #a7c0ec);
   border-radius: 12px;
-  max-width: 360px;
+  max-width: 100%;
+  width: 100%;
   height: auto;
+  min-height: 140px;
   max-height: 290px;
 
   text-align: center;
@@ -1241,6 +1245,7 @@ input[type="number"] {
   margin-top: 15px;
   padding: 121px 0px;
   height: 100%;
+  cursor: pointer;
 }
 
 .compareModalButton p {
@@ -1252,7 +1257,73 @@ input[type="number"] {
 .compareCardsFlex {
   display: flex;
   align-items: stretch;
-  /* gap: 4px; */
+  flex-wrap: wrap;
+}
+
+.compareCardCol,
+.compareModalButtonCol {
+  min-width: 0;
+  display: flex;
+}
+
+.compareCardCol .compareCard,
+.compareModalButtonCol .compareModalButton {
+  width: 100%;
+}
+
+/* Compare card inner layout: allow shrink so time/date don't overlap on narrow cards */
+.compareCard .RoundTripCardDetail {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.compareCard .fightTitle {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.compareCard .flightTiming {
+  min-width: 0;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.compareCard .startTime,
+.compareCard .EndTime {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.compareCard .EndTime {
+  text-align: right;
+}
+
+.compareCard .startTime h5,
+.compareCard .EndTime h5,
+.compareCard .startTime p,
+.compareCard .EndTime p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compareCard .FlightDirection {
+  min-width: 0;
+  flex: 0 1 auto;
+  flex-shrink: 1;
+}
+
+.compareCard .visualGuid {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.compareCard .featureIcons {
+  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 
 .featureIconText img {
@@ -1556,7 +1627,24 @@ img:hover {
   }
 }
 
+@media (max-width: 991px) {
+  .compareModalButton {
+    padding: 60px 20px;
+    min-height: 120px;
+  }
+}
+
 @media (max-width: 767px) {
+  .compareModalButton {
+    padding: 40px 16px;
+    min-height: 100px;
+  }
+
+  .pricingCardsWrap {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
   .countrySelectAndGetHelp {
     position: fixed;
     bottom: 20px;
@@ -1626,6 +1714,20 @@ img:hover {
 }
 
 @media (max-width: 575px) {
+  .compareModalButton {
+    padding: 32px 12px;
+    min-height: 90px;
+  }
+
+  .compareCard .cardBody {
+    padding: 8px;
+  }
+
+  .compareCard .cardHeader {
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+
   .flightIcon {
     width: 26px;
     height: 26px;
@@ -1685,6 +1787,15 @@ img:hover {
 }
 
 @media (max-width: 475px) {
+  .compareModalButton {
+    padding: 28px 10px;
+    min-height: 80px;
+  }
+
+  .compareModalButton p {
+    font-size: 12px;
+  }
+
   .topHalfCard {
     gap: 5px;
   }

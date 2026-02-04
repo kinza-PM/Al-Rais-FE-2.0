@@ -13,10 +13,14 @@ const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
 
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-import mealIcon from "../../assets/svgs/meals.svg";
-import portsIcon from "../../assets/svgs/ports.svg";
-import wifiIcon from "../../assets/svgs/wifi.svg";
+// import entertainmentIcon from "../../assets/svgs/entertainment.svg";
+// import mealIcon from "../../assets/svgs/meals.svg";
+// import portsIcon from "../../assets/svgs/ports.svg";
+// import wifiIcon from "../../assets/svgs/wifi.svg";
+import durationIcon from "../../assets/svgs/duration.svg";
+import refundableIcon from "../../assets/svgs/redundable.svg";
+import SEAT_ICON from "../../assets/svgs/seat.svg";
+import PLANE_ICON from "../../assets/svgs/plane.svg";
 
 import { travelData } from "../../utils/mockData";
 const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
@@ -186,8 +190,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   flightSegments: Array.isArray(segs)
                     ? segs
                     : segs
-                    ? [segs]
-                    : [],
+                      ? [segs]
+                      : [],
                 },
               ],
             },
@@ -201,10 +205,10 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
             {
               cabinIcon,
               baggageIcon,
-              mealIcon,
-              wifiIcon,
-              portsIcon,
-              entertainmentIcon,
+              mealIcon: refundableIcon,
+              durationIcon,
+              seatIcon: SEAT_ICON,
+              entertainmentIcon: PLANE_ICON,
             }
           );
 
@@ -268,9 +272,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         return (
           <div
             key={index}
-            className={`flightDetailCards ${
-              inbound ? "flightDetailRoundTripCards" : ""
-            }`}
+            className={`flightDetailCards ${inbound ? "flightDetailRoundTripCards" : ""
+              }`}
           >
             <div className="forBorderBottom">
               {renderRoundTopCard(outbound ?? item, item, true)}
@@ -284,11 +287,10 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 <div className="modalOptions">
                   <div className="tabs">
                     <div
-                      className={`tab ${
-                        active?.name === "price" && active?.id === index
+                      className={`tab ${active?.name === "price" && active?.id === index
                           ? "active"
                           : ""
-                      }`}
+                        }`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
                         // setActive({ name: "price", id: index });
@@ -304,11 +306,10 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                       Price options
                     </div>
                     <div
-                      className={`tab ${
-                        active?.name === "flight" && active?.id === index
+                      className={`tab ${active?.name === "flight" && active?.id === index
                           ? "active"
                           : ""
-                      }`}
+                        }`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
                         // setActive({ name: "flight", id: index });
@@ -324,11 +325,10 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                       Flight details
                     </div>
                     <div
-                      className={`tab ${
-                        active?.name === "compare" && active?.id === index
+                      className={`tab ${active?.name === "compare" && active?.id === index
                           ? "active"
                           : ""
-                      }`}
+                        }`}
                       onClick={() => {
                         // setActive({ name: "compare", id: index });
                         setActive((prev) => {

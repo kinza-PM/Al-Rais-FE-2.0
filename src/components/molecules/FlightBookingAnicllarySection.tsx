@@ -1,9 +1,9 @@
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-import mealIcon from "../../assets/svgs/meals.svg";
-import portIcon from "../../assets/svgs/ports.svg";
-import wifiIcon from "../../assets/svgs/wifi.svg";
+// import entertainmentIcon from "../../assets/svgs/entertainment.svg";
+// import mealIcon from "../../assets/svgs/meals.svg";
+// import portIcon from "../../assets/svgs/ports.svg";
+// import wifiIcon from "../../assets/svgs/wifi.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import { useMemo, useState } from "react";
 import FlightBookingBaggageSection from "../atoms/FlightBookingBaggageSection";
@@ -33,6 +33,10 @@ import {
 import toast from "react-hot-toast";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import { useFlightAncillaryBooking } from "../../hooks/useFlightBooking";
+import durationIcon from "../../assets/svgs/duration.svg";
+import refundableIcon from "../../assets/svgs/redundable.svg";
+import SEAT_ICON from "../../assets/svgs/seat.svg";
+import PLANE_ICON from "../../assets/svgs/plane.svg";
 
 type FlightBookingAnicllarySectionProps = {
   trip: any;
@@ -69,10 +73,10 @@ export default function FlightBookingAnicllarySection({
     EmirateLogo,
     cabinIcon,
     baggageIcon,
-    mealIcon,
-    wifiIcon,
-    portIcon,
-    entertainmentIcon,
+    mealIcon: refundableIcon,
+    wifiIcon: durationIcon,
+    portIcon: SEAT_ICON,
+    entertainmentIcon: PLANE_ICON
   };
   const segments = buildFlightSegmentFromTrip(trip, assets);
   const firstPrice = getPriceCabinClassForFlightSummary(trip);

@@ -47,11 +47,12 @@ function calculateCountdown(createdAt: string): { hours: string; mins: string; s
 
 // Transform a single booking from API response
 export function transformBookingItem(apiItem: any): any {
-  // Map status: active -> Confirmed, pending -> Pending, expired -> Expired
+  // Map status: API returns completed/active -> Confirmed, pending -> Pending, expired -> Expired
   const statusMap: Record<string, BookingStatus> = {
     expired: "Expired",
     pending: "Pending",
     active: "Confirmed",
+    completed: "Confirmed",
   };
   
   const status = statusMap[apiItem.status?.toLowerCase()] || "Pending";

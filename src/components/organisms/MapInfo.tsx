@@ -13,7 +13,7 @@ import "leaflet/dist/leaflet.css";
 type Location = {
   lat: number;
   lng: number;
-  countryFlag: string;
+  countryFlag?: string;
   destinationName: string;
 };
 
@@ -32,15 +32,18 @@ const AutoZoomAndAddTooltips: React.FC<{ locations: Location[] }> = ({
     const bounds = L.latLngBounds(
       locations.map<L.LatLngExpression>((loc) => [loc.lat, loc.lng])
     );
-    map.fitBounds(bounds, { padding: [50, 50], maxZoom: 4 });
+    map.fitBounds(bounds, { padding: [80, 80], maxZoom: 5 });
 
     // Add permanent tooltipped markers
     const created: L.Marker[] = locations.map((loc) => {
       const marker = L.marker([loc.lat, loc.lng]).addTo(map);
+      const flagHtml = loc.countryFlag 
+        ? `<img src="${loc.countryFlag}" alt="Flag" style="width:20px;height:15px;object-fit:cover;margin-right:5px"/>` 
+        : '';
       marker
         .bindTooltip(
           `<div style="display:flex;justify-content:center;align-items:center;gap:5px;padding:2px 25px">
-            <img src="${loc.countryFlag}" alt="Flag" style="width:20px;height:15px;object-fit:cover"/>
+            ${flagHtml}
             <span style="font-weight:500;font-size:12px">${loc.destinationName}</span>
           </div>`,
           {

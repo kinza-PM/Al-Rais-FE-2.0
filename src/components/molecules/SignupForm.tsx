@@ -7,7 +7,7 @@ import logoImg from "../../assets/images/logo.jpg";
 import { getEmailError, getPasswordError } from "../../utils/validators";
 // import FlagUsa from "../../assets/images/Flag-usa.png";
 // import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useNetworkStatus } from "../../context/NetworkStatusContext";
 import type { SignupMethod } from "../../features/auth/types";
 import { PhoneInput } from "react-international-phone";
@@ -30,7 +30,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
     password: "",
     confirmPassword: "",
   });
-
+  const location = useLocation();
+  const navigate = useNavigate();
   // const [signupMessage, setSignupMessage] = useState<string | null>(null);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpCode, setOtpCode] = useState("");
@@ -63,6 +64,9 @@ const SignupForm: React.FC<SignupFormProps> = ({
     clearError,
   } = useAuth();
   const { isOnline } = useNetworkStatus();
+
+  const returnUrl = (location.state as any)?.returnUrl;
+  const bookingData = (location.state as any)?.bookingData;
 
   // function ChevronDown() {
   //   return (
@@ -184,9 +188,15 @@ const SignupForm: React.FC<SignupFormProps> = ({
     if (result.success) {
       // Fallback: if page doesn't reload in 2 seconds, close modal
       toast.success("Account verified successfully!");
-      setTimeout(() => {
-        onSignupSuccess?.();
-      }, 2000);
+      if (returnUrl && bookingData) {
+        setTimeout(() => {
+          navigate(returnUrl, { state: bookingData, replace: true });
+        }, 1500);
+      } else {
+        setTimeout(() => {
+          onSignupSuccess?.();
+        }, 2000);
+      }
     } else {
       //useeffect error will handle this (useAuth)
       // toast.error(result.message || "Invalid verification code...");
@@ -324,13 +334,24 @@ const SignupForm: React.FC<SignupFormProps> = ({
       ) {
         // Auto-login was successful
         toast.success("Account created and logged in successfully!");
-        onSignupSuccess?.();
+        if (returnUrl && bookingData) {
+          setTimeout(() => {
+            navigate(returnUrl, { state: bookingData, replace: true });
+          }, 1500);
+        } else {
+          onSignupSuccess?.();
+        }
       } else {
         toast.success(result.message || "Account created successfully!");
-        // Still call onSignupSuccess after a delay to let user see the message
-        setTimeout(() => {
-          onSignupSuccess?.();
-        }, 1000);
+        if (returnUrl && bookingData) {
+          setTimeout(() => {
+            navigate(returnUrl, { state: bookingData, replace: true });
+          }, 1500);
+        } else {
+          setTimeout(() => {
+            onSignupSuccess?.();
+          }, 1000);
+        }
       }
     } else {
       // error already handled in useAuth.ts via `error`
@@ -415,9 +436,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   setUsePhone(false);
                   setTouched((prev) => ({ ...prev, email: false }));
                 }}
-                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                  !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                }`}
+                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${!usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                  }`}
               >
                 Email
               </button>
@@ -427,9 +447,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   setUsePhone(true);
                   setTouched((prev) => ({ ...prev, email: false }));
                 }}
-                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                  usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                }`}
+                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                  }`}
               >
                 Phone
               </button>
@@ -683,11 +702,10 @@ const SignupForm: React.FC<SignupFormProps> = ({
               type="button"
               onClick={handleResendCode}
               disabled={!canResend || resendLoading || !isOnline}
-              className={`text-sm underline ${
-                canResend && !resendLoading
-                  ? "text-blue-600 hover:text-blue-800"
-                  : "text-gray-400 cursor-not-allowed"
-              }`}
+              className={`text-sm underline ${canResend && !resendLoading
+                ? "text-blue-600 hover:text-blue-800"
+                : "text-gray-400 cursor-not-allowed"
+                }`}
             >
               {resendLoading
                 ? "Sending..."

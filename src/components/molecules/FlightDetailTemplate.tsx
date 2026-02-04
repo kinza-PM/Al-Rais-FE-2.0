@@ -1134,7 +1134,7 @@ const FlightDetailTemplate: React.FC = () => {
             />
           </div>
           <div className="countrySelectAndGetHelp py-pxTopHeader">
-            <div>
+            {/* <div>
               <Select
                 className="countrySelectBox"
                 defaultValue="US"
@@ -1215,7 +1215,7 @@ const FlightDetailTemplate: React.FC = () => {
 
             <div className="getHelpLink">
               <a href="#">Get help</a>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

@@ -181,8 +181,8 @@ export const extractFlightFeatures = (
     cabinIcon: string;
     baggageIcon: string;
     mealIcon: string;
-    wifiIcon: string;
-    portsIcon: string;
+    durationIcon: string;
+    seatIcon: string;
     entertainmentIcon: string;
   }
 ) => {
@@ -198,8 +198,8 @@ export const extractFlightFeatures = (
     { key: "cabin", icon: icons.cabinIcon, value: cabinRaw, label: `Cabin: ${cabinRaw}` },
     { key: "baggage", icon: icons.baggageIcon, value: baggageVal, label: `Baggage: ${baggageVal}` },
     { key: "meal", icon: icons.mealIcon, value: mealVal, label: `${mealVal}` },
-    { key: "duration", icon: icons.wifiIcon, value: durationVal, label: `Duration: ${durationVal}` },
-    { key: "seats", icon: icons.portsIcon, value: seatsVal, label: `Seats: ${seatsVal}` },
+    { key: "duration", icon: icons.durationIcon, value: durationVal, label: `Duration: ${durationVal}` },
+    { key: "seats", icon: icons.seatIcon, value: seatsVal, label: `Seats: ${seatsVal}` },
     { key: "equipment", icon: icons.entertainmentIcon, value: equipmentVal, label: `${equipmentVal}` },
   ];
 

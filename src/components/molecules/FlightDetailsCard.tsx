@@ -11,17 +11,20 @@ import { formatDate, formatTime } from "../../utils/helpers";
 import React from "react";
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-import mealIcon from "../../assets/svgs/meals.svg";
-import portsIcon from "../../assets/svgs/ports.svg";
-import wifiIcon from "../../assets/svgs/wifi.svg";
+import refundableIcon from "../../assets/svgs/redundable.svg";
+// import mealIcon from "../../assets/svgs/meals.svg";
+import durationIcon from "../../assets/svgs/duration.svg";
+// import wifiIcon from "../../assets/svgs/wifi.svg";
 import { extractFlightFeatures } from "../../utils/searchFlightListingHelpers";
+import { getAirportCoords } from "../../utils/geolocationHelper";
 
 type FlightDetailsCardProps = {
   details: any;
 };
 
 const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
+  const [mapLocations, setMapLocations] = React.useState<any[]>([]);
+
   const seg = details?.outbound ?? details;
 
   const fd = seg?.flight_detail ?? {};
@@ -73,10 +76,10 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         {
           cabinIcon,
           baggageIcon,
-          mealIcon,
-          wifiIcon,
-          portsIcon,
-          entertainmentIcon,
+          mealIcon: refundableIcon,
+          durationIcon ,
+          seatIcon: SEAT_ICON,
+          entertainmentIcon: PLANE_ICON,
         }
       );
 
@@ -114,10 +117,10 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         {
           cabinIcon,
           baggageIcon,
-          mealIcon,
-          wifiIcon,
-          portsIcon,
-          entertainmentIcon,
+          mealIcon: refundableIcon,
+          durationIcon,
+          seatIcon: SEAT_ICON,
+          entertainmentIcon: PLANE_ICON,
         }
       );
 
@@ -141,6 +144,61 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
     }
     return rows;
   }, [details, fd, airport, seg]);
+
+  React.useEffect(() => {
+    const fetchCoordinates = async () => {
+      const locations = await Promise.all(
+        displayRows.map(async (row) => {
+          // Collect all unique airports from segments
+          const allAirports: string[] = [];
+
+          if (row.segments && row.segments.length > 1) {
+            // Multiple segments - add all departure and arrival airports
+            row.segments.forEach((segment: any, idx: number) => {
+              // Add departure airport
+              const depAirport = segment?.departureAirportCode;
+              if (depAirport && !allAirports.includes(depAirport)) {
+                allAirports.push(depAirport);
+              }
+
+              // Add arrival airport (for last segment)
+              if (idx === row.segments.length - 1) {
+                const arrAirport = segment?.arrivalAirportCode;
+                if (arrAirport && !allAirports.includes(arrAirport)) {
+                  allAirports.push(arrAirport);
+                }
+              }
+            });
+          } else {
+            // Direct flight - just start and end
+            allAirports.push(row.startAirport, row.endAirport);
+          }
+
+          // Fetch coordinates for all airports
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          const airportCoords = await Promise.all(
+            allAirports.map(async (airportCode) => {
+              const coords = await getAirportCoords(airportCode);
+              return {
+                lat: coords.lat,
+                lng: coords.lng,
+                destinationName: airportCode
+              };
+            })
+          );
+
+          return airportCoords;
+        })
+      );
+
+      setMapLocations(locations);
+    };
+
+    if (displayRows.length > 0) {
+      fetchCoordinates();
+    }
+  }, [displayRows]);
 
   return (
     <div className="flight_detail_card">
@@ -437,10 +495,10 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                       {
                         cabinIcon,
                         baggageIcon,
-                        mealIcon,
-                        wifiIcon,
-                        portsIcon,
-                        entertainmentIcon,
+                        mealIcon: refundableIcon,
+                        durationIcon,
+                        seatIcon: SEAT_ICON,
+                        entertainmentIcon: PLANE_ICON,
                       }
                     );
 
@@ -625,7 +683,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
           </Flex>
 
           <Flex style={{ width: "40%" }}>
-            <div className="map_container">
+            {/* <div className="map_container">
               <MapInfo
                 locations={[
                   {
@@ -642,6 +700,15 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                   },
                 ]}
               />
+            </div> */}
+            <div className="map_container">
+              {mapLocations[idx] ? (
+                <MapInfo locations={mapLocations[idx]} />
+              ) : (
+                <div className="flex items-center justify-center text-[#2351a3] h-full">
+                  Loading map...
+                </div>
+              )}
             </div>
           </Flex>
         </Flex>

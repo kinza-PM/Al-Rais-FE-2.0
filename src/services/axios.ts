@@ -14,6 +14,8 @@ const flightApis = [
   "/reservationFlightBooking",
   "/retrieveFlightBooking",
   "/myBooking",
+  "/uploadImagePreSignedUrl",
+  "/uploadTicket",
 ];
 const paymentApis = ["/pay"];
 const flightAncillaryApis = ["/ancillarySearch", "/bookAncillary"];

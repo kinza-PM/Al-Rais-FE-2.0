@@ -63,8 +63,18 @@ export type FlightReservationBooking = {
   };
 };
 
+export type UploadImagePreSignedUrlRequest = {
+  offerId: string;
+  contentType: string;
+};
+
+export type UploadTicketRequest = {
+  ticketImage: string;
+  offerId: string;
+};
+
 export async function postInitialFlightProvBooking<TResp = any>(
-  body: FlightInitialBooking
+  body: FlightInitialBooking,
 ): Promise<TResp> {
   const source = "postInitialFlightProvBooking";
   try {
@@ -75,7 +85,7 @@ export async function postInitialFlightProvBooking<TResp = any>(
 }
 
 export async function postAncillaryBooking<TResp = any>(
-  body: FlightAncillaryBooking
+  body: FlightAncillaryBooking,
 ): Promise<TResp> {
   const source = "postAncillaryBooking";
   try {
@@ -86,7 +96,7 @@ export async function postAncillaryBooking<TResp = any>(
 }
 
 export async function postFlightFareRuleSearch<TResp = any>(
-  body: FlightFareRuleSearch
+  body: FlightFareRuleSearch,
 ): Promise<TResp> {
   const source = "postFlightFareRuleSearch";
   try {
@@ -97,7 +107,7 @@ export async function postFlightFareRuleSearch<TResp = any>(
 }
 
 export async function postFlightReservationBooking<TResp = any>(
-  body: FlightReservationBooking
+  body: FlightReservationBooking,
 ): Promise<TResp> {
   const source = "postFlightReservationBooking";
   try {
@@ -108,7 +118,7 @@ export async function postFlightReservationBooking<TResp = any>(
 }
 
 export async function postRetrieveFlightBooking<TResp = any>(
-  body: RetrieveFlightBooking
+  body: RetrieveFlightBooking,
 ): Promise<TResp> {
   const source = "postRetrieveFlightBooking";
   try {
@@ -119,7 +129,7 @@ export async function postRetrieveFlightBooking<TResp = any>(
 }
 
 export async function postFlightAncillarySearch<TResp = any>(
-  body: FlightAncillarySearch
+  body: FlightAncillarySearch,
 ): Promise<TResp> {
   const source = "postFlightAncillarySearch";
   try {
@@ -130,11 +140,33 @@ export async function postFlightAncillarySearch<TResp = any>(
 }
 
 export async function postMyBooking<TResp = any>(
-  body: UserProfileMyBooking
+  body: UserProfileMyBooking,
 ): Promise<TResp> {
   const source = "posMyBooking";
   try {
     return await api.post<TResp>("/myBooking", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}
+
+export async function postUploadImagePreSignedUrl<TResp = any>(
+  body: UploadImagePreSignedUrlRequest,
+): Promise<TResp> {
+  const source = "postUploadImagePreSignedUrl";
+  try {
+    return await api.post<TResp>("/uploadImagePreSignedUrl", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}
+
+export async function postUploadTicket<TResp = any>(
+  body: UploadTicketRequest,
+): Promise<TResp> {
+  const source = "postUploadTicket";
+  try {
+    return await api.post<TResp>("/uploadTicket", body);
   } catch (err) {
     throw toApiError(source, err);
   }

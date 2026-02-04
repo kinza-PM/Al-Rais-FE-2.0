@@ -6,11 +6,14 @@ import whatsappIcon from "../../assets/svgs/Icon.png.svg";
 
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-import mealIcon from "../../assets/svgs/meals.svg";
-import portsIcon from "../../assets/svgs/ports.svg";
-import wifiIcon from "../../assets/svgs/wifi.svg";
-
+// import entertainmentIcon from "../../assets/svgs/entertainment.svg";
+// import mealIcon from "../../assets/svgs/meals.svg";
+// import portsIcon from "../../assets/svgs/ports.svg";
+// import wifiIcon from "../../assets/svgs/wifi.svg";
+import durationIcon from "../../assets/svgs/duration.svg";
+import refundableIcon from "../../assets/svgs/redundable.svg";
+import SEAT_ICON from "../../assets/svgs/seat.svg";
+import PLANE_ICON from "../../assets/svgs/plane.svg";
 import { Switch, Modal } from "antd";
 import CustomButton from "../common/CustomButton";
 
@@ -191,10 +194,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 {
                   cabinIcon,
                   baggageIcon,
-                  mealIcon,
-                  wifiIcon,
-                  portsIcon,
-                  entertainmentIcon,
+                  mealIcon: refundableIcon,
+                  durationIcon,
+                  seatIcon: SEAT_ICON,
+                  entertainmentIcon: PLANE_ICON,
                 }
               );
 

@@ -41,16 +41,16 @@ const FlightHeroSection: React.FC = () => {
       setPaxCounts(next);
       setPaxOrder(order);
     },
-    []
+    [],
   );
 
   const handleDepartDate = useCallback(
     (d: Date | null) => setDepartDate(d),
-    []
+    [],
   );
   const handleArrivalDate = useCallback(
     (d: Date | null) => setArrivalDate(d),
-    []
+    [],
   );
 
   const {
@@ -84,7 +84,7 @@ const FlightHeroSection: React.FC = () => {
       passengers: isInitialLoading,
       cabinClasses: isInitialLoading,
     }),
-    [isInitialLoading, loadingMap]
+    [isInitialLoading, loadingMap],
   );
 
   useEffect(() => {
@@ -152,6 +152,13 @@ const FlightHeroSection: React.FC = () => {
   const validateForm = (): boolean => {
     const errors: string[] = [];
 
+    if (!fromCode?.trim()) {
+      errors.push("Please select origin (From)");
+    }
+    if (!toCode?.trim()) {
+      errors.push("Please select destination (To)");
+    }
+
     if (!departDate) {
       errors.push("Departure date is required");
     }
@@ -161,7 +168,7 @@ const FlightHeroSection: React.FC = () => {
     // If no passenger selection has been propagated yet, treat default UI (1 adult) as selected
     const totalPassengersRaw = Object.values(paxCounts).reduce(
       (sum, count) => sum + count,
-      0
+      0,
     );
     const totalPassengers =
       Object.keys(paxCounts).length === 0 ? 1 : totalPassengersRaw;
@@ -172,7 +179,7 @@ const FlightHeroSection: React.FC = () => {
     if (!selectedCabinClassId) {
       errors.push("Cabin class is required");
     }
-    
+
     if (errors.length > 1) {
       toast.error("Please complete all required fields before searching.");
     } else if (errors.length === 1) {
@@ -223,8 +230,10 @@ const FlightHeroSection: React.FC = () => {
     const departureStr = formatDateToLocalISO(departDate);
     const arrivalStr = formatDateToLocalISO(arrivalDate);
 
-    const fromOpt = (countries as AirportOption[]).find((c) => c.code === fromCode) ?? null;
-    const toOpt = (countries as AirportOption[]).find((c) => c.code === toCode) ?? null;
+    const fromOpt =
+      (countries as AirportOption[]).find((c) => c.code === fromCode) ?? null;
+    const toOpt =
+      (countries as AirportOption[]).find((c) => c.code === toCode) ?? null;
 
     setFlight({
       fromCode,
@@ -280,10 +289,11 @@ const FlightHeroSection: React.FC = () => {
                     key={t.id}
                     type="button"
                     onClick={() => setTrip(t.key)}
-                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${trip === t.key
-                      ? "bg-[#2351A3] text-white"
-                      : "text-[#3A4350] hover:bg-[#F4F7FD]"
-                      }`}
+                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${
+                      trip === t.key
+                        ? "bg-[#2351A3] text-white"
+                        : "text-[#3A4350] hover:bg-[#F4F7FD]"
+                    }`}
                   >
                     {t.label}
                   </button>

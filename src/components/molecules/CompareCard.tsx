@@ -4,12 +4,16 @@ import { Col, Row, Modal } from "antd";
 
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-import mealIcon from "../../assets/svgs/meals.svg";
-import portsIcon from "../../assets/svgs/ports.svg";
-import wifiIcon from "../../assets/svgs/wifi.svg";
+// import entertainmentIcon from "../../assets/svgs/entertainment.svg";
+// import mealIcon from "../../assets/svgs/meals.svg";
+// import portsIcon from "../../assets/svgs/ports.svg";
+// import wifiIcon from "../../assets/svgs/wifi.svg";
 import flightIcon from "../../assets/svgs/flightIcon.svg";
 import seaticon from "../../assets/svgs/seatsicon.svg";
+import durationIcon from "../../assets/svgs/duration.svg";
+import refundableIcon from "../../assets/svgs/redundable.svg";
+import SEAT_ICON from "../../assets/svgs/seat.svg";
+import PLANE_ICON from "../../assets/svgs/plane.svg";
 
 import circlePlus from "../../assets/svgs/plus-circle.svg";
 import { formatDate, formatTime } from "../../utils/helpers";
@@ -26,7 +30,7 @@ const CompareCard: React.FC<CompareCardProps> = ({
   const [newFlightData, setNewFlightData] = useState<any[]>([]);
   const [localAvailable, setLocalAvailable] = useState<any[]>([]);
   const [isCurrentPinned, setIsCurrentPinned] = useState(false);
-  console.log("available->", availableFlights);
+  // console.log("available->", availableFlights);
   const normalize = (x: any) => (x == null ? x : String(x));
 
   useEffect(() => {
@@ -299,25 +303,25 @@ const CompareCard: React.FC<CompareCardProps> = ({
               )}
               {seg.seatsAvailable && (
                 <span className="featureIconTooltipWrap">
-                  <img src={portsIcon} alt="seats" />
+                  <img src={SEAT_ICON} alt="seats" />
                   <span className="tooltip">Seats: {seg.seatsAvailable}</span>
                 </span>
               )}
               <span className="featureIconTooltipWrap">
-                <img src={mealIcon} alt="meal" />
+                <img src={refundableIcon} alt="meal" />
                 <span className="tooltip">
                   {seg.refundable ? "Refundable" : "Non-Refundable"}
                 </span>
               </span>
               {duration && (
                 <span className="featureIconTooltipWrap">
-                  <img src={wifiIcon} alt="duration" />
+                  <img src={durationIcon} alt="duration" />
                   <span className="tooltip">Duration: {duration}</span>
                 </span>
               )}
               {seg.equipment && (
                 <span className="featureIconTooltipWrap">
-                  <img src={entertainmentIcon} alt="equipment" />
+                  <img src={PLANE_ICON} alt="equipment" />
                   <span className="tooltip">{seg.equipment}</span>
                 </span>
               )}
@@ -524,7 +528,7 @@ const CompareCard: React.FC<CompareCardProps> = ({
       const inboundSegs = normalizeLegSegments(inbound);
 
       return (
-        <Col span={8} key={idKey} className="mb-5">
+        <Col xs={24} sm={24} md={24} lg={12} xl={8} key={idKey} className="mb-5 compareCardCol">
           <div className="compareCard">
             <div className="cardHeader">
               {isCurrent ? "Chosen Flight" : "Comparison Flight"}
@@ -615,7 +619,7 @@ const CompareCard: React.FC<CompareCardProps> = ({
     // one-way card (multi-segment if available)
     const oneWaySegs = normalizeOneWaySegments(item);
     return (
-      <Col span={8} key={idKey} className="mb-5">
+      <Col xs={24} sm={24} md={24} lg={12} xl={8} key={idKey} className="mb-5 compareCardCol">
         <div className="compareCard">
           <div className="cardHeader">
             {isCurrent ? "Chosen Flight" : "Comparison Flight"}
@@ -749,9 +753,9 @@ const CompareCard: React.FC<CompareCardProps> = ({
   return (
     <div className="">
       <div className="pricingCardsWrap">
-        <Row className="compareCardsFlex">
+        <Row className="compareCardsFlex" gutter={[16, 16]}>
           {newFlightData.map((item) => renderCompareCard(item))}
-          <Col span={8}>
+          <Col xs={24} sm={24} md={24} lg={12} xl={8} className="compareModalButtonCol">
             <div className="compareModalButton" onClick={showModalCompare}>
               <img src={circlePlus} alt="" />
               <p>Add another flight to compare</p>

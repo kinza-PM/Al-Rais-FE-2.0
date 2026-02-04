@@ -2,14 +2,16 @@ import Whatsapp from "../../assets/images/whatsapp.png";
 import Printer from "../../assets/svgs/printer.svg";
 import Mail from "../../assets/svgs/mail.svg";
 import Cross from "../../assets/svgs/cross.svg";
-import { useState } from "react";
-import { generateFlightTicketPDF } from "../../utils/pdfGenerator";
 
 type ShareTicketProps = {
   closeModal: () => void;
   bookingRef: string;
   passengerName?: string;
-  onPrint: () => void;
+  onPrint?: () => void;
+  /** URL of the uploaded ticket PDF (from S3) for sharing */
+  ticketPdfUrl?: string | null;
+  /** Show Print option (e.g. hide in My Bookings listing) */
+  showPrint?: boolean;
 };
 
 export default function ShareTicketModal({
@@ -17,64 +19,35 @@ export default function ShareTicketModal({
   bookingRef,
   passengerName = "Valued Customer",
   onPrint,
+  ticketPdfUrl,
+  showPrint = true,
 }: ShareTicketProps) {
-  const [isSharing, setIsSharing] = useState(false);
-  const [pdfGenerated, setPdfGenerated] = useState(false);
-
   const handleEmailShare = async () => {
-    if (!pdfGenerated) {
-      try {
-        setIsSharing(true);
-        await generateFlightTicketPDF(bookingRef);
-        setPdfGenerated(true);
-      } catch (error) {
-        console.error("Error generating PDF:", error);
-        setIsSharing(false);
-        return;
-      } finally {
-        setIsSharing(false);
-      }
-    }
-
     const subject = encodeURIComponent(
-      `Flight Booking Confirmation - ${bookingRef}`
+      `Flight Booking Confirmation - ${bookingRef}`,
     );
     const body = encodeURIComponent(
       `Dear ${passengerName},\n\n` +
         `Thank you for booking with Al Rais Travels!\n\n` +
         `Your booking has been confirmed with the following details:\n` +
         `Booking Reference: ${bookingRef}\n\n` +
-        `Your e-ticket has been downloaded to your device. Please attach the PDF file to this email and keep it safe for your travel.\n\n` +
+        (ticketPdfUrl ? `Your e-ticket: ${ticketPdfUrl}\n\n` : ``) +
         `We wish you a pleasant journey!\n\n` +
         `Best regards,\n` +
-        `Al Rais Travels Team`
+        `Al Rais Travels Team`,
     );
 
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const handleWhatsAppShare = async () => {
-    if (!pdfGenerated) {
-      try {
-        setIsSharing(true);
-        await generateFlightTicketPDF(bookingRef);
-        setPdfGenerated(true);
-      } catch (error) {
-        console.error("Error generating PDF:", error);
-        setIsSharing(false);
-        return;
-      } finally {
-        setIsSharing(false);
-      }
-    }
-
     const message = encodeURIComponent(
       `✈️ *Flight Booking Confirmed* ✈️\n\n` +
         `Dear ${passengerName},\n\n` +
         `Your booking with Al Rais Travels has been confirmed!\n\n` +
         `📋 *Booking Reference:* ${bookingRef}\n\n` +
-        `Your e-ticket PDF has been downloaded to your device. Please attach it to this message.\n\n` +
-        `Have a safe journey! 🌍✨`
+        (ticketPdfUrl ? `📄 Your e-ticket: ${ticketPdfUrl}\n\n` : ``) +
+        `Have a safe journey! 🌍✨`,
     );
 
     window.open(`https://wa.me/?text=${message}`, "_blank");
@@ -94,7 +67,7 @@ export default function ShareTicketModal({
         <div className="w-full max-w-[520px]">
           <div
             className="relative rounded-2xl bg-white shadow-xl ring-1 ring-black/5 px-6 sm:px-10 py-6 sm:py-8
-                       flex flex-col min-h-[350px] sm:min-h-[360px]"
+                       flex flex-col min-h-[250px] sm:min-h-[360px]"
             role="dialog"
             aria-modal="true"
             aria-labelledby="share-ticket-title"
@@ -117,44 +90,39 @@ export default function ShareTicketModal({
             </h2>
 
             <div className="mt-auto flex items-center justify-center gap-8 sm:gap-12 pb-2">
-              <button
-                type="button"
-                className="group flex flex-col items-center gap-2"
-                onClick={handlePrint}
-              >
-                <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F2F2F3]">
-                  <img src={Printer} alt="printer" />
-                </span>
-                <span className="text-[12px] text-[#3D495C]">Print</span>
-              </button>
+              {showPrint && (
+                <button
+                  type="button"
+                  className="group flex flex-col items-center gap-2"
+                  onClick={handlePrint}
+                >
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F2F2F3]">
+                    <img src={Printer} alt="printer" />
+                  </span>
+                  <span className="text-[12px] text-[#3D495C]">Print</span>
+                </button>
+              )}
 
               <button
                 type="button"
                 className="group flex flex-col items-center gap-2"
                 onClick={handleEmailShare}
-                disabled={isSharing}
               >
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#F2F2F3]">
                   <img src={Mail} alt="mail" />
                 </span>
-                <span className="text-[12px] text-[#3D495C]">
-                  {" "}
-                  {isSharing ? "Loading..." : "Email"}
-                </span>
+                <span className="text-[12px] text-[#3D495C]">Email</span>
               </button>
 
               <button
                 type="button"
                 className="group flex flex-col items-center gap-2"
                 onClick={handleWhatsAppShare}
-                disabled={isSharing}
               >
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366]">
                   <img src={Whatsapp} alt="whatsapp" />
                 </span>
-                <span className="text-[12px] text-[#3D495C]">
-                  {isSharing ? "Loading..." : "WhatsApp"}
-                </span>
+                <span className="text-[12px] text-[#3D495C]">WhatsApp</span>
               </button>
             </div>
           </div>
