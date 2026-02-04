@@ -3,12 +3,12 @@ import React, { useEffect, useMemo, useRef, useCallback } from "react";
 import alraisLogo from "../../assets/images/alraisLogo.png";
 import planeImg from "../../assets/images/travel_plane_image.png";
 import "../../assets/css/travel.css";
-import FlagUae from "../../assets/svgs/Flag-uae.svg";
-import FlagInd from "../../assets/svgs/Flag-ind.svg";
-import FlagUsa from "../../assets/svgs/Flag-usa.svg";
-import colSeparater from "../../assets/svgs/Lineseparater.svg";
+// import FlagUae from "../../assets/svgs/Flag-uae.svg";
+// import FlagInd from "../../assets/svgs/Flag-ind.svg";
+// import FlagUsa from "../../assets/svgs/Flag-usa.svg";
+// import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import noFlights from "../../assets/svgs/no-flights.svg";
-import { Segmented, Tabs, Select, Flex, Drawer, Button, Grid } from "antd";
+import { Segmented, Tabs, Flex, Drawer, Button, Grid } from "antd";
 // import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
 // import CustomSelect from "../common/CustomSelect";
@@ -59,9 +59,9 @@ import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 const onChange = (key: string) => {
   console.log(key);
 };
-const handleChange = (value: string) => {
-  console.log(`selected ${value}`);
-};
+// const handleChange = (value: string) => {
+//   console.log(`selected ${value}`);
+// };
 
 const items: TabsProps["items"] = [
   { key: "1", label: "Flights", children: "" },
@@ -129,7 +129,7 @@ const useResultInactivityWarning = ({
         hideTimeoutRef.current = null;
       }, INACTIVITY_BANNER_DURATION_MS);
     },
-    [hideBanner]
+    [hideBanner],
   );
 
   const scheduleTimers = useCallback(() => {
@@ -172,7 +172,7 @@ const useResultInactivityWarning = ({
 const buildPassengersArrayForFlightSearch = (
   order: string[],
   schema: PassengerSchema,
-  paxState: any
+  paxState: any,
 ) => {
   const keyToPtc = new Map((schema || []).map((s: any) => [s.key, s.ptc]));
   const arr: { id: string; ptc: string }[] = [];
@@ -184,7 +184,7 @@ const buildPassengersArrayForFlightSearch = (
   }
   const totalCounts = Object.values(paxState || {}).reduce(
     (a: number, b: any) => a + (Number(b) || 0),
-    0
+    0,
   );
   if (arr.length !== totalCounts) {
     const fallback: { id: string; ptc: string }[] = [];
@@ -272,7 +272,7 @@ const FlightDetailTemplate: React.FC = () => {
 
     const schemaKeys = ((passengers as any[]) || []).map((s) => s.key);
     const keys = Array.from(
-      new Set([...Object.keys(prev), ...Object.keys(next), ...schemaKeys])
+      new Set([...Object.keys(prev), ...Object.keys(next), ...schemaKeys]),
     );
 
     const order = passengerRequestOrder.current.slice(); // clone
@@ -338,7 +338,7 @@ const FlightDetailTemplate: React.FC = () => {
   const mapFlightRawResponseToFormats = (
     item: any,
     idx: number,
-    commonData?: { searchKey?: string; productCode?: string }
+    commonData?: { searchKey?: string; productCode?: string },
   ) => {
     const journeys = item?.journey || [];
     const seg0 = journeys[0]?.flightSegments?.[0] ?? null;
@@ -376,15 +376,15 @@ const FlightDetailTemplate: React.FC = () => {
       searchKey,
       outbound: outbound
         ? {
-          ...outbound,
-          logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment),
-        }
+            ...outbound,
+            logo: outbound?.logo ?? logoFromFlightSegment(outbound?.rawSegment),
+          }
         : null,
       inbound: inbound
         ? {
-          ...inbound,
-          logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment),
-        }
+            ...inbound,
+            logo: inbound?.logo ?? logoFromFlightSegment(inbound?.rawSegment),
+          }
         : null,
       // price: { economyLite: { price: item?.fare?.totalFare } },
       price: priceOptions,
@@ -397,7 +397,7 @@ const FlightDetailTemplate: React.FC = () => {
 
   const processFLightSearchResults = (
     raw: any[] = [],
-    commonData?: { searchKey?: string; productCode?: string }
+    commonData?: { searchKey?: string; productCode?: string },
   ) => {
     const oneWayFormatted: any[] = [];
     const roundFormatted: any[] = [];
@@ -406,7 +406,7 @@ const FlightDetailTemplate: React.FC = () => {
       const { oneWayObj, roundObj } = mapFlightRawResponseToFormats(
         item,
         idx,
-        commonData
+        commonData,
       );
       oneWayFormatted.push(oneWayObj);
       roundFormatted.push(roundObj);
@@ -417,7 +417,7 @@ const FlightDetailTemplate: React.FC = () => {
 
   const appendUniqueItemsForLoadMoreFlights = (
     prevArray: any[],
-    newArray: any[]
+    newArray: any[],
   ) => {
     const existing = new Set(prevArray.map((p) => p.id));
     const toAdd = newArray.filter((n) => !existing.has(n.id));
@@ -427,12 +427,15 @@ const FlightDetailTemplate: React.FC = () => {
   const validateSearchFields = (): string | null => {
     const validationErrors: string[] = [];
 
+    if (!fromCode?.trim()) validationErrors.push("from");
+    if (!toCode?.trim()) validationErrors.push("to");
+
     if (!departDate) validationErrors.push("departure");
     if (trip === "roundtrip" && !returnDate) validationErrors.push("return");
 
     const totalPassengers = Object.values(paxCounts).reduce(
       (sum: number, count: any) => sum + (Number(count) || 0),
-      0
+      0,
     );
     if (totalPassengers === 0) validationErrors.push("passengers");
     if (!selectedCabinClassId) validationErrors.push("cabin");
@@ -445,6 +448,8 @@ const FlightDetailTemplate: React.FC = () => {
 
     const error = validationErrors[0];
     const messages: Record<string, string> = {
+      from: "Please select where you’re flying from",
+      to: "Please select where you’re flying to",
       departure: "Please select a departure date to continue.",
       return: "Please select a return date to continue.",
       passengers: "Please select at least one passenger before searching.",
@@ -455,7 +460,7 @@ const FlightDetailTemplate: React.FC = () => {
   };
 
   const handleSearch = async (
-    searchFilters: { maxConnections?: number } = {}
+    searchFilters: { maxConnections?: number } = {},
   ) => {
     const validationError = validateSearchFields();
     if (validationError) {
@@ -468,12 +473,12 @@ const FlightDetailTemplate: React.FC = () => {
     const sortedMaxConnections =
       typeof searchFilters.maxConnections !== "undefined"
         ? searchFilters.maxConnections
-        : selectedMaxConnections ?? 0;
+        : (selectedMaxConnections ?? 0);
 
     const passengersForRequest = buildPassengersArrayForFlightSearch(
       passengerRequestOrder.current,
       passengers as PassengerSchema,
-      paxCounts
+      paxCounts,
     );
     const flightSegments: any[] = [
       {
@@ -498,7 +503,7 @@ const FlightDetailTemplate: React.FC = () => {
 
     const baseBody: any = { flightSegments, passengers: passengersForRequest };
     const searchFilterObj = buildFilterPreferenceForFlightSearchRequest(
-      Number(sortedMaxConnections ?? 0)
+      Number(sortedMaxConnections ?? 0),
     );
     // const searchFilterObj = buildFilterPreferenceForFlightSearchRequest(sortedPrice, Number(sortedMaxConnections ?? 0));
     const requestBody = searchFilterObj
@@ -518,14 +523,14 @@ const FlightDetailTemplate: React.FC = () => {
       const response = await callWithRetries(
         () => mutateAsync(requestBody),
         2,
-        500
+        500,
       );
       const raw = response.data || [];
       const commonData = response?.commonData;
 
       const { oneWayFormatted, roundFormatted } = processFLightSearchResults(
         raw,
-        commonData
+        commonData,
       );
 
       originalResponseRef.current = oneWayFormatted;
@@ -537,10 +542,10 @@ const FlightDetailTemplate: React.FC = () => {
 
       const fares: number[] = [
         ...oneWayFormatted.map((it) =>
-          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN)
+          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN),
         ),
         ...roundFormatted.map((it) =>
-          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN)
+          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN),
         ),
       ].filter((n) => !Number.isNaN(n) && isFinite(n));
 
@@ -552,7 +557,7 @@ const FlightDetailTemplate: React.FC = () => {
       setSelectedPriceRange([roundedMin, roundedMax]);
 
       const anyHasMore = (raw || []).some(
-        (it: any) => !!it?.detail?.moreFaresAvailable
+        (it: any) => !!it?.detail?.moreFaresAvailable,
       );
       // console.log("anyHasMore", anyHasMore, (raw.length > 0 && anyHasMore));
       setHasMore(raw.length > 0 && anyHasMore);
@@ -589,14 +594,14 @@ const FlightDetailTemplate: React.FC = () => {
 
       // append only unique items
       setResponseData((prev) =>
-        appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted)
+        appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted),
       );
       setRoundResponseData((prev) =>
-        appendUniqueItemsForLoadMoreFlights(prev, roundFormatted)
+        appendUniqueItemsForLoadMoreFlights(prev, roundFormatted),
       );
 
       const anyHasMore = (raw || []).some(
-        (it: any) => !!it?.detail?.moreFaresAvailable
+        (it: any) => !!it?.detail?.moreFaresAvailable,
       );
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);
@@ -640,7 +645,9 @@ const FlightDetailTemplate: React.FC = () => {
   });
 
   const isInitialLoading =
-    !countriesSearchTerm.trim() && loading && (!countries || countries.length === 0);
+    !countriesSearchTerm.trim() &&
+    loading &&
+    (!countries || countries.length === 0);
   const countriesLoading = loadingMap?.countries ?? isInitialLoading;
 
   const countriesForPicker = useMemo(() => {
@@ -676,14 +683,14 @@ const FlightDetailTemplate: React.FC = () => {
   const showDrawer = () => setOpen(true);
   const onClose = () => setOpen(false);
 
-  useEffect(() => {
-    if (!fromCode && (countries as AirportOption[])[0]) {
-      setFromCode((countries as AirportOption[])[0].code);
-    }
-    if (!toCode && (countries as AirportOption[])[1]) {
-      setToCode((countries as AirportOption[])[1].code);
-    }
-  }, [countries, fromCode, toCode]);
+  // useEffect(() => {
+  //   if (!fromCode && (countries as AirportOption[])[0]) {
+  //     setFromCode((countries as AirportOption[])[0].code);
+  //   }
+  //   if (!toCode && (countries as AirportOption[])[1]) {
+  //     setToCode((countries as AirportOption[])[1].code);
+  //   }
+  // }, [countries, fromCode, toCode]);
 
   // initialize from store once after listings load
   const isHydratingFromStore = useRef(false);
@@ -721,7 +728,7 @@ const FlightDetailTemplate: React.FC = () => {
     setToCode(flight?.toCode ?? "");
     setSelectedCabinClassId(String(flight?.selectedCabinClassId ?? "5"));
     setDepartDate(
-      typeof flight?.departure === "string" ? flight.departure : ""
+      typeof flight?.departure === "string" ? flight.departure : "",
     );
     setReturnDate(typeof flight?.arrival === "string" ? flight.arrival : "");
     setPaxCounts(flight?.next ?? {});
@@ -748,7 +755,7 @@ const FlightDetailTemplate: React.FC = () => {
   const hasBasicFilters = useCallback(() => {
     const totalPassengers = Object.values(paxCounts || {}).reduce<number>(
       (sum, count) => sum + Number(count || 0),
-      0
+      0,
     );
     const hasReturnDate = trip !== "roundtrip" || Boolean(returnDate);
     return (
@@ -843,7 +850,7 @@ const FlightDetailTemplate: React.FC = () => {
   // memo’d options
   const segOptions = useMemo(
     () => (flightTypes || []).map((ft) => ({ label: ft.label, value: ft.key })),
-    [flightTypes]
+    [flightTypes],
   );
 
   const cabinSelectOptions = useMemo(
@@ -854,7 +861,7 @@ const FlightDetailTemplate: React.FC = () => {
         label: c.label,
       })),
     ],
-    [cabinClasses]
+    [cabinClasses],
   );
 
   const handleAirlineToggle = (airlineCode: string, checked: boolean) => {
@@ -902,7 +909,7 @@ const FlightDetailTemplate: React.FC = () => {
 
       const newRange =
         typeof changes.priceRange !== "undefined"
-          ? changes.priceRange ?? priceRangeBounds
+          ? (changes.priceRange ?? priceRangeBounds)
           : selectedPriceRange;
 
       if (typeof changes.priceRange !== "undefined") {
@@ -915,7 +922,7 @@ const FlightDetailTemplate: React.FC = () => {
         typeof changes.selectedAirlines !== "undefined"
           ? changes.selectedAirlines
           : selectedAirlineIds,
-        newRange
+        newRange,
       );
 
       return;
@@ -945,7 +952,7 @@ const FlightDetailTemplate: React.FC = () => {
     arrRange?: { start?: string; end?: string } | null,
     selectedAirlinesParam?: string[] | null,
     priceRange?: [number, number] | null,
-    transitRange?: string | null
+    transitRange?: string | null,
   ) {
     const { filteredOneWay, filteredRound } = filterFlightsByTimeAndAirlines(
       originalResponseRef.current ?? [],
@@ -955,7 +962,7 @@ const FlightDetailTemplate: React.FC = () => {
       selectedAirlinesParam ?? selectedAirlineIds ?? null,
       transitRange ?? selectedTransitRange ?? null,
       timeToMinutesFromAnyString,
-      { matchAllSegments: false } // default behavior
+      { matchAllSegments: false }, // default behavior
     );
 
     const applyPrice = (list: any[]) => {
@@ -963,7 +970,7 @@ const FlightDetailTemplate: React.FC = () => {
       const [minP, maxP] = priceRange;
       return (list || []).filter((it) => {
         const fare = Number(
-          it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN
+          it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN,
         );
         if (Number.isNaN(fare)) return false;
         return fare >= minP && fare <= maxP;
@@ -1009,7 +1016,7 @@ const FlightDetailTemplate: React.FC = () => {
         root: null,
         rootMargin: "0px 0px 400px 0px", // prefetch a bit earlier
         threshold: 0,
-      }
+      },
     );
 
     obs.observe(el);
@@ -1130,7 +1137,7 @@ const FlightDetailTemplate: React.FC = () => {
               items={items}
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
-            // indicator={{ size: (origin) => origin - 20, align: alignValue }}
+              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
             />
           </div>
           <div className="countrySelectAndGetHelp py-pxTopHeader">
@@ -1327,7 +1334,9 @@ const FlightDetailTemplate: React.FC = () => {
                 }))}
                 value={selectedCabinClassId || ""}
                 onChange={(value) => setSelectedCabinClassId(value)}
-                placeholder={isInitialLoading ? "Loading…" : "Select cabin class"}
+                placeholder={
+                  isInitialLoading ? "Loading…" : "Select cabin class"
+                }
                 disabled={isInitialLoading}
                 widthClass="w-full"
                 // className="header-sub-inputs-common"
@@ -1367,7 +1376,7 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     next,
-                    selectedTransitRange
+                    selectedTransitRange,
                   );
                 }}
                 numberStops={numberStops}
@@ -1386,7 +1395,7 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     selectedPriceRange,
-                    val
+                    val,
                   );
                 }}
                 departureFlightRange={departureFlightRange}
@@ -1416,7 +1425,7 @@ const FlightDetailTemplate: React.FC = () => {
                     { start: "", end: "" },
                     [],
                     priceRangeBounds,
-                    null
+                    null,
                   );
                 }}
               />
@@ -1440,7 +1449,7 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     next,
-                    selectedTransitRange
+                    selectedTransitRange,
                   );
                 }}
                 numberStops={numberStops}
@@ -1459,7 +1468,7 @@ const FlightDetailTemplate: React.FC = () => {
                     arrivalFlightRange,
                     selectedAirlineIds,
                     selectedPriceRange,
-                    val
+                    val,
                   );
                 }}
                 departureFlightRange={departureFlightRange}
@@ -1489,7 +1498,7 @@ const FlightDetailTemplate: React.FC = () => {
                     { start: "", end: "" },
                     [],
                     priceRangeBounds,
-                    null
+                    null,
                   );
                 }}
               />
@@ -1560,7 +1569,7 @@ const FlightDetailTemplate: React.FC = () => {
                   passengersForRequest={buildPassengersArrayForFlightSearch(
                     passengerRequestOrder.current,
                     passengers as PassengerSchema,
-                    paxCounts
+                    paxCounts,
                   )}
                   isLoadingMore={isLoadingMore}
                   hasMore={hasMore}
@@ -1575,7 +1584,7 @@ const FlightDetailTemplate: React.FC = () => {
                 passengersForRequest={buildPassengersArrayForFlightSearch(
                   passengerRequestOrder.current,
                   passengers as PassengerSchema,
-                  paxCounts
+                  paxCounts,
                 )}
                 isLoadingMore={isLoadingMore}
                 hasMore={hasMore}

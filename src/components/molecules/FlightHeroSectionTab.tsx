@@ -87,10 +87,10 @@ const FlightHeroSection: React.FC = () => {
     [isInitialLoading, loadingMap],
   );
 
-  useEffect(() => {
-    if (!fromCode && countries[0]) setFromCode(countries[0].code);
-    if (!toCode && countries[1]) setToCode(countries[1].code);
-  }, [countries, fromCode, toCode]);
+  // useEffect(() => {
+  //   if (!fromCode && countries[0]) setFromCode(countries[0].code);
+  //   if (!toCode && countries[1]) setToCode(countries[1].code);
+  // }, [countries, fromCode, toCode]);
 
   const flightTypesFailed =
     !!errorMap?.flightTypes ||
@@ -153,10 +153,10 @@ const FlightHeroSection: React.FC = () => {
     const errors: string[] = [];
 
     if (!fromCode?.trim()) {
-      errors.push("Please select origin (From)");
+      errors.push("Please select where you’re flying from");
     }
     if (!toCode?.trim()) {
-      errors.push("Please select destination (To)");
+      errors.push("Please select where you’re flying to");
     }
 
     if (!departDate) {
