@@ -143,6 +143,11 @@ const RoundTripForm: React.FC<Props> = ({
           onChange={(d) => {
             setDepartDate(d);
             onChangeDepartDate?.(d);
+            // If new departure is after current return, clear return date
+            if (arrivalDate && d && d.getTime() > arrivalDate.getTime()) {
+              setArrivalDate(null);
+              onChangeArrivalDate?.(null);
+            }
           }}
           placeholder="Select departure date"
           buttonIconSrc={true}
@@ -189,6 +194,7 @@ const RoundTripForm: React.FC<Props> = ({
           placeholder="Select return date"
           buttonIconSrc={true}
           disablePastDates={true}
+          minDate={departDate}
           tooltip="Select return date"
         />
         {/* {arrivalDateError && (

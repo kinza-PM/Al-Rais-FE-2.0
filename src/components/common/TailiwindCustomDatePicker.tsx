@@ -11,6 +11,8 @@ type DatePickerProps = {
   inputClass?: string;
   //   error?: string;
   disablePastDates?: boolean;
+  /** When set, dates before this (at start-of-day) are disabled. Use e.g. for return date >= departure. */
+  minDate?: Date | null;
   tooltip?: string | null;
 };
 
@@ -49,9 +51,13 @@ function fmtLong(d?: Date | null) {
   return `${weekday}, ${Number(day)} ${month} ${year}`;
 }
 
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
+
 const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   value = null,
-  onChange = () => { },
+  onChange = () => {},
   placeholder = "Please select",
   buttonIconSrc,
   overridesClass = false,
@@ -59,6 +65,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   inputClass = null,
   //   error = "",
   disablePastDates = false,
+  minDate = null,
   tooltip = null,
 }) => {
   const [open, setOpen] = useState(false);
@@ -87,7 +94,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
 
   const monthName = useMemo(
     () => new Intl.DateTimeFormat("en-GB", { month: "long" }).format(view),
-    [view]
+    [view],
   );
   const yearNum = useMemo(() => view.getFullYear(), [view]);
 
@@ -109,8 +116,10 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
       isToday: boolean;
       isSelected: boolean;
       isPast: boolean;
+      isBeforeMin: boolean;
     }[] = [];
     const today = new Date();
+    const minDateStart = minDate ? startOfDay(minDate) : null;
 
     for (let i = 0; i < totalCells; i++) {
       const d = new Date(firstGridDate);
@@ -119,16 +128,19 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
       const isToday = isSameDay(d, today);
       const isSelected = value ? isSameDay(d, value) : false;
       const isPast = d.getTime() < today.getTime() && !isToday;
+      const isBeforeMin =
+        minDateStart !== null ? startOfDay(d) < minDateStart : false;
       cells.push({
         date: d,
         inMonth,
         isToday,
         isSelected,
         isPast,
+        isBeforeMin,
       });
     }
     return cells;
-  }, [view, value]);
+  }, [view, value, minDate]);
 
   return (
     <div ref={rootRef} className="relative">
@@ -146,17 +158,19 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
           //           error ? "border-[#E65959]" : "border-[#DFE7F3]"
           //         } pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer`
           //   }`}
-          className={`${overridesClass
-            ? inputClass
-            : "h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer"
-            }`}
+          className={`${
+            overridesClass
+              ? inputClass
+              : "h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer"
+          }`}
         />
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
           aria-label="Open calendar"
-          className={`absolute inset-y-0 ${showCalendarIconRight ? "right-3" : "left-3"
-            } flex items-center`}
+          className={`absolute inset-y-0 ${
+            showCalendarIconRight ? "right-3" : "left-3"
+          } flex items-center`}
         >
           {buttonIconSrc ? (
             <img src={Calendar} alt="calendar" className="w-[16px] h-[16px]" />
@@ -187,7 +201,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
           `}
           >
             <div className="text-center">
-              {tooltip}
+              {value ? fmtLong(value) : tooltip}
             </div>
           </div>
         )}
@@ -251,8 +265,9 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
             {WEEKDAY_LABELS.map((w, idx) => (
               <div
                 key={w}
-                className={`py-1 ${idx >= 5 ? "text-[#E65959]" : "text-[#8A94A6]"
-                  }`}
+                className={`py-1 ${
+                  idx >= 5 ? "text-[#E65959]" : "text-[#8A94A6]"
+                }`}
               >
                 {w}
               </div>
@@ -261,44 +276,46 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
 
           {/* Days grid */}
           <div className="grid grid-cols-7 gap-1 px-3 pb-3 pt-1">
-            {days.map(({ date, inMonth, isToday, isSelected, isPast }) => {
-              const base =
-                "h-9 w-9 mx-auto flex items-center justify-center rounded-md text-[13px] transition";
-              const outMonth = !inMonth ? "text-[#B8C1D1]" : "";
-              const isWeekend = [6, 0].includes(date.getDay());
-              const weekendColor =
-                inMonth && !isSelected
-                  ? isWeekend
-                    ? "text-[#E65959]"
-                    : "text-[#0F172A]"
-                  : "";
-              const selected = isSelected
-                ? "bg-[#2351A3] text-white"
-                : "hover:bg-[#F4F7FC]";
-              const todayRing =
-                isToday && !isSelected ? "ring-1 ring-[#2351A3]" : "";
+            {days.map(
+              ({ date, inMonth, isToday, isSelected, isPast, isBeforeMin }) => {
+                const base =
+                  "h-9 w-9 mx-auto flex items-center justify-center rounded-md text-[13px] transition";
+                const outMonth = !inMonth ? "text-[#B8C1D1]" : "";
+                const isWeekend = [6, 0].includes(date.getDay());
+                const weekendColor =
+                  inMonth && !isSelected
+                    ? isWeekend
+                      ? "text-[#E65959]"
+                      : "text-[#0F172A]"
+                    : "";
+                const selected = isSelected
+                  ? "bg-[#2351A3] text-white"
+                  : "hover:bg-[#F4F7FC]";
+                const todayRing =
+                  isToday && !isSelected ? "ring-1 ring-[#2351A3]" : "";
 
-              const pastDisabledVisual =
-                disablePastDates && isPast
+                const isDisabled = (disablePastDates && isPast) || isBeforeMin;
+                const disabledVisual = isDisabled
                   ? "opacity-50 cursor-not-allowed hover:bg-transparent"
                   : "";
 
-              return (
-                <button
-                  key={date.toISOString()}
-                  type="button"
-                  className={`${base} ${outMonth} ${weekendColor} ${selected} ${todayRing} ${pastDisabledVisual}`}
-                  onClick={() => {
-                    onChange(date);
-                    setOpen(false);
-                  }}
-                  disabled={disablePastDates && isPast}
-                  aria-disabled={disablePastDates && isPast}
-                >
-                  {date.getDate()}
-                </button>
-              );
-            })}
+                return (
+                  <button
+                    key={date.toISOString()}
+                    type="button"
+                    className={`${base} ${outMonth} ${weekendColor} ${selected} ${todayRing} ${disabledVisual}`}
+                    onClick={() => {
+                      onChange(date);
+                      setOpen(false);
+                    }}
+                    disabled={isDisabled}
+                    aria-disabled={isDisabled}
+                  >
+                    {date.getDate()}
+                  </button>
+                );
+              },
+            )}
           </div>
         </div>
       )}

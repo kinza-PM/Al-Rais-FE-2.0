@@ -94,13 +94,34 @@ const PassengerCounterDropdown: React.FC<Props> = ({
 
   const total = useMemo(
     () => rows.reduce((acc, r) => acc + ((pax as any)[r.key] || 0), 0),
-    [rows, pax]
+    [rows, pax],
   );
+
+  // Tooltip text: show "Select Passengers" when empty, else "1 Adult, 2 Children" etc.
+  const tooltipLabel = useMemo(() => {
+    const singularMap: Record<string, string> = {
+      adults: "Adult",
+      kids: "Kid",
+      children: "Child",
+      infants: "Infant",
+      seniors: "Senior",
+    };
+    const parts = rows
+      .filter((r) => ((pax as any)[r.key] || 0) > 0)
+      .map((r) => {
+        const count = (pax as any)[r.key] || 0;
+        const title = r.title || r.key;
+        const singular =
+          singularMap[r.key] ?? title.replace(/s$/, "") ?? title;
+        return count === 1 ? `1 ${singular}` : `${count} ${title}`;
+      });
+    return parts.length > 0 ? parts.join(", ") : "Select Passengers";
+  }, [rows, pax]);
 
   // Calculate adults + kids total (max 9)
   const adultsKidsTotal = useMemo(
     () => (pax.adults || 0) + (pax.kids || 0),
-    [pax]
+    [pax],
   );
 
   // keep pax shape in sync if schema arrives later
@@ -233,11 +254,7 @@ const PassengerCounterDropdown: React.FC<Props> = ({
             before:border-t-[#1E293B]
           `}
         >
-          <div className="text-center">
-            Adults + Kids count cannot exceed 9
-            <br />
-            Infants cannot be more than Adults
-          </div>
+          {tooltipLabel}
         </div>
       </div>
 

@@ -6,6 +6,7 @@ import type {
   CabinClassOption,
 } from "../../features/flights/types";
 import SearchableDropdown from "../common/SearchableDropdown";
+import Info from "../../assets/svgs/info-black.svg";
 
 type Pax = { adults: number; kids: number; infants: number; seniors?: number };
 
@@ -38,14 +39,19 @@ const PassengerCabinDropdown: React.FC<Props> = ({
   cabinClasses = [], // ✅ default to []
   loadingCabinClasses,
   selectedCabinClassId = "", // ✅ default to ""
-  onChangeCabinClassId = () => { }, // ✅ no-op default
+  onChangeCabinClassId = () => {}, // ✅ no-op default
   widthClass = "w-[190px]",
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const passengerRequestOrder = useRef<string[]>([]);
-  const prevCountsRef = useRef<Pax>({ adults: 0, kids: 0, infants: 0, seniors: undefined });
+  const prevCountsRef = useRef<Pax>({
+    adults: 0,
+    kids: 0,
+    infants: 0,
+    seniors: undefined,
+  });
 
   const cabinError =
     !loadingCabinClasses && (!cabinClasses || cabinClasses.length === 0)
@@ -66,7 +72,7 @@ const PassengerCabinDropdown: React.FC<Props> = ({
       (pax.kids || 0) +
       (pax.infants || 0) +
       (pax.seniors || 0),
-    [pax]
+    [pax],
   );
 
   const toStrictPax = (p: Partial<Pax> | undefined): Pax => ({
@@ -97,7 +103,13 @@ const PassengerCabinDropdown: React.FC<Props> = ({
     const next = toStrictPax(nextRaw);
     const prev = prevCountsRef.current; // use stable last counts
     const schemaKeys = (schema || []).map((s) => (s as any).key);
-    const keys = Array.from(new Set([...Object.keys(prev || {}), ...Object.keys(next || {}), ...schemaKeys]));
+    const keys = Array.from(
+      new Set([
+        ...Object.keys(prev || {}),
+        ...Object.keys(next || {}),
+        ...schemaKeys,
+      ]),
+    );
 
     const order = passengerRequestOrder.current.slice();
 
@@ -116,8 +128,12 @@ const PassengerCabinDropdown: React.FC<Props> = ({
     }
 
     // compare before setting to prevent loops with controlled child
-    const allKeys = Array.from(new Set([...Object.keys(prev || {}), ...Object.keys(next || {})]));
-    const changed = allKeys.some((k) => (prev as any)?.[k] !== (next as any)[k]);
+    const allKeys = Array.from(
+      new Set([...Object.keys(prev || {}), ...Object.keys(next || {})]),
+    );
+    const changed = allKeys.some(
+      (k) => (prev as any)?.[k] !== (next as any)[k],
+    );
 
     if (!changed) return; // nothing to do
 
@@ -175,7 +191,24 @@ const PassengerCabinDropdown: React.FC<Props> = ({
         >
           {/* Passengers */}
           <div className="mb-3">
-            <div className="text-[12px] text-[#3D495C] mb-1">Passengers</div>
+            <div className="flex items-center gap-2 text-[12px] text-[#3D495C] mb-1">
+              Passengers
+              <span className="relative inline-flex group/info">
+                <img
+                  src={Info}
+                  alt="info"
+                  className="w-4 h-4 inline-block align-middle"
+                />
+                <span
+                  className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
+                  role="tooltip"
+                >
+                  Adults + Kids count cannot exceed 9
+                  <br />
+                  Infants cannot be more than Adults
+                </span>
+              </span>
+            </div>
             <PassengerCounterDropdown
               value={pax}
               // onChange={(p) => {
@@ -199,10 +232,10 @@ const PassengerCabinDropdown: React.FC<Props> = ({
           <div>
             <div className="text-[12px] text-[#3D495C] mb-1">Cabin class</div>
             <SearchableDropdown
-              options={cabinClasses.map(cc => ({
+              options={cabinClasses.map((cc) => ({
                 id: cc.id,
                 value: cc.id,
-                label: cc.label
+                label: cc.label,
               }))}
               value={selectedCabinClassId}
               onChange={onChangeCabinClassId}

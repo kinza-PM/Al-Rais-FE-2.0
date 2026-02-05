@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import OneWayForm from "./OneWayForm";
 import RoundTripForm from "./RoundTripForm";
-import MultiCityForm from "./MultiCityForm";
+// import MultiCityForm from "./MultiCityForm";
 import type {
   TripType,
   FlightTypeOption,
@@ -373,7 +373,7 @@ const FlightHeroSection: React.FC = () => {
               />
             )}
 
-            {trip === "multicity" && (
+            {/* {trip === "multicity" && (
               <MultiCityForm
                 countries={countries as AirportOption[]}
                 loadingCountries={nsLoading.countries}
@@ -384,7 +384,7 @@ const FlightHeroSection: React.FC = () => {
                 selectedCabinClassId={selectedCabinClassId}
                 onChangeCabinClassId={setSelectedCabinClassId}
               />
-            )}
+            )} */}
 
             {/* Search */}
             <div className="flex justify-center mt-8">

@@ -1,4 +1,5 @@
-export type TripType = 'oneway' | 'roundtrip' | 'multicity';
+export type TripType = 'oneway' | 'roundtrip';
+// export type TripType = 'oneway' | 'roundtrip' | 'multicity';
 export type PaxKey = "adults" | "kids" | "infants" | "seniors";
 
 export interface FlightTypeItem {

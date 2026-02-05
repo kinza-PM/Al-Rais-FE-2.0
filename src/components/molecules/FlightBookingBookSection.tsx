@@ -88,7 +88,7 @@ export default function FlightBookingBookSection({
     mealIcon: refundableIcon,
     wifiIcon: durationIcon,
     portIcon: SEAT_ICON,
-    entertainmentIcon: PLANE_ICON
+    entertainmentIcon: PLANE_ICON,
   };
   const segments = buildFlightSegmentFromTrip(trip, assets);
   const firstPrice = getPriceCabinClassForFlightSummary(trip);
@@ -139,6 +139,9 @@ export default function FlightBookingBookSection({
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
+      if (err == "Unable to perform air booking step") {
+        navigate("/search_flight");
+      }
     }
   };
 
@@ -297,18 +300,20 @@ export default function FlightBookingBookSection({
                     {/* {pRules.isDocumentNumberMandatory && ( */}
                     <TailwindCustomInput
                       type="text"
-                      placeholder={`Enter ${p.identityDocuments?.[0]?.idType === "PT"
+                      placeholder={`Enter ${
+                        p.identityDocuments?.[0]?.idType === "PT"
                           ? "Passport number"
                           : p.identityDocuments?.[0]?.idType === "DL"
                             ? "Driving licence"
                             : "National ID"
-                        }`}
-                      label={`${p.identityDocuments?.[0]?.idType === "PT"
+                      }`}
+                      label={`${
+                        p.identityDocuments?.[0]?.idType === "PT"
                           ? "Passport number"
                           : p.identityDocuments?.[0]?.idType === "DL"
                             ? "Driving licence"
                             : "National ID"
-                        }`}
+                      }`}
                       value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
                       onChange={(evOrVal) => {
                         const v =
@@ -369,8 +374,8 @@ export default function FlightBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.dateOfIssue
                               ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.dateOfIssue,
-                              )
+                                  p.identityDocuments?.[0]?.dateOfIssue,
+                                )
                               : null
                           }
                           onChange={(date) => {
@@ -397,8 +402,8 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.expiryDate
                             ? parseLocalDateString(
-                              p.identityDocuments?.[0]?.expiryDate,
-                            )
+                                p.identityDocuments?.[0]?.expiryDate,
+                              )
                             : null
                         }
                         onChange={(date) => {

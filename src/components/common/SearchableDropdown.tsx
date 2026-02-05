@@ -61,7 +61,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   searchPlaceholder = "Search...",
   noResultsText = "No results found",
   loading = false,
-  onLoadMore = () => { },
+  onLoadMore = () => {},
   hasMore = false,
   loadingMore = false,
   tooltip = null,
@@ -112,7 +112,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     return baseOptions.filter(
       (option) =>
         option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        option.value.toLowerCase().includes(searchTerm.toLowerCase())
+        option.value.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [options, searchTerm, remoteSearch]);
 
@@ -283,15 +283,16 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           onClick={handleToggle}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          className={`${className ? className : baseClasses
-            } flex items-center justify-between`}
+          className={`${
+            className ? className : baseClasses
+          } flex items-center justify-between`}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-invalid={!!error}
           aria-describedby={error && showError ? "dropdown-error" : undefined}
         >
           <span>
-          {/* <span className={`${!selectedOption ? "text-[#98A4B3]" : ""}`}> */}
+            {/* <span className={`${!selectedOption ? "text-[#98A4B3]" : ""}`}> */}
             {displayValue}
           </span>
 
@@ -301,8 +302,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                         className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     /> */}
           <svg
-            className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${isOpen ? "rotate-180" : ""
-              }`}
+            className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
             width="16"
             height="16"
             viewBox="0 0 20 20"
@@ -333,7 +335,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           `}
           >
             <div className="text-center">
-              {tooltip}
+              {value ? displayValue : tooltip}
             </div>
           </div>
         )}
@@ -354,33 +356,35 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
             {/* Options List */}
             <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
-                <button
-                  key={`${option.value}-${option.id}`}
-                  type="button"
-                  onClick={() => handleOptionSelect(option.value)}
-                  disabled={option.disabled}
-                  className={`
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
+                  <button
+                    key={`${option.value}-${option.id}`}
+                    type="button"
+                    onClick={() => handleOptionSelect(option.value)}
+                    disabled={option.disabled}
+                    className={`
                       w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
-                      ${option.disabled
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
+                      ${
+                        option.disabled
+                          ? "opacity-50 cursor-not-allowed"
+                          : "cursor-pointer"
                       }
-                      ${option.value === value
-                        ? "bg-[#2351A3]/10 text-[#2351A3]"
-                        : "text-[#0F172A]"
+                      ${
+                        option.value === value
+                          ? "bg-[#2351A3]/10 text-[#2351A3]"
+                          : "text-[#0F172A]"
                       }
                     `}
-                >
-                  {option.label}
-                </button>
-              ))
-            ) : (
-              <div className="px-4 py-3 text-sm text-[#98A4B3] text-center">
-                {loading || searchPending ? "Loading..." : noResultsText}
-              </div>
-            )}
+                  >
+                    {option.label}
+                  </button>
+                ))
+              ) : (
+                <div className="px-4 py-3 text-sm text-[#98A4B3] text-center">
+                  {loading || searchPending ? "Loading..." : noResultsText}
+                </div>
+              )}
 
               {loadingMore && (
                 <div className="px-4 py-3 text-center text-sm text-[#98A4B3]">

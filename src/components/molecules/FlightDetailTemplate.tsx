@@ -8,6 +8,7 @@ import "../../assets/css/travel.css";
 // import FlagUsa from "../../assets/svgs/Flag-usa.svg";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import noFlights from "../../assets/svgs/no-flights.svg";
+import Info from "../../assets/svgs/info-black.svg";
 import { Segmented, Tabs, Flex, Drawer, Button, Grid } from "antd";
 // import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
@@ -260,8 +261,15 @@ const FlightDetailTemplate: React.FC = () => {
 
     const formatted = `${year}-${month}-${day}`; // YYYY-MM-DD
 
-    if (which === "depart") setDepartDate(formatted);
-    else setReturnDate(formatted);
+    if (which === "depart") {
+      setDepartDate(formatted);
+      // If new departure is after current return, clear return date
+      if (returnDate && d.getTime() > new Date(returnDate).getTime()) {
+        setReturnDate("");
+      }
+    } else {
+      setReturnDate(formatted);
+    }
   };
 
   // (moved init-from-store further below after loading is declared)
@@ -1335,11 +1343,29 @@ const FlightDetailTemplate: React.FC = () => {
                   tooltip="Select return date"
                   buttonIconSrc={true}
                   disablePastDates={true}
+                  minDate={departDate ? new Date(departDate) : null}
                 />
               </Flex>
             )}
             <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-              <label className="header-labels-common ">Passengers</label>
+              <label className="header-labels-common flex items-center gap-2">
+                Passengers
+                <span className="relative inline-flex group/info">
+                  <img
+                    src={Info}
+                    alt="info"
+                    className="w-4 h-4 inline-block align-middle"
+                  />
+                  <span
+                    className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
+                    role="tooltip"
+                  >
+                    Adults + Kids count cannot exceed 9
+                    <br />
+                    Infants cannot be more than Adults
+                  </span>
+                </span>
+              </label>
               <div style={{ minWidth: "100%", height: 44 }}>
                 <PassengerCounterDropdown
                   value={paxCounts}
