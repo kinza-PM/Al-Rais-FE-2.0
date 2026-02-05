@@ -60,6 +60,10 @@ export const extendSession = SessionService.extendCurrentSession;
 
 // ========== USER PROFILE OPERATIONS ==========
 
+export const createUserProfile = UserProfileService.createUserProfile;
+export const getUserProfileById = UserProfileService.getUserProfileById;
+export const getUserProfileByEmail = UserProfileService.getUserProfileByEmail;
+export const getCurrentUserProfileId = UserProfileService.getCurrentUserId;
 export const syncCognitoUser = UserProfileService.syncCognitoUser;
 export const updateUserProfile = UserProfileService.updateCurrentUserProfile;
 export const getCurrentUserProfile = UserProfileService.getCurrentUserProfile;

@@ -37,7 +37,12 @@ export async function getUserProfileById(
 ): Promise<UserProfile | null> {
   try {
     const response = await ApiClient.get<UserProfile>(`/users/${userId}`);
-    return response.success ? response.data ?? null : null;
+    if (response.success && response.data) {
+      LocalStorageService.setUserId(response.data.id);
+      LocalStorageService.setUserData(response.data);
+      return response.data;
+    }
+    return null;
   } catch (error) {
     console.error("UserProfileService: Error getting user profile:", error);
     return null;
@@ -51,7 +56,12 @@ export async function getUserProfileByEmail(
     const response = await ApiClient.get<UserProfile>(
       `/users/email?email=${encodeURIComponent(email)}`
     );
-    return response.success ? response.data ?? null : null;
+    if (response.success && response.data) {
+      LocalStorageService.setUserId(response.data.id);
+      LocalStorageService.setUserData(response.data);
+      return response.data;
+    }
+    return null;
   } catch (error) {
     console.error(
       "UserProfileService: Error getting user profile by email:",
