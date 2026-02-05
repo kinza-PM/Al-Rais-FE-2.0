@@ -9,6 +9,9 @@ export interface DropdownOption {
   disabled?: boolean;
 }
 
+/** Global label cache: persists selected labels across mounts/navigations when options list changes. */
+const globalLabelCache = new Map<string, string>();
+
 interface SearchableDropdownProps {
   options: DropdownOption[];
   value: string;
@@ -34,6 +37,14 @@ interface SearchableDropdownProps {
   hasMore?: boolean;
   loadingMore?: boolean;
   tooltip?: string | null;
+  /**
+   * Optional label to display when value is set.
+   * When provided, overrides derived label from options/cache.
+   * Use this to guarantee full label display when options list changes.
+   */
+  displayLabel?: string | null;
+  /** Called with full option when user selects; use to persist label for display. */
+  onOptionSelect?: (value: string, option: DropdownOption) => void;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -54,6 +65,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   hasMore = false,
   loadingMore = false,
   tooltip = null,
+  displayLabel = null,
+  onOptionSelect,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,11 +79,21 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
   const remoteSearch = !!onSearchChange;
 
+  const hasGoodLabel = (o: DropdownOption) =>
+    o.label && o.label.trim().length > (o.value?.length ?? 0);
+
   // Cache options by value so selected label doesn't disappear
   // when remote search results don't contain the selected option.
+  // Also persist to global cache for cross-mount/navigation display.
   useEffect(() => {
     for (const opt of options) {
-      optionCacheRef.current.set(opt.value, opt);
+      const existing = optionCacheRef.current.get(opt.value);
+      if (!existing || !hasGoodLabel(existing) || hasGoodLabel(opt)) {
+        optionCacheRef.current.set(opt.value, opt);
+        if (hasGoodLabel(opt)) {
+          globalLabelCache.set(opt.value, opt.label);
+        }
+      }
     }
   }, [options]);
 
@@ -93,11 +116,15 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     );
   }, [options, searchTerm, remoteSearch]);
 
-  // Get selected option label
+  // Get selected option label (displayLabel > global cache > option/cache > code)
   const selectedOption =
     options.find((option) => option.value === value) ??
     optionCacheRef.current.get(value);
-  const displayValue = selectedOption?.label || (value ? value : placeholder);
+  const displayValue =
+    (value && displayLabel) ||
+    (value && globalLabelCache.get(value)) ||
+    selectedOption?.label ||
+    (value ? value : placeholder);
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -157,6 +184,16 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   };
 
   const handleOptionSelect = (optionValue: string) => {
+    const selectedOpt =
+      filteredOptions.find((o) => o.value === optionValue) ??
+      options.find((o) => o.value === optionValue);
+    if (selectedOpt) {
+      optionCacheRef.current.set(optionValue, selectedOpt);
+      if (hasGoodLabel(selectedOpt)) {
+        globalLabelCache.set(optionValue, selectedOpt.label);
+      }
+      onOptionSelect?.(optionValue, selectedOpt);
+    }
     onChange(optionValue);
     setIsOpen(false);
     setSearchTerm("");

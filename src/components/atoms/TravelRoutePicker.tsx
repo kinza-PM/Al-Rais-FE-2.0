@@ -3,7 +3,12 @@ import DoubledArrow from "../../assets/svgs/doubled-arrow.svg";
 import type { AirportOption } from "../../features/flights/types";
 import SearchableDropdown from "../common/SearchableDropdown";
 
-type Value = { fromCode: string; toCode: string };
+type Value = {
+  fromCode: string;
+  toCode: string;
+  fromOption?: AirportOption | null;
+  toOption?: AirportOption | null;
+};
 
 type Props = {
   options: AirportOption[];
@@ -45,14 +50,31 @@ const TravelRoutePicker: React.FC<Props> = ({
   hasMore = false,
   loadingMore = false,
 }) => {
-  const { fromCode, toCode } = value;
+  const { fromCode, toCode, fromOption, toOption } = value;
 
-  const handleFrom = (code: string) => onChange({ fromCode: code, toCode });
-  const handleTo = (code: string) => onChange({ fromCode, toCode: code });
+  const handleFrom = (code: string, opt?: AirportOption) =>
+    onChange({
+      fromCode: code,
+      toCode,
+      fromOption: opt !== undefined ? opt : fromOption ?? undefined,
+      toOption: toOption ?? undefined,
+    });
+  const handleTo = (code: string, opt?: AirportOption) =>
+    onChange({
+      fromCode,
+      toCode: code,
+      fromOption: fromOption ?? undefined,
+      toOption: opt !== undefined ? opt : toOption ?? undefined,
+    });
 
   const swap = () => {
     if (!fromCode && !toCode) return;
-    onChange({ fromCode: toCode, toCode: fromCode });
+    onChange({
+      fromCode: toCode,
+      toCode: fromCode,
+      fromOption: toOption ?? null,
+      toOption: fromOption ?? null,
+    });
   };
 
   // Convert CountryOption to DropdownOption format
@@ -80,7 +102,18 @@ const TravelRoutePicker: React.FC<Props> = ({
         <SearchableDropdown
           options={fromOptions}
           value={fromCode}
-          onChange={handleFrom}
+          onChange={(code) => handleFrom(code)}
+          onOptionSelect={(code, opt) => {
+            const full = options.find((o) => o.code === code) ?? {
+              id: opt.id,
+              code: opt.value,
+              label: opt.label,
+              city: "",
+              country: "",
+            };
+            handleFrom(code, full);
+          }}
+          displayLabel={fromOption?.label ?? undefined}
           onSearchChange={onSearchChange}
           placeholder={placeholders.from}
           label={labels.from}
@@ -109,7 +142,18 @@ const TravelRoutePicker: React.FC<Props> = ({
         <SearchableDropdown
           options={toOptions}
           value={toCode}
-          onChange={handleTo}
+          onChange={(code) => handleTo(code)}
+          onOptionSelect={(code, opt) => {
+            const full = options.find((o) => o.code === code) ?? {
+              id: opt.id,
+              code: opt.value,
+              label: opt.label,
+              city: "",
+              country: "",
+            };
+            handleTo(code, full);
+          }}
+          displayLabel={toOption?.label ?? undefined}
           onSearchChange={onSearchChange}
           placeholder={placeholders.to}
           label={labels.to}

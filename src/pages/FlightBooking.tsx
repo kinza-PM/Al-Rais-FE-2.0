@@ -539,7 +539,7 @@ const FlightBooking = () => {
               countries={countriesOptions}
               reservation={flightReservationBookingPayload}
               onReservationChange={handleFlightReservationBookingChange}
-              onNext={() => setCurrentStep(4)}
+              onNext={() => setCurrentStep(eticketStepIndex)}
               onFinalReservationFlightBookingSuccess={
                 onFinalReservationFlightBookingSuccess
               }

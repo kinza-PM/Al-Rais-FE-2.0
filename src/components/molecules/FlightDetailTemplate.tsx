@@ -650,6 +650,12 @@ const FlightDetailTemplate: React.FC = () => {
     (!countries || countries.length === 0);
   const countriesLoading = loadingMap?.countries ?? isInitialLoading;
 
+  // Preserve full airport options (with labels) for display after clearFlight()
+  const [preservedFromOption, setPreservedFromOption] =
+    useState<AirportOption | null>(null);
+  const [preservedToOption, setPreservedToOption] =
+    useState<AirportOption | null>(null);
+
   const countriesForPicker = useMemo(() => {
     const base = (countries as AirportOption[]) || [];
     const merged: AirportOption[] = [];
@@ -660,21 +666,28 @@ const FlightDetailTemplate: React.FC = () => {
       merged.push(opt);
     };
 
-    // Ensure selected options coming from hero/store  are present
-    addUnique(flight?.fromOption as any);
-    addUnique(flight?.toOption as any);
+    // Ensure selected options coming from hero/store (or preserved after clearFlight) are present
+    addUnique((flight?.fromOption ?? preservedFromOption) as AirportOption);
+    addUnique((flight?.toOption ?? preservedToOption) as AirportOption);
 
     for (const c of base) addUnique(c);
     return merged;
-  }, [countries, flight?.fromOption, flight?.toOption]);
+  }, [
+    countries,
+    flight?.fromOption,
+    flight?.toOption,
+    preservedFromOption,
+    preservedToOption,
+  ]);
 
   const { useBreakpoint } = Grid;
 
   const [trip, setTrip] = useState<TripType>("oneway");
   const [fromCode, setFromCode] = useState<string>("");
   const [toCode, setToCode] = useState<string>("");
+  const [fromOption, setFromOption] = useState<AirportOption | null>(null);
+  const [toOption, setToOption] = useState<AirportOption | null>(null);
   const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("5");
-
   // const [showFilters, setShowFilters] = useState(false);
 
   const [open, setOpen] = useState(false);
@@ -726,7 +739,15 @@ const FlightDetailTemplate: React.FC = () => {
 
     setFromCode(flight?.fromCode ?? "");
     setToCode(flight?.toCode ?? "");
+    setFromOption((flight?.fromOption as AirportOption) ?? null);
+    setToOption((flight?.toOption as AirportOption) ?? null);
     setSelectedCabinClassId(String(flight?.selectedCabinClassId ?? "5"));
+    setPreservedFromOption(
+      (prev) => (flight?.fromOption as AirportOption) || prev
+    );
+    setPreservedToOption(
+      (prev) => (flight?.toOption as AirportOption) || prev
+    );
     setDepartDate(
       typeof flight?.departure === "string" ? flight.departure : "",
     );
@@ -1234,10 +1255,17 @@ const FlightDetailTemplate: React.FC = () => {
               options={countriesForPicker as AirportOption[]}
               loading={countriesLoading}
               onSearchChange={setCountriesSearchTerm}
-              value={{ fromCode, toCode }}
-              onChange={({ fromCode: f, toCode: t }) => {
+              value={{
+                fromCode,
+                toCode,
+                fromOption: fromOption ?? preservedFromOption,
+                toOption: toOption ?? preservedToOption,
+              }}
+              onChange={({ fromCode: f, toCode: t, fromOption: fOpt, toOption: tOpt }) => {
                 setFromCode(f);
                 setToCode(t);
+                if (fOpt !== undefined) setFromOption(fOpt);
+                if (tOpt !== undefined) setToOption(tOpt);
               }}
               showSwap
               labels={{ from: "From", to: "To" }}

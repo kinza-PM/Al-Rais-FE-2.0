@@ -352,6 +352,23 @@ function BookingCard({ booking }: { booking: any }) {
                   type="button"
                   className="text-[#5383DA] hover:underline"
                   overrideClasses
+                  onClick={async () => {
+                    if (!booking.ticketImage) return;
+                    try {
+                      const res = await fetch(booking.ticketImage, {
+                        mode: "cors",
+                      });
+                      const blob = await res.blob();
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `e-ticket-${booking.bookingRef || "ticket"}.pdf`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    } catch {
+                      window.open(booking.ticketImage, "_blank");
+                    }
+                  }}
                 >
                   Download e-ticket
                 </Button>
@@ -397,6 +414,7 @@ function BookingCard({ booking }: { booking: any }) {
           closeModal={() => setOpenShareModal(false)}
           bookingRef={booking.bookingRef || "N/A"}
           passengerName={getPassengerNameFromBooking(booking)}
+          ticketPdfUrl={booking.ticketImage ?? undefined}
           showPrint={false}
         />
       )}
