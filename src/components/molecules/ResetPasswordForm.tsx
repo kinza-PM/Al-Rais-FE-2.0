@@ -16,7 +16,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   email,
   otp,
   onPasswordReset,
-  onBackToOTP,
+  onBackToOTP: _onBackToOTP,
 }) => {
   const [formData, setFormData] = useState<ResetPasswordFormType>({
     email: email,
@@ -75,14 +75,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     return getPasswordError(formData.newPassword);
   }, [formData.newPassword]);
 
-  const confirmPasswordError = useMemo(() => {
-    if (formData.confirmPassword.trim() === "")
-      return "Confirm password is required.";
-    if (formData.newPassword !== formData.confirmPassword)
-      return "Passwords do not match.";
-    return null;
-  }, [formData.newPassword, formData.confirmPassword]);
-
   const isFormValid = useMemo(() => {
     if (!formData.newPassword || !formData.confirmPassword) return false;
     if (formData.newPassword !== formData.confirmPassword) return false;
@@ -90,7 +82,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   }, [formData.newPassword, formData.confirmPassword, passwordError]);
 
   const passwordsMatch = formData.newPassword && formData.confirmPassword && formData.newPassword === formData.confirmPassword;
-  const showMismatchError = touched.confirmPassword && formData.confirmPassword && !passwordsMatch;
+  const showMismatchError = Boolean(touched.confirmPassword && formData.confirmPassword && !passwordsMatch);
 
   // Check if password meets all requirements (for green checkmark display)
   const passwordMeetsAllRequirements = useMemo(() => {

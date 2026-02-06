@@ -12,7 +12,7 @@ interface ForgotPasswordFormProps {
 }
 
 const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
-  onBackToLogin,
+  onBackToLogin: _onBackToLogin,
   onOTPSent,
 }) => {
   const [formData, setFormData] = useState<ForgotPasswordFormType>({
@@ -77,7 +77,6 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
 
   const emailHasError = Boolean(emailError);
   const hasEmailError = Boolean(touched.email && emailHasError);
-  const displayError = error || (hasEmailError ? emailError : null);
 
   return (
     <div className="w-full shrink-0" style={{ maxWidth: '576px' }}>

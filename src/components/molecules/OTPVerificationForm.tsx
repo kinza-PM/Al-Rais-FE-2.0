@@ -11,7 +11,7 @@ interface OTPVerificationFormProps {
 
 const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({ 
   email, 
-  onBackToForgotPassword, 
+  onBackToForgotPassword: _onBackToForgotPassword, 
   onOTPVerified 
 }) => {
   const [formData, setFormData] = useState<OTPVerificationFormType>({

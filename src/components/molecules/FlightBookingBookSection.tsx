@@ -9,8 +9,9 @@ import EmirateLogo from "../../assets/images/emirates.png";
 import FlagUsa from "../../assets/images/Flag-usa.png";
 import FlagUae from "../../assets/svgs/Flag-uae.svg";
 import FlagPakistan from "../../assets/svgs/Flag-pakistan.svg";
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const COUNTRY_CODE_FLAGS: Record<string, string> = {
   "+1": FlagUsa,
   "+92": FlagPakistan,
