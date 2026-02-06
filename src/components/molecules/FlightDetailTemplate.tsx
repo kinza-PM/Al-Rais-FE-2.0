@@ -666,15 +666,20 @@ const FlightDetailTemplate: React.FC = () => {
 
   const countriesForPicker = useMemo(() => {
     const base = (countries as AirportOption[]) || [];
-    const merged: AirportOption[] = [];
 
+    // When user is searching, show only API search results (e.g. "duba" → only Dubai options)
+    if (countriesSearchTerm.trim()) {
+      return base;
+    }
+
+    const merged: AirportOption[] = [];
     const addUnique = (opt: AirportOption | null | undefined) => {
       if (!opt?.code) return;
       if (merged.some((x) => x.code === opt.code)) return;
       merged.push(opt);
     };
 
-    // Ensure selected options coming from hero/store (or preserved after clearFlight) are present
+    // No search: keep hero/store or preserved options so they stay in the list
     addUnique((flight?.fromOption ?? preservedFromOption) as AirportOption);
     addUnique((flight?.toOption ?? preservedToOption) as AirportOption);
 
@@ -682,6 +687,7 @@ const FlightDetailTemplate: React.FC = () => {
     return merged;
   }, [
     countries,
+    countriesSearchTerm,
     flight?.fromOption,
     flight?.toOption,
     preservedFromOption,
