@@ -6,17 +6,7 @@ import baggageIcon from "../../assets/svgs/baggage.svg";
 // import wifiIcon from "../../assets/svgs/wifi.svg";
 // import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
-import FlagUsa from "../../assets/images/Flag-usa.png";
-import FlagUae from "../../assets/svgs/Flag-uae.svg";
-import FlagPakistan from "../../assets/svgs/Flag-pakistan.svg";
 import React, { useState } from "react";
-
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const COUNTRY_CODE_FLAGS: Record<string, string> = {
-  "+1": FlagUsa,
-  "+92": FlagPakistan,
-  "+971": FlagUae,
-};
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
 // import CustomToggle from "../common/CustomToggle";

@@ -75,8 +75,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
     }
   }, [error]);
 
-  const emailHasError = Boolean(emailError);
-  const hasEmailError = Boolean(touched.email && emailHasError);
+  const emailHasError = Boolean(touched.email && emailError);
 
   return (
     <div className="w-full shrink-0" style={{ maxWidth: '576px' }}>

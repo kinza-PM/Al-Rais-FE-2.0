@@ -28,8 +28,6 @@ interface Slide {
 const LandingPage: React.FC = () => {
   const { onLoginClick, onSignupClick } =
     useOutletContext<LandingPageContext>();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [product, setProduct] = useState<"flights" | "hotels" | "cars" | "packages">("flights");
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
