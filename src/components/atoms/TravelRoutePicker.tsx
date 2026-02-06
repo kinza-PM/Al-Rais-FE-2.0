@@ -52,11 +52,14 @@ const TravelRoutePicker: React.FC<Props> = ({
 }) => {
   const { fromCode, toCode, fromOption, toOption } = value;
 
+  // When opt is provided (from onOptionSelect), pass it so parent can update label.
+  // When only code is provided (e.g. from SearchableDropdown's onChange after onOptionSelect),
+  // pass undefined for option so parent does not overwrite with stale option.
   const handleFrom = (code: string, opt?: AirportOption) =>
     onChange({
       fromCode: code,
       toCode,
-      fromOption: opt !== undefined ? opt : fromOption ?? undefined,
+      fromOption: opt !== undefined ? opt : undefined,
       toOption: toOption ?? undefined,
     });
   const handleTo = (code: string, opt?: AirportOption) =>
@@ -64,7 +67,7 @@ const TravelRoutePicker: React.FC<Props> = ({
       fromCode,
       toCode: code,
       fromOption: fromOption ?? undefined,
-      toOption: opt !== undefined ? opt : toOption ?? undefined,
+      toOption: opt !== undefined ? opt : undefined,
     });
 
   const swap = () => {
