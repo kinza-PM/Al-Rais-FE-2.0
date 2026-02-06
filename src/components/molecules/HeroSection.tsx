@@ -70,9 +70,10 @@ const HeroSection: React.FC<Props> = ({ activeTab, onTabChange }) => {
             />
             </div>
 
-          {/* Render the appropriate hero section */}
-          {selectedTab === "flights" && <FlightHeroSectionTab />}
-          {selectedTab === "hotels" && <HotelHeroSectionTab />}
+            {/* Render the appropriate hero section */}
+            {selectedTab === "flights" && <FlightHeroSectionTab />}
+            {selectedTab === "hotels" && <HotelHeroSectionTab />}
+          </div>
         </div>
       </div>
 
