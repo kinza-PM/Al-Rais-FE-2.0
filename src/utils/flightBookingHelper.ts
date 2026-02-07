@@ -75,6 +75,126 @@ export const buildInitialFlightBookingPassengersPayload = (
   });
 };
 
+// Field-level validation for passengers
+export const validatePassengersForFlightProvisionalBookingFields = (
+  fareBookingRules: any,
+  flightBookingPayload: FlightInitialBooking
+): Record<number, Record<string, string>> => {
+  const errors: Record<number, Record<string, string>> = {};
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const pRules = fareBookingRules?.passengerRules?.[0] ?? {};
+  const passengers = flightBookingPayload?.passengers ?? [];
+  const isEmpty = (v: any) =>
+    v === undefined || v === null || String(v).trim() === "";
+
+  for (let i = 0; i < passengers.length; i++) {
+    const p = passengers[i];
+    const pi = p?.passengerInfo ?? {};
+    const id = p?.identityDocuments?.[0] ?? {};
+    const addId = p?.additionalId ?? {};
+    const contactProvided = p?.contact?.contactsProvided?.[0] ?? {};
+    const phone = contactProvided?.phone?.[0] ?? {};
+    const email = contactProvided?.emailAddress?.[0];
+    const phoneValue =
+      phone && phone.areaCode && phone.phoneNumber
+        ? `${phone.areaCode}${phone.phoneNumber}`
+        : undefined;
+
+    const passengerErrors: Record<string, string> = {};
+
+    // Always required fields
+    if (isEmpty(pi.nameTitle)) {
+      passengerErrors["passengerInfo.nameTitle"] = "Title is required.";
+    }
+    if (isEmpty(pi.givenName)) {
+      passengerErrors["passengerInfo.givenName"] = "Full name is required.";
+    }
+    if (isEmpty(pi.surname)) {
+      passengerErrors["passengerInfo.surname"] = "Surname is required.";
+    }
+    if (isEmpty(pi.gender)) {
+      passengerErrors["passengerInfo.gender"] = "Gender is required.";
+    }
+    if (isEmpty(email)) {
+      passengerErrors["contact.contactsProvided.0.emailAddress.0"] = "Email address is required.";
+    }
+    if (isEmpty(phoneValue)) {
+      passengerErrors["contact.contactsProvided.0.phone.0"] = "Phone (country code and number) is required.";
+    }
+
+    // Date of birth
+    if (pRules.isDateOfBirthMandatory) {
+      const bd = pi.birthDate ?? null;
+      if (!bd) {
+        passengerErrors["passengerInfo.birthDate"] = "Birth date is required.";
+      } else {
+        const bdDate = new Date(`${bd}T00:00:00`);
+        bdDate.setHours(0, 0, 0, 0);
+        if (bdDate > today) {
+          passengerErrors["passengerInfo.birthDate"] = "Birth date cannot be in the future.";
+        }
+      }
+    }
+
+    // Expiry date
+    const exp = id.expiryDate ?? null;
+    if (!exp) {
+      passengerErrors["identityDocuments.0.expiryDate"] = "Expiry date is required.";
+    } else {
+      const expDate = new Date(`${exp}T00:00:00`);
+      expDate.setHours(0, 0, 0, 0);
+      if (expDate < today) {
+        passengerErrors["identityDocuments.0.expiryDate"] = "Expiry date must be booking date or a future date.";
+      }
+    }
+
+    // Rule-based checks
+    if (pRules.isIdTypeMandatory && isEmpty(id.idType)) {
+      passengerErrors["identityDocuments.0.idType"] = "ID type is required.";
+    }
+    if (isEmpty(id.idDocumentNumber)) {
+      passengerErrors["identityDocuments.0.idDocumentNumber"] = "Document number is required.";
+    }
+    if (isEmpty(id.issuingCountryCode)) {
+      passengerErrors["identityDocuments.0.issuingCountryCode"] = "Issuing country is required.";
+    }
+    if (pRules.isDateOfIssueMandatory && isEmpty(id.dateOfIssue)) {
+      passengerErrors["identityDocuments.0.dateOfIssue"] = "Date of issue is required.";
+    }
+    if (isEmpty(id.residenceCountryCode)) {
+      passengerErrors["identityDocuments.0.residenceCountryCode"] = "Residence country is required.";
+    }
+    if (pRules.isPANMandatory && isEmpty(pi.PAN)) {
+      passengerErrors["passengerInfo.PAN"] = "PAN is required.";
+    }
+    if (pRules.isAdditionalIdTypeMandatory && isEmpty(addId.type)) {
+      passengerErrors["additionalId.type"] = "Additional ID type is required.";
+    }
+    if (pRules.isAdditionalDocumentNumberMandatory && isEmpty(addId.number)) {
+      passengerErrors["additionalId.number"] = "Additional document number is required.";
+    }
+    if (pRules.isSeatMandatory && isEmpty(p.seat)) {
+      passengerErrors["seat"] = "Seat is required.";
+    }
+    if (pRules.isMealMandatory && isEmpty(p.meal)) {
+      passengerErrors["meal"] = "Meal is required.";
+    }
+    if (pRules.isBaggageMandatory && isEmpty(p.baggage)) {
+      passengerErrors["baggage"] = "Baggage is required.";
+    }
+    if (pRules.isOtherAncillaryMandatory && isEmpty(p.otherAncillary)) {
+      passengerErrors["otherAncillary"] = "Other ancillaries are required.";
+    }
+
+    if (Object.keys(passengerErrors).length > 0) {
+      errors[i] = passengerErrors;
+    }
+  }
+
+  return errors;
+};
+
 export const validatePassengersForFlightProvisionalBooking = (
   fareBookingRules: any,
   flightBookingPayload: FlightInitialBooking
@@ -215,6 +335,89 @@ export const validatePassengersForFlightProvisionalBooking = (
   }
 
   return { valid: true };
+};
+
+// Field-level validation for payment
+export const validateReservationFlightBookingDataFields = (
+  reservation: any,
+  card: { number: string; expiry: string; cvv: string; holderName: string }
+): Record<string, string> => {
+  const errors: Record<string, string> = {};
+  const isEmpty = (v: any) =>
+    v === undefined || v === null || String(v).trim() === "";
+
+  // Card number
+  if (isEmpty(card.number)) {
+    errors["card.number"] = "Card number is required.";
+  } else {
+    const numericCard = card.number.replace(/\s+/g, "");
+    if (!/^\d{12,19}$/.test(numericCard)) {
+      errors["card.number"] = "Card number looks invalid.";
+    }
+  }
+
+  // Expiry
+  if (isEmpty(card.expiry)) {
+    errors["card.expiry"] = "Expiry date is required.";
+  } else {
+    if (!/^\d{4}$/.test(card.expiry)) {
+      errors["card.expiry"] = "Expiry date is invalid. Please use MM/YY.";
+    } else {
+      const yy = Number(card.expiry.slice(0, 2));
+      const mm = Number(card.expiry.slice(2, 4));
+      if (!(mm >= 1 && mm <= 12)) {
+        errors["card.expiry"] = "Expiry month is invalid.";
+      } else {
+        const fullYear = 2000 + yy;
+        const expiryDate = new Date(fullYear, mm, 0);
+        expiryDate.setHours(23, 59, 59, 999);
+        if (expiryDate < new Date()) {
+          errors["card.expiry"] = "Card expiry is in the past.";
+        }
+      }
+    }
+  }
+
+  // CVV
+  if (isEmpty(card.cvv)) {
+    errors["card.cvv"] = "Security code (CVV) is required.";
+  } else if (!/^\d{3,4}$/.test(card.cvv)) {
+    errors["card.cvv"] = "Security code should be 3 or 4 digits.";
+  }
+
+  // Holder name
+  if (isEmpty(card.holderName)) {
+    errors["card.holderName"] = "Cardholder name is required.";
+  }
+
+  // Billing address
+  const address = reservation?.paymentDetails?.address ?? null;
+  if (!address) {
+    errors["address"] = "Billing address is required.";
+  } else {
+    const street0 = Array.isArray(address.street)
+      ? address.street[0]
+      : address.street;
+    if (isEmpty(street0)) {
+      errors["address.street.0"] = "Billing address line 1 is required.";
+    }
+    if (isEmpty(address.postalCode)) {
+      errors["address.postalCode"] = "Postal code is required.";
+    }
+    if (isEmpty(address.cityName)) {
+      errors["address.cityName"] = "City is required.";
+    }
+    if (isEmpty(address.countryCode)) {
+      errors["address.countryCode"] = "Country is required.";
+    }
+  }
+
+  // Email
+  if (isEmpty(reservation?.customerInfo?.emailAddress)) {
+    errors["customerInfo.emailAddress"] = "Email is required.";
+  }
+
+  return errors;
 };
 
 export const validateReservationFlightBookingData = (

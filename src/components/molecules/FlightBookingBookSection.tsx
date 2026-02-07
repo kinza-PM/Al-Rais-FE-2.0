@@ -23,7 +23,7 @@ import {
 } from "../../utils/helpers";
 import { useFlightInitialBooking } from "../../hooks/useFlightBooking";
 import toast from "react-hot-toast";
-import { validatePassengersForFlightProvisionalBooking } from "../../utils/flightBookingHelper";
+import { validatePassengersForFlightProvisionalBooking, validatePassengersForFlightProvisionalBookingFields } from "../../utils/flightBookingHelper";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import LoginModal from "../common/LoginModal";
 import { useAuth } from "../../features/auth/hooks/useAuth";
@@ -77,6 +77,8 @@ export default function FlightBookingBookSection({
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [openPrice, setOpenPrice] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<Record<number, Record<string, string>>>({});
+  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
 
   const pRules = fareBookingSearchRules?.passengerRules?.[0] ?? {};
   const { mutateAsync, isPending } = useFlightInitialBooking();
@@ -100,16 +102,52 @@ export default function FlightBookingBookSection({
     },
   };
 
+  // Helper to clear error for a specific field
+  const clearFieldError = (passengerIndex: number, fieldPath: string) => {
+    if (hasAttemptedValidation && validationErrors[passengerIndex]?.[fieldPath]) {
+      setValidationErrors((prev) => {
+        const updated = { ...prev };
+        if (updated[passengerIndex]) {
+          delete updated[passengerIndex][fieldPath];
+          if (Object.keys(updated[passengerIndex]).length === 0) {
+            delete updated[passengerIndex];
+          }
+        }
+        return updated;
+      });
+    }
+  };
+
   const handleFlightProvInitialBooking = async () => {
-    if (typeof validatePassengersForFlightProvisionalBooking === "function") {
-      const { valid, error } = validatePassengersForFlightProvisionalBooking(
-        fareBookingSearchRules,
-        flightBookingPayload,
-      );
-      if (!valid) {
-        toast.error(error || "Validation failed.");
-        return;
+    // if (typeof validatePassengersForFlightProvisionalBooking === "function") {
+    //   const { valid, error } = validatePassengersForFlightProvisionalBooking(
+    //     fareBookingSearchRules,
+    //     flightBookingPayload,
+    //   );
+    //   if (!valid) {
+    //     toast.error(error || "Validation failed.");
+    //     return;
+    //   }
+    // }
+    setHasAttemptedValidation(true);
+    const fieldErrors = validatePassengersForFlightProvisionalBookingFields(
+      fareBookingSearchRules,
+      flightBookingPayload,
+    );
+    setValidationErrors(fieldErrors);
+
+    if (Object.keys(fieldErrors).length > 0) {
+      // Still check overall validation for backward compatibility
+      if (typeof validatePassengersForFlightProvisionalBooking === "function") {
+        const { valid } = validatePassengersForFlightProvisionalBooking(
+          fareBookingSearchRules,
+          flightBookingPayload,
+        );
+        if (!valid) {
+          return;
+        }
       }
+      return;
     }
     try {
       const response = await mutateAsync(flightBookingPayload);
@@ -168,7 +206,7 @@ export default function FlightBookingBookSection({
 
                 <div className="px-4 py-4">
                   <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
-                    <div className="relative w-full">
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}>
                       <SearchableDropdown
                         options={[
                           { id: "mr", value: "MR", label: "Mr" },
@@ -176,73 +214,84 @@ export default function FlightBookingBookSection({
                           { id: "mrs", value: "MRS", label: "Mrs" },
                         ]}
                         value={p.passengerInfo?.nameTitle ?? ""}
-                        onChange={(value) =>
+                        onChange={(value) => {
                           onPassengerFieldChange(
                             idx,
                             "passengerInfo.nameTitle",
                             value,
-                          )
-                        }
+                          );
+                          clearFieldError(idx, "passengerInfo.nameTitle");
+                        }}
                         placeholder="Select title"
                         label="Title"
                         widthClass="w-full"
-                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["passengerInfo.nameTitle"] : null}
+                        className={`h-10 w-full appearance-none rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "border-[#E65959]" : "border-[#C2CAD6]"} bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
                       />
                     </div>
-                    <TailwindCustomInput
-                      type="text"
-                      placeholder="Enter your full name"
-                      label="Full name (Filled based on ID/Passport/Driver’s license)"
-                      value={p.passengerInfo?.givenName ?? ""}
-                      onChange={(evOrVal) => {
-                        const v =
-                          evOrVal && evOrVal.target
-                            ? evOrVal.target.value
-                            : evOrVal;
-                        onPassengerFieldChange(
-                          idx,
-                          "passengerInfo.givenName",
-                          v ?? "",
-                        );
-                      }}
-                    />
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}>
+                      <TailwindCustomInput
+                        type="text"
+                        placeholder="Enter your full name"
+                        label="Full name (Filled based on ID/Passport/Driver’s license)"
+                        value={p.passengerInfo?.givenName ?? ""}
+                        onChange={(evOrVal) => {
+                          const v =
+                            evOrVal && evOrVal.target
+                              ? evOrVal.target.value
+                              : evOrVal;
+                          onPassengerFieldChange(
+                            idx,
+                            "passengerInfo.givenName",
+                            v ?? "",
+                          );
+                          clearFieldError(idx, "passengerInfo.givenName");
+                        }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["passengerInfo.givenName"] : null}
+                      />
+                    </div>
 
-                    <TailwindCustomInput
-                      type="text"
-                      placeholder="Enter your surname"
-                      label="Surname"
-                      value={p.passengerInfo?.surname ?? ""}
-                      onChange={(evOrVal) => {
-                        const v =
-                          evOrVal && evOrVal.target
-                            ? evOrVal.target.value
-                            : evOrVal;
-                        onPassengerFieldChange(
-                          idx,
-                          "passengerInfo.surname",
-                          v ?? "",
-                        );
-                      }}
-                    />
-
-                    <div className="relative w-full">
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-4" : ""}`}>
+                      <TailwindCustomInput
+                        type="text"
+                        placeholder="Enter your surname"
+                        label="Surname"
+                        value={p.passengerInfo?.surname ?? ""}
+                        onChange={(evOrVal) => {
+                          const v =
+                            evOrVal && evOrVal.target
+                              ? evOrVal.target.value
+                              : evOrVal;
+                          onPassengerFieldChange(
+                            idx,
+                            "passengerInfo.surname",
+                            v ?? "",
+                          );
+                          clearFieldError(idx, "passengerInfo.surname");
+                        }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["passengerInfo.surname"] : null}
+                      />
+                    </div>
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-4" : ""}`}>
                       <SearchableDropdown
                         options={[
                           { id: "male", value: "M", label: "Male" },
                           { id: "female", value: "F", label: "Female" },
                         ]}
                         value={p.passengerInfo?.gender ?? ""}
-                        onChange={(value) =>
+                        onChange={(value) => {
                           onPassengerFieldChange(
                             idx,
                             "passengerInfo.gender",
                             value,
-                          )
-                        }
+                          );
+                          clearFieldError(idx, "passengerInfo.gender");
+                        }}
                         placeholder="Select gender"
                         label="Gender"
                         widthClass="w-full"
-                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["passengerInfo.gender"] : null}
+                        className={`h-10 w-full appearance-none rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "border-[#E65959]" : "border-[#C2CAD6]"} bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
                       />
                     </div>
                   </div>
@@ -271,7 +320,7 @@ export default function FlightBookingBookSection({
                     </div>
 
                     {pRules.isIdTypeMandatory && (
-                      <div className="relative w-full">
+                      <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idType"] ? "pb-4" : ""}`}>
                         <SearchableDropdown
                           options={[
                             {
@@ -281,55 +330,59 @@ export default function FlightBookingBookSection({
                             },
                           ]}
                           value={p.identityDocuments?.[0]?.idType ?? "PT"}
-                          onChange={(value) =>
+                          onChange={(value) => {
                             onPassengerFieldChange(
                               idx,
                               "identityDocuments.0.idType",
                               value,
-                            )
-                          }
+                            );
+                            clearFieldError(idx, "identityDocuments.0.idType");
+                          }}
                           placeholder="Select ID type"
                           label="ID type"
                           widthClass="w-full"
+                          error={hasAttemptedValidation ? validationErrors[idx]?.["identityDocuments.0.idType"] : null}
                           className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                         />
                       </div>
                     )}
 
                     {/* {pRules.isDocumentNumberMandatory && ( */}
-                    <TailwindCustomInput
-                      type="text"
-                      placeholder={`Enter ${
-                        p.identityDocuments?.[0]?.idType === "PT"
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}>
+                      <TailwindCustomInput
+                        type="text"
+                        placeholder={`Enter ${p.identityDocuments?.[0]?.idType === "PT"
                           ? "Passport number"
                           : p.identityDocuments?.[0]?.idType === "DL"
                             ? "Driving licence"
                             : "National ID"
-                      }`}
-                      label={`${
-                        p.identityDocuments?.[0]?.idType === "PT"
+                          }`}
+                        label={`${p.identityDocuments?.[0]?.idType === "PT"
                           ? "Passport number"
                           : p.identityDocuments?.[0]?.idType === "DL"
                             ? "Driving licence"
                             : "National ID"
-                      }`}
-                      value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
-                      onChange={(evOrVal) => {
-                        const v =
-                          evOrVal && evOrVal.target
-                            ? evOrVal.target.value
-                            : evOrVal;
-                        onPassengerFieldChange(
-                          idx,
-                          "identityDocuments.0.idDocumentNumber",
-                          v ?? "",
-                        );
-                      }}
-                    />
+                          }`}
+                        value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
+                        onChange={(evOrVal) => {
+                          const v =
+                            evOrVal && evOrVal.target
+                              ? evOrVal.target.value
+                              : evOrVal;
+                          onPassengerFieldChange(
+                            idx,
+                            "identityDocuments.0.idDocumentNumber",
+                            v ?? "",
+                          );
+                          clearFieldError(idx, "identityDocuments.0.idDocumentNumber");
+                        }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["identityDocuments.0.idDocumentNumber"] : null}
+                      />
+                    </div>
                     {/* )} */}
 
                     {/* {pRules.isIssuingCountryCodeMandatory && ( */}
-                    <div className="relative w-full">
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}>
                       <SearchableDropdown
                         // options={
                         //   cities?.map((c) => ({
@@ -348,24 +401,26 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.issuingCountryCode ?? ""
                         }
-                        onChange={(value) =>
+                        onChange={(value) => {
                           onPassengerFieldChange(
                             idx,
                             "identityDocuments.0.issuingCountryCode",
                             value,
-                          )
-                        }
+                          );
+                          clearFieldError(idx, "identityDocuments.0.issuingCountryCode");
+                        }}
                         placeholder="Select issuing country"
                         label="Issuing country"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
-                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] : null}
+                        className={`h-10 w-full appearance-none rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "border-[#E65959]" : "border-[#C2CAD6]"} bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
                       />
                     </div>
                     {/* )} */}
 
                     {pRules.isDateOfIssueMandatory && (
-                      <div className="w-full">
+                      <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}>
                         <label className="mb-1 block text-[12px] text-[#3D495C]">
                           Date of issue
                         </label>
@@ -373,8 +428,8 @@ export default function FlightBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.dateOfIssue
                               ? parseLocalDateString(
-                                  p.identityDocuments?.[0]?.dateOfIssue,
-                                )
+                                p.identityDocuments?.[0]?.dateOfIssue,
+                              )
                               : null
                           }
                           onChange={(date) => {
@@ -384,16 +439,18 @@ export default function FlightBookingBookSection({
                               "identityDocuments.0.dateOfIssue",
                               iso,
                             );
+                            clearFieldError(idx, "identityDocuments.0.dateOfIssue");
                           }}
                           placeholder="Please select"
+                          error={hasAttemptedValidation ? validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] : null}
                           overridesClass
-                          inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                          inputClass={`h-10 w-full rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none`}
                         />
                       </div>
                     )}
 
                     {/* {pRules.isExpiryDateMandatory && ( */}
-                    <div className="w-full">
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}>
                       <label className="mb-1 block text-[12px] text-[#3D495C]">
                         Expiry date
                       </label>
@@ -401,8 +458,8 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.expiryDate
                             ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.expiryDate,
-                              )
+                              p.identityDocuments?.[0]?.expiryDate,
+                            )
                             : null
                         }
                         onChange={(date) => {
@@ -412,16 +469,18 @@ export default function FlightBookingBookSection({
                             "identityDocuments.0.expiryDate",
                             iso,
                           );
+                          clearFieldError(idx, "identityDocuments.0.expiryDate");
                         }}
                         placeholder="Please select"
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["identityDocuments.0.expiryDate"] : null}
                         overridesClass
-                        inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                        inputClass={`h-10 w-full rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none`}
                       />
                     </div>
                     {/* )} */}
 
                     {/* {pRules.isResidenceCountryCodeMandatory && ( */}
-                    <div className="relative w-full">
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "pb-4" : ""}`}>
                       <SearchableDropdown
                         // options={
                         //   cities?.map((c) => ({
@@ -440,47 +499,53 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.residenceCountryCode ?? ""
                         }
-                        onChange={(value) =>
+                        onChange={(value) => {
                           onPassengerFieldChange(
                             idx,
                             "identityDocuments.0.residenceCountryCode",
                             value,
-                          )
-                        }
+                          );
+                          clearFieldError(idx, "identityDocuments.0.residenceCountryCode");
+                        }}
                         placeholder="Select residence country"
                         label="Residence Country"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
-                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] : null}
+                        className={`h-10 w-full appearance-none rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "border-[#E65959]" : "border-[#C2CAD6]"} bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
                       />
                     </div>
                     {/* )} */}
 
                     {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
-                    <TailwindCustomInput
-                      type="email"
-                      placeholder="Enter an email"
-                      label="Email"
-                      value={
-                        p.contact?.contactsProvided?.[0]?.emailAddress?.[0] ??
-                        ""
-                      }
-                      onChange={(evOrVal) => {
-                        const v =
-                          evOrVal && evOrVal.target
-                            ? evOrVal.target.value
-                            : evOrVal;
-                        onPassengerFieldChange(
-                          idx,
-                          "contact.contactsProvided.0.emailAddress.0",
-                          v ?? "",
-                        );
-                      }}
-                    />
+                    <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}>
+                      <TailwindCustomInput
+                        type="email"
+                        placeholder="Enter an email"
+                        label="Email"
+                        value={
+                          p.contact?.contactsProvided?.[0]?.emailAddress?.[0] ??
+                          ""
+                        }
+                        onChange={(evOrVal) => {
+                          const v =
+                            evOrVal && evOrVal.target
+                              ? evOrVal.target.value
+                              : evOrVal;
+                          onPassengerFieldChange(
+                            idx,
+                            "contact.contactsProvided.0.emailAddress.0",
+                            v ?? "",
+                          );
+                          clearFieldError(idx, "contact.contactsProvided.0.emailAddress.0");
+                        }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["contact.contactsProvided.0.emailAddress.0"] : null}
+                      />
+                    </div>
                     {/* )} */}
 
                     {pRules.isDateOfBirthMandatory && (
-                      <div className="w-full">
+                      <div className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}>
                         <label className="mb-1 block text-[12px] text-[#3D495C]">
                           Birth date
                         </label>
@@ -498,9 +563,11 @@ export default function FlightBookingBookSection({
                               "passengerInfo.birthDate",
                               iso,
                             );
+                            clearFieldError(idx, "passengerInfo.birthDate");
                           }}
+                          error={hasAttemptedValidation ? validationErrors[idx]?.["passengerInfo.birthDate"] : null}
                           overridesClass
-                          inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                          inputClass={`h-10 w-full rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none`}
                         />
                       </div>
                     )}
@@ -521,7 +588,9 @@ export default function FlightBookingBookSection({
                             "passengerInfo.PAN",
                             v ?? "",
                           );
+                          clearFieldError(idx, "passengerInfo.PAN");
                         }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["passengerInfo.PAN"] : null}
                       />
                     )}
 
@@ -541,7 +610,9 @@ export default function FlightBookingBookSection({
                             "additionalId.type",
                             v ?? "",
                           );
+                          clearFieldError(idx, "additionalId.type");
                         }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["additionalId.type"] : null}
                       />
                     )}
 
@@ -561,7 +632,9 @@ export default function FlightBookingBookSection({
                             "additionalId.number",
                             v ?? "",
                           );
+                          clearFieldError(idx, "additionalId.number");
                         }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["additionalId.number"] : null}
                       />
                     )}
 
@@ -572,13 +645,15 @@ export default function FlightBookingBookSection({
                         placeholder="Preferred seat (if any)"
                         label="Seat"
                         value={p.seat ?? ""}
-                        onChange={(evOrVal) =>
+                        onChange={(evOrVal) => {
                           onPassengerFieldChange(
                             idx,
                             "seat",
                             evOrVal.target?.value ?? evOrVal,
-                          )
-                        }
+                          );
+                          clearFieldError(idx, "seat");
+                        }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["seat"] : null}
                       />
                     )}
 
@@ -588,13 +663,15 @@ export default function FlightBookingBookSection({
                         placeholder="Meal preference"
                         label="Meal"
                         value={p.meal ?? ""}
-                        onChange={(evOrVal) =>
+                        onChange={(evOrVal) => {
                           onPassengerFieldChange(
                             idx,
                             "meal",
                             evOrVal.target?.value ?? evOrVal,
-                          )
-                        }
+                          );
+                          clearFieldError(idx, "meal");
+                        }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["meal"] : null}
                       />
                     )}
 
@@ -604,13 +681,15 @@ export default function FlightBookingBookSection({
                         placeholder="Baggage"
                         label="Baggage"
                         value={p.baggage ?? ""}
-                        onChange={(evOrVal) =>
+                        onChange={(evOrVal) => {
                           onPassengerFieldChange(
                             idx,
                             "baggage",
                             evOrVal.target?.value ?? evOrVal,
-                          )
-                        }
+                          );
+                          clearFieldError(idx, "baggage");
+                        }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["baggage"] : null}
                       />
                     )}
 
@@ -620,13 +699,15 @@ export default function FlightBookingBookSection({
                         placeholder="Other ancillaries"
                         label="Other ancillaries"
                         value={p.otherAncillary ?? ""}
-                        onChange={(evOrVal) =>
+                        onChange={(evOrVal) => {
                           onPassengerFieldChange(
                             idx,
                             "otherAncillary",
                             evOrVal.target?.value ?? evOrVal,
-                          )
-                        }
+                          );
+                          clearFieldError(idx, "otherAncillary");
+                        }}
+                        error={hasAttemptedValidation ? validationErrors[idx]?.["otherAncillary"] : null}
                       />
                     )}
 
@@ -688,43 +769,51 @@ export default function FlightBookingBookSection({
                         />
                       </div>
                     </div> */}
-                    <div className="w-full">
+                    <div className="relative w-full">
                       <label className="mb-1 block text-[12px] text-[#3D495C]">
                         Phone
                       </label>
-                      <PhoneInput
-                        defaultCountry="us"
-                        value={
-                          (p.contact?.contactsProvided?.[0]?.phone?.[0]
-                            ?.areaCode || "") +
-                          (p.contact?.contactsProvided?.[0]?.phone?.[0]
-                            ?.phoneNumber || "")
-                        }
-                        onChange={(phone, meta) => {
-                          const dialCode = `+${meta.country.dialCode}`;
-                          const phoneNumber = phone.replace(dialCode, "");
-                          onPassengerFieldChange(
-                            idx,
-                            "contact.contactsProvided.0.phone.0.areaCode",
-                            dialCode,
-                          );
-                          onPassengerFieldChange(
-                            idx,
-                            "contact.contactsProvided.0.phone.0.phoneNumber",
-                            phoneNumber,
-                          );
-                        }}
-                        forceDialCode={true}
-                        hideDropdown={false}
-                        disableCountryGuess={false}
-                        className="custom-phone-wrapper"
-                        countrySelectorStyleProps={{
-                          buttonClassName: "country-selector-btn",
-                        }}
-                        inputProps={{
-                          placeholder: "Phone",
-                        }}
-                      />
+                      <div className={hasAttemptedValidation && validationErrors[idx]?.["contact.contactsProvided.0.phone.0"] ? "phone-input-error" : ""}>
+                        <PhoneInput
+                          defaultCountry="us"
+                          value={
+                            (p.contact?.contactsProvided?.[0]?.phone?.[0]
+                              ?.areaCode || "") +
+                            (p.contact?.contactsProvided?.[0]?.phone?.[0]
+                              ?.phoneNumber || "")
+                          }
+                          onChange={(phone, meta) => {
+                            const dialCode = `+${meta.country.dialCode}`;
+                            const phoneNumber = phone.replace(dialCode, "");
+                            onPassengerFieldChange(
+                              idx,
+                              "contact.contactsProvided.0.phone.0.areaCode",
+                              dialCode,
+                            );
+                            onPassengerFieldChange(
+                              idx,
+                              "contact.contactsProvided.0.phone.0.phoneNumber",
+                              phoneNumber,
+                            );
+                            clearFieldError(idx, "contact.contactsProvided.0.phone.0");
+                          }}
+                          forceDialCode={true}
+                          hideDropdown={false}
+                          disableCountryGuess={false}
+                          className="custom-phone-wrapper"
+                          countrySelectorStyleProps={{
+                            buttonClassName: "country-selector-btn",
+                          }}
+                          inputProps={{
+                            placeholder: "Phone",
+                          }}
+                        />
+                      </div>
+                      {hasAttemptedValidation && validationErrors[idx]?.["contact.contactsProvided.0.phone.0"] && (
+                        <p className="absolute left-0 text-[12px] mt-1 text-[#E65959] whitespace-nowrap">
+                          {validationErrors[idx]["contact.contactsProvided.0.phone.0"]}
+                        </p>
+                      )}
                     </div>
                     {/* )} */}
                   </div>

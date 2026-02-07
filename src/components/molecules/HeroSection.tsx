@@ -24,13 +24,13 @@ const HeroSection: React.FC<Props> = ({ activeTab, onTabChange }) => {
       {/* Outer flight/hotel search container - matches Figma card */}
       <div className="w-full flex justify-center px-4 mt-10">
         <div
-          className="w-full max-w-[1156px] bg-[#CFD5E0] border-[2px] border-[#A4A9AD] rounded-[45px] flex justify-center relative z-10"
+          className="w-full max-w-[1156px] bg-[#CFD5E0] border-[2px] border-[#A4A9AD] rounded-[45px] flex justify-center relative z-10 overflow-visible"
           style={{ opacity: 1 }}
         >
           {/* Inner white panel */}
           <div
-            className="w-full mx-[15px] my-[15px] rounded-[35px] bg-white shadow-[0_8px_28px_rgba(12,40,86,0.08)]"
-            style={{ opacity: 1, overflowX: "hidden", overflowY: "visible" }}
+            className="w-full mx-[15px] my-[15px] rounded-[35px] bg-white shadow-[0_8px_28px_rgba(12,40,86,0.08)] overflow-visible"
+            style={{ opacity: 1 }}
           >
             <div className="relative h-[50px] px-6">
             {/* Tab labels */}

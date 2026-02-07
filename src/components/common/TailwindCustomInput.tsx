@@ -10,6 +10,7 @@ type TailwindCustomInputProps = {
     name?: string | undefined;
     disabled?: boolean;
     inputRef?: React.Ref<HTMLInputElement> | null;
+    error?: string | null;
 };
 
 export default function TailwindCustomInput({
@@ -23,19 +24,21 @@ export default function TailwindCustomInput({
     onChange = undefined,
     name = undefined,
     disabled = false,
-    inputRef = null
+    inputRef = null,
+    error = null
 }: TailwindCustomInputProps) {
 
     const defaultClasses =
-        "h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm " +
-        "placeholder:text-[#C2CAD6] text-[#0A0C0F] " +
-        "focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20";
+        `h-10 w-full rounded-lg border px-3 text-sm ` +
+        `placeholder:text-[#C2CAD6] text-[#0A0C0F] ` +
+        `focus:outline-none focus:ring-2 ` +
+        (error ? "border-[#E65959] focus:border-[#E65959] focus:ring-[#E65959]/20" : "border-[#C2CAD6] focus:border-[#5383DA] focus:ring-[#5383DA]/20");
 
     const defaultLabelClass =
         "mb-1 block text-[12px] text-[#3D495C]";
 
     return (
-        <div className="w-full">
+        <div className="relative w-full">
             {label ? (
                 <label className={labelClass ? labelClass : defaultLabelClass}>
                     {label} {required && <span className="text-red-600">*</span>}
@@ -53,6 +56,11 @@ export default function TailwindCustomInput({
                 className={className ?? defaultClasses}
                 disabled={disabled}
             />
+            {error && (
+                <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959]">
+                    {error}
+                </p>
+            )}
         </div>
     );
 }

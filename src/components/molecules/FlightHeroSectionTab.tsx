@@ -15,7 +15,6 @@ import { useNavigate } from "react-router-dom";
 import Loader from "../atoms/Loader";
 import { formatDateToLocalISO } from "../../utils/helpers";
 import noInternet from "../../assets/svgs/no-internet.svg";
-import toast from "react-hot-toast";
 
 const FlightHeroSection: React.FC = () => {
   const [trip, setTrip] = useState<TripType>("oneway");
@@ -27,14 +26,15 @@ const FlightHeroSection: React.FC = () => {
   const [departDate, setDepartDate] = useState<Date | null>(new Date());
   const [arrivalDate, setArrivalDate] = useState<Date | null>(new Date());
   const [countriesSearchTerm, setCountriesSearchTerm] = useState<string>("");
-
-  // const [validationErrors, setValidationErrors] = useState({
-  //   departDate: "",
-  //   arrivalDate: "",
-  //   passengers: "",
-  //   cabinClass: "",
-  // });
-  // const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({
+    fromCode: "",
+    toCode: "",
+    departDate: "",
+    arrivalDate: "",
+    passengers: "",
+    cabinClass: "",
+  });
+  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
 
   const handlePassengers = useCallback(
     (next: Record<string, number>, order: string[]) => {
@@ -109,13 +109,15 @@ const FlightHeroSection: React.FC = () => {
     setDepartDate(null);
     setArrivalDate(null);
     setCountriesSearchTerm("");
-    // setHasAttemptedValidation(false);
-    // setValidationErrors({
-    //   departDate: "",
-    //   arrivalDate: "",
-    //   passengers: "",
-    //   cabinClass: "",
-    // });
+    setHasAttemptedValidation(false);
+    setValidationErrors({
+      fromCode: "",
+      toCode: "",
+      departDate: "",
+      arrivalDate: "",
+      passengers: "",
+      cabinClass: "",
+    });
   }, [trip]);
 
   // const validateForm = (): boolean => {
@@ -150,20 +152,32 @@ const FlightHeroSection: React.FC = () => {
   //   return isValid;
   // };
   const validateForm = (): boolean => {
-    const errors: string[] = [];
+    const errors = {
+      fromCode: "",
+      toCode: "",
+      departDate: "",
+      arrivalDate: "",
+      passengers: "",
+      cabinClass: "",
+    };
+    let isValid = true;
 
     if (!fromCode?.trim()) {
-      errors.push("Please select where you’re flying from");
+      errors.fromCode = "Select where you're flying from";
+      isValid = false;
     }
     if (!toCode?.trim()) {
-      errors.push("Please select where you’re flying to");
+      errors.toCode = "Select where you're flying to";
+      isValid = false;
     }
 
     if (!departDate) {
-      errors.push("Departure date is required");
+      errors.departDate = "Departure date is required";
+      isValid = false;
     }
     if (trip === "roundtrip" && !arrivalDate) {
-      errors.push("Return date is required");
+      errors.arrivalDate = "Return date is required";
+      isValid = false;
     }
     // If no passenger selection has been propagated yet, treat default UI (1 adult) as selected
     const totalPassengersRaw = Object.values(paxCounts).reduce(
@@ -174,56 +188,63 @@ const FlightHeroSection: React.FC = () => {
       Object.keys(paxCounts).length === 0 ? 1 : totalPassengersRaw;
 
     if (totalPassengers === 0) {
-      errors.push("Passenger is required");
+      errors.passengers = "Passenger is required";
+      isValid = false;
     }
-    if (!selectedCabinClassId) {
-      errors.push("Cabin class is required");
-    }
-
-    if (errors.length > 1) {
-      toast.error("Please complete all required fields before searching.");
-    } else if (errors.length === 1) {
-      toast.error(errors[0]);
+    if (!selectedCabinClassId || selectedCabinClassId.trim() === "") {
+      errors.cabinClass = "Cabin class is required";
+      isValid = false;
     }
 
-    return errors.length === 0;
+    setValidationErrors(errors);
+    return isValid;
   };
 
   // Clear errors when values are filled
-  // useEffect(() => {
-  //   if (!hasAttemptedValidation) return;
+  useEffect(() => {
+    if (!hasAttemptedValidation) return;
 
-  //   setValidationErrors((prev) => {
-  //     const updated = { ...prev };
-  //     if (departDate && prev.departDate) {
-  //       updated.departDate = "";
-  //     }
-  //     if (trip === "roundtrip" && arrivalDate && prev.arrivalDate) {
-  //       updated.arrivalDate = "";
-  //     }
-  //     const totalPassengers = Object.values(paxCounts).reduce(
-  //       (sum, count) => sum + count,
-  //       0
-  //     );
-  //     if (totalPassengers > 0 && prev.passengers) {
-  //       updated.passengers = "";
-  //     }
-  //     if (selectedCabinClassId && prev.cabinClass) {
-  //       updated.cabinClass = "";
-  //     }
-  //     return updated;
-  //   });
-  // }, [
-  //   departDate,
-  //   arrivalDate,
-  //   paxCounts,
-  //   selectedCabinClassId,
-  //   trip,
-  //   hasAttemptedValidation,
-  // ]);
+    setValidationErrors((prev) => {
+      const updated = { ...prev };
+      if (fromCode?.trim() && prev.fromCode) {
+        updated.fromCode = "";
+      }
+      if (toCode?.trim() && prev.toCode) {
+        updated.toCode = "";
+      }
+      if (departDate && prev.departDate) {
+        updated.departDate = "";
+      }
+      if (trip === "roundtrip" && arrivalDate && prev.arrivalDate) {
+        updated.arrivalDate = "";
+      }
+      const totalPassengers = Object.values(paxCounts).reduce(
+        (sum, count) => sum + count,
+        0,
+      );
+      const totalPassengersFinal =
+        Object.keys(paxCounts).length === 0 ? 1 : totalPassengers;
+      if (totalPassengersFinal > 0 && prev.passengers) {
+        updated.passengers = "";
+      }
+      if (selectedCabinClassId && prev.cabinClass) {
+        updated.cabinClass = "";
+      }
+      return updated;
+    });
+  }, [
+    fromCode,
+    toCode,
+    departDate,
+    arrivalDate,
+    paxCounts,
+    selectedCabinClassId,
+    trip,
+    hasAttemptedValidation,
+  ]);
 
   const handleSearch = () => {
-    // setHasAttemptedValidation(true);
+    setHasAttemptedValidation(true);
     if (!validateForm()) {
       return;
     }
@@ -289,11 +310,10 @@ const FlightHeroSection: React.FC = () => {
                     key={t.id}
                     type="button"
                     onClick={() => setTrip(t.key)}
-                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${
-                      trip === t.key
+                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${trip === t.key
                         ? "bg-[#2351A3] text-white"
                         : "text-[#3A4350] hover:bg-[#F4F7FD]"
-                    }`}
+                      }`}
                   >
                     {t.label}
                   </button>
@@ -320,16 +340,25 @@ const FlightHeroSection: React.FC = () => {
                 onChangeCabinClassId={setSelectedCabinClassId}
                 onChangePassengers={handlePassengers}
                 onChangeDepartDate={handleDepartDate}
-                //ERRORS
-                // departDateError={
-                //   hasAttemptedValidation ? validationErrors.departDate : ""
-                // }
-                // passengersError={
-                //   hasAttemptedValidation ? validationErrors.passengers : ""
-                // }
-                // cabinClassError={
-                //   hasAttemptedValidation ? validationErrors.cabinClass : ""
-                // }
+                fromError={
+                  hasAttemptedValidation
+                    ? validationErrors.fromCode
+                    : errorMap?.countries || ""
+                }
+                toError={
+                  hasAttemptedValidation
+                    ? validationErrors.toCode
+                    : errorMap?.countries || ""
+                }
+                departDateError={
+                  hasAttemptedValidation ? validationErrors.departDate : ""
+                }
+                passengersError={
+                  hasAttemptedValidation ? validationErrors.passengers : ""
+                }
+                cabinClassError={
+                  hasAttemptedValidation ? validationErrors.cabinClass : ""
+                }
                 countriesHasMore={countriesHasMore}
                 countriesFetchNext={countriesFetchNext}
                 countriesLoadingMore={countriesIsFetchingNext}
@@ -354,19 +383,28 @@ const FlightHeroSection: React.FC = () => {
                 onChangePassengers={handlePassengers}
                 onChangeDepartDate={handleDepartDate}
                 onChangeArrivalDate={handleArrivalDate}
-                //ERRORS
-                // departDateError={
-                //   hasAttemptedValidation ? validationErrors.departDate : ""
-                // }
-                // arrivalDateError={
-                //   hasAttemptedValidation ? validationErrors.arrivalDate : ""
-                // }
-                // passengersError={
-                //   hasAttemptedValidation ? validationErrors.passengers : ""
-                // }
-                // cabinClassError={
-                //   hasAttemptedValidation ? validationErrors.cabinClass : ""
-                // }
+                fromError={
+                  hasAttemptedValidation
+                    ? validationErrors.fromCode
+                    : errorMap?.countries || ""
+                }
+                toError={
+                  hasAttemptedValidation
+                    ? validationErrors.toCode
+                    : errorMap?.countries || ""
+                }
+                departDateError={
+                  hasAttemptedValidation ? validationErrors.departDate : ""
+                }
+                arrivalDateError={
+                  hasAttemptedValidation ? validationErrors.arrivalDate : ""
+                }
+                passengersError={
+                  hasAttemptedValidation ? validationErrors.passengers : ""
+                }
+                cabinClassError={
+                  hasAttemptedValidation ? validationErrors.cabinClass : ""
+                }
                 countriesHasMore={countriesHasMore}
                 countriesFetchNext={countriesFetchNext}
                 countriesLoadingMore={countriesIsFetchingNext}

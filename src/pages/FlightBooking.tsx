@@ -23,6 +23,7 @@ import {
 import toast from "react-hot-toast";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import FlightBookingAnicllarySection from "../components/molecules/FlightBookingAnicllarySection";
+import AncillaryConfirmationModal from "../components/common/AncillaryConfirmationModal";
 
 const FlightBooking = () => {
   const location = useLocation();
@@ -38,20 +39,24 @@ const FlightBooking = () => {
   // const [currentStep, setCurrentStep] = useState(0);
   const [fareBookingSearchRules, setFareBookingSearchRules] =
     useState<any>(null);
+  const [showAncillaryModal, setShowAncillaryModal] = useState(false);
   const enhanceAvailable =
     !!initialOfferData?.flightDetail?.raw?.detail?.ancillaryDetailsAvailable;
   // const steps = ["Book", "Enhance", "Review", "Pay", "E-ticket"];
-  const [steps, _] = useState<string[]>(
-    enhanceAvailable
-      ? ["Book", "Enhance", "Review", "Pay", "E-ticket"]
-      : ["Book", "Review", "Pay", "E-ticket"],
-  );
+  const [steps, setSteps] = useState<string[]>(() => {
+    // Include Enhance step if enhanceAvailable
+    if (enhanceAvailable) {
+      return ["Book", "Enhance", "Review", "Pay", "E-ticket"];
+    }
+    return ["Book", "Review", "Pay", "E-ticket"];
+  });
 
   // Check if this is a pending booking (skip to payment)
   const isPendingBooking = initialOfferData?.isPendingBooking || false;
 
   const [currentStep, setCurrentStep] = useState(() => {
     if (isPendingBooking) {
+      // For pending bookings, go directly to payment
       const payStep = steps.indexOf("Pay");
       return payStep >= 0 ? payStep : 0;
     }
@@ -353,6 +358,7 @@ const FlightBooking = () => {
     if (!offerId) return;
     try {
       const response = await mutateAsyncAncillary({
+        // offerId: "AIR00247283-11",
         offerId: offerId,
         seatMapRequested: true,
         otherAncillaryRequested: true,
@@ -379,6 +385,7 @@ const FlightBooking = () => {
     init();
   }, []);
 
+
   useEffect(() => {
     if (offerData?.passengersForRequest && !isPendingBooking) {
       setFlightBookingPayload((prev) => ({
@@ -391,8 +398,42 @@ const FlightBooking = () => {
     // For pending bookings, passengers are already set in initial state
   }, [offerData?.passengersForRequest, isPendingBooking]);
 
+  const handleAncillaryConfirm = () => {
+    setShowAncillaryModal(false);
+    // Ensure Enhance step is in steps array
+    if (!steps.includes("Enhance")) {
+      // Add Enhance step if not present
+      const newSteps = [...steps];
+      const reviewIndex = newSteps.indexOf("Review");
+      if (reviewIndex >= 0) {
+        newSteps.splice(reviewIndex, 0, "Enhance");
+        setSteps(newSteps);
+        // Navigate to Enhance step (which is now at reviewIndex)
+        setCurrentStep(reviewIndex);
+        return;
+      }
+    }
+    // Enhance step already exists, navigate to it
+    const enhanceStep = steps.indexOf("Enhance");
+    if (enhanceStep >= 0) {
+      setCurrentStep(enhanceStep);
+    }
+  };
+
+  const handleAncillaryCancel = () => {
+    setShowAncillaryModal(false);
+    // Skip to Review step
+    const reviewStep = steps.indexOf("Review");
+    setCurrentStep(reviewStep >= 0 ? reviewStep : 1);
+  };
+
   return (
     <>
+      <AncillaryConfirmationModal
+        open={showAncillaryModal}
+        onConfirm={handleAncillaryConfirm}
+        onCancel={handleAncillaryCancel}
+      />
       {showTimerBanner && (
         <BookingBannerAlert
           message="Please complete your booking"
@@ -481,19 +522,21 @@ const FlightBooking = () => {
               // onNext={() => setCurrentStep(hasAncillaries ? 1 : 2)}
               onNext={async (newOfferId?: string) => {
                 const usedOfferId = newOfferId ?? offerData.offerId;
-                // if the initial offer indicates ancillaries are available -> fetch them now
-                if (enhanceAvailable) {
-                  const ancillary = await flightAncillarySearch(usedOfferId);
-                  const hasData =
-                    !!ancillary?.seatMap ||
-                    !!ancillary?.baggages ||
-                    !!ancillary?.meals ||
-                    !!ancillary?.otherAncillaries;
+                // After prov booking, fetch ancillary data
+                const ancillary = await flightAncillarySearch(usedOfferId);
+                const hasData =
+                  !!ancillary?.seatMap ||
+                  !!ancillary?.baggages ||
+                  !!ancillary?.meals ||
+                  !!ancillary?.otherAncillaries;
 
-                  setCurrentStep(hasData ? 1 : 2);
+                if (hasData) {
+                  // Ancillary data exists, show modal to ask user
+                  setShowAncillaryModal(true);
                 } else {
-                  // no enhance step in stepper, go straight to Review
-                  setCurrentStep(1);
+                  // No ancillary data, go to Review step
+                  const reviewStep = steps.indexOf("Review");
+                  setCurrentStep(reviewStep >= 0 ? reviewStep : 1);
                 }
               }}
               onUpdateFlightRaw={handleUpdateFlightRawDetails}

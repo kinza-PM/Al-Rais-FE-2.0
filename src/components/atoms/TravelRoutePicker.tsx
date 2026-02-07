@@ -127,7 +127,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           onLoadMore={onLoadMore}
           hasMore={hasMore}
           loadingMore={loadingMore}
-          tooltip="Select where you’re flying from"
+          tooltip="Select where you're flying from"
         />
       </div>
 
@@ -167,7 +167,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           onLoadMore={onLoadMore}
           hasMore={hasMore}
           loadingMore={loadingMore}
-          tooltip="Select where you’re flying to"
+          tooltip="Select where you're flying to"
         />
       </div>
     </>

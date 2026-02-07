@@ -186,10 +186,27 @@ const PassengerCounterDropdown: React.FC<Props> = ({
       return { ...p, [k]: newVal };
     });
 
-  // block native “menu” (it’s a button) and toggle error vs list
+  // Check if error is a validation error (should not show popup)
+  const isValidationError = React.useMemo(() => {
+    if (!errorMessage) return false;
+    const validationKeywords = [
+      "Please select",
+      "is required",
+      "required",
+      "Please complete",
+    ];
+    return validationKeywords.some((keyword) =>
+      errorMessage.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }, [errorMessage]);
+
+  // block native "menu" (it's a button) and toggle error vs list
   const handleToggle = () => {
-    const hasError = !!errorMessage || rows.length === 0;
-    if (hasError) {
+    // Only show popup for API errors, not validation errors
+    const hasApiError = !!errorMessage && !isValidationError;
+    const hasNoSchema = rows.length === 0;
+    
+    if (hasApiError || hasNoSchema) {
       setShowError((s) => !s);
       setOpen(false);
     } else {
@@ -258,20 +275,18 @@ const PassengerCounterDropdown: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Error panel (like From/To) */}
-      {showError && (
-        // <div className="absolute z-30 mt-2 w-[250px]">
+      {/* Error panel (like From/To) - only for API errors, not validation */}
+      {showError && !isValidationError && (
         <CustomDropdownError
           id="pax-error"
           title="Nothing found!"
           message={errorMessage ?? "Please try again later."}
         />
-        // </div>
       )}
 
       {/* Counter list */}
       {open && (
-        <div className="absolute z-30 mt-2 w-[300px] rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] p-3">
+        <div className="absolute z-[9999] mt-2 w-[300px] rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] p-3">
           {rows.map((r, idx) => (
             <React.Fragment key={r.key}>
               <Row

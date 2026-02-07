@@ -115,7 +115,8 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
 
     if (disabled || loading) return;
 
-    if (error) {
+    // Only show popup for API errors, not validation errors
+    if (error && !isValidationError) {
       setShowError((s) => !s);
       return;
     }
@@ -130,11 +131,26 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
     setSearchTerm("");
   };
 
+  // Check if error is a validation error (should show inline, not popup)
+  const isValidationError = React.useMemo(() => {
+    if (!error) return false;
+    const validationKeywords = [
+      "Please select",
+      "is required",
+      "required",
+      "Please complete",
+      "flying",
+    ];
+    return validationKeywords.some((keyword) =>
+      error.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }, [error]);
+
   const baseClasses = `
       appearance-none h-11 w-full rounded-xl border pl-4 pr-8 text-[14px] text-[#0F172A]
-      outline-none border-[#DFE7F3]
+      outline-none
       ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"}
-      ${error ? "border-red-500" : ""}
+      ${error && isValidationError ? "border-[#E65959]" : error ? "border-red-500" : "border-[#DFE7F3]"}
     `;
 
   return (
@@ -233,8 +249,14 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
           document.body
         )}
 
-      {error && showError && (
+      {error && showError && !isValidationError && (
         <CustomDropdownError title="Nothing found!" message={error} />
+      )}
+      {/* Show inline error only for validation errors */}
+      {error && isValidationError && (
+        <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
+          {error}
+        </p>
       )}
     </div>
   );

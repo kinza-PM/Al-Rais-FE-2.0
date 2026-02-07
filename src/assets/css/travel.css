@@ -1490,6 +1490,15 @@ img:hover {
   box-shadow: 0 0 0 2px rgba(83, 131, 218, 0.2) !important;
 }
 
+.phone-input-error .react-international-phone-input {
+  border-color: #E65959 !important;
+}
+
+.phone-input-error .react-international-phone-input:focus {
+  border-color: #E65959 !important;
+  box-shadow: 0 0 0 2px rgba(230, 89, 89, 0.2) !important;
+}
+
 .custom-phone-wrapper {
   display: flex !important;
   gap: 8px !important;

@@ -26,6 +26,8 @@ type Props = {
 
   // UI
   widthClass?: string;
+  passengersError?: string;
+  cabinClassError?: string;
 };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -41,6 +43,8 @@ const PassengerCabinDropdown: React.FC<Props> = ({
   selectedCabinClassId = "", // ✅ default to ""
   onChangeCabinClassId = () => {}, // ✅ no-op default
   widthClass = "w-[190px]",
+  passengersError = "",
+  cabinClassError = "",
 }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -86,6 +90,9 @@ const PassengerCabinDropdown: React.FC<Props> = ({
     cabinClasses.find((c) => c.id === selectedCabinClassId)?.label ||
     "Please select";
 
+  // Check if there are validation errors
+  const hasValidationError = !!(passengersError || cabinClassError);
+
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (!ref.current?.contains(e.target as Node)) setOpen(false);
@@ -98,6 +105,14 @@ const PassengerCabinDropdown: React.FC<Props> = ({
   useEffect(() => {
     prevCountsRef.current = pax;
   }, [pax]);
+
+  // Sync initial state to parent on mount (if uncontrolled)
+  useEffect(() => {
+    if (value === undefined && onChangePax) {
+      const order = (schema || []).map((s: any) => s.key);
+      onChangePax(paxLocal, order);
+    }
+  }, []); // Only on mount
 
   const handleInternalChange = (nextRaw: Partial<Pax> | undefined) => {
     const next = toStrictPax(nextRaw);
@@ -158,8 +173,12 @@ const PassengerCabinDropdown: React.FC<Props> = ({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="h-11 w-full rounded-xl border border-[#DFE7F3] px-4 text-[14px] text-[#0F172A]
-                   focus:ring-2 focus:ring-[#2351A3]/20 flex items-center justify-between"
+        className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A]
+                   focus:ring-2 focus:ring-[#2351A3]/20 flex items-center justify-between ${
+                     hasValidationError
+                       ? "border-[#E65959]"
+                       : "border-[#DFE7F3]"
+                   }`}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -186,7 +205,7 @@ const PassengerCabinDropdown: React.FC<Props> = ({
 
       {open && (
         <div
-          className="absolute z-30 mt-2 w-[320px] rounded-2xl bg-white border border-[#E7EEF7]
+          className="absolute z-[9999] mt-2 w-[320px] rounded-2xl bg-white border border-[#E7EEF7]
                         shadow-[0_8px_22px_rgba(12,40,86,0.08)] p-3"
         >
           {/* Passengers */}
@@ -211,17 +230,14 @@ const PassengerCabinDropdown: React.FC<Props> = ({
             </div>
             <PassengerCounterDropdown
               value={pax}
-              // onChange={(p) => {
-              //   const normalized = toStrictPax(p);
-              //   onChangePax ? onChangePax(normalized) : setPaxLocal(normalized);
-              // }}
               onChange={(p) => handleInternalChange(p)}
               maxTotal={maxTotal}
               schema={schema}
               errorMessage={
-                !loadingPassengers && (!schema || schema.length === 0)
+                passengersError ||
+                (!loadingPassengers && (!schema || schema.length === 0)
                   ? "Passenger types are not available right now. Please try again later."
-                  : null
+                  : null)
               }
             />
           </div>
@@ -241,7 +257,7 @@ const PassengerCabinDropdown: React.FC<Props> = ({
               onChange={onChangeCabinClassId}
               placeholder="Select cabin class"
               disabled={loadingCabinClasses}
-              error={cabinError}
+              error={cabinClassError || cabinError}
               widthClass="w-full"
               searchPlaceholder="Search cabin classes..."
               tooltip="Select cabin class"

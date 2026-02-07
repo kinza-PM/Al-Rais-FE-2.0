@@ -31,10 +31,12 @@ type Props = {
   onChangePassengers?: (p: { [k: string]: number }, order: string[]) => void;
   onChangeDepartDate?: (d: Date | null) => void;
   onChangeArrivalDate?: (d: Date | null) => void;
-  // departDateError?: string;
-  // arrivalDateError?: string;
-  // passengersError?: string;
-  // cabinClassError?: string;
+  fromError?: string;
+  toError?: string;
+  departDateError?: string;
+  arrivalDateError?: string;
+  passengersError?: string;
+  cabinClassError?: string;
   countriesHasMore?: boolean;
   countriesFetchNext?: () => void;
   countriesLoadingMore?: boolean;
@@ -58,23 +60,25 @@ const RoundTripForm: React.FC<Props> = ({
   onSearchCountries,
   fromCode = "",
   toCode = "",
-  onChangeFrom = () => {},
-  onChangeTo = () => {},
+  onChangeFrom = () => { },
+  onChangeTo = () => { },
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => {},
+  onChangeCabinClassId = () => { },
   onChangePassengers,
   onChangeDepartDate,
   onChangeArrivalDate,
-  // departDateError = "",
-  // arrivalDateError = "",
-  // passengersError = "",
-  // cabinClassError = "",
+  fromError = "",
+  toError = "",
+  departDateError = "",
+  arrivalDateError = "",
+  passengersError = "",
+  cabinClassError = "",
   countriesHasMore = false,
-  countriesFetchNext = () => {},
+  countriesFetchNext = () => { },
   countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
@@ -96,10 +100,9 @@ const RoundTripForm: React.FC<Props> = ({
     },
     [onChangePassengers]
   );
-
+  console.log(passengersError, cabinClassError);
   return (
     <div className="flex items-end gap-4">
-      {/* From */}
       <TravelRoutePicker
         options={countries}
         loading={loadingCountries}
@@ -114,16 +117,8 @@ const RoundTripForm: React.FC<Props> = ({
         placeholders={{ from: "Please select", to: "Please select" }}
         disableSameSelection
         widthClass="w-[190px]"
-        fromError={
-          !loadingCountries && countries.length === 0
-            ? "Please try a different search."
-            : undefined
-        }
-        toError={
-          !loadingCountries && countries.length === 0
-            ? "Please try a different search."
-            : undefined
-        }
+        fromError={fromError || undefined}
+        toError={toError || undefined}
         onLoadMore={() => {
           if (countriesHasMore) {
             countriesFetchNext?.();
@@ -134,7 +129,7 @@ const RoundTripForm: React.FC<Props> = ({
       />
 
       {/* Departure date */}
-      <div className="w-[200px]">
+      <div className="w-[200px] relative">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
@@ -153,12 +148,8 @@ const RoundTripForm: React.FC<Props> = ({
           buttonIconSrc={true}
           disablePastDates={true}
           tooltip="Select departure date"
+          error={departDateError || null}
         />
-        {/* {departDateError && (
-          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
-            {departDateError}
-          </p>
-        )} */}
         {/* <div className="relative">
           <input
             ref={depRef}
@@ -181,7 +172,7 @@ const RoundTripForm: React.FC<Props> = ({
         </div> */}
       </div>
 
-      <div className="w-[200px]">
+      <div className="w-[200px] relative">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Return date
         </label>
@@ -196,12 +187,8 @@ const RoundTripForm: React.FC<Props> = ({
           disablePastDates={true}
           minDate={departDate}
           tooltip="Select return date"
+          error={arrivalDateError || null}
         />
-        {/* {arrivalDateError && (
-          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
-            {arrivalDateError}
-          </p>
-        )} */}
         {/* <div className="relative">
           <input
             ref={arrRef}
@@ -225,7 +212,7 @@ const RoundTripForm: React.FC<Props> = ({
       </div>
 
       {/* Passengers */}
-      <div>
+      <div className="w-[190px] relative">
         <PassengerCabinDropdown
           schema={passengerSchema}
           loadingPassengers={loadingPassengers}
@@ -233,14 +220,23 @@ const RoundTripForm: React.FC<Props> = ({
           loadingCabinClasses={loadingCabinClasses}
           selectedCabinClassId={selectedCabinClassId}
           onChangeCabinClassId={onChangeCabinClassId}
-          widthClass="w-[190px]"
+          widthClass="w-full"
           onChangePax={handlePaxChange}
+          passengersError={passengersError}
+          cabinClassError={cabinClassError}
         />
-        {/* {(passengersError || cabinClassError) && (
-          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
-            {passengersError || cabinClassError}
+        {passengersError && (
+          <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959]">
+            {passengersError}
           </p>
-        )} */}
+        )}
+        {cabinClassError && (
+          <p className={`absolute top-full left-0 text-[12px] text-[#E65959] ${
+            passengersError ? "mt-6" : "mt-1"
+          }`}>
+            {cabinClassError}
+          </p>
+        )}
       </div>
     </div>
   );
