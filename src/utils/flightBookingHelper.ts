@@ -392,6 +392,7 @@ export const validateReservationFlightBookingDataFields = (
 
   // Billing address
   const address = reservation?.paymentDetails?.address ?? null;
+  console.log("address", address);
   if (!address) {
     errors["address"] = "Billing address is required.";
   } else {
@@ -399,7 +400,7 @@ export const validateReservationFlightBookingDataFields = (
       ? address.street[0]
       : address.street;
     if (isEmpty(street0)) {
-      errors["address.street.0"] = "Billing address line 1 is required.";
+      errors["address.street.0"] = "Billing address is required.";
     }
     if (isEmpty(address.postalCode)) {
       errors["address.postalCode"] = "Postal code is required.";
@@ -465,7 +466,7 @@ export const validateReservationFlightBookingData = (
     ? address.street[0]
     : address.street;
   if (isEmpty(street0))
-    return { valid: false, error: "Billing address line 1 is required." };
+    return { valid: false, error: "Billing address is required." };
 
   if (isEmpty(address.postalCode))
     return { valid: false, error: "Postal code is required." };

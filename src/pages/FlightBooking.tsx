@@ -174,7 +174,7 @@ const FlightBooking = () => {
             street: [],
             postalCode: "",
             cityName: "",
-            countryCode: "UAE",
+            countryCode: "",
           },
         },
       };
@@ -358,7 +358,6 @@ const FlightBooking = () => {
     if (!offerId) return;
     try {
       const response = await mutateAsyncAncillary({
-        // offerId: "AIR00247283-11",
         offerId: offerId,
         seatMapRequested: true,
         otherAncillaryRequested: true,
