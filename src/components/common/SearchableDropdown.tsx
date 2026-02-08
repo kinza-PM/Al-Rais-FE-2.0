@@ -61,7 +61,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   searchPlaceholder = "Search...",
   noResultsText = "No results found",
   loading = false,
-  onLoadMore = () => { },
+  onLoadMore = () => {},
   hasMore = false,
   loadingMore = false,
   tooltip = null,
@@ -176,10 +176,10 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       "is required",
       "required",
       "Please complete",
-      "flying"
+      "flying",
     ];
     return validationKeywords.some((keyword) =>
-      error.toLowerCase().includes(keyword.toLowerCase())
+      error.toLowerCase().includes(keyword.toLowerCase()),
     );
   }, [error]);
 
@@ -299,8 +299,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           onClick={handleToggle}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          className={`${className ? className : baseClasses
-            } flex items-center justify-between`}
+          className={`${
+            className ? className : baseClasses
+          } flex items-center justify-between`}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-invalid={!!error}
@@ -317,8 +318,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                         className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     /> */}
           <svg
-            className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${isOpen ? "rotate-180" : ""
-              }`}
+            className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
             width="16"
             height="16"
             viewBox="0 0 20 20"
@@ -348,9 +350,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             before:border-t-[#1E293B]
           `}
           >
-            <div className="text-center">
-              {value ? displayValue : tooltip}
-            </div>
+            <div className="text-center">{value ? displayValue : tooltip}</div>
           </div>
         )}
 
@@ -364,6 +364,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                autoComplete="new-password"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                name={`search-${Math.random()}`}
                 className="w-full px-3 py-2 text-sm border border-[#DFE7F3] rounded-lg focus:outline-none"
               />
             </div>
@@ -379,13 +384,15 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                     disabled={option.disabled}
                     className={`
                       w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
-                      ${option.disabled
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
+                      ${
+                        option.disabled
+                          ? "opacity-50 cursor-not-allowed"
+                          : "cursor-pointer"
                       }
-                      ${option.value === value
-                        ? "bg-[#2351A3]/10 text-[#2351A3]"
-                        : "text-[#0F172A]"
+                      ${
+                        option.value === value
+                          ? "bg-[#2351A3]/10 text-[#2351A3]"
+                          : "text-[#0F172A]"
                       }
                     `}
                   >

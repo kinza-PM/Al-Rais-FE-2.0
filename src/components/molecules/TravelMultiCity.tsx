@@ -25,7 +25,10 @@ type TravelMultiCityProps = {
   passengersForRequest?: { id: string; ptc: string }[];
   isLoadingMore?: boolean;
   hasMore?: boolean;
-  renderLoader?: (state: { isLoadingMore?: boolean; hasMore?: boolean }) => React.ReactNode;
+  renderLoader?: (state: {
+    isLoadingMore?: boolean;
+    hasMore?: boolean;
+  }) => React.ReactNode;
   loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   emptyState?: (() => React.ReactNode) | React.ReactNode;
 };
@@ -39,8 +42,8 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   loadMoreRef,
   emptyState,
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [filterData, setFilterData] = useState<any[]>([]);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
+  const [, setFilterData] = useState<any[]>([]);
   const [filterDetail, setFilterDetail] = useState<any[]>([]);
   const [active, setActive] = useState({ name: "", id: 0 });
 
@@ -66,21 +69,22 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
       setFilterDetail(filtered);
       setFilterData([]);
     },
-    [detailById]
+    [detailById],
   );
 
   const HandleCompareOption = useCallback(
     ({ id }: { id: number | undefined }) => {
-      const randomFour = passData?.filter((it) => it?.id !== id).slice(0, 4) ?? [];
+      const randomFour =
+        passData?.filter((it) => it?.id !== id).slice(0, 4) ?? [];
       setFilterDetail(randomFour);
     },
-    [passData]
+    [passData],
   );
 
-  const handleCancelCompare = (modalType: "compare" | "share") => {
-    if (modalType === "compare") setIsModalOpen(false);
-    else setFilterData([]);
-  };
+  // const handleCancelCompare = (modalType: "compare" | "share") => {
+  //   if (modalType === "compare") setIsModalOpen(false);
+  //   else setFilterData([]);
+  // };
 
   const handleOfferSelection = useCallback(
     (offerId: string, item: any) => {
@@ -93,14 +97,19 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
         },
       });
     },
-    [navigate, passengersForRequest]
+    [navigate, passengersForRequest],
   );
 
-  const renderSegmentCard = (seg: any, item: any, segIdx: number, showPrice: boolean) => {
+  const renderSegmentCard = (
+    seg: any,
+    item: any,
+    segIdx: number,
+    showPrice: boolean,
+  ) => {
     const rawSeg = seg?.rawSegment ?? seg;
     const perSegFlightDetail = buildPerSegmentFlightDetail(
       seg?.flight_detail || item?.flight_detail || {},
-      rawSeg
+      rawSeg,
     );
 
     const journeys = item?.raw?.journey ?? [];
@@ -133,11 +142,10 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
         durationIcon,
         seatIcon: SEAT_ICON,
         entertainmentIcon: PLANE_ICON,
-      }
+      },
     );
 
-    const price =
-      item?.rawTotalStartingFare ?? item?.raw?.fare?.totalFare ?? 0;
+    const price = item?.rawTotalStartingFare ?? item?.raw?.fare?.totalFare ?? 0;
     const currency = item?.raw?.fare?.currencyCode ?? "AED";
 
     return (
@@ -190,7 +198,7 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   if (!passData || passData.length === 0) {
     return (
       <div>
-        {typeof emptyState === "function" ? emptyState() : emptyState ?? null}
+        {typeof emptyState === "function" ? emptyState() : (emptyState ?? null)}
         <div ref={loadMoreRef} className="min-h-[1px]" />
       </div>
     );
@@ -209,7 +217,7 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
           >
             <div className="forBorderBottom">
               {segments.map((seg: any, segIdx: number) =>
-                renderSegmentCard(seg, item, segIdx, segIdx === 0)
+                renderSegmentCard(seg, item, segIdx, segIdx === 0),
               )}
             </div>
 
@@ -221,7 +229,11 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                       className={`tab ${active?.name === "price" && active?.id === index ? "active" : ""}`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
-                        setActive((prev) => ({ ...prev, name: "price", id: index }));
+                        setActive((prev) => ({
+                          ...prev,
+                          name: "price",
+                          id: index,
+                        }));
                       }}
                     >
                       Price options
@@ -230,7 +242,11 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                       className={`tab ${active?.name === "flight" && active?.id === index ? "active" : ""}`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
-                        setActive((prev) => ({ ...prev, name: "flight", id: index }));
+                        setActive((prev) => ({
+                          ...prev,
+                          name: "flight",
+                          id: index,
+                        }));
                       }}
                     >
                       Flight details
@@ -239,7 +255,11 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                       className={`tab ${active?.name === "compare" && active?.id === index ? "active" : ""}`}
                       onClick={() => {
                         HandleCompareOption({ id: item.id });
-                        setActive((prev) => ({ ...prev, name: "compare", id: index }));
+                        setActive((prev) => ({
+                          ...prev,
+                          name: "compare",
+                          id: index,
+                        }));
                       }}
                     >
                       Compare
@@ -254,7 +274,9 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                 </div>
               </div>
               <React.Suspense
-                fallback={<div className="tab-loading-placeholder">Loading…</div>}
+                fallback={
+                  <div className="tab-loading-placeholder">Loading…</div>
+                }
               >
                 {active?.name === "price" && active?.id === index ? (
                   <PricingDetailCard passSome={filterDetail} />
@@ -267,7 +289,7 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                       passData || [],
                       item.id,
                       4,
-                      mapOfferForCompareMultiCity
+                      mapOfferForCompareMultiCity,
                     )}
                   />
                 ) : null}
