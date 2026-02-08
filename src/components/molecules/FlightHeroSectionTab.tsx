@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import OneWayForm from "./OneWayForm";
 import RoundTripForm from "./RoundTripForm";
-// import MultiCityForm from "./MultiCityForm";
+import MultiCityForm, { type MultiCityLeg } from "./MultiCityForm";
 import type {
   TripType,
   FlightTypeOption,
@@ -26,6 +26,10 @@ const FlightHeroSection: React.FC = () => {
   const [departDate, setDepartDate] = useState<Date | null>(new Date());
   const [arrivalDate, setArrivalDate] = useState<Date | null>(new Date());
   const [countriesSearchTerm, setCountriesSearchTerm] = useState<string>("");
+  const [multicityLegs, setMulticityLegs] = useState<MultiCityLeg[]>([
+    { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
+    { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
+  ]);
   const [validationErrors, setValidationErrors] = useState({
     fromCode: "",
     toCode: "",
@@ -109,6 +113,10 @@ const FlightHeroSection: React.FC = () => {
     setDepartDate(null);
     setArrivalDate(null);
     setCountriesSearchTerm("");
+    setMulticityLegs([
+      { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
+      { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
+    ]);
     setHasAttemptedValidation(false);
     setValidationErrors({
       fromCode: "",
@@ -162,23 +170,50 @@ const FlightHeroSection: React.FC = () => {
     };
     let isValid = true;
 
-    if (!fromCode?.trim()) {
-      errors.fromCode = "Select where you're flying from";
-      isValid = false;
-    }
-    if (!toCode?.trim()) {
-      errors.toCode = "Select where you're flying to";
-      isValid = false;
+    if (trip === "multicity") {
+      const hasInvalidLeg = multicityLegs.some(
+        (leg) =>
+          !leg.fromCode?.trim() ||
+          !leg.toCode?.trim() ||
+          !leg.date ||
+          !leg.cabinClassId?.trim(),
+      );
+
+      if (hasInvalidLeg) {
+        if (multicityLegs.some((leg) => !leg.fromCode?.trim())) {
+          errors.fromCode = "Select where you're flying from";
+        }
+        if (multicityLegs.some((leg) => !leg.toCode?.trim())) {
+          errors.toCode = "Select where you're flying to";
+        }
+        if (multicityLegs.some((leg) => !leg.date)) {
+          errors.departDate = "Departure date is required";
+        }
+        if (multicityLegs.some((leg) => !leg.cabinClassId?.trim())) {
+          errors.cabinClass = "Cabin class is required";
+        }
+        isValid = false;
+      }
+    } else {
+      if (!fromCode?.trim()) {
+        errors.fromCode = "Select where you're flying from";
+        isValid = false;
+      }
+      if (!toCode?.trim()) {
+        errors.toCode = "Select where you're flying to";
+        isValid = false;
+      }
+
+      if (!departDate) {
+        errors.departDate = "Departure date is required";
+        isValid = false;
+      }
+      if (trip === "roundtrip" && !arrivalDate) {
+        errors.arrivalDate = "Return date is required";
+        isValid = false;
+      }
     }
 
-    if (!departDate) {
-      errors.departDate = "Departure date is required";
-      isValid = false;
-    }
-    if (trip === "roundtrip" && !arrivalDate) {
-      errors.arrivalDate = "Return date is required";
-      isValid = false;
-    }
     // If no passenger selection has been propagated yet, treat default UI (1 adult) as selected
     const totalPassengersRaw = Object.values(paxCounts).reduce(
       (sum, count) => sum + count,
@@ -206,17 +241,23 @@ const FlightHeroSection: React.FC = () => {
 
     setValidationErrors((prev) => {
       const updated = { ...prev };
-      if (fromCode?.trim() && prev.fromCode) {
-        updated.fromCode = "";
-      }
-      if (toCode?.trim() && prev.toCode) {
-        updated.toCode = "";
-      }
-      if (departDate && prev.departDate) {
-        updated.departDate = "";
-      }
-      if (trip === "roundtrip" && arrivalDate && prev.arrivalDate) {
-        updated.arrivalDate = "";
+      if (trip === "multicity") {
+        const allLegsValid = multicityLegs.every(
+          (leg) =>
+            leg.fromCode?.trim() &&
+            leg.toCode?.trim() &&
+            leg.date &&
+            leg.cabinClassId?.trim(),
+        );
+        if (allLegsValid && prev.fromCode) updated.fromCode = "";
+        if (allLegsValid && prev.cabinClass) updated.cabinClass = "";
+      } else {
+        if (fromCode?.trim() && prev.fromCode) updated.fromCode = "";
+        if (toCode?.trim() && prev.toCode) updated.toCode = "";
+        if (departDate && prev.departDate) updated.departDate = "";
+        if (trip === "roundtrip" && arrivalDate && prev.arrivalDate) {
+          updated.arrivalDate = "";
+        }
       }
       const totalPassengers = Object.values(paxCounts).reduce(
         (sum, count) => sum + count,
@@ -224,12 +265,8 @@ const FlightHeroSection: React.FC = () => {
       );
       const totalPassengersFinal =
         Object.keys(paxCounts).length === 0 ? 1 : totalPassengers;
-      if (totalPassengersFinal > 0 && prev.passengers) {
-        updated.passengers = "";
-      }
-      if (selectedCabinClassId && prev.cabinClass) {
-        updated.cabinClass = "";
-      }
+      if (totalPassengersFinal > 0 && prev.passengers) updated.passengers = "";
+      if (selectedCabinClassId && prev.cabinClass) updated.cabinClass = "";
       return updated;
     });
   }, [
@@ -241,6 +278,7 @@ const FlightHeroSection: React.FC = () => {
     selectedCabinClassId,
     trip,
     hasAttemptedValidation,
+    multicityLegs,
   ]);
 
   const handleSearch = () => {
@@ -248,27 +286,69 @@ const FlightHeroSection: React.FC = () => {
     if (!validateForm()) {
       return;
     }
-    const departureStr = formatDateToLocalISO(departDate);
-    const arrivalStr = formatDateToLocalISO(arrivalDate);
 
-    const fromOpt =
-      (countries as AirportOption[]).find((c) => c.code === fromCode) ?? null;
-    const toOpt =
-      (countries as AirportOption[]).find((c) => c.code === toCode) ?? null;
+    const countriesArr = countries as AirportOption[];
 
-    setFlight({
-      fromCode,
-      toCode,
-      fromOption: fromOpt,
-      toOption: toOpt,
-      selectedCabinClassId,
-      trip,
-      order: paxOrder,
-      next: paxCounts,
-      departure: departureStr,
-      arrival: trip === "roundtrip" ? arrivalStr : null,
-      flight_filters: {},
-    });
+    if (trip === "multicity") {
+      const legsForStore = multicityLegs
+        .filter(
+          (l) =>
+            l.fromCode?.trim() &&
+            l.toCode?.trim() &&
+            l.date &&
+            l.cabinClassId?.trim(),
+        )
+        .map((l) => ({
+          fromCode: l.fromCode,
+          toCode: l.toCode,
+          date: formatDateToLocalISO(l.date),
+          cabinClassId: l.cabinClassId ?? "5",
+          fromOption:
+            countriesArr.find((c) => c.code === l.fromCode) ??
+            l.fromOption ??
+            null,
+          toOption:
+            countriesArr.find((c) => c.code === l.toCode) ?? l.toOption ?? null,
+        }));
+      const firstLeg = legsForStore[0];
+      const lastLeg = legsForStore[legsForStore.length - 1];
+
+      setFlight({
+        fromCode: firstLeg?.fromCode ?? "",
+        toCode: lastLeg?.toCode ?? "",
+        fromOption: firstLeg?.fromOption ?? null,
+        toOption: lastLeg?.toOption ?? null,
+        selectedCabinClassId: firstLeg?.cabinClassId ?? "5",
+        trip,
+        order: paxOrder,
+        next: paxCounts,
+        departure: null,
+        arrival: null,
+        legs: legsForStore,
+        flight_filters: {},
+      });
+    } else {
+      const departureStr = formatDateToLocalISO(departDate);
+      const arrivalStr = formatDateToLocalISO(arrivalDate);
+
+      const fromOpt = countriesArr.find((c) => c.code === fromCode) ?? null;
+      const toOpt = countriesArr.find((c) => c.code === toCode) ?? null;
+
+      setFlight({
+        fromCode,
+        toCode,
+        fromOption: fromOpt,
+        toOption: toOpt,
+        selectedCabinClassId,
+        trip,
+        order: paxOrder,
+        next: paxCounts,
+        departure: departureStr,
+        arrival: trip === "roundtrip" ? arrivalStr : null,
+        flight_filters: {},
+      });
+    }
+
     navigate("/search_flight");
   };
 
@@ -310,10 +390,11 @@ const FlightHeroSection: React.FC = () => {
                     key={t.id}
                     type="button"
                     onClick={() => setTrip(t.key)}
-                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${trip === t.key
+                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${
+                      trip === t.key
                         ? "bg-[#2351A3] text-white"
                         : "text-[#3A4350] hover:bg-[#F4F7FD]"
-                      }`}
+                    }`}
                   >
                     {t.label}
                   </button>
@@ -411,18 +492,42 @@ const FlightHeroSection: React.FC = () => {
               />
             )}
 
-            {/* {trip === "multicity" && (
+            {trip === "multicity" && (
               <MultiCityForm
                 countries={countries as AirportOption[]}
                 loadingCountries={nsLoading.countries}
+                onSearchCountries={setCountriesSearchTerm}
                 passengerSchema={passengers as PassengerSchema}
                 loadingPassengers={nsLoading.passengers}
                 cabinClasses={cabinClasses as CabinClassOption[]}
                 loadingCabinClasses={nsLoading.cabinClasses}
-                selectedCabinClassId={selectedCabinClassId}
-                onChangeCabinClassId={setSelectedCabinClassId}
+                legs={multicityLegs}
+                onChangeLegs={setMulticityLegs}
+                onChangePassengers={handlePassengers}
+                fromError={
+                  hasAttemptedValidation
+                    ? validationErrors.fromCode
+                    : errorMap?.countries || ""
+                }
+                toError={
+                  hasAttemptedValidation
+                    ? validationErrors.toCode
+                    : errorMap?.countries || ""
+                }
+                departDateError={
+                  hasAttemptedValidation ? validationErrors.departDate : ""
+                }
+                passengersError={
+                  hasAttemptedValidation ? validationErrors.passengers : ""
+                }
+                cabinClassError={
+                  hasAttemptedValidation ? validationErrors.cabinClass : ""
+                }
+                countriesHasMore={countriesHasMore}
+                countriesFetchNext={countriesFetchNext}
+                countriesLoadingMore={countriesIsFetchingNext}
               />
-            )} */}
+            )}
 
             {/* Search */}
             <div className="flex justify-center mt-8">

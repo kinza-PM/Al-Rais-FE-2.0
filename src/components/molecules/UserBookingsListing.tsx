@@ -27,7 +27,7 @@ function CardDivider() {
   return <div className="-mx-5 h-px bg-[#E4E4E7] max-[768px]:-mx-4" />;
 }
 
-// Flight timeline for single journey - shows dots with duration above for multiple segments
+// Flight timeline for single journey - shows segment durations and layovers for multi-stop
 function FlightTimeline({ segments }: { segments: any[] }) {
   const hasMultipleSegments = segments.length > 1;
 
@@ -50,65 +50,83 @@ function FlightTimeline({ segments }: { segments: any[] }) {
     );
   }
 
+  // Multi-segment: above line = each leg duration (departure→stop, stop→arrival); below line at each stop = layover + airport
+  const lineClass =
+    "relative h-[1px] w-[440px] max-w-[72vw] rounded-full bg-[#A7C0EC] max-[768px]:w-full max-[768px]:max-w-full";
+  const n = segments.length;
+
   return (
     <div className="flex flex-col items-center mb-2">
-      <div className="relative w-[440px] max-w-[72vw] max-[768px]:w-full max-[768px]:max-w-full mb-1 flex items-center justify-between">
-        {segments.slice(1).map((segment, idx) => {
-          const layoverTime = segment.layoverTime || "";
-          const position = ((idx + 1) / segments.length) * 100;
-
+      {/* Above line: each segment duration centred between consecutive dots */}
+      <div
+        className="relative w-[440px] max-w-[72vw] max-[768px]:w-full max-[768px]:max-w-full mb-1"
+        style={{ height: "18px" }}
+      >
+        {segments.map((segment, idx) => {
+          const duration = segment.duration || "";
+          const startPct = (idx / n) * 100;
+          const endPct = ((idx + 1) / n) * 100;
           return (
             <div
               key={idx}
-              className="absolute flex flex-col items-center"
+              className="absolute flex justify-center top-0"
               style={{
-                left: `${position}%`,
-                transform: "translateX(-50%)",
+                left: `${startPct}%`,
+                width: `${endPct - startPct}%`,
               }}
             >
-              {layoverTime && (
-                <>
-                  <span className="text-[10px] text-[#3D495C] mb-0.5 whitespace-nowrap">
-                    {layoverTime}
-                  </span>
-                  <span className="h-2 w-2 rounded-full bg-[#2351A3] mb-2" />
-                </>
+              {duration && (
+                <span className="text-[10px] text-[#3D495C] whitespace-nowrap">
+                  {duration}
+                </span>
               )}
             </div>
           );
         })}
       </div>
 
-      <div className="relative h-[1px] w-[440px] max-w-[72vw] rounded-full bg-[#A7C0EC] max-[768px]:w-full max-[768px]:max-w-full">
+      {/* Horizontal line with dots at start, each stop, and end */}
+      <div className={lineClass}>
         <span className="absolute -top-[5px] left-0 h-2.5 w-2.5 rounded-full bg-[#2351A3]" />
+        {segments.slice(1).map((_, idx) => {
+          const position = ((idx + 1) / n) * 100;
+          return (
+            <span
+              key={idx}
+              className="absolute -top-[5px] h-2.5 w-2.5 rounded-full bg-[#2351A3]"
+              style={{ left: `${position}%`, transform: "translateX(-50%)" }}
+            />
+          );
+        })}
         <span className="absolute -top-[5px] right-0 h-2.5 w-2.5 rounded-full bg-[#2351A3]" />
       </div>
 
-      {segments.length > 2 && (
-        <div className="relative w-[440px] max-w-[72vw] max-[768px]:w-full max-[768px]:max-w-full mt-1">
-          {segments.slice(1, -1).map((segment, idx) => {
-            const stopAirport = segment.departureAirportCode || "";
-            const position = ((idx + 1) / segments.length) * 100;
-
-            return (
-              <div
-                key={idx}
-                className="absolute flex flex-col items-center"
-                style={{
-                  left: `${position}%`,
-                  transform: "translateX(-50%)",
-                }}
-              >
-                {stopAirport && (
-                  <span className="text-[10px] text-[#3D495C] whitespace-nowrap">
-                    {stopAirport}
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* Below line: at each stop dot show layover + airport */}
+      <div
+        className="relative w-[440px] max-w-[72vw] max-[768px]:w-full max-[768px]:max-w-full mt-1"
+        style={{ height: "16px" }}
+      >
+        {segments.slice(1).map((segment, idx) => {
+          const layoverTime = segment.layoverTime || "";
+          const stopAirport = segment.departureAirportCode || "";
+          const position = ((idx + 1) / n) * 100;
+          return (
+            <div
+              key={idx}
+              className="absolute flex flex-col items-center bottom-7 -translate-x-1/4"
+              style={{ left: `${position}%` }}
+            >
+              {(layoverTime || stopAirport) && (
+                <span className="text-[9px] text-[#3D495C] whitespace-nowrap text-center">
+                  {layoverTime && stopAirport
+                    ? `${stopAirport} (${layoverTime})`
+                    : layoverTime || stopAirport}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -135,7 +153,7 @@ function FlightJourneyCard({
 
         <div className="text-center">
           <div
-            className={`text-[15px] font-medium text-[#0A0C0F] ${journey.segments.length > 1 ? "relative bottom-3" : ""}`}
+            className={`text-[15px] font-medium text-[#0A0C0F] ${journey.segments.length > 1 ? "relative" : ""}`}
           >
             {journey.from.code} <span className="mx-2">→</span>{" "}
             {journey.to.code}

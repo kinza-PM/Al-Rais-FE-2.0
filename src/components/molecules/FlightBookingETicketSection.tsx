@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 // import EmirateLogo from "../../assets/images/emirates.png";
 import AlRaisLogo from "../../assets/images/al-rais-logo.png";
 import ShareTicketModal from "../atoms/ShareTicketModal";
@@ -75,59 +75,99 @@ export default function FlightBookingETicketSection({
     }
   };
 
-  // Extract flight info - handle both oneway and roundtrip
+  // Extract flight info - handle oneway, roundtrip and multicity
   const journeys = reservedFlightBooking?.journey || [];
-  const isRoundtrip = journeys.length > 1;
 
-  // For oneway: use first journey, for roundtrip: use both journeys
+  // First journey/segment for cabin class and baggage (used in header and baggage section)
   const outboundJourney = journeys[0];
-  const returnJourney = journeys[1];
-
   const outboundSegment = outboundJourney?.flightSegments?.[0];
-  const returnSegment = returnJourney?.flightSegments?.[0];
-
-  // Outbound flight info
-  const outboundAirlineCode = outboundSegment?.marketingAirline || "EK";
-  const outboundFlightNumber = outboundSegment?.flightNumber || "N/A";
   const outboundCabinClass = outboundSegment?.cabinClass || "Economy";
-  const outboundDuration =
-    outboundSegment?.duration ||
-    outboundJourney?.flight?.flightInfo?.duration ||
-    "N/A";
-  const outboundStops = outboundSegment?.stopQuantity
-    ? outboundSegment?.stopQuantity === 0
-      ? "Direct"
-      : `${outboundSegment?.stopQuantity} stop(s)`
-    : "Direct";
 
-  // Return flight info (for roundtrip)
-  const returnAirlineCode = returnSegment?.marketingAirline || "EK";
-  const returnFlightNumber = returnSegment?.flightNumber || "N/A";
-  const returnDuration =
-    returnSegment?.duration ||
-    returnJourney?.flight?.flightInfo?.duration ||
-    "N/A";
-  const returnStops = returnSegment?.stopQuantity
-    ? returnSegment?.stopQuantity === 0
-      ? "Direct"
-      : `${returnSegment?.stopQuantity} stop(s)`
-    : "Direct";
-
-  // Extract airport info - outbound
-  const outboundDepCode = outboundSegment?.departureAirportCode || "DXB";
-  const outboundArrCode = outboundSegment?.arrivalAirportCode || "DEL";
-  const outboundDepTime = outboundSegment?.departureDateTime || "";
-  const outboundArrTime = outboundSegment?.arrivalDateTime || "";
-  const outboundDepTerminal = outboundSegment?.departureTerminal || "";
-  const outboundArrTerminal = outboundSegment?.arrivalTerminal || "";
-
-  // Extract airport info - return (for roundtrip)
-  const returnDepCode = returnSegment?.departureAirportCode || "";
-  const returnArrCode = returnSegment?.arrivalAirportCode || "";
-  const returnDepTime = returnSegment?.departureDateTime || "";
-  const returnArrTime = returnSegment?.arrivalDateTime || "";
-  const returnDepTerminal = returnSegment?.departureTerminal || "";
-  const returnArrTerminal = returnSegment?.arrivalTerminal || "";
+  // Build a list of flight blocks to render (oneway: 1, roundtrip: 2, multicity: N)
+  // For flights with stops, include stop details (airport code + layover) from all segments
+  const flightBlocks = useMemo(() => {
+    const jList = reservedFlightBooking?.journey || [];
+    if (jList.length === 0) return [];
+    return jList
+      .map((journey: any, i: number) => {
+        const allSegments = journey?.flightSegments ?? [];
+        const seg = allSegments[0];
+        if (!seg) return null;
+        const isOneway = jList.length === 1;
+        const isRoundtripTrip = jList.length === 2;
+        let heading: string;
+        if (isOneway) heading = "Flight Details";
+        else if (isRoundtripTrip)
+          heading = i === 0 ? "Outbound Flight" : "Return Flight";
+        else heading = `Flight ${String(i + 1).padStart(2, "0")}`;
+        const duration =
+          seg?.duration ||
+          journey?.flight?.flightInfo?.duration ||
+          "N/A";
+        const stopQuantity =
+          seg?.stopQuantity ??
+          (Array.isArray(allSegments) ? Math.max(0, allSegments.length - 1) : 0);
+        const isDirect = stopQuantity === 0;
+        const stopsLabel = isDirect ? "Direct" : `${stopQuantity} stop(s)`;
+        // Build stop details: each stop = arrival airport of segment[i], layover = segment[i+1].layoverTime
+        const stopDetails: Array<{ airportCode: string; layover?: string }> = [];
+        if (Array.isArray(allSegments) && allSegments.length > 1) {
+          for (let s = 0; s < allSegments.length - 1; s++) {
+            const arrSeg = allSegments[s];
+            const nextSeg = allSegments[s + 1];
+            const airportCode =
+              arrSeg?.arrivalAirportCode ?? nextSeg?.departureAirportCode ?? "";
+            const layover = nextSeg?.layoverTime ?? undefined;
+            if (airportCode) {
+              stopDetails.push({ airportCode, layover });
+            }
+          }
+        }
+        return {
+          heading,
+          airlineCode: seg?.marketingAirline || "EK",
+          flightNumber: seg?.flightNumber || "N/A",
+          duration,
+          stops: stopsLabel,
+          stopDetails,
+          depCode: seg?.departureAirportCode || "",
+          arrCode:
+            allSegments.length > 0
+              ? (allSegments[allSegments.length - 1] as any)?.arrivalAirportCode ??
+                seg?.arrivalAirportCode ??
+                ""
+              : seg?.arrivalAirportCode || "",
+          depTime: seg?.departureDateTime || "",
+          arrTime:
+            allSegments.length > 0
+              ? (allSegments[allSegments.length - 1] as any)?.arrivalDateTime ??
+                seg?.arrivalDateTime ??
+                ""
+              : seg?.arrivalDateTime || "",
+          depTerminal: seg?.departureTerminal || "",
+          arrTerminal:
+            allSegments.length > 0
+              ? (allSegments[allSegments.length - 1] as any)?.arrivalTerminal ??
+                seg?.arrivalTerminal ??
+                ""
+              : seg?.arrivalTerminal || "",
+        };
+      })
+      .filter(Boolean) as Array<{
+      heading: string;
+      airlineCode: string;
+      flightNumber: string;
+      duration: string;
+      stops: string;
+      stopDetails: Array<{ airportCode: string; layover?: string }>;
+      depCode: string;
+      arrCode: string;
+      depTime: string;
+      arrTime: string;
+      depTerminal: string;
+      arrTerminal: string;
+    }>;
+  }, [reservedFlightBooking?.journey]);
 
   // Extract baggage info - use outbound segment for baggage info
   const baggageAllowance = outboundSegment?.baggageAllowance;
@@ -473,137 +513,64 @@ export default function FlightBookingETicketSection({
       <NotchDivider />
 
       <div className="space-y-3">
-        {/* Outbound Flight */}
-        <div>
-          <div className="mb-2">
-            <div className="text-[12px] font-medium text-[#3D495C]">
-              {isRoundtrip ? "Outbound Flight" : "Flight Details"}
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-10">
-            <div className="flex items-center gap-2">
-              {/* <img
-                src={EmirateLogo}
-                alt="Airline"
-                className="h-10 w-10 rounded-full object-cover"
-              /> */}
-              <div>
-                <div className="text-[14px] text-nowrap font-medium text-[#0A0C0F]">
-                  {outboundAirlineCode} Airlines
-                </div>
-                <div className="text-[12px] text-[#3D495C]">
-                  {outboundAirlineCode} {outboundFlightNumber}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-[12px] text-[#3D495C]">Duration</div>
-              <div className="text-[14px] font-medium text-[#0A0C0F]">
-                {outboundDuration}
-              </div>
-            </div>
-            <div>
-              <div className="text-[12px] text-[#3D495C]">Stops</div>
-              <div className="text-[14px] font-medium text-[#0A0C0F]">
-                {outboundStops}
-              </div>
-            </div>
-          </div>
-
-          <div className="py-4">
-            <div className="flex items-center gap-2">
-              <svg
-                width="20"
-                height="14"
-                viewBox="0 0 20 14"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M13.7486 13.375C13.7486 13.5408 13.6828 13.6998 13.5656 13.817C13.4483 13.9342 13.2894 14 13.1236 14H1.87362C1.70786 14 1.54889 13.9342 1.43167 13.817C1.31446 13.6998 1.24862 13.5408 1.24862 13.375C1.24862 13.2093 1.31446 13.0503 1.43167 12.9331C1.54889 12.8159 1.70786 12.75 1.87362 12.75H13.1236C13.2894 12.75 13.4483 12.8159 13.5656 12.9331C13.6828 13.0503 13.7486 13.2093 13.7486 13.375ZM19.3627 3.77737C19.3463 3.86436 19.3117 3.94688 19.261 4.01947C19.2104 4.09207 19.1449 4.15308 19.0689 4.19846L7.55252 11.0735C7.07247 11.355 6.52621 11.5038 5.96971 11.5047C5.17699 11.5038 4.41457 11.2 3.83846 10.6555L3.82909 10.6461L1.01424 7.89065C0.865311 7.74922 0.753524 7.57328 0.688765 7.37837C0.624005 7.18347 0.608269 6.97561 0.642948 6.77317C0.677626 6.57074 0.761651 6.37997 0.887593 6.21773C1.01353 6.05549 1.17751 5.92679 1.36502 5.843L1.5994 5.72815C1.74741 5.65549 1.91814 5.64425 2.0744 5.6969L4.28221 6.44221L5.85799 5.48909L4.15252 3.83362C3.99915 3.69232 3.88356 3.51489 3.8163 3.31749C3.74903 3.12009 3.73222 2.909 3.7674 2.70344C3.80258 2.49789 3.88863 2.3044 4.01771 2.14061C4.14679 1.97681 4.31479 1.84791 4.50643 1.76565L4.53143 1.7555L5.09002 1.54378C5.23086 1.49126 5.3859 1.49126 5.52674 1.54378L9.7408 3.09221L13.7697 0.687527C14.4118 0.305408 15.1699 0.167121 15.9055 0.297947C16.6411 0.428772 17.305 0.819971 17.776 1.40003L17.7853 1.41175L19.2416 3.27815C19.296 3.34803 19.3349 3.42868 19.3558 3.51475C19.3767 3.60081 19.379 3.69033 19.3627 3.77737ZM17.8205 3.48831L16.8049 2.18596C16.5222 1.84016 16.1248 1.60724 15.685 1.52954C15.2452 1.45183 14.792 1.53451 14.408 1.76253L10.1267 4.31878C10.0466 4.36632 9.95682 4.39547 9.864 4.40411C9.77119 4.41276 9.67761 4.40069 9.59002 4.36878L5.31112 2.79534L4.99862 2.91487L5.01502 2.9305L7.30877 5.15628C7.37727 5.22284 7.42961 5.30422 7.46176 5.39416C7.49391 5.4841 7.50502 5.58021 7.49423 5.67511C7.48344 5.77002 7.45104 5.86119 7.39953 5.94162C7.34801 6.02205 7.27875 6.0896 7.19705 6.13909L4.68065 7.66175C4.6028 7.70876 4.51563 7.73822 4.42523 7.74807C4.33482 7.75792 4.24335 7.74793 4.15721 7.71878L1.91737 6.96331L1.90252 6.97112L1.87362 6.9844C1.87738 6.98709 1.88079 6.99024 1.88377 6.99378L4.69627 9.74847C4.98979 10.0243 5.36478 10.1976 5.76506 10.2424C6.16535 10.2872 6.56937 10.201 6.91659 9.9969L17.8205 3.48831Z"
-                  fill="#3D495C"
-                />
-              </svg>
-
-              <div>
-                <div className="text-[12px] font-medium text-[#0A0C0F]">
-                  {outboundDepCode} Airport ({outboundDepCode})
-                </div>
-                <div className="text-[12px] text-[#3D495C]">
-                  {formatTime(outboundDepTime)} • {formatDate(outboundDepTime)}{" "}
-                  • Terminal {outboundDepTerminal}
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-2">
-              <svg
-                width="19"
-                height="15"
-                viewBox="0 0 19 15"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M19 14.375C19 14.5407 18.9342 14.6997 18.8169 14.8169C18.6997 14.9341 18.5408 15 18.375 15H7.125C6.95924 15 6.80027 14.9341 6.68306 14.8169C6.56585 14.6997 6.5 14.5407 6.5 14.375C6.5 14.2092 6.56585 14.0502 6.68306 13.933C6.80027 13.8158 6.95924 13.75 7.125 13.75H18.375C18.5408 13.75 18.6997 13.8158 18.8169 13.933C18.9342 14.0502 19 14.2092 19 14.375ZM16.9562 12.4765L3.15703 8.61247C2.5012 8.42715 1.92365 8.03312 1.51186 7.49009C1.10008 6.94705 0.876497 6.2846 0.875 5.6031V1.24997C0.874985 1.0519 0.922042 0.856653 1.01229 0.680333C1.10254 0.504013 1.2334 0.351665 1.39409 0.235844C1.55477 0.120023 1.74068 0.0440462 1.93649 0.0141745C2.1323 -0.0156971 2.3324 0.00139196 2.52031 0.0640332L2.94766 0.206221C3.03728 0.236003 3.11899 0.285711 3.18665 0.351608C3.25431 0.417505 3.30615 0.497879 3.33828 0.586689L4.16641 2.88122L6.5 3.54606V1.24997C6.49999 1.0519 6.54704 0.856653 6.63729 0.680333C6.72754 0.504013 6.8584 0.351665 7.01909 0.235844C7.17977 0.120023 7.36568 0.0440462 7.56149 0.0141745C7.7573 -0.0156971 7.9574 0.00139196 8.14531 0.0640332L8.57266 0.206221C8.65723 0.234407 8.7348 0.280361 8.80016 0.340997C8.86551 0.401634 8.91713 0.47555 8.95156 0.557783L10.7094 4.74763L15.4625 6.07575C16.1197 6.2603 16.6986 6.65428 17.1115 7.19785C17.5244 7.74142 17.7485 8.40489 17.75 9.08747V11.875C17.75 11.9714 17.7276 12.0666 17.6847 12.153C17.6417 12.2393 17.5794 12.3146 17.5025 12.3729C17.4256 12.4311 17.3363 12.4708 17.2415 12.4888C17.1468 12.5068 17.0491 12.5026 16.9562 12.4765ZM16.5 9.08747C16.4989 8.67784 16.3642 8.27974 16.1163 7.95361C15.8685 7.62749 15.521 7.39114 15.1266 7.28044L10.082 5.87419C9.99116 5.84888 9.9072 5.80333 9.83644 5.74096C9.76568 5.67859 9.70995 5.60101 9.67344 5.51403L7.90625 1.30231L7.75 1.24997V4.37497C7.75007 4.47169 7.72769 4.56711 7.68462 4.65371C7.64155 4.74032 7.57897 4.81574 7.5018 4.87405C7.42463 4.93237 7.33498 4.97197 7.23991 4.98975C7.14484 5.00754 7.04693 5.00301 6.95391 4.97653L3.51641 3.99685C3.42096 3.96949 3.33341 3.91979 3.26099 3.85186C3.18858 3.78393 3.13339 3.69973 3.1 3.60622L2.26484 1.29606L2.125 1.24997V5.6031C2.12601 6.01209 2.26023 6.40962 2.50734 6.73553C2.75444 7.06143 3.10099 7.29797 3.49453 7.40935L16.5 11.0508V9.08747Z"
-                  fill="#3D495C"
-                />
-              </svg>
-
-              <div>
-                <div className="text-[12px] font-medium text-[#0A0C0F]">
-                  {outboundArrCode} Airport ({outboundArrCode})
-                </div>
-                <div className="text-[12px] text-[#3D495C]">
-                  {formatTime(outboundArrTime)} • {formatDate(outboundArrTime)}{" "}
-                  • Terminal {outboundArrTerminal}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Return Flight - Only show for roundtrip */}
-        {isRoundtrip && returnSegment && (
-          <>
-            <NotchDivider />
-            <div>
+        {/* Flight(s): oneway (1), roundtrip (2), multicity (N) */}
+        {flightBlocks.map((block, blockIndex) => (
+          <div key={blockIndex}>
+            {blockIndex > 0 && <NotchDivider />}
+            <div className={blockIndex > 0 ? "mt-4" : ""}>
               <div className="mb-2">
                 <div className="text-[12px] font-medium text-[#3D495C]">
-                  Return Flight
+                  {block.heading}
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-10">
                 <div className="flex items-center gap-2">
-                  {/* <img
-                    src={EmirateLogo}
-                    alt="Airline"
-                    className="h-10 w-10 rounded-full object-cover"
-                  /> */}
                   <div>
                     <div className="text-[14px] text-nowrap font-medium text-[#0A0C0F]">
-                      {returnAirlineCode} Airlines
+                      {block.airlineCode} Airlines
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
-                      {returnAirlineCode} {returnFlightNumber}
+                      {block.airlineCode} {block.flightNumber}
                     </div>
                   </div>
                 </div>
-
                 <div>
                   <div className="text-[12px] text-[#3D495C]">Duration</div>
                   <div className="text-[14px] font-medium text-[#0A0C0F]">
-                    {returnDuration}
+                    {block.duration}
                   </div>
                 </div>
                 <div>
                   <div className="text-[12px] text-[#3D495C]">Stops</div>
                   <div className="text-[14px] font-medium text-[#0A0C0F]">
-                    {returnStops}
+                    {block.stops}
                   </div>
                 </div>
               </div>
-
+              {block.stopDetails && block.stopDetails.length > 0 && (
+                <div className="mt-3 px-3 py-2">
+                  <div className="text-[11px] font-medium text-[#3D495C] mb-1.5">
+                    Stop(s) & layover
+                  </div>
+                  <ul className="space-y-1.5">
+                    {block.stopDetails.map((stop, stopIdx) => (
+                      <li
+                        key={stopIdx}
+                        className="text-[13px] text-[#0A0C0F] flex flex-wrap items-baseline gap-x-2"
+                      >
+                        <span className="font-medium">
+                          {stopIdx + 1}. {stop.airportCode}
+                        </span>
+                        {stop.layover && (
+                          <span className="text-[12px] text-[#3D495C]">
+                            (Layover: {stop.layover})
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               <div className="py-4">
                 <div className="flex items-center gap-2">
                   <svg
@@ -618,14 +585,13 @@ export default function FlightBookingETicketSection({
                       fill="#3D495C"
                     />
                   </svg>
-
                   <div>
                     <div className="text-[12px] font-medium text-[#0A0C0F]">
-                      {returnDepCode} Airport ({returnDepCode})
+                      {block.depCode} Airport ({block.depCode})
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
-                      {formatTime(returnDepTime)} • {formatDate(returnDepTime)}{" "}
-                      • Terminal {returnDepTerminal}
+                      {formatTime(block.depTime)} • {formatDate(block.depTime)}{" "}
+                      {block.depTerminal ? `• Terminal ${block.depTerminal}` : ""}
                     </div>
                   </div>
                 </div>
@@ -642,21 +608,20 @@ export default function FlightBookingETicketSection({
                       fill="#3D495C"
                     />
                   </svg>
-
                   <div>
                     <div className="text-[12px] font-medium text-[#0A0C0F]">
-                      {returnArrCode} Airport ({returnArrCode})
+                      {block.arrCode} Airport ({block.arrCode})
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
-                      {formatTime(returnArrTime)} • {formatDate(returnArrTime)}{" "}
-                      • Terminal {returnArrTerminal}
+                      {formatTime(block.arrTime)} • {formatDate(block.arrTime)}{" "}
+                      {block.arrTerminal ? `• Terminal ${block.arrTerminal}` : ""}
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          </>
-        )}
+          </div>
+        ))}
       </div>
 
       <NotchDivider />

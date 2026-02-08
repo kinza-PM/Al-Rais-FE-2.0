@@ -1098,6 +1098,7 @@ input[type="number"] {
   flex-direction: column;
   height: 100%;
   min-width: 0;
+  overflow: visible;
 }
 
 .cardHeader {
@@ -1124,6 +1125,10 @@ input[type="number"] {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+}
+
+.compareCard .cardBody {
+  overflow: visible;
 }
 
 .featureImgs {
@@ -1264,6 +1269,7 @@ input[type="number"] {
 .compareModalButtonCol {
   min-width: 0;
   display: flex;
+  overflow: visible;
 }
 
 .compareCardCol .compareCard,
@@ -1272,9 +1278,10 @@ input[type="number"] {
 }
 
 /* Compare card inner layout: allow shrink so time/date don't overlap on narrow cards */
+/* overflow: visible so icon tooltips are not clipped on hover */
 .compareCard .RoundTripCardDetail {
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .compareCard .fightTitle {
@@ -1324,6 +1331,14 @@ input[type="number"] {
 .compareCard .featureIcons {
   flex-shrink: 0;
   flex-wrap: wrap;
+}
+
+/* Ensure tooltips in compare cards are visible and above other content */
+.compareCard .featureIconTooltipWrap {
+  position: relative;
+}
+.compareCard .featureIconTooltipWrap .tooltip {
+  z-index: 9999;
 }
 
 .featureIconText img {

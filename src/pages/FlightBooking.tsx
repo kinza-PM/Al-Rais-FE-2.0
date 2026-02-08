@@ -111,7 +111,7 @@ const FlightBooking = () => {
               phone: [
                 {
                   label: "Origin",
-                  areaCode: "+1",
+                  areaCode: "",
                   phoneNumber: "",
                 },
               ],
@@ -384,7 +384,6 @@ const FlightBooking = () => {
     init();
   }, []);
 
-
   useEffect(() => {
     if (offerData?.passengersForRequest && !isPendingBooking) {
       setFlightBookingPayload((prev) => ({
@@ -521,19 +520,21 @@ const FlightBooking = () => {
               // onNext={() => setCurrentStep(hasAncillaries ? 1 : 2)}
               onNext={async (newOfferId?: string) => {
                 const usedOfferId = newOfferId ?? offerData.offerId;
-                // After prov booking, fetch ancillary data
-                const ancillary = await flightAncillarySearch(usedOfferId);
-                const hasData =
-                  !!ancillary?.seatMap ||
-                  !!ancillary?.baggages ||
-                  !!ancillary?.meals ||
-                  !!ancillary?.otherAncillaries;
+                if (enhanceAvailable) {
+                  const ancillary = await flightAncillarySearch(usedOfferId);
+                  const hasData =
+                    !!ancillary?.seatMap ||
+                    !!ancillary?.baggages ||
+                    !!ancillary?.meals ||
+                    !!ancillary?.otherAncillaries;
 
-                if (hasData) {
-                  // Ancillary data exists, show modal to ask user
-                  setShowAncillaryModal(true);
+                  if (hasData) {
+                    setShowAncillaryModal(true);
+                  } else {
+                    const reviewStep = steps.indexOf("Review");
+                    setCurrentStep(reviewStep >= 0 ? reviewStep : 1);
+                  }
                 } else {
-                  // No ancillary data, go to Review step
                   const reviewStep = steps.indexOf("Review");
                   setCurrentStep(reviewStep >= 0 ? reviewStep : 1);
                 }

@@ -157,6 +157,65 @@ export const mapOfferForCompareRoundTrip = (f: any) => {
   };
 };
 
+// Multi-city compare mapper: segments grouped by journey (Flight 01, Flight 02, ...)
+export const mapOfferForCompareMultiCity = (f: any) => {
+  if (!f) return null;
+  const raw = f.raw ?? {};
+  const journeys = raw?.journey ?? [];
+
+  const mapSegments = (segs: any[]) =>
+    (segs || []).map((s: any) => {
+      const checked = s?.baggageAllowance?.checkedInBaggage?.[0];
+      const carry = s?.baggageAllowance?.carryOnBaggage?.[0];
+      return {
+        name: f.name,
+        logo: f.logo,
+        flight_detail: buildPerSegmentFlightDetail(f?.flight_detail || {}, s),
+        duration: s?.duration ?? null,
+        layoverTime: s?.layoverTime ?? null,
+        fromCode: s?.departureAirportCode,
+        toCode: s?.arrivalAirportCode,
+        equipment: s?.equipmentName ?? s?.equipmentType ?? null,
+        seatsAvailable: s?.seatsAvailable ?? null,
+        baggageChecked: checked ? `${checked.value}${checked.unit ?? ""}` : null,
+        baggageCarry: carry ? `${carry.value}${carry.unit ?? ""}` : null,
+        refundable: raw?.fare?.fareType?.refundable ?? false,
+      };
+    });
+
+  const segmentGroups: any[][] = journeys.map((j: any) => {
+    const segs = j?.flightSegments ?? [];
+    return mapSegments(Array.isArray(segs) ? segs : []);
+  });
+
+  const allSegments = segmentGroups.flat();
+  const firstSeg = allSegments?.[0];
+  const totalFare = raw?.fare?.totalFare ?? f?.rawTotalStartingFare ?? f?.price?.economyLite?.price ?? null;
+  const currency = raw?.fare?.currencyCode ?? f?.currency ?? "AED";
+
+  return {
+    id: f.id ?? f.offerId ?? raw?.offerId,
+    logo: f.logo,
+    name: f.name,
+    flight_detail: f?.flight_detail,
+    price: f.price,
+    totalFare,
+    currency,
+    duration: f?.flight_detail?.duration ?? firstSeg?.duration ?? null,
+    equipment: firstSeg?.equipment ?? null,
+    seatsAvailable: firstSeg?.seatsAvailable ?? null,
+    baggageChecked: firstSeg?.baggageChecked ?? null,
+    baggageCarry: firstSeg?.baggageCarry ?? null,
+    refundable: !!(raw?.fare?.fareType?.refundable || f?.refundable),
+    segments: allSegments,
+    segmentGroups,
+    rawMinimal: {
+      offerId: raw?.offerId ?? f.offerId ?? f.id,
+      supplier: raw?.financialInfo?.supplier ?? raw?.financialInfo ?? null,
+    },
+  };
+};
+
 export const pickRandomFlightsForCompare = (
   all: any[] = [],
   excludeId: any,

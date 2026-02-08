@@ -1,5 +1,14 @@
 import { create } from "zustand";
 
+export type FlightLeg = {
+  fromCode: string;
+  toCode: string;
+  date: string | null;
+  cabinClassId?: string;
+  fromOption?: { id: string; label: string; code: string; city: string; country: string } | null;
+  toOption?: { id: string; label: string; code: string; city: string; country: string } | null;
+};
+
 type Flight = {
   fromCode: string;
   toCode: string;
@@ -23,6 +32,8 @@ type Flight = {
   next?: Record<string, number>;
   departure?: string | null;
   arrival?: string | null;
+  /** For multicity: legs with fromCode, toCode, date per flight */
+  legs?: FlightLeg[];
   flight_filters?: Record<string, any>;
 };
 

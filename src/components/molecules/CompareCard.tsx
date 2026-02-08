@@ -382,22 +382,22 @@ const CompareCard: React.FC<CompareCardProps> = ({
 
     const startTime = firstSegment?.departureDateTime
       ? formatTime(firstSegment.departureDateTime)
-      : passSome?.flight_detail?.start_time ?? "";
+      : firstSegment?.flight_detail?.start_time ?? passSome?.flight_detail?.start_time ?? "";
     const startDate = firstSegment?.departureDateTime
       ? formatDate(firstSegment.departureDateTime)
-      : passSome?.flight_detail?.start_date ?? "";
+      : firstSegment?.flight_detail?.start_date ?? passSome?.flight_detail?.start_date ?? "";
     const endTime = lastSegment?.arrivalDateTime
       ? formatTime(lastSegment.arrivalDateTime)
-      : passSome?.flight_detail?.end_time ?? "";
+      : lastSegment?.flight_detail?.end_time ?? passSome?.flight_detail?.end_time ?? "";
     const endDate = lastSegment?.arrivalDateTime
       ? formatDate(lastSegment.arrivalDateTime)
-      : passSome?.flight_detail?.end_date ?? "";
+      : lastSegment?.flight_detail?.end_date ?? passSome?.flight_detail?.end_date ?? "";
 
     const secondSegment = hasMultipleSegments ? flightSegments[1] : null;
-    const firstDuration = firstSegment?.duration ?? "";
-    const secondDuration = secondSegment?.duration ?? "";
+    const firstDuration = firstSegment?.duration ?? firstSegment?.flight_detail?.duration ?? "";
+    const secondDuration = secondSegment?.duration ?? secondSegment?.flight_detail?.duration ?? "";
     const layoverTime = secondSegment?.layoverTime ?? "";
-    const stopAirport = secondSegment?.departureAirportCode ?? "";
+    const stopAirport = secondSegment?.departureAirportCode ?? secondSegment?.fromCode ?? "";
 
     const marketingAirline =
       passSome?.flight_detail?.marketingAirline ??
@@ -434,7 +434,7 @@ const CompareCard: React.FC<CompareCardProps> = ({
         return (
           <>
             <span className="mb-5">{firstDuration}</span>
-            <div className="stopsDetail mb-4">
+            <div className="stopsDetail">
               <span>{layoverTime || "Layover"}</span>
               <div className="stopPoint stopDots" />
               <span>{stopAirport}</span>
@@ -490,6 +490,9 @@ const CompareCard: React.FC<CompareCardProps> = ({
 
   const renderCompareCard = (item: any) => {
     const isRound = !!(item as any).outbound || !!(item as any).inbound;
+    const isMultiCity =
+      Array.isArray((item as any).segmentGroups) &&
+      (item as any).segmentGroups.length > 1;
     const idKey = item.id ?? Math.random().toString(36).slice(2, 9);
     const removeId = item.id ?? item.offerId;
     const isCurrent =
@@ -606,6 +609,82 @@ const CompareCard: React.FC<CompareCardProps> = ({
                   <div>
                     <p className="parahTwo">
                       Segments: {outboundSegs.length} ↔ {inboundSegs.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Col>
+      );
+    }
+
+    // multi-city card: Flight 01 Group, Flight 02 Group, ... with dividers
+    if (isMultiCity) {
+      const segmentGroups = (item as any).segmentGroups ?? [];
+      const displayPrice =
+        (item as any).totalFare ??
+        item.price?.economyLite?.price ??
+        item.totalFare ??
+        "—";
+      const currency =
+        (item as any).currency ??
+        item.price?.currency ??
+        item.fare?.currencyCode ??
+        "";
+
+      return (
+        <Col xs={24} sm={24} md={24} lg={12} xl={8} key={idKey} className="mb-5 compareCardCol">
+          <div className="compareCard">
+            <div className="cardHeader">
+              {isCurrent ? "Chosen Flight" : "Comparison Flight"}
+              {!isCurrent && (
+                <button
+                  style={{
+                    float: "right",
+                    background: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                  onClick={() => removeFromCompare(removeId)}
+                  aria-label="Remove"
+                  title="Remove"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            <div className="cardBody">
+              {segmentGroups.map((group: any[], groupIdx: number) => (
+                <div key={`mc-group-${groupIdx}`}>
+                  <div className="compareLegDivider cardHeader">
+                    Flight {String(groupIdx + 1).padStart(2, "0")} Group
+                  </div>
+                  {group.map((seg, i) => (
+                    <div key={`mc-${groupIdx}-${i}`}>
+                      {renderSegmentSummary(seg, { showIcons: true })}
+                    </div>
+                  ))}
+                </div>
+              ))}
+
+              <div className="StartingPrice mt-5">
+                <span>Start from</span>
+                <h5>
+                  {currency} {displayPrice}
+                </h5>
+              </div>
+
+              <div className="flightSeats" style={{ marginTop: 12 }}>
+                <div className="flightDetail">
+                  <div className="flighticon">
+                    <img src={flightIcon} alt="" />
+                  </div>
+                  <div>
+                    <p className="parahOne">{item.name ?? "Multi-city"}</p>
+                    <p className="parahTwo">
+                      {segmentGroups.length} flight(s)
                     </p>
                   </div>
                 </div>
@@ -787,6 +866,9 @@ const CompareCard: React.FC<CompareCardProps> = ({
             localAvailable.map((item, index) => {
               const isRound =
                 !!(item as any).outbound || !!(item as any).inbound;
+              const isMultiCity =
+                Array.isArray((item as any).segmentGroups) &&
+                (item as any).segmentGroups.length > 1;
               return (
                 <div
                   key={item.id ?? index}
@@ -794,7 +876,38 @@ const CompareCard: React.FC<CompareCardProps> = ({
                   onClick={() => addFlightToCompare(item)}
                 >
                   <div className="modalFlightDetail">
-                    {isRound
+                    {isMultiCity
+                      ? (() => {
+                          const segmentGroups = (item as any).segmentGroups ?? [];
+                          return (
+                            <div
+                              style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 12,
+                              }}
+                            >
+                              {segmentGroups.map((group: any[], gIdx: number) => {
+                                const passSome = {
+                                  segments: group,
+                                  flight_detail: group[0]?.flight_detail,
+                                  logo: item.logo,
+                                  name: item.name,
+                                  stop: [],
+                                };
+                                return (
+                                  <div key={`mc-modal-${gIdx}`}>
+                                    {renderTimingAndStops(
+                                      passSome,
+                                      `mc-${index}-${gIdx}`
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()
+                      : isRound
                       ? (() => {
                           const outbound = (item as any).outbound ?? null;
                           const inbound = (item as any).inbound ?? null;

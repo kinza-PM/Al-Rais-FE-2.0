@@ -37,7 +37,7 @@ export function normalizeTripKey(name: string): TripType | null {
   )
     return "oneway";
   if (n.includes("round") && n.includes("trip")) return "roundtrip";
-  // if (n.includes("multi")) return "multicity";
+  if (n.includes("multi")) return "multicity";
   return null;
 }
 
@@ -73,13 +73,12 @@ export function buildFlightTypeOptions(
     return [
       { id: "oneway", key: "oneway", label: "One Way" },
       { id: "roundtrip", key: "roundtrip", label: "Round Trip" },
-      // { id: "multicity", key: "multicity", label: "Multi-City" },
+      { id: "multicity", key: "multicity", label: "Multi-City" },
     ];
   }
 
   // Optional: stable sort (One Way, Round Trip, Multi-City)
-  const order: TripType[] = ["oneway", "roundtrip"];
-  // const order: TripType[] = ["oneway", "roundtrip", "multicity"];
+  const order: TripType[] = ["oneway", "roundtrip", "multicity"];
   options.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key));
 
   return options;

@@ -392,7 +392,6 @@ export const validateReservationFlightBookingDataFields = (
 
   // Billing address
   const address = reservation?.paymentDetails?.address ?? null;
-  console.log("address", address);
   if (!address) {
     errors["address"] = "Billing address is required.";
   } else {
