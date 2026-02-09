@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import PassengerCounterDropdown from "../atoms/PassengerCounterDropdown";
 import type {
   CabinClassOption,
@@ -140,6 +140,32 @@ const MultiCityForm: React.FC<Props> = ({
     },
     [passengerSchema, onChangePassengers, paxCounts],
   );
+
+  useEffect(() => {
+    setLegs((prev) => {
+      const updated = [...prev];
+      let hasChanges = false;
+
+      for (let i = 0; i < updated.length - 1; i++) {
+        const currentLeg = updated[i];
+        const nextLeg = updated[i + 1];
+        if (
+          currentLeg.toCode &&
+          currentLeg.toCode.trim() &&
+          nextLeg.fromCode !== currentLeg.toCode
+        ) {
+          updated[i + 1] = {
+            ...nextLeg,
+            fromCode: currentLeg.toCode,
+            fromOption: currentLeg.toOption, 
+          };
+          hasChanges = true;
+        }
+      }
+
+      return hasChanges ? updated : prev;
+    });
+  }, [legs.map((leg) => leg.toCode).join(",")]);
 
   const cabinError =
     !loadingCabinClasses && (!cabinClasses || cabinClasses.length === 0)

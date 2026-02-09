@@ -1239,6 +1239,34 @@ const FlightDetailTemplate: React.FC = () => {
     }
   }, [trip, resetInactivityCountdown]);
 
+  useEffect(() => {
+    if (trip !== "multicity") return;
+    if (multicityLegs.length < 2) return;
+
+    setMulticityLegs((prev) => {
+      const updated = [...prev];
+      let hasChanges = false;
+
+      for (let i = 0; i < updated.length - 1; i++) {
+        const currentLeg = updated[i];
+        const nextLeg = updated[i + 1];
+        if (
+          currentLeg.toCode &&
+          currentLeg.toCode.trim() &&
+          nextLeg.fromCode !== currentLeg.toCode
+        ) {
+          updated[i + 1] = {
+            ...nextLeg,
+            fromCode: currentLeg.toCode,
+            fromOption: currentLeg.toOption,
+          };
+          hasChanges = true;
+        }
+      }
+      return hasChanges ? updated : prev;
+    });
+  }, [trip, multicityLegs.map((leg) => leg.toCode).join(",")]);
+
   const openTimePicker = (key: string) => {
     timeRefs.current[key]?.showPicker?.() || timeRefs.current[key]?.click();
   };
