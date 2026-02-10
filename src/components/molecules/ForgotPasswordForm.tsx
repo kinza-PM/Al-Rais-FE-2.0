@@ -18,6 +18,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
   const [formData, setFormData] = useState<ForgotPasswordFormType>({
     email: "",
   });
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState({ email: false });
@@ -42,24 +43,26 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setTouched({ email: true });
     setError(null);
 
-    if (!formData.email.trim() || emailError) {
+    if (!formData.email) {
+      setError("Please enter your email address");
       return;
     }
 
     setLoading(true);
+
     try {
       const result = await AuthService.forgotPassword(formData);
+
       if (result.success) {
         onOTPSent(formData.email);
       } else {
         setError(result.message || "Failed to send reset code");
       }
-    } catch (err) {
-      console.error('ForgotPasswordForm error:', err);
-      setError('An unexpected error occurred. Please try again.');
+    } catch (error) {
+      console.error("ForgotPasswordForm error:", error);
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -75,11 +78,14 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
     }
   }, [error]);
 
-  const emailHasError = Boolean(touched.email && emailError);
+  const emailHasError = Boolean(emailError);
 
   return (
-    <div className="w-full shrink-0" style={{ maxWidth: '576px' }}>
-      <div className="rounded-xl sm:rounded-2xl bg-white shadow-lg px-6 py-8 sm:px-8" style={{ minHeight: '369px' }}>
+    <div className="w-full shrink-0" style={{ maxWidth: "576px" }}>
+      <div
+        className="rounded-xl sm:rounded-2xl bg-white shadow-lg px-6 py-8 sm:px-8"
+        style={{ minHeight: "369px" }}
+      >
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Figma: Title "Reset password" bold #0A0C0F */}
           <h3 className="text-center text-xl font-bold text-[#0A0C0F] sm:text-2xl">
@@ -106,7 +112,10 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
               errorBorderColor="#FF5270"
             />
             {touched.email && emailHasError && (
-              <p role="alert" className="mt-1 text-sm font-medium text-[#FF5270]">
+              <p
+                role="alert"
+                className="mt-1 text-sm font-medium text-[#FF5270]"
+              >
                 {emailError}
               </p>
             )}
@@ -117,10 +126,9 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
             <button
               type="submit"
               disabled={loading || !isFormValid || !formData.email.trim()}
-              className="flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
-              style={{ background: '#C2CAD6' }}
+              className={`flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-white transition-opacity hover:opacity-95 ${loading || !isFormValid || !formData.email.trim() ? " bg-[#C2CAD6] disabled:cursor-not-allowed disabled:opacity-70" : "auth-bg-btn"}`}
             >
-              {loading ? 'Sending...' : 'Continue'}
+              {loading ? "Sending..." : "Continue"}
             </button>
           </div>
         </form>

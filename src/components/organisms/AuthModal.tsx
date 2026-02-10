@@ -24,7 +24,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   // State for forgot password flow
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
-  const [forgotPasswordOTP, setForgotPasswordOTP] = useState('');
+  // const [forgotPasswordOTP, setForgotPasswordOTP] = useState('');
 
   if (!isOpen) return null;
 
@@ -60,7 +60,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleBackToOTP = () => {
     onModeChange('forgot-password');
-    setForgotPasswordOTP('');
+    // setForgotPasswordOTP('');
   };
 
   return (
@@ -106,7 +106,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
         ) : mode === 'reset-password' ? (
           <ResetPasswordForm 
             email={forgotPasswordEmail}
-            otp={forgotPasswordOTP}
+            // otp={forgotPasswordOTP}
             onPasswordReset={handlePasswordReset}
             onBackToOTP={handleBackToOTP}
           />

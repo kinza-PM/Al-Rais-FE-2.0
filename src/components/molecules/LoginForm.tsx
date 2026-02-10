@@ -7,16 +7,20 @@ import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import { filterEmailInput } from "../../utils/helpers";
 import toast from "react-hot-toast";
-import logoSmall from '../../assets/images/logo-small.png';
+import logoSmall from "../../assets/images/logo-small.png";
 
 interface LoginFormProps {
   onSignupClick: () => void;
   onLoginSuccess?: () => void;
   onForgotPasswordClick?: () => void;
-  onLoginError?: () => void;
+  // onLoginError?: () => void;
 }
 
-const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, onForgotPasswordClick, onLoginError }) => {
+const LoginForm: React.FC<LoginFormProps> = ({
+  onSignupClick,
+  onLoginSuccess,
+  onForgotPasswordClick,
+}) => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -88,7 +92,6 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
       }, 2000);
     } else {
       handleLoginError(result);
-      onLoginError?.();
     }
   };
 
@@ -211,9 +214,11 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
       : formData.email.trim();
     if (!identifier) return;
     setResendLoading(true);
+    // setSubmitError(null);
     const result = await resendConfirmationCode(identifier);
     setResendLoading(false);
     if (result.success) {
+      // setLoginMessage("Verification code sent.");
       toast.success("Verification code sent.");
     } else {
       toast.error(result.message || "Failed to resend verification code.");
@@ -229,12 +234,20 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
             aria-label="Go to home page"
             className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
-            <img src={logoSmall} alt="Al Rais Travel" className="h-11 w-[60px] object-contain" />
+            <img
+              src={logoSmall}
+              alt="Al Rais Travel"
+              className="h-11 w-[60px] object-contain"
+            />
           </Link>
         </div>
 
-        <h2 className="text-center text-xl font-bold text-[#0A0C0F] mb-1 sm:text-2xl">Welcome back</h2>
-        <p className="text-center text-sm text-[#3D495C] mb-6">Please login to continue</p>
+        <h2 className="text-center text-xl font-bold text-[#0A0C0F] mb-1 sm:text-2xl">
+          Welcome back
+        </h2>
+        <p className="text-center text-sm text-[#3D495C] mb-6">
+          Please login to continue
+        </p>
 
         {/* Toggle Buttons */}
         <div className="flex justify-center mb-6">
@@ -411,10 +424,18 @@ const LoginForm: React.FC<LoginFormProps> = ({ onSignupClick, onLoginSuccess, on
           <button
             type="submit"
             disabled={!isFormValid || !!loading?.login || !isOnline}
-            className="flex w-full min-h-[47px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-[#0A0C0F] transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70"
-            style={{ background: '#C2CAD6' }}
+            className={`
+              flex w-full min-h-[47px] items-center justify-center gap-2.5
+              rounded-full px-10 py-3.5
+              font-medium text-white transition-opacity hover:opacity-95
+              ${
+                !isFormValid || !!loading.login || !isOnline
+                  ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                  : "auth-bg-btn"
+              }
+            `}
           >
-            {loading?.login ? 'Logging in...' : 'Login'}
+            {loading?.login ? "Logging in..." : "Login"}
           </button>
         </form>
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   ForgotPasswordForm,
-  LoginFailedCard,
+  // LoginFailedCard,
   LoginForm,
   MainLayout,
   ResetPasswordForm,
@@ -10,7 +10,7 @@ import {
 import type { AuthMode } from "../types/AuthTypes";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import OTPVerificationForm from "../components/molecules/OTPVerificationForm";
+// import OTPVerificationForm from "../components/molecules/OTPVerificationForm";
 
 const AuthPage = () => {
   const location = useLocation();
@@ -19,8 +19,6 @@ const AuthPage = () => {
     (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
-  const [forgotPasswordOTP, setForgotPasswordOTP] = useState("");
-  const [showLoginError, setShowLoginError] = useState(false);
 
   const handleModeSwitch = () => {
     setMode(mode === "login" ? "signup" : "login");
@@ -33,25 +31,12 @@ const AuthPage = () => {
   const handleBackToLogin = () => {
     setMode("login");
     setForgotPasswordEmail("");
-    setForgotPasswordOTP("");
-    setShowLoginError(false);
-  };
-
-  const handleLoginError = () => {
-    setShowLoginError(true);
-  };
-
-  const handleTryAgain = () => {
-    setShowLoginError(false);
+    // setForgotPasswordOTP("");
   };
 
   const handleOTPSent = (email: string) => {
     setForgotPasswordEmail(email);
-    setMode("otp-verification");
-  };
-
-  const handleOTPVerified = (otp: string) => {
-    setForgotPasswordOTP(otp);
+    // setMode("otp-verification");
     setMode("reset-password");
   };
 
@@ -62,10 +47,6 @@ const AuthPage = () => {
     setTimeout(() => {
       handleBackToLogin();
     }, 500);
-  };
-
-  const handleBackToForgotPassword = () => {
-    setMode("forgot-password");
   };
 
   const handleBackToOTP = () => {
@@ -113,40 +94,17 @@ const AuthPage = () => {
             >
               ← Back to login
             </button>
-            
+
             <ForgotPasswordForm
               onBackToLogin={handleBackToLogin}
               onOTPSent={handleOTPSent}
             />
           </div>
-        ) : mode === "otp-verification" ? (
-          /* OTP Verification: light background, centered card, back button top-left */
-          <div
-            className="relative flex min-h-screen w-full flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:py-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            style={{ background: "#F2F2F3" }}
-          >
-            {/* Back to login button - top-left corner of page */}
-            <button
-              type="button"
-              onClick={handleBackToLogin}
-              className="absolute left-6 top-6 text-sm text-[#0A0C0F] hover:opacity-80 sm:left-8 sm:top-8"
-            >
-              ← Back to login
-            </button>
-            
-            <OTPVerificationForm
-              email={forgotPasswordEmail}
-              onBackToForgotPassword={handleBackToForgotPassword}
-              onOTPVerified={handleOTPVerified}
-            />
-          </div>
         ) : mode === "reset-password" ? (
-          /* Set new password: light background, centered card, back button top-left */
           <div
             className="relative flex min-h-screen w-full flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:py-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             style={{ background: "#F2F2F3" }}
           >
-            {/* Back to login button - top-left corner of page */}
             <button
               type="button"
               onClick={handleBackToLogin}
@@ -154,10 +112,9 @@ const AuthPage = () => {
             >
               ← Back to login
             </button>
-            
+
             <ResetPasswordForm
               email={forgotPasswordEmail}
-              otp={forgotPasswordOTP}
               onPasswordReset={handlePasswordReset}
               onBackToOTP={handleBackToOTP}
             />
@@ -174,13 +131,12 @@ const AuthPage = () => {
                 onSignupClick={handleModeSwitch}
                 onLoginSuccess={() => navigate("/")}
                 onForgotPasswordClick={handleForgotPassword}
-                onLoginError={handleLoginError}
               />
 
               {/* Login failed card (shown on right when error occurs) */}
-              {showLoginError && (
+              {/* {showLoginError && (
                 <LoginFailedCard onTryAgain={handleTryAgain} />
-              )}
+              )} */}
             </div>
           </div>
         )}
