@@ -8,14 +8,10 @@ import "../../assets/css/travel.css";
 // import FlagUsa from "../../assets/svgs/Flag-usa.svg";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import noFlights from "../../assets/svgs/no-flights.svg";
-<<<<<<< HEAD
-import { Tabs, Drawer, Button, Grid } from "antd";
-=======
 import Info from "../../assets/svgs/info-black.svg";
 import { Segmented, Tabs, Flex, Drawer, Button, Grid } from "antd";
 // import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
 // import CustomSelect from "../common/CustomSelect";
 // import CustomDatePicker from "../common/CustomDatePicker";
 import FlightSearchFilter from "../atoms/FlightSearchFilter";
