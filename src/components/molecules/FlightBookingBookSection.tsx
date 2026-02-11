@@ -296,7 +296,7 @@ export default function FlightBookingBookSection({
                       />
                     </div>
                     <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
+                      className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
                     >
                       <TailwindCustomInput
                       type="text"
@@ -313,6 +313,7 @@ export default function FlightBookingBookSection({
                           "passengerInfo.givenName",
                           v ?? "",
                         );
+                        clearFieldError(idx, "passengerInfo.givenName");
                       }}
                         error={
                           hasAttemptedValidation
@@ -325,34 +326,6 @@ export default function FlightBookingBookSection({
 
                     <div
                       className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
-                    >
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Enter your full name"
-                        label="Full name (Filled based on ID/Passport/Driver’s license)"
-                        value={p.passengerInfo?.givenName ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "passengerInfo.givenName",
-                            v ?? "",
-                          );
-                          clearFieldError(idx, "passengerInfo.givenName");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["passengerInfo.givenName"]
-                            : null
-                        }
-                      />
-                    </div>
-
-                    <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
                     >
                       <TailwindCustomInput
                         type="text"
