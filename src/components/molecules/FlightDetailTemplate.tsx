@@ -220,6 +220,7 @@ const FlightDetailTemplate: React.FC = () => {
   const [departDate, setDepartDate] = useState<string>("");
   const [returnDate, setReturnDate] = useState<string>("");
   const [multicityLegs, setMulticityLegs] = useState<FlightLeg[]>([]);
+  const [highDemandIndicators, setHighDemandIndicators] = useState<any[]>([]);
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [ioReady, setIoReady] = useState(false);
@@ -591,6 +592,7 @@ const FlightDetailTemplate: React.FC = () => {
       );
       const raw = response.data || [];
       const commonData = response?.commonData;
+      const highDemand = response?.highDemandIndicators || [];
 
       const { oneWayFormatted, roundFormatted, multiCityFormatted } =
         processFLightSearchResults(raw, commonData);
@@ -601,6 +603,7 @@ const FlightDetailTemplate: React.FC = () => {
       setResponseData(oneWayFormatted);
       setRoundResponseData(roundFormatted);
       setMulticityResponseData(trip === "multicity" ? multiCityFormatted : []);
+      setHighDemandIndicators(highDemand);
       // start inactivity timers only based on API results
       startResultInactivityTimers();
 
@@ -2003,6 +2006,7 @@ const FlightDetailTemplate: React.FC = () => {
                   renderLoader={renderLoadMoreApiLoader}
                   loadMoreRef={loadMoreRef}
                   emptyState={noFlightsDataAvailable}
+                  highDemandIndicators={highDemandIndicators}
                 />
               </>
             ) : trip === "roundtrip" ? (
@@ -2018,6 +2022,7 @@ const FlightDetailTemplate: React.FC = () => {
                 renderLoader={renderLoadMoreApiLoader}
                 loadMoreRef={loadMoreRef}
                 emptyState={noFlightsDataAvailable}
+                highDemandIndicators={highDemandIndicators}
               />
             ) : (
               <TravelMultiCity
@@ -2032,6 +2037,7 @@ const FlightDetailTemplate: React.FC = () => {
                 renderLoader={renderLoadMoreApiLoader}
                 loadMoreRef={loadMoreRef}
                 emptyState={noFlightsDataAvailable}
+                 highDemandIndicators={highDemandIndicators}
               />
             )}
           </div>

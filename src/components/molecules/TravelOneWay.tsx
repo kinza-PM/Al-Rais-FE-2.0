@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useCallback } from "react";
 import "../../assets/css/travel.css";
 
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
+import highDemandIcon from "../../assets/svgs/high-demand.svg";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
 
 import cabinIcon from "../../assets/svgs/cabin.svg";
@@ -35,6 +36,7 @@ type TravelOneWayProps = {
   renderLoader?: (state: { isLoadingMore?: boolean; hasMore?: boolean }) => React.ReactNode;
   loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   emptyState?: (() => React.ReactNode) | React.ReactNode;
+  highDemandIndicators?: any[];
 };
 
 const radioReminder = (checked: boolean) => {
@@ -54,6 +56,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   renderLoader,
   loadMoreRef,
   emptyState,
+  highDemandIndicators = [],
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shareModal, setshareModal] = useState(false);
@@ -112,6 +115,26 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     }
     return result;
   };
+
+  const highDemandLookup = useMemo(() => {
+    if (!highDemandIndicators || highDemandIndicators.length === 0) return new Map();
+
+    const lookup = new Map();
+    highDemandIndicators.forEach((indicator) => {
+      if (indicator.highDemand === true && indicator.marketingAirline) {
+        lookup.set(indicator.marketingAirline, {
+          totalCounts: indicator.totalCounts,
+          highDemand: indicator.highDemand,
+        });
+      }
+    });
+
+    return lookup;
+  }, [highDemandIndicators]);
+
+  const getHighDemandInfo = useCallback((marketingAirline: string) => {
+    return highDemandLookup.get(marketingAirline) || null;
+  }, [highDemandLookup]);
 
   const HandlePriceOption = React.useCallback(({ id }: { id: number | undefined }) => {
     const filtered = (id !== undefined && detailById[id]) || [];
@@ -333,8 +356,22 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                   Share
                 </p> */}
               </div>
-              <div className="selectPriceBtn" onClick={() => handleOfferSelection(item?.offerId, item)}>
-                <CustomButton>Select Price</CustomButton>
+              <div className="selectPriceBtn flex items-center gap-2">
+                {(() => {
+                  const segs = item?.raw?.journey?.[0]?.flightSegments ?? [];
+                  const currentSeg = Array.isArray(segs) ? segs[0] : segs?.[0] ?? segs ?? null;
+                  const marketingAirline = currentSeg?.marketingAirline;
+                  const highDemandInfo = getHighDemandInfo(marketingAirline);
+
+                  return highDemandInfo ? (
+                    <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
+                      <img src={highDemandIcon} alt="icon" className="w-3 h-3 mr-1" />
+                      High-demand
+                      {/* High-demand ({highDemandInfo.totalCounts}) */}
+                    </div>
+                  ) : null;
+                })()}
+                <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>Select Price</CustomButton>
               </div>
             </div>
             <React.Suspense

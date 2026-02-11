@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useCallback } from "react";
 import "../../assets/css/travel.css";
 
+import highDemandIcon from "../../assets/svgs/high-demand.svg";
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
 
@@ -46,6 +47,7 @@ type TravelRoundTripProps = {
   }) => React.ReactNode;
   loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   emptyState?: (() => React.ReactNode) | React.ReactNode;
+  highDemandIndicators?: any[];
 };
 
 const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
@@ -56,6 +58,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   renderLoader,
   loadMoreRef,
   emptyState,
+  highDemandIndicators = [],
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [shareModal, setshareModal] = useState(false);
@@ -102,6 +105,41 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     setFilterDetail(filtered);
     setFilterData([]);
   };
+
+  const highDemandLookup = useMemo(() => {
+    if (!highDemandIndicators || highDemandIndicators.length === 0) return null;
+
+    return {
+      outbound: highDemandIndicators[0] || null,  // First object = outbound
+      inbound: highDemandIndicators[1] || null,   // Second object = inbound
+    };
+  }, [highDemandIndicators]);
+
+  const getHighDemandInfo = useCallback((outboundAirline: string, inboundAirline: string | null) => {
+    if (!highDemandLookup) return null;
+
+    const { outbound, inbound } = highDemandLookup;
+
+    // Check if outbound airline matches first indicator
+    const outboundMatches = outbound?.highDemand === true &&
+      outbound?.marketingAirline === outboundAirline;
+
+    // Check if inbound airline matches second indicator  
+    const inboundMatches = inbound?.highDemand === true &&
+      inbound?.marketingAirline === inboundAirline;
+
+    // Only show if BOTH match
+    if (outboundMatches && inboundMatches) {
+      return {
+        outboundCount: outbound.totalCounts,
+        inboundCount: inbound.totalCounts,
+        totalCount: outbound.totalCounts + inbound.totalCounts,
+        highDemand: true,
+      };
+    }
+
+    return null;
+  }, [highDemandLookup]);
 
   const handleCancelCompare = (modalType: "compare" | "share") => {
     if (modalType == "compare") {
@@ -288,8 +326,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   <div className="tabs">
                     <div
                       className={`tab ${active?.name === "price" && active?.id === index
-                          ? "active"
-                          : ""
+                        ? "active"
+                        : ""
                         }`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
@@ -307,8 +345,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     </div>
                     <div
                       className={`tab ${active?.name === "flight" && active?.id === index
-                          ? "active"
-                          : ""
+                        ? "active"
+                        : ""
                         }`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
@@ -326,8 +364,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     </div>
                     <div
                       className={`tab ${active?.name === "compare" && active?.id === index
-                          ? "active"
-                          : ""
+                        ? "active"
+                        : ""
                         }`}
                       onClick={() => {
                         // setActive({ name: "compare", id: index });
@@ -365,11 +403,29 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     Share
                   </p> */}
                 </div>
-                <div
-                  className="selectPriceBtn"
-                  onClick={() => handleOfferSelection(item?.offerId, item)}
-                >
-                  <CustomButton>Select Price</CustomButton>
+                <div className="selectPriceBtn flex items-center gap-2">
+                  {(() => {
+                    const outboundSegs = item?.outbound?.raw?.journey?.[0]?.flightSegments ??
+                      item?.raw?.journey?.[0]?.flightSegments ?? [];
+                    const outboundSeg = Array.isArray(outboundSegs) ? outboundSegs[0] : outboundSegs?.[0] ?? outboundSegs ?? null;
+                    const outboundAirline = outboundSeg?.marketingAirline;
+
+                    const inboundSegs = item?.inbound?.raw?.journey?.[0]?.flightSegments ??
+                      item?.raw?.journey?.[1]?.flightSegments ?? [];
+                    const inboundSeg = Array.isArray(inboundSegs) ? inboundSegs[0] : inboundSegs?.[0] ?? inboundSegs ?? null;
+                    const inboundAirline = inboundSeg?.marketingAirline;
+
+                    const highDemandInfo = getHighDemandInfo(outboundAirline, inboundAirline);
+
+                    return highDemandInfo ? (
+                      <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
+                        <img src={highDemandIcon} alt="icon" className="w-3 h-3 mr-1" />
+                        High-demand
+                        {/* High-demand ({highDemandInfo.totalCounts}) */}
+                      </div>
+                    ) : null;
+                  })()}
+                  <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>Select Price</CustomButton>
                 </div>
               </div>
               <React.Suspense
