@@ -6,8 +6,10 @@ import Button from "../components/atoms/Button";
 import { Select } from "antd";
 import toast from "react-hot-toast";
 import { getTicketReasons, createTicket } from "../services/api/customerSupport";
+import { useAuth } from "../features/auth/hooks/useAuth";
 
 const CustomerSupportPage = () => {
+  const { user, isAuthenticated } = useAuth();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -62,6 +64,31 @@ const CustomerSupportPage = () => {
     };
     fetchReasons();
   }, []);
+
+  // Preload user data if authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      setFormData((prev) => ({
+        ...prev,
+        name: user.name || user.full_name || prev.name,
+        email: user.email || prev.email,
+      }));
+      if (user.phone) {
+        // Parse phone if it includes country code
+        if (user.phone.startsWith("+")) {
+          const match = user.phone.match(/^(\+\d{1,4})(\d+)$/);
+          if (match) {
+            setPhoneCountryCode(match[1]);
+            setPhoneNumber(match[2]);
+          } else {
+            setPhoneNumber(user.phone);
+          }
+        } else {
+          setPhoneNumber(user.phone);
+        }
+      }
+    }
+  }, [isAuthenticated, user]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
