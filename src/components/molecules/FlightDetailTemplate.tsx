@@ -1514,20 +1514,29 @@ const FlightDetailTemplate: React.FC = () => {
       <div className="flightDetailTemplateWrap">
         <div className="bottomHeaderSetting">
           {trip === "multicity" ? (
-            <Flex
-              vertical
-              gap="middle"
-              style={{
-                width: "100%",
-                maxWidth: "1000px", // Container max width for centering
-                margin: "0 auto", // Center the container
-              }}
-            >
-              {/* ===== SECTION 1: PASSENGERS (TOP) — cabin is per flight row ===== */}
-              <Flex align="flex-end" justify="center" gap="middle" wrap="wrap">
+            <>
+              {/* First Row: Trip and Passengers */}
+              <Flex className="bottomHeaderFlex">
+                <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
+                  <label className="header-labels-common">Trip</label>
+                  <SearchableDropdown
+                    options={segOptions.map((option) => ({
+                      id: option.value,
+                      value: option.value,
+                      label: option.label,
+                      disabled: false,
+                    }))}
+                    value={trip}
+                    onChange={(value) => setTrip(value as TripType)}
+                    placeholder="Select trip type"
+                    widthClass="w-full"
+                    searchPlaceholder="Search trip type..."
+                  />
+                </Flex>
+
                 <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
                   <label className="header-labels-common flex items-center gap-2">
-                    Passengers
+                    Travellers
                     <span className="relative inline-flex group/info">
                       <img
                         src={Info}
@@ -1747,12 +1756,53 @@ const FlightDetailTemplate: React.FC = () => {
                   onClick={() => handleSearch()}
                   style={{ minWidth: "200px" }} // Minimum width for better appearance
                 >
-                  {isPending ? "Searching..." : "Search flights"}
+                  {isPending ? "Searching..." : "Search"}
                 </CustomButton>
               </Flex>
-            </Flex>
+            </>
           ) : (
             <Flex className="bottomHeaderFlex">
+              {/* Trip Type Dropdown */}
+              <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
+                <label className="header-labels-common">Trip</label>
+                <SearchableDropdown
+                  options={segOptions.map((option) => ({
+                    id: option.value,
+                    value: option.value,
+                    label: option.label,
+                    disabled: false,
+                  }))}
+                  value={trip}
+                  onChange={(value) => setTrip(value as TripType)}
+                  placeholder="Select trip type"
+                  widthClass="w-full"
+                  searchPlaceholder="Search trip type..."
+                />
+              </Flex>
+
+              {/* Cabin Class Dropdown */}
+              <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
+                <label className="header-labels-common">Cabin Class</label>
+                <SearchableDropdown
+                  options={cabinSelectOptions.map((option) => ({
+                    id: option.value || "placeholder",
+                    value: option.value,
+                    label: option.label,
+                    disabled: "disabled" in option ? option.disabled : false,
+                  }))}
+                  value={selectedCabinClassId || ""}
+                  onChange={(value) => setSelectedCabinClassId(value)}
+                  placeholder={
+                    isInitialLoading ? "Loading…" : "Select cabin class"
+                  }
+                  disabled={isInitialLoading}
+                  widthClass="w-full"
+                  searchPlaceholder="Search cabin classes..."
+                  tooltip="Select cabin class"
+                />
+              </Flex>
+
+              {/* From/To Picker */}
               <TravelRoutePicker
                 options={countriesForPicker as AirportOption[]}
                 loading={countriesLoading}
@@ -1832,69 +1882,46 @@ const FlightDetailTemplate: React.FC = () => {
               </Flex>
             )}
             {trip !== "multicity" && (
-              <>
-                <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                  <label className="header-labels-common flex items-center gap-2">
-                    Passengers
-                    <span className="relative inline-flex group/info">
-                      <img
-                        src={Info}
-                        alt="info"
-                        className="w-4 h-4 inline-block align-middle"
-                      />
-                      <span
-                        className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
-                        role="tooltip"
-                      >
-                        Adults + Kids count cannot exceed 9
-                        <br />
-                        Infants cannot be more than Adults
-                      </span>
-                    </span>
-                  </label>
-                  <div style={{ minWidth: "100%", height: 44 }}>
-                    <PassengerCounterDropdown
-                      value={paxCounts}
-                      schema={passengers as PassengerSchema}
-                      maxTotal={100}
-                      onChange={(value) => {
-                        handlePassenger(value);
-                      }}
+              <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
+                <label className="header-labels-common flex items-center gap-2">
+                  Travellers
+                  <span className="relative inline-flex group/info">
+                    <img
+                      src={Info}
+                      alt="info"
+                      className="w-4 h-4 inline-block align-middle"
                     />
-                  </div>
-                </Flex>
-                <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                  <label className="header-labels-common ">Cabin Class</label>
-                  <SearchableDropdown
-                    options={cabinSelectOptions.map((option) => ({
-                      id: option.value || "placeholder",
-                      value: option.value,
-                      label: option.label,
-                      disabled: "disabled" in option ? option.disabled : false,
-                    }))}
-                    value={selectedCabinClassId || ""}
-                    onChange={(value) => setSelectedCabinClassId(value)}
-                    placeholder={
-                      isInitialLoading ? "Loading…" : "Select cabin class"
-                    }
-                    disabled={isInitialLoading}
-                    widthClass="w-full"
-                    // className="header-sub-inputs-common"
-                    searchPlaceholder="Search cabin classes..."
-                    tooltip="Select cabin class"
+                    <span
+                      className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
+                      role="tooltip"
+                    >
+                      Adults + Kids count cannot exceed 9
+                      <br />
+                      Infants cannot be more than Adults
+                    </span>
+                  </span>
+                </label>
+                <div style={{ minWidth: "100%", height: 44 }}>
+                  <PassengerCounterDropdown
+                    value={paxCounts}
+                    schema={passengers as PassengerSchema}
+                    maxTotal={100}
+                    onChange={(value) => {
+                      handlePassenger(value);
+                    }}
                   />
-                </Flex>
-              </>
+                </div>
+              </Flex>
+            )}
+            {trip !== "multicity" && (
+              <CustomButton
+                className="searchFilterBtn"
+                onClick={() => handleSearch()}
+              >
+                {isPending ? "Searching..." : "Search"}
+              </CustomButton>
             )}
           </Flex>
-          {trip !== "multicity" && (
-            <CustomButton
-              className="searchFilterBtn"
-              onClick={() => handleSearch()}
-            >
-              {isPending ? "Searching..." : "Search flights"}
-            </CustomButton>
-          )}
         </div>
 
         {!screens.lg && (

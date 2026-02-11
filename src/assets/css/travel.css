@@ -208,27 +208,28 @@ input[type="number"] {
 }
 
 .buttonStyleChild {
-  width: 100%;
-  max-width: 154px;
-  padding: 10px 30px;
-  border-radius: 8px;
-  background: #2351a3;
+  width: 137px;
+  max-width: 137px;
+  padding: 14px 40px;
+  border-radius: 100px;
+  background: linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%);
   color: #f2f2f3;
   font-size: 16px;
   min-height: 47px;
+  height: 47px;
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.5px;
-  height: auto;
-  max-height: 57px;
 }
 
 .bottomHeaderSetting {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
   margin-bottom: 35px;
-  gap: 24px;
+  gap: 20px;
+  padding: 24px 32px;
+  border-radius: 16px;
 }
 
 .fromToIcon svg {
@@ -1409,7 +1410,7 @@ img:hover {
 
 .fromToSelectWidth {
   width: 100%;
-  max-width: 250px;
+  max-width: 396px;
 }
 
 .bottomHeaderFlex .fromToBtn {
@@ -1420,22 +1421,29 @@ img:hover {
 
 .bottomHeaderFlex {
   width: 100%;
+  display: flex;
   align-items: flex-end;
-  justify-content: space-between;
-  gap: 24px;
+  justify-content: flex-start;
+  gap: 14px;
+  flex-wrap: wrap;
 }
 
 .searchFilterBtn {
-  max-width: 200px;
-  border-radius: 8px;
-  margin-left: 44px;
-  flex: 1;
-
-  width: 100%;
-  /* max-width: 154px; */
-  padding: 10px 30px;
-  border-radius: 8px;
-  background: #2351a3;
+  max-width: 137px !important;
+  width: 137px !important;
+  border-radius: 100px !important;
+  margin-left: auto;
+  align-self: flex-end;
+  padding: 14px 40px !important;
+  color: #f2f2f3 !important;
+  font-size: 16px !important;
+  min-height: 47px !important;
+  height: 47px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px;
+  background: linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%) !important;
+  flex-shrink: 0;
   color: #f2f2f3;
   font-size: 16px;
   min-height: 47px;
@@ -1631,19 +1639,21 @@ img:hover {
   }
 
   .bottomHeaderSetting {
-    flex-direction: column;
-    align-items: center;
+    padding: 16px;
+    gap: 16px;
   }
 
   .bottomHeaderFlex {
     width: 100%;
-    align-items: end;
-    justify-content: space-between;
-    gap: 16px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
   }
 
   .searchFilterBtn {
     margin-left: 0px;
+    max-width: 100%;
+    width: 100%;
   }
 
   .flightDetailMainContent .w-\[344px\] {
