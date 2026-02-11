@@ -197,8 +197,7 @@ export function mapFlightSegment(
   return {
     heading: defaultHeading,
     route,
-    airlineLogo: item?.logo ?? item?.outbound?.logo ?? "",
-    // airlineLogo: item?.logo ?? item?.outbound?.logo ?? assets.EmirateLogo ?? "",
+    airlineLogo: item?.logo ?? item?.outbound?.logo ?? assets.EmirateLogo ?? "",
     airlineName:
       item?.name ?? item?.airlineName ?? item?.outbound?.name ?? "Airline",
     flightMeta: `${flightNumber} – ${flightClass}`,

@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import Button from "../atoms/Button"; // path adjust kar lena
+import EmirateLogo from "../../assets/images/emirates.png";
 
 type AmenityIcon = {
     src: string;
@@ -44,17 +45,23 @@ export default function FlightSummaryCard({
     fare,
     className = "",
 }: FlightSummaryCardProps) {
+    const [failedLogos, setFailedLogos] = useState<Set<number>>(new Set());
+
+    const handleImageError = (index: number) => {
+        setFailedLogos(prev => new Set(prev).add(index));
+    };
+
     return (
-        <div className={`rounded-xl border border-[#E4E4E7] bg-white ${className}`}>
+        <div className={`rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#efefef] shadow-sm ${className}`}>
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-[#E4E4E7] px-4 py-3">
-                <h3 className="text-[15px] font-medium text-[#0A0C0F]">{title}</h3>
+            <div className="flex items-center justify-between border-b-[1.5px] border-[#C2CAD6] px-4 py-3">
+                <h3 className="text-[15px] font-semibold text-[#0A0C0F]">{title}</h3>
 
                 {headerActionText && (
                     <Button
                         type="button"
                         onClick={onHeaderActionClick}
-                        className="text-[15px] font-medium text-[#5383DA] hover:underline"
+                        className="text-[14px] font-medium text-[#5383DA] hover:underline"
                         overrideClasses
                     >
                         {headerActionText}
@@ -75,27 +82,28 @@ export default function FlightSummaryCard({
                         </div>
 
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="h-12 w-12 rounded-full object-cover">
+                            <div className="flex items-center gap-3">
+                                <div className="h-12 w-12 rounded-full overflow-hidden flex-shrink-0">
                                     <img
-                                        src={seg.airlineLogo}
-                                        // alt={seg.airlineName}
-                                        alt=""
+                                        src={failedLogos.has(i) || !seg.airlineLogo ? EmirateLogo : seg.airlineLogo}
+                                        alt={seg.airlineName}
+                                        className="h-full w-full object-cover"
+                                        onError={() => handleImageError(i)}
                                     />
                                 </div>
 
                                 <div>
-                                    <div className="text-[15px] font-medium text-[#0A0C0F]">
+                                    <div className="text-[15px] font-semibold text-[#0A0C0F]">
                                         {seg.airlineName}
                                     </div>
-                                    <div className="mt-[2px] text-[12px] text-[#3D495C]">
+                                    <div className="mt-[2px] text-[13px] text-[#3D495C]">
                                         {seg.flightMeta}
                                     </div>
                                 </div>
                             </div>
 
                             {seg.amenities && seg.amenities.length > 0 && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-3">
                                     {seg.amenities.map((a, idx) => (
                                         <img key={idx} src={a.src} alt={a.alt} className="h-4 w-4" title={a.title} />
                                     ))}
@@ -109,7 +117,7 @@ export default function FlightSummaryCard({
                                 <div className="text-[10px] text-[#3D495C]">{seg.dep.date}</div>
                             </div>
 
-                            <div className="relative">
+                            <div className="relative min-w-[200px]">
                                 <div className="absolute left-[10px] right-[10px] top-[20px] h-[2px] bg-[#A7C0EC]" />
                                 <span className="absolute left-0 top-[14px] h-[14px] w-[14px] rounded-full bg-[#2351A3]" />
                                 <span className="absolute right-0 top-[14px] h-[14px] w-[14px] rounded-full bg-[#2351A3]" />
@@ -131,14 +139,14 @@ export default function FlightSummaryCard({
                     </div>
 
                     {/* divider between segments */}
-                    {i < segments.length - 1 && <div className="border-t border-[#E4E4E7]" />}
+                    {i < segments.length - 1 && <div className="border-t-[1.5px] border-[#C2CAD6]" />}
                 </React.Fragment>
             ))}
 
             {/* Fare row */}
             {fare && (
                 <>
-                    <div className="border-t border-[#E4E4E7]" />
+                    <div className="border-t-[1.5px] border-[#C2CAD6]" />
                     <div className="px-4 py-3">
                         <div className="flex items-center justify-between">
                             <div>

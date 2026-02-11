@@ -522,9 +522,6 @@ input[type="number"] {
 
 .topHalfCardWrap {
   padding: 10px 15px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  border: 1px solid var(--white-300, #e4e4e7);
 }
 
 .RoundTripCardDetail {
@@ -663,7 +660,7 @@ input[type="number"] {
   background: var(--primary-100, #a7c0ec);
   max-width: 400px;
   margin: auto;
-  min-width: 300px;
+  min-width: 194px;
   height: 2px;
   display: flex;
   justify-content: space-between;
@@ -1458,10 +1455,10 @@ img:hover {
 
 .custom-phone-wrapper .react-international-phone-country-selector-button {
   width: 112px !important;
-  height: 40px !important;
-  border-radius: 8px !important;
-  border: 1px solid #C2CAD6 !important;
-  background: white !important;
+  height: 50px !important;
+  border-radius: 16px !important;
+  border: 1.5px solid #C2CAD6 !important;
+  background: #F9FAFB !important;
   padding: 8px 12px !important;
   display: flex !important;
   align-items: center !important;
@@ -1471,10 +1468,11 @@ img:hover {
 
 .custom-phone-wrapper .react-international-phone-input {
   flex: 1 !important;
-  height: 40px !important;
+  height: 50px !important;
   width: 100% !important;
-  border-radius: 8px !important;
-  border: 1px solid #C2CAD6 !important;
+  border-radius: 16px !important;
+  border: 1.5px solid #C2CAD6 !important;
+  background: #F9FAFB !important;
   padding: 0 12px !important;
   font-size: 14px !important;
   color: #0A0C0F !important;
@@ -1497,8 +1495,8 @@ img:hover {
 
 .custom-phone-wrapper .react-international-phone-country-selector-dropdown {
   max-height: 300px !important;
-  border-radius: 8px !important;
-  border: 1px solid #C2CAD6 !important;
+  border-radius: 16px !important;
+  border: 1.5px solid #C2CAD6 !important;
   margin-top: 4px !important;
 }
 
@@ -1506,8 +1504,8 @@ img:hover {
   width: calc(100% - 16px) !important;
   margin: 8px !important;
   padding: 8px 12px !important;
-  border: 1px solid #C2CAD6 !important;
-  border-radius: 8px !important;
+  border: 1.5px solid #C2CAD6 !important;
+  border-radius: 16px !important;
   font-size: 14px !important;
   color: #3D495C !important;
 }

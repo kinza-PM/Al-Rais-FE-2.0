@@ -3,6 +3,7 @@ import "../../assets/css/travel.css";
 
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
+import defaultAirlineLogo from "../../assets/images/alRaisLogo.jpg";
 
 import { Modal } from "antd";
 
@@ -144,7 +145,12 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   }
 
   return (
-    <div className="">
+    <div className="" style={{ 
+      background: '#FFFFFF', 
+      borderRadius: '16px', 
+      padding: '20px',
+      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
+    }}>
       {passData?.map((item: any, index: number) => {
         // Replace the existing renderRoundTopCard with this version
         const renderRoundTopCard = (
@@ -222,42 +228,67 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
             <div
               className="topHalfCard RoundTripCardDetail"
               key={`round-${d?.id || parent?.id || Math.random()}`}
+              style={{
+                width: '100%',
+                minHeight: '101px',
+                display: 'flex',
+                alignItems: 'center',
+                padding: '20px 0',
+                gap: '24px',
+                background: 'transparent',
+                borderRadius: '0',
+                border: 'none',
+                boxSizing: 'border-box',
+                marginBottom: '0'
+              }}
             >
-              <div className="fightTitle">
-                <div className="flightIcon">
-                  <img src={d?.logo} alt="" />
+              <div className="fightTitle" style={{ display: 'flex', alignItems: 'center', gap: '1px', minWidth: '201px' }}>
+                <div className="flightIcon" style={{ flexShrink: 0 }}>
+                  <img 
+                    src={d?.logo || defaultAirlineLogo} 
+                    alt={d?.name || "Airline"} 
+                    style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = defaultAirlineLogo;
+                    }}
+                  />
                 </div>
-                <div className="nameAndDetails">
-                  <h5>{d?.name}</h5>
-                  <p>
-                    {itemForTiming?.flight_detail?.flight_number} -{" "}
-                    {itemForTiming?.flight_detail?.flight_class}
-                  </p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                  <div className="nameAndDetails">
+                    <h5 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0F172A', lineHeight: 1.3 }}>{d?.name}</h5>
+                    <p style={{ margin: 0, fontSize: '11px', color: '#64748B', lineHeight: 1.3, marginTop: '2px' }}>
+                      {itemForTiming?.flight_detail?.flight_number} - {itemForTiming?.flight_detail?.flight_class}
+                    </p>
+                  </div>
+                  
+                  {visible.length ? (
+                    <div className="featureIcons" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {visible.slice(0, 6).map((f) => (
+                        <div className="featureIconTooltipWrap" key={f.key} style={{ position: 'relative' }}>
+                          <img src={f.icon} alt={f.key} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                          <span className="tooltip">{f.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
-              <div className="stopsOnLarge">
+              <div className="stopsOnLarge" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <FlightTimingAndStops passSome={itemForTiming} />
               </div>
 
-              {visible.length ? (
-                <div className="featureIcons">
-                  {visible.map((f) => (
-                    <div className="featureIconTooltipWrap" key={f.key}>
-                      <img src={f.icon} alt={f.key} />
-                      <span className="tooltip">{f.label}</span>
-                    </div>
-                  ))}
+              {showPrice && (
+                <div className="StartingPrice" style={{ minWidth: '160px', textAlign: 'right' }}>
+                  <p style={{ margin: 0, fontSize: '12px', color: '#64748B', marginBottom: '6px', fontWeight: 400 }}>Starting from</p>
+                  <h5 style={{ margin: 0, fontSize: '27px', fontWeight: 700, color: '#2351A3', lineHeight: 1, letterSpacing: '-0.5px' }}>
+                    {d?.raw?.fare?.currencyCode ?? "$"}
+                    {price}
+                  </h5>
                 </div>
-              ) : null}
-
-              <div className={`StartingPrice ${showPrice ? "" : "invisible"}`}>
-                <span>Start from</span>
-                <h5>
-                  {d?.raw?.fare?.currencyCode ?? "$"}
-                  {price}
-                </h5>
-              </div>
+              )}
 
               <div className="stopsOnSmall">
                 <FlightTimingAndStops passSome={itemForTiming} />
@@ -274,70 +305,228 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
             key={index}
             className={`flightDetailCards ${inbound ? "flightDetailRoundTripCards" : ""
               }`}
+            style={{ 
+              border: 'none',
+              marginBottom: '0',
+              paddingBottom: '0',
+              borderBottom: index < passData.length - 1 ? '2px solid #E4E4E7' : 'none'
+            }}
           >
-            <div className="forBorderBottom">
+            <div className="forBorderBottom" style={{ marginBottom: '16px' }}>
               {renderRoundTopCard(outbound ?? item, item, true)}
 
               {/* inbound (render only when present) */}
               {inbound && renderRoundTopCard(inbound, item, false)}
+              
+              {/* View details / Book Now / Less Details button */}
+              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+                {/* Show View Details button when tabs are NOT active */}
+                {!(active?.id === index && (active?.name === "price" || active?.name === "flight" || active?.name === "compare")) && (
+                  <button
+                    onClick={() => {
+                      HandlePriceOption({ id: item.id });
+                      setActive((prev) => ({
+                        ...prev,
+                        name: "price",
+                        id: index,
+                      }));
+                    }}
+                    style={{
+                      width: '150px',
+                      height: '47px',
+                      borderRadius: '100px',
+                      padding: '14px 25px',
+                      background: 'linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)',
+                      color: '#FFFFFF',
+                      fontSize: '15px',
+                      fontWeight: 600,
+                      border: 'none',
+                      cursor: 'pointer',
+                      boxShadow: '0 4px 12px rgba(35, 81, 163, 0.3)',
+                      transition: 'all 0.2s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(35, 81, 163, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(35, 81, 163, 0.3)';
+                    }}
+                  >
+                    View details
+                  </button>
+                )}
+                {/* Show Book Now button when Price options tab is active */}
+                {active?.id === index && active?.name === "price" && (
+                  <button
+                    onClick={() => handleOfferSelection(item?.offerId, item)}
+                    style={{
+                      width: '130px',
+                      height: '47px',
+                      background: 'linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)',
+                      borderRadius: '100px',
+                      padding: '14px 25px',
+                      gap: '10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#FFFFFF',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      transition: 'all 0.3s ease',
+                      boxShadow: '0 2px 8px rgba(35, 81, 163, 0.3)'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(35, 81, 163, 0.4)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'translateY(0)';
+                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(35, 81, 163, 0.3)';
+                    }}
+                  >
+                    Book Now
+                  </button>
+                )}
+                {/* Show Less Details button when Flight details or Compare tab is active */}
+                {active?.id === index && (active?.name === "flight" || active?.name === "compare") && (
+                  <button
+                    onClick={() => {
+                      setActive((prev) => ({
+                        ...prev,
+                        name: "",
+                        id: -1,
+                      }));
+                    }}
+                    style={{
+                      width: '143px',
+                      height: '47px',
+                      borderRadius: '100px',
+                      padding: '14px 25px',
+                      gap: '10px',
+                      background: '#FFFFFF',
+                      color: '#2351A3',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      border: '2px solid #2351A3',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#F1F5F9';
+                      e.currentTarget.style.transform = 'translateY(-2px)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#FFFFFF';
+                      e.currentTarget.style.transform = 'translateY(0)';
+                    }}
+                  >
+                    Less Details
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="bottomHalfCard">
-              <div className="bottomHalfCardflexStyle">
-                <div className="modalOptions">
-                  <div className="tabs">
+            {/* Only show tabs and content when View details is clicked */}
+            {(active?.name === "price" || active?.name === "flight" || active?.name === "compare") && active?.id === index && (
+              <div className="bottomHalfCard">
+                <div className="bottomHalfCardflexStyle">
+                  <div className="modalOptions">
+                    <div className="tabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                     <div
-                      className={`tab ${active?.name === "price" && active?.id === index
-                          ? "active"
-                          : ""
-                        }`}
+                      className={`tab ${active?.name === "price" && active?.id === index ? "active" : ""}`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
-                        // setActive({ name: "price", id: index });
-                        setActive((prev) => {
-                          return {
-                            ...prev,
-                            name: "price",
-                            id: index,
-                          };
-                        });
+                        setActive((prev) => ({
+                          ...prev,
+                          name: "price",
+                          id: index,
+                        }));
+                      }}
+                      style={{
+                        width: '105px',
+                        height: '35px',
+                        borderTopLeftRadius: '16px',
+                        borderTopRightRadius: '16px',
+                        borderBottomLeftRadius: '0',
+                        borderBottomRightRadius: '0',
+                        background: active?.name === "price" && active?.id === index ? '#2351A3' : '#F1F5F9',
+                        color: active?.name === "price" && active?.id === index ? '#FFFFFF' : '#64748B',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        border: 'none',
+                        transition: 'all 0.2s ease',
                       }}
                     >
                       Price options
                     </div>
                     <div
-                      className={`tab ${active?.name === "flight" && active?.id === index
-                          ? "active"
-                          : ""
-                        }`}
+                      className={`tab ${active?.name === "flight" && active?.id === index ? "active" : ""}`}
                       onClick={() => {
                         HandlePriceOption({ id: item.id });
-                        // setActive({ name: "flight", id: index });
-                        setActive((prev) => {
-                          return {
-                            ...prev,
-                            name: "flight",
-                            id: index,
-                          };
-                        });
+                        setActive((prev) => ({
+                          ...prev,
+                          name: "flight",
+                          id: index,
+                        }));
+                      }}
+                      style={{
+                        width: '105px',
+                        height: '35px',
+                        borderTopLeftRadius: '16px',
+                        borderTopRightRadius: '16px',
+                        borderBottomLeftRadius: '0',
+                        borderBottomRightRadius: '0',
+                        background: active?.name === "flight" && active?.id === index ? '#2351A3' : '#F1F5F9',
+                        color: active?.name === "flight" && active?.id === index ? '#FFFFFF' : '#64748B',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        border: 'none',
+                        transition: 'all 0.2s ease',
                       }}
                     >
                       Flight details
                     </div>
                     <div
-                      className={`tab ${active?.name === "compare" && active?.id === index
-                          ? "active"
-                          : ""
-                        }`}
+                      className={`tab ${active?.name === "compare" && active?.id === index ? "active" : ""}`}
                       onClick={() => {
-                        // setActive({ name: "compare", id: index });
-                        setActive((prev) => {
-                          return {
-                            ...prev,
-                            name: "compare",
-                            id: index,
-                          };
-                        });
+                        setActive((prev) => ({
+                          ...prev,
+                          name: "compare",
+                          id: index,
+                        }));
+                      }}
+                      style={{
+                        width: '105px',
+                        height: '35px',
+                        borderTopLeftRadius: '16px',
+                        borderTopRightRadius: '16px',
+                        borderBottomLeftRadius: '0',
+                        borderBottomRightRadius: '0',
+                        background: active?.name === "compare" && active?.id === index ? '#2351A3' : '#F1F5F9',
+                        color: active?.name === "compare" && active?.id === index ? '#FFFFFF' : '#64748B',
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        border: 'none',
+                        transition: 'all 0.2s ease',
                       }}
                     >
                       Compare
@@ -365,12 +554,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     Share
                   </p> */}
                 </div>
-                <div
-                  className="selectPriceBtn"
-                  onClick={() => handleOfferSelection(item?.offerId, item)}
-                >
-                  <CustomButton>Select Price</CustomButton>
-                </div>
               </div>
               <React.Suspense
                 fallback={<div className="tab-loading-placeholder">Loading…</div>}
@@ -393,7 +576,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   ""
                 )}
               </React.Suspense>
-            </div>
+              </div>
+            )}
           </div>
         );
       })}

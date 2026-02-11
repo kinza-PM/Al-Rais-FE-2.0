@@ -274,7 +274,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   return (
     <div className={`relative ${widthClass}`} ref={dropdownRef}>
       {label && (
-        <label className="block text-[12px] text-[#3D495C] mb-1">{label}</label>
+        <label className="block text-[12px] text-[#0A0C0F] mb-1">{label}</label>
       )}
 
       <div className="group relative">

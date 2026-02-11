@@ -27,12 +27,12 @@ export default function TailwindCustomInput({
 }: TailwindCustomInputProps) {
 
     const defaultClasses =
-        "h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm " +
+        "h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm " +
         "placeholder:text-[#C2CAD6] text-[#0A0C0F] " +
         "focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20";
 
     const defaultLabelClass =
-        "mb-1 block text-[12px] text-[#3D495C]";
+        "mb-1 block text-[12px] text-[#0A0C0F]";
 
     return (
         <div className="w-full">

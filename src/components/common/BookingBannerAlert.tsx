@@ -99,9 +99,9 @@ const BookingBannerAlert: React.FC<BookingBannerAlertProps> = ({
         message="Two minutes remaining, confirm your booking now to avoid being redirected."
         variant="warning"
       />
-      <div className={`inset-x-0 z-50 ${bgColor}`}>
+      <div className="inset-x-0 z-50 flex justify-center py-4">
         <div
-          className={`mx-auto max-w-screen-2xl px-4 py-2 flex items-center justify-center gap-2 ${textColor}`}
+          className={`mx-auto w-full max-w-[470px] h-[50px] px-4 flex items-center justify-center gap-2 rounded-[100px] ${bgColor} ${textColor}`}
         >
           <span className="text-[15px] font-medium">{message}</span>
 

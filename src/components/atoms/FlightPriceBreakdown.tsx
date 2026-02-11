@@ -46,8 +46,8 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip }: Props
     const total = fare?.totalFare ?? fare?.total ?? null;
 
     return (
-        <div className="mt-4 rounded-xl border border-[#E4E4E7] bg-white">
-            <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
+        <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm max-w-[576px]">
+            <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#E4E4E7]">
                 <div className="text-[16px] font-semibold text-[#0A0C0F]">Price breakdown</div>
                 <CardCollapseToggle open={open} onClick={onToggleOpen} />
             </div>
@@ -163,7 +163,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip }: Props
                 </div>
             </div>
 
-            {open && <div className="h-px bg-[#E4E4E7]" />}
+            {open && <div className="h-[1.5px] bg-[#E4E4E7]" />}
 
             <div className="flex items-center justify-between px-4 py-2">
                 <span className="text-[12px] text-[#3D495C]">Total</span>

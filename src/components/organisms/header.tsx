@@ -153,6 +153,9 @@ import {
   LogoutOutlined,
   ProfileOutlined,
   BellOutlined,
+  ShoppingCartOutlined,
+  GlobalOutlined,
+  DollarOutlined,
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import Logo from "../atoms/Logo";
@@ -164,8 +167,28 @@ import {
   subscribeToNotifications,
   type NotificationItem,
 } from "../../services/notificationService";
+import avatarImage from "../../assets/images/aavter.png";
+import FlagUSA from "../../assets/svgs/Flag-usa.svg";
+import FlagUAE from "../../assets/svgs/Flag-uae.svg";
+import FlagIND from "../../assets/svgs/Flag-ind.svg";
 
 const { Header } = Layout;
+
+// Flag Icon Component
+const FlagIcon: React.FC<{ src: string, size?: number }> = ({ src, size = 20 }) => (
+  <div style={{ 
+    width: `${size}px`, 
+    height: `${size}px`, 
+    borderRadius: '50%', 
+    overflow: 'hidden', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center',
+    flexShrink: 0
+  }}>
+    <img src={src} alt="flag" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+  </div>
+);
 
 interface HeaderProps {
   logoSrc: string;
@@ -431,12 +454,15 @@ const AppHeader: React.FC<HeaderProps> = ({
 
   return (
     <Header
-      className="header-gradient"
       style={{
-        padding: "0 16px",
+        background: "#FFFFFF",
+        padding: "0px 80px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
+        borderBottom: "1px solid #E4E4E7",
+        height: "auto",
+        minHeight: "56px",
       }}
     >
       {/* Logo */}
@@ -450,52 +476,258 @@ const AppHeader: React.FC<HeaderProps> = ({
       </div>
 
       {/* Desktop Navigation */}
-      {!isMobile && (
-        <div style={{ display: "flex", gap: "20px" }}>
-          {navItems.map((item) => (
-            <div key={item.key}>{item.label}</div>
-          ))}
-        </div>
-      )}
-      {!isMobile && (
-        <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
-          {notificationTrigger}
-          {/* Auth Section */}
-          {isAuthenticated && user ? (
-            <Dropdown menu={userMenu} placement="bottomRight" arrow>
-              <div
+      {!isMobile && isAuthenticated && user && (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* Hamburger Menu Button */}
+          <button
+            onClick={() => setDrawerVisible(true)}
+            style={{
+              width: "39px",
+              height: "38px",
+              border: "2px solid #5383DA",
+              borderRadius: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#FFFFFF",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#F0F7FF";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#FFFFFF";
+            }}
+          >
+            <MenuOutlined style={{ fontSize: "16px", color: "#3D495C" }} />
+          </button>
+
+          {/* USD Currency Selector */}
+          <Dropdown
+            menu={{
+              items: [
+                { 
+                  key: "usd", 
+                  label: (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 0" }}>
+                      <FlagIcon src={FlagUSA} size={20} />
+                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>USD - US Dollar</span>
+                    </div>
+                  )
+                },
+                { 
+                  key: "aed", 
+                  label: (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 0" }}>
+                      <FlagIcon src={FlagUAE} size={20} />
+                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>AED - UAE Dirham</span>
+                    </div>
+                  )
+                },
+                { 
+                  key: "inr", 
+                  label: (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 0" }}>
+                      <FlagIcon src={FlagIND} size={20} />
+                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>INR - Indian Rupee</span>
+                    </div>
+                  )
+                },
+              ],
+            }}
+            placement="bottomRight"
+          >
+            <button
+              style={{
+                height: "38px",
+                padding: "0 12px",
+                border: "2px solid #5383DA",
+                borderRadius: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                backgroundColor: "#FFFFFF",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#F0F7FF";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#FFFFFF";
+              }}
+            >
+              <FlagIcon src={FlagUSA} size={18} />
+              <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>
+                USD
+              </span>
+            </button>
+          </Dropdown>
+
+          {/* EN Language Selector */}
+          <Dropdown
+            menu={{
+              items: [
+                { 
+                  key: "en", 
+                  label: (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 0" }}>
+                      <FlagIcon src={FlagUSA} size={20} />
+                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>English</span>
+                    </div>
+                  )
+                },
+                { 
+                  key: "ar", 
+                  label: (
+                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 0" }}>
+                      <FlagIcon src={FlagUAE} size={20} />
+                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>العربية (Arabic)</span>
+                    </div>
+                  )
+                },
+              ],
+            }}
+            placement="bottomRight"
+          >
+            <button
+              style={{
+                height: "38px",
+                padding: "0 12px",
+                border: "2px solid #5383DA",
+                borderRadius: "16px",
+                display: "flex",
+                alignItems: "center",
+                gap: "5px",
+                backgroundColor: "#FFFFFF",
+                cursor: "pointer",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#F0F7FF";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#FFFFFF";
+              }}
+            >
+              <FlagIcon src={FlagUSA} size={18} />
+              <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>
+                EN
+              </span>
+            </button>
+          </Dropdown>
+
+          {/* Shopping Cart with Badge */}
+          <button
+            onClick={() => navigate("/cart")}
+            style={{
+              width: "39px",
+              height: "38px",
+              border: "2px solid #5383DA",
+              borderRadius: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#FFFFFF",
+              cursor: "pointer",
+              position: "relative",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = "#F0F7FF";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = "#FFFFFF";
+            }}
+          >
+            <ShoppingCartOutlined style={{ fontSize: "16px", color: "#3D495C" }} />
+            <div
+              style={{
+                position: "absolute",
+                top: "-7px",
+                right: "-7px",
+                backgroundColor: "#EA0029",
+                color: "#FFFFFF",
+                fontSize: "10px",
+                fontWeight: 700,
+                borderRadius: "50%",
+                width: "20px",
+                height: "20px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px solid #FFFFFF",
+                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+              }}
+            >
+              02
+            </div>
+          </button>
+
+          {/* User Profile with Avatar */}
+          <Dropdown menu={userMenu} placement="bottomRight" arrow>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+                cursor: "pointer",
+                padding: "4px 10px",
+                borderRadius: "8px",
+                transition: "background-color 0.2s",
+                marginLeft: "2px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#F9FAFB";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "transparent";
+              }}
+            >
+              <img
+                src={avatarImage}
+                alt="User avatar"
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "pointer",
+                  width: "38px",
+                  height: "38px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "2px solid #E4E4E7",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: "#0A0C0F",
+                  whiteSpace: "nowrap",
                 }}
               >
-                <Avatar style={{ backgroundColor: "#1890ff" }} size="large">
-                  {user.name?.charAt(0).toUpperCase() || "U"}
-                </Avatar>
-                <span style={{ marginLeft: 8 }}>
-                  Welcome, {user.name?.split("@")[0] || "User"}
-                </span>
-              </div>
-            </Dropdown>
-          ) : (
-            <div style={{ display: "flex", gap: "10px" }}>
-              <Button
-                onClick={onLoginClick}
-                variant="primary"
-                className="px-4 py-2 sm:px-6 sm:py-2 lg:px-7 lg:py-2 text-xs sm:text-sm"
-              >
-                Login
-              </Button>
-              <Button
-                onClick={onSignupClick}
-                variant="secondary"
-                className="px-3 py-2 sm:px-5 sm:py-2 lg:px-6 lg:py-2 text-xs sm:text-sm"
-              >
-                Sign up
-              </Button>
+                Welcome, {user.name?.split("@")[0] || "User"}
+              </span>
             </div>
-          )}
+          </Dropdown>
+        </div>
+      )}
+
+      {/* Desktop Navigation - Not Logged In */}
+      {!isMobile && !isAuthenticated && (
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <Button
+            onClick={onLoginClick}
+            variant="primary"
+            className="px-4 py-2 sm:px-6 sm:py-2 lg:px-7 lg:py-2 text-xs sm:text-sm"
+          >
+            Login
+          </Button>
+          <Button
+            onClick={onSignupClick}
+            variant="secondary"
+            className="px-3 py-2 sm:px-5 sm:py-2 lg:px-6 lg:py-2 text-xs sm:text-sm"
+          >
+            Sign up
+          </Button>
         </div>
       )}
 
@@ -575,14 +807,85 @@ const AppHeader: React.FC<HeaderProps> = ({
         )}
       </Modal>
 
-      {/* Mobile Hamburger Button */}
-      {isMobile && (
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          {notificationTrigger}
-          <MenuOutlined
-            style={{ fontSize: 22, cursor: "pointer" }}
+      {/* Mobile View */}
+      {isMobile && isAuthenticated && user && (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {/* Shopping Cart */}
+          <button
+            onClick={() => navigate("/cart")}
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "2px solid #5383DA",
+              borderRadius: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#FFFFFF",
+              cursor: "pointer",
+              position: "relative",
+            }}
+          >
+            <ShoppingCartOutlined style={{ fontSize: "16px", color: "#3D495C" }} />
+            <div
+              style={{
+                position: "absolute",
+                top: "-6px",
+                right: "-6px",
+                backgroundColor: "#EA0029",
+                color: "#FFFFFF",
+                fontSize: "10px",
+                fontWeight: 700,
+                borderRadius: "50%",
+                width: "18px",
+                height: "18px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                border: "2px solid #FFFFFF",
+              }}
+            >
+              02
+            </div>
+          </button>
+
+          {/* Hamburger Menu */}
+          <button
             onClick={() => setDrawerVisible(true)}
-          />
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "2px solid #5383DA",
+              borderRadius: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#FFFFFF",
+              cursor: "pointer",
+            }}
+          >
+            <MenuOutlined style={{ fontSize: "16px", color: "#3D495C" }} />
+          </button>
+        </div>
+      )}
+
+      {/* Mobile View - Not Logged In */}
+      {isMobile && !isAuthenticated && (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Button
+            onClick={onLoginClick}
+            variant="primary"
+            className="px-3 py-1.5 text-xs"
+          >
+            Login
+          </Button>
+          <Button
+            onClick={onSignupClick}
+            variant="secondary"
+            className="px-3 py-1.5 text-xs"
+          >
+            Sign up
+          </Button>
         </div>
       )}
 
@@ -591,7 +894,95 @@ const AppHeader: React.FC<HeaderProps> = ({
         placement="right"
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
+        width={280}
       >
+        {/* User Profile in Drawer */}
+        {isAuthenticated && user && (
+          <div style={{ marginBottom: 24, paddingBottom: 24, borderBottom: "1px solid #E4E4E7" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: 16 }}>
+              <img
+                src={avatarImage}
+                alt="User avatar"
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  border: "2px solid #E4E4E7",
+                }}
+              />
+              <div>
+                <div style={{ fontSize: "16px", fontWeight: 600, color: "#0A0C0F" }}>
+                  {user.name?.split("@")[0] || "User"}
+                </div>
+                <div style={{ fontSize: "13px", color: "#3D495C" }}>
+                  {user.email || ""}
+                </div>
+              </div>
+            </div>
+
+            {/* Currency & Language Selectors */}
+            <div style={{ display: "flex", gap: "8px", marginBottom: 12 }}>
+              <Dropdown
+                menu={{
+                  items: [
+                    { key: "usd", label: "🇺🇸 USD - US Dollar" },
+                    { key: "eur", label: "🇪🇺 EUR - Euro" },
+                    { key: "gbp", label: "🇬🇧 GBP - British Pound" },
+                    { key: "aed", label: "🇦🇪 AED - UAE Dirham" },
+                  ],
+                }}
+              >
+                <button
+                  style={{
+                    flex: 1,
+                    height: "40px",
+                    border: "2px solid #5383DA",
+                    borderRadius: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    backgroundColor: "#FFFFFF",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
+                  <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>USD</span>
+                </button>
+              </Dropdown>
+
+              <Dropdown
+                menu={{
+                  items: [
+                    { key: "en", label: "🇺🇸 English" },
+                    { key: "ar", label: "🇸🇦 العربية (Arabic)" },
+                    { key: "fr", label: "🇫🇷 Français (French)" },
+                  ],
+                }}
+              >
+                <button
+                  style={{
+                    flex: 1,
+                    height: "40px",
+                    border: "2px solid #5383DA",
+                    borderRadius: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "6px",
+                    backgroundColor: "#FFFFFF",
+                    cursor: "pointer",
+                  }}
+                >
+                  <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
+                  <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>EN</span>
+                </button>
+              </Dropdown>
+            </div>
+          </div>
+        )}
+
         <Menu
           mode="vertical"
           items={navItems}
@@ -599,46 +990,69 @@ const AppHeader: React.FC<HeaderProps> = ({
           onClick={() => setDrawerVisible(false)}
         />
 
-        {/* Auth in Drawer */}
-        <div style={{ marginTop: 20 }}>
-          {isAuthenticated && user ? (
-            <Dropdown menu={userMenu} placement="bottomRight" arrow>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  cursor: "pointer",
-                }}
-              >
-                <Avatar style={{ backgroundColor: "#1890ff" }} size="large">
-                  {user.name?.charAt(0).toUpperCase() || "U"}
-                </Avatar>
-                <span style={{ marginLeft: 8 }}>
-                  Welcome, {user.name?.split("@")[0] || "User"}
-                </span>
-              </div>
-            </Dropdown>
-          ) : (
-            <div
-              style={{ display: "flex", flexDirection: "column", gap: "12px" }}
+        {/* Drawer Actions */}
+        {isAuthenticated && user && (
+          <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: "12px" }}>
+            <button
+              onClick={() => {
+                setDrawerVisible(false);
+                navigate("/profile");
+              }}
+              style={{
+                padding: "12px 16px",
+                border: "2px solid #5383DA",
+                borderRadius: "16px",
+                backgroundColor: "#FFFFFF",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#0A0C0F",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#F0F7FF";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#FFFFFF";
+              }}
             >
-              <Button
-                onClick={onLoginClick}
-                variant="primary"
-                className="px-4 py-2 sm:px-6 sm:py-2 lg:px-7 lg:py-2 text-xs sm:text-sm"
-              >
-                Login
-              </Button>
-              <Button
-                onClick={onSignupClick}
-                variant="secondary"
-                className="px-3 py-2 sm:px-5 sm:py-2 lg:px-6 lg:py-2 text-xs sm:text-sm"
-              >
-                Sign up
-              </Button>
-            </div>
-          )}
-        </div>
+              <ProfileOutlined style={{ fontSize: "18px", color: "#5383DA" }} />
+              View Profile
+            </button>
+            <button
+              onClick={() => {
+                setDrawerVisible(false);
+                handleLogout();
+              }}
+              style={{
+                padding: "12px 16px",
+                border: "2px solid #EA0029",
+                borderRadius: "16px",
+                backgroundColor: "#FFF5F5",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#EA0029",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = "#FFE5E5";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = "#FFF5F5";
+              }}
+            >
+              <LogoutOutlined style={{ fontSize: "18px" }} />
+              Sign Out
+            </button>
+          </div>
+        )}
       </Drawer>
     </Header>
   );

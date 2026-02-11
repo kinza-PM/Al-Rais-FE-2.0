@@ -152,8 +152,8 @@ export default function FlightBookingBookSection({
         <div className="space-y-4">
           {passengers.map((p, idx) => (
             <React.Fragment key={p.passengerKey || idx}>
-              <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
-                <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
+              <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
+                <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px] bg-[#F2F2F3]">
                   <h3 className="text-[15px] font-medium text-[#0A0C0F]">
                     Contact person {String(idx + 1).padStart(2, "0")} details
                   </h3>
@@ -164,9 +164,9 @@ export default function FlightBookingBookSection({
                                     /> */}
                 </div>
 
-                <div className="px-4 py-4">
-                  <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
-                    <div className="relative w-full">
+                <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
+                  <div className="grid gap-x-1 gap-y-3 md:grid-cols-[1.2fr_1.8fr] pr-4">
+                    <div className="relative w-full max-w-[300px]">
                       <SearchableDropdown
                         options={[
                           { id: "mr", value: "MR", label: "Mr" },
@@ -184,7 +184,7 @@ export default function FlightBookingBookSection({
                         placeholder="Select title"
                         label="Title"
                         widthClass="w-full"
-                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
                       />
                     </div>
                     <TailwindCustomInput
@@ -203,27 +203,31 @@ export default function FlightBookingBookSection({
                           v ?? "",
                         );
                       }}
+                      className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
                     />
 
-                    <TailwindCustomInput
-                      type="text"
-                      placeholder="Enter your surname"
-                      label="Surname"
-                      value={p.passengerInfo?.surname ?? ""}
-                      onChange={(evOrVal) => {
-                        const v =
-                          evOrVal && evOrVal.target
-                            ? evOrVal.target.value
-                            : evOrVal;
-                        onPassengerFieldChange(
-                          idx,
-                          "passengerInfo.surname",
-                          v ?? "",
-                        );
-                      }}
-                    />
+                    <div className="w-full max-w-[300px]">
+                      <TailwindCustomInput
+                        type="text"
+                        placeholder="Enter your surname"
+                        label="Surname"
+                        value={p.passengerInfo?.surname ?? ""}
+                        onChange={(evOrVal) => {
+                          const v =
+                            evOrVal && evOrVal.target
+                              ? evOrVal.target.value
+                              : evOrVal;
+                          onPassengerFieldChange(
+                            idx,
+                            "passengerInfo.surname",
+                            v ?? "",
+                          );
+                        }}
+                        className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+                      />
+                    </div>
 
-                    <div className="relative w-full">
+                    <div className="relative w-full max-w-[561px]">
                       <SearchableDropdown
                         options={[
                           { id: "male", value: "M", label: "Male" },
@@ -240,7 +244,7 @@ export default function FlightBookingBookSection({
                         placeholder="Select gender"
                         label="Gender"
                         widthClass="w-full"
-                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -249,14 +253,14 @@ export default function FlightBookingBookSection({
 
               {/* Passenger details (separate card) */}
 
-              <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7]">
+              <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
+                <div className="flex items-center justify-between px-4 py-2 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px]">
                   <h3 className="text-[15px] font-medium text-[#0A0C0F]">
                     Passenger {String(idx + 1).padStart(2, "0")} details
                   </h3>
                 </div>
 
-                <div className="px-4 py-4">
+                <div className="px-4 py-4 rounded-b-[16px]">
                   <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
                     <div className="relative w-full">
                       <TailwindCustomInput
@@ -269,7 +273,7 @@ export default function FlightBookingBookSection({
                     </div>
 
                     {pRules.isIdTypeMandatory && (
-                      <div className="relative w-full">
+                      <div className="relative w-full max-w-[561px]">
                         <SearchableDropdown
                           options={[
                             {
@@ -289,7 +293,7 @@ export default function FlightBookingBookSection({
                           placeholder="Select ID type"
                           label="ID type"
                           widthClass="w-full"
-                          className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                         />
                       </div>
                     )}
@@ -325,7 +329,7 @@ export default function FlightBookingBookSection({
                     {/* )} */}
 
                     {/* {pRules.isIssuingCountryCodeMandatory && ( */}
-                    <div className="relative w-full">
+                    <div className="relative w-full max-w-[561px]">
                       <SearchableDropdown
                         // options={
                         //   cities?.map((c) => ({
@@ -355,14 +359,14 @@ export default function FlightBookingBookSection({
                         label="Issuing country"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
-                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                       />
                     </div>
                     {/* )} */}
 
                     {pRules.isDateOfIssueMandatory && (
-                      <div className="w-full">
-                        <label className="mb-1 block text-[12px] text-[#3D495C]">
+                      <div className="w-full max-w-[561px]">
+                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Date of issue
                         </label>
                         <TailiwindCustomDatePicker
@@ -383,14 +387,14 @@ export default function FlightBookingBookSection({
                           }}
                           placeholder="Please select"
                           overridesClass
-                          inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                          inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
                         />
                       </div>
                     )}
 
                     {/* {pRules.isExpiryDateMandatory && ( */}
-                    <div className="w-full">
-                      <label className="mb-1 block text-[12px] text-[#3D495C]">
+                    <div className="w-full max-w-[561px]">
+                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                         Expiry date
                       </label>
                       <TailiwindCustomDatePicker
@@ -411,13 +415,13 @@ export default function FlightBookingBookSection({
                         }}
                         placeholder="Please select"
                         overridesClass
-                        inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                        inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
                       />
                     </div>
                     {/* )} */}
 
                     {/* {pRules.isResidenceCountryCodeMandatory && ( */}
-                    <div className="relative w-full">
+                    <div className="relative w-full max-w-[561px]">
                       <SearchableDropdown
                         // options={
                         //   cities?.map((c) => ({
@@ -447,7 +451,7 @@ export default function FlightBookingBookSection({
                         label="Residence Country"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
-                        className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                       />
                     </div>
                     {/* )} */}
@@ -476,8 +480,8 @@ export default function FlightBookingBookSection({
                     {/* )} */}
 
                     {pRules.isDateOfBirthMandatory && (
-                      <div className="w-full">
-                        <label className="mb-1 block text-[12px] text-[#3D495C]">
+                      <div className="w-full max-w-[561px]">
+                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Birth date
                         </label>
                         <TailiwindCustomDatePicker
@@ -496,7 +500,7 @@ export default function FlightBookingBookSection({
                             );
                           }}
                           overridesClass
-                          inputClass="h-10 w-full rounded-lg border border-[#C2CAD6] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                          inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
                         />
                       </div>
                     )}
@@ -628,7 +632,7 @@ export default function FlightBookingBookSection({
 
                     {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
                     {/* <div className="w-full">
-                      <label className="mb-1 block text-[12px] text-[#3D495C]">
+                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                         Phone
                       </label>
                       <div className="flex gap-2">
@@ -679,8 +683,8 @@ export default function FlightBookingBookSection({
                         />
                       </div>
                     </div> */}
-                    <div className="w-full">
-                      <label className="mb-1 block text-[12px] text-[#3D495C]">
+                    <div className="w-full max-w-[561px]">
+                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                         Phone
                       </label>
                       <PhoneInput
@@ -746,7 +750,7 @@ export default function FlightBookingBookSection({
           <Button
             type="button"
             overrideClasses
-            className="mt-6 mx-4 w-[calc(100%-2rem)] rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90"
+            className="mt-6 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-gradient-to-r from-[#5383DA] via-[#2351A3] to-[#081326] flex items-center justify-center gap-[10px]"
             onClick={() => handleFlightProvInitialBooking()}
             disabled={isPending}
           >

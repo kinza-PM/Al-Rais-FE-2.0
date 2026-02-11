@@ -8,9 +8,7 @@ import "../../assets/css/travel.css";
 // import FlagUsa from "../../assets/svgs/Flag-usa.svg";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import noFlights from "../../assets/svgs/no-flights.svg";
-import { Segmented, Tabs, Flex, Drawer, Button, Grid } from "antd";
-// import type { CheckboxGroupProps } from "antd/es/checkbox";
-import CustomButton from "../common/CustomButton";
+import { Tabs, Drawer, Button, Grid } from "antd";
 // import CustomSelect from "../common/CustomSelect";
 // import CustomDatePicker from "../common/CustomDatePicker";
 import FlightSearchFilter from "../atoms/FlightSearchFilter";
@@ -245,6 +243,10 @@ const FlightDetailTemplate: React.FC = () => {
   const PRICE_STEP = 50;
   const filterChangeDebounceRef = useRef<number | null>(null);
   const timeRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  
+  // Sort dropdown state
+  const [sortBy, setSortBy] = useState<string>("lowest_price");
+  const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
 
   const handleDate = (date: any, which: "depart" | "return" = "depart") => {
     if (!date) {
@@ -1044,11 +1046,136 @@ const FlightDetailTemplate: React.FC = () => {
     return () => obs.disconnect();
   }, [ioReady, hasMore, isLoadingMore]);
 
+  const sortOptions = [
+    { value: "lowest_price", label: "Lowest price" },
+    { value: "highest_price", label: "Highest price" },
+    { value: "shortest_duration", label: "Shortest duration" },
+    { value: "earliest_departure", label: "Earliest departure" },
+  ];
+
+  const getSortLabel = (value: string) => {
+    return sortOptions.find(opt => opt.value === value)?.label || "Lowest price";
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortBy(value);
+    setIsSortDropdownOpen(false);
+    
+    // Sort the response data based on selection
+    const sortData = (data: any[]) => {
+      const sorted = [...data];
+      switch (value) {
+        case "lowest_price":
+          return sorted.sort((a, b) => (a.price?.totalPrice || 0) - (b.price?.totalPrice || 0));
+        case "highest_price":
+          return sorted.sort((a, b) => (b.price?.totalPrice || 0) - (a.price?.totalPrice || 0));
+        case "shortest_duration":
+          return sorted.sort((a, b) => (a.totalDuration || 0) - (b.totalDuration || 0));
+        case "earliest_departure":
+          return sorted.sort((a, b) => {
+            const timeA = a.segments?.[0]?.departureTime || "";
+            const timeB = b.segments?.[0]?.departureTime || "";
+            return timeA.localeCompare(timeB);
+          });
+        default:
+          return sorted;
+      }
+    };
+
+    if (responseData.length > 0) {
+      setResponseData(sortData(responseData));
+    }
+    if (roundResponseData.length > 0) {
+      setRoundResponseData(sortData(roundResponseData));
+    }
+  };
+
   const headerContent = (
-    <div>
-      <div style={{ fontSize: 12, fontWeight: 400, color: "#3D495C" }}>
-        Sort by
+    <div style={{ position: 'relative', width: '280px' }}>
+      <div 
+        onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
+        style={{ 
+          width: '280px',
+          height: '70px',
+          borderRadius: '16px',
+          border: '1.5px solid #3D495C',
+          background: '#F2F2F3',
+          padding: '12px 16px',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          position: 'relative',
+          cursor: 'pointer'
+        }}
+      >
+        <span style={{ fontSize: 12, fontWeight: 400, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+          Sort by
+        </span>
+        <span style={{ fontSize: 16, fontWeight: 500, color: '#0F172A', display: 'block' }}>
+          {getSortLabel(sortBy)}
+        </span>
+        <svg 
+          style={{ 
+            position: 'absolute', 
+            right: '16px', 
+            top: '50%', 
+            transform: isSortDropdownOpen ? 'translateY(-50%) rotate(180deg)' : 'translateY(-50%)',
+            transition: 'transform 0.3s ease'
+          }}
+          width="20" 
+          height="20" 
+          viewBox="0 0 20 20" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M5 7.5L10 12.5L15 7.5" stroke="#3D495C" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
       </div>
+      
+      {/* Dropdown options */}
+      {isSortDropdownOpen && (
+        <div style={{
+          position: 'absolute',
+          top: '75px',
+          left: 0,
+          width: '280px',
+          background: '#FFFFFF',
+          borderRadius: '16px',
+          border: '1.5px solid #C2CAD6',
+          boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)',
+          zIndex: 1000,
+          overflow: 'hidden'
+        }}>
+          {sortOptions.map((option) => (
+            <div
+              key={option.value}
+              onClick={() => handleSortChange(option.value)}
+              style={{
+                padding: '12px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: sortBy === option.value ? 600 : 400,
+                color: sortBy === option.value ? '#2351A3' : '#0F172A',
+                background: sortBy === option.value ? '#F2F2F3' : '#FFFFFF',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                if (sortBy !== option.value) {
+                  e.currentTarget.style.background = '#F8F9FA';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (sortBy !== option.value) {
+                  e.currentTarget.style.background = '#FFFFFF';
+                }
+              }}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 
@@ -1139,18 +1266,7 @@ const FlightDetailTemplate: React.FC = () => {
         containerClassName="top-6 z-40"
       />
       <div className="topHeaderSetting">
-        <div className="topHeaderSettingInner">
-          <div className="tadioButtonGroupWrap py-pxTopHeader">
-            <div className="radioButtonGroup">
-              <Segmented
-                value={trip}
-                style={{ marginBottom: 0 }}
-                onChange={(v) => setTrip(v as TripType)}
-                options={segOptions.length ? segOptions : []}
-                disabled={isInitialLoading && !segOptions.length}
-              />
-            </div>
-          </div>
+        <div className="topHeaderSettingInner" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
           <div className="topHeaderTabs">
             <Tabs
               defaultActiveKey="1"
@@ -1158,10 +1274,9 @@ const FlightDetailTemplate: React.FC = () => {
               items={items}
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
-              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
             />
           </div>
-          <div className="countrySelectAndGetHelp py-pxTopHeader">
+          <div className="countrySelectAndGetHelp py-pxTopHeader" style={{ display: 'none' }}>
             {/* <div>
               <Select
                 className="countrySelectBox"
@@ -1248,99 +1363,119 @@ const FlightDetailTemplate: React.FC = () => {
         </div>
       </div>
 
-      <div className="flightDetailTemplateWrap">
-        <div className="bottomHeaderSetting">
-          <Flex className="bottomHeaderFlex">
-            <TravelRoutePicker
-              options={countriesForPicker as AirportOption[]}
-              loading={countriesLoading}
-              onSearchChange={setCountriesSearchTerm}
-              value={{
-                fromCode,
-                toCode,
-                fromOption: fromOption ?? preservedFromOption,
-                toOption: toOption ?? preservedToOption,
-              }}
-              onChange={({ fromCode: f, toCode: t, fromOption: fOpt, toOption: tOpt }) => {
-                setFromCode(f);
-                setToCode(t);
-                if (fOpt !== undefined) setFromOption(fOpt);
-                if (tOpt !== undefined) setToOption(tOpt);
-              }}
-              showSwap
-              labels={{ from: "From", to: "To" }}
-              placeholders={{ from: "Please select", to: "Please select" }}
-              disableSameSelection
-              widthClass="fromToSelectWidth"
-              fromError={
-                !loading && countries.length === 0
-                  ? "Please try a different search."
-                  : undefined
-              }
-              toError={
-                !loading && countries.length === 0
-                  ? "Please try a different search."
-                  : undefined
-              }
-              onLoadMore={() => {
-                if (countriesHasMore) {
-                  countriesFetchNext?.();
-                }
-              }}
-              hasMore={countriesHasMore}
-              loadingMore={countriesIsFetchingNext}
-            />
-          </Flex>
-          <Flex className="bottomHeaderFlex">
-            <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-              <label className="header-labels-common ">Departure Date</label>
-              {/* <CustomDatePicker
-                format={"dddd, DD MMM YYYY "}
-                style={{ width: "100%", height: 44 }}
-                className="header-input-common ant-input-select"
-                value={departDate ? dayjs(departDate) : null}
-                onChange={(value) => {
-                  handleDate(value, "depart");
-                }}
-              /> */}
-              <TailiwindCustomDatePicker
-                value={departDate ? new Date(departDate) : null}
-                onChange={(value) => {
-                  handleDate(value, "depart");
-                }}
-                placeholder="Select departure date"
-                tooltip="Select departure date"
-                buttonIconSrc={true}
-                disablePastDates={true}
-              />
-            </Flex>
-            {trip === "roundtrip" && (
-              <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                <label className="header-labels-common ">Return Date</label>
-                {/* <CustomDatePicker
-                  format={"dddd, DD MMM YYYY "}
-                  style={{ width: "100%", height: 44 }}
-                  className="header-input-common ant-input-select"
-                  value={returnDate ? dayjs(returnDate) : null}
-                  onChange={(value) => {
-                    handleDate(value, "return");
-                  }}
-                /> */}
-                <TailiwindCustomDatePicker
-                  value={returnDate ? new Date(returnDate) : null}
-                  onChange={(value) => {
-                    handleDate(value, "return");
-                  }}
-                  placeholder="Select return date"
-                  tooltip="Select return date"
-                  buttonIconSrc={true}
-                  disablePastDates={true}
+      <div className="flightDetailTemplateWrap" style={{ padding: '0 clamp(16px, 5vw, 60px)' }}>
+        <div 
+          className="bottomHeaderSetting"
+          style={{
+            background: '#FFFFFF',
+            borderRadius: '20px',
+            padding: 'clamp(16px, 3vw, 24px) clamp(12px, 2vw, 24px)',
+            border: 'none',
+            width: '100%',
+            maxWidth: '1400px',
+            margin: '0 auto',
+            boxSizing: 'border-box',
+            display: 'block'
+          }}
+        >
+          {/* Row 1: Trip, Cabin Class, From, Swap, To */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'clamp(8px, 2vw, 16px)', marginBottom: 'clamp(12px, 3vw, 20px)' }}>
+            {/* Trip Dropdown */}
+            <div style={{ flex: '0 0 auto', minWidth: '150px' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#3D495C', fontWeight: 400, marginBottom: '6px' }}>
+                Trip
+              </label>
+              <div style={{ width: '250px', height: '50px', borderRadius: '16px', background: '#FFFFFF' }}>
+                <SearchableDropdown
+                  options={segOptions.map((option) => ({
+                    id: option.value,
+                    value: option.value,
+                    label: option.label,
+                  }))}
+                  value={trip}
+                  onChange={(value) => setTrip(value as TripType)}
+                  placeholder="One Way"
+                  disabled={isInitialLoading && !segOptions.length}
+                  widthClass="w-full"
                 />
-              </Flex>
-            )}
-            <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-              <label className="header-labels-common ">Passengers</label>
-              <div style={{ minWidth: "100%", height: 44 }}>
+              </div>
+            </div>
+
+            {/* Cabin Class Dropdown */}
+            <div style={{ flex: '0 0 auto' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#3D495C', fontWeight: 400, marginBottom: '6px' }}>
+                Cabin class
+              </label>
+              <div style={{ width: '280px', height: '50px', borderRadius: '16px', background: '#FFFFFF' }}>
+                <SearchableDropdown
+                  options={cabinSelectOptions.map((option) => ({
+                    id: option.value || "placeholder",
+                    value: option.value,
+                    label: option.label,
+                    disabled: "disabled" in option ? option.disabled : false,
+                  }))}
+                  value={selectedCabinClassId || ""}
+                  onChange={(value) => setSelectedCabinClassId(value)}
+                  placeholder={isInitialLoading ? "Loading…" : "Economy"}
+                  disabled={isInitialLoading}
+                  widthClass="w-full"
+                  searchPlaceholder="Search cabin classes..."
+                />
+              </div>
+            </div>
+
+            {/* From/To with Swap Button */}
+            <div style={{ flex: '0 0 auto', display: 'flex', alignItems: 'flex-end', gap: '12px', marginBottom: '6px' }}>
+              <TravelRoutePicker
+                options={countriesForPicker as AirportOption[]}
+                loading={countriesLoading}
+                onSearchChange={setCountriesSearchTerm}
+                value={{
+                  fromCode,
+                  toCode,
+                  fromOption: fromOption ?? preservedFromOption,
+                  toOption: toOption ?? preservedToOption,
+                }}
+                onChange={({ fromCode: f, toCode: t, fromOption: fOpt, toOption: tOpt }) => {
+                  setFromCode(f);
+                  setToCode(t);
+                  if (fOpt !== undefined) setFromOption(fOpt);
+                  if (tOpt !== undefined) setToOption(tOpt);
+                }}
+                showSwap
+                labels={{ from: "From", to: "To" }}
+                placeholders={{ from: "Please select", to: "Please select" }}
+                disableSameSelection
+                widthClass="w-[370px]"
+                fromError={
+                  !loading && countries.length === 0
+                    ? "Please try a different search."
+                    : undefined
+                }
+                toError={
+                  !loading && countries.length === 0
+                    ? "Please try a different search."
+                    : undefined
+                }
+                onLoadMore={() => {
+                  if (countriesHasMore) {
+                    countriesFetchNext?.();
+                  }
+                }}
+                hasMore={countriesHasMore}
+                loadingMore={countriesIsFetchingNext}
+              />
+            </div>
+          </div>
+
+          {/* Row 2: Travelers, Departure Date, Search Button */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 'clamp(8px, 2vw, 16px)', flexWrap: 'wrap' }}>
+            {/* Travelers Dropdown */}
+            <div style={{ flex: '0 0 auto' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#3D495C', fontWeight: 400, marginBottom: '6px' }}>
+                Travelers
+              </label>
+              <div style={{ width: '250px', height: '50px', borderRadius: '16px', background: '#FFFFFF' }}>
                 <PassengerCounterDropdown
                   value={paxCounts}
                   schema={passengers as PassengerSchema}
@@ -1350,35 +1485,86 @@ const FlightDetailTemplate: React.FC = () => {
                   }}
                 />
               </div>
-            </Flex>
-            <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-              <label className="header-labels-common ">Cabin Class</label>
-              <SearchableDropdown
-                options={cabinSelectOptions.map((option) => ({
-                  id: option.value || "placeholder",
-                  value: option.value,
-                  label: option.label,
-                  disabled: "disabled" in option ? option.disabled : false,
-                }))}
-                value={selectedCabinClassId || ""}
-                onChange={(value) => setSelectedCabinClassId(value)}
-                placeholder={
-                  isInitialLoading ? "Loading…" : "Select cabin class"
+            </div>
+
+            {/* Departure Date */}
+            <div style={{ flex: '0 0 auto' }}>
+              <label style={{ display: 'block', fontSize: '12px', color: '#3D495C', fontWeight: 400, marginBottom: '6px' }}>
+                Departure date
+              </label>
+              <div style={{ width: '250px', height: '50px', borderRadius: '16px', background: '#FFFFFF' }}>
+                <TailiwindCustomDatePicker
+                  value={departDate ? new Date(departDate) : null}
+                  onChange={(value) => {
+                    handleDate(value, "depart");
+                  }}
+                  placeholder="Select departure date"
+                  tooltip="Select departure date"
+                  buttonIconSrc={true}
+                  disablePastDates={true}
+                />
+              </div>
+            </div>
+
+            {/* Return Date (conditional for roundtrip) */}
+            {trip === "roundtrip" && (
+              <div style={{ flex: '0 0 auto' }}>
+                <label style={{ display: 'block', fontSize: '12px', color: '#3D495C', fontWeight: 400, marginBottom: '6px' }}>
+                  Return date
+                </label>
+                <div style={{ width: '250px', height: '50px', borderRadius: '16px', background: '#FFFFFF' }}>
+                  <TailiwindCustomDatePicker
+                    value={returnDate ? new Date(returnDate) : null}
+                    onChange={(value) => {
+                      handleDate(value, "return");
+                    }}
+                    placeholder="Select return date"
+                    tooltip="Select return date"
+                    buttonIconSrc={true}
+                    disablePastDates={true}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Flexible spacer */}
+            <div style={{ flex: 1 }}></div>
+
+            {/* Search Button */}
+            <button
+              onClick={() => handleSearch()}
+              disabled={isPending}
+              style={{
+                background: 'linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)',
+                color: 'white',
+                height: '50px',
+                minWidth: '120px',
+                borderRadius: '100px',
+                padding: '14px 32px',
+                fontSize: '15px',
+                fontWeight: 600,
+                border: 'none',
+                cursor: isPending ? 'not-allowed' : 'pointer',
+                boxShadow: '0 4px 12px rgba(35, 81, 163, 0.3)',
+                transition: 'all 0.2s ease',
+                opacity: isPending ? 0.7 : 1,
+                flexShrink: 0,
+                marginRight: '7px'
+              }}
+              onMouseEnter={(e) => {
+                if (!isPending) {
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(35, 81, 163, 0.4)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
                 }
-                disabled={isInitialLoading}
-                widthClass="w-full"
-                // className="header-sub-inputs-common"
-                searchPlaceholder="Search cabin classes..."
-                tooltip="Select cabin class"
-              />
-            </Flex>
-          </Flex>
-          <CustomButton
-            className="searchFilterBtn"
-            onClick={() => handleSearch()}
-          >
-            {isPending ? "Searching..." : "Search flights"}
-          </CustomButton>
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.boxShadow = '0 4px 12px rgba(35, 81, 163, 0.3)';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              {isPending ? "Searching..." : "Search"}
+            </button>
+          </div>
         </div>
 
         {!screens.lg && (
@@ -1461,7 +1647,7 @@ const FlightDetailTemplate: React.FC = () => {
           </div>
         )}
 
-        <div className="contentWrapFlex">
+        <div className="contentWrapFlex" style={{ padding: '0 clamp(12px, 5vw, 25px)' }}>
           {screens.lg && (
             <div className="flightDetailFilter">
               <FlightSearchFilter

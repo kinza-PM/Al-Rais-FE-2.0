@@ -33,11 +33,11 @@ export default function FLightFareRule({ trip }: { trip: any }) {
     const list = entries.length ? entries : (singleEntry ? [singleEntry] : []);
 
     return (
-        <div className="mt-4 rounded-xl border border-[#E4E4E7] bg-white">
+        <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm max-w-[576px]">
             <div className="px-4 py-3 text-[16px] font-semibold text-[#0A0C0F]">
                 Important fare rules
             </div>
-            <div className="h-px bg-[#E4E4E7]" />
+            <div className="h-[1.5px] bg-[#E4E4E7]" />
 
             <ul className="px-4 py-1">
                 {list.map((e, idx) => (
