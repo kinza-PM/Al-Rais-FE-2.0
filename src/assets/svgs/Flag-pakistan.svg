@@ -1,0 +1,9 @@
+<svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="20" height="20" fill="#01411C"/>
+  <rect width="5" height="20" fill="white"/>
+  <!-- Crescent: white circle with green circle overlay -->
+  <circle cx="13.2" cy="10" r="2.2" fill="white"/>
+  <circle cx="14" cy="10" r="1.6" fill="#01411C"/>
+  <!-- Star -->
+  <path fill="white" d="M14.5 8.5l.4 1.2 1.2.2-.9.8.3 1.2-1-.7-1 .7.3-1.2-.9-.8 1.2-.2z"/>
+</svg>

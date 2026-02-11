@@ -61,7 +61,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   searchPlaceholder = "Search...",
   noResultsText = "No results found",
   loading = false,
-  onLoadMore = () => { },
+  onLoadMore = () => {},
   hasMore = false,
   loadingMore = false,
   tooltip = null,
@@ -112,7 +112,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     return baseOptions.filter(
       (option) =>
         option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        option.value.toLowerCase().includes(searchTerm.toLowerCase())
+        option.value.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [options, searchTerm, remoteSearch]);
 
@@ -168,13 +168,29 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     }
   }, [isOpen]);
 
+  // Check if error is a validation error (should not show popup)
+  const isValidationError = useMemo(() => {
+    if (!error) return false;
+    const validationKeywords = [
+      "Please select",
+      "is required",
+      "required",
+      "Please complete",
+      "flying",
+    ];
+    return validationKeywords.some((keyword) =>
+      error.toLowerCase().includes(keyword.toLowerCase()),
+    );
+  }, [error]);
+
   const handleToggle = () => {
     // In remote search mode we should not disable the dropdown while loading,
     // otherwise it feels "jerky" while typing/searching.
     if (disabled) return;
     if (!remoteSearch && loading) return;
 
-    if (error) {
+    // Only show popup for API errors, not validation errors
+    if (error && !isValidationError) {
       setShowError(!showError);
       return;
     }
@@ -266,9 +282,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
   const baseClasses = `
     appearance-none h-11 w-full rounded-xl border pl-4 pr-8 text-[14px] text-[#0F172A] 
-    outline-none border-[#DFE7F3]
+    outline-none 
     ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"}
-    ${error ? "border-red-500" : ""}
+    ${error && isValidationError ? "border-red-500" : "border-[#DFE7F3]"}
   `;
 
   return (
@@ -283,15 +299,16 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           onClick={handleToggle}
           onKeyDown={handleKeyDown}
           disabled={disabled}
-          className={`${className ? className : baseClasses
-            } flex items-center justify-between`}
+          className={`${
+            className ? className : baseClasses
+          } flex items-center justify-between`}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-invalid={!!error}
           aria-describedby={error && showError ? "dropdown-error" : undefined}
         >
           <span>
-          {/* <span className={`${!selectedOption ? "text-[#98A4B3]" : ""}`}> */}
+            {/* <span className={`${!selectedOption ? "text-[#98A4B3]" : ""}`}> */}
             {displayValue}
           </span>
 
@@ -301,8 +318,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                         className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
                     /> */}
           <svg
-            className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${isOpen ? "rotate-180" : ""
-              }`}
+            className={`pointer-events-none shrink-0 absolute right-3 transition-transform ${
+              isOpen ? "rotate-180" : ""
+            }`}
             width="16"
             height="16"
             viewBox="0 0 20 20"
@@ -332,14 +350,12 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             before:border-t-[#1E293B]
           `}
           >
-            <div className="text-center">
-              {tooltip}
-            </div>
+            <div className="text-center">{value ? displayValue : tooltip}</div>
           </div>
         )}
 
         {isOpen && (
-          <div className="absolute z-30 mt-2 w-full rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] overflow-hidden">
+          <div className="absolute z-[9999] mt-2 w-full rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] overflow-hidden">
             {/* Search Input */}
             <div className="p-3 border-b border-[#EDEFF6]">
               <input
@@ -348,39 +364,46 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                 placeholder={searchPlaceholder}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                autoComplete="new-password"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                name={`search-${Math.random()}`}
                 className="w-full px-3 py-2 text-sm border border-[#DFE7F3] rounded-lg focus:outline-none"
               />
             </div>
 
             {/* Options List */}
             <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option) => (
-                <button
-                  key={`${option.value}-${option.id}`}
-                  type="button"
-                  onClick={() => handleOptionSelect(option.value)}
-                  disabled={option.disabled}
-                  className={`
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
+                  <button
+                    key={`${option.value}-${option.id}`}
+                    type="button"
+                    onClick={() => handleOptionSelect(option.value)}
+                    disabled={option.disabled}
+                    className={`
                       w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
-                      ${option.disabled
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
+                      ${
+                        option.disabled
+                          ? "opacity-50 cursor-not-allowed"
+                          : "cursor-pointer"
                       }
-                      ${option.value === value
-                        ? "bg-[#2351A3]/10 text-[#2351A3]"
-                        : "text-[#0F172A]"
+                      ${
+                        option.value === value
+                          ? "bg-[#2351A3]/10 text-[#2351A3]"
+                          : "text-[#0F172A]"
                       }
                     `}
-                >
-                  {option.label}
-                </button>
-              ))
-            ) : (
-              <div className="px-4 py-3 text-sm text-[#98A4B3] text-center">
-                {loading || searchPending ? "Loading..." : noResultsText}
-              </div>
-            )}
+                  >
+                    {option.label}
+                  </button>
+                ))
+              ) : (
+                <div className="px-4 py-3 text-sm text-[#98A4B3] text-center">
+                  {loading || searchPending ? "Loading..." : noResultsText}
+                </div>
+              )}
 
               {loadingMore && (
                 <div className="px-4 py-3 text-center text-sm text-[#98A4B3]">
@@ -391,7 +414,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           </div>
         )}
 
-        {error && showError && (
+        {error && showError && !isValidationError && (
           <CustomDropdownError
             id="dropdown-error"
             title="Nothing found!"
@@ -399,6 +422,12 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           />
         )}
       </div>
+      {/* Show inline error only for validation errors */}
+      {error && isValidationError && (
+        <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
+          {error}
+        </p>
+      )}
     </div>
   );
 };

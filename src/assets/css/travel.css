@@ -4,6 +4,10 @@
   --black-200: #3d495c;
 }
 
+.auth-bg-btn {
+  background: linear-gradient(90.59deg, #5383da 0%, #2351a3 50%, #081326 100%) !important;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -1095,6 +1099,7 @@ input[type="number"] {
   flex-direction: column;
   height: 100%;
   min-width: 0;
+  overflow: visible;
 }
 
 .cardHeader {
@@ -1121,6 +1126,10 @@ input[type="number"] {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+}
+
+.compareCard .cardBody {
+  overflow: visible;
 }
 
 .featureImgs {
@@ -1261,6 +1270,7 @@ input[type="number"] {
 .compareModalButtonCol {
   min-width: 0;
   display: flex;
+  overflow: visible;
 }
 
 .compareCardCol .compareCard,
@@ -1269,9 +1279,10 @@ input[type="number"] {
 }
 
 /* Compare card inner layout: allow shrink so time/date don't overlap on narrow cards */
+/* overflow: visible so icon tooltips are not clipped on hover */
 .compareCard .RoundTripCardDetail {
   min-width: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .compareCard .fightTitle {
@@ -1321,6 +1332,14 @@ input[type="number"] {
 .compareCard .featureIcons {
   flex-shrink: 0;
   flex-wrap: wrap;
+}
+
+/* Ensure tooltips in compare cards are visible and above other content */
+.compareCard .featureIconTooltipWrap {
+  position: relative;
+}
+.compareCard .featureIconTooltipWrap .tooltip {
+  z-index: 9999;
 }
 
 .featureIconText img {
@@ -1455,10 +1474,17 @@ img:hover {
 
 .custom-phone-wrapper .react-international-phone-country-selector-button {
   width: 112px !important;
+<<<<<<< HEAD
   height: 50px !important;
   border-radius: 16px !important;
   border: 1.5px solid #C2CAD6 !important;
   background: #F9FAFB !important;
+=======
+  height: 40px !important;
+  border-radius: 8px !important;
+  border: 1px solid #c2cad6 !important;
+  background: white !important;
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
   padding: 8px 12px !important;
   display: flex !important;
   align-items: center !important;
@@ -1470,22 +1496,36 @@ img:hover {
   flex: 1 !important;
   height: 50px !important;
   width: 100% !important;
+<<<<<<< HEAD
   border-radius: 16px !important;
   border: 1.5px solid #C2CAD6 !important;
   background: #F9FAFB !important;
+=======
+  border-radius: 8px !important;
+  border: 1px solid #c2cad6 !important;
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
   padding: 0 12px !important;
   font-size: 14px !important;
-  color: #0A0C0F !important;
+  color: #0a0c0f !important;
 }
 
 .custom-phone-wrapper .react-international-phone-input::placeholder {
-  color: #C2CAD6 !important;
+  color: #c2cad6 !important;
 }
 
 .custom-phone-wrapper .react-international-phone-input:focus {
   outline: none !important;
-  border-color: #5383DA !important;
+  border-color: #5383da !important;
   box-shadow: 0 0 0 2px rgba(83, 131, 218, 0.2) !important;
+}
+
+.phone-input-error .react-international-phone-input {
+  border-color: #e65959 !important;
+}
+
+.phone-input-error .react-international-phone-input:focus {
+  border-color: #e65959 !important;
+  box-shadow: 0 0 0 2px rgba(230, 89, 89, 0.2) !important;
 }
 
 .custom-phone-wrapper {
@@ -1495,23 +1535,35 @@ img:hover {
 
 .custom-phone-wrapper .react-international-phone-country-selector-dropdown {
   max-height: 300px !important;
+<<<<<<< HEAD
   border-radius: 16px !important;
   border: 1.5px solid #C2CAD6 !important;
+=======
+  border-radius: 8px !important;
+  border: 1px solid #c2cad6 !important;
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
   margin-top: 4px !important;
 }
 
-.custom-phone-wrapper .react-international-phone-country-selector-dropdown__list-item-search-input {
+.custom-phone-wrapper
+  .react-international-phone-country-selector-dropdown__list-item-search-input {
   width: calc(100% - 16px) !important;
   margin: 8px !important;
   padding: 8px 12px !important;
+<<<<<<< HEAD
   border: 1.5px solid #C2CAD6 !important;
   border-radius: 16px !important;
+=======
+  border: 1px solid #c2cad6 !important;
+  border-radius: 8px !important;
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
   font-size: 14px !important;
-  color: #3D495C !important;
+  color: #3d495c !important;
 }
 
-.custom-phone-wrapper .react-international-phone-country-selector-dropdown__list-item:hover {
-  background-color: #F3F4F6 !important;
+.custom-phone-wrapper
+  .react-international-phone-country-selector-dropdown__list-item:hover {
+  background-color: #f3f4f6 !important;
 }
 
 @media (min-width: 993px) {

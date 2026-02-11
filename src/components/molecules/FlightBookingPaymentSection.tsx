@@ -41,6 +41,7 @@ import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import {
   openBlankPopupAndCheckWebisteAllowPopup,
   validateReservationFlightBookingData,
+  validateReservationFlightBookingDataFields,
   waitFor3DSecurePaymentPopupReturnResponse,
   type FlightFinalReservedBooking,
 } from "../../utils/flightBookingHelper";
@@ -61,8 +62,8 @@ type FlightBookingPaymentSectionProps = {
   onReservationChange: (
     eOrPath:
       | React.ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >
+          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
       | string,
     maybeValue?: any,
   ) => void;
@@ -106,6 +107,10 @@ export default function FlightBookingPaymentSection({
     cvv: "",
     holderName: "",
   });
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
 
   const { mutateAsync, isPending } = useFlightReservationBooking();
   const {
@@ -125,7 +130,7 @@ export default function FlightBookingPaymentSection({
     mealIcon: refundableIcon,
     wifiIcon: durationIcon,
     portIcon: SEAT_ICON,
-    entertainmentIcon: PLANE_ICON
+    entertainmentIcon: PLANE_ICON,
   };
   const segments = buildFlightSegmentFromTrip(trip, assets);
   const address = reservation?.paymentDetails?.address ?? {};
@@ -169,6 +174,7 @@ export default function FlightBookingPaymentSection({
         ...prev,
         number: formatted,
       }));
+      clearFieldError("card.number");
       return;
     }
     if (name === "expiry") {
@@ -186,25 +192,62 @@ export default function FlightBookingPaymentSection({
         expiryDisplay: display,
         expiry: stored,
       }));
+      clearFieldError("card.expiry");
       return;
     }
 
     if (name === "cvv") {
       const digits = value.replace(/\D/g, "").slice(0, 4);
       setCardDetails((prev) => ({ ...prev, cvv: digits }));
+      clearFieldError("card.cvv");
+      return;
+    }
+
+    if (name === "holderName") {
+      setCardDetails((prev) => ({ ...prev, [name]: value }));
+      clearFieldError("card.holderName");
       return;
     }
 
     setCardDetails((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Helper to clear error for a specific field
+  const clearFieldError = (fieldPath: string) => {
+    if (hasAttemptedValidation && validationErrors[fieldPath]) {
+      setValidationErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[fieldPath];
+        return updated;
+      });
+    }
+  };
+
   const generatePayfortPaymentTokenization = async () => {
-    const { valid, error } = validateReservationFlightBookingData(
+    //  const { valid, error } = validateReservationFlightBookingData(
+    //   reservation,
+    //   cardDetails,
+    // );
+    // if (!valid) {
+    //   toast.error(error || "Validation failed.");
+    //   return;
+    // }
+    setHasAttemptedValidation(true);
+    const fieldErrors = validateReservationFlightBookingDataFields(
       reservation,
       cardDetails,
     );
-    if (!valid) {
-      toast.error(error || "Validation failed.");
+    setValidationErrors(fieldErrors);
+
+    if (Object.keys(fieldErrors).length > 0) {
+      // Still check overall validation for backward compatibility
+      const { valid } = validateReservationFlightBookingData(
+        reservation,
+        cardDetails,
+      );
+      if (!valid) {
+        return;
+      }
       return;
     }
     // console.log("cardDetails", cardDetails);
@@ -312,7 +355,7 @@ export default function FlightBookingPaymentSection({
       // always cleanup/close popup if still open
       try {
         if (popup && !popup.closed) popup.close();
-      } catch (_) { }
+      } catch (_) {}
       setIsProcessing(false);
     }
   };
@@ -540,17 +583,31 @@ export default function FlightBookingPaymentSection({
                   </div>
                 </div>
                 <div className="mt-5 space-y-4">
-                  <TailwindCustomInput
-                    type="email"
-                    placeholder="Enter an email"
-                    className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none"
-                    label="Email"
-                    name="customerInfo.emailAddress"
-                    value={reservation?.customerInfo?.emailAddress ?? ""}
-                    onChange={onReservationChange}
-                  />
+                  <div
+                    className={`relative w-full ${hasAttemptedValidation && validationErrors["customerInfo.emailAddress"] ? "pb-4" : ""}`}
+                  >
+                    <TailwindCustomInput
+                      type="email"
+                      placeholder="Enter an email"
+                      className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["customerInfo.emailAddress"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none`}
+                      label="Email"
+                      name="customerInfo.emailAddress"
+                      value={reservation?.customerInfo?.emailAddress ?? ""}
+                      onChange={(e) => {
+                        onReservationChange(e);
+                        clearFieldError("customerInfo.emailAddress");
+                      }}
+                      error={
+                        hasAttemptedValidation
+                          ? validationErrors["customerInfo.emailAddress"]
+                          : null
+                      }
+                    />
+                  </div>
 
-                  <div>
+                  <div
+                    className={`relative w-full ${hasAttemptedValidation && validationErrors["card.number"] ? "pb-4" : ""}`}
+                  >
                     <label className="mb-1 block text-[12px] text-[#3D495C]">
                       Card number
                     </label>
@@ -558,10 +615,15 @@ export default function FlightBookingPaymentSection({
                       <TailwindCustomInput
                         type="text"
                         placeholder="0000 0000 0000 0000"
-                        className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 pr-20 text-[14px] ..."
+                        className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["card.number"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 pr-20 text-[14px] ...`}
                         name="number"
                         value={cardDetails.number}
                         onChange={handleCardFieldChange}
+                        error={
+                          hasAttemptedValidation
+                            ? validationErrors["card.number"]
+                            : null
+                        }
                       />
                       <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-3">
                         <img
@@ -579,33 +641,60 @@ export default function FlightBookingPaymentSection({
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
-                    <TailwindCustomInput
-                      type="text"
-                      placeholder="MM/YY"
-                      className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
-                      name="expiry"
-                      value={cardDetails.expiryDisplay}
-                      onChange={handleCardFieldChange}
-                    />
-                    <TailwindCustomInput
-                      type="text"
-                      placeholder="000"
-                      className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
-                      name="cvv"
-                      value={cardDetails.cvv}
-                      onChange={handleCardFieldChange}
-                    />
+                    <div
+                      className={`relative w-full ${hasAttemptedValidation && validationErrors["card.expiry"] ? "pb-4" : ""}`}
+                    >
+                      <TailwindCustomInput
+                        type="text"
+                        placeholder="MM/YY"
+                        className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["card.expiry"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 text-[14px] ...`}
+                        name="expiry"
+                        value={cardDetails.expiryDisplay}
+                        onChange={handleCardFieldChange}
+                        error={
+                          hasAttemptedValidation
+                            ? validationErrors["card.expiry"]
+                            : null
+                        }
+                      />
+                    </div>
+                    <div
+                      className={`relative w-full ${hasAttemptedValidation && validationErrors["card.cvv"] ? "pb-4" : ""}`}
+                    >
+                      <TailwindCustomInput
+                        type="text"
+                        placeholder="000"
+                        className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["card.cvv"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 text-[14px] ...`}
+                        name="cvv"
+                        value={cardDetails.cvv}
+                        onChange={handleCardFieldChange}
+                        error={
+                          hasAttemptedValidation
+                            ? validationErrors["card.cvv"]
+                            : null
+                        }
+                      />
+                    </div>
                   </div>
 
-                  <TailwindCustomInput
-                    type="text"
-                    placeholder="Enter cardholder name"
-                    className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
-                    label="Cardholder name"
-                    name="holderName"
-                    value={cardDetails.holderName}
-                    onChange={handleCardFieldChange}
-                  />
+                  <div
+                    className={`relative w-full ${hasAttemptedValidation && validationErrors["card.holderName"] ? "pb-4" : ""}`}
+                  >
+                    <TailwindCustomInput
+                      type="text"
+                      placeholder="Enter cardholder name"
+                      className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["card.holderName"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 text-[14px] ...`}
+                      label="Cardholder name"
+                      name="holderName"
+                      value={cardDetails.holderName}
+                      onChange={handleCardFieldChange}
+                      error={
+                        hasAttemptedValidation
+                          ? validationErrors["card.holderName"]
+                          : null
+                      }
+                    />
+                  </div>
 
                   <div className="rounded-xl border border-[#C2CAD6] overflow-hidden">
                     <div
@@ -630,7 +719,7 @@ export default function FlightBookingPaymentSection({
 
                       <CardCollapseToggle
                         open={openAddress}
-                        onClick={() => { }}
+                        onClick={() => {}}
                         className="pointer-events-none"
                       />
                     </div>
@@ -649,36 +738,27 @@ export default function FlightBookingPaymentSection({
                     >
                       <div className="overflow-hidden">
                         <div className="divide-y divide-[#E4E4E7]">
-                          <div className="px-3">
+                          <div
+                            className={`relative px-3 ${hasAttemptedValidation && validationErrors["address.street.0"] ? "border border-[#E65959]" : ""}`}
+                          >
                             <TailwindCustomInput
                               type="text"
                               placeholder="Address line 1"
-                              className="h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none"
+                              className={`h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none border-[#C2CAD6]`}
                               name="paymentDetails.address.street.0"
                               value={
                                 Array.isArray(address.street)
                                   ? (address.street[0] ?? "")
                                   : ""
                               }
-                              onChange={onReservationChange}
+                              onChange={(e) => {
+                                onReservationChange(e);
+                                clearFieldError("address.street.0");
+                              }}
                             />
                           </div>
 
                           <div className="relative">
-                            {/* <select
-                              defaultValue=""
-                              className="h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3"
-                              value={address.countryCode ?? ""}
-                              name="paymentDetails.address.countryCode"
-                              onChange={onReservationChange}
-                            >
-                              <option value="" disabled>
-                                Select a country
-                              </option>
-                              <option value="UAE">United Arab Emirates</option>
-                            </select>
-
-                            <ChevronDown /> */}
                             <CardOverlaySearchableDropdown
                               options={
                                 countries?.map((c) => ({
@@ -688,38 +768,24 @@ export default function FlightBookingPaymentSection({
                                 })) || []
                               }
                               value={address.countryCode ?? ""}
-                              onChange={(val) =>
+                              onChange={(val) => {
                                 onReservationChange(
                                   "paymentDetails.address.countryCode",
                                   val,
-                                )
+                                );
+                                clearFieldError("address.countryCode");
+                              }}
+                              error={
+                                hasAttemptedValidation
+                                  ? validationErrors["address.countryCode"]
+                                  : null
                               }
                               placeholder="Select a country"
-                              className="h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3"
+                              className={`h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3`}
                             />
                           </div>
 
                           <div className="grid grid-cols-2">
-                            {/* <div className="px-3 relative">
-                              <select
-                                defaultValue=""
-                                className="h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3"
-                                value={address.cityName ?? ""}
-                                onChange={onReservationChange}
-                                name="paymentDetails.address.cityName"
-                              >
-                                <option value="" disabled>
-                                  Select a city
-                                </option>
-                                {cities?.map((c) => (
-                                  <option key={c.code} value={c.code}>
-                                    {c.city}
-                                  </option>
-                                ))}
-                              </select>
-
-                              <ChevronDown />
-                            </div> */}
                             <div className="relative">
                               <CardOverlaySearchableDropdown
                                 options={citiesData.map((c, index) => ({
@@ -728,24 +794,40 @@ export default function FlightBookingPaymentSection({
                                   label: c.label,
                                 }))}
                                 value={address.cityName ?? ""}
-                                onChange={(val) =>
+                                onChange={(val) => {
                                   onReservationChange(
                                     "paymentDetails.address.cityName",
                                     val,
-                                  )
-                                }
+                                  );
+                                  clearFieldError("address.cityName");
+                                }}
                                 placeholder="Select a city"
-                                className="h-11 w-full appearance-none bg-transparent px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                                error={
+                                  hasAttemptedValidation
+                                    ? validationErrors["address.cityName"]
+                                    : null
+                                }
+                                className={`h-11 w-full appearance-none bg-transparent px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
                               />
                             </div>
-                            <div className="border-l border-[#E4E4E7] px-3">
+                            <div
+                              className={`relative px-3 ${hasAttemptedValidation && validationErrors["address.postalCode"] ? "border border-[#E65959]" : "border-l border-[#E4E4E7]"}`}
+                            >
                               <TailwindCustomInput
                                 type="text"
                                 placeholder="Zip code"
-                                className="h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none"
+                                className={`h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none`}
                                 name="paymentDetails.address.postalCode"
                                 value={address.postalCode ?? ""}
-                                onChange={onReservationChange}
+                                onChange={(e) => {
+                                  onReservationChange(e);
+                                  clearFieldError("address.postalCode");
+                                }}
+                                error={
+                                  hasAttemptedValidation
+                                    ? validationErrors["address.postalCode"]
+                                    : null
+                                }
                               />
                             </div>
                           </div>
@@ -789,7 +871,7 @@ export default function FlightBookingPaymentSection({
             overrideClasses
             disabled={isPayButtonLoading}
             onClick={() => generatePayfortPaymentTokenization()}
-          // onClick={() => handleReservationFlightBooking()}
+            // onClick={() => handleReservationFlightBooking()}
           >
             {/* {isTokenizing ? "Loading..." : "Pay"} */}
             {getPayButtonText()}

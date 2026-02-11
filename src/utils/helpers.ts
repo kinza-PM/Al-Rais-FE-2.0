@@ -278,17 +278,20 @@ export function buildFlightSegmentFromTrip(
 
     if (Array.isArray(journeys) && journeys.length > 0) {
       const results: any[] = [];
+      const isMulticity = journeys.length > 2;
       journeys.forEach((j: any, jIdx: number) => {
         const segs = j?.flightSegments ?? [];
         if (Array.isArray(segs) && segs.length > 0) {
           const isSingleJourney = journeys.length === 1;
           const journeyLabel = isSingleJourney
             ? "Departure flight"
+            : isMulticity
+            ? `Flight ${String(jIdx + 1).padStart(2, "0")}`
             : jIdx === 0
             ? "Departure flight"
             : jIdx === 1
             ? "Return flight"
-            : `Journey ${jIdx + 1}`;
+            : `Flight ${String(jIdx + 1).padStart(2, "0")}`;
           segs.forEach((seg: any, sIdx: number) => {
             const partClone = {
               ...part,

@@ -1,19 +1,30 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import Input from "../atoms/Input";
-import Button from "../atoms/Button";
 import { useAuth } from "../../features/auth/hooks/useAuth";
-import Logo from "../atoms/Logo";
-import logoImg from "../../assets/images/logo.jpg";
-import { getEmailError, getPasswordError } from "../../utils/validators";
+import logoSmall from "../../assets/images/logo-small.png";
+import CustomToggle from "../common/CustomToggle";
+import {
+  getEmailError,
+  // getFullNameError,
+  getPasswordError,
+  // getPhoneError,
+} from "../../utils/validators";
 // import FlagUsa from "../../assets/images/Flag-usa.png";
-// import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
+// import FlagUae from "../../assets/svgs/Flag-uae.svg";
+// import FlagPakistan from "../../assets/svgs/Flag-pakistan.svg";
+import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
+
+// const COUNTRY_CODE_FLAGS: Record<string, string> = {
+//   "+1": FlagUsa,
+//   "+92": FlagPakistan,
+//   "+971": FlagUae,
+// };
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useNetworkStatus } from "../../context/NetworkStatusContext";
-import type { SignupMethod } from "../../features/auth/types";
-import { PhoneInput } from "react-international-phone";
-import "react-international-phone/style.css";
-import { filterEmailInput } from "../../utils/helpers";
 import toast from "react-hot-toast";
+import type { SignupMethod } from "../../features/auth/types";
+import { filterEmailInput } from "../../utils/helpers";
+import { PhoneInput } from "react-international-phone";
 
 interface SignupFormProps {
   onLoginClick: () => void;
@@ -25,18 +36,21 @@ const SignupForm: React.FC<SignupFormProps> = ({
   onSignupSuccess,
 }) => {
   const [formData, setFormData] = useState({
+    // title: "MR",
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
+    // gender: "MALE",
   });
   const location = useLocation();
   const navigate = useNavigate();
   // const [signupMessage, setSignupMessage] = useState<string | null>(null);
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [otpCode, setOtpCode] = useState("");
+  const [emailUpdates, setEmailUpdates] = useState(false);
   const [userCredentials, setUserCredentials] = useState<{
-    email: string; // this is actually "identifier" (email OR +phone)
+    email: string;
     password: string;
     signupMethod: SignupMethod;
   } | null>(null);
@@ -50,6 +64,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
     password: false,
     confirmPassword: false,
     otp: false,
+    // gender: false,
+    // title: false,
   });
   const [usePhone, setUsePhone] = useState(false);
   const [phoneCountryCode, setPhoneCountryCode] = useState("+1");
@@ -68,15 +84,15 @@ const SignupForm: React.FC<SignupFormProps> = ({
   const returnUrl = (location.state as any)?.returnUrl;
   const bookingData = (location.state as any)?.bookingData;
 
-  // function ChevronDown() {
-  //   return (
-  //     <img
-  //       alt="arrow-icon"
-  //       src={arrownDownwardIcon}
-  //       className="pointer-events-none absolute right-3 top-3/5"
-  //     />
-  //   );
-  // }
+  function ChevronDown() {
+    return (
+      <img
+        alt="arrow-icon"
+        src={arrownDownwardIcon}
+        className="pointer-events-none absolute right-3 top-3/5"
+      />
+    );
+  }
 
   // Countdown timer effect
   useEffect(() => {
@@ -294,6 +310,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
         password: true,
         confirmPassword: true,
         otp: false,
+        // title: true,
+        // gender: true,
       });
       return;
     }
@@ -367,6 +385,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
       password: false,
       confirmPassword: false,
       otp: false,
+      // title: false,
+      // gender: false,
     });
 
     setFormData({
@@ -374,6 +394,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
       email: "",
       password: "",
       confirmPassword: "",
+      // gender: "MALE",
+      // title: "MR",
     });
     setPhoneNumber("");
     setPhoneCountryCode("+1");
@@ -389,104 +411,171 @@ const SignupForm: React.FC<SignupFormProps> = ({
 
   const PasswordRequirement = () => {
     return (
-      <div className="flex items-center gap-1 text-[11px] text-[#3D495C]">
+      <div className="flex items-center gap-1.5 text-[11px] text-[#3D495C] mt-1">
         <svg
           width="16"
           height="16"
           viewBox="0 0 18 18"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
+          className="shrink-0"
         >
           <path
-            d="M9 0.875C7.39303 0.875 5.82214 1.35152 4.486 2.24431C3.14985 3.1371 2.10844 4.40605 1.49348 5.8907C0.87852 7.37535 0.717618 9.00901 1.03112 10.5851C1.34463 12.1612 2.11846 13.6089 3.25476 14.7452C4.39106 15.8815 5.8388 16.6554 7.4149 16.9689C8.99099 17.2824 10.6247 17.1215 12.1093 16.5065C13.594 15.8916 14.8629 14.8502 15.7557 13.514C16.6485 12.1779 17.125 10.607 17.125 9C17.1227 6.84581 16.266 4.78051 14.7427 3.25727C13.2195 1.73403 11.1542 0.877275 9 0.875ZM12.5672 7.56719L8.19219 11.9422C8.13415 12.0003 8.06522 12.0464 7.98934 12.0779C7.91347 12.1093 7.83214 12.1255 7.75 12.1255C7.66787 12.1255 7.58654 12.1093 7.51067 12.0779C7.43479 12.0464 7.36586 12.0003 7.30782 11.9422L5.43282 10.0672C5.31554 9.94991 5.24966 9.79085 5.24966 9.625C5.24966 9.45915 5.31554 9.30009 5.43282 9.18281C5.55009 9.06554 5.70915 8.99965 5.875 8.99965C6.04086 8.99965 6.19992 9.06554 6.31719 9.18281L7.75 10.6164L11.6828 6.68281C11.7409 6.62474 11.8098 6.57868 11.8857 6.54725C11.9616 6.51583 12.0429 6.49965 12.125 6.49965C12.2071 6.49965 12.2884 6.51583 12.3643 6.57868C12.4402 6.60982 12.5091 6.65588 12.5672 6.71395C12.6253 6.77202 12.6713 6.84096 12.7027 6.91683C12.7342 6.9927 12.7504 7.07402 12.7504 7.15614C12.7504 7.23827 12.7342 7.31959 12.7027 7.39546C12.6713 7.47133 12.6253 7.54027 12.5672 7.59834Z"
-            fill="#C2CAD6"
+            d="M9 0.875C7.39303 0.875 5.82214 1.35152 4.486 2.24431C3.14985 3.1371 2.10844 4.40605 1.49348 5.8907C0.87852 7.37535 0.717618 9.00901 1.03112 10.5851C1.34463 12.1612 2.11846 13.6089 3.25476 14.7452C4.39106 15.8815 5.8388 16.6554 7.4149 16.9689C8.99099 17.2824 10.6247 17.1215 12.1093 16.5065C13.594 15.8916 14.8629 14.8502 15.7557 13.514C16.6485 12.1779 17.125 10.607 17.125 9C17.1227 6.84581 16.266 4.78051 14.7427 3.25727C13.2195 1.73403 11.1542 0.877275 9 0.875ZM12.5672 7.56719L8.19219 11.9422C8.13415 12.0003 8.06522 12.0464 7.98934 12.0779C7.91347 12.1093 7.83214 12.1255 7.75 12.1255C7.66787 12.1255 7.58654 12.1093 7.51067 12.0779C7.43479 12.0464 7.36586 12.0003 7.30782 11.9422L5.43282 10.0672C5.31554 9.94991 5.24966 9.79085 5.24966 9.625C5.24966 9.45915 5.31554 9.30009 5.43282 9.18281C5.55009 9.06554 5.70915 8.99965 5.875 8.99965C6.04086 8.99965 6.19992 9.06554 6.31719 9.18281L7.75 10.6164L11.6828 6.68281C11.7409 6.62474 11.8098 6.57868 11.8857 6.54725C11.9616 6.51583 12.0429 6.49965 12.125 6.49965C12.2071 6.49965 12.2884 6.51583 12.3643 6.54725C12.4402 6.57868 12.5091 6.62474 12.5672 6.68281C12.6253 6.74088 12.6713 6.80982 12.7027 6.88569C12.7342 6.96156 12.7504 7.04288 12.7504 7.125C12.7504 7.20712 12.7342 7.28844 12.7027 7.36431C12.6713 7.44018 12.6253 7.50912 12.5672 7.56719Z"
+            fill="#22c55e"
           />
         </svg>
-        Password must include at least one uppercase letter, one lowercase
-        letter, one number, and one special character.
+        Contains letters (A-Z, a-z), digits 0-9 AND special characters.
       </div>
     );
   };
 
   return (
-    <div className="space-y-4 bg-white rounded-xl border border-[#E4E4E7] w-full px-4 py-10">
-      {!showOtpInput ? (
-        <div>
-          <div className="flex justify-center mb-6">
-            <Link
-              to="/"
-              aria-label="Go to home page"
-              className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
-            >
-              <Logo src={logoImg} alt="Brand name" size="modal" />
-            </Link>
-          </div>
-
-          <h2 className="text-center text-2xl font-semibold mb-1">Welcome</h2>
-          <p className="text-center text-sm text-gray-500 mb-6">
-            Let's setup an account
-          </p>
-
-          {/* Toggle Buttons */}
-          <div className="flex justify-center mb-6">
-            <div className="flex items-center rounded-xl ring-1 ring-[#C2CAD6] px-2 py-1">
-              <button
-                type="button"
-                onClick={() => {
-                  setUsePhone(false);
-                  setTouched((prev) => ({ ...prev, email: false }));
-                }}
-                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${!usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                  }`}
+    <div
+      className="w-full max-w-[468px] space-y-4 rounded-xl border border-[#E4E4E7] bg-white shadow-lg transition-shadow sm:rounded-2xl"
+      style={{
+        opacity: 1,
+        width: "100%",
+        minHeight: 0,
+      }}
+    >
+      <div className="px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
+        {!showOtpInput ? (
+          <div>
+            <div className="flex justify-center mb-6">
+              <Link
+                to="/"
+                aria-label="Go to home page"
+                className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
               >
-                Email
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setUsePhone(true);
-                  setTouched((prev) => ({ ...prev, email: false }));
-                }}
-                className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                  }`}
-              >
-                Phone
-              </button>
+                <img
+                  src={logoSmall}
+                  alt="Al Rais Travel"
+                  className="h-11 w-[60px] object-contain"
+                  style={{ opacity: 1 }}
+                />
+              </Link>
             </div>
-          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="text"
-                name="name"
-                label="Full Name"
-                placeholder="Enter your full name"
-                value={formData.name}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
-                touched={touched.name}
-                error={Boolean(nameError)}
-                rounded="xl"
-                required
-              />
-              {touched.name && nameError && (
-                <p
-                  role="alert"
-                  aria-live="assertive"
-                  className="mt-1 text-sm text-red-600"
+            <h2 className="mb-1 text-center text-xl font-semibold text-[#0A0C0F] sm:text-2xl">
+              Welcome
+            </h2>
+            <p className="mb-6 text-center text-sm text-[#3D495C]">
+              Let's setup an account
+            </p>
+
+            {/* Toggle Buttons */}
+            <div className="flex justify-center mb-6">
+              <div className="flex items-center rounded-xl ring-1 ring-[#C2CAD6] px-2 py-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsePhone(false);
+                    setTouched((prev) => ({ ...prev, email: false }));
+                  }}
+                  className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
+                    !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                  }`}
                 >
-                  {nameError}
-                </p>
-              )}
+                  Email
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsePhone(true);
+                    setTouched((prev) => ({ ...prev, email: false }));
+                  }}
+                  className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
+                    usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                  }`}
+                >
+                  Phone
+                </button>
+              </div>
             </div>
-            <div className="space-y-2">
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* <div>
+                <Input
+                  type="text"
+                  name="name"
+                  label="Full Name"
+                  placeholder="Enter your full name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  touched={touched.name}
+                  error={Boolean(nameError)}
+                  rounded="xl"
+                  required
+                />
+                {touched.name && nameError && (
+                  <p
+                    role="alert"
+                    aria-live="assertive"
+                    className="mt-1 text-sm text-red-600"
+                  >
+                    {nameError}
+                  </p>
+                )}
+              </div> */}
               <div>
-                <label className="text-sm text-xs font-normal text-[#3D495C]">
-                  {usePhone ? "Phone" : "Email"}
+                <label className="text-sm text-xs font-normal text-[#3D495C] mb-1 block">
+                  Full Name
                 </label>
-                {usePhone ? (
-                  <>
+                <div className="flex gap-2">
+                  <div className="relative flex items-center w-24">
+                    <select
+                      aria-label="Title"
+                      className="px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"
+                      // value={formData.title}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          title: e.target.value,
+                        }))
+                      }
+                    >
+                      <option value="MR">Mr.</option>
+                      <option value="MS">Ms.</option>
+                      <option value="MRS">Mrs.</option>
+                    </select>
+                    <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                      <ChevronDown />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <Input
+                      type="text"
+                      name="name"
+                      label=""
+                      placeholder="Enter your full name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      touched={touched.name}
+                      error={Boolean(nameError)}
+                      rounded="xl"
+                      required
+                    />
+                  </div>
+                </div>
+                {touched.name && nameError && (
+                  <p
+                    role="alert"
+                    aria-live="assertive"
+                    className="mt-1 text-sm text-red-600"
+                  >
+                    {nameError}
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <div>
+                  <label className="text-sm text-xs font-normal text-[#3D495C]">
+                    {usePhone ? "Phone" : "Email"}
+                  </label>
+                  {usePhone ? (
                     <div className="flex gap-2 mt-1">
                       <PhoneInput
                         defaultCountry="us"
@@ -538,244 +627,347 @@ const SignupForm: React.FC<SignupFormProps> = ({
                         }}
                       />
                     </div>
-                  </>
-                ) : (
-                  <Input
-                    type="email"
-                    name="email"
-                    label=""
-                    placeholder="Enter your email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    onBlur={handleBlur}
-                    touched={touched.email}
-                    error={emailHasError}
-                    rounded="xl"
-                    required
+                  ) : (
+                    <Input
+                      type="email"
+                      name="email"
+                      label=""
+                      placeholder="Enter your email"
+                      value={formData.email}
+                      onChange={handleInputChange}
+                      onBlur={handleBlur}
+                      touched={touched.email}
+                      error={emailHasError}
+                      rounded="xl"
+                      required
+                    />
+                  )}
+                  {touched.email && emailHasError && (
+                    <p
+                      role="alert"
+                      aria-live="assertive"
+                      className="mt-1 text-sm text-red-600"
+                    >
+                      {emailError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] text-[#3D495C]">
+                  <p>
+                    I would like to receive important updates and exciting deals
+                  </p>
+                  <CustomToggle
+                    checked={emailUpdates}
+                    onChange={() => setEmailUpdates((v) => !v)}
                   />
-                )}
-                {touched.email && emailHasError && (
+                </div>
+              </div>
+              <div>
+                <label className="text-sm text-xs font-normal text-[#3D495C] mb-1 block">
+                  Gender
+                </label>
+                <div className="relative flex items-center">
+                  <select
+                    aria-label="Gender"
+                    className="px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-10 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"
+                    // value={formData.gender}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        gender: e.target.value,
+                      }))
+                    }
+                    onBlur={() =>
+                      setTouched((prev) => ({ ...prev, gender: true }))
+                    }
+                  >
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-2 flex items-center">
+                    <ChevronDown />
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Input
+                  type="password"
+                  name="password"
+                  label="New password"
+                  placeholder="Create a password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  touched={touched.password}
+                  error={Boolean(passwordError)}
+                  rounded="xl"
+                  required
+                />
+                {touched.password && passwordError && (
                   <p
                     role="alert"
                     aria-live="assertive"
                     className="mt-1 text-sm text-red-600"
                   >
-                    {emailError}
+                    {passwordError}
+                  </p>
+                )}
+                <PasswordRequirement />
+              </div>
+              <div className="space-y-1">
+                <Input
+                  type="password"
+                  name="confirmPassword"
+                  label="Confirm Password"
+                  placeholder="Confirm your password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  touched={touched.confirmPassword}
+                  error={Boolean(confirmPasswordError)}
+                  rounded="xl"
+                  required
+                />
+                {touched.confirmPassword && confirmPasswordError && (
+                  <p
+                    role="alert"
+                    aria-live="assertive"
+                    className="mt-1 text-sm text-red-600"
+                  >
+                    {confirmPasswordError}
                   </p>
                 )}
               </div>
-            </div>
-            <div className="space-y-1">
-              <Input
-                type="password"
-                name="password"
-                label="Password"
-                placeholder="Create a password"
-                value={formData.password}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
-                touched={touched.password}
-                error={Boolean(passwordError)}
-                rounded="xl"
-                required
-              />
-              {touched.password && passwordError && (
+
+              {/* Auth/backend errors: User already exists, email already associated (Figma wording) */}
+              {/* {error && (
                 <p
                   role="alert"
                   aria-live="assertive"
-                  className="mt-1 text-sm text-red-600"
+                  className="text-center text-sm font-medium text-red-600"
                 >
-                  {passwordError}
+                  {error.toLowerCase().includes("already") &&
+                  (error.toLowerCase().includes("email") ||
+                    error.toLowerCase().includes("associated"))
+                    ? "This email is already associated with another account."
+                    : error.toLowerCase().includes("already") &&
+                        error.toLowerCase().includes("exist")
+                      ? "User already exists."
+                      : error}
                 </p>
               )}
-              <PasswordRequirement />
-            </div>
-            <div className="space-y-1">
-              <Input
-                type="password"
-                name="confirmPassword"
-                label="Confirm Password"
-                placeholder="Confirm your password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
-                touched={touched.confirmPassword}
-                error={Boolean(confirmPasswordError)}
-                rounded="xl"
-                required
-              />
-              {touched.confirmPassword && confirmPasswordError && (
-                <p
-                  role="alert"
-                  aria-live="assertive"
-                  className="mt-1 text-sm text-red-600"
+
+              {signupMessage && !showOtpInput && (
+                <div className="text-green-600 text-sm text-center">
+                  {signupMessage}
+                </div>
+              )} */}
+
+              <div className="flex justify-center pt-1">
+                <button
+                  type="submit"
+                  disabled={!isFormValid || loading.signup || !isOnline}
+                  // className="flex min-h-[47px] min-w-[142px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[142px]"
+                  className={`
+                    flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5
+                    rounded-full px-10 py-3.5
+                    font-semibold text-white tracking-[0.5px]
+                    transition-opacity hover:opacity-95
+                    ${
+                      !isFormValid || loading.signup || !isOnline
+                        ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                        : "auth-bg-btn"
+                    }
+                  `}
+                  style={{
+                    background: "var(--black-100, #C2CAD6)",
+                    opacity: 1,
+                  }}
                 >
-                  {confirmPasswordError}
-                </p>
-              )}
-              <PasswordRequirement />
-            </div>
-
-            {/* {error && (
-              <div className="text-red-500 text-sm text-center">{error}</div>
-            )}
-
-            {signupMessage && !showOtpInput && (
-              <div className="text-green-600 text-sm text-center">
-                {signupMessage}
+                  {loading.signup ? "Creating Account..." : "Sign up"}
+                </button>
               </div>
+            </form>
+          </div>
+        ) : (
+          <form onSubmit={handleOtpSubmit} className="space-y-4">
+            {/* Figma: breadcrumb - "Sign up - Verify your email" top-left, light grey */}
+            <p className="text-left text-xs text-[#9CA3AF] mb-2">
+              Sign up - Verify your{" "}
+              {userCredentials?.email?.includes("+") ? "phone" : "email"}
+            </p>
+
+            {/* Figma: logo at top center */}
+            <div className="flex justify-center mb-6">
+              <Link
+                to="/"
+                aria-label="Go to home"
+                className="rounded focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
+                <img
+                  src={logoSmall}
+                  alt="Al Rais Travel"
+                  className="h-11 w-[60px] object-contain"
+                  style={{ opacity: 1 }}
+                />
+              </Link>
+            </div>
+
+            <h2 className="text-center text-xl font-bold text-[#0A0C0F] mb-1 sm:text-2xl">
+              Verify your{" "}
+              {userCredentials?.email?.includes("+") ? "phone" : "email"}
+            </h2>
+            <p className="text-center text-sm text-[#0A0C0F] mb-6">
+              A code has been sent to{" "}
+              <span className="font-medium text-[#5383DA]">
+                {userCredentials?.email}
+              </span>
+            </p>
+
+            <div className="space-y-1">
+              <Input
+                type="text"
+                name="otpCode"
+                label="Verification code"
+                placeholder="Enter verification code"
+                value={otpCode}
+                onChange={(e) => {
+                  const value = e.target.value.replace(/\D/g, ""); // Only allow digits
+                  if (value.length <= 6) {
+                    setOtpCode(value);
+                  }
+                  if (error) clearError();
+                }}
+                rounded="xl"
+                required
+                touched={touched.otp}
+                error={Boolean(otpError)}
+                onBlur={() => {
+                  setTouched((prev) => ({ ...prev, otp: true }));
+                }}
+              />
+              {/* Figma: error directly below input, red text */}
+              {touched.otp && otpError && (
+                <p
+                  id="otp-error"
+                  role="alert"
+                  aria-live="assertive"
+                  className="mt-1 text-sm text-red-600"
+                >
+                  {otpError}
+                </p>
+              )}
+            </div>
+
+            {/* {signupMessage && (
+              <p className="text-center text-sm text-[#5383DA]">
+                {signupMessage}
+              </p>
             )} */}
 
-            <div className="flex justify-center">
-              <Button
+            <div className="flex justify-center pt-1">
+              <button
                 type="submit"
-                variant="primary"
-                disabled={!isFormValid || loading.signup || !isOnline}
+                disabled={
+                  !otpCode || otpCode.length !== 6 || otpLoading || !isOnline
+                }
+                className={`
+                  flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5
+                  rounded-full px-10 py-3.5
+                  font-semibold text-white tracking-[0.5px]
+                  transition-opacity hover:opacity-95
+                  ${
+                    !otpCode || otpCode.length !== 6 || otpLoading || !isOnline
+                      ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                      : "auth-bg-btn"
+                  }
+                `}
+                style={{ background: "var(--black-100, #C2CAD6)", opacity: 1 }}
               >
-                {loading.signup ? "Creating Account..." : "Sign Up"}
-              </Button>
+                {otpLoading ? "Verifying..." : "Verify now"}
+              </button>
+            </div>
+
+            <div className="text-center pt-4">
+              <p className="text-sm text-[#3D495C]">
+                Haven&apos;t received the code?{" "}
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={!canResend || resendLoading || !isOnline}
+                  className={`text-sm font-medium underline ${canResend && !resendLoading ? "text-[#5383DA] hover:text-[#2351A3]" : "text-gray-400 cursor-not-allowed"}`}
+                >
+                  {resendLoading
+                    ? "Sending..."
+                    : canResend
+                      ? "Resend"
+                      : `Resend (${countdown}s)`}
+                </button>
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowOtpInput(false);
+                  setOtpCode("");
+                  // setSignupMessage(null);
+                }}
+                className="mt-4 block w-full text-center text-sm text-[#3D495C] hover:text-[#0A0C0F]"
+              >
+                Go Back to signup
+              </button>
             </div>
           </form>
-        </div>
-      ) : (
-        <form onSubmit={handleOtpSubmit} className="space-y-4">
-          <div className="text-center mb-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              Verify Your{" "}
-              {userCredentials?.email?.includes("+") ? "Phone" : "Email"}
-            </h3>
-            <p className="text-sm text-gray-600 mt-2">
-              We sent a verification code to{" "}
-              <strong>{userCredentials?.email}</strong>
-            </p>
-          </div>
+        )}
 
-          <div>
-            <Input
-              type="text"
-              name="otpCode"
-              label="Verification Code"
-              placeholder="Enter 6-digit code"
-              onBlur={() => {
-                setTouched((prev) => ({ ...prev, otp: true }));
-              }}
-              touched={touched.otp}
-              error={Boolean(otpError)}
-              value={otpCode}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, ""); // Only allow digits
-                if (value.length <= 6) {
-                  setOtpCode(value);
-                }
-                if (error) clearError();
-              }}
-              rounded="xl"
-              required
-            />
-
-            {touched.otp && otpError && (
-              <p
-                id="otp-error"
-                role="alert"
-                aria-live="assertive"
-                className="mt-1 text-sm text-red-600"
-              >
-                {otpError}
+        {!showOtpInput && (
+          <>
+            <div className="mt-6 text-center">
+              <p className="text-sm text-[#3D495C]">
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={onLoginClick}
+                  className="text-[#5383DA] hover:underline font-semibold"
+                >
+                  Login
+                </button>
               </p>
-            )}
-          </div>
-
-          <div className="flex justify-center">
-            <Button
-              type="submit"
-              variant="primary"
-              disabled={
-                !otpCode || otpCode.length !== 6 || otpLoading || !isOnline
-              }
-            >
-              {otpLoading ? "Verifying..." : "Verify Account"}
-            </Button>
-          </div>
-
-          <div className="text-center space-y-2">
-            <button
-              type="button"
-              onClick={handleResendCode}
-              disabled={!canResend || resendLoading || !isOnline}
-              className={`text-sm underline ${canResend && !resendLoading
-                ? "text-blue-600 hover:text-blue-800"
-                : "text-gray-400 cursor-not-allowed"
-                }`}
-            >
-              {resendLoading
-                ? "Sending..."
-                : canResend
-                  ? "Resend Code"
-                  : `Resend Code (${countdown}s)`}
-            </button>
-            <br />
-            <button
-              type="button"
-              onClick={() => {
-                setShowOtpInput(false);
-                setOtpCode("");
-                // setSignupMessage(null);
-              }}
-              className="text-sm text-gray-600 hover:text-gray-800"
-            >
-              ← Back to signup
-            </button>
-          </div>
-        </form>
-      )}
-
-      {!showOtpInput && (
-        <>
-          <div className="mt-6 text-center">
-            <p className="text-sm text-[#3D495C]">
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={onLoginClick}
-                className="text-[#5383DA] hover:underline font-semibold"
+            </div>
+            <div className="mt-8 text-center">
+              <p
+                className="text-[#3D495C]"
+                style={{
+                  fontFamily: "Inter",
+                  fontWeight: 400,
+                  fontSize: "12px",
+                  lineHeight: "100%",
+                  letterSpacing: "0%",
+                  textAlign: "center",
+                  opacity: 1,
+                }}
               >
-                Login
-              </button>
-            </p>
-          </div>
-          <div className="mt-8 text-center">
-            <p
-              className="text-[#3D495C]"
-              style={{
-                fontFamily: "Inter",
-                fontWeight: 400,
-                fontSize: "12px",
-                lineHeight: "100%",
-                letterSpacing: "0%",
-                textAlign: "center",
-                opacity: 1,
-              }}
-            >
-              By continuing, you agree to our{" "}
-              <button
-                type="button"
-                className="hover:underline font-medium"
-                style={{ color: "#5383DA" }}
-              >
-                Terms
-              </button>{" "}
-              and{" "}
-              <button
-                type="button"
-                className="hover:underline font-medium"
-                style={{ color: "#5383DA" }}
-              >
-                Privacy policy
-              </button>
-            </p>
-          </div>
-        </>
-      )}
+                By continuing, you agree to our{" "}
+                <button
+                  type="button"
+                  className="hover:underline font-medium"
+                  style={{ color: "#5383DA" }}
+                >
+                  Terms
+                </button>{" "}
+                and{" "}
+                <button
+                  type="button"
+                  className="hover:underline font-medium"
+                  style={{ color: "#5383DA" }}
+                >
+                  Privacy policy
+                </button>
+              </p>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };

@@ -94,13 +94,34 @@ const PassengerCounterDropdown: React.FC<Props> = ({
 
   const total = useMemo(
     () => rows.reduce((acc, r) => acc + ((pax as any)[r.key] || 0), 0),
-    [rows, pax]
+    [rows, pax],
   );
+
+  // Tooltip text: show "Select Passengers" when empty, else "1 Adult, 2 Children" etc.
+  const tooltipLabel = useMemo(() => {
+    const singularMap: Record<string, string> = {
+      adults: "Adult",
+      kids: "Kid",
+      children: "Child",
+      infants: "Infant",
+      seniors: "Senior",
+    };
+    const parts = rows
+      .filter((r) => ((pax as any)[r.key] || 0) > 0)
+      .map((r) => {
+        const count = (pax as any)[r.key] || 0;
+        const title = r.title || r.key;
+        const singular =
+          singularMap[r.key] ?? title.replace(/s$/, "") ?? title;
+        return count === 1 ? `1 ${singular}` : `${count} ${title}`;
+      });
+    return parts.length > 0 ? parts.join(", ") : "Select Passengers";
+  }, [rows, pax]);
 
   // Calculate adults + kids total (max 9)
   const adultsKidsTotal = useMemo(
     () => (pax.adults || 0) + (pax.kids || 0),
-    [pax]
+    [pax],
   );
 
   // keep pax shape in sync if schema arrives later
@@ -165,10 +186,27 @@ const PassengerCounterDropdown: React.FC<Props> = ({
       return { ...p, [k]: newVal };
     });
 
-  // block native “menu” (it’s a button) and toggle error vs list
+  // Check if error is a validation error (should not show popup)
+  const isValidationError = React.useMemo(() => {
+    if (!errorMessage) return false;
+    const validationKeywords = [
+      "Please select",
+      "is required",
+      "required",
+      "Please complete",
+    ];
+    return validationKeywords.some((keyword) =>
+      errorMessage.toLowerCase().includes(keyword.toLowerCase())
+    );
+  }, [errorMessage]);
+
+  // block native "menu" (it's a button) and toggle error vs list
   const handleToggle = () => {
-    const hasError = !!errorMessage || rows.length === 0;
-    if (hasError) {
+    // Only show popup for API errors, not validation errors
+    const hasApiError = !!errorMessage && !isValidationError;
+    const hasNoSchema = rows.length === 0;
+    
+    if (hasApiError || hasNoSchema) {
       setShowError((s) => !s);
       setOpen(false);
     } else {
@@ -233,28 +271,22 @@ const PassengerCounterDropdown: React.FC<Props> = ({
             before:border-t-[#1E293B]
           `}
         >
-          <div className="text-center">
-            Adults + Kids count cannot exceed 9
-            <br />
-            Infants cannot be more than Adults
-          </div>
+          {tooltipLabel}
         </div>
       </div>
 
-      {/* Error panel (like From/To) */}
-      {showError && (
-        // <div className="absolute z-30 mt-2 w-[250px]">
+      {/* Error panel (like From/To) - only for API errors, not validation */}
+      {showError && !isValidationError && (
         <CustomDropdownError
           id="pax-error"
           title="Nothing found!"
           message={errorMessage ?? "Please try again later."}
         />
-        // </div>
       )}
 
       {/* Counter list */}
       {open && (
-        <div className="absolute z-30 mt-2 w-[300px] rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] p-3">
+        <div className="absolute z-[9999] mt-2 w-[300px] rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] p-3">
           {rows.map((r, idx) => (
             <React.Fragment key={r.key}>
               <Row

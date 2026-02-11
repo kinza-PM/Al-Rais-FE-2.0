@@ -1,4 +1,4 @@
-// import React, { useState } from "react";
+﻿// import React, { useState } from "react";
 // import { Link, useNavigate } from "react-router-dom";
 // import Logo from "../atoms/Logo";
 // import Button from "../atoms/Button";
@@ -146,20 +146,25 @@
 
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Layout, Menu, Dropdown, Avatar, Drawer, Badge, Modal, Typography } from "antd";
+import { Layout, Menu, Dropdown, Avatar, Drawer } from "antd";
 import {
   MenuOutlined,
-  // UserOutlined,
   LogoutOutlined,
   ProfileOutlined,
+<<<<<<< HEAD
   BellOutlined,
   ShoppingCartOutlined,
   GlobalOutlined,
   DollarOutlined,
+=======
+  ShoppingCartOutlined,
+  DownOutlined,
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
 } from "@ant-design/icons";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import Logo from "../atoms/Logo";
 import Button from "../atoms/Button";
+<<<<<<< HEAD
 import toast from "react-hot-toast";
 import {
   fetchNotificationsPage,
@@ -189,6 +194,15 @@ const FlagIcon: React.FC<{ src: string, size?: number }> = ({ src, size = 20 }) 
     <img src={src} alt="flag" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
   </div>
 );
+=======
+import FlagUsa from "../../assets/svgs/Flag-usa.svg";
+
+const { Header } = Layout;
+
+const PRIMARY_BLUE = "#2351A3";
+const OUTLINE_BLUE = "#5383DA";
+const TEXT_DARK = "#081326";
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
 
 interface HeaderProps {
   logoSrc: string;
@@ -204,10 +218,6 @@ const AppHeader: React.FC<HeaderProps> = ({
   const { isAuthenticated, user, signOut } = useAuth();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [showAllNotifications, setShowAllNotifications] = useState(false);
-  const [notifNextToken, setNotifNextToken] = useState<string | null>(null);
-  const [notifLoadingMore, setNotifLoadingMore] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -219,104 +229,6 @@ const AppHeader: React.FC<HeaderProps> = ({
   const handleLogout = async () => {
     await signOut();
     navigate("/");
-  };
-
-  useEffect(() => {
-    let subscription: { unsubscribe?: () => void } | undefined;
-
-    const init = async () => {
-      if (!isAuthenticated || !user?.id) return;
-      try {
-        const page = await fetchNotificationsPage(user.id, 20, null);
-        setNotifications(page.items ?? []);
-        setNotifNextToken(page.nextToken ?? null);
-      } catch (err) {
-        console.error("Failed to load notifications", err);
-      }
-
-      subscription = subscribeToNotifications(
-        user.id,
-        (notification) => {
-          setNotifications((prev) => {
-            const exists = prev.some((n) => n.notificationId === notification.notificationId);
-            return exists ? prev : [notification, ...prev];
-          });
-          toast.success(notification.title || "New notification");
-        },
-        (err) => {
-          console.error("Notification subscription error", err);
-          toast.error("Real-time notifications disconnected");
-        }
-      );
-    };
-
-    void init();
-
-    return () => {
-      subscription?.unsubscribe?.();
-    };
-  }, [isAuthenticated, user?.id]);
-
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const topNotifications = notifications.slice(0, 5);
-  const hasMoreNotifications = notifications.length > 5;
-
-  const formatTimestamp = (iso?: string) => {
-    if (!iso) return "";
-    const d = new Date(iso);
-    return isNaN(d.getTime()) ? "" : d.toLocaleString();
-  };
-
-  const handleMarkRead = async (notification: NotificationItem) => {
-    if (!user?.id) return;
-    if (notification.read) return;
-
-    // Optimistic UI update
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.notificationId === notification.notificationId ? { ...n, read: true } : n
-      )
-    );
-
-    try {
-      await markNotificationRead(user.id, notification.notificationId);
-    } catch (err) {
-      // Rollback on failure
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.notificationId === notification.notificationId
-            ? { ...n, read: false }
-            : n
-        )
-      );
-      console.error("Failed to mark notification read", err);
-      toast.error("Failed to mark as read");
-    }
-  };
-
-  const loadMoreNotifications = async () => {
-    if (!user?.id) return;
-    if (!notifNextToken) return;
-    if (notifLoadingMore) return;
-
-    setNotifLoadingMore(true);
-    try {
-      const page = await fetchNotificationsPage(user.id, 20, notifNextToken);
-      setNotifications((prev) => {
-        const seen = new Set(prev.map((n) => n.notificationId));
-        const merged = [...prev];
-        for (const n of page.items ?? []) {
-          if (!seen.has(n.notificationId)) merged.push(n);
-        }
-        return merged;
-      });
-      setNotifNextToken(page.nextToken ?? null);
-    } catch (err) {
-      console.error("Failed to load more notifications", err);
-      toast.error("Failed to load more notifications");
-    } finally {
-      setNotifLoadingMore(false);
-    }
   };
 
   // Dropdown menu for authenticated user
@@ -338,90 +250,11 @@ const AppHeader: React.FC<HeaderProps> = ({
     ],
   };
 
-  const notificationMenu = {
-    items:
-      topNotifications.length > 0
-        ? [
-          ...topNotifications.map((notification) => ({
-            key: notification.notificationId,
-            label: (
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 4,
-                  minWidth: 240,
-                  padding: 8,
-                  borderRadius: 8,
-                  marginBottom: 6,
-                  backgroundColor: notification.read ? "#ffffff" : "#E0F2FF",
-                  border: notification.read
-                    ? "1px solid #f3f4f6"
-                    : "1px solid #bfdbfe",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ fontWeight: 600, color: "#0f172a" }}>
-                    {notification.title}
-                  </span>
-                  {!notification.read && (
-                    <span style={{ fontSize: 10, color: "#2563eb" }}>Unread</span>
-                  )}
-                </div>
-                <span style={{ color: "#4b5563" }}>{notification.message}</span>
-                <span style={{ fontSize: 12, color: "#9ca3af" }}>
-                  {formatTimestamp(notification.createdAt)}
-                </span>
-              </div>
-            ),
-          })),
-          ...(hasMoreNotifications
-            ? [
-              {
-                key: "show-more",
-                label: (
-                  <div
-                    style={{
-                      padding: "8px 10px",
-                      color: "#2563eb",
-                      fontWeight: 600,
-                    }}
-                  >
-                    Show more
-                  </div>
-                ),
-                onClick: () => setShowAllNotifications(true),
-              },
-            ]
-            : []),
-        ]
-        : [
-          {
-            key: "empty",
-            label: (
-              <div style={{ color: "#6b7280" }}>No new notifications</div>
-            ),
-            disabled: true,
-          },
-        ],
-    onClick: ({ key }: { key: string }) => {
-      if (key === "show-more") {
-        setShowAllNotifications(true);
-        return;
-      }
-      const n = notifications.find((x) => x.notificationId === key);
-      if (n) void handleMarkRead(n);
-    },
-  };
-
   // Navigation links
   const navItems = [
-    // { key: "travel", label: <Link to="/travel">Travel</Link> },
-    // { key: "packages", label: <Link to="/packages">Packages</Link> },
-    // { key: "about", label: <Link to="/about">About</Link> },
-    { key: "travel", label: <Link to="#">Travel</Link> },
-    { key: "packages", label: <Link to="#">Packages</Link> },
-    { key: "about", label: <Link to="#">About</Link> },
+    { key: "travel", label: <Link to="/travel">Travel</Link> },
+    { key: "packages", label: <Link to="/packages">Packages</Link> },
+    { key: "about", label: <Link to="/about">About</Link> },
     ...(isAuthenticated
       ? [
         {
@@ -432,28 +265,9 @@ const AppHeader: React.FC<HeaderProps> = ({
       : []),
   ];
 
-  const notificationTrigger = (
-    <Dropdown
-      menu={notificationMenu}
-      placement="bottomRight"
-      trigger={["click"]}
-    >
-      <Badge
-        count={unreadCount || null}
-        overflowCount={9}
-        size="small"
-        showZero={false}
-      >
-        <BellOutlined
-          style={{ fontSize: 20, color: "#1f2937", cursor: "pointer" }}
-          aria-label="Notifications"
-        />
-      </Badge>
-    </Dropdown>
-  );
-
   return (
     <Header
+<<<<<<< HEAD
       style={{
         background: "#FFFFFF",
         padding: "0px 80px",
@@ -463,11 +277,22 @@ const AppHeader: React.FC<HeaderProps> = ({
         borderBottom: "1px solid #E4E4E7",
         height: "auto",
         minHeight: "56px",
+=======
+      className="bg-white"
+      style={{
+        padding: "0 144px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        borderBottom: "1px solid #E5E7EB",
+        height: 80,
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
       }}
     >
       {/* Logo */}
       <div>
-        <Link to="/"
+        <Link
+          to="/"
           aria-label="Go to home page"
           className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
@@ -475,6 +300,7 @@ const AppHeader: React.FC<HeaderProps> = ({
         </Link>
       </div>
 
+<<<<<<< HEAD
       {/* Desktop Navigation */}
       {!isMobile && isAuthenticated && user && (
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -706,6 +532,120 @@ const AppHeader: React.FC<HeaderProps> = ({
               >
                 Welcome, {user.name?.split("@")[0] || "User"}
               </span>
+=======
+      {/* Right side controls (desktop) */}
+      {!isMobile && (
+        <div className="flex items-center gap-4">
+          {/* Menu pill */}
+          <button
+            type="button"
+            onClick={() => setDrawerVisible(true)}
+            className="flex items-center justify-center w-10 h-10 rounded-[16px] border text-[16px]"
+            style={{
+              borderColor: OUTLINE_BLUE,
+              color: PRIMARY_BLUE,
+              backgroundColor: "#FFFFFF",
+            }}
+          >
+            <MenuOutlined />
+          </button>
+
+          {/* Currency pill */}
+          <button
+            type="button"
+            className="flex items-center gap-2 px-4 h-10 rounded-[16px] border text-sm font-medium"
+            style={{
+              borderColor: OUTLINE_BLUE,
+              color: TEXT_DARK,
+              backgroundColor: "#FFFFFF",
+            }}
+          >
+            <img
+              src={FlagUsa}
+              alt="USD"
+              className="w-5 h-5 rounded-full object-cover"
+            />
+            <span>USD</span>
+            <DownOutlined style={{ fontSize: 12 }} />
+          </button>
+
+          {/* Language pill */}
+          <button
+            type="button"
+            className="flex items-center gap-2 px-4 h-10 rounded-[16px] border text-sm font-medium"
+            style={{
+              borderColor: OUTLINE_BLUE,
+              color: TEXT_DARK,
+              backgroundColor: "#FFFFFF",
+            }}
+          >
+            <img
+              src={FlagUsa}
+              alt="English"
+              className="w-5 h-5 rounded-full object-cover"
+            />
+            <span>EN</span>
+          </button>
+
+          {/* Auth / actions */}
+          {isAuthenticated && user ? (
+            <Dropdown menu={userMenu} placement="bottomRight" arrow>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                  paddingInline: 12,
+                  height: 40,
+                  borderRadius: 9999,
+                  border: `1px solid ${OUTLINE_BLUE}`,
+                  backgroundColor: "#FFFFFF",
+                }}
+              >
+                <Avatar
+                  style={{ backgroundColor: PRIMARY_BLUE }}
+                  size="small"
+                >
+                  {user.name?.charAt(0).toUpperCase() || "U"}
+                </Avatar>
+                <span style={{ marginLeft: 8, color: TEXT_DARK }}>
+                  {user.name?.split("@")[0] || "User"}
+                </span>
+                <DownOutlined style={{ fontSize: 12, marginLeft: 4 }} />
+              </div>
+            </Dropdown>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={onLoginClick}
+                overrideClasses
+                className="px-6 h-10 rounded-[16px] border text-sm font-medium bg-white hover:bg-[#E6F0FF] transition-colors"
+                type="button"
+              >
+                <span className="text-[#2351A3]">Login</span>
+              </Button>
+              <Button
+                onClick={onSignupClick}
+                overrideClasses
+                className="px-6 h-10 rounded-[16px] border text-sm font-medium shadow-sm transition-colors text-[#2351A3] hover:bg-[#E6F0FF]"
+                type="button"
+              >
+                <span>Sign up</span>
+              </Button>
+
+              {/* Cart pill */}
+              <button
+                type="button"
+                className="flex items-center justify-center w-10 h-10 rounded-[16px] border text-[16px]"
+                style={{
+                  borderColor: OUTLINE_BLUE,
+                  color: PRIMARY_BLUE,
+                  backgroundColor: "#FFFFFF",
+                }}
+              >
+                <ShoppingCartOutlined />
+              </button>
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
             </div>
           </Dropdown>
         </div>
@@ -731,6 +671,7 @@ const AppHeader: React.FC<HeaderProps> = ({
         </div>
       )}
 
+<<<<<<< HEAD
       <Modal
         title="Notifications"
         open={showAllNotifications}
@@ -887,9 +828,17 @@ const AppHeader: React.FC<HeaderProps> = ({
             Sign up
           </Button>
         </div>
+=======
+      {/* Mobile: simple menu + auth in drawer */}
+      {isMobile && (
+        <MenuOutlined
+          style={{ fontSize: 22, cursor: "pointer", color: PRIMARY_BLUE }}
+          onClick={() => setDrawerVisible(true)}
+        />
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
       )}
 
-      {/* Mobile Drawer */}
+      {/* Drawer for navigation & auth (all breakpoints) */}
       <Drawer
         placement="right"
         onClose={() => setDrawerVisible(false)}
@@ -990,6 +939,7 @@ const AppHeader: React.FC<HeaderProps> = ({
           onClick={() => setDrawerVisible(false)}
         />
 
+<<<<<<< HEAD
         {/* Drawer Actions */}
         {isAuthenticated && user && (
           <div style={{ marginTop: 24, display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -1017,6 +967,33 @@ const AppHeader: React.FC<HeaderProps> = ({
               }}
               onMouseLeave={(e) => {
                 e.currentTarget.style.backgroundColor = "#FFFFFF";
+=======
+        {/* Auth in Drawer */}
+        <div style={{ marginTop: 20 }}>
+          {isAuthenticated && user ? (
+            <Dropdown menu={userMenu} placement="bottomRight" arrow>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  cursor: "pointer",
+                }}
+              >
+                <Avatar style={{ backgroundColor: PRIMARY_BLUE }} size="large">
+                  {user.name?.charAt(0).toUpperCase() || "U"}
+                </Avatar>
+                <span style={{ marginLeft: 8 }}>
+                  Welcome, {user.name?.split("@")[0] || "User"}
+                </span>
+              </div>
+            </Dropdown>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px",
+>>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
               }}
             >
               <ProfileOutlined style={{ fontSize: "18px", color: "#5383DA" }} />

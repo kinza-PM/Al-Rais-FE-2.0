@@ -89,7 +89,10 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
       const currentScrollX = window.scrollX;
       searchInputRef.current.focus({ preventScroll: true });
       requestAnimationFrame(() => {
-        if (window.scrollY !== currentScrollY || window.scrollX !== currentScrollX) {
+        if (
+          window.scrollY !== currentScrollY ||
+          window.scrollX !== currentScrollX
+        ) {
           window.scrollTo(currentScrollX, currentScrollY);
         }
       });
@@ -101,7 +104,7 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
     return options.filter(
       (o) =>
         o.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        o.value.toLowerCase().includes(searchTerm.toLowerCase())
+        o.value.toLowerCase().includes(searchTerm.toLowerCase()),
     );
   }, [options, searchTerm]);
 
@@ -115,7 +118,8 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
 
     if (disabled || loading) return;
 
-    if (error) {
+    // Only show popup for API errors, not validation errors
+    if (error && !isValidationError) {
       setShowError((s) => !s);
       return;
     }
@@ -130,15 +134,32 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
     setSearchTerm("");
   };
 
+  // Check if error is a validation error (should show inline, not popup)
+  const isValidationError = React.useMemo(() => {
+    if (!error) return false;
+    const validationKeywords = [
+      "Please select",
+      "is required",
+      "required",
+      "Please complete",
+      "flying",
+    ];
+    return validationKeywords.some((keyword) =>
+      error.toLowerCase().includes(keyword.toLowerCase()),
+    );
+  }, [error]);
+
   const baseClasses = `
       appearance-none h-11 w-full rounded-xl border pl-4 pr-8 text-[14px] text-[#0F172A]
-      outline-none border-[#DFE7F3]
+      outline-none
       ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"}
-      ${error ? "border-red-500" : ""}
+      ${error && isValidationError ? "border-[#E65959]" : error ? "border-red-500" : "border-[#DFE7F3]"}
     `;
 
   return (
-    <div className={`relative ${widthClass}`}>
+    <div
+      className={`relative ${widthClass} ${error && isValidationError ? "border border-[#E65959]" : ""}`}
+    >
       {label && (
         <label className="block text-[12px] text-[#3D495C] mb-1">{label}</label>
       )}
@@ -148,8 +169,9 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
         type="button"
         onClick={handleToggle}
         disabled={disabled || loading}
-        className={`${className || baseClasses
-          } flex items-center justify-between relative`}
+        className={`${
+          className || baseClasses
+        } flex items-center justify-between relative`}
         aria-expanded={isOpen}
       >
         <span className={!selectedOption ? "text-[#98A4B3]" : ""}>
@@ -157,8 +179,9 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
         </span>
 
         <svg
-          className={`pointer-events-none absolute right-3 transition-transform ${isOpen ? "rotate-180" : ""
-            }`}
+          className={`pointer-events-none absolute right-3 transition-transform ${
+            isOpen ? "rotate-180" : ""
+          }`}
           width="16"
           height="16"
           viewBox="0 0 20 20"
@@ -210,14 +233,16 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
                     onClick={() => handleSelect(opt.value)}
                     className={`
                         w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC]
-                        ${opt.disabled
-                        ? "opacity-50 cursor-not-allowed"
-                        : "cursor-pointer"
-                      }
-                        ${opt.value === value
-                        ? "bg-[#2351A3]/10 text-[#2351A3]"
-                        : "text-[#0F172A]"
-                      }
+                        ${
+                          opt.disabled
+                            ? "opacity-50 cursor-not-allowed"
+                            : "cursor-pointer"
+                        }
+                        ${
+                          opt.value === value
+                            ? "bg-[#2351A3]/10 text-[#2351A3]"
+                            : "text-[#0F172A]"
+                        }
                       `}
                   >
                     {opt.label}
@@ -230,12 +255,18 @@ const CardOverlaySearchableDropdown: React.FC<Props> = ({
               )}
             </div>
           </div>,
-          document.body
+          document.body,
         )}
 
-      {error && showError && (
+      {error && showError && !isValidationError && (
         <CustomDropdownError title="Nothing found!" message={error} />
       )}
+      {/* Show inline error only for validation errors */}
+      {/* {error && isValidationError && (
+        <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
+          {error}
+        </p>
+      )} */}
     </div>
   );
 };

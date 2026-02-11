@@ -21,6 +21,7 @@ export interface LoginForm {
 }
 
 export interface SignupForm {
+  // title: string;
   name: string;
   email: string;
   password: string;
@@ -70,4 +71,4 @@ export interface AuthResponse {
   nextStep?: string;
   requiresConfirmation?: boolean;
   isGuest?: boolean;
-} 
+}

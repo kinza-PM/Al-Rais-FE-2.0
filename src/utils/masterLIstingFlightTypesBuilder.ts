@@ -91,7 +91,7 @@ export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
       .map((i, key) => ({
         id: `${key}`,
         // label: `${i.city}, ${i.country}`,
-        label: `${i.city} (${i.iataCode})`,
+        label: `${i.city}, ${i.country} (${i.iataCode})`,
         // label: `${i.airportName}`,
         // label: `${i.city} (${i.cityCode}), ${i.country}`,
         code: i.iataCode,
@@ -101,7 +101,7 @@ export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
         countryCode: i.countryCode,
       }))
       // optional: stable sort by city
-      .sort((a, b) => a.city.localeCompare(b.city))
+      // .sort((a, b) => a.city.localeCompare(b.city))
   );
 }
 

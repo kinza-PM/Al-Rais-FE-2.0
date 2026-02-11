@@ -279,6 +279,7 @@ export class AuthService {
       // Prepare user attributes
       const userAttributes: Record<string, string> = {
         name: userData.name,
+        // title: userData.title,
       };
 
       // If it's a phone number, use phone_number attribute, otherwise use email

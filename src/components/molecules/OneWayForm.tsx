@@ -8,6 +8,7 @@ import type {
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import SearchableDropdown from "../common/SearchableDropdown";
+import Info from "../../assets/svgs/info-black.svg";
 
 type Props = {
   countries?: AirportOption[];
@@ -31,9 +32,11 @@ type Props = {
   // lifted state callbacks
   onChangePassengers?: (p: { [k: string]: number }, order: string[]) => void;
   onChangeDepartDate?: (d: Date | null) => void;
-  // departDateError?: string;
-  // passengersError?: string;
-  // cabinClassError?: string;
+  fromError?: string;
+  toError?: string;
+  departDateError?: string;
+  passengersError?: string;
+  cabinClassError?: string;
   countriesHasMore?: boolean;
   countriesFetchNext?: () => void;
   countriesLoadingMore?: boolean;
@@ -45,21 +48,23 @@ const OneWayForm: React.FC<Props> = ({
   onSearchCountries,
   fromCode = "",
   toCode = "",
-  onChangeFrom = () => {},
-  onChangeTo = () => {},
+  onChangeFrom = () => { },
+  onChangeTo = () => { },
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => {},
+  onChangeCabinClassId = () => { },
   onChangePassengers,
   onChangeDepartDate,
-  // departDateError = "",
-  // passengersError = "",
-  // cabinClassError = "",
+  fromError = "",
+  toError = "",
+  departDateError = "",
+  passengersError = "",
+  cabinClassError = "",
   countriesHasMore = false,
-  countriesFetchNext = () => {},
+  countriesFetchNext = () => { },
   countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
@@ -151,16 +156,8 @@ const OneWayForm: React.FC<Props> = ({
         placeholders={{ from: "Please select", to: "Please select" }}
         disableSameSelection
         widthClass="w-[190px]"
-        fromError={
-          !loadingCountries && countries.length === 0
-            ? "Please try a different search."
-            : undefined
-        }
-        toError={
-          !loadingCountries && countries.length === 0
-            ? "Please try a different search."
-            : undefined
-        }
+        fromError={fromError || undefined}
+        toError={toError || undefined}
         onLoadMore={() => {
           if (countriesHasMore) {
             countriesFetchNext?.();
@@ -185,13 +182,8 @@ const OneWayForm: React.FC<Props> = ({
           tooltip="Select departure date"
           buttonIconSrc={true}
           disablePastDates={true}
-
+          error={departDateError || null}
         />
-        {/* {departDateError && (
-          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
-            {departDateError}
-          </p>
-        )} */}
         {/* <div className="relative">
           <input
             ref={depRef}
@@ -215,30 +207,46 @@ const OneWayForm: React.FC<Props> = ({
       </div>
 
       {/* Passengers */}
-      <div className="w-[170px]">
-        <label className="block text-[12px] text-[#3D495C] mb-1">
+      <div className="w-[170px] relative">
+        <label className="flex items-center gap-2 text-[12px] text-[#3D495C] mb-1">
           Passengers
+          <span className="relative inline-flex group/info">
+            <img
+              src={Info}
+              alt="info"
+              className="w-4 h-4 inline-block align-middle"
+            />
+            <span
+              className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg text-center min-w-max before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:w-0 before:h-0 before:block before:border-4 before:border-transparent before:border-t-[#1E293B]"
+              role="tooltip"
+            >
+              Adults + Kids count cannot exceed 9
+              <br />
+              Infants cannot be more than Adults
+            </span>
+          </span>
         </label>
         <PassengerCounterDropdown
           maxTotal={100}
           onChange={handlePaxChange}
           schema={passengerSchema}
           errorMessage={
-            !loadingPassengers &&
-            (!passengerSchema || passengerSchema.length === 0)
+            passengersError ||
+            (!loadingPassengers &&
+              (!passengerSchema || passengerSchema.length === 0)
               ? "Passenger types are not available right now. Please try again later."
-              : null
+              : null)
           }
         />
-        {/* {passengersError && (
-          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
+        {passengersError && (
+          <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
             {passengersError}
           </p>
-        )} */}
+        )}
       </div>
 
       {/* Cabin class */}
-      <div className="w-[185px]">
+      <div className="w-[185px] relative">
         <SearchableDropdown
           options={cabinClasses.map((cc) => ({
             id: cc.id,
@@ -251,15 +259,15 @@ const OneWayForm: React.FC<Props> = ({
           tooltip="Select cabin class"
           label="Cabin class"
           disabled={!!loadingCabinClasses}
-          error={cabinError}
+          error={cabinClassError || cabinError}
           widthClass="w-full"
           searchPlaceholder="Search cabin classes..."
         />
-        {/* {cabinClassError && (
-          <p className="absolute mt-1 ml-2 text-[12px] text-[#E65959] whitespace-nowrap">
+        {cabinClassError && (
+          <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
             {cabinClassError}
           </p>
-        )} */}
+        )}
       </div>
     </div>
   );

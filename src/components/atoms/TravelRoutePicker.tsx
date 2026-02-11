@@ -52,11 +52,14 @@ const TravelRoutePicker: React.FC<Props> = ({
 }) => {
   const { fromCode, toCode, fromOption, toOption } = value;
 
+  // When opt is provided (from onOptionSelect), pass it so parent can update label.
+  // When only code is provided (e.g. from SearchableDropdown's onChange after onOptionSelect),
+  // pass undefined for option so parent does not overwrite with stale option.
   const handleFrom = (code: string, opt?: AirportOption) =>
     onChange({
       fromCode: code,
       toCode,
-      fromOption: opt !== undefined ? opt : fromOption ?? undefined,
+      fromOption: opt !== undefined ? opt : undefined,
       toOption: toOption ?? undefined,
     });
   const handleTo = (code: string, opt?: AirportOption) =>
@@ -64,7 +67,7 @@ const TravelRoutePicker: React.FC<Props> = ({
       fromCode,
       toCode: code,
       fromOption: fromOption ?? undefined,
-      toOption: opt !== undefined ? opt : toOption ?? undefined,
+      toOption: opt !== undefined ? opt : undefined,
     });
 
   const swap = () => {
@@ -124,7 +127,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           onLoadMore={onLoadMore}
           hasMore={hasMore}
           loadingMore={loadingMore}
-          tooltip="Select where you’re flying from"
+          tooltip="Select where you're flying from"
         />
       </div>
 
@@ -132,7 +135,7 @@ const TravelRoutePicker: React.FC<Props> = ({
         <button
           type="button"
           onClick={swap}
-          className="-mx-2.5 flex h-10 w-10 items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn"
+          className="-mx-0.5 flex h-11 w-12 items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn"
         >
           <img src={DoubledArrow} alt="swap-routes" />
         </button>
@@ -164,7 +167,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           onLoadMore={onLoadMore}
           hasMore={hasMore}
           loadingMore={loadingMore}
-          tooltip="Select where you’re flying to"
+          tooltip="Select where you're flying to"
         />
       </div>
     </>
