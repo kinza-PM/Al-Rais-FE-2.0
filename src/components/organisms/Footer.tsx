@@ -19,7 +19,11 @@ const SERVICES_LINKS = [
   "Manage your bookings",
 ];
 
-const HELP_LINKS = ["FAQs", "Payments", "Contact support"];
+const HELP_LINKS = [
+  { label: "FAQs", link: "#" },
+  { label: "Payments", link: "#" },
+  { label: "Contact support", link: "/customer-support" },
+];
 
 const Footer: React.FC = () => {
   return (
@@ -97,12 +101,12 @@ const Footer: React.FC = () => {
             </h3>
             <ul className="space-y-2">
               {HELP_LINKS.map((item) => (
-                <li key={item}>
+                <li key={item.label}>
                   <a
-                    href="#"
+                    href={item.link}
                     className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
                   >
-                    {item}
+                    {item.label}
                   </a>
                 </li>
               ))}

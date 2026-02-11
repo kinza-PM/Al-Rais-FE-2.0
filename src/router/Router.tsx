@@ -20,6 +20,7 @@ const NotFoundPage = lazy(() => import("../pages/NotFoundPage"));
 const Travellers = lazy(() => import("../pages/Travellers"));
 const FlightBooking = lazy(() => import("../pages/FlightBooking"));
 const HotelBooking = lazy(() => import("../pages/HotelBooking"));
+const CustomerSupportPage = lazy(() => import("../pages/CustomerSupportPage"));
 
 const router = createBrowserRouter([
   {
@@ -98,6 +99,10 @@ const router = createBrowserRouter([
             <ProfilePage />
           </ProtectedRoute>
         ),
+      },
+      {
+        path: "customer-support",
+        element: <CustomerSupportPage />,
       },
       {
         path: "*",
