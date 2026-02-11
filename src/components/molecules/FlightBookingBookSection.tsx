@@ -264,17 +264,11 @@ export default function FlightBookingBookSection({
                                     /> */}
                 </div>
 
-<<<<<<< HEAD
                 <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
                   <div className="grid gap-x-1 gap-y-3 md:grid-cols-[1.2fr_1.8fr] pr-4">
-                    <div className="relative w-full max-w-[300px]">
-=======
-                <div className="px-4 py-4">
-                  <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
                     <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
+                      className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
                     >
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                       <SearchableDropdown
                         options={[
                           { id: "mr", value: "MR", label: "Mr" },
@@ -293,11 +287,18 @@ export default function FlightBookingBookSection({
                         placeholder="Select title"
                         label="Title"
                         widthClass="w-full"
-<<<<<<< HEAD
+                        error={
+                          hasAttemptedValidation
+                            ? validationErrors[idx]?.["passengerInfo.nameTitle"]
+                            : null
+                        }
                         className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
                       />
                     </div>
-                    <TailwindCustomInput
+                    <div
+                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
+                    >
+                      <TailwindCustomInput
                       type="text"
                       placeholder="Enter your full name"
                       label="Full name (Filled based on ID/Passport/Driver’s license)"
@@ -313,21 +314,17 @@ export default function FlightBookingBookSection({
                           v ?? "",
                         );
                       }}
-                      className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                    />
-
-                    <div className="w-full max-w-[300px]">
-=======
                         error={
                           hasAttemptedValidation
-                            ? validationErrors[idx]?.["passengerInfo.nameTitle"]
+                            ? validationErrors[idx]?.["passengerInfo.givenName"]
                             : null
                         }
-                        className={`h-10 w-full appearance-none rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "border-[#E65959]" : "border-[#C2CAD6]"} bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
+                        className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
                       />
                     </div>
+
                     <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
+                      className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
                     >
                       <TailwindCustomInput
                         type="text"
@@ -357,7 +354,6 @@ export default function FlightBookingBookSection({
                     <div
                       className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
                     >
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                       <TailwindCustomInput
                         type="text"
                         placeholder="Enter your surname"
@@ -373,14 +369,6 @@ export default function FlightBookingBookSection({
                             "passengerInfo.surname",
                             v ?? "",
                           );
-<<<<<<< HEAD
-                        }}
-                        className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                      />
-                    </div>
-
-                    <div className="relative w-full max-w-[561px]">
-=======
                           clearFieldError(idx, "passengerInfo.surname");
                         }}
                         error={
@@ -388,12 +376,13 @@ export default function FlightBookingBookSection({
                             ? validationErrors[idx]?.["passengerInfo.surname"]
                             : null
                         }
+                        className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
                       />
                     </div>
+
                     <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
+                      className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
                     >
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                       <SearchableDropdown
                         options={[
                           { id: "male", value: "M", label: "Male" },
@@ -411,16 +400,12 @@ export default function FlightBookingBookSection({
                         placeholder="Select gender"
                         label="Gender"
                         widthClass="w-full"
-<<<<<<< HEAD
-                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-=======
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.["passengerInfo.gender"]
                             : null
                         }
-                        className={`h-10 w-full appearance-none rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "border-[#E65959]" : "border-[#C2CAD6]"} bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
+                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                       />
                     </div>
                   </div>
@@ -449,13 +434,9 @@ export default function FlightBookingBookSection({
                     </div>
 
                     {pRules.isIdTypeMandatory && (
-<<<<<<< HEAD
-                      <div className="relative w-full max-w-[561px]">
-=======
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idType"] ? "pb-4" : ""}`}
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idType"] ? "pb-4" : ""}`}
                       >
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                         <SearchableDropdown
                           options={[
                             {
@@ -476,9 +457,6 @@ export default function FlightBookingBookSection({
                           placeholder="Select ID type"
                           label="ID type"
                           widthClass="w-full"
-<<<<<<< HEAD
-                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-=======
                           error={
                             hasAttemptedValidation
                               ? validationErrors[idx]?.[
@@ -486,8 +464,7 @@ export default function FlightBookingBookSection({
                                 ]
                               : null
                           }
-                          className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
+                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                         />
                       </div>
                     )}
@@ -540,13 +517,9 @@ export default function FlightBookingBookSection({
                     {/* )} */}
 
                     {/* {pRules.isIssuingCountryCodeMandatory && ( */}
-<<<<<<< HEAD
-                    <div className="relative w-full max-w-[561px]">
-=======
                     <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
+                      className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
                     >
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                       <SearchableDropdown
                         // options={
                         //   cities?.map((c) => ({
@@ -580,9 +553,6 @@ export default function FlightBookingBookSection({
                         label="Issuing country"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
-<<<<<<< HEAD
-                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-=======
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
@@ -590,22 +560,16 @@ export default function FlightBookingBookSection({
                               ]
                             : null
                         }
-                        className={`h-10 w-full appearance-none rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "border-[#E65959]" : "border-[#C2CAD6]"} bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
+                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                       />
                     </div>
                     {/* )} */}
 
                     {pRules.isDateOfIssueMandatory && (
-<<<<<<< HEAD
-                      <div className="w-full max-w-[561px]">
-                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-=======
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
+                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
                       >
-                        <label className="mb-1 block text-[12px] text-[#3D495C]">
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
+                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Date of issue
                         </label>
                         <TailiwindCustomDatePicker
@@ -637,25 +601,16 @@ export default function FlightBookingBookSection({
                               : null
                           }
                           overridesClass
-<<<<<<< HEAD
                           inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-=======
-                          inputClass={`h-10 w-full rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none`}
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                         />
                       </div>
                     )}
 
                     {/* {pRules.isExpiryDateMandatory && ( */}
-<<<<<<< HEAD
-                    <div className="w-full max-w-[561px]">
-                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-=======
                     <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
+                      className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
                     >
-                      <label className="mb-1 block text-[12px] text-[#3D495C]">
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
+                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                         Expiry date
                       </label>
                       <TailiwindCustomDatePicker
@@ -687,23 +642,15 @@ export default function FlightBookingBookSection({
                             : null
                         }
                         overridesClass
-<<<<<<< HEAD
                         inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-=======
-                        inputClass={`h-10 w-full rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none`}
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                       />
                     </div>
                     {/* )} */}
 
                     {/* {pRules.isResidenceCountryCodeMandatory && ( */}
-<<<<<<< HEAD
-                    <div className="relative w-full max-w-[561px]">
-=======
                     <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "pb-4" : ""}`}
+                      className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "pb-4" : ""}`}
                     >
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                       <SearchableDropdown
                         // options={
                         //   cities?.map((c) => ({
@@ -737,9 +684,6 @@ export default function FlightBookingBookSection({
                         label="Residence Country"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
-<<<<<<< HEAD
-                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-=======
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
@@ -747,8 +691,7 @@ export default function FlightBookingBookSection({
                               ]
                             : null
                         }
-                        className={`h-10 w-full appearance-none rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "border-[#E65959]" : "border-[#C2CAD6]"} bg-white px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
+                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                       />
                     </div>
                     {/* )} */}
@@ -792,15 +735,10 @@ export default function FlightBookingBookSection({
                     {/* )} */}
 
                     {pRules.isDateOfBirthMandatory && (
-<<<<<<< HEAD
-                      <div className="w-full max-w-[561px]">
-                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-=======
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
+                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
                       >
-                        <label className="mb-1 block text-[12px] text-[#3D495C]">
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
+                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Birth date
                         </label>
                         <TailiwindCustomDatePicker
@@ -827,11 +765,7 @@ export default function FlightBookingBookSection({
                               : null
                           }
                           overridesClass
-<<<<<<< HEAD
                           inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-=======
-                          inputClass={`h-10 w-full rounded-lg border ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none`}
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                         />
                       </div>
                     )}
@@ -1061,13 +995,8 @@ export default function FlightBookingBookSection({
                         />
                       </div>
                     </div> */}
-<<<<<<< HEAD
-                    <div className="w-full max-w-[561px]">
+                    <div className="relative w-full max-w-[561px]">
                       <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-=======
-                    <div className="relative w-full">
-                      <label className="mb-1 block text-[12px] text-[#3D495C]">
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
                         Phone
                       </label>
                       <div

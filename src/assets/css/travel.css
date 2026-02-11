@@ -1474,17 +1474,10 @@ img:hover {
 
 .custom-phone-wrapper .react-international-phone-country-selector-button {
   width: 112px !important;
-<<<<<<< HEAD
   height: 50px !important;
   border-radius: 16px !important;
   border: 1.5px solid #C2CAD6 !important;
   background: #F9FAFB !important;
-=======
-  height: 40px !important;
-  border-radius: 8px !important;
-  border: 1px solid #c2cad6 !important;
-  background: white !important;
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
   padding: 8px 12px !important;
   display: flex !important;
   align-items: center !important;
@@ -1496,14 +1489,9 @@ img:hover {
   flex: 1 !important;
   height: 50px !important;
   width: 100% !important;
-<<<<<<< HEAD
   border-radius: 16px !important;
   border: 1.5px solid #C2CAD6 !important;
   background: #F9FAFB !important;
-=======
-  border-radius: 8px !important;
-  border: 1px solid #c2cad6 !important;
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
   padding: 0 12px !important;
   font-size: 14px !important;
   color: #0a0c0f !important;
@@ -1535,13 +1523,8 @@ img:hover {
 
 .custom-phone-wrapper .react-international-phone-country-selector-dropdown {
   max-height: 300px !important;
-<<<<<<< HEAD
   border-radius: 16px !important;
   border: 1.5px solid #C2CAD6 !important;
-=======
-  border-radius: 8px !important;
-  border: 1px solid #c2cad6 !important;
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
   margin-top: 4px !important;
 }
 
@@ -1550,13 +1533,8 @@ img:hover {
   width: calc(100% - 16px) !important;
   margin: 8px !important;
   padding: 8px 12px !important;
-<<<<<<< HEAD
   border: 1.5px solid #C2CAD6 !important;
   border-radius: 16px !important;
-=======
-  border: 1px solid #c2cad6 !important;
-  border-radius: 8px !important;
->>>>>>> e5d323e56c7a28ba29f31972700039392a8f34be
   font-size: 14px !important;
   color: #3d495c !important;
 }
