@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 import "../../assets/css/travel.css";
 import FlagUae from "../../assets/svgs/Flag-uae.svg";
@@ -36,6 +36,8 @@ import {
   type HotelFilters,
   type SortOption,
 } from "../../utils/hotelFilters";
+import { useCountriesOptions } from "../../hooks/masterListings/listing";
+import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
 // import {
 //   getCitiesByCountry,
 //   getNationalityOptions,
@@ -131,6 +133,19 @@ const HotelSearchListing: React.FC = () => {
   });
   const [sortOption, setSortOption] = useState<SortOption>("");
 
+  const { data: countriesOptions, isLoading: isCountriesLoading } =
+    useCountriesOptions();
+
+  const selectedCountry = useMemo(
+    () => countriesOptions?.find((c) => c.label === searchState.country),
+    [countriesOptions, searchState.country],
+  );
+
+  const { data: citiesData, isLoading: isCitiesLoading } = useCitiesOptions(
+    selectedCountry?.label || "",
+    !!selectedCountry?.label,
+  );
+
   // const countryOptions = useMemo(() => {
   //   return getUniqueCountries(countries);
   // }, [countries]);
@@ -154,7 +169,7 @@ const HotelSearchListing: React.FC = () => {
       //   setValidationError(null);
       // }
     },
-    [validationError]
+    [validationError],
   );
 
   // Handle nested filter changes
@@ -168,7 +183,7 @@ const HotelSearchListing: React.FC = () => {
         },
       }));
     },
-    []
+    [],
   );
 
   const convertDateToString = useCallback((date: Date | null): string => {
@@ -187,7 +202,7 @@ const HotelSearchListing: React.FC = () => {
         children?: number;
         rooms?: number;
       },
-      ages: Array<number | null>
+      ages: Array<number | null>,
     ): RoomData[] => {
       const numRooms = pax.rooms || 1;
       const totalAdults = pax.adults || 0;
@@ -210,13 +225,13 @@ const HotelSearchListing: React.FC = () => {
       for (let i = 0; i < numRooms; i++) {
         const adultsInRoom = Math.min(
           baseAdultsPerRoom + (i < extraAdults ? 1 : 0),
-          2 // Max 2 per room
+          2, // Max 2 per room
         );
 
         // Distribute children: base + 1 extra for first few rooms
         const childrenInRoom = Math.min(
           baseChildrenPerRoom + (i < extraChildren ? 1 : 0),
-          2 // Max 2 per room
+          2, // Max 2 per room
         );
 
         const childAgesForRoom: number[] = [];
@@ -237,7 +252,7 @@ const HotelSearchListing: React.FC = () => {
 
       return rooms;
     },
-    []
+    [],
   );
 
   // Handle TravellersAndRoomDropdown onChange
@@ -252,7 +267,7 @@ const HotelSearchListing: React.FC = () => {
       const room = convertPaxToRoom(pax, childAges);
       handleSearchChange("rooms", room);
     },
-    [childAges, convertPaxToRoom, handleSearchChange]
+    [childAges, convertPaxToRoom, handleSearchChange],
   );
 
   const handleChildrenAgesChange = useCallback(
@@ -261,12 +276,29 @@ const HotelSearchListing: React.FC = () => {
       const room = convertPaxToRoom(paxData, ages);
       handleSearchChange("rooms", room);
     },
-    [paxData, convertPaxToRoom, handleSearchChange]
+    [paxData, convertPaxToRoom, handleSearchChange],
   );
 
   const validateForm = useCallback((): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    const hasMultipleErrors =
+      [
+        !searchState.country || searchState.country.trim() === "",
+        !searchState.city || searchState.city.trim() === "",
+        !searchState.checkIn || searchState.checkIn.trim() === "",
+        !searchState.checkOut || searchState.checkOut.trim() === "",
+        !searchState.travelerCountryOfResidence ||
+          searchState.travelerCountryOfResidence.trim() === "",
+      ].filter(Boolean).length > 1;
+
+    if (hasMultipleErrors) {
+      setValidationError(
+        "Please complete all required fields before searching.",
+      );
+      return false;
+    }
 
     if (!searchState.country || searchState.country.trim() === "") {
       setValidationError("Country is required");
@@ -325,7 +357,7 @@ const HotelSearchListing: React.FC = () => {
       setValidationError(
         `Maximum ${maxAdultsAllowed} adults allowed for ${numRooms} room${
           numRooms > 1 ? "s" : ""
-        } (2 per room)`
+        } (2 per room)`,
       );
       return false;
     }
@@ -336,7 +368,7 @@ const HotelSearchListing: React.FC = () => {
       setValidationError(
         `Maximum ${maxChildrenAllowed} children allowed for ${numRooms} room${
           numRooms > 1 ? "s" : ""
-        } (2 per room)`
+        } (2 per room)`,
       );
       return false;
     }
@@ -344,7 +376,7 @@ const HotelSearchListing: React.FC = () => {
     // Validate child ages - all children must have ages specified
     if (totalChildren > 0) {
       const validChildAges = childAges.filter(
-        (age): age is number => age !== null
+        (age): age is number => age !== null,
       );
       if (validChildAges.length !== totalChildren) {
         setValidationError(`Please specify ages for all children`);
@@ -410,8 +442,14 @@ const HotelSearchListing: React.FC = () => {
   return (
     <div className="">
       <Loader
-        show={isPending}
-        label="Please wait while we are looking for available hotels"
+        show={isPending || isCountriesLoading || isCitiesLoading}
+        label={`${
+          isPending
+            ? "Please wait while we are looking for available hotels"
+            : isCitiesLoading
+              ? "Loading cities..."
+              : "Please wait while we are fetching details"
+        }`}
       />
       <div className="topHeaderSetting">
         <div className="topHeaderSettingInner">
@@ -528,32 +566,46 @@ const HotelSearchListing: React.FC = () => {
             <Flex vertical style={{ width: "100%", maxWidth: 450 }}>
               <div>
                 <SearchableDropdown
-                  // options={countryOptions}
-                  options={[{ id: "1", value: "France", label: "France" }]}
+                  options={
+                    countriesOptions?.map((c) => ({
+                      id: c.iso2,
+                      value: c.label,
+                      label: c.label,
+                    })) || []
+                  }
+                  // options={[{ id: "1", value: "France", label: "France" }]}
                   value={searchState.country}
-                  // onChange={(value) => {
-                  //   handleSearchChange("country", value);
-                  //   handleSearchChange("city", "");
-                  // }}
-                  onChange={(value) => handleSearchChange("country", value)}
+                  onChange={(value) => {
+                    handleSearchChange("country", value);
+                    handleSearchChange("city", "");
+                  }}
+                  // onChange={(value) => handleSearchChange("country", value)}
                   placeholder="Where are you traveling to?"
                   label="Country"
                   widthClass="w-full"
                   searchPlaceholder="Search"
+                  tooltip="Where are you traveling to?"
                 />
               </div>
             </Flex>
             <Flex vertical style={{ width: "100%", maxWidth: 450 }}>
               <div>
                 <SearchableDropdown
-                  // options={cityOptions}
-                  options={[{ id: "1", value: "Paris", label: "Paris" }]}
+                  options={
+                    citiesData?.map((c, index) => ({
+                      id: `${index}-${c.value}`,
+                      value: c.value,
+                      label: c.label,
+                    })) || []
+                  }
+                  // options={[{ id: "1", value: "Paris", label: "Paris" }]}
                   value={searchState.city}
                   onChange={(value) => handleSearchChange("city", value)}
                   placeholder="Where are you traveling to?"
                   label="City"
                   widthClass="w-full"
                   searchPlaceholder="Search"
+                  tooltip="Where are you traveling to?"
                 />
               </div>
             </Flex>
@@ -576,6 +628,8 @@ const HotelSearchListing: React.FC = () => {
                     overridesClass={true}
                     showCalendarIconRight={false}
                     inputClass="h-10 w-[165px] rounded-xl border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                    disablePastDates={true}
+                    tooltip="Select check-in date"
                   />
                   <span className="text-[#94A3B8] select-none">-</span>
                   <TailiwindCustomDatePicker
@@ -593,6 +647,9 @@ const HotelSearchListing: React.FC = () => {
                     overridesClass={true}
                     showCalendarIconRight={false}
                     inputClass="h-10 w-[165px] rounded-xl border-none pl-10 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                    disablePastDates={true}
+                    minDate={new Date(searchState.checkIn)}
+                    tooltip="Select check-out date"
                   />
                 </div>
               </div>
@@ -600,8 +657,14 @@ const HotelSearchListing: React.FC = () => {
             <Flex vertical style={{ width: "100%", maxWidth: 380 }}>
               <div>
                 <SearchableDropdown
-                  // options={nationalityOptions}
-                  options={[{ id: "1", value: "INDIA,IN", label: "INDIA" }]}
+                  options={
+                    countriesOptions?.map((c) => ({
+                      id: c.iso2,
+                      value: `${c.label},${c.iso2}`,
+                      label: c.label,
+                    })) || []
+                  }
+                  // options={[{ id: "1", value: "INDIA,IN", label: "INDIA" }]}
                   value={searchState.travelerNationality}
                   onChange={(value) => {
                     handleSearchChange("travelerNationality", value);
@@ -611,6 +674,7 @@ const HotelSearchListing: React.FC = () => {
                   label="Nationality"
                   widthClass="w-full"
                   searchPlaceholder="Search"
+                  tooltip="Select your country of residence"
                 />
               </div>
             </Flex>
@@ -624,6 +688,7 @@ const HotelSearchListing: React.FC = () => {
                 value={paxData}
                 onChange={handlePaxChange}
                 onChildrenAgesChange={handleChildrenAgesChange}
+                tooltip="Select passengers and rooms"
               />
             </div>
             <Flex vertical style={{ width: "100%", maxWidth: 350 }}>
@@ -642,6 +707,7 @@ const HotelSearchListing: React.FC = () => {
                   placeholder="Select rating"
                   label="Star Rating"
                   singleSelect={true}
+                  tooltip="Select star rating"
                 />
               </div>
             </Flex>
