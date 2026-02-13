@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useEffect, useRef } from "react";
 
 import "../../assets/css/travel.css";
 import FlagUae from "../../assets/svgs/Flag-uae.svg";
@@ -36,6 +36,7 @@ import {
   type HotelFilters,
   type SortOption,
 } from "../../utils/hotelFilters";
+import { useHotelStore } from "../../store/UseHotelStore";
 import { useCountriesOptions } from "../../hooks/masterListings/listing";
 import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
 // import {
@@ -77,6 +78,8 @@ const HotelSearchListing: React.FC = () => {
   const onClose = () => setOpen(false);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
+
+  const { hotel } = useHotelStore();
 
   const { passengers } = useMasterListings({
     include: ["passengers"],
@@ -279,6 +282,48 @@ const HotelSearchListing: React.FC = () => {
     [paxData, convertPaxToRoom, handleSearchChange],
   );
 
+  // Hydrate from store only when coming from HotelHeroSectionTab (pre-fill + auto-search)
+  // When user navigates to hotel detail, clearHotel() is called - so back = empty form, no data
+  const hydratedHotelSnapshotRef = useRef<string | null>(null);
+  const shouldAutoSearchRef = useRef(false);
+
+  useEffect(() => {
+    if (!hotel) return;
+
+    const snapshot = JSON.stringify({
+      country: hotel.country,
+      city: hotel.city,
+      checkIn: hotel.checkIn,
+      checkOut: hotel.checkOut,
+    });
+
+    if (hydratedHotelSnapshotRef.current === snapshot) return;
+
+    hydratedHotelSnapshotRef.current = snapshot;
+
+    setSearchState((prev) => ({
+      ...prev,
+      country: hotel.country,
+      city: hotel.city,
+      checkIn: hotel.checkIn,
+      checkOut: hotel.checkOut,
+      travelerCountryOfResidence: hotel.travelerCountryOfResidence,
+      travelerNationality: hotel.travelerNationality,
+      rooms: convertPaxToRoom(hotel.paxData, hotel.childAges),
+      filters: {
+        ...prev.filters,
+        minStarRating: hotel.minStarRating ?? 0,
+      },
+    }));
+    setPaxData(hotel.paxData);
+    setChildAges(hotel.childAges);
+    setValidationError(null);
+    setApiError(null);
+    setHotelSearchResults([]);
+    setHasSearched(false);
+    shouldAutoSearchRef.current = true;
+  }, [hotel, convertPaxToRoom]);
+
   const validateForm = useCallback((): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -421,6 +466,32 @@ const HotelSearchListing: React.FC = () => {
       setHotelSearchResults([]);
     }
   }, [searchState, validateForm, mutateAsync]);
+
+  // Auto-trigger search when form is pre-filled from store (first visit from hero)
+  useEffect(() => {
+    if (!shouldAutoSearchRef.current) return;
+    if (isPending) return;
+    if (
+      !searchState.country?.trim() ||
+      !searchState.city?.trim() ||
+      !searchState.checkIn?.trim() ||
+      !searchState.checkOut?.trim() ||
+      !searchState.travelerCountryOfResidence?.trim()
+    ) {
+      return;
+    }
+
+    shouldAutoSearchRef.current = false;
+    handleSearchHotels();
+  }, [
+    searchState.country,
+    searchState.city,
+    searchState.checkIn,
+    searchState.checkOut,
+    searchState.travelerCountryOfResidence,
+    isPending,
+    handleSearchHotels,
+  ]);
 
   // Apply filters and sorting to results
   const filteredAndSortedHotels = React.useMemo(() => {
