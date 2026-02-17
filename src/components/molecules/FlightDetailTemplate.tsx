@@ -477,11 +477,11 @@ const FlightDetailTemplate: React.FC = () => {
       );
       if (!allLegsValid) validationErrors.push("legs");
     } else {
-      if (!fromCode?.trim()) validationErrors.push("from");
-      if (!toCode?.trim()) validationErrors.push("to");
+    if (!fromCode?.trim()) validationErrors.push("from");
+    if (!toCode?.trim()) validationErrors.push("to");
 
-      if (!departDate) validationErrors.push("departure");
-      if (trip === "roundtrip" && !returnDate) validationErrors.push("return");
+    if (!departDate) validationErrors.push("departure");
+    if (trip === "roundtrip" && !returnDate) validationErrors.push("return");
     }
 
     const totalPassengers = Object.values(paxCounts).reduce(
@@ -551,13 +551,13 @@ const FlightDetailTemplate: React.FC = () => {
               cabinPreferences: [l.cabinClassId ?? selectedCabinClassId ?? "5"],
             }))
         : [
-            {
-              departureAirportCode: fromCode,
-              departureDate: departDate,
-              arrivalAirportCode: toCode,
-              cabinPreferences: [selectedCabinClassId],
-            },
-          ];
+      {
+        departureAirportCode: fromCode,
+        departureDate: departDate,
+        arrivalAirportCode: toCode,
+        cabinPreferences: [selectedCabinClassId],
+      },
+    ];
 
     if (trip === "roundtrip") {
       flightSegments.push({
@@ -1209,7 +1209,7 @@ const FlightDetailTemplate: React.FC = () => {
         }}
       >
         <span style={{ fontSize: 12, fontWeight: 400, color: '#64748B', display: 'block', marginBottom: '4px' }}>
-          Sort by
+        Sort by
         </span>
         <span style={{ fontSize: 16, fontWeight: 500, color: '#0F172A', display: 'block' }}>
           {getSortLabel(sortBy)}
@@ -1516,7 +1516,7 @@ const FlightDetailTemplate: React.FC = () => {
           {trip === "multicity" ? (
             <>
               {/* First Row: Trip and Passengers */}
-              <Flex className="bottomHeaderFlex">
+          <Flex className="bottomHeaderFlex">
                 <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
                   <label className="header-labels-common">Trip</label>
                   <SearchableDropdown
@@ -1803,67 +1803,67 @@ const FlightDetailTemplate: React.FC = () => {
               </Flex>
 
               {/* From/To Picker */}
-              <TravelRoutePicker
-                options={countriesForPicker as AirportOption[]}
-                loading={countriesLoading}
-                onSearchChange={setCountriesSearchTerm}
-                value={{
-                  fromCode,
-                  toCode,
-                  fromOption: fromOption ?? preservedFromOption,
-                  toOption: toOption ?? preservedToOption,
-                }}
+            <TravelRoutePicker
+              options={countriesForPicker as AirportOption[]}
+              loading={countriesLoading}
+              onSearchChange={setCountriesSearchTerm}
+              value={{
+                fromCode,
+                toCode,
+                fromOption: fromOption ?? preservedFromOption,
+                toOption: toOption ?? preservedToOption,
+              }}
                 onChange={({
                   fromCode: f,
                   toCode: t,
                   fromOption: fOpt,
                   toOption: tOpt,
                 }) => {
-                  setFromCode(f);
-                  setToCode(t);
-                  if (fOpt !== undefined) setFromOption(fOpt);
-                  if (tOpt !== undefined) setToOption(tOpt);
-                }}
-                showSwap
-                labels={{ from: "From", to: "To" }}
-                placeholders={{ from: "Please select", to: "Please select" }}
-                disableSameSelection
-                widthClass="fromToSelectWidth"
-                fromError={
-                  !loading && countries.length === 0
-                    ? "Please try a different search."
-                    : undefined
+                setFromCode(f);
+                setToCode(t);
+                if (fOpt !== undefined) setFromOption(fOpt);
+                if (tOpt !== undefined) setToOption(tOpt);
+              }}
+              showSwap
+              labels={{ from: "From", to: "To" }}
+              placeholders={{ from: "Please select", to: "Please select" }}
+              disableSameSelection
+              widthClass="fromToSelectWidth"
+              fromError={
+                !loading && countries.length === 0
+                  ? "Please try a different search."
+                  : undefined
+              }
+              toError={
+                !loading && countries.length === 0
+                  ? "Please try a different search."
+                  : undefined
+              }
+              onLoadMore={() => {
+                if (countriesHasMore) {
+                  countriesFetchNext?.();
                 }
-                toError={
-                  !loading && countries.length === 0
-                    ? "Please try a different search."
-                    : undefined
-                }
-                onLoadMore={() => {
-                  if (countriesHasMore) {
-                    countriesFetchNext?.();
-                  }
-                }}
-                hasMore={countriesHasMore}
-                loadingMore={countriesIsFetchingNext}
-              />
-            </Flex>
+              }}
+              hasMore={countriesHasMore}
+              loadingMore={countriesIsFetchingNext}
+            />
+          </Flex>
           )}
           <Flex className="bottomHeaderFlex">
             {trip !== "multicity" && (
-              <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                <label className="header-labels-common ">Departure Date</label>
-                <TailiwindCustomDatePicker
-                  value={departDate ? new Date(departDate) : null}
-                  onChange={(value) => {
-                    handleDate(value, "depart");
-                  }}
-                  placeholder="Select departure date"
-                  tooltip="Select departure date"
-                  buttonIconSrc={true}
-                  disablePastDates={true}
-                />
-              </Flex>
+            <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
+              <label className="header-labels-common ">Departure Date</label>
+              <TailiwindCustomDatePicker
+                value={departDate ? new Date(departDate) : null}
+                onChange={(value) => {
+                  handleDate(value, "depart");
+                }}
+                placeholder="Select departure date"
+                tooltip="Select departure date"
+                buttonIconSrc={true}
+                disablePastDates={true}
+              />
+            </Flex>
             )}
             {trip === "roundtrip" && (
               <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
@@ -1882,7 +1882,7 @@ const FlightDetailTemplate: React.FC = () => {
               </Flex>
             )}
             {trip !== "multicity" && (
-              <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
+            <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
                 <label className="header-labels-common flex items-center gap-2">
                   Travellers
                   <span className="relative inline-flex group/info">
@@ -1901,25 +1901,25 @@ const FlightDetailTemplate: React.FC = () => {
                     </span>
                   </span>
                 </label>
-                <div style={{ minWidth: "100%", height: 44 }}>
-                  <PassengerCounterDropdown
-                    value={paxCounts}
-                    schema={passengers as PassengerSchema}
-                    maxTotal={100}
-                    onChange={(value) => {
-                      handlePassenger(value);
-                    }}
-                  />
-                </div>
-              </Flex>
+              <div style={{ minWidth: "100%", height: 44 }}>
+                <PassengerCounterDropdown
+                  value={paxCounts}
+                  schema={passengers as PassengerSchema}
+                  maxTotal={100}
+                  onChange={(value) => {
+                    handlePassenger(value);
+                  }}
+                />
+              </div>
+            </Flex>
             )}
             {trip !== "multicity" && (
-              <CustomButton
-                className="searchFilterBtn"
-                onClick={() => handleSearch()}
-              >
+          <CustomButton
+            className="searchFilterBtn"
+            onClick={() => handleSearch()}
+          >
                 {isPending ? "Searching..." : "Search"}
-              </CustomButton>
+          </CustomButton>
             )}
           </Flex>
         </div>

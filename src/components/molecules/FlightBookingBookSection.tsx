@@ -193,14 +193,14 @@ export default function FlightBookingBookSection({
 
     if (Object.keys(fieldErrors).length > 0) {
       // Still check overall validation for backward compatibility
-      if (typeof validatePassengersForFlightProvisionalBooking === "function") {
+    if (typeof validatePassengersForFlightProvisionalBooking === "function") {
         const { valid } = validatePassengersForFlightProvisionalBooking(
-          fareBookingSearchRules,
+        fareBookingSearchRules,
           flightBookingPayload,
-        );
-        if (!valid) {
-          return;
-        }
+      );
+      if (!valid) {
+        return;
+      }
       }
       return;
     }
@@ -298,7 +298,7 @@ export default function FlightBookingBookSection({
                     <div
                       className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
                     >
-                      <TailwindCustomInput
+                    <TailwindCustomInput
                       type="text"
                       placeholder="Enter your full name"
                       label="Full name (Filled based on ID/Passport/Driver’s license)"
@@ -327,19 +327,19 @@ export default function FlightBookingBookSection({
                     <div
                       className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
                     >
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Enter your surname"
-                        label="Surname"
-                        value={p.passengerInfo?.surname ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "passengerInfo.surname",
+                    <TailwindCustomInput
+                      type="text"
+                      placeholder="Enter your surname"
+                      label="Surname"
+                      value={p.passengerInfo?.surname ?? ""}
+                      onChange={(evOrVal) => {
+                        const v =
+                          evOrVal && evOrVal.target
+                            ? evOrVal.target.value
+                            : evOrVal;
+                        onPassengerFieldChange(
+                          idx,
+                          "passengerInfo.surname",
                             v ?? "",
                           );
                           clearFieldError(idx, "passengerInfo.surname");
@@ -446,38 +446,38 @@ export default function FlightBookingBookSection({
                     <div
                       className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
                     >
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder={`Enter ${
-                          p.identityDocuments?.[0]?.idType === "PT"
-                            ? "Passport number"
-                            : p.identityDocuments?.[0]?.idType === "DL"
-                              ? "Driving licence"
-                              : "National ID"
-                        }`}
-                        label={`${
-                          p.identityDocuments?.[0]?.idType === "PT"
-                            ? "Passport number"
-                            : p.identityDocuments?.[0]?.idType === "DL"
-                              ? "Driving licence"
-                              : "National ID"
-                        }`}
-                        value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "identityDocuments.0.idDocumentNumber",
+                    <TailwindCustomInput
+                      type="text"
+                      placeholder={`Enter ${
+                        p.identityDocuments?.[0]?.idType === "PT"
+                          ? "Passport number"
+                          : p.identityDocuments?.[0]?.idType === "DL"
+                          ? "Driving licence"
+                          : "National ID"
+                      }`}
+                      label={`${
+                        p.identityDocuments?.[0]?.idType === "PT"
+                          ? "Passport number"
+                          : p.identityDocuments?.[0]?.idType === "DL"
+                          ? "Driving licence"
+                          : "National ID"
+                      }`}
+                      value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
+                      onChange={(evOrVal) => {
+                        const v =
+                          evOrVal && evOrVal.target
+                            ? evOrVal.target.value
+                            : evOrVal;
+                        onPassengerFieldChange(
+                          idx,
+                          "identityDocuments.0.idDocumentNumber",
                             v ?? "",
                           );
                           clearFieldError(
                             idx,
                             "identityDocuments.0.idDocumentNumber",
-                          );
-                        }}
+                        );
+                      }}
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
@@ -485,7 +485,7 @@ export default function FlightBookingBookSection({
                               ]
                             : null
                         }
-                      />
+                    />
                     </div>
                     {/* )} */}
 
@@ -673,29 +673,29 @@ export default function FlightBookingBookSection({
                     <div
                       className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
                     >
-                      <TailwindCustomInput
-                        type="email"
-                        placeholder="Enter an email"
-                        label="Email"
-                        value={
-                          p.contact?.contactsProvided?.[0]?.emailAddress?.[0] ??
-                          ""
-                        }
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "contact.contactsProvided.0.emailAddress.0",
+                    <TailwindCustomInput
+                      type="email"
+                      placeholder="Enter an email"
+                      label="Email"
+                      value={
+                        p.contact?.contactsProvided?.[0]?.emailAddress?.[0] ??
+                        ""
+                      }
+                      onChange={(evOrVal) => {
+                        const v =
+                          evOrVal && evOrVal.target
+                            ? evOrVal.target.value
+                            : evOrVal;
+                        onPassengerFieldChange(
+                          idx,
+                          "contact.contactsProvided.0.emailAddress.0",
                             v ?? "",
                           );
                           clearFieldError(
                             idx,
                             "contact.contactsProvided.0.emailAddress.0",
-                          );
-                        }}
+                        );
+                      }}
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
@@ -703,7 +703,7 @@ export default function FlightBookingBookSection({
                               ]
                             : null
                         }
-                      />
+                    />
                     </div>
                     {/* )} */}
 

@@ -503,17 +503,17 @@ const AppHeader: React.FC<HeaderProps> = ({
               }}
             >
               02
-            </div>
+        </div>
           </button>
 
           {/* User Profile with Avatar */}
-          <Dropdown menu={userMenu} placement="bottomRight" arrow>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
+            <Dropdown menu={userMenu} placement="bottomRight" arrow>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
                 gap: "8px",
-                cursor: "pointer",
+                  cursor: "pointer",
                 padding: "4px 10px",
                 borderRadius: "8px",
                 transition: "background-color 0.2s",
@@ -545,32 +545,32 @@ const AppHeader: React.FC<HeaderProps> = ({
                   whiteSpace: "nowrap",
                 }}
               >
-                Welcome, {user.name?.split("@")[0] || "User"}
-              </span>
-            </div>
-          </Dropdown>
+                  Welcome, {user.name?.split("@")[0] || "User"}
+                </span>
+              </div>
+            </Dropdown>
         </div>
       )}
 
       {/* Desktop Navigation - Not Logged In */}
       {!isMobile && !isAuthenticated && (
         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-          <Button
-            onClick={onLoginClick}
-            variant="primary"
-            className="px-4 py-2 sm:px-6 sm:py-2 lg:px-7 lg:py-2 text-xs sm:text-sm"
-          >
-            Login
-          </Button>
-          <Button
-            onClick={onSignupClick}
-            variant="secondary"
-            className="px-3 py-2 sm:px-5 sm:py-2 lg:px-6 lg:py-2 text-xs sm:text-sm"
-          >
-            Sign up
-          </Button>
-        </div>
-      )}
+              <Button
+                onClick={onLoginClick}
+                variant="primary"
+                className="px-4 py-2 sm:px-6 sm:py-2 lg:px-7 lg:py-2 text-xs sm:text-sm"
+              >
+                Login
+              </Button>
+              <Button
+                onClick={onSignupClick}
+                variant="secondary"
+                className="px-3 py-2 sm:px-5 sm:py-2 lg:px-6 lg:py-2 text-xs sm:text-sm"
+              >
+                Sign up
+              </Button>
+            </div>
+          )}
 
       <Modal
         title="Notifications"
@@ -839,20 +839,20 @@ const AppHeader: React.FC<HeaderProps> = ({
                 setDrawerVisible(false);
                 navigate("/profile");
               }}
-              style={{
+                style={{
                 padding: "12px 16px",
                 border: "2px solid #5383DA",
                 borderRadius: "16px",
                 backgroundColor: "#FFFFFF",
                 cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
+                  display: "flex",
+                  alignItems: "center",
                 gap: "10px",
                 fontSize: "14px",
                 fontWeight: 500,
                 color: "#0A0C0F",
                 transition: "all 0.2s",
-              }}
+                }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = "#F0F7FF";
               }}
@@ -892,8 +892,8 @@ const AppHeader: React.FC<HeaderProps> = ({
               <LogoutOutlined style={{ fontSize: "18px" }} />
               Sign Out
             </button>
-          </div>
-        )}
+            </div>
+          )}
       </Drawer>
     </Header>
   );

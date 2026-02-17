@@ -8,8 +8,8 @@ import durationIcon from "../../assets/svgs/duration.svg";
 import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
-// import applePay from "../../assets/svgs/ApplePay.svg";
-// import googlePay from "../../assets/svgs/GooglePay.svg";
+import applePay from "../../assets/images/ApplePay (1).png";
+import googlePay from "../../assets/images/GooglePay.png";
 import shareIcon from "../../assets/svgs/share.svg";
 import secureLockIcon from "../../assets/svgs/secure-lock.svg";
 import visaIcon from "../../assets/svgs/visa.svg";
@@ -18,8 +18,8 @@ import masterCardIcon from "../../assets/svgs/mastercard.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 // import FlagUsa from "../../assets/images/Flag-usa.png";
 // import FlagUae from "../../assets/svgs/Flag-uae.svg";
-import Tabby from "../../assets/images/tabby.png";
-import Tamara from "../../assets/images/tamara.png";
+import Tabby from "../../assets/images/tabbycard.png";
+import Tamara from "../../assets/images/tamara1.png";
 import { useEffect, useMemo, useRef, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import CardCollapseToggle from "../common/CardCollapseToggle";
@@ -513,52 +513,79 @@ export default function FlightBookingPaymentSection({
         />
 
         <div className="mt-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* <div className="grid grid-cols-3 sm:grid-cols-3 gap-3"> */}
+          <div className="flex items-center justify-center gap-[0.45rem]">
+            {/* Pay with Card */}
             <Button
               type="button"
               onClick={() => setPayMethod("card")}
               aria-pressed={payMethod === "card"}
               className={[
-                "h-12 w-full rounded-xl border px-5 text-[14px] font-semibold flex items-center justify-center",
+                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
+                "w-[102px] h-[65px] rounded-[8px] border-[1.5px]",
                 payMethod === "card"
                   ? "bg-[rgba(167,192,236,0.3)] text-[#2351A3] border-[#2351A3]"
-                  : "bg-white text-[#0A0C0F] border-[#F9F7F6] hover:bg-[#F8FAFC]",
+                  : "bg-white text-[#0A0C0F] border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
               ].join(" ")}
               overrideClasses
             >
-              Pay with card
+              <span className="text-[12px] font-semibold text-center px-2">Pay with card</span>
             </Button>
 
-            {/* <Button
-                            type="button"
-                            onClick={() => setPayMethod("apple")}
-                            aria-pressed={payMethod === "apple"}
-                            className={[
-                                "h-12 w-full rounded-xl border px-5 flex items-center justify-center",
-                                payMethod === "apple"
-                                    ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
-                                    : "bg-white border-[#F9F7F6] hover:bg-[#F8FAFC]"
-                            ].join(" ")}
-                            overrideClasses
-                        >
-                            <img src={applePay} alt="Apple Pay" className="h-5 w-auto" />
-                        </Button>
+            {/* Apple Pay */}
+            <Button
+              type="button"
+              onClick={() => setPayMethod("apple")}
+              aria-pressed={payMethod === "apple"}
+              className={[
+                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
+                "w-[102px] h-[65px] rounded-[8px] border-[1.5px] p-8",
+                payMethod === "apple"
+                  ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
+                  : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
+              ].join(" ")}
+              overrideClasses
+            >
+              <img src={applePay} alt="Apple Pay" className="h-auto w-full object-contain" />
+            </Button>
 
-                        <Button
-                            type="button"
-                            onClick={() => setPayMethod("google")}
-                            aria-pressed={payMethod === "google"}
-                            className={[
-                                "h-12 w-full rounded-xl border px-5 flex items-center justify-center",
-                                payMethod === "google"
-                                    ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
-                                    : "bg-white border-[#F9F7F6] hover:bg-[#F8FAFC]"
-                            ].join(" ")}
-                            overrideClasses
-                        >
-                            <img src={googlePay} alt="Google Pay" className="h-5 w-auto" />
-                        </Button> */}
+            {/* Google Pay */}
+            <Button
+              type="button"
+              onClick={() => setPayMethod("google")}
+              aria-pressed={payMethod === "google"}
+              className={[
+                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
+                "w-[103px] h-[65px] rounded-[6px] border-[1.5px] p-8",
+                payMethod === "google"
+                  ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
+                  : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
+              ].join(" ")}
+              overrideClasses
+            >
+              <img src={googlePay} alt="Google Pay" className="h-auto w-full object-contain" />
+            </Button>
+
+            {/* Tabby */}
+            <Button
+              type="button"
+              style={{ width: '103px', height: '65px' }}
+              className="flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 rounded-[6px] border-[1.5px] border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm p-3 focus:outline-none"
+              overrideClasses
+            >
+              <img src={Tabby} alt="Tabby" style={{ width: '40px', height: '16px' }} className="object-contain" />
+              <span className="text-[9px] text-[#64748B] text-center">Buy now pay later</span>
+            </Button>
+
+            {/* Tamara */}
+            <Button
+              type="button"
+              style={{ width: '103px', height: '65px' }}
+              className="flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 rounded-[6px] border-[1.5px] border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm p-3 focus:outline-none"
+              overrideClasses
+            >
+              <img src={Tamara} alt="Tamara" style={{ width: '40px', height: '16px' }} className="object-contain" />
+              <span className="text-[9px] text-[#64748B] text-center">Buy now pay later</span>
+            </Button>
           </div>
         </div>
 
@@ -864,42 +891,55 @@ export default function FlightBookingPaymentSection({
           trip={trip.raw}
         />
 
-        <div className="mt-16 px-5">
-          <Button
-            type="button"
-            className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold"
-            overrideClasses
-            disabled={isPayButtonLoading}
-            onClick={() => generatePayfortPaymentTokenization()}
-            // onClick={() => handleReservationFlightBooking()}
-          >
-            {/* {isTokenizing ? "Loading..." : "Pay"} */}
-            {getPayButtonText()}
-          </Button>
+        <div className="mt-16 px-5 flex flex-col items-center">
+        <Button
+  type="button"
+  style={{
+    background:
+      "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+  }}
+  className={`
+    w-[252px]
+    h-[47px]
+    rounded-[100px]
+    py-[14px]
+    px-[40px]
+    text-[#F2F2F3]
+    text-[16px]
+    font-semibold
+    flex items-center justify-center gap-3
+    transition-all duration-300
+    ${isPayButtonLoading ? "cursor-not-allowed opacity-90" : ""}
+  `}
+  overrideClasses
+  disabled={isPayButtonLoading}
+  onClick={generatePayfortPaymentTokenization}
+>
+  {isPayButtonLoading && (
+    <svg
+      className="h-5 w-5 animate-spin"
+      viewBox="0 0 24 24"
+      fill="none"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="white"
+        strokeWidth="3"
+      />
+      <path
+        className="opacity-90"
+        fill="white"
+        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+      />
+    </svg>
+  )}
 
-          <div className="my-4 text-center text-[12px] text-[#3D495C]">OR</div>
+  <span>{getPayButtonText()}</span>
+</Button>
 
-          <div>
-            <p className="text-[15px] font-medium text-[#0A0C0F]">
-              Buy now, Pay later with:
-            </p>
-            <div className="mt-3 flex items-center justify-center gap-4">
-              <Button
-                type="button"
-                className="rounded-xl focus:outline-none"
-                overrideClasses
-              >
-                <img src={Tabby} alt="Tabby" className="h-10 w-auto" />
-              </Button>
-              <Button
-                type="button"
-                className="rounded-xl focus:outline-none"
-                overrideClasses
-              >
-                <img src={Tamara} alt="Tamara" className="h-10 w-auto" />
-              </Button>
-            </div>
-          </div>
 
           <div className="mt-6 text-center text-[12px] text-[#3D495C]">
             Secure payments by Al Rais • Terms • Privacy

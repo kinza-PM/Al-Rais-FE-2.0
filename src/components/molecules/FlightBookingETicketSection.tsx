@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 // import EmirateLogo from "../../assets/images/emirates.png";
 import AlRaisLogo from "../../assets/images/al-rais-logo.png";
+import tripImageCard1 from "../../assets/images/tripimagecard1.jpg";
+import tripImageCard2 from "../../assets/images/tripimagecard2.jpg";
+import tripImageCard3 from "../../assets/images/tripimagecard3.jpg";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import INFO_ICON from "../../assets/svgs/info.svg";
 import Button from "../atoms/Button";
@@ -15,6 +18,7 @@ import {
   useUploadTicket,
 } from "../../hooks/useFlightBooking";
 import Loader from "../atoms/Loader";
+
 // import { uploadToS3 } from "../../utils/s3Helper";
 
 /** Base URL for uploaded ticket PDFs on S3 (bucket + region) */
@@ -134,39 +138,39 @@ export default function FlightBookingETicketSection({
           arrCode:
             allSegments.length > 0
               ? (allSegments[allSegments.length - 1] as any)?.arrivalAirportCode ??
-                seg?.arrivalAirportCode ??
-                ""
+              seg?.arrivalAirportCode ??
+              ""
               : seg?.arrivalAirportCode || "",
           depTime: seg?.departureDateTime || "",
           arrTime:
             allSegments.length > 0
               ? (allSegments[allSegments.length - 1] as any)?.arrivalDateTime ??
-                seg?.arrivalDateTime ??
-                ""
+              seg?.arrivalDateTime ??
+              ""
               : seg?.arrivalDateTime || "",
           depTerminal: seg?.departureTerminal || "",
           arrTerminal:
             allSegments.length > 0
               ? (allSegments[allSegments.length - 1] as any)?.arrivalTerminal ??
-                seg?.arrivalTerminal ??
-                ""
+              seg?.arrivalTerminal ??
+              ""
               : seg?.arrivalTerminal || "",
         };
       })
       .filter(Boolean) as Array<{
-      heading: string;
-      airlineCode: string;
-      flightNumber: string;
-      duration: string;
-      stops: string;
-      stopDetails: Array<{ airportCode: string; layover?: string }>;
-      depCode: string;
-      arrCode: string;
-      depTime: string;
-      arrTime: string;
-      depTerminal: string;
-      arrTerminal: string;
-    }>;
+        heading: string;
+        airlineCode: string;
+        flightNumber: string;
+        duration: string;
+        stops: string;
+        stopDetails: Array<{ airportCode: string; layover?: string }>;
+        depCode: string;
+        arrCode: string;
+        depTime: string;
+        arrTime: string;
+        depTerminal: string;
+        arrTerminal: string;
+      }>;
   }, [reservedFlightBooking?.journey]);
 
   // Extract baggage info - use outbound segment for baggage info
@@ -438,7 +442,7 @@ export default function FlightBookingETicketSection({
   const FlightTicketContentCard = () => (
     <div
       id="flight-ticket-content"
-      className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-4 pt-4 pb-2"
+      className="rounded-2xl border border-[#E4E4E7] bg-[#ededed] shadow-sm px-4 pt-4 pb-2"
     >
       <div>
         <div className="flex items-center justify-center gap-2 px-6">
@@ -691,8 +695,8 @@ export default function FlightBookingETicketSection({
         show={isFetchingTicket}
         label="Please wait while we are fetching your ticket."
       />
-      <section className="mt-8 flex items-center justify-center px-4">
-        <div className="w-full max-w-[580px]">
+      <section className="mt-8 flex flex-col items-center justify-center px-4">
+        <div className="w-full max-w-[503px]">
           <div style={{ display: !showInstructions ? "block" : "none" }}>
             <FlightTicketContentCard />
           </div>
@@ -740,25 +744,135 @@ export default function FlightBookingETicketSection({
             </div>
           </div>
 
-          <div className="flex items-center justify-center px-12 gap-4 mt-10 mb-12">
+          <div className="flex items-center justify-center gap-4 mt-10 mb-12">
+
+            {/* Share Button */}
             <Button
               type="button"
               overrideClasses
-              className="h-11 w-full rounded-xl bg-white border-2 border-[#2351A3] text-[#2351A3] text-[16px] font-semibold"
               onClick={() => setOpenShareModal(true)}
+              className="
+              h-[47px]
+              px-[40px]
+              rounded-[100px]
+              border-[1.5px]
+              border-[#2351A3]
+              text-[#2351A3]
+              text-[16px]
+              font-semibold
+              flex items-center justify-center gap-[10px]
+              bg-transparent
+            "
             >
               Share your ticket
             </Button>
+
+            {/* Download Button */}
             <Button
               type="button"
-              className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
               overrideClasses
               onClick={handleDownloadPDF}
               disabled={isGeneratingPDF}
+              className="
+              h-[47px]
+              px-[40px]
+              rounded-[100px]
+              text-white
+              text-[16px]
+              font-semibold
+              flex items-center justify-center gap-[10px]
+              disabled:opacity-50 disabled:cursor-not-allowed
+              bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)]
+            "
             >
               {isGeneratingPDF ? "Generating PDF..." : "Download your ticket"}
             </Button>
+
           </div>
+
+        </div>
+
+        {/* New container: promotional cards in a single row, no scrollbar */}
+        <div className="pdf-hide w-full mt-8 mb-12 px-4 flex flex-row flex-nowrap items-center justify-center gap-4">
+          {/* Card 1: Hotels */}
+            <div
+              className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden bg-white border border-[#E4E4E7]"
+              style={{ opacity: 1 }}
+            >
+              <div className="flex-1 flex flex-col justify-center pl-4 pr-2 py-3 min-w-0">
+                <p className="text-[15px] font-semibold text-[#0A0C0F] leading-tight">
+                  Enjoy your trip!
+                </p>
+                <p className="text-[13px] text-[#3D495C] mt-0.5 leading-[1.2]">
+                  We have hotels at your destination start just from{" "}
+                  <span className="font-semibold text-[#0A0C0F]">$42</span>
+                  /night
+                </p>
+                <a
+                  href="/hotels"
+                  className="text-[13px] text-[#5383DA] underline mt-1 font-medium hover:text-[#2351A3]"
+                >
+                  Explore hotels listings in Mumbai
+                </a>
+              </div>
+              <div className="w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
+                <img
+                  src={tripImageCard1}
+                  alt="Hotels at your destination"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* Card 2: Car bookings - gradient */}
+            <div
+              className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden"
+              style={{
+                background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                opacity: 1,
+              }}
+            >
+              <div className="flex-1 flex flex-col justify-center pl-4 pr-2 py-3 min-w-0">
+                <p className="text-[15px] font-semibold text-white leading-tight">
+                  Travel without worry!
+                </p>
+                <p
+                  className="text-[14px] text-white mt-0.5 leading-[100%] font-normal"
+                  style={{ fontFamily: "Inter, sans-serif" }}
+                >
+                  Al-Rais offers car bookings with un-matched prices!
+                </p>
+              </div>
+              <div className="w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
+                <img
+                  src={tripImageCard2}
+                  alt="Car bookings"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </div>
+
+            {/* Card 3: Tour */}
+            <div
+              className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden bg-white border border-[#E4E4E7] shadow-sm"
+              style={{ opacity: 1 }}
+            >
+              <div className="flex flex-col justify-center pl-4 pr-2 py-3 min-w-0 w-[237px] flex-shrink-0">
+                <p
+                  className="text-[15px] text-[#0A0C0F] leading-[100%] font-medium"
+                  style={{ fontFamily: "Inter, sans-serif" }}
+                >
+                  Book a complete tour with your all-in-one travel booking companion
+                </p>
+              </div>
+              <div className="flex-1 min-w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
+                <img
+                  src={tripImageCard3}
+                  alt="Tour with travel companion"
+                  className="block w-full h-full object-cover object-right"
+                />
+              </div>
+            </div>
         </div>
 
         {openShareModal && (

@@ -427,16 +427,26 @@ export default function FlightBookingReviewSection({
             </div>
 
             <div className="mt-5 flex justify-center w-full">
-                {/* <div className="mt-14 flex justify-center w-full"> */}
-                <Button
-                    type="button"
-                    className="h-10 w-full max-w-[420px] rounded-lg bg-[#2351A3] px-8 text-[15px] font-semibold text-[#F2F2F3]"
-                    overrideClasses
-                    onClick={() => continueToPayment()}
-                >
-                    Continue to payment
-                </Button>
-            </div>
+  <Button
+    type="button"
+    overrideClasses
+    onClick={() => continueToPayment()}
+    className="
+      h-[47px]
+      w-[252px]
+      px-[40px]
+      rounded-[100px]
+      text-[16px]
+      font-semibold
+      text-white
+      flex items-center justify-center gap-[10px]
+      bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)]
+    "
+  >
+    Continue to payment
+  </Button>
+</div>
+
         </section>
     );
 }

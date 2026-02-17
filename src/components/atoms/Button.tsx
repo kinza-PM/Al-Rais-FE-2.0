@@ -7,7 +7,9 @@ interface ButtonProps {
   type?: "button" | "submit";
   className?: string;
   disabled?: boolean;
-  overrideClasses?: boolean; // 👈 new prop
+  overrideClasses?: boolean;
+  style?: React.CSSProperties;
+  "aria-pressed"?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -18,6 +20,8 @@ const Button: React.FC<ButtonProps> = ({
   className = "",
   disabled = false,
   overrideClasses = false,
+  style,
+  "aria-pressed": ariaPressed,
 }) => {
   const baseClasses =
     "font-semibold py-2 px-4 rounded-md transition-all whitespace-nowrap";
@@ -36,9 +40,11 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       onClick={disabled ? undefined : onClick}
       disabled={disabled}
+      style={style}
+      aria-pressed={ariaPressed}
       className={
         overrideClasses
-          ? className // 👈 sirf apki class lagegi
+          ? className
           : `${baseClasses} ${variantClasses[variant]} ${className}`
       }
     >
