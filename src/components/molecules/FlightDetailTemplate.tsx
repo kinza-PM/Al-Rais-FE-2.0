@@ -9,7 +9,7 @@ import "../../assets/css/travel.css";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import noFlights from "../../assets/svgs/no-flights.svg";
 import Info from "../../assets/svgs/info-black.svg";
-import { Segmented, Tabs, Flex, Drawer, Button, Grid } from "antd";
+import { Flex, Drawer, Button, Grid } from "antd";
 // import type { CheckboxGroupProps } from "antd/es/checkbox";
 import CustomButton from "../common/CustomButton";
 // import CustomSelect from "../common/CustomSelect";
@@ -58,17 +58,17 @@ import SearchableDropdown from "../common/SearchableDropdown";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
-const onChange = (key: string) => {
-  console.log(key);
-};
+// const onChange = (key: string) => {
+//   console.log(key);
+// };
 // const handleChange = (value: string) => {
 //   console.log(`selected ${value}`);
 // };
 
-const items: TabsProps["items"] = [
-  { key: "1", label: "Flights", children: "" },
-  { key: "2", label: "Hotels", children: "" },
-];
+// const items: TabsProps["items"] = [
+//   { key: "1", label: "Flights", children: "" },
+//   { key: "2", label: "Hotels", children: "" },
+// ];
 
 const baggageHandler: CheckboxProps["onChange"] = (e) => {
   console.log(`checked = ${e.target.checked}`);
@@ -1418,7 +1418,7 @@ const FlightDetailTemplate: React.FC = () => {
       />
       <div className="topHeaderSetting">
         <div className="topHeaderSettingInner" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          <div className="topHeaderTabs">
+          {/* <div className="topHeaderTabs">
             <Tabs
               defaultActiveKey="1"
               className="customIndicate"
@@ -1426,7 +1426,7 @@ const FlightDetailTemplate: React.FC = () => {
               onChange={onChange}
               tabBarStyle={{ marginBottom: "16px !important" }}
             />
-          </div>
+          </div> */}
           <div className="countrySelectAndGetHelp py-pxTopHeader" style={{ display: 'none' }}>
             {/* <div>
               <Select

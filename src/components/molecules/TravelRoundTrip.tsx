@@ -622,9 +622,9 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                       </div>
                     ) : null;
                   })()}
-                  <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>
+                  {/* <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>
                     Select Price
-                  </CustomButton>
+                  </CustomButton> */}
                 </div>
               </div>
               <React.Suspense
