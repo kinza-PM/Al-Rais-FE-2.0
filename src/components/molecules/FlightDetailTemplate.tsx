@@ -19,7 +19,7 @@ import TravelOneWay from "./TravelOneWay";
 import TravelRoundTrip from "./TravelRoundTrip";
 import TravelMultiCity from "./TravelMultiCity";
 
-import type { TabsProps } from "antd";
+// import type { TabsProps } from "antd";
 import { useState } from "react";
 import type { CheckboxProps } from "antd";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";

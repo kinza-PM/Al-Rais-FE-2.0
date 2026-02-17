@@ -17,7 +17,7 @@ import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
 import { Switch, Modal } from "antd";
-import CustomButton from "../common/CustomButton";
+// import CustomButton from "../common/CustomButton";
 
 import { useEffect, useMemo, useState } from "react";
 import { travelData } from "../../utils/mockData";

@@ -8,7 +8,7 @@ import defaultAirlineLogo from "../../assets/images/alRaisLogo.jpg";
 
 import { Modal } from "antd";
 
-import CustomButton from "../common/CustomButton";
+// import CustomButton from "../common/CustomButton";
 
 import { useEffect, useMemo, useState } from "react";
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
