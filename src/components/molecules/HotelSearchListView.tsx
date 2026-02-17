@@ -8,6 +8,7 @@ import AvailableTick from "../../../src/assets/svgs/available-tick.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
 import { useNavigate } from "react-router-dom";
+import { useHotelStore } from "../../store/UseHotelStore";
 import { processHotelSearchListingData } from "../../utils/hotelHelper";
 
 type HotelSearchListViewProps = {
@@ -17,6 +18,7 @@ type HotelSearchListViewProps = {
 const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
   ({ hotels }) => {
     const navigate = useNavigate();
+    const { clearHotel } = useHotelStore();
     // const [favorites, setFavorites] = React.useState<{ [key: string]: boolean }>(
     //   {}
     // );
@@ -395,6 +397,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         className="bg-[#2351A3] text-[#F2F2F3] text-base font-semibold py-3 px-10 rounded-lg disabled:bg-[#C2CAD6]"
                         disabled={!isAvailable}
                         onClick={() => {
+                          clearHotel(); // Clear store so back navigation shows empty form + no data
                           navigate(`/hotel-detail/${hotel.hotelKey}`, {
                             state: {
                               searchKey: hotel.searchKey,

@@ -2,14 +2,25 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import SessionExpiryWarning from "../../features/auth/components/SessionExpiryWarning";
+import { AuthService } from "../../features/auth/services/authService";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const [hideHeader, setHideHeader] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const authenticated = await AuthService.isAuthenticated();
+      setIsAuthenticated(authenticated);
+    };
+
+    void checkAuth();
+  }, [location.pathname]);
 
   const openLogin = () => {
     navigate("/auth", { state: { mode: "login" } });
@@ -65,7 +76,8 @@ const AppLayout: React.FC = () => {
         )}
 
         {/* Session expiry UX guard (warn before auto-logout) */}
-        <SessionExpiryWarning warningSeconds={120} />
+        {/* <SessionExpiryWarning warningSeconds={120} /> */}
+        {isAuthenticated && <SessionExpiryWarning warningSeconds={120} />}
 
         <main className="min-h-screen">
           <Outlet

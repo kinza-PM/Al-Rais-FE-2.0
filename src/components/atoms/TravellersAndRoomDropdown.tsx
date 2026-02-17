@@ -19,6 +19,7 @@ type Props = {
   errorMessage?: string | null;
   // optional callback to return children ages to parent
   onChildrenAgesChange?: (ages: Array<number | null>) => void;
+  tooltip?: string | null;
 };
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
@@ -77,6 +78,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   schema,
   errorMessage,
   onChildrenAgesChange,
+  tooltip = null,
 }) => {
   // schema rows (from API)
   const rows = useMemo(() => schema ?? [], [schema]);
@@ -97,7 +99,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   // total passengers (sum of rows keys)
   const total = useMemo(
     () => rows.reduce((acc, r) => acc + ((pax as any)[r.key] || 0), 0),
-    [rows, pax]
+    [rows, pax],
   );
 
   useEffect(() => {
@@ -155,7 +157,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
       rows.find((r) => r.key === "kids")?.key as
         | (keyof Pax & string)
         | undefined,
-    [rows]
+    [rows],
   );
 
   const childCount = (childRowKey && ((pax as any)[childRowKey] || 0)) || 0;
@@ -191,52 +193,75 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   // --- filter out infants visually ---
   const visibleRows = useMemo(
     () => rows.filter((r) => r.key !== "infants"),
-    [rows]
+    [rows],
   );
 
   return (
     <div className="relative" ref={ref}>
       {/* Trigger */}
-      <button
-        type="button"
-        onClick={handleToggle}
-        onKeyDown={(e) => {
-          if (e.key === "Escape") {
-            setOpen(false);
-            setShowError(false);
-          }
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            handleToggle();
-          }
-        }}
-        className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none border-[#DFE7F3]`}
-        aria-haspopup="dialog"
-        aria-expanded={open || showError}
-        aria-invalid={showError}
-        aria-describedby={showError ? "pax-error" : undefined}
-      >
-        <span className="tabular-nums">
-          {pad2(total)} Passenger{total !== 1 ? "s" : ""} and{" "}
-          {pad2(pax.rooms ?? 1)} Room{(pax.rooms ?? 1) !== 1 ? "s" : ""}
-        </span>
-        <svg
-          className="shrink-0"
-          width="16"
-          height="16"
-          viewBox="0 0 20 20"
-          fill="none"
-          aria-hidden="true"
+      <div className="group relative">
+        <button
+          type="button"
+          onClick={handleToggle}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              setOpen(false);
+              setShowError(false);
+            }
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              handleToggle();
+            }
+          }}
+          className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none border-[#DFE7F3]`}
+          aria-haspopup="dialog"
+          aria-expanded={open || showError}
+          aria-invalid={showError}
+          aria-describedby={showError ? "pax-error" : undefined}
         >
-          <path
-            d="M5 7.5l5 5 5-5"
-            stroke="#2351A3"
-            strokeWidth="1.6"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
+          <span className="tabular-nums">
+            {pad2(total)} Passenger{total !== 1 ? "s" : ""} and{" "}
+            {pad2(pax.rooms ?? 1)} Room{(pax.rooms ?? 1) !== 1 ? "s" : ""}
+          </span>
+          <svg
+            className="shrink-0"
+            width="16"
+            height="16"
+            viewBox="0 0 20 20"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M5 7.5l5 5 5-5"
+              stroke="#2351A3"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+        {tooltip && (
+          <div
+            className={`
+                    pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-3
+                    hidden group-hover:block z-50
+                    px-3 py-2 text-xs leading-5 text-white
+                    bg-[#1E293B] rounded-lg shadow-lg
+                    whitespace-nowrap
+                    transition-all duration-150 opacity-0 group-hover:opacity-100
+                    before:content-[''] before:absolute before:top-full before:left-1/2
+                    before:-translate-x-1/2 before:border-6 before:border-transparent
+                    before:border-t-[#1E293B]
+                `}
+          >
+            <div className="text-center">
+              {total > 0
+                ? `${pad2(total)} Passenger${total !== 1 ? "s" : ""} and ${pad2(pax.rooms ?? 1)} Room${(pax.rooms ?? 1) !== 1 ? "s" : ""}`
+                : tooltip}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Error panel */}
       {showError && (
