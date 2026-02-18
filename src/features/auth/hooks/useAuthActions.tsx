@@ -151,7 +151,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
 
   const createRemoteUserRecord = async (
     userData: User,
-    options: { signupMethod?: SignupMethod; contactValue?: string } = {},
+    options: { signupMethod?: SignupMethod; contactValue?: string; title?: string; gender?: string } = {},
   ) => {
     if (!userData?.id) {
       return;
@@ -165,6 +165,8 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       signupMethod === "PHONE" ? userData.phone : userData.email;
     const contactValue = options.contactValue ?? defaultContact ?? undefined;
 
+    console.log("createRemoteUserRecord - Options received:", { title: options.title, gender: options.gender });
+
     try {
       const creationResult = await AuthService.createRemoteUserRecord({
         userId: userData.id,
@@ -172,6 +174,8 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
         phoneNumber: userData.phone ?? null,
         name: userData.full_name || userData.name || "",
         signupMethod,
+        title: options.title,
+        gender: options.gender,
       });
 
       if (!creationResult?.userId || !creationResult?.createdAt) {
@@ -370,6 +374,8 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
                 userData.email,
               ),
               contactValue: userData.email,
+              title: userData.title,
+              gender: userData.gender,
             });
 
             // Avoid hard reload; it causes jarring UX and can re-trigger bootstrap API calls.
@@ -413,7 +419,7 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
     email: string,
     confirmationCode: string,
     password?: string,
-    options?: { signupMethod?: SignupMethod; contactValue?: string },
+    options?: { signupMethod?: SignupMethod; contactValue?: string; title?: string; gender?: string },
   ) => {
     setError(null);
 
@@ -433,6 +439,8 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
             await createRemoteUserRecord(loginResponse.user, {
               signupMethod: options?.signupMethod,
               contactValue: options?.contactValue ?? email,
+              title: options?.title,
+              gender: options?.gender,
             });
 
             // Auto-reload page

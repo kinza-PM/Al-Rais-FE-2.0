@@ -36,12 +36,12 @@ const SignupForm: React.FC<SignupFormProps> = ({
   onSignupSuccess,
 }) => {
   const [formData, setFormData] = useState({
-    // title: "MR",
+    title: "MR",
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
-    // gender: "MALE",
+    gender: "M",
   });
   const location = useLocation();
   const navigate = useNavigate();
@@ -53,6 +53,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
     email: string;
     password: string;
     signupMethod: SignupMethod;
+    title: string;
+    gender: string;
   } | null>(null);
   const [otpLoading, setOtpLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
@@ -64,8 +66,6 @@ const SignupForm: React.FC<SignupFormProps> = ({
     password: false,
     confirmPassword: false,
     otp: false,
-    // gender: false,
-    // title: false,
   });
   const [usePhone, setUsePhone] = useState(false);
   const [phoneCountryCode, setPhoneCountryCode] = useState("+1");
@@ -189,6 +189,11 @@ const SignupForm: React.FC<SignupFormProps> = ({
     setOtpLoading(true);
     // setSignupMessage(null);
 
+    console.log("SignupForm - Sending to confirmSignUp:", {
+      title: userCredentials.title,
+      gender: userCredentials.gender,
+    });
+
     const result = await confirmSignUp(
       userCredentials.email,
       otpCode,
@@ -196,6 +201,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
       {
         signupMethod: userCredentials.signupMethod,
         contactValue: userCredentials.email,
+        title: userCredentials.title,
+        gender: userCredentials.gender,
       },
     );
 
@@ -328,7 +335,11 @@ const SignupForm: React.FC<SignupFormProps> = ({
       signupMethod,
     };
 
-    // console.log("Signup Data:", signupData);
+    console.log("SignupForm - Signup Data:", {
+      title: signupData.title,
+      gender: signupData.gender,
+      name: signupData.name,
+    });
 
     const result = await signup(signupData);
 
@@ -342,6 +353,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
           email: signupData.email, // identifier used everywhere (email or +phone)
           password: formData.password,
           signupMethod,
+          title: formData.title,
+          gender: formData.gender,
         });
         toast.success(
           `Verification code sent to your ${isPhone ? "phone" : "email"}!`,
@@ -385,8 +398,6 @@ const SignupForm: React.FC<SignupFormProps> = ({
       password: false,
       confirmPassword: false,
       otp: false,
-      // title: false,
-      // gender: false,
     });
 
     setFormData({
@@ -394,8 +405,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
       email: "",
       password: "",
       confirmPassword: "",
-      // gender: "MALE",
-      // title: "MR",
+      gender: "M",
+      title: "MR",
     });
     setPhoneNumber("");
     setPhoneCountryCode("+1");
@@ -528,7 +539,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
                     <select
                       aria-label="Title"
                       className="px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"
-                      // value={formData.title}
+                      value={formData.title}
                       onChange={(e) =>
                         setFormData((prev) => ({
                           ...prev,
@@ -671,15 +682,12 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   <select
                     aria-label="Gender"
                     className="px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-10 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"
-                    // value={formData.gender}
+                    value={formData.gender}
                     onChange={(e) =>
                       setFormData((prev) => ({
                         ...prev,
                         gender: e.target.value,
                       }))
-                    }
-                    onBlur={() =>
-                      setTouched((prev) => ({ ...prev, gender: true }))
                     }
                   >
                     <option value="M">Male</option>

@@ -26,6 +26,8 @@ interface RemoteUserPayload {
   phoneNumber: string | null;
   name: string;
   signupMethod: SignupMethod;
+  title?: string;
+  gender?: string;
 }
 
 interface RemoteUserCreationResult {
@@ -482,6 +484,7 @@ export class AuthService {
     payload: RemoteUserPayload,
   ): Promise<RemoteUserCreationResult | null> {
     try {
+      console.log("createRemoteUserRecord - Sending payload:", payload);
       const response = await fetch(
         "https://yjz5d5q2i0.execute-api.eu-west-1.amazonaws.com/users",
         {
