@@ -4,6 +4,7 @@ import "../../assets/css/travel.css";
 import FlagUae from "../../assets/svgs/Flag-uae.svg";
 import FlagInd from "../../assets/svgs/Flag-ind.svg";
 import FlagUsa from "../../assets/svgs/Flag-usa.svg";
+import Info from "../../assets/svgs/info-black.svg";
 import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import { Segmented, Tabs, Select, Flex, Grid, Drawer, Button } from "antd";
 import CustomButton from "../common/CustomButton";
@@ -750,8 +751,21 @@ const HotelSearchListing: React.FC = () => {
               </div>
             </Flex>
             <div className="w-full">
-              <label className="block text-[12px] text-[#3D495C] mb-1">
-                Travellers and rooms
+              <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
+                Travellers and rooms{" "}
+                <span className="relative inline-flex group/info">
+                  <img
+                    src={Info}
+                    alt="info"
+                    className="w-4 h-4 inline-block align-middle"
+                  />
+                  <span
+                    className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
+                    role="tooltip"
+                  >
+                    Maximum 2 adults allowed per room
+                  </span>
+                </span>
               </label>
               <TravellersAndRoomDropdown
                 maxTotal={100}

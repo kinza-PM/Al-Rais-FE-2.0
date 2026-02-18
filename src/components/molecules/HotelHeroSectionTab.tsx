@@ -9,6 +9,7 @@ import TravellersAndRoomDropdown from "../atoms/TravellersAndRoomDropdown";
 import CheckableDropdown from "../common/CheckableDropdown";
 import type { PassengerSchema } from "../../features/flights/types";
 import { useHotelStore } from "../../store/UseHotelStore";
+import Info from "../../assets/svgs/info-black.svg";
 import Loader from "../atoms/Loader";
 
 const starRatingOptions = [
@@ -364,8 +365,21 @@ const HotelHeroSectionTab: React.FC = () => {
         </div>
 
         <div className="w-[270px] relative">
-          <label className="block text-[12px] text-[#3D495C] mb-1">
-            Travellers and rooms
+          <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
+            Travellers and rooms{" "}
+            <span className="relative inline-flex group/info">
+              <img
+                src={Info}
+                alt="info"
+                className="w-4 h-4 inline-block align-middle"
+              />
+              <span
+                className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
+                role="tooltip"
+              >
+                Maximum 2 adults allowed per room
+              </span>
+            </span>
           </label>
           <TravellersAndRoomDropdown
             maxTotal={100}

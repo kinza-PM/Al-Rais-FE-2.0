@@ -4,18 +4,31 @@ import CustomToggle from "../common/CustomToggle";
 import { useState } from "react";
 import Button from "../atoms/Button";
 import HotelImage from "../../../src/assets/images/Hotel Image.png";
-import HotelBookingAnicllarySection from "./HotelBookingAnicllarySection";
+// import HotelBookingAnicllarySection from "./HotelBookingAnicllarySection";
 import HotelSummaryCard from "../atoms/HotelSummaryCard";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelFareRule from "../atoms/HotelFareRule";
+// import { useAuth } from "../../features/auth/hooks/useAuth";
+// import LoginModal from "../common/LoginModal";
 
 type HotelBookingBookSectionProps = {
   onNext?: () => void;
+  hotelDetail?: any;
+  bookingInfo?: any;
+  selectedRooms?: any[];
+  totalPrice?: number;
+  currency?: string;
 };
 
 export default function HotelBookingBookSection({
   onNext,
+  hotelDetail,
+  bookingInfo,
+  selectedRooms = [],
+  totalPrice = 0,
+  currency = "AED",
 }: HotelBookingBookSectionProps) {
+  // const { isAuthenticated } = useAuth();
   const [bookingForOther, setBookingForOther] = useState(true);
 
   return (
@@ -170,7 +183,134 @@ export default function HotelBookingBookSection({
             </div>
 
             <div className="grid grid-cols-3 gap-4 px-5 py-3">
-              {Array.from({ length: 2 }).map((_, index) => {
+              {selectedRooms.map((selectedRoom, index) => {
+                const room = selectedRoom?.room;
+                const ratePlan = room?.ratePlan;
+                const roomRate = room?.roomRate;
+                const roomImages = room?.roomImages?.image || [];
+                const isNonRefundable =
+                  ratePlan?.cancelPolicyIndicator === "Non-Refundable";
+
+                // Room images — pehli 3 use karo, fallback HotelImage
+                const img1 = roomImages[0]?.path || HotelImage;
+                const img2 = roomImages[1]?.path || HotelImage;
+                const img3 = roomImages[2]?.path || HotelImage;
+
+                const cancellationCost =
+                  roomRate?.netAmount && isNonRefundable
+                    ? `${roomRate.currency || currency} ${(
+                        roomRate.netAmount * selectedRoom.count
+                      ).toFixed(2)} (full cost of your selection)`
+                    : "Free cancellation";
+
+                return (
+                  <div
+                    key={selectedRoom.roomKey || index}
+                    className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-[#E4E4E7] overflow-visible mb-2"
+                  >
+                    {/* IMAGES */}
+                    <div className="relative h-56 p-2">
+                      <div className="flex gap-2 h-full">
+                        <div className="flex-1 rounded-xl overflow-hidden">
+                          <img
+                            src={img1}
+                            alt="Room"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                HotelImage;
+                            }}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2 w-28">
+                          <div className="flex-1 rounded-xl overflow-hidden">
+                            <img
+                              src={img2}
+                              alt="Room"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src =
+                                  HotelImage;
+                              }}
+                            />
+                          </div>
+                          <div className="flex-1 rounded-xl overflow-hidden">
+                            <img
+                              src={img3}
+                              alt="Room"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src =
+                                  HotelImage;
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* DETAILS */}
+                    <div className="px-2 py-1">
+                      <h3 className="text-base font-medium text-[#0A0C0F]">
+                        {room?.roomTypeName || "Room"}
+                      </h3>
+
+                      <p className="text-xs text-[#3D495C] mb-3">
+                        {ratePlan?.meal || "Room Only"}
+                      </p>
+
+                      {room?.maxOccupancy && room.maxOccupancy > 0 && (
+                        <div className="grid grid-cols-[1.3fr_1.7fr] gap-3 text-xs leading-relaxed mb-3">
+                          <p className="text-[#3D495C]">Max guests/room</p>
+                          <p className="text-[#0A0C0F] font-semibold text-right">
+                            {String(room.maxOccupancy).padStart(2, "0")} Adults
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-[1.3fr_1.7fr] gap-3 text-xs leading-relaxed mb-3">
+                        <p className="text-[#3D495C]">Cancellation</p>
+                        <p
+                          className={`font-semibold text-right break-words text-xs ${
+                            isNonRefundable
+                              ? "text-[#0A0C0F]"
+                              : "text-[#1A7F4B]"
+                          }`}
+                        >
+                          {cancellationCost}
+                        </p>
+                      </div>
+
+                      {ratePlan?.lastCancellationDate && (
+                        <div className="grid grid-cols-[1.3fr_1.7fr] gap-3 text-xs leading-relaxed mb-3">
+                          <p className="text-[#3D495C]">Last cancel date</p>
+                          <p className="text-[#0A0C0F] font-semibold text-right">
+                            {new Date(
+                              ratePlan.lastCancellationDate,
+                            ).toLocaleDateString("en-GB", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-[1.3fr_1.7fr] gap-3 text-xs leading-relaxed mb-3">
+                        <p className="text-[#3D495C]">Total price</p>
+                        <p className="text-[#0A0C0F] font-semibold text-right">
+                          {currency}{" "}
+                          {(
+                            (roomRate?.netAmount || 0) * selectedRoom.count
+                          ).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* {Array.from({ length: 2 }).map((_, index) => {
                 return (
                   <div
                     className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-[#E4E4E7] overflow-visible mb-2"
@@ -203,23 +343,22 @@ export default function HotelBookingBookSection({
                           </div>
                         </div>
                       </div>
-                      {/* // Two Images - Split Evenly */}
-                      {/* <div className="flex gap-2 h-full">
-                  <div className="flex-1 rounded-xl overflow-hidden">
-                    <img
-                      src={HotelImage}
-                      alt="Hotel"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 rounded-xl overflow-hidden">
-                    <img
-                      src={HotelImage}
-                      alt="Hotel"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                </div> */}
+                      <div className="flex gap-2 h-full">
+                        <div className="flex-1 rounded-xl overflow-hidden">
+                          <img
+                            src={HotelImage}
+                            alt="Hotel"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex-1 rounded-xl overflow-hidden">
+                          <img
+                            src={HotelImage}
+                            alt="Hotel"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      </div>
                     </div>
 
                     <div className="px-2 py-1">
@@ -290,8 +429,8 @@ export default function HotelBookingBookSection({
                     </div>
                   </div>
                 );
-              })}
-              <div className="flex flex-col items-center justify-center bg-[#FFFFFF] rounded-2xl shadow-sm border border-dashed border-[#A7C0EC] mb-2">
+              })} */}
+              {/* <div className="flex flex-col items-center justify-center bg-[#FFFFFF] rounded-2xl shadow-sm border border-dashed border-[#A7C0EC] mb-2">
                 <Button
                   className="flex flex-col gap-1 items-center text-[#5383DA]"
                   overrideClasses
@@ -311,18 +450,26 @@ export default function HotelBookingBookSection({
 
                   <span className="text-sm font-medium">Add another room</span>
                 </Button>
-              </div>
+              </div> */}
             </div>
           </div>
 
-          <HotelBookingAnicllarySection />
+          {/* <HotelBookingAnicllarySection /> */}
         </div>
 
         {/* RIGHT: Trip details */}
         <div>
-          <HotelSummaryCard />
-          <HotelFareRule />
-          <HotelPriceBreakdown />
+          <HotelSummaryCard
+            hotelDetail={hotelDetail}
+            bookingInfo={bookingInfo}
+          />
+          <HotelFareRule
+            selectedRooms={selectedRooms}
+            totalPrice={totalPrice}
+            currency={currency}
+            hotelDetail={hotelDetail}
+          />
+          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} />
 
           <Button
             type="button"
@@ -337,6 +484,7 @@ export default function HotelBookingBookSection({
             Continue
           </Button>
         </div>
+        {/* {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />} */}
       </div>
     </section>
   );

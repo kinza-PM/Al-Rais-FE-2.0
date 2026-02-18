@@ -5,18 +5,43 @@ import HotelImage4 from "../../assets/images/HotelImage4.png";
 
 type HotelSummaryCardProps = {
   paymentPage?: boolean;
+  hotelDetail?: any;
+  bookingInfo?: any;
 };
 
 export default function HotelSummaryCard({
   paymentPage = false,
+  hotelDetail,
+  bookingInfo,
 }: HotelSummaryCardProps) {
+  // Get first 5 images from hotel detail, fallback to default images
+  const displayImages = hotelDetail?.images
+    ?.slice(0, 5)
+    .map((img: any) => img.path)
+    .filter(Boolean) || [
+    HotelImage1,
+    HotelImage2,
+    HotelImage3,
+    HotelImage4,
+    HotelImage2,
+  ];
+
+  const hotelName = hotelDetail?.name || "Hotel";
+  const hotelLocation = hotelDetail?.address
+    ? `${hotelDetail.address}${hotelDetail.city ? `, ${hotelDetail.city}` : ""}${
+        hotelDetail.country ? `, ${hotelDetail.country}` : ""
+      }`
+    : hotelDetail?.city && hotelDetail?.country
+      ? `${hotelDetail.city}, ${hotelDetail.country}`
+      : "";
+
   return (
     <div>
       <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm p-2 mb-4">
         <div className="grid grid-cols-4 gap-2 auto-rows-fr">
           <div className="col-span-2 row-span-2 relative overflow-hidden rounded-2xl">
             <img
-              src={HotelImage1}
+              src={displayImages[0] || HotelImage1}
               alt="Hotel room"
               className="w-full h-full object-cover"
             />
@@ -24,14 +49,14 @@ export default function HotelSummaryCard({
 
           <div className="col-span-1 relative overflow-hidden rounded-2xl">
             <img
-              src={HotelImage2}
+              src={displayImages[1] || HotelImage2}
               alt="Hotel interior"
               className="w-full h-full object-cover"
             />
           </div>
           <div className="col-span-1 relative overflow-hidden rounded-2xl">
             <img
-              src={HotelImage3}
+              src={displayImages[2] || HotelImage3}
               alt="Hotel pool"
               className="w-full h-full object-cover"
             />
@@ -39,14 +64,14 @@ export default function HotelSummaryCard({
 
           <div className="col-span-1 relative overflow-hidden rounded-2xl">
             <img
-              src={HotelImage2}
+              src={displayImages[3] || HotelImage2}
               alt="Hotel interior"
               className="w-full h-full object-cover"
             />
           </div>
           <div className="col-span-1 relative overflow-hidden rounded-2xl">
             <img
-              src={HotelImage4}
+              src={displayImages[4] || HotelImage4}
               alt="Hotel pool"
               className="w-full h-full object-cover"
             />
@@ -54,12 +79,10 @@ export default function HotelSummaryCard({
         </div>
 
         <div className="mt-4 mb-2">
-          <h3 className="text-base font-medium text-[#0A0C0F]">
-            The Nishat Hotel
-          </h3>
-          <p className="text-xs text-[#3D495C]">
-            Abdul Haque Road,Johar Town, 54600 Lahore, Pakistan
-          </p>
+          <h3 className="text-base font-medium text-[#0A0C0F]">{hotelName}</h3>
+          {hotelLocation && (
+            <p className="text-xs text-[#3D495C]">{hotelLocation}</p>
+          )}
         </div>
 
         {paymentPage && (
@@ -68,6 +91,7 @@ export default function HotelSummaryCard({
             <HotelBookingDetailContent
               paymentPage={paymentPage}
               borderClass="-mx-2"
+              bookingInfo={bookingInfo}
             />
           </>
         )}
@@ -80,7 +104,10 @@ export default function HotelSummaryCard({
             </h3>
           </div>
 
-          <HotelBookingDetailContent paymentPage={paymentPage} />
+          <HotelBookingDetailContent
+            paymentPage={paymentPage}
+            bookingInfo={bookingInfo}
+          />
         </div>
       )}
     </div>
@@ -90,7 +117,68 @@ export default function HotelSummaryCard({
 const HotelBookingDetailContent = ({
   borderClass = "",
   paymentPage = false,
+  bookingInfo,
+}: {
+  borderClass?: string;
+  paymentPage?: boolean;
+  bookingInfo?: any;
 }) => {
+  // Format date helper
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "";
+    try {
+      const date = new Date(dateString);
+      const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      return `${days[date.getDay()]}, ${date.getDate()} ${
+        months[date.getMonth()]
+      } ${date.getFullYear()}`;
+    } catch {
+      return dateString;
+    }
+  };
+
+  const checkInDate = bookingInfo?.checkIn || "";
+  const checkOutDate = bookingInfo?.checkOut || "";
+  const checkInTime = bookingInfo?.checkInTime || "";
+  const checkOutTime = bookingInfo?.checkOutTime || "";
+  const totalNights = bookingInfo?.totalNights || 1;
+  const rooms = bookingInfo?.rooms || 0;
+  const adults = bookingInfo?.adults || 0;
+  const children = bookingInfo?.children ?? 0;
+
+  const selectionText =
+    rooms > 0 && (adults > 0 || children > 0)
+      ? (() => {
+          const r = `${rooms.toString().padStart(2, "0")} room${rooms > 1 ? "s" : ""}`;
+          const a =
+            adults > 0
+              ? `${adults.toString().padStart(2, "0")} adult${adults > 1 ? "s" : ""}`
+              : "";
+          const c =
+            children > 0
+              ? `${children.toString().padStart(2, "0")} child${children > 1 ? "ren" : ""}`
+              : "";
+          if (a && c) return `${r} for ${a} and ${c}`;
+          if (a) return `${r} for ${a}`;
+          if (c) return `${r} for ${c}`;
+          return r;
+        })()
+      : "Select rooms and guests";
+
   return (
     <>
       <div className={paymentPage ? "px-2 py-3" : "px-4 py-6"}>
@@ -98,9 +186,13 @@ const HotelBookingDetailContent = ({
           <div className="col-span-4">
             <p className="text-lg font-semibold text-[#0A0C0F]">Check-in</p>
             <p className="mt-4 text-base font-medium text-[#0A0C0F]">
-              2:00 PM – 12:00 AM
+              {checkInTime}
             </p>
-            <p className="text-xs text-[#3D495C] mt-1">Fri, 22 August 2025</p>
+            {checkInDate && (
+              <p className="text-xs text-[#3D495C] mt-1">
+                {formatDate(checkInDate)}
+              </p>
+            )}
           </div>
 
           <div className="col-span-4 flex justify-center mt-16">
@@ -109,7 +201,10 @@ const HotelBookingDetailContent = ({
                 <div className="stopPoint"></div>
 
                 <div className="stopsDetail">
-                  <span className="mb-5">Total stay: 1 night</span>
+                  <span className="mb-5">
+                    Total stay: {totalNights}{" "}
+                    {totalNights === 1 ? "night" : "nights"}
+                  </span>
                 </div>
 
                 <div className="stopPoint"></div>
@@ -120,9 +215,13 @@ const HotelBookingDetailContent = ({
           <div className="col-span-4 text-left">
             <p className="text-base font-semibold text-[#0A0C0F]">Check-out</p>
             <p className="mt-4 text-base font-medium text-[#0A0C0F]">
-              2:00 PM – 12:00 AM
+              {checkOutTime}
             </p>
-            <p className="text-xs text-[#3D495C] mt-1">Sat, 23 August 2025</p>
+            {checkOutDate && (
+              <p className="text-xs text-[#3D495C] mt-1">
+                {formatDate(checkOutDate)}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -131,9 +230,7 @@ const HotelBookingDetailContent = ({
 
       <div className={paymentPage ? "px-2 pt-6 pb-1" : "px-4 pt-6 pb-3"}>
         <p className="text-xs text-[#3D495C]">Your selection</p>
-        <p className="text-base font-medium text-[#0A0C0F]">
-          02 rooms for 02 adults
-        </p>
+        <p className="text-base font-medium text-[#0A0C0F]">{selectionText}</p>
       </div>
     </>
   );

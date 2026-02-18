@@ -17,7 +17,7 @@ import { useHotelDetail, useHotelGetMoreRooms } from "../hooks/useHotelSearch";
 import Loader from "../components/atoms/Loader";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation, useParams, useNavigate } from "react-router-dom";
 
 const tabs = [
   "Overview",
@@ -30,6 +30,17 @@ const tabs = [
 
 type LocationState = {
   searchKey?: string;
+  bookingParams?: {
+    checkIn?: string;
+    checkOut?: string;
+    paxData?: {
+      adults?: number;
+      children?: number;
+      kids?: number;
+      rooms?: number;
+    };
+    [key: string]: any;
+  };
 };
 
 const redIcon = L.icon({
@@ -72,12 +83,14 @@ const MapAutoFix = ({ lat, lng }: { lat: number; lng: number }) => {
 const HotelDetailListing = () => {
   const params = useParams<{ hotelKey?: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
   const state = (location.state || {}) as LocationState;
   const [hotelDetail, setHotelDetail] = useState<any>(null);
   const [hotelMoreRooms, setHotelMoreRooms] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("Overview");
   const [showHotelDetailImages, setShowHotelDetailImages] =
     useState<boolean>(false);
+  const [selectedRooms, setSelectedRooms] = useState<any[]>([]);
 
   const { mutateAsync, isPending } = useHotelDetail();
   const {
@@ -112,7 +125,6 @@ const HotelDetailListing = () => {
       }
 
       if (roomsResult.status === "fulfilled") {
-        console.log("getMoreRooms response------------", roomsResult.value);
         setHotelMoreRooms(roomsResult.value?.data?.[0]);
       }
       // } else {
@@ -131,7 +143,7 @@ const HotelDetailListing = () => {
 
   const primaryImages = useMemo(
     () => hotelDetail?.images || [],
-    [hotelDetail?.images]
+    [hotelDetail?.images],
   );
   const dynamicImages = useMemo(() => {
     const totalImages = primaryImages.length;
@@ -150,7 +162,7 @@ const HotelDetailListing = () => {
         ? parseFloat(hotelDetail.longitude)
         : 67.0011,
     }),
-    [hotelDetail?.latitude, hotelDetail?.longitude]
+    [hotelDetail?.latitude, hotelDetail?.longitude],
   );
 
   const nearbyInfo = useMemo(() => {
@@ -170,10 +182,10 @@ const HotelDetailListing = () => {
           7,
           Number.isFinite(Number(hotelDetail?.starRating))
             ? Number(hotelDetail?.starRating)
-            : 0
-        )
+            : 0,
+        ),
       ),
-    [hotelDetail?.starRating]
+    [hotelDetail?.starRating],
   );
 
   const handleShowImages = useCallback(() => {
@@ -187,6 +199,48 @@ const HotelDetailListing = () => {
   const handleTabChange = useCallback((tab: (typeof tabs)[number]) => {
     setActiveTab(tab);
   }, []);
+
+  const handleRoomsChange = useCallback((rooms: any[]) => {
+    setSelectedRooms(rooms);
+  }, []);
+
+  // Calculate total price from selected rooms
+  const totalPrice = useMemo(() => {
+    return selectedRooms.reduce((total, selectedRoom) => {
+      const roomPrice = selectedRoom.room?.roomRate?.netAmount || 0;
+      return total + roomPrice * selectedRoom.count;
+    }, 0);
+  }, [selectedRooms]);
+
+  // Get currency from first selected room or default
+  const currency = useMemo(() => {
+    if (selectedRooms.length > 0) {
+      return selectedRooms[0]?.room?.roomRate?.currency || "AED";
+    }
+    return "AED";
+  }, [selectedRooms]);
+
+  // Format price helper
+  const formatPrice = (amount: number, currency: string) => {
+    return `${currency} ${amount.toFixed(2)}`;
+  };
+
+  // Get total rooms count
+  const totalRoomsCount = useMemo(() => {
+    return selectedRooms.reduce((total, selectedRoom) => {
+      return total + selectedRoom.count;
+    }, 0);
+  }, [selectedRooms]);
+
+  const numberOfRooms = useMemo(() => {
+    if (!hotelMoreRooms?.rooms || !Array.isArray(hotelMoreRooms.rooms)) {
+      return 1; // Default to 1 room
+    }
+    const maxRoomIndex = Math.max(
+      ...hotelMoreRooms.rooms.map((room: any) => room.roomIndex || 1),
+    );
+    return maxRoomIndex > 0 ? maxRoomIndex : 1;
+  }, [hotelMoreRooms?.rooms]);
 
   return !showHotelDetailImages ? (
     <div className="w-full px-16 py-6">
@@ -414,6 +468,7 @@ const HotelDetailListing = () => {
           // passengers={passengers}
           // hotelDetail={hotelDetail}
           hotelMoreRooms={hotelMoreRooms}
+          onRoomsChange={handleRoomsChange}
         />
       )}
 
@@ -456,21 +511,82 @@ const HotelDetailListing = () => {
         <div className="relative max-w-5xl mx-auto px-4 py-6">
           <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4E4E7] px-4 py-3">
             <div className="flex items-center justify-between gap-6">
-              <div className="flex-shrink-0">
+              <div className="flex-shrink-0 flex-1">
                 <p className="text-xs text-[#3D495C]">Your selection</p>
-                <p className="text-base font-medium text-[#0A0C0F]">
-                  No rooms selected
-                </p>
-                <button className="text-sm text-[#EA0029] mt-1 font-normal">
-                  Select dates, travelers and rooms to see prices.
-                </button>
+                {selectedRooms.length > 0 ? (
+                  <>
+                    <p className="text-base font-medium text-[#0A0C0F]">
+                      {totalRoomsCount} room{totalRoomsCount > 1 ? "s" : ""}{" "}
+                      selected
+                    </p>
+                    <div className="mt-1 space-y-1">
+                      {/* {selectedRooms.map((selectedRoom, index) => (
+                        <div
+                          key={selectedRoom.roomKey || index}
+                          className="text-sm text-[#3D495C]"
+                        >
+                          <span className="font-medium">
+                            {selectedRoom.count}x{" "}
+                            {selectedRoom.room?.roomTypeName ||
+                              "Room"}{" "}
+                            - {selectedRoom.room?.ratePlan?.meal || ""}
+                          </span>
+                          <span className="ml-2">
+                            {formatPrice(
+                              (selectedRoom.room?.roomRate?.netAmount || 0) *
+                                selectedRoom.count,
+                              selectedRoom.room?.roomRate?.currency || "AED"
+                            )}
+                          </span>
+                        </div>
+                      ))} */}
+                      <div className="text-base font-semibold text-[#0A0C0F] mt-2 pt-2 border-t border-[#E4E4E7]">
+                        Total: {formatPrice(totalPrice, currency)}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-base font-medium text-[#0A0C0F]">
+                      No rooms selected
+                    </p>
+                    <button className="text-sm text-[#EA0029] mt-1 font-normal">
+                      Select dates, travelers and rooms to see prices.
+                    </button>
+                  </>
+                )}
               </div>
 
               <Button
-                disabled
-                // className="bg-[#2351A3] text-[#F2F2F3] px-10 py-3 rounded-lg font-semibold text-base"
-                className="bg-[#C2CAD6] text-[#F2F2F3] px-10 py-3 rounded-lg font-semibold text-base cursor-not-allowed"
+                disabled={selectedRooms.length < numberOfRooms}
+                // disabled={selectedRooms.length === 0}
+                className={
+                  selectedRooms.length >= numberOfRooms
+                    ? "bg-[#2351A3] text-[#F2F2F3] px-10 py-3 rounded-lg font-semibold text-base"
+                    : "bg-[#C2CAD6] text-[#F2F2F3] px-10 py-3 rounded-lg font-semibold text-base cursor-not-allowed"
+                }
                 overrideClasses
+                onClick={() => {
+                  const { images, ...hotelDetailWithoutImages } =
+                    hotelDetail ?? {};
+                  const slicedImages = Array.isArray(images)
+                    ? images.slice(0, 5)
+                    : [];
+                  navigate("/hotel-booking", {
+                    state: {
+                      hotelDetail: {
+                        ...hotelDetailWithoutImages,
+                        images: slicedImages,
+                      },
+                      searchKey: state.searchKey,
+                      bookingParams: state.bookingParams,
+                      selectedRooms,
+                      totalPrice,
+                      currency,
+                      hotelKey: params.hotelKey,
+                    },
+                  });
+                }}
               >
                 Continue to booking
               </Button>

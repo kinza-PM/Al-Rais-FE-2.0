@@ -1,8 +1,8 @@
-import { memo, useMemo, useState } from "react";
+import { memo, useMemo, useState, useEffect } from "react";
 // import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 // import TravellersAndRoomDropdown from "../atoms/TravellersAndRoomDropdown";
 // import type { PassengerSchema } from "../../features/flights/types";
-// import Button from "../atoms/Button";
+import Button from "../atoms/Button";
 import HotelDetailRoom1 from "../../assets/images/hotel-detail-room-1.png";
 import HotelDetailRoom2 from "../../assets/images/hotel-detail-room-2.png";
 import HotelDetailRoom3 from "../../assets/images/hotel-detail-room-3.png";
@@ -18,12 +18,19 @@ import {
   GREAT_KEYWORDS,
 } from "../../utils/hotelHelper";
 // import { hotelRoomDetails } from "../../utils/mockData";
-// import Button from "../atoms/Button";
+
+type SelectedRoom = {
+  roomKey: string;
+  room: any;
+  count: number;
+  selectedAt: number; // timestamp for FIFO removal
+};
 
 type HotelDetailRoomSectionProps = {
   // passengers?: PassengerSchema;
   // hotelDetail?: any;
   hotelMoreRooms?: any;
+  onRoomsChange?: (selectedRooms: SelectedRoom[]) => void;
 };
 
 const DEFAULT_ROOM_IMAGES = [
@@ -37,8 +44,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   // passengers,
   // hotelDetail,
   hotelMoreRooms,
+  onRoomsChange,
 }) => {
-  const [selectedRoomKey, setSelectedRoomKey] = useState<string | null>(null);
+  // Map of roomKey -> SelectedRoom
+  const [selectedRoomsMap, setSelectedRoomsMap] = useState<
+    Map<string, SelectedRoom>
+  >(new Map());
   // const [checkInDate, setCheckInDate] = useState<Date | null>(null);
   // const [checkOutDate, setCheckOutDate] = useState<Date | null>(null);
 
@@ -129,19 +140,140 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     return `${currency} ${amount.toFixed(2)}`;
   };
 
-  const handleRoomSelection = (roomKey: string) => {
-    setSelectedRoomKey((prev) => (prev === roomKey ? null : roomKey));
-  };
-
   const numberOfRooms = useMemo(() => {
     if (!hotelMoreRooms?.rooms || !Array.isArray(hotelMoreRooms.rooms)) {
       return 1; // Default to 1 room
     }
     const maxRoomIndex = Math.max(
-      ...hotelMoreRooms.rooms.map((room: any) => room.roomIndex || 1)
+      ...hotelMoreRooms.rooms.map((room: any) => room.roomIndex || 1),
     );
     return maxRoomIndex > 0 ? maxRoomIndex : 1;
   }, [hotelMoreRooms?.rooms]);
+
+  // Calculate total selected rooms count
+  const totalSelectedCount = useMemo(() => {
+    let total = 0;
+    selectedRoomsMap.forEach((selectedRoom) => {
+      total += selectedRoom.count;
+    });
+    return total;
+  }, [selectedRoomsMap]);
+
+  // Notify parent when selected rooms change
+  useEffect(() => {
+    if (onRoomsChange) {
+      const selectedRoomsArray = Array.from(selectedRoomsMap.values());
+      onRoomsChange(selectedRoomsArray);
+    }
+  }, [selectedRoomsMap, onRoomsChange]);
+
+  const handleRoomIncrement = (roomKey: string, room: any) => {
+    setSelectedRoomsMap((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(roomKey);
+
+      // Current total rooms selected based on latest state
+      const currentTotal = Array.from(newMap.values()).reduce(
+        (sum, r) => sum + r.count,
+        0,
+      );
+
+      // If this room is not selected yet and we've already reached the max,
+      // drop the oldest selection (FIFO) to make space.
+      if (!existing && currentTotal >= numberOfRooms && prev.size > 0) {
+        const oldestEntry = Array.from(prev.entries()).sort(
+          (a, b) => a[1].selectedAt - b[1].selectedAt,
+        )[0];
+        newMap.delete(oldestEntry[0]);
+      }
+
+      if (existing) {
+        // If already selected, only increment if we stay within the max rooms
+        const available = numberOfRooms - currentTotal;
+        if (available > 0) {
+          newMap.set(roomKey, {
+            ...existing,
+            count: existing.count + 1,
+          });
+        }
+      } else {
+        // Add new selection with count 1
+        newMap.set(roomKey, {
+          roomKey,
+          room,
+          count: 1,
+          selectedAt: Date.now(),
+        });
+      }
+
+      return newMap;
+    });
+  };
+
+  const handleRoomDecrement = (roomKey: string) => {
+    setSelectedRoomsMap((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(roomKey);
+
+      if (existing) {
+        if (existing.count > 1) {
+          // Decrement count
+          newMap.set(roomKey, {
+            ...existing,
+            count: existing.count - 1,
+          });
+        } else {
+          // Remove if count reaches 0
+          newMap.delete(roomKey);
+        }
+      }
+
+      return newMap;
+    });
+  };
+
+  const getRoomCount = (roomKey: string): number => {
+    return selectedRoomsMap.get(roomKey)?.count || 0;
+  };
+
+  // Clicking on the whole option row should toggle select/deselect:
+  // - If not selected -> select 1 room (respecting global max)
+  // - If already selected -> deselect this option completely
+  const handleCardClick = (roomKey: string, room: any) => {
+    setSelectedRoomsMap((prev) => {
+      const newMap = new Map(prev);
+      const existing = newMap.get(roomKey);
+
+      if (existing) {
+        // Deselect this option entirely
+        newMap.delete(roomKey);
+        return newMap;
+      }
+
+      // Not selected yet → select 1 room, enforcing global max
+      const currentTotal = Array.from(newMap.values()).reduce(
+        (sum, r) => sum + r.count,
+        0,
+      );
+
+      if (currentTotal >= numberOfRooms && prev.size > 0) {
+        // Remove oldest selection (FIFO) to make space
+        const oldestEntry = Array.from(prev.entries()).sort(
+          (a, b) => a[1].selectedAt - b[1].selectedAt,
+        )[0];
+        newMap.delete(oldestEntry[0]);
+      }
+
+      newMap.set(roomKey, {
+        roomKey,
+        room,
+        count: 1,
+        selectedAt: Date.now(),
+      });
+
+      return newMap;
+    });
+  };
 
   // const getMaxOccupancy = (room: any) => {
   //   if (room.maxOccupancy && room.maxOccupancy > 0) {
@@ -234,14 +366,14 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
           ];
 
           const allFacilities = group.rooms.flatMap(
-            (room: any) => room?.roomFacilities || []
+            (room: any) => room?.roomFacilities || [],
           );
 
           const categorizedAmenities = categorizeFacilities(
             [allFacilities],
             categories,
             FACILITY_KEYWORDS,
-            GREAT_KEYWORDS
+            GREAT_KEYWORDS,
           );
 
           return (
@@ -295,7 +427,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
 
                 <div className="py-1">
                   {Object.values(categorizedAmenities).some(
-                    (arr) => arr.length > 0
+                    (arr) => arr.length > 0,
                   ) ? (
                     <>
                       {(categorizedAmenities.greatForYourStay.length > 0 ||
@@ -308,16 +440,16 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                             categorizedAmenities.bedrooms.length > 0
                               ? "grid-cols-[2.7fr_1fr_1fr]"
                               : (categorizedAmenities.greatForYourStay.length >
-                                  0 &&
-                                  (categorizedAmenities.kitchen.length > 0 ||
-                                    categorizedAmenities.bedrooms.length >
-                                      0)) ||
-                                (!categorizedAmenities.greatForYourStay
-                                  .length &&
-                                  categorizedAmenities.kitchen.length > 0 &&
-                                  categorizedAmenities.bedrooms.length > 0)
-                              ? "grid-cols-[2.7fr_1fr]"
-                              : "grid-cols-1"
+                                    0 &&
+                                    (categorizedAmenities.kitchen.length > 0 ||
+                                      categorizedAmenities.bedrooms.length >
+                                        0)) ||
+                                  (!categorizedAmenities.greatForYourStay
+                                    .length &&
+                                    categorizedAmenities.kitchen.length > 0 &&
+                                    categorizedAmenities.bedrooms.length > 0)
+                                ? "grid-cols-[2.7fr_1fr]"
+                                : "grid-cols-1"
                           }`}
                         >
                           {categorizedAmenities.greatForYourStay.length > 0 && (
@@ -336,7 +468,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                       <CheckIcon />
                                       <span>{item}</span>
                                     </span>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>
@@ -357,7 +489,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                       <CheckIcon />
                                       <span>{it}</span>
                                     </span>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>
@@ -378,7 +510,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                       <CheckIcon />
                                       <span>{it}</span>
                                     </span>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>
@@ -412,7 +544,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                       <CheckIcon />
                                       <span>{item}</span>
                                     </span>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>
@@ -433,7 +565,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                       <CheckIcon />
                                       <span>{it}</span>
                                     </span>
-                                  )
+                                  ),
                                 )}
                               </div>
                             </div>
@@ -470,19 +602,20 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                     ? price -
                       offers.reduce(
                         (sum: number, offer: any) => sum + (offer.amount || 0),
-                        0
+                        0,
                       )
                     : price;
                   const roomKey =
                     room.roomKey || `${group.roomTypeName}-${index}`;
-                  const isSelected = selectedRoomKey === roomKey;
+                  const roomCount = getRoomCount(roomKey);
+                  const isSelected = roomCount > 0;
 
                   return (
                     <div key={roomKey || index}>
                       {/* <div className="flex items-center justify-between gap-5 py-3"> */}
                       <div
                         onClick={() =>
-                          price > 0 && handleRoomSelection(roomKey)
+                          price > 0 && handleCardClick(roomKey, room)
                         }
                         className={`flex items-center gap-5 py-4 px-4 -mx-3 rounded-xl transition-all duration-200 ${
                           price > 0
@@ -496,6 +629,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       >
                         <div className="flex-shrink-0">
                           <div
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (price > 0) {
+                                handleCardClick(roomKey, room);
+                              }
+                            }}
                             className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
                               isSelected
                                 ? "bg-[#2351A3] border-[#2351A3]"
@@ -592,23 +731,23 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                       <span className="text-xs">
                                         {new Date(rate.from).toLocaleDateString(
                                           "en-GB",
-                                          { day: "2-digit", month: "short" }
+                                          { day: "2-digit", month: "short" },
                                         )}{" "}
                                         -{" "}
                                         {new Date(rate.to).toLocaleDateString(
                                           "en-GB",
-                                          { day: "2-digit", month: "short" }
+                                          { day: "2-digit", month: "short" },
                                         )}
                                       </span>
                                       <span className="text-xs font-medium">
                                         {formatPrice(
                                           rate.amount,
-                                          room.roomRate.currency
+                                          room.roomRate.currency,
                                         )}
                                         /night
                                       </span>
                                     </div>
-                                  )
+                                  ),
                                 )}
                               </div>
                             )}
@@ -616,11 +755,16 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                           {price > 0 ? (
                             <div className="text-right text-sm text-[#0A0C0F] max-w-64 font-semibold">
                               <div>
-                                {formatPrice(price * numberOfRooms, currency)}
+                                {formatPrice(
+                                  price * numberOfRooms,
+                                  // price * (isSelected ? roomCount : numberOfRooms),
+                                  currency,
+                                )}
                               </div>
                               <div className="text-[11px] text-[#6B7280] font-normal">
-                                Total for {numberOfRooms} room
-                                {numberOfRooms > 1 ? "s" : ""}
+                                {isSelected
+                                  ? `Total for ${roomCount} room${roomCount > 1 ? "s" : ""}`
+                                  : `Total for ${numberOfRooms} room${numberOfRooms > 1 ? "s" : ""}`}
                               </div>
                             </div>
                           ) : (
@@ -629,28 +773,59 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                             </div>
                           )}
 
-                          {/* Commented out +/- icons because searching is done with 2 rooms */}
-                          {/* <div className="flex items-center gap-2">
-                            <Button
-                              type="button"
-                              className="flex items-center w-7 h-7 rounded-full justify-center text-white text-sm bg-[#C2CAD6] cursor-not-allowed"
-                              overrideClasses
-                            >
-                              <span className="block leading-none">−</span>
-                            </Button>
+                          {/* Counter buttons for room selection */}
+                          {isSelected && (
+                            <div className="flex items-center gap-2">
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRoomDecrement(roomKey);
+                                }}
+                              >
+                                <Button
+                                  type="button"
+                                  className={`flex items-center w-7 h-7 rounded-full justify-center text-white text-sm ${
+                                    roomCount > 0
+                                      ? "bg-[#2351A3] cursor-pointer"
+                                      : "bg-[#C2CAD6] cursor-not-allowed"
+                                  }`}
+                                  overrideClasses
+                                >
+                                  <span className="block leading-none">−</span>
+                                </Button>
+                              </div>
 
-                            <span className="w-8 text-center font-normal text-base text-[#0A0C0F]">
-                              {String(0).padStart(2, "0")}
-                            </span>
+                              <span className="w-8 text-center font-normal text-base text-[#0A0C0F]">
+                                {String(roomCount).padStart(2, "0")}
+                              </span>
 
-                            <Button
-                              type="button"
-                              className="flex items-center w-7 h-7 rounded-full justify-center text-white text-sm bg-[#2351A3]"
-                              overrideClasses
-                            >
-                              <span className="block leading-none">+</span>
-                            </Button>
-                          </div> */}
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (price > 0) {
+                                    handleRoomIncrement(roomKey, room);
+                                  }
+                                }}
+                              >
+                                <Button
+                                  type="button"
+                                  className={`flex items-center w-7 h-7 rounded-full justify-center text-white text-sm ${
+                                    price > 0 &&
+                                    totalSelectedCount < numberOfRooms
+                                      ? "bg-[#2351A3] cursor-pointer"
+                                      : "bg-[#C2CAD6] cursor-not-allowed"
+                                  }`}
+                                  overrideClasses
+                                  disabled={
+                                    price <= 0 ||
+                                    totalSelectedCount >= numberOfRooms
+                                  }
+                                >
+                                  <span className="block leading-none">+</span>
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 

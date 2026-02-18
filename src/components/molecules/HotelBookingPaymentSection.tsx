@@ -17,7 +17,13 @@ import HotelSummaryCard from "../atoms/HotelSummaryCard";
 
 type PaymentMethod = "card" | "apple" | "google";
 
-type HotelBookingPaymentSectionProps = { onNext?: () => void };
+type HotelBookingPaymentSectionProps = {
+  onNext?: () => void;
+  hotelDetail?: any;
+  bookingInfo?: any;
+  totalPrice?: number;
+  currency?: string;
+};
 
 function ChevronDown() {
   return (
@@ -31,6 +37,10 @@ function ChevronDown() {
 
 export default function HotelBookingPaymentSection({
   onNext,
+  hotelDetail,
+  bookingInfo,
+  totalPrice = 0,
+  currency = "AED",
 }: HotelBookingPaymentSectionProps) {
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
   const [openAddress, setOpenAddress] = useState(true);
@@ -38,7 +48,11 @@ export default function HotelBookingPaymentSection({
   return (
     <section className="mt-10 flex items-center justify-center px-4">
       <div className="w-full max-w-[550px]">
-        <HotelSummaryCard paymentPage={true} />
+        <HotelSummaryCard
+          paymentPage={true}
+          hotelDetail={hotelDetail}
+          bookingInfo={bookingInfo}
+        />
 
         <div className="mt-6">
           {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3"> */}
@@ -258,7 +272,7 @@ export default function HotelBookingPaymentSection({
                         Subtotal
                       </span>
                       <span className="font-semibold text-[#0A0C0F] text-right">
-                        $852.45
+                        {currency} {totalPrice.toFixed(2)}
                       </span>
                     </div>
 
@@ -267,7 +281,7 @@ export default function HotelBookingPaymentSection({
                         Total
                       </span>
                       <span className="text-[22px] font-bold text-[#0A0C0F] text-right">
-                        $852.45
+                        {currency} {totalPrice.toFixed(2)}
                       </span>
                     </div>
                   </div>
@@ -277,7 +291,10 @@ export default function HotelBookingPaymentSection({
           </div>
         )}
 
-        <HotelPriceBreakdown />
+        <HotelPriceBreakdown
+          totalPrice={totalPrice}
+          currency={currency}
+        />
 
         <div className="mt-16 px-5">
           <Button

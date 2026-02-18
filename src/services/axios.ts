@@ -19,7 +19,12 @@ const flightApis = [
 ];
 const paymentApis = ["/pay"];
 const flightAncillaryApis = ["/ancillarySearch", "/bookAncillary"];
-const hotelApis = ["/hotelSearch", "/hotelDetail", "/getMoreRooms"];
+const hotelApis = [
+  "/hotelSearch",
+  "/hotelDetail",
+  "/getMoreRooms",
+  "/hotelPreBook",
+];
 const locationApis = ["/countries/cities", "/countries"];
 // const resonApis = ["/countries/cities", "/countries"];
 const ticketApis = ["/ticket"];
@@ -42,7 +47,8 @@ export const HOTEL_API_BASE =
 
 export const LOCATION_API_BASE = "https://countriesnow.space/api/v0.1";
 
-export const TICKET_API_BASE = "https://roj8jj0e3h.execute-api.eu-west-1.amazonaws.com/dev";
+export const TICKET_API_BASE =
+  "https://roj8jj0e3h.execute-api.eu-west-1.amazonaws.com/dev";
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,

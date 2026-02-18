@@ -62,10 +62,20 @@ const rooms = [
 
 type HotelBookingReviewSectionProps = {
   onNext?: () => void;
+  hotelDetail?: any;
+  bookingInfo?: any;
+  selectedRooms?: any[];
+  totalPrice?: number;
+  currency?: string;
 };
 
 export default function HotelBookingReviewSection({
   onNext,
+  hotelDetail,
+  bookingInfo,
+  selectedRooms = [],
+  totalPrice = 0,
+  currency = "AED",
 }: HotelBookingReviewSectionProps) {
   return (
     <section className="mx-auto max-w-full px-10 flight-booking-section">
@@ -270,9 +280,17 @@ export default function HotelBookingReviewSection({
 
         {/* RIGHT: Trip details */}
         <div>
-          <HotelSummaryCard />
-          <HotelFareRule />
-          <HotelPriceBreakdown />
+          <HotelSummaryCard
+            hotelDetail={hotelDetail}
+            bookingInfo={bookingInfo}
+          />
+          <HotelFareRule
+            selectedRooms={selectedRooms}
+            totalPrice={totalPrice}
+            currency={currency}
+            hotelDetail={hotelDetail}
+          />
+          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} />
         </div>
       </div>
 
