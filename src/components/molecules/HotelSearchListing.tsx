@@ -764,6 +764,10 @@ const HotelSearchListing: React.FC = () => {
                     role="tooltip"
                   >
                     Maximum 2 adults allowed per room
+                    <br />
+                    Maximum 2 children allowed per room
+                    <br />
+                    Child age must be within 2 and 12 years
                   </span>
                 </span>
               </label>

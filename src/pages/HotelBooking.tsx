@@ -11,6 +11,7 @@ import LoginModal from "../components/common/LoginModal";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useHotelPreBooking } from "../hooks/useHotelBooking";
+import Loader from "../components/atoms/Loader";
 
 const HotelBooking = () => {
   const location = useLocation();
@@ -49,16 +50,27 @@ const HotelBooking = () => {
         const body = {
           hotelKey: state.hotelKey ?? "",
           searchKey: state.searchKey ?? "",
-          rooms: (state.selectedRooms ?? []).map((selectedRoom) => ({
-            roomIndex: selectedRoom.room?.roomIndex ?? 1,
-            roomKey: selectedRoom.roomKey ?? "",
-          })),
+          rooms: (state.selectedRooms ?? []).flatMap((selectedRoom) =>
+            Array.from({ length: selectedRoom.count }, () => ({
+              roomIndex: selectedRoom.room?.roomIndex ?? 1,
+              roomKey: selectedRoom.roomKey ?? "",
+            })),
+          ),
         };
         const response = await mutateAsync(body);
         console.log("response------------", response);
+        if (
+          response?.meta?.success &&
+          response?.meta?.statusMessage === "SUCCESS"
+        ) {
+          toast.success("Hotel Pre Booking Successfully.");
+        } else {
+          window.history.back();
+        }
       } catch (error) {
         const err = extractErrorFromAxiosApiError(error);
         toast.error(err);
+        window.history.back();
       }
     }
   };
@@ -108,6 +120,10 @@ const HotelBooking = () => {
   return (
     <>
       <div className={`p-8`}>
+        <Loader
+          show={isPending}
+          label="Please wait while we complete your provisional booking"
+        />
         {/* <div className={`p-8 ${showTimerBanner ? "pt-8" : ""}`}> */}
         <div className="relative mx-auto max-w-[420px] md:max-w-[520px]">
           <div className="absolute left-[10px] right-[15px] top-3 -translate-y-1/2 z-0">

@@ -762,9 +762,10 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                 )}
                               </div>
                               <div className="text-[11px] text-[#6B7280] font-normal">
-                                {isSelected
+                                {`Total for ${numberOfRooms} room${numberOfRooms > 1 ? "s" : ""}`}
+                                {/* {isSelected
                                   ? `Total for ${roomCount} room${roomCount > 1 ? "s" : ""}`
-                                  : `Total for ${numberOfRooms} room${numberOfRooms > 1 ? "s" : ""}`}
+                                  : `Total for ${numberOfRooms} room${numberOfRooms > 1 ? "s" : ""}`} */}
                               </div>
                             </div>
                           ) : (

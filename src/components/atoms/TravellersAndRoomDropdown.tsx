@@ -139,9 +139,25 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   const decRooms = () =>
     setPax((p) => ({ ...p, rooms: Math.max(1, (p.rooms ?? 1) - 1) }));
 
+  const isValidationError = React.useMemo(() => {
+    if (!errorMessage) return false;
+    const validationKeywords = [
+      "Please select",
+      "is required",
+      "required",
+      "Please complete",
+      "Maximum",
+    ];
+    return validationKeywords.some((keyword) =>
+      errorMessage.toLowerCase().includes(keyword.toLowerCase()),
+    );
+  }, [errorMessage]);
+
   const handleToggle = () => {
-    const hasError = !!errorMessage || rows.length === 0;
-    if (hasError) {
+    // const hasError = !!errorMessage || rows.length === 0;
+    const hasApiError = !!errorMessage && !isValidationError;
+    const hasNoSchema = rows.length === 0;
+    if (hasApiError || hasNoSchema) {
       setShowError((s) => !s);
       setOpen(false);
     } else {
@@ -182,7 +198,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   }, [childAges, onChildrenAgesChange]);
 
   const handleChildAgeChange = (index: number, value: string) => {
-    const num = value === "" ? null : Math.max(0, Math.min(17, Number(value)));
+    const num = value === "" ? null : Math.max(2, Math.min(12, Number(value)));
     setChildAges((prev) => {
       const next = [...prev];
       next[index] = num;
@@ -213,7 +229,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
               handleToggle();
             }
           }}
-          className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none border-[#DFE7F3]`}
+          className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none ${errorMessage && isValidationError ? "border-red-500" : "border-[#DFE7F3]"}`}
           aria-haspopup="dialog"
           aria-expanded={open || showError}
           aria-invalid={showError}
@@ -264,7 +280,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
       </div>
 
       {/* Error panel */}
-      {showError && (
+      {showError && !isValidationError && (
         <CustomDropdownError
           id="pax-error"
           title="Nothing found!"
@@ -309,8 +325,8 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
                   <input
                     key={i}
                     type="number"
-                    min={0}
-                    max={17}
+                    min={2}
+                    max={12}
                     inputMode="numeric"
                     aria-label={`child-${i + 1}-age`}
                     placeholder="Age"

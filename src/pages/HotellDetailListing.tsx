@@ -558,10 +558,10 @@ const HotelDetailListing = () => {
               </div>
 
               <Button
-                disabled={selectedRooms.length < numberOfRooms}
+                disabled={totalRoomsCount < numberOfRooms}
                 // disabled={selectedRooms.length === 0}
                 className={
-                  selectedRooms.length >= numberOfRooms
+                  totalRoomsCount >= numberOfRooms
                     ? "bg-[#2351A3] text-[#F2F2F3] px-10 py-3 rounded-lg font-semibold text-base"
                     : "bg-[#C2CAD6] text-[#F2F2F3] px-10 py-3 rounded-lg font-semibold text-base cursor-not-allowed"
                 }
