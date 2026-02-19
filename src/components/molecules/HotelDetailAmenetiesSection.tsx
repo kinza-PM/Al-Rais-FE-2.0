@@ -7,7 +7,13 @@ import {
   GREAT_KEYWORDS,
 } from "../../utils/hotelHelper";
 
-const HotelDetailAmenetiesSection = ({ hotelDetail }: { hotelDetail: any }) => {
+const HotelDetailAmenetiesSection = ({
+  hotelDetail,
+  onSeeRooms,
+}: {
+  hotelDetail: any;
+  onSeeRooms?: () => void;
+}) => {
   const displayPopularFacilities = useMemo(() => {
     if (!hotelDetail?.hotelFacilities) return [];
     const unwantedKeywords = [
@@ -58,22 +64,22 @@ const HotelDetailAmenetiesSection = ({ hotelDetail }: { hotelDetail: any }) => {
       [hotelDetail?.hotelFacilities, hotelDetail?.roomFacilities],
       categories,
       FACILITY_KEYWORDS,
-      GREAT_KEYWORDS
+      GREAT_KEYWORDS,
     );
   }, [hotelDetail]);
 
   const categoryCount = Object.entries(categorizedAmenities).filter(
-    ([_, items]) => items.length > 0
+    ([_, items]) => items.length > 0,
   ).length;
 
   const columnClass =
     categoryCount >= 6
       ? "columns-4"
       : categoryCount >= 4
-      ? "columns-3"
-      : categoryCount >= 2
-      ? "columns-2"
-      : "columns-1";
+        ? "columns-3"
+        : categoryCount >= 2
+          ? "columns-2"
+          : "columns-1";
 
   return (
     <div className="mt-6">
@@ -94,6 +100,7 @@ const HotelDetailAmenetiesSection = ({ hotelDetail }: { hotelDetail: any }) => {
           type="button"
           overrideClasses
           className="bg-[#2351A3] text-[#F2F2F3] text-sm font-semibold px-8 py-3 border-none rounded-lg"
+          onClick={onSeeRooms}
         >
           See rooms
         </Button>

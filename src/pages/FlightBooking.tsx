@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import FlightBookingBookSection from "../components/molecules/FlightBookingBookSection";
 import FlightBookingReviewSection from "../components/molecules/FlightBookingReviewSection";
 import FlightBookingPaymentSection from "../components/molecules/FlightBookingPaymentSection";
@@ -24,10 +24,14 @@ import toast from "react-hot-toast";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import FlightBookingAnicllarySection from "../components/molecules/FlightBookingAnicllarySection";
 import AncillaryConfirmationModal from "../components/common/AncillaryConfirmationModal";
+import { useAuth } from "../features/auth/hooks/useAuth";
+import * as RemoteUserService from "../services/api/remoteUserService";
 
 const FlightBooking = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const hasPrefilledRef = useRef(false);
   const initialOfferData =
     (location.state && (location.state as any)) ||
     (window.history.state && (window.history.state as any)) ||
@@ -354,6 +358,49 @@ const FlightBooking = () => {
     }
   };
 
+  const prefillFirstPassengerFromUserDetail = (ud: any) => {
+    if (!ud) return;
+
+    // Name split: last word = surname, baaki = givenName
+    const fullName = (ud.name || "").trim();
+    const nameParts = fullName.split(" ").filter(Boolean);
+    const surname = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+    const givenName =
+      nameParts.length > 1
+        ? nameParts.slice(0, -1).join(" ")
+        : nameParts[0] || "";
+
+    const titleMap: Record<string, string> = {
+      MR: "MR",
+      MS: "MS",
+      MRS: "MRS",
+    };
+    const nameTitle = titleMap[(ud.title || "").toUpperCase()] ?? "";
+
+    const genderMap: Record<string, string> = {
+      M: "M",
+      F: "F",
+      MALE: "M",
+      FEMALE: "F",
+    };
+    const gender = genderMap[(ud.gender || "").toUpperCase()] ?? "";
+
+    setFlightBookingPayload((prev) => {
+      const next = JSON.parse(JSON.stringify(prev));
+      if (!next.passengers?.[0]) return prev;
+
+      next.passengers[0].passengerInfo = {
+        ...next.passengers[0].passengerInfo,
+        nameTitle,
+        givenName,
+        surname,
+        gender,
+      };
+
+      return next;
+    });
+  };
+
   const flightAncillarySearch = async (offerId: string) => {
     if (!offerId) return;
     try {
@@ -424,6 +471,34 @@ const FlightBooking = () => {
     const reviewStep = steps.indexOf("Review");
     setCurrentStep(reviewStep >= 0 ? reviewStep : 1);
   };
+
+  useEffect(() => {
+    if (!user || hasPrefilledRef.current) return;
+
+    const fetchAndPrefill = async () => {
+      try {
+        const email = (user.email || "").trim().toLowerCase();
+        const phoneNumber = (user.phone || "").trim();
+
+        const userDetails =
+          email || phoneNumber
+            ? await RemoteUserService.getByIdentifier({
+                email: email || undefined,
+                phoneNumber: phoneNumber || undefined,
+              })
+            : null;
+
+        if (userDetails) {
+          prefillFirstPassengerFromUserDetail(userDetails);
+          hasPrefilledRef.current = true; // dobara prefill mat karo
+        }
+      } catch (error) {
+        console.error("User detail fetch failed:", error);
+      }
+    };
+
+    fetchAndPrefill();
+  }, [user]);
 
   return (
     <>

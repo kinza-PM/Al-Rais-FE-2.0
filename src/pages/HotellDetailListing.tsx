@@ -5,10 +5,10 @@ import FilledStar from "../assets/svgs/filled_star.svg";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "../components";
 import HotelDetailOverviewSection from "../components/molecules/HotelDetailOverviewSection";
-import HotelDetailGuestReviewSection from "../components/molecules/HotelDetailGuestReviewSection";
+// import HotelDetailGuestReviewSection from "../components/molecules/HotelDetailGuestReviewSection";
 import HotelDetailAmenetiesSection from "../components/molecules/HotelDetailAmenetiesSection";
-import HotelDetailFaqSection from "../components/molecules/HotelDetailFaqSection";
-import HotelDetailRulesSection from "../components/molecules/HotelDetailRulesSection";
+// import HotelDetailFaqSection from "../components/molecules/HotelDetailFaqSection";
+// import HotelDetailRulesSection from "../components/molecules/HotelDetailRulesSection";
 // import HotellGridCard from "../components/atoms/HotellGridCard";
 import HotelImages from "../components/molecules/HotelImages";
 import HotelDetailRoomSection from "../components/molecules/HotelDetailRoomSection";
@@ -22,10 +22,10 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 const tabs = [
   "Overview",
   "Rooms",
-  "Guest reviews",
+  // "Guest reviews",
   "Ameneties",
-  "FAQs",
-  "Rules",
+  // "FAQs",
+  // "Rules",
 ] as const;
 
 type LocationState = {
@@ -473,19 +473,19 @@ const HotelDetailListing = () => {
       )}
 
       {/* GUEST REVIEWS SECTION */}
-      {activeTab === "Guest reviews" && <HotelDetailGuestReviewSection />}
+      {/* {activeTab === "Guest reviews" && <HotelDetailGuestReviewSection />} */}
 
       {/* AMENETIES SECTION */}
       {activeTab === "Ameneties" && (
         // <HotelDetailAmenetiesSection />
-        <HotelDetailAmenetiesSection hotelDetail={hotelDetail} />
+        <HotelDetailAmenetiesSection hotelDetail={hotelDetail} onSeeRooms={() => handleTabChange("Rooms")} />
       )}
 
       {/* FAQ SECTION */}
-      {activeTab === "FAQs" && <HotelDetailFaqSection />}
+      {/* {activeTab === "FAQs" && <HotelDetailFaqSection />} */}
 
       {/* RULES SECTION */}
-      {activeTab === "Rules" && <HotelDetailRulesSection />}
+      {/* {activeTab === "Rules" && <HotelDetailRulesSection />} */}
 
       {/* <div className="mx-auto mt-12 mb-4">
         <h4 className="text-[#0A0C0F] text-base font-bold">
