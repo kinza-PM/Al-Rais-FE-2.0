@@ -24,6 +24,7 @@ const hotelApis = [
   "/hotelDetail",
   "/getMoreRooms",
   "/hotelPreBook",
+  "/hotelBooking",
 ];
 const locationApis = ["/countries/cities", "/countries"];
 // const resonApis = ["/countries/cities", "/countries"];

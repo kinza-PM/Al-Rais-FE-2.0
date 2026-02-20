@@ -80,7 +80,7 @@ const HotelSearchListing: React.FC = () => {
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
 
-  const { hotel } = useHotelStore();
+  const { hotel, setHotel } = useHotelStore();
 
   const { passengers } = useMasterListings({
     include: ["passengers"],
@@ -462,6 +462,19 @@ const HotelSearchListing: React.FC = () => {
         }));
 
         setHotelSearchResults(formattedHotels);
+
+        // Sync store with current search params so ListView passes correct pax when navigating
+        setHotel({
+          country: searchState.country,
+          city: searchState.city,
+          checkIn: searchState.checkIn,
+          checkOut: searchState.checkOut,
+          travelerCountryOfResidence: searchState.travelerCountryOfResidence,
+          travelerNationality: searchState.travelerNationality,
+          paxData,
+          childAges,
+          minStarRating: searchState.filters?.minStarRating ?? 0,
+        });
       } else {
         setHotelSearchResults([]);
       }
@@ -471,7 +484,7 @@ const HotelSearchListing: React.FC = () => {
       setApiError(err);
       setHotelSearchResults([]);
     }
-  }, [searchState, validateForm, mutateAsync]);
+  }, [searchState, validateForm, mutateAsync, paxData, childAges, setHotel]);
 
   // Auto-trigger search when form is pre-filled from store (first visit from hero)
   useEffect(() => {

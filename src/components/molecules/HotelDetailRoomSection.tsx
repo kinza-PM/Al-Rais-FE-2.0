@@ -32,7 +32,9 @@ type HotelDetailRoomSectionProps = {
 };
 
 // Build grouped rooms (roomTypeName -> rate options) from a list of rooms
-function buildGroupedRoomsForRooms(rooms: any[]): { roomTypeName: string; rooms: any[] }[] {
+function buildGroupedRoomsForRooms(
+  rooms: any[],
+): { roomTypeName: string; rooms: any[] }[] {
   const roomMap = new Map<string, any[]>();
   rooms.forEach((room: any) => {
     const roomTypeName = room.roomTypeName || "";
@@ -51,11 +53,17 @@ function buildGroupedRoomsForRooms(rooms: any[]): { roomTypeName: string; rooms:
     if (existingIndex === -1) {
       existingRooms.push(room);
       roomMap.set(roomTypeName, existingRooms);
-    } else if (room.roomIndex === 1 && existingRooms[existingIndex].roomIndex !== 1) {
+    } else if (
+      room.roomIndex === 1 &&
+      existingRooms[existingIndex].roomIndex !== 1
+    ) {
       existingRooms[existingIndex] = room;
     }
   });
-  return Array.from(roomMap.entries()).map(([roomTypeName, rooms]) => ({ roomTypeName, rooms }));
+  return Array.from(roomMap.entries()).map(([roomTypeName, rooms]) => ({
+    roomTypeName,
+    rooms,
+  }));
 }
 
 const DEFAULT_ROOM_IMAGES = [
@@ -66,7 +74,9 @@ const DEFAULT_ROOM_IMAGES = [
 ];
 
 // Derive selection map from parent's selectedRooms so tab switch doesn't lose selection
-function selectedRoomsToMap(selectedRooms: SelectedRoom[] | undefined): Map<number, { roomKey: string; room: any }> {
+function selectedRoomsToMap(
+  selectedRooms: SelectedRoom[] | undefined,
+): Map<number, { roomKey: string; room: any }> {
   const map = new Map<number, { roomKey: string; room: any }>();
   if (!selectedRooms?.length) return map;
   selectedRooms.forEach((s) => {
@@ -84,10 +94,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   // Selection from parent so it persists when switching tabs (Overview / Rooms / Ameneties)
   const selectionByRoomIndex = useMemo(
     () => selectedRoomsToMap(selectedRoomsFromParent),
-    [selectedRoomsFromParent]
+    [selectedRoomsFromParent],
   );
   // Which room sections are expanded (local UI only)
-  const [expandedRoomIndices, setExpandedRoomIndices] = useState<Set<number>>(new Set([1]));
+  const [expandedRoomIndices, setExpandedRoomIndices] = useState<Set<number>>(
+    new Set([1]),
+  );
   const roomSectionRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
   const numberOfRooms = useMemo(() => {
@@ -102,7 +114,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
 
   const roomIndices = useMemo(
     () => Array.from({ length: numberOfRooms }, (_, i) => i + 1),
-    [numberOfRooms]
+    [numberOfRooms],
   );
 
   // Group rooms by roomIndex, then for each index build grouped rooms (roomTypeName -> options)
@@ -132,41 +144,52 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     (roomIndex: number, roomKey: string, room: any) => {
       if (!onRoomsChange) return;
       const current = selectionByRoomIndex.get(roomIndex);
-      if (current?.roomKey === roomKey) {
-        // Deselect this room: keep others from current selection
+      const isDeselecting = current?.roomKey === roomKey;
+      if (isDeselecting) {
         const next = (selectedRoomsFromParent ?? []).filter(
-          (s) => (s.room?.roomIndex ?? 1) !== roomIndex
+          (s) => (s.room?.roomIndex ?? 1) !== roomIndex,
         );
         onRoomsChange(next);
-      } else {
-        // Select this option for roomIndex; keep others
-        const others = (selectedRoomsFromParent ?? []).filter(
-          (s) => (s.room?.roomIndex ?? 1) !== roomIndex
-        );
-        const next: SelectedRoom[] = [...others, { roomKey, room, count: 1 }];
-        next.sort((a, b) => (a.room?.roomIndex ?? 1) - (b.room?.roomIndex ?? 1));
-        onRoomsChange(next);
+        setExpandedRoomIndices((prev) => new Set(prev).add(roomIndex));
+        return;
       }
-      // Collapse this room, expand next unselected (UI only)
+      // Selecting: add this room, collapse it, expand next unselected, scroll to next
+      const others = (selectedRoomsFromParent ?? []).filter(
+        (s) => (s.room?.roomIndex ?? 1) !== roomIndex,
+      );
+      const next: SelectedRoom[] = [...others, { roomKey, room, count: 1 }];
+      next.sort((a, b) => (a.room?.roomIndex ?? 1) - (b.room?.roomIndex ?? 1));
+      onRoomsChange(next);
+
+      const selectedIndices = new Set(next.map((s) => s.room?.roomIndex ?? 1));
+      const nextUnselected = roomIndices.find((ri) => !selectedIndices.has(ri));
       setExpandedRoomIndices((prev) => {
         const nextSet = new Set(prev);
         nextSet.delete(roomIndex);
-        const nextUnselected = roomIndices.find(
-          (ri) => ri !== roomIndex && !selectionByRoomIndex.has(ri)
-        );
         if (nextUnselected != null) nextSet.add(nextUnselected);
-        prev.forEach((ri) => {
-          if (ri !== roomIndex && !selectionByRoomIndex.has(ri)) nextSet.add(ri);
-        });
         return nextSet.size > 0 ? nextSet : new Set();
       });
+
+      // Scroll to next room so user is at its top, not stuck in center
+      if (nextUnselected != null) {
+        setTimeout(() => {
+          const el = roomSectionRefs.current.get(nextUnselected);
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const headerOffset = 140;
+          const absoluteY = window.scrollY + rect.top - headerOffset;
+          window.scrollTo({ top: Math.max(0, absoluteY), behavior: "smooth" });
+        }, 100);
+      }
     },
-    [onRoomsChange, selectedRoomsFromParent, selectionByRoomIndex, roomIndices]
+    [onRoomsChange, selectedRoomsFromParent, selectionByRoomIndex, roomIndices],
   );
 
   // When parent selection changes (e.g. tab switch back): expand first unselected
   useEffect(() => {
-    const nextUnselected = roomIndices.find((ri) => !selectionByRoomIndex.has(ri));
+    const nextUnselected = roomIndices.find(
+      (ri) => !selectionByRoomIndex.has(ri),
+    );
     setExpandedRoomIndices((prev) => {
       const next = new Set<number>();
       if (nextUnselected != null) next.add(nextUnselected);
@@ -185,7 +208,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   const scrollToRoom = useCallback((roomIndex: number) => {
     setExpandedRoomIndices((prev) => new Set(prev).add(roomIndex));
     setTimeout(() => {
-      roomSectionRefs.current.get(roomIndex)?.scrollIntoView({ behavior: "smooth", block: "start" });
+      const el = roomSectionRefs.current.get(roomIndex);
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const headerOffset = 140;
+      const absoluteY = window.scrollY + rect.top - headerOffset;
+      window.scrollTo({ top: Math.max(0, absoluteY), behavior: "smooth" });
     }, 50);
   }, []);
 
@@ -212,40 +240,57 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
       <h4 className="text-[#0A0C0F] text-base font-bold">Rooms availability</h4>
 
       {/* Sticky progress bar: Room 1 ✓ | Room 2 ✓ | Room 3 → | ... - click to scroll */}
-      {numberOfRooms > 1 && (() => {
-        const hasAnyRooms = Array.from(roomsByRoomIndex.values()).some((arr) => arr.length > 0);
-        if (!hasAnyRooms) return null;
-        return (
-          <div className="sticky top-0 z-10 mt-4 mb-4 py-2 px-3 bg-[#F8FAFC] border border-[#E4E4E7] rounded-xl flex flex-wrap items-center gap-2 shadow-sm">
-            {roomIndices.map((ri) => {
-              const isSelected = selectionByRoomIndex.has(ri);
-              const isExpanded = expandedRoomIndices.has(ri);
-              return (
-                <button
-                  key={ri}
-                  type="button"
-                  onClick={() => scrollToRoom(ri)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    isSelected
-                      ? "bg-[#2351A3] text-white"
-                      : isExpanded
-                        ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
-                        : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
-                  }`}
-                >
-                  <span>Room {ri}</span>
-                  {isSelected && (
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
-                      <path d="M11.5 4L5.5 10L2.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  )}
-                  {!isSelected && isExpanded && <span className="text-[10px]">→</span>}
-                </button>
-              );
-            })}
-          </div>
-        );
-      })()}
+      {numberOfRooms > 1 &&
+        (() => {
+          const hasAnyRooms = Array.from(roomsByRoomIndex.values()).some(
+            (arr) => arr.length > 0,
+          );
+          if (!hasAnyRooms) return null;
+          return (
+            <div className="sticky top-0 z-10 mt-4 mb-4 py-2 px-3 bg-[#F8FAFC] border border-[#E4E4E7] rounded-xl flex flex-wrap items-center gap-2 shadow-sm">
+              {roomIndices.map((ri) => {
+                const isSelected = selectionByRoomIndex.has(ri);
+                const isExpanded = expandedRoomIndices.has(ri);
+                return (
+                  <button
+                    key={ri}
+                    type="button"
+                    onClick={() => scrollToRoom(ri)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      isSelected
+                        ? "bg-[#2351A3] text-white"
+                        : isExpanded
+                          ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
+                          : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
+                    }`}
+                  >
+                    <span>Room {ri}</span>
+                    {isSelected && (
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 14 14"
+                        fill="none"
+                        className="flex-shrink-0"
+                      >
+                        <path
+                          d="M11.5 4L5.5 10L2.5 7"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                    {!isSelected && isExpanded && (
+                      <span className="text-[10px]">→</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
       {/* <div className="max-w-5xl mx-auto flex items-end mt-8 gap-5">
         <div>
           <label className="block text-[12px] text-[#3D495C] mb-1">Dates</label>
@@ -291,7 +336,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
       </div> */}
 
       {(() => {
-        const hasAnyRooms = Array.from(roomsByRoomIndex.values()).some((arr) => arr.length > 0);
+        const hasAnyRooms = Array.from(roomsByRoomIndex.values()).some(
+          (arr) => arr.length > 0,
+        );
         if (!hasAnyRooms) {
           return (
             <div className="py-6 text-center text-sm font-semibold text-[#3D495C]">
@@ -312,7 +359,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
           return (
             <div
               key={`room-index-${roomIndex}`}
-              ref={(el) => { roomSectionRefs.current.set(roomIndex, el); }}
+              ref={(el) => {
+                roomSectionRefs.current.set(roomIndex, el);
+              }}
               className="relative max-w-7xl mx-auto mt-6 mb-6 scroll-mt-24"
             >
               {/* Collapsed: compact summary when selected */}
@@ -322,21 +371,56 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                   className="border border-[#2351A3] bg-[#F0F5FF] rounded-xl p-4 cursor-pointer hover:bg-[#E8EEF7] transition-colors flex items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-2">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-[#2351A3]">
-                      <path d="M11.5 4L5.5 10L2.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 14 14"
+                      fill="none"
+                      className="flex-shrink-0 text-[#2351A3]"
+                    >
+                      <path
+                        d="M11.5 4L5.5 10L2.5 7"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
-                    <span className="font-semibold text-[#0A0C0F]">Room {roomIndex}</span>
+                    <span className="font-semibold text-[#0A0C0F]">
+                      Room {roomIndex}
+                    </span>
                     <span className="text-[#3D495C]">—</span>
-                    <span className="text-sm text-[#3D495C] truncate max-w-[200px]">{selectedForRoom?.room?.roomTypeName || "Room"}</span>
-                    <span className="text-sm text-[#3D495C]">• {selectedForRoom?.room?.ratePlan?.meal || "ROOM ONLY"}</span>
+                    <span className="text-sm text-[#3D495C] truncate max-w-[200px]">
+                      {selectedForRoom?.room?.roomTypeName || "Room"}
+                    </span>
+                    <span className="text-sm text-[#3D495C]">
+                      • {selectedForRoom?.room?.ratePlan?.meal || "ROOM ONLY"}
+                    </span>
                     <span className="text-sm font-semibold text-[#0A0C0F]">
-                      {formatPrice(selectedForRoom?.room?.roomRate?.netAmount || 0, selectedForRoom?.room?.roomRate?.currency || "AED")}
+                      {formatPrice(
+                        selectedForRoom?.room?.roomRate?.netAmount || 0,
+                        selectedForRoom?.room?.roomRate?.currency || "AED",
+                      )}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-[#2351A3]">Change</span>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}>
-                      <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <span className="text-sm font-medium text-[#2351A3]">
+                      Change
+                    </span>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 16 16"
+                      fill="none"
+                      className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}
+                    >
+                      <path
+                        d="M4 6L8 10L12 6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </div>
                 </div>
@@ -345,199 +429,437 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
               {/* Expanded: full content; header click collapses (accordion style) */}
               {showExpanded && (
                 <>
-              <div
-                role="button"
-                tabIndex={0}
-                // onClick={() => toggleExpanded(roomIndex)}
-                // onKeyDown={(e) => e.key === "Enter" && toggleExpanded(roomIndex)}
-                className="flex items-center justify-between gap-3 mb-3 py-1 -mx-1 px-1 rounded-lg cursor-pointer transition-colors group"
-                aria-expanded="true"
-                aria-label={`Collapse Room ${roomIndex}`}
-              >
-                <h3 className="text-base font-semibold text-[#0A0C0F]">
-                  Room {roomIndex} — Select one option
-                </h3>
-                {/* <span className="flex-shrink-0 text-[#6B7280] group-hover:text-[#0A0C0F] transition-colors" aria-hidden>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    // onClick={() => toggleExpanded(roomIndex)}
+                    // onKeyDown={(e) => e.key === "Enter" && toggleExpanded(roomIndex)}
+                    className="flex items-center justify-between gap-3 mb-3 py-1 -mx-1 px-1 rounded-lg cursor-pointer transition-colors group"
+                    aria-expanded="true"
+                    aria-label={`Collapse Room ${roomIndex}`}
+                  >
+                    <h3 className="text-base font-semibold text-[#0A0C0F]">
+                      Room {roomIndex} — Select one option
+                    </h3>
+                    {/* <span className="flex-shrink-0 text-[#6B7280] group-hover:text-[#0A0C0F] transition-colors" aria-hidden>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="rotate-180">
                     <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 </span> */}
-              </div>
-              {groupedRoomsForIndex.map((group) => {
-                const firstRoom = group.rooms[0];
-                const allRoomImages: string[] = [];
-                group.rooms.forEach((room: any) => {
-                  if (room?.roomImages?.image && Array.isArray(room.roomImages.image)) {
-                    room.roomImages.image.forEach((img: any) => {
-                      if (img.path && !allRoomImages.includes(img.path)) allRoomImages.push(img.path);
+                  </div>
+                  {groupedRoomsForIndex.map((group) => {
+                    const firstRoom = group.rooms[0];
+                    const allRoomImages: string[] = [];
+                    group.rooms.forEach((room: any) => {
+                      if (
+                        room?.roomImages?.image &&
+                        Array.isArray(room.roomImages.image)
+                      ) {
+                        room.roomImages.image.forEach((img: any) => {
+                          if (img.path && !allRoomImages.includes(img.path))
+                            allRoomImages.push(img.path);
+                        });
+                      }
                     });
-                  }
-                });
-                const roomImages = allRoomImages.length > 0 ? allRoomImages.slice(0, 4) : DEFAULT_ROOM_IMAGES;
-                const categories = ["greatForYourStay", "kitchen", "bedrooms", "mediaAndTechnology", "bathroom"];
-                const allFacilities = group.rooms.flatMap((room: any) => room?.roomFacilities || []);
-                const categorizedAmenities = categorizeFacilities([allFacilities], categories, FACILITY_KEYWORDS, GREAT_KEYWORDS);
+                    const roomImages =
+                      allRoomImages.length > 0
+                        ? allRoomImages.slice(0, 4)
+                        : DEFAULT_ROOM_IMAGES;
+                    const categories = [
+                      "greatForYourStay",
+                      "kitchen",
+                      "bedrooms",
+                      "mediaAndTechnology",
+                      "bathroom",
+                    ];
+                    const allFacilities = group.rooms.flatMap(
+                      (room: any) => room?.roomFacilities || [],
+                    );
+                    const categorizedAmenities = categorizeFacilities(
+                      [allFacilities],
+                      categories,
+                      FACILITY_KEYWORDS,
+                      GREAT_KEYWORDS,
+                    );
 
-                return (
-                  <div
-                    key={`${roomIndex}-${group.roomTypeName}`}
-                    className="border border-[#E4E4E7] bg-[#FFFFFF] rounded-2xl p-3 mb-4"
-                  >
-                    <h2 className="text-base font-medium text-[#0A0C0F] mb-2">
-                      {firstRoom?.roomTypeName || group.roomTypeName || "Room"}
-                    </h2>
-                    <Seperator />
-                    <div className="grid grid-cols-[380px_1px_1fr] gap-4">
-                      <div className="mt-6">
-                        <div className="flex items-center mb-3">
-                          {roomImages.map((img: any, idx: number) => {
-                            const fallback = DEFAULT_ROOM_IMAGES[idx % DEFAULT_ROOM_IMAGES.length];
+                    return (
+                      <div
+                        key={`${roomIndex}-${group.roomTypeName}`}
+                        className="border border-[#E4E4E7] bg-[#FFFFFF] rounded-2xl p-3 mb-4"
+                      >
+                        <h2 className="text-base font-medium text-[#0A0C0F] mb-2">
+                          {firstRoom?.roomTypeName ||
+                            group.roomTypeName ||
+                            "Room"}
+                        </h2>
+                        <Seperator />
+                        <div className="grid grid-cols-[380px_1px_1fr] gap-4">
+                          <div className="mt-6">
+                            <div className="flex items-center mb-3">
+                              {roomImages.map((img: any, idx: number) => {
+                                const fallback =
+                                  DEFAULT_ROOM_IMAGES[
+                                    idx % DEFAULT_ROOM_IMAGES.length
+                                  ];
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`relative w-32 h-32 rounded overflow-hidden shadow-sm border border-white ${idx > 0 ? "-ml-14" : ""}`}
+                                  >
+                                    <img
+                                      src={img}
+                                      alt={`Room view ${idx + 1}`}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        const t =
+                                          e.currentTarget as HTMLImageElement;
+                                        if (t.src !== fallback)
+                                          t.src = fallback;
+                                      }}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <div className="border-l border-[#E4E4E7]" />
+                          <div className="py-1">
+                            {Object.values(categorizedAmenities).some(
+                              (arr) => arr.length > 0,
+                            ) ? (
+                              <>
+                                {(categorizedAmenities.greatForYourStay.length >
+                                  0 ||
+                                  categorizedAmenities.kitchen.length > 0 ||
+                                  categorizedAmenities.bedrooms.length > 0) && (
+                                  <div
+                                    className={`grid items-start ${categorizedAmenities.greatForYourStay.length > 0 && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0 ? "grid-cols-[2.7fr_1fr_1fr]" : (categorizedAmenities.greatForYourStay.length > 0 && (categorizedAmenities.kitchen.length > 0 || categorizedAmenities.bedrooms.length > 0)) || (!categorizedAmenities.greatForYourStay.length && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0) ? "grid-cols-[2.7fr_1fr]" : "grid-cols-1"}`}
+                                  >
+                                    {categorizedAmenities.greatForYourStay
+                                      .length > 0 && (
+                                      <div>
+                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                          <img alt="icon" src={GreatStayIcon} />
+                                          <h5>Great for your stay</h5>
+                                        </div>
+                                        <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
+                                          {categorizedAmenities.greatForYourStay.map(
+                                            (item: string) => (
+                                              <span
+                                                key={item}
+                                                className="flex items-center gap-1 whitespace-nowrap"
+                                              >
+                                                <CheckIcon />
+                                                <span>{item}</span>
+                                              </span>
+                                            ),
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {categorizedAmenities.kitchen.length >
+                                      0 && (
+                                      <div>
+                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                          <img alt="icon" src={KnifeIcon} />
+                                          <h5>Kitchen</h5>
+                                        </div>
+                                        <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
+                                          {categorizedAmenities.kitchen.map(
+                                            (it: string) => (
+                                              <span
+                                                key={it}
+                                                className="flex items-center gap-1 whitespace-nowrap"
+                                              >
+                                                <CheckIcon />
+                                                <span>{it}</span>
+                                              </span>
+                                            ),
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {categorizedAmenities.bedrooms.length >
+                                      0 && (
+                                      <div>
+                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                          <img alt="icon" src={BedroomIcon} />
+                                          <h5>Bedrooms</h5>
+                                        </div>
+                                        <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
+                                          {categorizedAmenities.bedrooms.map(
+                                            (it: string) => (
+                                              <span
+                                                key={it}
+                                                className="flex items-center gap-1 whitespace-nowrap"
+                                              >
+                                                <CheckIcon />
+                                                <span>{it}</span>
+                                              </span>
+                                            ),
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                                {(categorizedAmenities.mediaAndTechnology
+                                  .length > 0 ||
+                                  categorizedAmenities.bathroom.length > 0) && (
+                                  <div
+                                    className={`grid items-start mt-2 gap-2 ${categorizedAmenities.mediaAndTechnology.length > 0 && categorizedAmenities.bathroom.length > 0 ? "grid-cols-[2.7fr_2fr]" : "grid-cols-1"}`}
+                                  >
+                                    {categorizedAmenities.mediaAndTechnology
+                                      .length > 0 && (
+                                      <div>
+                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                          <img alt="icon" src={MediaIcon} />
+                                          <h5>Media & Technology</h5>
+                                        </div>
+                                        <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
+                                          {categorizedAmenities.mediaAndTechnology.map(
+                                            (item: string) => (
+                                              <span
+                                                key={item}
+                                                className="flex items-center gap-1 whitespace-nowrap"
+                                              >
+                                                <CheckIcon />
+                                                <span>{item}</span>
+                                              </span>
+                                            ),
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {categorizedAmenities.bathroom.length >
+                                      0 && (
+                                      <div>
+                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                          <img alt="icon" src={BathroomIcon} />
+                                          <h5>Bathroom</h5>
+                                        </div>
+                                        <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-wrap gap-2">
+                                          {categorizedAmenities.bathroom.map(
+                                            (it: string) => (
+                                              <span
+                                                key={it}
+                                                className="flex items-center gap-1 whitespace-nowrap"
+                                              >
+                                                <CheckIcon />
+                                                <span>{it}</span>
+                                              </span>
+                                            ),
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <span className="text-[#94A3B8] text-xs">
+                                No amenities listed
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <Seperator />
+                        <h2 className="text-base font-normal text-[#000000] mb-2">
+                          Select an option
+                        </h2>
+                        <Seperator />
+                        <div>
+                          {group.rooms.map((room: any, index: number) => {
+                            const price = room.roomRate?.netAmount || 0;
+                            const currency = room.roomRate?.currency || "AED";
+                            const mealPlan = room.ratePlan?.meal || "ROOM ONLY";
+                            const cancelPolicy =
+                              room.ratePlan?.cancelPolicyIndicator || "";
+                            const offers = room.offers || [];
+                            const hasOffers = offers.length > 0;
+                            const originalPrice = hasOffers
+                              ? price -
+                                offers.reduce(
+                                  (sum: number, offer: any) =>
+                                    sum + (offer.amount || 0),
+                                  0,
+                                )
+                              : price;
+                            const roomKey =
+                              room.roomKey ||
+                              `${group.roomTypeName}-${roomIndex}-${index}`;
+                            const selectedRoomKey =
+                              getSelectedForRoomIndex(roomIndex);
+                            const isSelected = selectedRoomKey === roomKey;
+
                             return (
-                              <div key={idx} className={`relative w-32 h-32 rounded overflow-hidden shadow-sm border border-white ${idx > 0 ? "-ml-14" : ""}`}>
-                                <img src={img} alt={`Room view ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { const t = e.currentTarget as HTMLImageElement; if (t.src !== fallback) t.src = fallback; }} />
+                              <div key={roomKey || index}>
+                                <div
+                                  onClick={() =>
+                                    price > 0 &&
+                                    handleSelectForRoomIndex(
+                                      roomIndex,
+                                      roomKey,
+                                      room,
+                                    )
+                                  }
+                                  className={`flex items-center gap-5 py-4 px-4 -mx-3 rounded-xl transition-all duration-200 ${price > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${isSelected ? "border border-[#2351A3] bg-[#F0F5FF] shadow-sm" : ""}`}
+                                >
+                                  <div className="flex-shrink-0">
+                                    <div
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (price > 0)
+                                          handleSelectForRoomIndex(
+                                            roomIndex,
+                                            roomKey,
+                                            room,
+                                          );
+                                      }}
+                                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected ? "bg-[#2351A3] border-[#2351A3]" : "border-[#C2CAD6] bg-white"}`}
+                                    >
+                                      {isSelected && (
+                                        <svg
+                                          width="12"
+                                          height="10"
+                                          viewBox="0 0 12 10"
+                                          fill="none"
+                                          xmlns="http://www.w3.org/2000/svg"
+                                        >
+                                          <path
+                                            d="M1 5L4.5 8.5L11 1"
+                                            stroke="white"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          />
+                                        </svg>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="w-48 flex-shrink-0">
+                                    <h4 className="font-semibold text-sm text-[#3D495C] mb-3">
+                                      {mealPlan}
+                                    </h4>
+                                    <div className="space-y-2 text-sm text-[#3D495C] font-normal">
+                                      <div className="flex items-center gap-2">
+                                        <AvaialableIcon />
+                                        <span>{mealPlan}</span>
+                                      </div>
+                                      {cancelPolicy && (
+                                        <div className="flex items-center gap-2">
+                                          <AvaialableIcon />
+                                          <span>{cancelPolicy}</span>
+                                        </div>
+                                      )}
+                                      {hasOffers && (
+                                        <div className="flex items-center gap-2">
+                                          <AvaialableIcon />
+                                          <span
+                                            dangerouslySetInnerHTML={{
+                                              __html:
+                                                offers[0]?.name ||
+                                                "Special offer",
+                                            }}
+                                          />
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm text-[#3D495C] font-normal leading-relaxed">
+                                      {room.roomTypeDesc ||
+                                        room.roomTypeName ||
+                                        "Room description not available"}
+                                    </p>
+                                    {hasOffers && (
+                                      <div className="mt-2 flex items-center gap-2">
+                                        <span className="text-xs text-[#3D495C] line-through">
+                                          {formatPrice(originalPrice, currency)}
+                                        </span>
+                                        <span className="text-sm font-semibold text-[#EA0029]">
+                                          {formatPrice(price, currency)}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {!hasOffers && price > 0 && (
+                                      <div className="mt-2">
+                                        <span className="text-sm font-semibold text-[#0A0C0F]">
+                                          {formatPrice(price, currency)}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex items-center gap-6">
+                                    {room.roomRate?.rates &&
+                                      room.roomRate.rates.length > 1 && (
+                                        <div className="text-sm text-[#3D495C] font-normal">
+                                          {room.roomRate.rates.map(
+                                            (rate: any, idx: number) => (
+                                              <div
+                                                key={idx}
+                                                className="flex items-center gap-2 mb-1"
+                                              >
+                                                <span className="text-xs">
+                                                  {new Date(
+                                                    rate.from,
+                                                  ).toLocaleDateString(
+                                                    "en-GB",
+                                                    {
+                                                      day: "2-digit",
+                                                      month: "short",
+                                                    },
+                                                  )}{" "}
+                                                  -{" "}
+                                                  {new Date(
+                                                    rate.to,
+                                                  ).toLocaleDateString(
+                                                    "en-GB",
+                                                    {
+                                                      day: "2-digit",
+                                                      month: "short",
+                                                    },
+                                                  )}
+                                                </span>
+                                                <span className="text-xs font-medium">
+                                                  {formatPrice(
+                                                    rate.amount,
+                                                    room.roomRate.currency,
+                                                  )}
+                                                  /night
+                                                </span>
+                                              </div>
+                                            ),
+                                          )}
+                                        </div>
+                                      )}
+                                    {price > 0 ? (
+                                      <div className="text-right text-sm text-[#0A0C0F] max-w-64 font-semibold">
+                                        <div>
+                                          {formatPrice(price, currency)}
+                                        </div>
+                                        <div className="text-[11px] text-[#6B7280] font-normal">
+                                          Total for 1 room
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      <div className="text-sm text-[#EA0029] max-w-64">
+                                        Select dates, travelers and rooms to see
+                                        prices.
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                {index < group.rooms.length - 1 && (
+                                  <Seperator />
+                                )}
                               </div>
                             );
                           })}
                         </div>
                       </div>
-                      <div className="border-l border-[#E4E4E7]" />
-                      <div className="py-1">
-                        {Object.values(categorizedAmenities).some((arr) => arr.length > 0) ? (
-                          <>
-                            {(categorizedAmenities.greatForYourStay.length > 0 || categorizedAmenities.kitchen.length > 0 || categorizedAmenities.bedrooms.length > 0) && (
-                              <div className={`grid items-start ${categorizedAmenities.greatForYourStay.length > 0 && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0 ? "grid-cols-[2.7fr_1fr_1fr]" : (categorizedAmenities.greatForYourStay.length > 0 && (categorizedAmenities.kitchen.length > 0 || categorizedAmenities.bedrooms.length > 0)) || (!categorizedAmenities.greatForYourStay.length && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0) ? "grid-cols-[2.7fr_1fr]" : "grid-cols-1"}`}>
-                                {categorizedAmenities.greatForYourStay.length > 0 && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={GreatStayIcon} /><h5>Great for your stay</h5></div>
-                                    <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
-                                      {categorizedAmenities.greatForYourStay.map((item: string) => (<span key={item} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{item}</span></span>))}
-                                    </div>
-                                  </div>
-                                )}
-                                {categorizedAmenities.kitchen.length > 0 && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={KnifeIcon} /><h5>Kitchen</h5></div>
-                                    <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
-                                      {categorizedAmenities.kitchen.map((it: string) => (<span key={it} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{it}</span></span>))}
-                                    </div>
-                                  </div>
-                                )}
-                                {categorizedAmenities.bedrooms.length > 0 && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={BedroomIcon} /><h5>Bedrooms</h5></div>
-                                    <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
-                                      {categorizedAmenities.bedrooms.map((it: string) => (<span key={it} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{it}</span></span>))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                            {(categorizedAmenities.mediaAndTechnology.length > 0 || categorizedAmenities.bathroom.length > 0) && (
-                              <div className={`grid items-start mt-2 gap-2 ${categorizedAmenities.mediaAndTechnology.length > 0 && categorizedAmenities.bathroom.length > 0 ? "grid-cols-[2.7fr_2fr]" : "grid-cols-1"}`}>
-                                {categorizedAmenities.mediaAndTechnology.length > 0 && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={MediaIcon} /><h5>Media & Technology</h5></div>
-                                    <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
-                                      {categorizedAmenities.mediaAndTechnology.map((item: string) => (<span key={item} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{item}</span></span>))}
-                                    </div>
-                                  </div>
-                                )}
-                                {categorizedAmenities.bathroom.length > 0 && (
-                                  <div>
-                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={BathroomIcon} /><h5>Bathroom</h5></div>
-                                    <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-wrap gap-2">
-                                      {categorizedAmenities.bathroom.map((it: string) => (<span key={it} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{it}</span></span>))}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-                          </>
-                        ) : (
-                          <span className="text-[#94A3B8] text-xs">No amenities listed</span>
-                        )}
-                      </div>
-                    </div>
-                    <Seperator />
-                    <h2 className="text-base font-normal text-[#000000] mb-2">Select an option</h2>
-                    <Seperator />
-                    <div>
-                      {group.rooms.map((room: any, index: number) => {
-                        const price = room.roomRate?.netAmount || 0;
-                        const currency = room.roomRate?.currency || "AED";
-                        const mealPlan = room.ratePlan?.meal || "ROOM ONLY";
-                        const cancelPolicy = room.ratePlan?.cancelPolicyIndicator || "";
-                        const offers = room.offers || [];
-                        const hasOffers = offers.length > 0;
-                        const originalPrice = hasOffers ? price - offers.reduce((sum: number, offer: any) => sum + (offer.amount || 0), 0) : price;
-                        const roomKey = room.roomKey || `${group.roomTypeName}-${roomIndex}-${index}`;
-                        const selectedRoomKey = getSelectedForRoomIndex(roomIndex);
-                        const isSelected = selectedRoomKey === roomKey;
-
-                        return (
-                          <div key={roomKey || index}>
-                            <div
-                              onClick={() => price > 0 && handleSelectForRoomIndex(roomIndex, roomKey, room)}
-                              className={`flex items-center gap-5 py-4 px-4 -mx-3 rounded-xl transition-all duration-200 ${price > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${isSelected ? "border border-[#2351A3] bg-[#F0F5FF] shadow-sm" : ""}`}
-                            >
-                              <div className="flex-shrink-0">
-                                <div onClick={(e) => { e.stopPropagation(); if (price > 0) handleSelectForRoomIndex(roomIndex, roomKey, room); }} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected ? "bg-[#2351A3] border-[#2351A3]" : "border-[#C2CAD6] bg-white"}`}>
-                                  {isSelected && (
-                                    <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                      <path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="w-48 flex-shrink-0">
-                                <h4 className="font-semibold text-sm text-[#3D495C] mb-3">{mealPlan}</h4>
-                                <div className="space-y-2 text-sm text-[#3D495C] font-normal">
-                                  <div className="flex items-center gap-2"><AvaialableIcon /><span>{mealPlan}</span></div>
-                                  {cancelPolicy && <div className="flex items-center gap-2"><AvaialableIcon /><span>{cancelPolicy}</span></div>}
-                                  {hasOffers && <div className="flex items-center gap-2"><AvaialableIcon /><span dangerouslySetInnerHTML={{ __html: offers[0]?.name || "Special offer" }} /></div>}
-                                </div>
-                              </div>
-                              <div className="flex-1">
-                                <p className="text-sm text-[#3D495C] font-normal leading-relaxed">
-                                  {room.roomTypeDesc || room.roomTypeName || "Room description not available"}
-                                </p>
-                                {hasOffers && (
-                                  <div className="mt-2 flex items-center gap-2">
-                                    <span className="text-xs text-[#3D495C] line-through">{formatPrice(originalPrice, currency)}</span>
-                                    <span className="text-sm font-semibold text-[#EA0029]">{formatPrice(price, currency)}</span>
-                                  </div>
-                                )}
-                                {!hasOffers && price > 0 && <div className="mt-2"><span className="text-sm font-semibold text-[#0A0C0F]">{formatPrice(price, currency)}</span></div>}
-                              </div>
-                              <div className="flex items-center gap-6">
-                                {room.roomRate?.rates && room.roomRate.rates.length > 1 && (
-                                  <div className="text-sm text-[#3D495C] font-normal">
-                                    {room.roomRate.rates.map((rate: any, idx: number) => (
-                                      <div key={idx} className="flex items-center gap-2 mb-1">
-                                        <span className="text-xs">{new Date(rate.from).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} - {new Date(rate.to).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
-                                        <span className="text-xs font-medium">{formatPrice(rate.amount, room.roomRate.currency)}/night</span>
-                                      </div>
-                                    ))}
-                                  </div>
-                                )}
-                                {price > 0 ? (
-                                  <div className="text-right text-sm text-[#0A0C0F] max-w-64 font-semibold">
-                                    <div>{formatPrice(price, currency)}</div>
-                                    <div className="text-[11px] text-[#6B7280] font-normal">Total for 1 room</div>
-                                  </div>
-                                ) : (
-                                  <div className="text-sm text-[#EA0029] max-w-64">Select dates, travelers and rooms to see prices.</div>
-                                )}
-                              </div>
-                            </div>
-                            {index < group.rooms.length - 1 && <Seperator />}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
                 </>
               )}
             </div>

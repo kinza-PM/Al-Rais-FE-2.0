@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "../components";
 import HotelBookingBookSection from "../components/molecules/HotelBookingBookSection";
@@ -12,6 +12,11 @@ import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useHotelPreBooking } from "../hooks/useHotelBooking";
 import Loader from "../components/atoms/Loader";
+import {
+  buildInitialHotelBookingPayload,
+  type HotelBookingPayload,
+} from "../utils/hotelBookingHelper";
+import { useCountriesOptions } from "../hooks/masterListings/listing";
 
 const HotelBooking = () => {
   const location = useLocation();
@@ -35,9 +40,10 @@ const HotelBooking = () => {
     currency?: string;
     hotelKey?: string;
   };
-  console.log("state----------", state);
+  const [preBookData, setPreBookData] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, _] = useState<string[]>(["Book", "Review", "Pay", "Receipt"]);
+  const { data: countriesOptions } = useCountriesOptions();
   const progressPct =
     steps.length > 1 ? (currentStep / (steps.length - 1)) * 100 : 0;
 
@@ -58,11 +64,11 @@ const HotelBooking = () => {
           ),
         };
         const response = await mutateAsync(body);
-        console.log("response------------", response);
         if (
           response?.meta?.success &&
           response?.meta?.statusMessage === "SUCCESS"
         ) {
+          setPreBookData(response);
           toast.success("Hotel Pre Booking Successfully.");
         } else {
           window.history.back();
@@ -112,6 +118,100 @@ const HotelBooking = () => {
   const selectedRooms = state.selectedRooms ?? [];
   const totalPrice = state.totalPrice ?? 0;
   const currency = state.currency ?? "AED";
+
+  // Resolve checkIn/checkOut from multiple sources (state may not have bookingParams)
+  const effectiveCheckIn =
+    bookingInfo.checkIn ||
+    preBookData?.data?.[0]?.hotel?.checkInDate ||
+    selectedRooms[0]?.room?.roomRate?.rates?.[0]?.from ||
+    "";
+  const effectiveCheckOut =
+    bookingInfo.checkOut ||
+    preBookData?.data?.[0]?.hotel?.checkOutDate ||
+    selectedRooms[0]?.room?.roomRate?.rates?.[0]?.to ||
+    "";
+
+  const [hotelBookingPayload, setHotelBookingPayload] =
+    useState<HotelBookingPayload | null>(null);
+
+  useEffect(() => {
+    if (
+      selectedRooms.length > 0 &&
+      state.searchKey &&
+      state.hotelKey &&
+      effectiveCheckIn &&
+      effectiveCheckOut
+    ) {
+      const payload = buildInitialHotelBookingPayload(
+        preBookData,
+        state.searchKey,
+        state.hotelKey,
+        totalPrice,
+        currency,
+        effectiveCheckIn,
+        effectiveCheckOut,
+        selectedRooms,
+        pax
+      );
+      setHotelBookingPayload(payload);
+    }
+  }, [
+    preBookData,
+    selectedRooms,
+    state.searchKey,
+    state.hotelKey,
+    totalPrice,
+    currency,
+    effectiveCheckIn,
+    effectiveCheckOut,
+    pax,
+  ]);
+
+  const setNested = (obj: any, path: string, value: any) => {
+    const parts = path.split(".");
+    let cur = obj;
+    for (let i = 0; i < parts.length - 1; i++) {
+      const key = parts[i];
+      if (/^\d+$/.test(key)) {
+        const idx = Number(key);
+        if (!Array.isArray(cur)) cur = [];
+        if (!cur[idx]) cur[idx] = {};
+        cur = cur[idx];
+      } else {
+        if (!cur[key] || typeof cur[key] !== "object") cur[key] = {};
+        cur = cur[key];
+      }
+    }
+    const last = parts[parts.length - 1];
+    if (/^\d+$/.test(last)) {
+      cur[Number(last)] = value;
+    } else {
+      cur[last] = value;
+    }
+  };
+
+  const updatePassengerField = useCallback(
+    (roomIndex: number, passengerIndex: number, path: string, value: any) => {
+      setHotelBookingPayload((prev) => {
+        if (!prev || !prev.rooms[roomIndex]?.passengers[passengerIndex])
+          return prev;
+        const next = JSON.parse(JSON.stringify(prev));
+        setNested(
+          next.rooms[roomIndex].passengers[passengerIndex],
+          path,
+          value
+        );
+        return next;
+      });
+    },
+    []
+  );
+
+  const handleBookSectionContinue = useCallback(() => {
+    if (!hotelBookingPayload) return;
+    console.log("Hotel booking payload:", hotelBookingPayload);
+    setCurrentStep(1);
+  }, [hotelBookingPayload]);
 
   useEffect(() => {
     init();
@@ -177,11 +277,12 @@ const HotelBooking = () => {
         </div>
 
         <div className="mt-6">
-          {currentStep === 0 && (
+          {currentStep === 0 && hotelBookingPayload && (
             <HotelBookingBookSection
-              onNext={() => {
-                setCurrentStep(1);
-              }}
+              hotelBookingPayload={hotelBookingPayload}
+              onPassengerFieldChange={updatePassengerField}
+              onNext={handleBookSectionContinue}
+              countries={countriesOptions ?? []}
               hotelDetail={hotelDetail}
               bookingInfo={bookingInfo}
               selectedRooms={selectedRooms}

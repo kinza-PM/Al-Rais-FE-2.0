@@ -1,0 +1,262 @@
+// import { generateUUID } from "./helpers";
+
+export type HotelBookingPayload = {
+  searchKey: string;
+  bookingKey: string;
+  hotelKey: string;
+  totalNet: number;
+  currency: string;
+  culture: string;
+  stayDateRange: { checkIn: string; checkOut: string };
+  rooms: Array<{
+    roomIndex: number;
+    roomKey: string;
+    passengers: Array<{
+      passengerKey: string;
+      isLead: boolean;
+      ptc: string;
+      passengerInfo: {
+        birthDate: string | null;
+        gender: string;
+        nameTitle: string;
+        givenName: string;
+        surname: string;
+      };
+      identityDocuments: Array<{
+        idDocumentNumber: string;
+        idType: string;
+        issuingCountryCode: string;
+        dateOfIssue: string | null;
+        expiryDate: string | null;
+      }>;
+      contact: {
+        contactsProvided: Array<{
+          emailAddress: string[];
+          phone: Array<{
+            label: string;
+            areaCode: string | number;
+            phoneNumber: string | number;
+          }>;
+        }>;
+      };
+    }>;
+  }>;
+  paymentDetails: { paymentMode: string };
+};
+
+const emptyPassenger = (
+  isLead: boolean,
+  ptc: string,
+  passengerNumber: number,
+) => ({
+  passengerKey: String(passengerNumber),
+  // passengerKey: generateUUID(),
+  isLead,
+  ptc,
+  passengerInfo: {
+    birthDate: null,
+    gender: "",
+    nameTitle: "",
+    givenName: "",
+    surname: "",
+  },
+  identityDocuments: [
+    {
+      idDocumentNumber: "",
+      idType: "PASSPORT",
+      issuingCountryCode: "",
+      dateOfIssue: null,
+      expiryDate: null,
+    },
+  ],
+  contact: {
+    contactsProvided: [
+      {
+        emailAddress: [""],
+        phone: [
+          {
+            label: "Origin",
+            areaCode: "",
+            phoneNumber: "",
+          },
+        ],
+      },
+    ],
+  },
+});
+
+export function buildInitialHotelBookingPayload(
+  preBookData: any,
+  searchKey: string,
+  hotelKey: string,
+  totalNet: number,
+  currency: string,
+  checkIn: string,
+  checkOut: string,
+  selectedRooms: Array<{ roomKey: string; room?: any; count?: number }>,
+  paxData?: {
+    adults?: number;
+    children?: number;
+    kids?: number;
+    rooms?: number;
+  },
+): HotelBookingPayload {
+  const adults = paxData?.adults ?? 1;
+  const children = (paxData?.children ?? 0) + (paxData?.kids ?? 0);
+  const roomsCount = selectedRooms.length || 1;
+
+  // Same distribution as search form convertPaxToRoom: base + extra (first rooms get extra)
+  const MAX_ADULTS_PER_ROOM = 2;
+  const MAX_CHILDREN_PER_ROOM = 2;
+
+  const baseAdultsPerRoom = Math.floor(adults / roomsCount);
+  const extraAdults = adults % roomsCount;
+  const baseChildrenPerRoom = Math.floor(children / roomsCount);
+  const extraChildren = children % roomsCount;
+
+  const perRoomAdults: number[] = [];
+  const perRoomChildren: number[] = [];
+  for (let i = 0; i < roomsCount; i++) {
+    perRoomAdults.push(
+      Math.min(
+        baseAdultsPerRoom + (i < extraAdults ? 1 : 0),
+        MAX_ADULTS_PER_ROOM,
+      ),
+    );
+    perRoomChildren.push(
+      Math.min(
+        baseChildrenPerRoom + (i < extraChildren ? 1 : 0),
+        MAX_CHILDREN_PER_ROOM,
+      ),
+    );
+  }
+
+  const rooms = selectedRooms.map((sel, idx) => {
+    const roomIndex = sel.room?.roomIndex ?? idx + 1;
+    const roomKey = sel.roomKey ?? "";
+    const numAdults = perRoomAdults[idx] || 1;
+    const numChildren = perRoomChildren[idx] || 0;
+    const passengers: any[] = [];
+    let paxCounter = 1;
+    for (let i = 0; i < numAdults; i++) {
+      passengers.push(emptyPassenger(i === 0, "ADT", paxCounter++));
+    }
+    for (let i = 0; i < numChildren; i++) {
+      passengers.push(emptyPassenger(false, "CHD", paxCounter++));
+    }
+    if (passengers.length === 0) {
+      passengers.push(emptyPassenger(true, "ADT", paxCounter++));
+    }
+    return { roomIndex, roomKey, passengers };
+  });
+
+  const bookingKey =
+    preBookData?.data?.[0]?.hotel?.bookingKey ??
+    preBookData?.data?.[0]?.bookingKey ??
+    preBookData?.bookingKey ??
+    "";
+
+  return {
+    searchKey,
+    bookingKey,
+    hotelKey,
+    totalNet,
+    currency,
+    culture: "en",
+    stayDateRange: { checkIn, checkOut },
+    rooms,
+    paymentDetails: { paymentMode: "CR" },
+  };
+}
+
+export type HotelPassengerFieldErrors = Record<
+  number,
+  Record<number, Record<string, string>>
+>;
+
+export function validateHotelBookingPassengersFields(
+  payload: HotelBookingPayload,
+): HotelPassengerFieldErrors {
+  const errors: HotelPassengerFieldErrors = {};
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const isEmpty = (v: any) =>
+    v === undefined || v === null || String(v).trim() === "";
+
+  payload.rooms.forEach((room, roomIdx) => {
+    room.passengers.forEach((p, pIdx) => {
+      const pi = p?.passengerInfo ?? {};
+      const id = p?.identityDocuments?.[0] ?? {};
+      const contactProvided = p?.contact?.contactsProvided?.[0] ?? {};
+      const phone = contactProvided?.phone?.[0] ?? {};
+      const email = contactProvided?.emailAddress?.[0];
+      const phoneValue =
+        phone && phone.areaCode && phone.phoneNumber
+          ? `${phone.areaCode}${phone.phoneNumber}`
+          : undefined;
+
+      const passengerErrors: Record<string, string> = {};
+
+      if (isEmpty(pi.nameTitle)) {
+        passengerErrors["passengerInfo.nameTitle"] = "Title is required.";
+      }
+      if (isEmpty(pi.givenName)) {
+        passengerErrors["passengerInfo.givenName"] = "Full name is required.";
+      }
+      if (isEmpty(pi.surname)) {
+        passengerErrors["passengerInfo.surname"] = "Surname is required.";
+      }
+      if (isEmpty(pi.gender)) {
+        passengerErrors["passengerInfo.gender"] = "Gender is required.";
+      }
+      if (isEmpty(pi.birthDate)) {
+        passengerErrors["passengerInfo.birthDate"] = "Birth date is required.";
+      } else if (pi.birthDate) {
+        const bdDate = new Date(`${pi.birthDate}T00:00:00`);
+        bdDate.setHours(0, 0, 0, 0);
+        if (bdDate > today) {
+          passengerErrors["passengerInfo.birthDate"] =
+            "Birth date cannot be in the future.";
+        }
+      }
+      if (isEmpty(email)) {
+        passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
+          "Email address is required.";
+      }
+      if (isEmpty(phoneValue)) {
+        passengerErrors["contact.contactsProvided.0.phone.0"] =
+          "Phone (country code and number) is required.";
+      }
+      if (isEmpty(id.idDocumentNumber)) {
+        passengerErrors["identityDocuments.0.idDocumentNumber"] =
+          "Document number is required.";
+      }
+      if (isEmpty(id.issuingCountryCode)) {
+        passengerErrors["identityDocuments.0.issuingCountryCode"] =
+          "Issuing country is required.";
+      }
+      if (isEmpty(id.dateOfIssue)) {
+        passengerErrors["identityDocuments.0.dateOfIssue"] =
+          "Date of issue is required.";
+      }
+      if (isEmpty(id.expiryDate)) {
+        passengerErrors["identityDocuments.0.expiryDate"] =
+          "Expiry date is required.";
+      } else if (id.expiryDate) {
+        const expDate = new Date(`${id.expiryDate}T00:00:00`);
+        expDate.setHours(0, 0, 0, 0);
+        if (expDate < today) {
+          passengerErrors["identityDocuments.0.expiryDate"] =
+            "Expiry date must be today or a future date.";
+        }
+      }
+
+      if (Object.keys(passengerErrors).length > 0) {
+        if (!errors[roomIdx]) errors[roomIdx] = {};
+        errors[roomIdx][pIdx] = passengerErrors;
+      }
+    });
+  });
+
+  return errors;
+}

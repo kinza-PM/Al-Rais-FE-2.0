@@ -1,4 +1,5 @@
 // services/api/flightSearch.ts
+import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
 import { api, toApiError } from "../axios";
 
 export type HotelPreBooking = {
@@ -16,6 +17,17 @@ export async function postHotelPreBooking<TResp = any>(
   const source = "postHotelPreBooking";
   try {
     return await api.post<TResp>("/hotelPreBook", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}
+
+export async function postHotelReservationBooking<TResp = any>(
+  body: HotelBookingPayload,
+): Promise<TResp> {
+  const source = "postHotelReservationBooking";
+  try {
+    return await api.post<TResp>("/hotelBooking", body);
   } catch (err) {
     throw toApiError(source, err);
   }
