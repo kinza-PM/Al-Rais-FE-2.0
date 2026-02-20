@@ -17,6 +17,7 @@ type Props = {
   maxTotal?: number;
   schema?: PassengerSchema;
   errorMessage?: string | null;
+  initialChildAges?: Array<number | null>;
   // optional callback to return children ages to parent
   onChildrenAgesChange?: (ages: Array<number | null>) => void;
   tooltip?: string | null;
@@ -77,6 +78,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   maxTotal = 100,
   schema,
   errorMessage,
+  initialChildAges,
   onChildrenAgesChange,
   tooltip = null,
 }) => {
@@ -179,7 +181,9 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   const childCount = (childRowKey && ((pax as any)[childRowKey] || 0)) || 0;
 
   // local ages array for children (null means not set)
-  const [childAges, setChildAges] = useState<Array<number | null>>([]);
+  const [childAges, setChildAges] = useState<Array<number | null>>(
+    initialChildAges ?? [],
+  );
 
   // sync childAges length when childCount changes
   useEffect(() => {
@@ -198,7 +202,19 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   }, [childAges, onChildrenAgesChange]);
 
   const handleChildAgeChange = (index: number, value: string) => {
-    const num = value === "" ? null : Math.max(2, Math.min(12, Number(value)));
+    // const num = value === "" ? null : Math.max(2, Math.min(12, Number(value)));
+    const num = value === "" ? null : Number(value);
+    setChildAges((prev) => {
+      const next = [...prev];
+      next[index] = num;
+      return next;
+    });
+  };
+
+  const handleChildAgeBlur = (index: number, value: string) => {
+    // Focus chorne ke baad clamp karo
+    if (value === "") return;
+    const num = Math.max(2, Math.min(12, Number(value)));
     setChildAges((prev) => {
       const next = [...prev];
       next[index] = num;
@@ -211,6 +227,12 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
     () => rows.filter((r) => r.key !== "infants"),
     [rows],
   );
+
+  useEffect(() => {
+    if (initialChildAges && initialChildAges.length > 0) {
+      setChildAges(initialChildAges);
+    }
+  }, [initialChildAges]);
 
   return (
     <div className="relative" ref={ref}>
@@ -336,6 +358,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
                         : String(childAges[i])
                     }
                     onChange={(e) => handleChildAgeChange(i, e.target.value)}
+                    onBlur={(e) => handleChildAgeBlur(i, e.target.value)}
                     className="w-20 h-9 rounded-xl border border-[#EDEFF6] pl-3 text-[14px] text-[#0F172A] bg-white placeholder:text-[#94A3B8] focus:outline-none focus:ring-0"
                   />
                 ))}

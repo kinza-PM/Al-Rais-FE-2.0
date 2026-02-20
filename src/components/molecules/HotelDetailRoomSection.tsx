@@ -1,8 +1,7 @@
-import { memo, useMemo, useState, useEffect } from "react";
+import { memo, useMemo, useState, useEffect, useRef, useCallback } from "react";
 // import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 // import TravellersAndRoomDropdown from "../atoms/TravellersAndRoomDropdown";
 // import type { PassengerSchema } from "../../features/flights/types";
-import Button from "../atoms/Button";
 import HotelDetailRoom1 from "../../assets/images/hotel-detail-room-1.png";
 import HotelDetailRoom2 from "../../assets/images/hotel-detail-room-2.png";
 import HotelDetailRoom3 from "../../assets/images/hotel-detail-room-3.png";
@@ -23,15 +22,41 @@ type SelectedRoom = {
   roomKey: string;
   room: any;
   count: number;
-  selectedAt: number; // timestamp for FIFO removal
+  selectedAt?: number;
 };
 
 type HotelDetailRoomSectionProps = {
-  // passengers?: PassengerSchema;
-  // hotelDetail?: any;
   hotelMoreRooms?: any;
+  selectedRooms?: SelectedRoom[];
   onRoomsChange?: (selectedRooms: SelectedRoom[]) => void;
 };
+
+// Build grouped rooms (roomTypeName -> rate options) from a list of rooms
+function buildGroupedRoomsForRooms(rooms: any[]): { roomTypeName: string; rooms: any[] }[] {
+  const roomMap = new Map<string, any[]>();
+  rooms.forEach((room: any) => {
+    const roomTypeName = room.roomTypeName || "";
+    if (!roomTypeName) return;
+    const ratePlanCode = room.ratePlan?.code || "";
+    const isPackage = room.ratePlan?.isPackage || false;
+    const meal = room.ratePlan?.meal || "";
+    const cancelPolicy = room.ratePlan?.cancelPolicyIndicator || "";
+    const ratePlanKey = `${ratePlanCode}-${isPackage}-${meal}-${cancelPolicy}`;
+    if (!roomMap.has(roomTypeName)) roomMap.set(roomTypeName, []);
+    const existingRooms = roomMap.get(roomTypeName) || [];
+    const existingIndex = existingRooms.findIndex((r: any) => {
+      const k = `${r.ratePlan?.code || ""}-${r.ratePlan?.isPackage || false}-${r.ratePlan?.meal || ""}-${r.ratePlan?.cancelPolicyIndicator || ""}`;
+      return k === ratePlanKey;
+    });
+    if (existingIndex === -1) {
+      existingRooms.push(room);
+      roomMap.set(roomTypeName, existingRooms);
+    } else if (room.roomIndex === 1 && existingRooms[existingIndex].roomIndex !== 1) {
+      existingRooms[existingIndex] = room;
+    }
+  });
+  return Array.from(roomMap.entries()).map(([roomTypeName, rooms]) => ({ roomTypeName, rooms }));
+}
 
 const DEFAULT_ROOM_IMAGES = [
   HotelDetailRoom1,
@@ -40,109 +65,34 @@ const DEFAULT_ROOM_IMAGES = [
   HotelDetailRoom4,
 ];
 
+// Derive selection map from parent's selectedRooms so tab switch doesn't lose selection
+function selectedRoomsToMap(selectedRooms: SelectedRoom[] | undefined): Map<number, { roomKey: string; room: any }> {
+  const map = new Map<number, { roomKey: string; room: any }>();
+  if (!selectedRooms?.length) return map;
+  selectedRooms.forEach((s) => {
+    const ri = s.room?.roomIndex ?? 1;
+    map.set(ri, { roomKey: s.roomKey, room: s.room });
+  });
+  return map;
+}
+
 const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
-  // passengers,
-  // hotelDetail,
   hotelMoreRooms,
+  selectedRooms: selectedRoomsFromParent,
   onRoomsChange,
 }) => {
-  // Map of roomKey -> SelectedRoom
-  const [selectedRoomsMap, setSelectedRoomsMap] = useState<
-    Map<string, SelectedRoom>
-  >(new Map());
-  // const [checkInDate, setCheckInDate] = useState<Date | null>(null);
-  // const [checkOutDate, setCheckOutDate] = useState<Date | null>(null);
-
-  // const { amenities, roomOptions } = hotelRoomDetails;
-
-  // Group API rooms by logical room type so UI can show:
-  // 1. One card per room type (e.g. "CLASSIC DOUBLE - Normal rate")
-  // 2. Inside that card, multiple pricing options (different rate plans / meal plans / cancellation policies)
-  //
-  // IMPORTANT: roomIndex (1, 2, etc.) represents WHICH room number, not the room type.
-  // Example: "CLASSIC DOUBLE" can have roomIndex 1 AND 2 (same room type, different room numbers).
-  // We group by roomTypeName and collect unique rate plans regardless of roomIndex.
-  const groupedRooms = useMemo(() => {
-    if (!hotelMoreRooms?.rooms || !Array.isArray(hotelMoreRooms.rooms)) {
-      return [];
-    }
-    // Map structure:
-    //   key   = roomTypeName (e.g. "CLASSIC DOUBLE - Normal rate")
-    //   value = array of unique rate plans for that room type
-    const roomMap = new Map<string, any[]>();
-
-    hotelMoreRooms.rooms.forEach((room: any) => {
-      const roomTypeName = room.roomTypeName || "";
-      if (!roomTypeName) return; // Skip if no room type name
-
-      // IMPORTANT: roomIndex (1, 2, etc.) represents WHICH room number, not the room type.
-      // Example: "CLASSIC DOUBLE" can have roomIndex 1 AND 2 (same room type, different room numbers).
-      // We group by roomTypeName and collect unique rate plans regardless of roomIndex.
-
-      // Create a unique key for this rate plan combination
-      // Same room type can have different rate plans based on:
-      // - ratePlan.code
-      // - isPackage (package vs non-package)
-      // - meal (ROOM ONLY vs BED AND BREAKFAST)
-      // - cancelPolicyIndicator (Refundable vs Non-Refundable)
-      const ratePlanCode = room.ratePlan?.code || "";
-      const isPackage = room.ratePlan?.isPackage || false;
-      const meal = room.ratePlan?.meal || "";
-      const cancelPolicy = room.ratePlan?.cancelPolicyIndicator || "";
-
-      // Create unique identifier for this rate plan
-      const ratePlanKey = `${ratePlanCode}-${isPackage}-${meal}-${cancelPolicy}`;
-
-      // Initialize array for this room type if it doesn't exist
-      if (!roomMap.has(roomTypeName)) {
-        roomMap.set(roomTypeName, []);
-      }
-
-      // Check if this exact rate plan already exists for this room type
-      // (regardless of roomIndex - we only want unique rate plans)
-      const existingRooms = roomMap.get(roomTypeName) || [];
-      const existingIndex = existingRooms.findIndex((r: any) => {
-        const existingKey = `${r.ratePlan?.code || ""}-${
-          r.ratePlan?.isPackage || false
-        }-${r.ratePlan?.meal || ""}-${r.ratePlan?.cancelPolicyIndicator || ""}`;
-        return existingKey === ratePlanKey;
-      });
-
-      // If this rate plan doesn't exist yet, add it
-      if (existingIndex === -1) {
-        existingRooms.push(room);
-        roomMap.set(roomTypeName, existingRooms);
-      } else {
-        // If it exists, prefer keeping roomIndex 1 over roomIndex 2 (for consistency)
-        // But if current is roomIndex 1 and existing is roomIndex 2, replace it
-        if (
-          room.roomIndex === 1 &&
-          existingRooms[existingIndex].roomIndex !== 1
-        ) {
-          existingRooms[existingIndex] = room;
-        }
-      }
-    });
-
-    // Convert Map -> array for easier UI rendering:
-    // [
-    //   { roomTypeName: 'CLASSIC DOUBLE - Normal rate', rooms: [planA, planB] },
-    //   { roomTypeName: 'SINGLE STANDARD - Normal rate', rooms: [...] },
-    // ]
-    // Each 'rooms' array contains unique rate plans (different meal/cancellation/package options)
-    return Array.from(roomMap.entries()).map(([roomTypeName, rooms]) => ({
-      roomTypeName,
-      rooms,
-    }));
-  }, [hotelMoreRooms?.rooms]);
-
-  const formatPrice = (amount: number, currency: string) => {
-    return `${currency} ${amount.toFixed(2)}`;
-  };
+  // Selection from parent so it persists when switching tabs (Overview / Rooms / Ameneties)
+  const selectionByRoomIndex = useMemo(
+    () => selectedRoomsToMap(selectedRoomsFromParent),
+    [selectedRoomsFromParent]
+  );
+  // Which room sections are expanded (local UI only)
+  const [expandedRoomIndices, setExpandedRoomIndices] = useState<Set<number>>(new Set([1]));
+  const roomSectionRefs = useRef<Map<number, HTMLDivElement | null>>(new Map());
 
   const numberOfRooms = useMemo(() => {
     if (!hotelMoreRooms?.rooms || !Array.isArray(hotelMoreRooms.rooms)) {
-      return 1; // Default to 1 room
+      return 1;
     }
     const maxRoomIndex = Math.max(
       ...hotelMoreRooms.rooms.map((room: any) => room.roomIndex || 1),
@@ -150,130 +100,103 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     return maxRoomIndex > 0 ? maxRoomIndex : 1;
   }, [hotelMoreRooms?.rooms]);
 
-  // Calculate total selected rooms count
-  const totalSelectedCount = useMemo(() => {
-    let total = 0;
-    selectedRoomsMap.forEach((selectedRoom) => {
-      total += selectedRoom.count;
-    });
-    return total;
-  }, [selectedRoomsMap]);
+  const roomIndices = useMemo(
+    () => Array.from({ length: numberOfRooms }, (_, i) => i + 1),
+    [numberOfRooms]
+  );
 
-  // Notify parent when selected rooms change
-  useEffect(() => {
-    if (onRoomsChange) {
-      const selectedRoomsArray = Array.from(selectedRoomsMap.values());
-      onRoomsChange(selectedRoomsArray);
+  // Group rooms by roomIndex, then for each index build grouped rooms (roomTypeName -> options)
+  const roomsByRoomIndex = useMemo(() => {
+    if (!hotelMoreRooms?.rooms || !Array.isArray(hotelMoreRooms.rooms)) {
+      return new Map<number, { roomTypeName: string; rooms: any[] }[]>();
     }
-  }, [selectedRoomsMap, onRoomsChange]);
+    const byIndex = new Map<number, any[]>();
+    hotelMoreRooms.rooms.forEach((room: any) => {
+      const idx = room.roomIndex ?? 1;
+      if (!byIndex.has(idx)) byIndex.set(idx, []);
+      byIndex.get(idx)!.push(room);
+    });
+    const result = new Map<number, { roomTypeName: string; rooms: any[] }[]>();
+    byIndex.forEach((rooms, idx) => {
+      result.set(idx, buildGroupedRoomsForRooms(rooms));
+    });
+    return result;
+  }, [hotelMoreRooms?.rooms]);
 
-  const handleRoomIncrement = (roomKey: string, room: any) => {
-    setSelectedRoomsMap((prev) => {
-      const newMap = new Map(prev);
-      const existing = newMap.get(roomKey);
+  const formatPrice = (amount: number, currency: string) => {
+    return `${currency} ${amount.toFixed(2)}`;
+  };
 
-      // Current total rooms selected based on latest state
-      const currentTotal = Array.from(newMap.values()).reduce(
-        (sum, r) => sum + r.count,
-        0,
-      );
-
-      // If this room is not selected yet and we've already reached the max,
-      // drop the oldest selection (FIFO) to make space.
-      if (!existing && currentTotal >= numberOfRooms && prev.size > 0) {
-        const oldestEntry = Array.from(prev.entries()).sort(
-          (a, b) => a[1].selectedAt - b[1].selectedAt,
-        )[0];
-        newMap.delete(oldestEntry[0]);
-      }
-
-      if (existing) {
-        // If already selected, only increment if we stay within the max rooms
-        const available = numberOfRooms - currentTotal;
-        if (available > 0) {
-          newMap.set(roomKey, {
-            ...existing,
-            count: existing.count + 1,
-          });
-        }
+  // Build new selection array and notify parent (selection lives in parent so tab switch keeps it)
+  const handleSelectForRoomIndex = useCallback(
+    (roomIndex: number, roomKey: string, room: any) => {
+      if (!onRoomsChange) return;
+      const current = selectionByRoomIndex.get(roomIndex);
+      if (current?.roomKey === roomKey) {
+        // Deselect this room: keep others from current selection
+        const next = (selectedRoomsFromParent ?? []).filter(
+          (s) => (s.room?.roomIndex ?? 1) !== roomIndex
+        );
+        onRoomsChange(next);
       } else {
-        // Add new selection with count 1
-        newMap.set(roomKey, {
-          roomKey,
-          room,
-          count: 1,
-          selectedAt: Date.now(),
+        // Select this option for roomIndex; keep others
+        const others = (selectedRoomsFromParent ?? []).filter(
+          (s) => (s.room?.roomIndex ?? 1) !== roomIndex
+        );
+        const next: SelectedRoom[] = [...others, { roomKey, room, count: 1 }];
+        next.sort((a, b) => (a.room?.roomIndex ?? 1) - (b.room?.roomIndex ?? 1));
+        onRoomsChange(next);
+      }
+      // Collapse this room, expand next unselected (UI only)
+      setExpandedRoomIndices((prev) => {
+        const nextSet = new Set(prev);
+        nextSet.delete(roomIndex);
+        const nextUnselected = roomIndices.find(
+          (ri) => ri !== roomIndex && !selectionByRoomIndex.has(ri)
+        );
+        if (nextUnselected != null) nextSet.add(nextUnselected);
+        prev.forEach((ri) => {
+          if (ri !== roomIndex && !selectionByRoomIndex.has(ri)) nextSet.add(ri);
         });
-      }
-
-      return newMap;
-    });
-  };
-
-  const handleRoomDecrement = (roomKey: string) => {
-    setSelectedRoomsMap((prev) => {
-      const newMap = new Map(prev);
-      const existing = newMap.get(roomKey);
-
-      if (existing) {
-        if (existing.count > 1) {
-          // Decrement count
-          newMap.set(roomKey, {
-            ...existing,
-            count: existing.count - 1,
-          });
-        } else {
-          // Remove if count reaches 0
-          newMap.delete(roomKey);
-        }
-      }
-
-      return newMap;
-    });
-  };
-
-  const getRoomCount = (roomKey: string): number => {
-    return selectedRoomsMap.get(roomKey)?.count || 0;
-  };
-
-  // Clicking on the whole option row should toggle select/deselect:
-  // - If not selected -> select 1 room (respecting global max)
-  // - If already selected -> deselect this option completely
-  const handleCardClick = (roomKey: string, room: any) => {
-    setSelectedRoomsMap((prev) => {
-      const newMap = new Map(prev);
-      const existing = newMap.get(roomKey);
-
-      if (existing) {
-        // Deselect this option entirely
-        newMap.delete(roomKey);
-        return newMap;
-      }
-
-      // Not selected yet → select 1 room, enforcing global max
-      const currentTotal = Array.from(newMap.values()).reduce(
-        (sum, r) => sum + r.count,
-        0,
-      );
-
-      if (currentTotal >= numberOfRooms && prev.size > 0) {
-        // Remove oldest selection (FIFO) to make space
-        const oldestEntry = Array.from(prev.entries()).sort(
-          (a, b) => a[1].selectedAt - b[1].selectedAt,
-        )[0];
-        newMap.delete(oldestEntry[0]);
-      }
-
-      newMap.set(roomKey, {
-        roomKey,
-        room,
-        count: 1,
-        selectedAt: Date.now(),
+        return nextSet.size > 0 ? nextSet : new Set();
       });
+    },
+    [onRoomsChange, selectedRoomsFromParent, selectionByRoomIndex, roomIndices]
+  );
 
-      return newMap;
+  // When parent selection changes (e.g. tab switch back): expand first unselected
+  useEffect(() => {
+    const nextUnselected = roomIndices.find((ri) => !selectionByRoomIndex.has(ri));
+    setExpandedRoomIndices((prev) => {
+      const next = new Set<number>();
+      if (nextUnselected != null) next.add(nextUnselected);
+      prev.forEach((ri) => {
+        if (ri === nextUnselected) return;
+        if (!selectionByRoomIndex.has(ri)) next.add(ri);
+      });
+      return next.size > 0 ? next : new Set();
     });
+  }, [selectionByRoomIndex, roomIndices]);
+
+  const getSelectedForRoomIndex = (roomIndex: number): string | null => {
+    return selectionByRoomIndex.get(roomIndex)?.roomKey ?? null;
   };
+
+  const scrollToRoom = useCallback((roomIndex: number) => {
+    setExpandedRoomIndices((prev) => new Set(prev).add(roomIndex));
+    setTimeout(() => {
+      roomSectionRefs.current.get(roomIndex)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }, []);
+
+  const toggleExpanded = useCallback((roomIndex: number) => {
+    setExpandedRoomIndices((prev) => {
+      const next = new Set(prev);
+      if (next.has(roomIndex)) next.delete(roomIndex);
+      else next.add(roomIndex);
+      return next;
+    });
+  }, []);
 
   // const getMaxOccupancy = (room: any) => {
   //   if (room.maxOccupancy && room.maxOccupancy > 0) {
@@ -287,6 +210,42 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   return (
     <div className="mt-6">
       <h4 className="text-[#0A0C0F] text-base font-bold">Rooms availability</h4>
+
+      {/* Sticky progress bar: Room 1 ✓ | Room 2 ✓ | Room 3 → | ... - click to scroll */}
+      {numberOfRooms > 1 && (() => {
+        const hasAnyRooms = Array.from(roomsByRoomIndex.values()).some((arr) => arr.length > 0);
+        if (!hasAnyRooms) return null;
+        return (
+          <div className="sticky top-0 z-10 mt-4 mb-4 py-2 px-3 bg-[#F8FAFC] border border-[#E4E4E7] rounded-xl flex flex-wrap items-center gap-2 shadow-sm">
+            {roomIndices.map((ri) => {
+              const isSelected = selectionByRoomIndex.has(ri);
+              const isExpanded = expandedRoomIndices.has(ri);
+              return (
+                <button
+                  key={ri}
+                  type="button"
+                  onClick={() => scrollToRoom(ri)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    isSelected
+                      ? "bg-[#2351A3] text-white"
+                      : isExpanded
+                        ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
+                        : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
+                  }`}
+                >
+                  <span>Room {ri}</span>
+                  {isSelected && (
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0">
+                      <path d="M11.5 4L5.5 10L2.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                  {!isSelected && isExpanded && <span className="text-[10px]">→</span>}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })()}
       {/* <div className="max-w-5xl mx-auto flex items-end mt-8 gap-5">
         <div>
           <label className="block text-[12px] text-[#3D495C] mb-1">Dates</label>
@@ -331,518 +290,260 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
         </Button>
       </div> */}
 
-      {groupedRooms.length > 0 ? (
-        groupedRooms.map((group) => {
-          const firstRoom = group.rooms[0];
-
-          // Collect all images from all rooms in the group
-          const allRoomImages: string[] = [];
-          group.rooms.forEach((room: any) => {
-            if (
-              room?.roomImages?.image &&
-              Array.isArray(room.roomImages.image)
-            ) {
-              room.roomImages.image.forEach((img: any) => {
-                if (img.path && !allRoomImages.includes(img.path)) {
-                  allRoomImages.push(img.path);
-                }
-              });
-            }
-          });
-
-          // Use collected images or default static images
-          const roomImages =
-            allRoomImages.length > 0
-              ? allRoomImages.slice(0, 4)
-              : DEFAULT_ROOM_IMAGES;
-
-          // Get categorized amenities from ALL rooms' facilities
-          const categories = [
-            "greatForYourStay",
-            "kitchen",
-            "bedrooms",
-            "mediaAndTechnology",
-            "bathroom",
-          ];
-
-          const allFacilities = group.rooms.flatMap(
-            (room: any) => room?.roomFacilities || [],
+      {(() => {
+        const hasAnyRooms = Array.from(roomsByRoomIndex.values()).some((arr) => arr.length > 0);
+        if (!hasAnyRooms) {
+          return (
+            <div className="py-6 text-center text-sm font-semibold text-[#3D495C]">
+              No rooms available.
+            </div>
           );
+        }
+        return roomIndices.map((roomIndex) => {
+          const groupedRoomsForIndex = roomsByRoomIndex.get(roomIndex) || [];
+          if (groupedRoomsForIndex.length === 0) return null;
 
-          const categorizedAmenities = categorizeFacilities(
-            [allFacilities],
-            categories,
-            FACILITY_KEYWORDS,
-            GREAT_KEYWORDS,
-          );
+          const selectedForRoom = selectionByRoomIndex.get(roomIndex);
+          const isExpanded = expandedRoomIndices.has(roomIndex);
+          const isSelected = !!selectedForRoom;
+          const showCollapsed = isSelected && !isExpanded;
+          const showExpanded = isExpanded || !isSelected;
 
           return (
             <div
-              key={group.roomTypeName}
-              className="relative max-w-7xl mx-auto mt-6 border border-[#E4E4E7] bg-[#FFFFFF] rounded-2xl p-3 mb-6"
+              key={`room-index-${roomIndex}`}
+              ref={(el) => { roomSectionRefs.current.set(roomIndex, el); }}
+              className="relative max-w-7xl mx-auto mt-6 mb-6 scroll-mt-24"
             >
-              <h2 className="text-base font-medium text-[#0A0C0F] mb-2">
-                {firstRoom?.roomTypeName || group.roomTypeName || "Royal Suite"}
-              </h2>
+              {/* Collapsed: compact summary when selected */}
+              {showCollapsed && (
+                <div
+                  onClick={() => toggleExpanded(roomIndex)}
+                  className="border border-[#2351A3] bg-[#F0F5FF] rounded-xl p-4 cursor-pointer hover:bg-[#E8EEF7] transition-colors flex items-center justify-between gap-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="flex-shrink-0 text-[#2351A3]">
+                      <path d="M11.5 4L5.5 10L2.5 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    <span className="font-semibold text-[#0A0C0F]">Room {roomIndex}</span>
+                    <span className="text-[#3D495C]">—</span>
+                    <span className="text-sm text-[#3D495C] truncate max-w-[200px]">{selectedForRoom?.room?.roomTypeName || "Room"}</span>
+                    <span className="text-sm text-[#3D495C]">• {selectedForRoom?.room?.ratePlan?.meal || "ROOM ONLY"}</span>
+                    <span className="text-sm font-semibold text-[#0A0C0F]">
+                      {formatPrice(selectedForRoom?.room?.roomRate?.netAmount || 0, selectedForRoom?.room?.roomRate?.currency || "AED")}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-[#2351A3]">Change</span>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={`transition-transform ${isExpanded ? "rotate-180" : ""}`}>
+                      <path d="M4 6L8 10L12 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </div>
+                </div>
+              )}
 
-              <Seperator />
+              {/* Expanded: full content; header click collapses (accordion style) */}
+              {showExpanded && (
+                <>
+              <div
+                role="button"
+                tabIndex={0}
+                // onClick={() => toggleExpanded(roomIndex)}
+                // onKeyDown={(e) => e.key === "Enter" && toggleExpanded(roomIndex)}
+                className="flex items-center justify-between gap-3 mb-3 py-1 -mx-1 px-1 rounded-lg cursor-pointer transition-colors group"
+                aria-expanded="true"
+                aria-label={`Collapse Room ${roomIndex}`}
+              >
+                <h3 className="text-base font-semibold text-[#0A0C0F]">
+                  Room {roomIndex} — Select one option
+                </h3>
+                {/* <span className="flex-shrink-0 text-[#6B7280] group-hover:text-[#0A0C0F] transition-colors" aria-hidden>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="rotate-180">
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span> */}
+              </div>
+              {groupedRoomsForIndex.map((group) => {
+                const firstRoom = group.rooms[0];
+                const allRoomImages: string[] = [];
+                group.rooms.forEach((room: any) => {
+                  if (room?.roomImages?.image && Array.isArray(room.roomImages.image)) {
+                    room.roomImages.image.forEach((img: any) => {
+                      if (img.path && !allRoomImages.includes(img.path)) allRoomImages.push(img.path);
+                    });
+                  }
+                });
+                const roomImages = allRoomImages.length > 0 ? allRoomImages.slice(0, 4) : DEFAULT_ROOM_IMAGES;
+                const categories = ["greatForYourStay", "kitchen", "bedrooms", "mediaAndTechnology", "bathroom"];
+                const allFacilities = group.rooms.flatMap((room: any) => room?.roomFacilities || []);
+                const categorizedAmenities = categorizeFacilities([allFacilities], categories, FACILITY_KEYWORDS, GREAT_KEYWORDS);
 
-              <div className="grid grid-cols-[380px_1px_1fr] gap-4">
-                <div>
-                  <div className="mt-6">
-                    <div className="flex items-center mb-3">
-                      {roomImages.map((img: any, idx: number) => {
-                        const fallback =
-                          DEFAULT_ROOM_IMAGES[idx % DEFAULT_ROOM_IMAGES.length];
+                return (
+                  <div
+                    key={`${roomIndex}-${group.roomTypeName}`}
+                    className="border border-[#E4E4E7] bg-[#FFFFFF] rounded-2xl p-3 mb-4"
+                  >
+                    <h2 className="text-base font-medium text-[#0A0C0F] mb-2">
+                      {firstRoom?.roomTypeName || group.roomTypeName || "Room"}
+                    </h2>
+                    <Seperator />
+                    <div className="grid grid-cols-[380px_1px_1fr] gap-4">
+                      <div className="mt-6">
+                        <div className="flex items-center mb-3">
+                          {roomImages.map((img: any, idx: number) => {
+                            const fallback = DEFAULT_ROOM_IMAGES[idx % DEFAULT_ROOM_IMAGES.length];
+                            return (
+                              <div key={idx} className={`relative w-32 h-32 rounded overflow-hidden shadow-sm border border-white ${idx > 0 ? "-ml-14" : ""}`}>
+                                <img src={img} alt={`Room view ${idx + 1}`} className="w-full h-full object-cover" onError={(e) => { const t = e.currentTarget as HTMLImageElement; if (t.src !== fallback) t.src = fallback; }} />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div className="border-l border-[#E4E4E7]" />
+                      <div className="py-1">
+                        {Object.values(categorizedAmenities).some((arr) => arr.length > 0) ? (
+                          <>
+                            {(categorizedAmenities.greatForYourStay.length > 0 || categorizedAmenities.kitchen.length > 0 || categorizedAmenities.bedrooms.length > 0) && (
+                              <div className={`grid items-start ${categorizedAmenities.greatForYourStay.length > 0 && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0 ? "grid-cols-[2.7fr_1fr_1fr]" : (categorizedAmenities.greatForYourStay.length > 0 && (categorizedAmenities.kitchen.length > 0 || categorizedAmenities.bedrooms.length > 0)) || (!categorizedAmenities.greatForYourStay.length && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0) ? "grid-cols-[2.7fr_1fr]" : "grid-cols-1"}`}>
+                                {categorizedAmenities.greatForYourStay.length > 0 && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={GreatStayIcon} /><h5>Great for your stay</h5></div>
+                                    <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
+                                      {categorizedAmenities.greatForYourStay.map((item: string) => (<span key={item} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{item}</span></span>))}
+                                    </div>
+                                  </div>
+                                )}
+                                {categorizedAmenities.kitchen.length > 0 && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={KnifeIcon} /><h5>Kitchen</h5></div>
+                                    <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
+                                      {categorizedAmenities.kitchen.map((it: string) => (<span key={it} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{it}</span></span>))}
+                                    </div>
+                                  </div>
+                                )}
+                                {categorizedAmenities.bedrooms.length > 0 && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={BedroomIcon} /><h5>Bedrooms</h5></div>
+                                    <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
+                                      {categorizedAmenities.bedrooms.map((it: string) => (<span key={it} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{it}</span></span>))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                            {(categorizedAmenities.mediaAndTechnology.length > 0 || categorizedAmenities.bathroom.length > 0) && (
+                              <div className={`grid items-start mt-2 gap-2 ${categorizedAmenities.mediaAndTechnology.length > 0 && categorizedAmenities.bathroom.length > 0 ? "grid-cols-[2.7fr_2fr]" : "grid-cols-1"}`}>
+                                {categorizedAmenities.mediaAndTechnology.length > 0 && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={MediaIcon} /><h5>Media & Technology</h5></div>
+                                    <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
+                                      {categorizedAmenities.mediaAndTechnology.map((item: string) => (<span key={item} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{item}</span></span>))}
+                                    </div>
+                                  </div>
+                                )}
+                                {categorizedAmenities.bathroom.length > 0 && (
+                                  <div>
+                                    <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold"><img alt="icon" src={BathroomIcon} /><h5>Bathroom</h5></div>
+                                    <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-wrap gap-2">
+                                      {categorizedAmenities.bathroom.map((it: string) => (<span key={it} className="flex items-center gap-1 whitespace-nowrap"><CheckIcon /><span>{it}</span></span>))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-[#94A3B8] text-xs">No amenities listed</span>
+                        )}
+                      </div>
+                    </div>
+                    <Seperator />
+                    <h2 className="text-base font-normal text-[#000000] mb-2">Select an option</h2>
+                    <Seperator />
+                    <div>
+                      {group.rooms.map((room: any, index: number) => {
+                        const price = room.roomRate?.netAmount || 0;
+                        const currency = room.roomRate?.currency || "AED";
+                        const mealPlan = room.ratePlan?.meal || "ROOM ONLY";
+                        const cancelPolicy = room.ratePlan?.cancelPolicyIndicator || "";
+                        const offers = room.offers || [];
+                        const hasOffers = offers.length > 0;
+                        const originalPrice = hasOffers ? price - offers.reduce((sum: number, offer: any) => sum + (offer.amount || 0), 0) : price;
+                        const roomKey = room.roomKey || `${group.roomTypeName}-${roomIndex}-${index}`;
+                        const selectedRoomKey = getSelectedForRoomIndex(roomIndex);
+                        const isSelected = selectedRoomKey === roomKey;
 
                         return (
-                          <div
-                            key={idx}
-                            className={`relative w-32 h-32 rounded overflow-hidden cursor-pointer shadow-sm border border-white ${
-                              idx > 0 ? "-ml-14" : ""
-                            }`}
-                          >
-                            <img
-                              src={img}
-                              alt={`Room view ${idx + 1}`}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target =
-                                  e.currentTarget as HTMLImageElement;
-                                if (target.src !== fallback) {
-                                  target.src = fallback;
-                                }
-                              }}
-                            />
+                          <div key={roomKey || index}>
+                            <div
+                              onClick={() => price > 0 && handleSelectForRoomIndex(roomIndex, roomKey, room)}
+                              className={`flex items-center gap-5 py-4 px-4 -mx-3 rounded-xl transition-all duration-200 ${price > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${isSelected ? "border border-[#2351A3] bg-[#F0F5FF] shadow-sm" : ""}`}
+                            >
+                              <div className="flex-shrink-0">
+                                <div onClick={(e) => { e.stopPropagation(); if (price > 0) handleSelectForRoomIndex(roomIndex, roomKey, room); }} className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected ? "bg-[#2351A3] border-[#2351A3]" : "border-[#C2CAD6] bg-white"}`}>
+                                  {isSelected && (
+                                    <svg width="12" height="10" viewBox="0 0 12 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                      <path d="M1 5L4.5 8.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="w-48 flex-shrink-0">
+                                <h4 className="font-semibold text-sm text-[#3D495C] mb-3">{mealPlan}</h4>
+                                <div className="space-y-2 text-sm text-[#3D495C] font-normal">
+                                  <div className="flex items-center gap-2"><AvaialableIcon /><span>{mealPlan}</span></div>
+                                  {cancelPolicy && <div className="flex items-center gap-2"><AvaialableIcon /><span>{cancelPolicy}</span></div>}
+                                  {hasOffers && <div className="flex items-center gap-2"><AvaialableIcon /><span dangerouslySetInnerHTML={{ __html: offers[0]?.name || "Special offer" }} /></div>}
+                                </div>
+                              </div>
+                              <div className="flex-1">
+                                <p className="text-sm text-[#3D495C] font-normal leading-relaxed">
+                                  {room.roomTypeDesc || room.roomTypeName || "Room description not available"}
+                                </p>
+                                {hasOffers && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <span className="text-xs text-[#3D495C] line-through">{formatPrice(originalPrice, currency)}</span>
+                                    <span className="text-sm font-semibold text-[#EA0029]">{formatPrice(price, currency)}</span>
+                                  </div>
+                                )}
+                                {!hasOffers && price > 0 && <div className="mt-2"><span className="text-sm font-semibold text-[#0A0C0F]">{formatPrice(price, currency)}</span></div>}
+                              </div>
+                              <div className="flex items-center gap-6">
+                                {room.roomRate?.rates && room.roomRate.rates.length > 1 && (
+                                  <div className="text-sm text-[#3D495C] font-normal">
+                                    {room.roomRate.rates.map((rate: any, idx: number) => (
+                                      <div key={idx} className="flex items-center gap-2 mb-1">
+                                        <span className="text-xs">{new Date(rate.from).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })} - {new Date(rate.to).toLocaleDateString("en-GB", { day: "2-digit", month: "short" })}</span>
+                                        <span className="text-xs font-medium">{formatPrice(rate.amount, room.roomRate.currency)}/night</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {price > 0 ? (
+                                  <div className="text-right text-sm text-[#0A0C0F] max-w-64 font-semibold">
+                                    <div>{formatPrice(price, currency)}</div>
+                                    <div className="text-[11px] text-[#6B7280] font-normal">Total for 1 room</div>
+                                  </div>
+                                ) : (
+                                  <div className="text-sm text-[#EA0029] max-w-64">Select dates, travelers and rooms to see prices.</div>
+                                )}
+                              </div>
+                            </div>
+                            {index < group.rooms.length - 1 && <Seperator />}
                           </div>
                         );
                       })}
                     </div>
-
-                    {/* <p className="text-sm text-[#3D495C]">Room size: 30 m²</p> */}
                   </div>
-                </div>
-
-                <div className="border-l border-[#E4E4E7]"></div>
-
-                <div className="py-1">
-                  {Object.values(categorizedAmenities).some(
-                    (arr) => arr.length > 0,
-                  ) ? (
-                    <>
-                      {(categorizedAmenities.greatForYourStay.length > 0 ||
-                        categorizedAmenities.kitchen.length > 0 ||
-                        categorizedAmenities.bedrooms.length > 0) && (
-                        <div
-                          className={`grid items-start ${
-                            categorizedAmenities.greatForYourStay.length > 0 &&
-                            categorizedAmenities.kitchen.length > 0 &&
-                            categorizedAmenities.bedrooms.length > 0
-                              ? "grid-cols-[2.7fr_1fr_1fr]"
-                              : (categorizedAmenities.greatForYourStay.length >
-                                    0 &&
-                                    (categorizedAmenities.kitchen.length > 0 ||
-                                      categorizedAmenities.bedrooms.length >
-                                        0)) ||
-                                  (!categorizedAmenities.greatForYourStay
-                                    .length &&
-                                    categorizedAmenities.kitchen.length > 0 &&
-                                    categorizedAmenities.bedrooms.length > 0)
-                                ? "grid-cols-[2.7fr_1fr]"
-                                : "grid-cols-1"
-                          }`}
-                        >
-                          {categorizedAmenities.greatForYourStay.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                <img alt="icon" src={GreatStayIcon} />
-                                <h5>Great for your stay</h5>
-                              </div>
-                              <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
-                                {categorizedAmenities.greatForYourStay.map(
-                                  (item: string) => (
-                                    <span
-                                      key={item}
-                                      className="flex items-center gap-1 whitespace-nowrap"
-                                    >
-                                      <CheckIcon />
-                                      <span>{item}</span>
-                                    </span>
-                                  ),
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          {categorizedAmenities.kitchen.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                <img alt="icon" src={KnifeIcon} />
-                                <h5>Kitchen</h5>
-                              </div>
-                              <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
-                                {categorizedAmenities.kitchen.map(
-                                  (it: string) => (
-                                    <span
-                                      key={it}
-                                      className="flex items-center gap-1 whitespace-nowrap"
-                                    >
-                                      <CheckIcon />
-                                      <span>{it}</span>
-                                    </span>
-                                  ),
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          {categorizedAmenities.bedrooms.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                <img alt="icon" src={BedroomIcon} />
-                                <h5>Bedrooms</h5>
-                              </div>
-                              <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
-                                {categorizedAmenities.bedrooms.map(
-                                  (it: string) => (
-                                    <span
-                                      key={it}
-                                      className="flex items-center gap-1 whitespace-nowrap"
-                                    >
-                                      <CheckIcon />
-                                      <span>{it}</span>
-                                    </span>
-                                  ),
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                      {(categorizedAmenities.mediaAndTechnology.length > 0 ||
-                        categorizedAmenities.bathroom.length > 0) && (
-                        <div
-                          className={`grid items-start mt-2 gap-2 ${
-                            categorizedAmenities.mediaAndTechnology.length >
-                              0 && categorizedAmenities.bathroom.length > 0
-                              ? "grid-cols-[2.7fr_2fr]"
-                              : "grid-cols-1"
-                          }`}
-                        >
-                          {categorizedAmenities.mediaAndTechnology.length >
-                            0 && (
-                            <div>
-                              <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                <img alt="icon" src={MediaIcon} />
-                                <h5>Media & Technology</h5>
-                              </div>
-                              <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
-                                {categorizedAmenities.mediaAndTechnology.map(
-                                  (item: string) => (
-                                    <span
-                                      key={item}
-                                      className="flex items-center gap-1 whitespace-nowrap"
-                                    >
-                                      <CheckIcon />
-                                      <span>{item}</span>
-                                    </span>
-                                  ),
-                                )}
-                              </div>
-                            </div>
-                          )}
-                          {categorizedAmenities.bathroom.length > 0 && (
-                            <div>
-                              <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                <img alt="icon" src={BathroomIcon} />
-                                <h5>Bathroom</h5>
-                              </div>
-                              <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-wrap gap-2">
-                                {categorizedAmenities.bathroom.map(
-                                  (it: string) => (
-                                    <span
-                                      key={it}
-                                      className="flex items-center gap-1 whitespace-nowrap"
-                                    >
-                                      <CheckIcon />
-                                      <span>{it}</span>
-                                    </span>
-                                  ),
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <span className="text-[#94A3B8] text-xs">
-                      No amenities listed
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <Seperator />
-
-              <h2 className="text-base font-normal text-[#000000] mb-2">
-                Select an option
-              </h2>
-
-              <Seperator />
-
-              <div>
-                {group.rooms.map((room: any, index: number) => {
-                  const price = room.roomRate?.netAmount || 0;
-                  const currency = room.roomRate?.currency || "AED";
-                  const mealPlan = room.ratePlan?.meal || "ROOM ONLY";
-                  const cancelPolicy =
-                    room.ratePlan?.cancelPolicyIndicator || "";
-                  const offers = room.offers || [];
-                  const hasOffers = offers.length > 0;
-                  const originalPrice = hasOffers
-                    ? price -
-                      offers.reduce(
-                        (sum: number, offer: any) => sum + (offer.amount || 0),
-                        0,
-                      )
-                    : price;
-                  const roomKey =
-                    room.roomKey || `${group.roomTypeName}-${index}`;
-                  const roomCount = getRoomCount(roomKey);
-                  const isSelected = roomCount > 0;
-
-                  return (
-                    <div key={roomKey || index}>
-                      {/* <div className="flex items-center justify-between gap-5 py-3"> */}
-                      <div
-                        onClick={() =>
-                          price > 0 && handleCardClick(roomKey, room)
-                        }
-                        className={`flex items-center gap-5 py-4 px-4 -mx-3 rounded-xl transition-all duration-200 ${
-                          price > 0
-                            ? "cursor-pointer"
-                            : "cursor-not-allowed opacity-60"
-                        } ${
-                          isSelected
-                            ? "border border-[#2351A3] bg-[#F0F5FF] shadow-sm"
-                            : ""
-                        }`}
-                      >
-                        <div className="flex-shrink-0">
-                          <div
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (price > 0) {
-                                handleCardClick(roomKey, room);
-                              }
-                            }}
-                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${
-                              isSelected
-                                ? "bg-[#2351A3] border-[#2351A3]"
-                                : "border-[#C2CAD6] bg-white"
-                            }`}
-                          >
-                            {isSelected && (
-                              <svg
-                                width="12"
-                                height="10"
-                                viewBox="0 0 12 10"
-                                fill="none"
-                                xmlns="http://www.w3.org/2000/svg"
-                              >
-                                <path
-                                  d="M1 5L4.5 8.5L11 1"
-                                  stroke="white"
-                                  strokeWidth="2"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                              </svg>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="w-48 flex-shrink-0">
-                          <h4 className="font-semibold text-sm text-[#3D495C] mb-3">
-                            {mealPlan}
-                          </h4>
-                          <div className="space-y-2 text-sm text-[#3D495C] font-normal">
-                            <div className="flex items-center gap-2">
-                              <AvaialableIcon />
-                              <span>{mealPlan}</span>
-                            </div>
-                            {cancelPolicy && (
-                              <div className="flex items-center gap-2">
-                                <AvaialableIcon />
-                                <span>{cancelPolicy}</span>
-                              </div>
-                            )}
-                            {hasOffers && (
-                              <div className="flex items-center gap-2">
-                                <AvaialableIcon />
-                                <span
-                                  dangerouslySetInnerHTML={{
-                                    __html: offers[0]?.name || "Special offer",
-                                  }}
-                                />
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex-1">
-                          <p className="text-sm text-[#3D495C] font-normal leading-relaxed">
-                            {room.roomTypeDesc ||
-                              room.roomTypeName ||
-                              "Room description not available"}
-                          </p>
-                          {hasOffers && (
-                            <div className="mt-2 flex items-center gap-2">
-                              <span className="text-xs text-[#3D495C] line-through">
-                                {formatPrice(originalPrice, currency)}
-                              </span>
-                              <span className="text-sm font-semibold text-[#EA0029]">
-                                {formatPrice(price, currency)}
-                              </span>
-                            </div>
-                          )}
-                          {!hasOffers && price > 0 && (
-                            <div className="mt-2">
-                              <span className="text-sm font-semibold text-[#0A0C0F]">
-                                {formatPrice(price, currency)}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-6">
-                          {/* <div className="flex items-center gap-2 text-sm text-[#3D495C] font-normal">
-                            <PersonIcon />
-                            <span>{getMaxOccupancy(room)}</span>
-                          </div> */}
-                          {room.roomRate?.rates &&
-                            room.roomRate.rates.length > 1 && (
-                              <div className="text-sm text-[#3D495C] font-normal">
-                                {room.roomRate.rates.map(
-                                  (rate: any, idx: number) => (
-                                    <div
-                                      key={idx}
-                                      className="flex items-center gap-2 mb-1"
-                                    >
-                                      <span className="text-xs">
-                                        {new Date(rate.from).toLocaleDateString(
-                                          "en-GB",
-                                          { day: "2-digit", month: "short" },
-                                        )}{" "}
-                                        -{" "}
-                                        {new Date(rate.to).toLocaleDateString(
-                                          "en-GB",
-                                          { day: "2-digit", month: "short" },
-                                        )}
-                                      </span>
-                                      <span className="text-xs font-medium">
-                                        {formatPrice(
-                                          rate.amount,
-                                          room.roomRate.currency,
-                                        )}
-                                        /night
-                                      </span>
-                                    </div>
-                                  ),
-                                )}
-                              </div>
-                            )}
-
-                          {price > 0 ? (
-                            <div className="text-right text-sm text-[#0A0C0F] max-w-64 font-semibold">
-                              <div>
-                                {formatPrice(
-                                  price * numberOfRooms,
-                                  // price * (isSelected ? roomCount : numberOfRooms),
-                                  currency,
-                                )}
-                              </div>
-                              <div className="text-[11px] text-[#6B7280] font-normal">
-                                {`Total for ${numberOfRooms} room${numberOfRooms > 1 ? "s" : ""}`}
-                                {/* {isSelected
-                                  ? `Total for ${roomCount} room${roomCount > 1 ? "s" : ""}`
-                                  : `Total for ${numberOfRooms} room${numberOfRooms > 1 ? "s" : ""}`} */}
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="text-sm text-[#EA0029] max-w-64">
-                              Select dates, travelers and rooms to see prices.
-                            </div>
-                          )}
-
-                          {/* Counter buttons for room selection */}
-                          {isSelected && (
-                            <div className="flex items-center gap-2">
-                              <div
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleRoomDecrement(roomKey);
-                                }}
-                              >
-                                <Button
-                                  type="button"
-                                  className={`flex items-center w-7 h-7 rounded-full justify-center text-white text-sm ${
-                                    roomCount > 0
-                                      ? "bg-[#2351A3] cursor-pointer"
-                                      : "bg-[#C2CAD6] cursor-not-allowed"
-                                  }`}
-                                  overrideClasses
-                                >
-                                  <span className="block leading-none">−</span>
-                                </Button>
-                              </div>
-
-                              <span className="w-8 text-center font-normal text-base text-[#0A0C0F]">
-                                {String(roomCount).padStart(2, "0")}
-                              </span>
-
-                              <div
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (price > 0) {
-                                    handleRoomIncrement(roomKey, room);
-                                  }
-                                }}
-                              >
-                                <Button
-                                  type="button"
-                                  className={`flex items-center w-7 h-7 rounded-full justify-center text-white text-sm ${
-                                    price > 0 &&
-                                    totalSelectedCount < numberOfRooms
-                                      ? "bg-[#2351A3] cursor-pointer"
-                                      : "bg-[#C2CAD6] cursor-not-allowed"
-                                  }`}
-                                  overrideClasses
-                                  disabled={
-                                    price <= 0 ||
-                                    totalSelectedCount >= numberOfRooms
-                                  }
-                                >
-                                  <span className="block leading-none">+</span>
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {index < group.rooms.length - 1 && <Seperator />}
-                    </div>
-                  );
-                })}
-              </div>
+                );
+              })}
+                </>
+              )}
             </div>
           );
-        })
-      ) : (
-        <div className="py-6 text-center text-sm font-semibold text-[#3D495C]">
-          No rooms available.
-        </div>
-      )}
+        });
+      })()}
     </div>
   );
 };

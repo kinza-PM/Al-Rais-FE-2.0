@@ -399,7 +399,12 @@ const HotelSearchListing: React.FC = () => {
 
     // Check if adults exceed room capacity (2 per room)
     const maxAdultsAllowed = numRooms * 2;
-    if (totalAdults > maxAdultsAllowed) {
+    if (totalAdults < numRooms) {
+      setValidationError(
+        `Minimum ${numRooms} adult${numRooms > 1 ? "s" : ""} required for ${numRooms} room${numRooms > 1 ? "s" : ""} (1 per room)`,
+      );
+      return false;
+    } else if (totalAdults > maxAdultsAllowed) {
       setValidationError(
         `Maximum ${maxAdultsAllowed} adults allowed for ${numRooms} room${
           numRooms > 1 ? "s" : ""
@@ -763,6 +768,7 @@ const HotelSearchListing: React.FC = () => {
                     className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
                     role="tooltip"
                   >
+                    Minimum 1 adult required per room <br />
                     Maximum 2 adults allowed per room
                     <br />
                     Maximum 2 children allowed per room
@@ -776,6 +782,7 @@ const HotelSearchListing: React.FC = () => {
                 schema={passengers as PassengerSchema}
                 value={paxData}
                 onChange={handlePaxChange}
+                initialChildAges={childAges}
                 onChildrenAgesChange={handleChildrenAgesChange}
                 tooltip="Select passengers and rooms"
               />

@@ -465,9 +465,8 @@ const HotelDetailListing = () => {
       {/* ROOM SECTION */}
       {activeTab === "Rooms" && (
         <HotelDetailRoomSection
-          // passengers={passengers}
-          // hotelDetail={hotelDetail}
           hotelMoreRooms={hotelMoreRooms}
+          selectedRooms={selectedRooms}
           onRoomsChange={handleRoomsChange}
         />
       )}
