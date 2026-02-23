@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "../../assets/css/travel.css";
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import highDemandIcon from "../../assets/svgs/high-demand.svg";
+import offerViewIcon from "../../assets/svgs/offer-view-icon.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
 import durationIcon from "../../assets/svgs/duration.svg";
 import refundableIcon from "../../assets/svgs/redundable.svg";
@@ -85,30 +86,36 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
     }));
   }, [highDemandIndicators]);
 
-  const getHighDemandInfo = useCallback((segmentAirlines: string[]) => {
-    if (!highDemandBySegment || highDemandBySegment.length === 0) return null;
-    if (segmentAirlines.length !== highDemandBySegment.length) return null;
+  const getHighDemandInfo = useCallback(
+    (segmentAirlines: string[]) => {
+      if (!highDemandBySegment || highDemandBySegment.length === 0) return null;
+      if (segmentAirlines.length !== highDemandBySegment.length) return null;
 
-    // Check if ALL segments match their corresponding indicator
-    const allMatch = segmentAirlines.every((airline, index) => {
-      const indicator = highDemandBySegment[index];
-      return indicator?.highDemand === true && indicator?.marketingAirline === airline;
-    });
+      // Check if ALL segments match their corresponding indicator
+      const allMatch = segmentAirlines.every((airline, index) => {
+        const indicator = highDemandBySegment[index];
+        return (
+          indicator?.highDemand === true &&
+          indicator?.marketingAirline === airline
+        );
+      });
 
-    if (!allMatch) return null;
+      if (!allMatch) return null;
 
-    // Calculate total count across all segments
-    const totalCount = highDemandBySegment.reduce(
-      (sum, indicator) => sum + (indicator.totalCounts || 0),
-      0
-    );
+      // Calculate total count across all segments
+      const totalCount = highDemandBySegment.reduce(
+        (sum, indicator) => sum + (indicator.totalCounts || 0),
+        0,
+      );
 
-    return {
-      totalCount,
-      segmentCounts: highDemandBySegment.map((ind) => ind.totalCounts),
-      highDemand: true,
-    };
-  }, [highDemandBySegment]);
+      return {
+        totalCount,
+        segmentCounts: highDemandBySegment.map((ind) => ind.totalCounts),
+        highDemand: true,
+      };
+    },
+    [highDemandBySegment],
+  );
 
   const HandleCompareOption = useCallback(
     ({ id }: { id: number | undefined }) => {
@@ -304,29 +311,47 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                     </div>
                   </div>
                 </div>
-                <div className="selectPriceBtn flex items-center gap-2" >
+                <div className="selectPriceBtn flex items-center gap-2">
+                  {item.offerViewCount > 0 && (
+                    <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
+                      <img src={offerViewIcon} alt="icon" className="mr-1" />
+                      {item.offerViewCount} People viewing this
+                    </div>
+                  )}
                   {(() => {
                     // Extract marketing airline from each segment
                     const segments = item?.segments ?? [];
-                    const segmentAirlines = segments.map((_: any, idx: number) => {
-                      const journeys = item?.raw?.journey ?? [];
-                      const journeyItem = journeys[idx] ?? {};
-                      const segs = journeyItem?.flightSegments ?? [];
-                      const currentSeg = Array.isArray(segs) ? segs[0] : segs?.[0] ?? segs ?? null;
-                      return currentSeg?.marketingAirline ?? '';
-                    }).filter(Boolean); // Remove empty strings
+                    const segmentAirlines = segments
+                      .map((_: any, idx: number) => {
+                        const journeys = item?.raw?.journey ?? [];
+                        const journeyItem = journeys[idx] ?? {};
+                        const segs = journeyItem?.flightSegments ?? [];
+                        const currentSeg = Array.isArray(segs)
+                          ? segs[0]
+                          : (segs?.[0] ?? segs ?? null);
+                        return currentSeg?.marketingAirline ?? "";
+                      })
+                      .filter(Boolean); // Remove empty strings
 
                     const highDemandInfo = getHighDemandInfo(segmentAirlines);
 
                     return highDemandInfo ? (
                       <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
-                        <img src={highDemandIcon} alt="icon" className="w-3 h-3 mr-1" />
+                        <img
+                          src={highDemandIcon}
+                          alt="icon"
+                          className="w-3 h-3 mr-1"
+                        />
                         High-demand
                         {/* High-demand ({highDemandInfo.totalCount}) */}
                       </div>
                     ) : null;
                   })()}
-                  <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>Select Price</CustomButton>
+                  <CustomButton
+                    onClick={() => handleOfferSelection(item?.offerId, item)}
+                  >
+                    Select Price
+                  </CustomButton>
                 </div>
               </div>
               <React.Suspense

@@ -380,6 +380,7 @@ const FlightDetailTemplate: React.FC = () => {
       flight_detail: outbound?.flight_detail ?? null,
       stop: outbound?.stop ?? [],
       rawTotalStartingFare: item?.fare?.totalFare,
+      offerViewCount: item?.offerViewCount ?? 0,
       // price: { economyLite: { price: item?.fare?.totalFare } },
       price: priceOptions,
       raw: item,
@@ -404,6 +405,7 @@ const FlightDetailTemplate: React.FC = () => {
           }
         : null,
       price: priceOptions,
+      offerViewCount: item?.offerViewCount ?? 0,
       rawTotalStartingFare: item?.fare?.totalFare ?? null,
       raw: item,
     };
@@ -430,6 +432,7 @@ const FlightDetailTemplate: React.FC = () => {
       segments: multiCitySegments,
       flight_detail: firstMultiSeg?.flight_detail ?? null,
       rawTotalStartingFare: item?.fare?.totalFare,
+      offerViewCount: item?.offerViewCount ?? 0,
       price: priceOptions,
       raw: item,
     };

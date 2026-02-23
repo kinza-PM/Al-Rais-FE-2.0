@@ -11,6 +11,7 @@ const flightApis = [
   "/moreFareSearch",
   "/flightProvBooking",
   "/fareRuleSearch",
+  "/ingestFlightsView",
   "/reservationFlightBooking",
   "/retrieveFlightBooking",
   "/myBooking",

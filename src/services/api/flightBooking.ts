@@ -34,6 +34,10 @@ export type FlightFareRuleSearch = {
   offerId: string;
 };
 
+export type FlightIngestView = {
+  offerId: string;
+};
+
 export type UserProfileMyBooking = {
   status: string;
 };
@@ -101,6 +105,17 @@ export async function postFlightFareRuleSearch<TResp = any>(
   const source = "postFlightFareRuleSearch";
   try {
     return await api.post<TResp>("/fareRuleSearch", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}
+
+export async function postFlightIngestView<TResp = any>(
+  body: FlightIngestView,
+): Promise<TResp> {
+  const source = "postFlightIngestView";
+  try {
+    return await api.post<TResp>("/ingestFlightsView", body);
   } catch (err) {
     throw toApiError(source, err);
   }

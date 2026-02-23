@@ -19,6 +19,7 @@ import Loader from "../components/atoms/Loader";
 import {
   useFlightAncillarySearch,
   useFlightFareRuleSearch,
+  useFlightIngestView,
 } from "../hooks/useFlightBooking";
 import toast from "react-hot-toast";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
@@ -190,6 +191,8 @@ const FlightBooking = () => {
     useCountriesOptions();
 
   const { mutateAsync, isPending } = useFlightFareRuleSearch();
+  const { mutateAsync: mutateIngestViewAsync, isPending: isIngestViewPending } =
+    useFlightIngestView();
   const { mutateAsync: mutateAsyncAncillary, isPending: isPendingAncillary } =
     useFlightAncillarySearch();
 
@@ -358,6 +361,20 @@ const FlightBooking = () => {
     }
   };
 
+  const ingestViewUserCountOnFlightOffer = async () => {
+    if (isPendingBooking || !user) {
+      return;
+    }
+
+    if (!offerData?.offerId) return;
+    try {
+      await mutateIngestViewAsync({ offerId: offerData?.offerId });
+    } catch (error) {
+      const err = extractErrorFromAxiosApiError(error);
+      console.log("ingest view error------------", err);
+    }
+  };
+
   const prefillFirstPassengerFromUserDetail = (ud: any) => {
     if (!ud) return;
 
@@ -500,6 +517,10 @@ const FlightBooking = () => {
     fetchAndPrefill();
   }, [user]);
 
+  useEffect(() => {
+    ingestViewUserCountOnFlightOffer();
+  }, [user]);
+
   return (
     <>
       <AncillaryConfirmationModal
@@ -525,7 +546,12 @@ const FlightBooking = () => {
         />
       )}
       <Loader
-        show={isCountriesLoading || isPending || isPendingAncillary}
+        show={
+          isCountriesLoading ||
+          isPending ||
+          isPendingAncillary ||
+          isIngestViewPending
+        }
         // show={isCountryLoading || isPending}
         label="Please wait while we are fetching records..."
       />

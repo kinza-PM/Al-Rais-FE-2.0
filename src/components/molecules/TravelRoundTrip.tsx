@@ -2,6 +2,7 @@ import React, { useCallback } from "react";
 import "../../assets/css/travel.css";
 
 import highDemandIcon from "../../assets/svgs/high-demand.svg";
+import offerViewIcon from "../../assets/svgs/offer-view-icon.svg";
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import defaultAirlineLogo from "../../assets/images/alRaisLogo.jpg";
@@ -111,36 +112,41 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     if (!highDemandIndicators || highDemandIndicators.length === 0) return null;
 
     return {
-      outbound: highDemandIndicators[0] || null,  // First object = outbound
-      inbound: highDemandIndicators[1] || null,   // Second object = inbound
+      outbound: highDemandIndicators[0] || null, // First object = outbound
+      inbound: highDemandIndicators[1] || null, // Second object = inbound
     };
   }, [highDemandIndicators]);
 
-  const getHighDemandInfo = useCallback((outboundAirline: string, inboundAirline: string | null) => {
-    if (!highDemandLookup) return null;
+  const getHighDemandInfo = useCallback(
+    (outboundAirline: string, inboundAirline: string | null) => {
+      if (!highDemandLookup) return null;
 
-    const { outbound, inbound } = highDemandLookup;
+      const { outbound, inbound } = highDemandLookup;
 
-    // Check if outbound airline matches first indicator
-    const outboundMatches = outbound?.highDemand === true &&
-      outbound?.marketingAirline === outboundAirline;
+      // Check if outbound airline matches first indicator
+      const outboundMatches =
+        outbound?.highDemand === true &&
+        outbound?.marketingAirline === outboundAirline;
 
-    // Check if inbound airline matches second indicator  
-    const inboundMatches = inbound?.highDemand === true &&
-      inbound?.marketingAirline === inboundAirline;
+      // Check if inbound airline matches second indicator
+      const inboundMatches =
+        inbound?.highDemand === true &&
+        inbound?.marketingAirline === inboundAirline;
 
-    // Only show if BOTH match
-    if (outboundMatches && inboundMatches) {
-      return {
-        outboundCount: outbound.totalCounts,
-        inboundCount: inbound.totalCounts,
-        totalCount: outbound.totalCounts + inbound.totalCounts,
-        highDemand: true,
-      };
-    }
+      // Only show if BOTH match
+      if (outboundMatches && inboundMatches) {
+        return {
+          outboundCount: outbound.totalCounts,
+          inboundCount: inbound.totalCounts,
+          totalCount: outbound.totalCounts + inbound.totalCounts,
+          highDemand: true,
+        };
+      }
 
-    return null;
-  }, [highDemandLookup]);
+      return null;
+    },
+    [highDemandLookup],
+  );
 
   const handleCancelCompare = (modalType: "compare" | "share") => {
     if (modalType == "compare") {
@@ -168,7 +174,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         },
       });
     },
-    [navigate, passengersForRequest]
+    [navigate, passengersForRequest],
   );
 
   const [active, setActive] = useState({ name: "", id: 0 });
@@ -176,25 +182,28 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   if (!passData || passData.length === 0) {
     return (
       <div>
-        {typeof emptyState === "function" ? emptyState() : emptyState ?? null}
+        {typeof emptyState === "function" ? emptyState() : (emptyState ?? null)}
         <div ref={loadMoreRef} className="min-h-[1px]" />
       </div>
     );
   }
 
   return (
-    <div className="" style={{ 
-      background: '#FFFFFF', 
-      borderRadius: '16px', 
-      padding: '20px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-    }}>
+    <div
+      className=""
+      style={{
+        background: "#FFFFFF",
+        borderRadius: "16px",
+        padding: "20px",
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+      }}
+    >
       {passData?.map((item: any, index: number) => {
         // Replace the existing renderRoundTopCard with this version
         const renderRoundTopCard = (
           display: any,
           parent: any,
-          showPrice = false
+          showPrice = false,
         ) => {
           const d = display ?? parent;
           const price =
@@ -218,7 +227,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
           // build per-segment flight_detail for timings/FlightTimingAndStops
           const perSegFlightDetail = buildPerSegmentFlightDetail(
             d?.flight_detail || {},
-            currentSeg
+            currentSeg,
           );
 
           // Pass all segments to FlightTimingAndStops for proper multi-segment handling
@@ -253,7 +262,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
               durationIcon,
               seatIcon: SEAT_ICON,
               entertainmentIcon: PLANE_ICON,
-            }
+            },
           );
 
           // Convert to label format for TravelRoundTrip (which uses label instead of value)
@@ -267,25 +276,38 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
               className="topHalfCard RoundTripCardDetail"
               key={`round-${d?.id || parent?.id || Math.random()}`}
               style={{
-                width: '100%',
-                minHeight: '101px',
-                display: 'flex',
-                alignItems: 'center',
-                padding: '20px 0',
-                gap: '24px',
-                background: 'transparent',
-                borderRadius: '0',
-                border: 'none',
-                boxSizing: 'border-box',
-                marginBottom: '0'
+                width: "100%",
+                minHeight: "101px",
+                display: "flex",
+                alignItems: "center",
+                padding: "20px 0",
+                gap: "24px",
+                background: "transparent",
+                borderRadius: "0",
+                border: "none",
+                boxSizing: "border-box",
+                marginBottom: "0",
               }}
             >
-              <div className="fightTitle" style={{ display: 'flex', alignItems: 'center', gap: '1px', minWidth: '201px' }}>
+              <div
+                className="fightTitle"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "1px",
+                  minWidth: "201px",
+                }}
+              >
                 <div className="flightIcon" style={{ flexShrink: 0 }}>
-                  <img 
-                    src={d?.logo || defaultAirlineLogo} 
-                    alt={d?.name || "Airline"} 
-                    style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
+                  <img
+                    src={d?.logo || defaultAirlineLogo}
+                    alt={d?.name || "Airline"}
+                    style={{
+                      width: "48px",
+                      height: "48px",
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                    }}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.onerror = null;
@@ -293,19 +315,60 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     }}
                   />
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: "8px",
+                    flex: 1,
+                  }}
+                >
                   <div className="nameAndDetails">
-                    <h5 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0F172A', lineHeight: 1.3 }}>{d?.name}</h5>
-                    <p style={{ margin: 0, fontSize: '11px', color: '#64748B', lineHeight: 1.3, marginTop: '2px' }}>
-                      {itemForTiming?.flight_detail?.flight_number} - {itemForTiming?.flight_detail?.flight_class}
+                    <h5
+                      style={{
+                        margin: 0,
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#0F172A",
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {d?.name}
+                    </h5>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: "11px",
+                        color: "#64748B",
+                        lineHeight: 1.3,
+                        marginTop: "2px",
+                      }}
+                    >
+                      {itemForTiming?.flight_detail?.flight_number} -{" "}
+                      {itemForTiming?.flight_detail?.flight_class}
                     </p>
                   </div>
-                  
+
                   {visible.length ? (
-                    <div className="featureIcons" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    <div
+                      className="featureIcons"
+                      style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}
+                    >
                       {visible.slice(0, 6).map((f) => (
-                        <div className="featureIconTooltipWrap" key={f.key} style={{ position: 'relative' }}>
-                          <img src={f.icon} alt={f.key} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                        <div
+                          className="featureIconTooltipWrap"
+                          key={f.key}
+                          style={{ position: "relative" }}
+                        >
+                          <img
+                            src={f.icon}
+                            alt={f.key}
+                            style={{
+                              width: "18px",
+                              height: "18px",
+                              cursor: "pointer",
+                            }}
+                          />
                           <span className="tooltip">{f.label}</span>
                         </div>
                       ))}
@@ -314,14 +377,44 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 </div>
               </div>
 
-              <div className="stopsOnLarge" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div
+                className="stopsOnLarge"
+                style={{
+                  flex: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
                 <FlightTimingAndStops passSome={itemForTiming} />
               </div>
 
               {showPrice && (
-                <div className="StartingPrice" style={{ minWidth: '160px', textAlign: 'right' }}>
-                  <p style={{ margin: 0, fontSize: '12px', color: '#64748B', marginBottom: '6px', fontWeight: 400 }}>Starting from</p>
-                  <h5 style={{ margin: 0, fontSize: '27px', fontWeight: 700, color: '#2351A3', lineHeight: 1, letterSpacing: '-0.5px' }}>
+                <div
+                  className="StartingPrice"
+                  style={{ minWidth: "160px", textAlign: "right" }}
+                >
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: "12px",
+                      color: "#64748B",
+                      marginBottom: "6px",
+                      fontWeight: 400,
+                    }}
+                  >
+                    Starting from
+                  </p>
+                  <h5
+                    style={{
+                      margin: 0,
+                      fontSize: "27px",
+                      fontWeight: 700,
+                      color: "#2351A3",
+                      lineHeight: 1,
+                      letterSpacing: "-0.5px",
+                    }}
+                  >
                     {d?.raw?.fare?.currencyCode ?? "$"}
                     {price}
                   </h5>
@@ -341,25 +434,38 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         return (
           <div
             key={index}
-            className={`flightDetailCards ${inbound ? "flightDetailRoundTripCards" : ""
-              }`}
-            style={{ 
-              border: 'none',
-              marginBottom: '0',
-              paddingBottom: '0',
-              borderBottom: index < passData.length - 1 ? '2px solid #E4E4E7' : 'none'
+            className={`flightDetailCards ${
+              inbound ? "flightDetailRoundTripCards" : ""
+            }`}
+            style={{
+              border: "none",
+              marginBottom: "0",
+              paddingBottom: "0",
+              borderBottom:
+                index < passData.length - 1 ? "2px solid #E4E4E7" : "none",
             }}
           >
-            <div className="forBorderBottom" style={{ marginBottom: '16px' }}>
+            <div className="forBorderBottom" style={{ marginBottom: "16px" }}>
               {renderRoundTopCard(outbound ?? item, item, true)}
 
               {/* inbound (render only when present) */}
               {inbound && renderRoundTopCard(inbound, item, false)}
-              
+
               {/* View details / Book Now / Less Details button */}
-              <div style={{ display: 'flex', justifyContent: 'center', marginTop: '16px' }}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  marginTop: "16px",
+                }}
+              >
                 {/* Show View Details button when tabs are NOT active */}
-                {!(active?.id === index && (active?.name === "price" || active?.name === "flight" || active?.name === "compare")) && (
+                {!(
+                  active?.id === index &&
+                  (active?.name === "price" ||
+                    active?.name === "flight" ||
+                    active?.name === "compare")
+                ) && (
                   <button
                     onClick={() => {
                       HandlePriceOption({ id: item.id });
@@ -370,26 +476,29 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                       }));
                     }}
                     style={{
-                      width: '150px',
-                      height: '47px',
-                      borderRadius: '100px',
-                      padding: '14px 25px',
-                      background: 'linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)',
-                      color: '#FFFFFF',
-                      fontSize: '15px',
+                      width: "150px",
+                      height: "47px",
+                      borderRadius: "100px",
+                      padding: "14px 25px",
+                      background:
+                        "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                      color: "#FFFFFF",
+                      fontSize: "15px",
                       fontWeight: 600,
-                      border: 'none',
-                      cursor: 'pointer',
-                      boxShadow: '0 4px 12px rgba(35, 81, 163, 0.3)',
-                      transition: 'all 0.2s ease',
+                      border: "none",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(35, 81, 163, 0.3)",
+                      transition: "all 0.2s ease",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(35, 81, 163, 0.4)';
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 6px 16px rgba(35, 81, 163, 0.4)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(35, 81, 163, 0.3)';
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 4px 12px rgba(35, 81, 163, 0.3)";
                     }}
                   >
                     View details
@@ -400,177 +509,209 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   <button
                     onClick={() => handleOfferSelection(item?.offerId, item)}
                     style={{
-                      width: '130px',
-                      height: '47px',
-                      background: 'linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)',
-                      borderRadius: '100px',
-                      padding: '14px 25px',
-                      gap: '10px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#FFFFFF',
-                      fontSize: '14px',
+                      width: "130px",
+                      height: "47px",
+                      background:
+                        "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                      borderRadius: "100px",
+                      padding: "14px 25px",
+                      gap: "10px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#FFFFFF",
+                      fontSize: "14px",
                       fontWeight: 600,
-                      transition: 'all 0.3s ease',
-                      boxShadow: '0 2px 8px rgba(35, 81, 163, 0.3)'
+                      transition: "all 0.3s ease",
+                      boxShadow: "0 2px 8px rgba(35, 81, 163, 0.3)",
                     }}
                     onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                      e.currentTarget.style.boxShadow = '0 6px 16px rgba(35, 81, 163, 0.4)';
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 6px 16px rgba(35, 81, 163, 0.4)";
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = 'translateY(0)';
-                      e.currentTarget.style.boxShadow = '0 2px 8px rgba(35, 81, 163, 0.3)';
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 2px 8px rgba(35, 81, 163, 0.3)";
                     }}
                   >
                     Book Now
                   </button>
                 )}
                 {/* Show Less Details button when Flight details or Compare tab is active */}
-                {active?.id === index && (active?.name === "flight" || active?.name === "compare") && (
-                  <button
-                    onClick={() => {
-                      setActive((prev) => ({
-                        ...prev,
-                        name: "",
-                        id: -1,
-                      }));
-                    }}
-                    style={{
-                      width: '143px',
-                      height: '47px',
-                      borderRadius: '100px',
-                      padding: '14px 25px',
-                      gap: '10px',
-                      background: '#FFFFFF',
-                      color: '#2351A3',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      border: '2px solid #2351A3',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#F1F5F9';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = '#FFFFFF';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    Less Details
-                  </button>
-                )}
+                {active?.id === index &&
+                  (active?.name === "flight" || active?.name === "compare") && (
+                    <button
+                      onClick={() => {
+                        setActive((prev) => ({
+                          ...prev,
+                          name: "",
+                          id: -1,
+                        }));
+                      }}
+                      style={{
+                        width: "143px",
+                        height: "47px",
+                        borderRadius: "100px",
+                        padding: "14px 25px",
+                        gap: "10px",
+                        background: "#FFFFFF",
+                        color: "#2351A3",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        border: "2px solid #2351A3",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "all 0.2s ease",
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = "#F1F5F9";
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = "#FFFFFF";
+                        e.currentTarget.style.transform = "translateY(0)";
+                      }}
+                    >
+                      Less Details
+                    </button>
+                  )}
               </div>
             </div>
 
             {/* Only show tabs and content when View details is clicked */}
-            {(active?.name === "price" || active?.name === "flight" || active?.name === "compare") && active?.id === index && (
-              <div className="bottomHalfCard">
-                <div className="bottomHalfCardflexStyle">
-                  <div className="modalOptions">
-                    <div className="tabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                    <div
-                      className={`tab ${active?.name === "price" && active?.id === index ? "active" : ""}`}
-                      onClick={() => {
-                        HandlePriceOption({ id: item.id });
-                        setActive((prev) => ({
-                          ...prev,
-                          name: "price",
-                          id: index,
-                        }));
-                      }}
-                      style={{
-                        width: '105px',
-                        height: '35px',
-                        borderTopLeftRadius: '16px',
-                        borderTopRightRadius: '16px',
-                        borderBottomLeftRadius: '0',
-                        borderBottomRightRadius: '0',
-                        background: active?.name === "price" && active?.id === index ? '#2351A3' : '#F1F5F9',
-                        color: active?.name === "price" && active?.id === index ? '#FFFFFF' : '#64748B',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        border: 'none',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      Price options
-                    </div>
-                    <div
-                      className={`tab ${active?.name === "flight" && active?.id === index ? "active" : ""}`}
-                      onClick={() => {
-                        HandlePriceOption({ id: item.id });
-                        setActive((prev) => ({
-                          ...prev,
-                          name: "flight",
-                          id: index,
-                        }));
-                      }}
-                      style={{
-                        width: '105px',
-                        height: '35px',
-                        borderTopLeftRadius: '16px',
-                        borderTopRightRadius: '16px',
-                        borderBottomLeftRadius: '0',
-                        borderBottomRightRadius: '0',
-                        background: active?.name === "flight" && active?.id === index ? '#2351A3' : '#F1F5F9',
-                        color: active?.name === "flight" && active?.id === index ? '#FFFFFF' : '#64748B',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        border: 'none',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      Flight details
-                    </div>
-                    <div
-                      className={`tab ${active?.name === "compare" && active?.id === index ? "active" : ""}`}
-                      onClick={() => {
-                        setActive((prev) => ({
-                          ...prev,
-                          name: "compare",
-                          id: index,
-                        }));
-                      }}
-                      style={{
-                        width: '105px',
-                        height: '35px',
-                        borderTopLeftRadius: '16px',
-                        borderTopRightRadius: '16px',
-                        borderBottomLeftRadius: '0',
-                        borderBottomRightRadius: '0',
-                        background: active?.name === "compare" && active?.id === index ? '#2351A3' : '#F1F5F9',
-                        color: active?.name === "compare" && active?.id === index ? '#FFFFFF' : '#64748B',
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        border: 'none',
-                        transition: 'all 0.2s ease',
-                      }}
-                    >
-                      Compare
-                    </div>
-                  </div>
-                  {/* <p
+            {(active?.name === "price" ||
+              active?.name === "flight" ||
+              active?.name === "compare") &&
+              active?.id === index && (
+                <div className="bottomHalfCard">
+                  <div className="bottomHalfCardflexStyle">
+                    <div className="modalOptions">
+                      <div
+                        className="tabs"
+                        style={{
+                          display: "flex",
+                          gap: "8px",
+                          marginBottom: "16px",
+                        }}
+                      >
+                        <div
+                          className={`tab ${active?.name === "price" && active?.id === index ? "active" : ""}`}
+                          onClick={() => {
+                            HandlePriceOption({ id: item.id });
+                            setActive((prev) => ({
+                              ...prev,
+                              name: "price",
+                              id: index,
+                            }));
+                          }}
+                          style={{
+                            width: "105px",
+                            height: "35px",
+                            borderTopLeftRadius: "16px",
+                            borderTopRightRadius: "16px",
+                            borderBottomLeftRadius: "0",
+                            borderBottomRightRadius: "0",
+                            background:
+                              active?.name === "price" && active?.id === index
+                                ? "#2351A3"
+                                : "#F1F5F9",
+                            color:
+                              active?.name === "price" && active?.id === index
+                                ? "#FFFFFF"
+                                : "#64748B",
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            border: "none",
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          Price options
+                        </div>
+                        <div
+                          className={`tab ${active?.name === "flight" && active?.id === index ? "active" : ""}`}
+                          onClick={() => {
+                            HandlePriceOption({ id: item.id });
+                            setActive((prev) => ({
+                              ...prev,
+                              name: "flight",
+                              id: index,
+                            }));
+                          }}
+                          style={{
+                            width: "105px",
+                            height: "35px",
+                            borderTopLeftRadius: "16px",
+                            borderTopRightRadius: "16px",
+                            borderBottomLeftRadius: "0",
+                            borderBottomRightRadius: "0",
+                            background:
+                              active?.name === "flight" && active?.id === index
+                                ? "#2351A3"
+                                : "#F1F5F9",
+                            color:
+                              active?.name === "flight" && active?.id === index
+                                ? "#FFFFFF"
+                                : "#64748B",
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            border: "none",
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          Flight details
+                        </div>
+                        <div
+                          className={`tab ${active?.name === "compare" && active?.id === index ? "active" : ""}`}
+                          onClick={() => {
+                            setActive((prev) => ({
+                              ...prev,
+                              name: "compare",
+                              id: index,
+                            }));
+                          }}
+                          style={{
+                            width: "105px",
+                            height: "35px",
+                            borderTopLeftRadius: "16px",
+                            borderTopRightRadius: "16px",
+                            borderBottomLeftRadius: "0",
+                            borderBottomRightRadius: "0",
+                            background:
+                              active?.name === "compare" && active?.id === index
+                                ? "#2351A3"
+                                : "#F1F5F9",
+                            color:
+                              active?.name === "compare" && active?.id === index
+                                ? "#FFFFFF"
+                                : "#64748B",
+                            fontSize: "13px",
+                            fontWeight: 500,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            cursor: "pointer",
+                            border: "none",
+                            transition: "all 0.2s ease",
+                          }}
+                        >
+                          Compare
+                        </div>
+                      </div>
+                      {/* <p
                   className="compareLikeButton"
                   onClick={() => {
                     showModalCompare({ modalType: "compare", id: undefined });
@@ -578,7 +719,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 >
                   Compare
                 </p> */}
-                  {/* <img
+                      {/* <img
                     src={colSeparater}
                     alt=""
                     style={{ width: 1, height: 30 }}
@@ -591,65 +732,84 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   >
                     Share
                   </p> */}
-                </div>
-                <div className="selectPriceBtn flex items-center gap-2">
-                  {(() => {
-                    const outboundSegs =
-                      item?.outbound?.raw?.journey?.[0]?.flightSegments ??
-                      item?.raw?.journey?.[0]?.flightSegments ??
-                      [];
-                    const outboundSeg = Array.isArray(outboundSegs)
-                      ? outboundSegs[0]
-                      : outboundSegs?.[0] ?? outboundSegs ?? null;
-                    const outboundAirline = outboundSeg?.marketingAirline;
+                    </div>
+                    <div className="selectPriceBtn flex items-center gap-2">
+                      {item.offerViewCount > 0 && (
+                        <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
+                          <img
+                            src={offerViewIcon}
+                            alt="icon"
+                            className="mr-1"
+                          />
+                          {item.offerViewCount} People viewing this
+                        </div>
+                      )}
+                      {(() => {
+                        const outboundSegs =
+                          item?.outbound?.raw?.journey?.[0]?.flightSegments ??
+                          item?.raw?.journey?.[0]?.flightSegments ??
+                          [];
+                        const outboundSeg = Array.isArray(outboundSegs)
+                          ? outboundSegs[0]
+                          : (outboundSegs?.[0] ?? outboundSegs ?? null);
+                        const outboundAirline = outboundSeg?.marketingAirline;
 
-                    const inboundSegs =
-                      item?.inbound?.raw?.journey?.[0]?.flightSegments ??
-                      item?.raw?.journey?.[1]?.flightSegments ??
-                      [];
-                    const inboundSeg = Array.isArray(inboundSegs)
-                      ? inboundSegs[0]
-                      : inboundSegs?.[0] ?? inboundSegs ?? null;
-                    const inboundAirline = inboundSeg?.marketingAirline;
+                        const inboundSegs =
+                          item?.inbound?.raw?.journey?.[0]?.flightSegments ??
+                          item?.raw?.journey?.[1]?.flightSegments ??
+                          [];
+                        const inboundSeg = Array.isArray(inboundSegs)
+                          ? inboundSegs[0]
+                          : (inboundSegs?.[0] ?? inboundSegs ?? null);
+                        const inboundAirline = inboundSeg?.marketingAirline;
 
-                    const highDemandInfo = getHighDemandInfo(outboundAirline, inboundAirline);
+                        const highDemandInfo = getHighDemandInfo(
+                          outboundAirline,
+                          inboundAirline,
+                        );
 
-                    return highDemandInfo ? (
-                      <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
-                        <img src={highDemandIcon} alt="icon" className="w-3 h-3 mr-1" />
-                        High-demand
-                        {/* High-demand ({highDemandInfo.totalCounts}) */}
-                      </div>
-                    ) : null;
-                  })()}
-                  {/* <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>
+                        return highDemandInfo ? (
+                          <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
+                            <img
+                              src={highDemandIcon}
+                              alt="icon"
+                              className="w-3 h-3 mr-1"
+                            />
+                            High-demand
+                            {/* High-demand ({highDemandInfo.totalCounts}) */}
+                          </div>
+                        ) : null;
+                      })()}
+                      {/* <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>
                     Select Price
                   </CustomButton> */}
-                </div>
-              </div>
-              <React.Suspense
-                fallback={<div className="tab-loading-placeholder">Loading…</div>}
-              >
-                {active?.name == "price" && active?.id == index ? (
-                  <PricingDetailCard passSome={filterDetail} />
-                ) : active?.name == "flight" && active?.id == index ? (
-                  <FlightDetailsCard details={item} />
-                ) : active?.name == "compare" && active?.id == index ? (
-                  <CompareCard
-                    currentFlight={mapOfferForCompareRoundTrip(item)}
-                    availableFlights={pickRandomFlightsForCompare(
-                      passData || [],
-                      item.id,
-                      4,
-                      mapOfferForCompareRoundTrip
+                    </div>
+                  </div>
+                  <React.Suspense
+                    fallback={
+                      <div className="tab-loading-placeholder">Loading…</div>
+                    }
+                  >
+                    {active?.name == "price" && active?.id == index ? (
+                      <PricingDetailCard passSome={filterDetail} />
+                    ) : active?.name == "flight" && active?.id == index ? (
+                      <FlightDetailsCard details={item} />
+                    ) : active?.name == "compare" && active?.id == index ? (
+                      <CompareCard
+                        currentFlight={mapOfferForCompareRoundTrip(item)}
+                        availableFlights={pickRandomFlightsForCompare(
+                          passData || [],
+                          item.id,
+                          4,
+                          mapOfferForCompareRoundTrip,
+                        )}
+                      />
+                    ) : (
+                      ""
                     )}
-                  />
-                ) : (
-                  ""
-                )}
-              </React.Suspense>
-              </div>
-            )}
+                  </React.Suspense>
+                </div>
+              )}
           </div>
         );
       })}

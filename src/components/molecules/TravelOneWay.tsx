@@ -3,6 +3,7 @@ import "../../assets/css/travel.css";
 
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
 import highDemandIcon from "../../assets/svgs/high-demand.svg";
+import offerViewIcon from "../../assets/svgs/offer-view-icon.svg";
 // import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import defaultAirlineLogo from "../../assets/images/emirates.png";
 
@@ -27,14 +28,22 @@ const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 import { useNavigate } from "react-router-dom";
 // removed: format helpers are handled in utilities
-import { buildPerSegmentFlightDetail, mapOfferForCompareOneWay, pickRandomFlightsForCompare, extractFlightFeatures } from "../../utils/searchFlightListingHelpers";
+import {
+  buildPerSegmentFlightDetail,
+  mapOfferForCompareOneWay,
+  pickRandomFlightsForCompare,
+  extractFlightFeatures,
+} from "../../utils/searchFlightListingHelpers";
 
 type TravelOneWayProps = {
   passData: any[]; // yahan aap type refine kar sakte ho
   passengersForRequest?: { id: string; ptc: string }[];
   isLoadingMore?: boolean;
   hasMore?: boolean;
-  renderLoader?: (state: { isLoadingMore?: boolean; hasMore?: boolean }) => React.ReactNode;
+  renderLoader?: (state: {
+    isLoadingMore?: boolean;
+    hasMore?: boolean;
+  }) => React.ReactNode;
   loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   emptyState?: (() => React.ReactNode) | React.ReactNode;
   highDemandIndicators?: any[];
@@ -118,7 +127,8 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   };
 
   const highDemandLookup = useMemo(() => {
-    if (!highDemandIndicators || highDemandIndicators.length === 0) return new Map();
+    if (!highDemandIndicators || highDemandIndicators.length === 0)
+      return new Map();
 
     const lookup = new Map();
     highDemandIndicators.forEach((indicator) => {
@@ -133,20 +143,29 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     return lookup;
   }, [highDemandIndicators]);
 
-  const getHighDemandInfo = useCallback((marketingAirline: string) => {
-    return highDemandLookup.get(marketingAirline) || null;
-  }, [highDemandLookup]);
+  const getHighDemandInfo = useCallback(
+    (marketingAirline: string) => {
+      return highDemandLookup.get(marketingAirline) || null;
+    },
+    [highDemandLookup],
+  );
 
-  const HandlePriceOption = React.useCallback(({ id }: { id: number | undefined }) => {
-    const filtered = (id !== undefined && detailById[id]) || [];
-    setFilterDetail(filtered);
-    setFilterData([]);
-  }, [detailById]);
+  const HandlePriceOption = React.useCallback(
+    ({ id }: { id: number | undefined }) => {
+      const filtered = (id !== undefined && detailById[id]) || [];
+      setFilterDetail(filtered);
+      setFilterData([]);
+    },
+    [detailById],
+  );
 
-  const HandleCompareOption = React.useCallback(({ id }: { id: number | undefined }) => {
-    const randomFour = getRandomItemsExcluding(passData || [], id, 4);
-    setFilterDetail(randomFour);
-  }, [passData]);
+  const HandleCompareOption = React.useCallback(
+    ({ id }: { id: number | undefined }) => {
+      const randomFour = getRandomItemsExcluding(passData || [], id, 4);
+      setFilterDetail(randomFour);
+    },
+    [passData],
+  );
 
   const handleCancelCompare = (modalType: "compare" | "share") => {
     if (modalType == "compare") {
@@ -158,18 +177,20 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
   // moved to helpers: mapOfferForCompareOneWay and pickRandomFlightsForCompare
 
-  const handleOfferSelection = React.useCallback((offerId: string, item: any) => {
-    // console.log(offerId);
-    navigate('/flight-booking', {
-      state: {
-        offerId,
-        searchKey: item?.searchKey,
-        flightDetail: item,
-        passengersForRequest: passengersForRequest || []
-      }
-    })
-  }, [navigate, passengersForRequest]);
-
+  const handleOfferSelection = React.useCallback(
+    (offerId: string, item: any) => {
+      // console.log(offerId);
+      navigate("/flight-booking", {
+        state: {
+          offerId,
+          searchKey: item?.searchKey,
+          flightDetail: item,
+          passengersForRequest: passengersForRequest || [],
+        },
+      });
+    },
+    [navigate, passengersForRequest],
+  );
 
   const [active, setActive] = useState({ name: "", id: 0 });
   // console.log(active, "active");
@@ -177,7 +198,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   if (!passData || passData.length === 0) {
     return (
       <div>
-        {typeof emptyState === "function" ? emptyState() : emptyState ?? null}
+        {typeof emptyState === "function" ? emptyState() : (emptyState ?? null)}
         <div ref={loadMoreRef} className="min-h-[1px]" />
       </div>
     );
@@ -185,25 +206,38 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   // console.log('pass data------', passData);
 
   return (
-    <div className="" style={{ 
-      background: '#FFFFFF', 
-      borderRadius: '16px', 
-      padding: '20px',
-      boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-    }}>
+    <div
+      className=""
+      style={{
+        background: "#FFFFFF",
+        borderRadius: "16px",
+        padding: "20px",
+        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+      }}
+    >
       {passData?.map((item, index) => (
-        <div className="flightDetailCards" key={index} style={{ 
-          border: 'none',
-          marginBottom: '0',
-          paddingBottom: '0',
-          borderBottom: index < passData.length - 1 ? '2px solid #E4E4E7' : 'none'
-        }}>
+        <div
+          className="flightDetailCards"
+          key={index}
+          style={{
+            border: "none",
+            marginBottom: "0",
+            paddingBottom: "0",
+            borderBottom:
+              index < passData.length - 1 ? "2px solid #E4E4E7" : "none",
+          }}
+        >
           <div className="topHalfCardWrap">
             {(() => {
               const segs: any[] = item?.raw?.journey?.[0]?.flightSegments ?? [];
-              const currentSeg = Array.isArray(segs) ? segs[0] : segs?.[0] ?? segs ?? null;
+              const currentSeg = Array.isArray(segs)
+                ? segs[0]
+                : (segs?.[0] ?? segs ?? null);
 
-              const perSegFlightDetail = buildPerSegmentFlightDetail(item?.flight_detail || {}, currentSeg);
+              const perSegFlightDetail = buildPerSegmentFlightDetail(
+                item?.flight_detail || {},
+                currentSeg,
+              );
               // Pass all segments to FlightTimingAndStops for proper multi-segment handling
               const itemForTiming = {
                 ...item,
@@ -214,7 +248,11 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                   journey: [
                     {
                       ...(item.raw?.journey?.[0] || {}),
-                      flightSegments: Array.isArray(segs) ? segs : (segs ? [segs] : []),
+                      flightSegments: Array.isArray(segs)
+                        ? segs
+                        : segs
+                          ? [segs]
+                          : [],
                     },
                   ],
                 },
@@ -232,30 +270,49 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                   durationIcon,
                   seatIcon: SEAT_ICON,
                   entertainmentIcon: PLANE_ICON,
-                }
+                },
               );
 
               return (
-                <div className="" key={`seg-0-${currentSeg?.segmentKey || '0'}`}>
-                  <div className="topHalfCard" style={{
-                    width: '100%',
-                    minHeight: '101px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: '20px 0',
-                    gap: '24px',
-                    background: 'transparent',
-                    borderRadius: '0',
-                    border: 'none',
-                    boxSizing: 'border-box',
-                    marginBottom: '0'
-                  }}>
-                    <div className="fightTitle" style={{ display: 'flex', alignItems: 'center', gap: '1px', minWidth: '201px' }}>
+                <div
+                  className=""
+                  key={`seg-0-${currentSeg?.segmentKey || "0"}`}
+                >
+                  <div
+                    className="topHalfCard"
+                    style={{
+                      width: "100%",
+                      minHeight: "101px",
+                      display: "flex",
+                      alignItems: "center",
+                      padding: "20px 0",
+                      gap: "24px",
+                      background: "transparent",
+                      borderRadius: "0",
+                      border: "none",
+                      boxSizing: "border-box",
+                      marginBottom: "0",
+                    }}
+                  >
+                    <div
+                      className="fightTitle"
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1px",
+                        minWidth: "201px",
+                      }}
+                    >
                       <div className="flightIcon" style={{ flexShrink: 0 }}>
-                        <img 
-                          src={item?.logo || defaultAirlineLogo} 
-                          alt={item?.name || "Airline"} 
-                          style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }}
+                        <img
+                          src={item?.logo || defaultAirlineLogo}
+                          alt={item?.name || "Airline"}
+                          style={{
+                            width: "48px",
+                            height: "48px",
+                            borderRadius: "50%",
+                            objectFit: "cover",
+                          }}
                           onError={(e) => {
                             const target = e.target as HTMLImageElement;
                             target.onerror = null;
@@ -263,19 +320,64 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                           }}
                         />
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "8px",
+                          flex: 1,
+                        }}
+                      >
                         <div className="nameAndDetails">
-                          <h5 style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: '#0F172A', lineHeight: 1.3 }}>{item?.name}</h5>
-                          <p style={{ margin: 0, fontSize: '11px', color: '#64748B', lineHeight: 1.3, marginTop: '2px' }}>
-                            {itemForTiming?.flight_detail?.flight_number} - {itemForTiming?.flight_detail?.flight_class}
+                          <h5
+                            style={{
+                              margin: 0,
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              color: "#0F172A",
+                              lineHeight: 1.3,
+                            }}
+                          >
+                            {item?.name}
+                          </h5>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: "11px",
+                              color: "#64748B",
+                              lineHeight: 1.3,
+                              marginTop: "2px",
+                            }}
+                          >
+                            {itemForTiming?.flight_detail?.flight_number} -{" "}
+                            {itemForTiming?.flight_detail?.flight_class}
                           </p>
                         </div>
-                        
+
                         {visible.length ? (
-                          <div className="featureIcons" style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <div
+                            className="featureIcons"
+                            style={{
+                              display: "flex",
+                              gap: "8px",
+                              flexWrap: "wrap",
+                            }}
+                          >
                             {visible.slice(0, 6).map((f) => (
-                              <div className="featureIconTooltipWrap" key={f.key} style={{ position: 'relative' }}>
-                                <img src={f.icon} alt={f.key} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
+                              <div
+                                className="featureIconTooltipWrap"
+                                key={f.key}
+                                style={{ position: "relative" }}
+                              >
+                                <img
+                                  src={f.icon}
+                                  alt={f.key}
+                                  style={{
+                                    width: "18px",
+                                    height: "18px",
+                                    cursor: "pointer",
+                                  }}
+                                />
                                 <span className="tooltip">{f.label}</span>
                               </div>
                             ))}
@@ -284,19 +386,67 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                       </div>
                     </div>
 
-                    <div className="stopsOnLarge" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div
+                      className="stopsOnLarge"
+                      style={{
+                        flex: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
                       <FlightTimingAndStops passSome={itemForTiming} />
                     </div>
 
                     {/* Price and Button Section - Inline Layout */}
-                    <div className="StartingPrice" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '8px', minWidth: '300px' }}>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#64748B', fontWeight: 400, alignSelf: 'flex-start' }}>Starting from</p>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <h5 style={{ margin: 0, fontSize: '27px', fontWeight: 700, color: '#2351A3', lineHeight: 1, letterSpacing: '-0.5px' }}>
-                          {item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}
+                    <div
+                      className="StartingPrice"
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-end",
+                        gap: "8px",
+                        minWidth: "300px",
+                      }}
+                    >
+                      <p
+                        style={{
+                          margin: 0,
+                          fontSize: "12px",
+                          color: "#64748B",
+                          fontWeight: 400,
+                          alignSelf: "flex-start",
+                        }}
+                      >
+                        Starting from
+                      </p>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "16px",
+                        }}
+                      >
+                        <h5
+                          style={{
+                            margin: 0,
+                            fontSize: "27px",
+                            fontWeight: 700,
+                            color: "#2351A3",
+                            lineHeight: 1,
+                            letterSpacing: "-0.5px",
+                          }}
+                        >
+                          {item?.raw?.fare?.currencyCode ?? "$"}
+                          {item.rawTotalStartingFare}
                         </h5>
                         {/* Show View Details button when tabs are NOT active */}
-                        {!(active?.id === index && (active?.name === "price" || active?.name === "flight" || active?.name === "compare")) && (
+                        {!(
+                          active?.id === index &&
+                          (active?.name === "price" ||
+                            active?.name === "flight" ||
+                            active?.name === "compare")
+                        ) && (
                           <button
                             onClick={() => {
                               HandlePriceOption({ id: item.id });
@@ -307,27 +457,31 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                               }));
                             }}
                             style={{
-                              width: '150px',
-                              height: '47px',
-                              borderRadius: '100px',
-                              padding: '14px 25px',
-                              background: 'linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)',
-                              color: '#FFFFFF',
-                              fontSize: '15px',
+                              width: "150px",
+                              height: "47px",
+                              borderRadius: "100px",
+                              padding: "14px 25px",
+                              background:
+                                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                              color: "#FFFFFF",
+                              fontSize: "15px",
                               fontWeight: 600,
-                              border: 'none',
-                              cursor: 'pointer',
-                              boxShadow: '0 4px 12px rgba(35, 81, 163, 0.3)',
-                              transition: 'all 0.2s ease',
-                              flexShrink: 0
+                              border: "none",
+                              cursor: "pointer",
+                              boxShadow: "0 4px 12px rgba(35, 81, 163, 0.3)",
+                              transition: "all 0.2s ease",
+                              flexShrink: 0,
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 6px 16px rgba(35, 81, 163, 0.4)';
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 6px 16px rgba(35, 81, 163, 0.4)";
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(35, 81, 163, 0.3)';
+                              e.currentTarget.style.transform = "translateY(0)";
+                              e.currentTarget.style.boxShadow =
+                                "0 4px 12px rgba(35, 81, 163, 0.3)";
                             }}
                           >
                             View details
@@ -336,78 +490,88 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                         {/* Show Book Now button when Price options tab is active */}
                         {active?.id === index && active?.name === "price" && (
                           <button
-                            onClick={() => handleOfferSelection(item?.offerId, item)}
+                            onClick={() =>
+                              handleOfferSelection(item?.offerId, item)
+                            }
                             style={{
-                              width: '130px',
-                              height: '47px',
-                              background: 'linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)',
-                              borderRadius: '100px',
-                              padding: '14px 25px',
-                              gap: '10px',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              border: 'none',
-                              cursor: 'pointer',
-                              color: '#FFFFFF',
-                              fontSize: '14px',
+                              width: "130px",
+                              height: "47px",
+                              background:
+                                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                              borderRadius: "100px",
+                              padding: "14px 25px",
+                              gap: "10px",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: "none",
+                              cursor: "pointer",
+                              color: "#FFFFFF",
+                              fontSize: "14px",
                               fontWeight: 600,
-                              transition: 'all 0.3s ease',
-                              boxShadow: '0 2px 8px rgba(35, 81, 163, 0.3)',
-                              flexShrink: 0
+                              transition: "all 0.3s ease",
+                              boxShadow: "0 2px 8px rgba(35, 81, 163, 0.3)",
+                              flexShrink: 0,
                             }}
                             onMouseEnter={(e) => {
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                              e.currentTarget.style.boxShadow = '0 6px 16px rgba(35, 81, 163, 0.4)';
+                              e.currentTarget.style.transform =
+                                "translateY(-2px)";
+                              e.currentTarget.style.boxShadow =
+                                "0 6px 16px rgba(35, 81, 163, 0.4)";
                             }}
                             onMouseLeave={(e) => {
-                              e.currentTarget.style.transform = 'translateY(0)';
-                              e.currentTarget.style.boxShadow = '0 2px 8px rgba(35, 81, 163, 0.3)';
+                              e.currentTarget.style.transform = "translateY(0)";
+                              e.currentTarget.style.boxShadow =
+                                "0 2px 8px rgba(35, 81, 163, 0.3)";
                             }}
                           >
                             Book Now
                           </button>
                         )}
                         {/* Show Less Details button when Flight details or Compare tab is active */}
-                        {active?.id === index && (active?.name === "flight" || active?.name === "compare") && (
-                          <button
-                            onClick={() => {
-                              setActive((prev) => ({
-                                ...prev,
-                                name: "",
-                                id: -1,
-                              }));
-                            }}
-                            style={{
-                              width: '143px',
-                              height: '47px',
-                              borderRadius: '100px',
-                              padding: '14px 25px',
-                              gap: '10px',
-                              background: '#FFFFFF',
-                              color: '#2351A3',
-                              fontSize: '14px',
-                              fontWeight: 600,
-                              border: '2px solid #2351A3',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              transition: 'all 0.2s ease',
-                              flexShrink: 0
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.background = '#F1F5F9';
-                              e.currentTarget.style.transform = 'translateY(-2px)';
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.background = '#FFFFFF';
-                              e.currentTarget.style.transform = 'translateY(0)';
-                            }}
-                          >
-                            Less Details
-                          </button>
-                        )}
+                        {active?.id === index &&
+                          (active?.name === "flight" ||
+                            active?.name === "compare") && (
+                            <button
+                              onClick={() => {
+                                setActive((prev) => ({
+                                  ...prev,
+                                  name: "",
+                                  id: -1,
+                                }));
+                              }}
+                              style={{
+                                width: "143px",
+                                height: "47px",
+                                borderRadius: "100px",
+                                padding: "14px 25px",
+                                gap: "10px",
+                                background: "#FFFFFF",
+                                color: "#2351A3",
+                                fontSize: "14px",
+                                fontWeight: 600,
+                                border: "2px solid #2351A3",
+                                cursor: "pointer",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                transition: "all 0.2s ease",
+                                flexShrink: 0,
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = "#F1F5F9";
+                                e.currentTarget.style.transform =
+                                  "translateY(-2px)";
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = "#FFFFFF";
+                                e.currentTarget.style.transform =
+                                  "translateY(0)";
+                              }}
+                            >
+                              Less Details
+                            </button>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -421,102 +585,134 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
           </div>
 
           {/* Only show tabs and content when View details is clicked */}
-          {(active?.name === "price" || active?.name === "flight" || active?.name === "compare") && active?.id === index && (
-            <div className="bottomHalfCard">
-              <div className="bottomHalfCardflexStyle">
-                <div className="modalOptions">
-                  <div className="tabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-                  <div
-                    className={`tab ${active?.name === "price" && active?.id === index ? "active" : ""}`}
-                    onClick={() => {
-                      HandlePriceOption({ id: item.id });
-                      setActive((prev) => ({
-                        ...prev,
-                        name: "price",
-                        id: index,
-                      }));
-                    }}
-                    style={{
-                      width: '105px',
-                      height: '35px',
-                      borderTopLeftRadius: '16px',
-                      borderTopRightRadius: '16px',
-                      borderBottomLeftRadius: '0',
-                      borderBottomRightRadius: '0',
-                      background: active?.name === "price" && active?.id === index ? '#2351A3' : '#F1F5F9',
-                      color: active?.name === "price" && active?.id === index ? '#FFFFFF' : '#64748B',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      border: 'none',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    Price options
-                  </div>
-                  <div
-                    className={`tab ${active?.name === "flight" && active?.id === index ? "active" : ""}`}
-                    onClick={() => {
-                      HandlePriceOption({ id: item.id });
-                      setActive((prev) => ({
-                        ...prev,
-                        name: "flight",
-                        id: index,
-                      }));
-                    }}
-                    style={{
-                      width: '105px',
-                      height: '35px',
-                      borderTopLeftRadius: '16px',
-                      borderTopRightRadius: '16px',
-                      borderBottomLeftRadius: '0',
-                      borderBottomRightRadius: '0',
-                      background: active?.name === "flight" && active?.id === index ? '#2351A3' : '#F1F5F9',
-                      color: active?.name === "flight" && active?.id === index ? '#FFFFFF' : '#64748B',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      border: 'none',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    Flight details
-                  </div>
-                  <div
-                    className={`tab ${active?.name === "compare" && active?.id === index ? "active" : ""}`}
-                    onClick={() => {
-                      HandleCompareOption({ id: item.id });
-                      setActive((prev) => ({ ...prev, name: "compare", id: index }));
-                    }}
-                    style={{
-                      width: '105px',
-                      height: '35px',
-                      borderTopLeftRadius: '16px',
-                      borderTopRightRadius: '16px',
-                      borderBottomLeftRadius: '0',
-                      borderBottomRightRadius: '0',
-                      background: active?.name === "compare" && active?.id === index ? '#2351A3' : '#F1F5F9',
-                      color: active?.name === "compare" && active?.id === index ? '#FFFFFF' : '#64748B',
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      border: 'none',
-                      transition: 'all 0.2s ease',
-                    }}
-                  >
-                    Compare
-                  </div>
-                </div>
-                {/* <p
+          {(active?.name === "price" ||
+            active?.name === "flight" ||
+            active?.name === "compare") &&
+            active?.id === index && (
+              <div className="bottomHalfCard">
+                <div className="bottomHalfCardflexStyle">
+                  <div className="modalOptions">
+                    <div
+                      className="tabs"
+                      style={{
+                        display: "flex",
+                        gap: "8px",
+                        marginBottom: "16px",
+                      }}
+                    >
+                      <div
+                        className={`tab ${active?.name === "price" && active?.id === index ? "active" : ""}`}
+                        onClick={() => {
+                          HandlePriceOption({ id: item.id });
+                          setActive((prev) => ({
+                            ...prev,
+                            name: "price",
+                            id: index,
+                          }));
+                        }}
+                        style={{
+                          width: "105px",
+                          height: "35px",
+                          borderTopLeftRadius: "16px",
+                          borderTopRightRadius: "16px",
+                          borderBottomLeftRadius: "0",
+                          borderBottomRightRadius: "0",
+                          background:
+                            active?.name === "price" && active?.id === index
+                              ? "#2351A3"
+                              : "#F1F5F9",
+                          color:
+                            active?.name === "price" && active?.id === index
+                              ? "#FFFFFF"
+                              : "#64748B",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          border: "none",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        Price options
+                      </div>
+                      <div
+                        className={`tab ${active?.name === "flight" && active?.id === index ? "active" : ""}`}
+                        onClick={() => {
+                          HandlePriceOption({ id: item.id });
+                          setActive((prev) => ({
+                            ...prev,
+                            name: "flight",
+                            id: index,
+                          }));
+                        }}
+                        style={{
+                          width: "105px",
+                          height: "35px",
+                          borderTopLeftRadius: "16px",
+                          borderTopRightRadius: "16px",
+                          borderBottomLeftRadius: "0",
+                          borderBottomRightRadius: "0",
+                          background:
+                            active?.name === "flight" && active?.id === index
+                              ? "#2351A3"
+                              : "#F1F5F9",
+                          color:
+                            active?.name === "flight" && active?.id === index
+                              ? "#FFFFFF"
+                              : "#64748B",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          border: "none",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        Flight details
+                      </div>
+                      <div
+                        className={`tab ${active?.name === "compare" && active?.id === index ? "active" : ""}`}
+                        onClick={() => {
+                          HandleCompareOption({ id: item.id });
+                          setActive((prev) => ({
+                            ...prev,
+                            name: "compare",
+                            id: index,
+                          }));
+                        }}
+                        style={{
+                          width: "105px",
+                          height: "35px",
+                          borderTopLeftRadius: "16px",
+                          borderTopRightRadius: "16px",
+                          borderBottomLeftRadius: "0",
+                          borderBottomRightRadius: "0",
+                          background:
+                            active?.name === "compare" && active?.id === index
+                              ? "#2351A3"
+                              : "#F1F5F9",
+                          color:
+                            active?.name === "compare" && active?.id === index
+                              ? "#FFFFFF"
+                              : "#64748B",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          border: "none",
+                          transition: "all 0.2s ease",
+                        }}
+                      >
+                        Compare
+                      </div>
+                    </div>
+                    {/* <p
                   className="compareLikeButton"
                   onClick={() => {
                     showModalCompare({ modalType: "compare", id: undefined });
@@ -524,7 +720,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 >
                   Compare
                 </p> */}
-                {/* <img
+                    {/* <img
                   src={colSeparater}
                   alt=""
                   style={{ width: 1, height: 30 }}
@@ -537,45 +733,66 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 >
                   Share
                 </p> */}
-              </div>
-              <div className="selectPriceBtn flex items-center gap-2">
-                {(() => {
-                  const segs = item?.raw?.journey?.[0]?.flightSegments ?? [];
-                  const currentSeg = Array.isArray(segs) ? segs[0] : segs?.[0] ?? segs ?? null;
-                  const marketingAirline = currentSeg?.marketingAirline;
-                  const highDemandInfo = getHighDemandInfo(marketingAirline);
+                  </div>
+                  <div className="selectPriceBtn flex items-center gap-2">
+                    {item.offerViewCount > 0 && (
+                      <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
+                        <img src={offerViewIcon} alt="icon" className="mr-1" />
+                        {item.offerViewCount} People viewing this
+                      </div>
+                    )}
+                    {(() => {
+                      const segs =
+                        item?.raw?.journey?.[0]?.flightSegments ?? [];
+                      const currentSeg = Array.isArray(segs)
+                        ? segs[0]
+                        : (segs?.[0] ?? segs ?? null);
+                      const marketingAirline = currentSeg?.marketingAirline;
+                      const highDemandInfo =
+                        getHighDemandInfo(marketingAirline);
 
-                  return highDemandInfo ? (
-                    <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
-                      <img src={highDemandIcon} alt="icon" className="w-3 h-3 mr-1" />
-                      High-demand
-                      {/* High-demand ({highDemandInfo.totalCounts}) */}
-                    </div>
-                  ) : null;
-                })()}
-                {/* <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>
+                      return highDemandInfo ? (
+                        <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
+                          <img
+                            src={highDemandIcon}
+                            alt="icon"
+                            className="w-3 h-3 mr-1"
+                          />
+                          High-demand
+                          {/* High-demand ({highDemandInfo.totalCounts}) */}
+                        </div>
+                      ) : null;
+                    })()}
+                    {/* <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>
                   Select Price
                 </CustomButton> */}
+                  </div>
+                </div>
+                <React.Suspense
+                  fallback={
+                    <div className="tab-loading-placeholder">Loading…</div>
+                  }
+                >
+                  {active?.name == "price" && active?.id == index ? (
+                    <PricingDetailCard passSome={filterDetail} />
+                  ) : active?.name == "flight" && active?.id == index ? (
+                    <FlightDetailsCard details={item} />
+                  ) : active?.name == "compare" && active?.id == index ? (
+                    <CompareCard
+                      currentFlight={mapOfferForCompareOneWay(item)}
+                      availableFlights={pickRandomFlightsForCompare(
+                        passData || [],
+                        item.id,
+                        4,
+                        mapOfferForCompareOneWay,
+                      )}
+                    />
+                  ) : (
+                    ""
+                  )}
+                </React.Suspense>
               </div>
-            </div>
-            <React.Suspense
-              fallback={<div className="tab-loading-placeholder">Loading…</div>}
-            >
-              {active?.name == "price" && active?.id == index ? (
-                <PricingDetailCard passSome={filterDetail} />
-              ) : active?.name == "flight" && active?.id == index ? (
-                <FlightDetailsCard details={item} />
-              ) : active?.name == "compare" && active?.id == index ? (
-                <CompareCard
-                  currentFlight={mapOfferForCompareOneWay(item)}
-                  availableFlights={pickRandomFlightsForCompare(passData || [], item.id, 4, mapOfferForCompareOneWay)}
-                />
-              ) : (
-                ""
-              )}
-            </React.Suspense>
-            </div>
-          )}
+            )}
         </div>
       ))}
 
@@ -598,19 +815,19 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 fill="white"
               />
             </svg>
-              </div>
-              <div className="textSection">
-                <h5>Keep me posted about this search</h5>
-                <p>
-                  Get important updates about price alerts, weather alerts and other
-                  updates in your inbox
-                </p>
-              </div>
-            </div>
-            <div>
-              <Switch defaultChecked onChange={radioReminder} />
-            </div>
           </div>
+          <div className="textSection">
+            <h5>Keep me posted about this search</h5>
+            <p>
+              Get important updates about price alerts, weather alerts and other
+              updates in your inbox
+            </p>
+          </div>
+        </div>
+        <div>
+          <Switch defaultChecked onChange={radioReminder} />
+        </div>
+      </div>
 
       <Modal
         title={
@@ -816,7 +1033,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 </div>
                 <div className="StartingPrice">
                   <p>Start from</p>
-                  <h5>{item?.raw?.fare?.currencyCode ?? "$"}{item.rawTotalStartingFare}/per seat</h5>
+                  <h5>
+                    {item?.raw?.fare?.currencyCode ?? "$"}
+                    {item.rawTotalStartingFare}/per seat
+                  </h5>
                 </div>
               </div>
             </div>

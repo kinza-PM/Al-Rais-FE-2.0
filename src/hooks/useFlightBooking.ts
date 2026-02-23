@@ -3,6 +3,7 @@ import {
   postAncillaryBooking,
   postFlightAncillarySearch,
   postFlightFareRuleSearch,
+  postFlightIngestView,
   postFlightReservationBooking,
   postInitialFlightProvBooking,
   postRetrieveFlightBooking,
@@ -11,6 +12,7 @@ import {
   type FlightAncillaryBooking,
   type FlightAncillarySearch,
   type FlightFareRuleSearch,
+  type FlightIngestView,
   type FlightInitialBooking,
   type FlightReservationBooking,
   type RetrieveFlightBooking,
@@ -34,6 +36,12 @@ export function useFlightAncillaryBooking() {
 export function useFlightFareRuleSearch() {
   return useMutation({
     mutationFn: (body: FlightFareRuleSearch) => postFlightFareRuleSearch(body),
+  });
+}
+
+export function useFlightIngestView() {
+  return useMutation({
+    mutationFn: (body: FlightIngestView) => postFlightIngestView(body),
   });
 }
 
