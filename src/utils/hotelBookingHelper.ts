@@ -178,12 +178,39 @@ export type HotelPassengerFieldErrors = Record<
 
 export function validateHotelBookingPassengersFields(
   payload: HotelBookingPayload,
+  options?: {
+    /**
+     * Expected child ages per room (distributed same as search),
+     * e.g. [[5], [7, 9]] => room 0 has one child age 5, room 1 has two children 7 & 9.
+     */
+    childAgesPerRoom?: number[][];
+    /**
+     * Reference date to calculate age (typically check-in date).
+     * Falls back to today's date when not provided.
+     */
+    checkInDate?: string;
+  },
 ): HotelPassengerFieldErrors {
   const errors: HotelPassengerFieldErrors = {};
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  const referenceDate = (() => {
+    if (options?.checkInDate) {
+      const d = new Date(options.checkInDate);
+      if (!Number.isNaN(d.getTime())) {
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+    }
+    return today;
+  })();
+
   const isEmpty = (v: any) =>
     v === undefined || v === null || String(v).trim() === "";
+
+  const expectedChildAgesPerRoom = options?.childAgesPerRoom ?? [];
+  const childIndexByRoom: Record<number, number> = {};
 
   payload.rooms.forEach((room, roomIdx) => {
     room.passengers.forEach((p, pIdx) => {
@@ -221,7 +248,8 @@ export function validateHotelBookingPassengersFields(
             "Birth date cannot be in the future.";
         } else {
           const ageYears =
-            (today.getTime() - bdDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+            (referenceDate.getTime() - bdDate.getTime()) /
+            (365.25 * 24 * 60 * 60 * 1000);
           const ptc = (p?.ptc ?? "ADT").toUpperCase();
           if (ptc === "CHD") {
             if (ageYears < 2 || ageYears > 12) {
@@ -233,6 +261,33 @@ export function validateHotelBookingPassengersFields(
               passengerErrors["passengerInfo.birthDate"] =
                 "Adult must be older than 12 years.";
             }
+          }
+          console.log(
+            "expectedChildAgesPerRoom.length",
+            expectedChildAgesPerRoom.length,
+            expectedChildAgesPerRoom,
+          );
+          // Extra validation for children: age must match the age used at search time (per room)
+          if (ptc === "CHD" && expectedChildAgesPerRoom.length > 0) {
+            const currentChildIndex =
+              childIndexByRoom[roomIdx] !== undefined
+                ? childIndexByRoom[roomIdx]
+                : 0;
+            console.log("currentChildIndex", currentChildIndex);
+            const expectedAge =
+              expectedChildAgesPerRoom[roomIdx]?.[currentChildIndex];
+            console.log("expectedAge", expectedChildAgesPerRoom[roomIdx]);
+            if (typeof expectedAge === "number") {
+              const roundedAge = Math.floor(ageYears);
+              if (roundedAge !== expectedAge) {
+                passengerErrors["passengerInfo.birthDate"] =
+                  `Child age must match selected age (${expectedAge} years).`;
+              }
+            }
+          }
+
+          if ((p?.ptc ?? "").toUpperCase() === "CHD") {
+            childIndexByRoom[roomIdx] = (childIndexByRoom[roomIdx] ?? 0) + 1;
           }
         }
       }

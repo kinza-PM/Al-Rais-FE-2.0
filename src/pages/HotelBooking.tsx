@@ -102,6 +102,46 @@ const HotelBooking = () => {
   }, [preBookCheckIn, preBookCheckOut, bookingParams?.checkIn, bookingParams?.checkOut]);
 
   const pax = bookingParams?.paxData;
+  const selectedRooms = state.selectedRooms ?? [];
+  console.log(bookingParams)
+  // Child ages distribution per room (same logic as hotel search convertPaxToRoom)
+  const rawChildAges = (bookingParams as any)?.childAges ?? [];
+  const childAgesPerRoom: number[][] = useMemo(() => {
+    const totalChildren = (pax?.children ?? 0) + (pax?.kids ?? 0);
+    if (!totalChildren) return [];
+
+    const roomsCount =
+      (Array.isArray(selectedRooms) && selectedRooms.length > 0
+        ? selectedRooms.length
+        : pax?.rooms) || 1;
+
+    const agesFlat: number[] = rawChildAges
+      .filter((age: any): age is number => age !== null && age !== undefined)
+      .slice(0, totalChildren);
+
+    const baseChildrenPerRoom = Math.floor(totalChildren / roomsCount);
+    const extraChildren = totalChildren % roomsCount;
+
+    const result: number[][] = [];
+    let idx = 0;
+
+    for (let i = 0; i < roomsCount; i++) {
+      const childrenInRoom = Math.min(
+        baseChildrenPerRoom + (i < extraChildren ? 1 : 0),
+        2,
+      );
+      const roomAges: number[] = [];
+      for (let j = 0; j < childrenInRoom; j++) {
+        if (idx < agesFlat.length) {
+          roomAges.push(agesFlat[idx]);
+          idx += 1;
+        }
+      }
+      result.push(roomAges);
+    }
+
+    return result;
+  }, [pax, selectedRooms, rawChildAges]);
 
   // Prepare booking info (prefer preBook dates; fallback to bookingParams/state)
   const bookingInfo = useMemo(
@@ -119,7 +159,6 @@ const HotelBooking = () => {
   );
 
   const hotelDetail = state.hotelDetail || {};
-  const selectedRooms = state.selectedRooms ?? [];
   const preBookHotel = preBookData?.data?.[0]?.hotel;
   const totalPrice =
     preBookHotel?.totalNet ?? state.totalPrice ?? 0;
@@ -290,6 +329,8 @@ const HotelBooking = () => {
               hotelBookingPayload={hotelBookingPayload}
               onPassengerFieldChange={updatePassengerField}
               onNext={handleBookSectionContinue}
+              childAgesPerRoom={childAgesPerRoom}
+              checkInDate={effectiveCheckIn}
               countries={countriesOptions ?? []}
               hotelDetail={hotelDetail}
               bookingInfo={bookingInfo}
@@ -303,6 +344,10 @@ const HotelBooking = () => {
               onNext={() => {
                 setCurrentStep(2);
               }}
+              onPrevious={() => {
+                setCurrentStep(0);
+              }}
+              hotelBookingPayload={hotelBookingPayload}
               hotelDetail={hotelDetail}
               bookingInfo={bookingInfo}
               selectedRooms={selectedRooms}

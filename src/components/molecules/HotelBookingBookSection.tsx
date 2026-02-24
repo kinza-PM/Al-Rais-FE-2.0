@@ -38,6 +38,15 @@ type HotelBookingBookSectionProps = {
   selectedRooms?: any[];
   totalPrice?: number;
   currency?: string;
+  /**
+   * Expected child ages per room (distributed same as hotel search).
+   * Example: [[5], [7, 9]] => room 0 has one child aged 5; room 1 has two children aged 7 & 9.
+   */
+  childAgesPerRoom?: number[][];
+  /**
+   * Check-in date used as reference for child age validation.
+   */
+  checkInDate?: string;
 };
 
 export default function HotelBookingBookSection({
@@ -50,6 +59,8 @@ export default function HotelBookingBookSection({
   selectedRooms = [],
   totalPrice = 0,
   currency = "AED",
+  childAgesPerRoom,
+  checkInDate,
 }: HotelBookingBookSectionProps) {
   const [validationErrors, setValidationErrors] =
     useState<HotelPassengerFieldErrors>({});
@@ -103,8 +114,13 @@ export default function HotelBookingBookSection({
 
   const handleContinue = async () => {
     setHasAttemptedValidation(true);
-    const fieldErrors =
-      validateHotelBookingPassengersFields(hotelBookingPayload);
+    const fieldErrors = validateHotelBookingPassengersFields(
+      hotelBookingPayload,
+      {
+        childAgesPerRoom: childAgesPerRoom ?? [],
+        checkInDate: checkInDate,
+      },
+    );
     setValidationErrors(fieldErrors);
     const hasErrors = Object.keys(fieldErrors).some(
       (ri) => Object.keys(fieldErrors[Number(ri)] || {}).length > 0,
