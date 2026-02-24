@@ -32,6 +32,7 @@ export type FlightAncillarySearch = {
 
 export type FlightFareRuleSearch = {
   offerId: string;
+  searchKey: string;
 };
 
 export type FlightIngestView = {
@@ -44,6 +45,7 @@ export type UserProfileMyBooking = {
 
 export type RetrieveFlightBooking = {
   offerId: string;
+  searchKey: string;
 };
 
 export type FlightReservationBooking = {

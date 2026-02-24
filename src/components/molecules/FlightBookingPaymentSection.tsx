@@ -389,7 +389,10 @@ export default function FlightBookingPaymentSection({
         case "FETCH LATER":
           setIsPolling(true);
           timeoutRef.current = setTimeout(() => {
-            retrieveFlightBooking(reservationWithToken.offerId);
+            retrieveFlightBooking(
+              reservationWithToken.offerId,
+              reservationWithToken.searchKey,
+            );
           }, 110000);
           break;
 
@@ -404,10 +407,11 @@ export default function FlightBookingPaymentSection({
   };
 
   // Retrieve flight booking - separate function
-  const retrieveFlightBooking = async (offerId: string) => {
+  const retrieveFlightBooking = async (offerId: string, searchKey: string) => {
     try {
       const retrieveFlightResponse = await retrieveFlightBookingMutateAsync({
         offerId,
+        searchKey,
       });
       if (
         retrieveFlightResponse?.meta?.success &&
@@ -528,7 +532,9 @@ export default function FlightBookingPaymentSection({
               ].join(" ")}
               overrideClasses
             >
-              <span className="text-[12px] font-semibold text-center px-2">Pay with card</span>
+              <span className="text-[12px] font-semibold text-center px-2">
+                Pay with card
+              </span>
             </Button>
 
             {/* Apple Pay */}
@@ -545,7 +551,11 @@ export default function FlightBookingPaymentSection({
               ].join(" ")}
               overrideClasses
             >
-              <img src={applePay} alt="Apple Pay" className="h-auto w-full object-contain" />
+              <img
+                src={applePay}
+                alt="Apple Pay"
+                className="h-auto w-full object-contain"
+              />
             </Button>
 
             {/* Google Pay */}
@@ -562,29 +572,47 @@ export default function FlightBookingPaymentSection({
               ].join(" ")}
               overrideClasses
             >
-              <img src={googlePay} alt="Google Pay" className="h-auto w-full object-contain" />
+              <img
+                src={googlePay}
+                alt="Google Pay"
+                className="h-auto w-full object-contain"
+              />
             </Button>
 
             {/* Tabby */}
             <Button
               type="button"
-              style={{ width: '103px', height: '65px' }}
+              style={{ width: "103px", height: "65px" }}
               className="flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 rounded-[6px] border-[1.5px] border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm p-3 focus:outline-none"
               overrideClasses
             >
-              <img src={Tabby} alt="Tabby" style={{ width: '40px', height: '16px' }} className="object-contain" />
-              <span className="text-[9px] text-[#64748B] text-center">Buy now pay later</span>
+              <img
+                src={Tabby}
+                alt="Tabby"
+                style={{ width: "40px", height: "16px" }}
+                className="object-contain"
+              />
+              <span className="text-[9px] text-[#64748B] text-center">
+                Buy now pay later
+              </span>
             </Button>
 
             {/* Tamara */}
             <Button
               type="button"
-              style={{ width: '103px', height: '65px' }}
+              style={{ width: "103px", height: "65px" }}
               className="flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 rounded-[6px] border-[1.5px] border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm p-3 focus:outline-none"
               overrideClasses
             >
-              <img src={Tamara} alt="Tamara" style={{ width: '40px', height: '16px' }} className="object-contain" />
-              <span className="text-[9px] text-[#64748B] text-center">Buy now pay later</span>
+              <img
+                src={Tamara}
+                alt="Tamara"
+                style={{ width: "40px", height: "16px" }}
+                className="object-contain"
+              />
+              <span className="text-[9px] text-[#64748B] text-center">
+                Buy now pay later
+              </span>
             </Button>
           </div>
         </div>
@@ -892,13 +920,13 @@ export default function FlightBookingPaymentSection({
         />
 
         <div className="mt-16 px-5 flex flex-col items-center">
-        <Button
-  type="button"
-  style={{
-    background:
-      "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-  }}
-  className={`
+          <Button
+            type="button"
+            style={{
+              background:
+                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+            }}
+            className={`
     w-[252px]
     h-[47px]
     rounded-[100px]
@@ -911,35 +939,34 @@ export default function FlightBookingPaymentSection({
     transition-all duration-300
     ${isPayButtonLoading ? "cursor-not-allowed opacity-90" : ""}
   `}
-  overrideClasses
-  disabled={isPayButtonLoading}
-  onClick={generatePayfortPaymentTokenization}
->
-  {isPayButtonLoading && (
-    <svg
-      className="h-5 w-5 animate-spin"
-      viewBox="0 0 24 24"
-      fill="none"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="white"
-        strokeWidth="3"
-      />
-      <path
-        className="opacity-90"
-        fill="white"
-        d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
-      />
-    </svg>
-  )}
+            overrideClasses
+            disabled={isPayButtonLoading}
+            onClick={generatePayfortPaymentTokenization}
+          >
+            {isPayButtonLoading && (
+              <svg
+                className="h-5 w-5 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="white"
+                  strokeWidth="3"
+                />
+                <path
+                  className="opacity-90"
+                  fill="white"
+                  d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                />
+              </svg>
+            )}
 
-  <span>{getPayButtonText()}</span>
-</Button>
-
+            <span>{getPayButtonText()}</span>
+          </Button>
 
           <div className="mt-6 text-center text-[12px] text-[#3D495C]">
             Secure payments by Al Rais • Terms • Privacy

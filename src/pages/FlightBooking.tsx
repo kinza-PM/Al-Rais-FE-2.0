@@ -348,7 +348,10 @@ const FlightBooking = () => {
 
     if (!offerData?.offerId) return;
     try {
-      const response = await mutateAsync({ offerId: offerData?.offerId });
+      const response = await mutateAsync({
+        offerId: offerData?.offerId,
+        searchKey: offerData?.searchKey,
+      });
       const rules = response?.data?.[0]?.bookingRules ?? null;
       setFareBookingSearchRules(rules);
     } catch (error) {
