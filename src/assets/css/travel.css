@@ -771,7 +771,7 @@ input[type="number"] {
   padding: 0px;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
-  border: 1px solid var(--white-300, #e4e4e7);
+  /* border: 1px solid var(--white-300, #e4e4e7); */
   border-top: none;
 }
 
@@ -826,8 +826,14 @@ input[type="number"] {
   margin-bottom: 15px;
 }
 
+/* For round-trip/multi-segment flight cards adjust bottom spacing and hide overflow */
+.flightDetailCards.flightDetailRoundTripCards {
+  margin-bottom: -33px !important;
+  overflow: hidden;
+}
+
 .flightDetailRoundTripCards {
-  border: 1px solid var(--white-300, #e4e4e7);
+  /* border: 1px solid var(--white-300, #e4e4e7); */
   border-radius: 12px;
 }
 
@@ -1424,7 +1430,7 @@ img:hover {
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
-  gap: 14px;
+  gap: 11px;
   flex-wrap: wrap;
 }
 

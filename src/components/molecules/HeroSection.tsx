@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import FlightHeroSectionTab from "./FlightHeroSectionTab";
 import HotelHeroSectionTab from "./HotelHeroSectionTab";
 import Celebration from "../../assets/svgs/celebration.svg";
@@ -10,14 +10,10 @@ type Props = {
   onTabChange?: (tab: "flights" | "hotels") => void;
 };
 
-const HeroSection: React.FC<Props> = ({ activeTab, onTabChange }) => {
-  const [internalTab, setInternalTab] = useState<"flights" | "hotels">("flights");
-  const selectedTab = activeTab ?? internalTab;
+const HeroSection: React.FC<Props> = ({ activeTab }) => {
+  const selectedTab = activeTab ?? "flights";
 
-  const handleTabChange = (tab: "flights" | "hotels") => {
-    onTabChange?.(tab);
-    if (!activeTab) setInternalTab(tab);
-  };
+  // Tab changes are controlled by parent via `activeTab` / `onTabChange` when provided.
 
   return (
     <div>
