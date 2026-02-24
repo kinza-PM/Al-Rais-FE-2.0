@@ -131,9 +131,11 @@ export function buildInitialHotelBookingPayload(
     );
   }
 
+  const preBookRooms = preBookData?.data?.[0]?.hotel?.rooms ?? [];
   const rooms = selectedRooms.map((sel, idx) => {
-    const roomIndex = sel.room?.roomIndex ?? idx + 1;
-    const roomKey = sel.roomKey ?? "";
+    const preBookRoom = preBookRooms[idx];
+    const roomIndex = preBookRoom?.roomIndex ?? sel.room?.roomIndex ?? idx + 1;
+    const roomKey = preBookRoom?.roomKey ?? sel.roomKey ?? "";
     const numAdults = perRoomAdults[idx] || 1;
     const numChildren = perRoomChildren[idx] || 0;
     const passengers: any[] = [];
@@ -217,6 +219,21 @@ export function validateHotelBookingPassengersFields(
         if (bdDate > today) {
           passengerErrors["passengerInfo.birthDate"] =
             "Birth date cannot be in the future.";
+        } else {
+          const ageYears =
+            (today.getTime() - bdDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+          const ptc = (p?.ptc ?? "ADT").toUpperCase();
+          if (ptc === "CHD") {
+            if (ageYears < 2 || ageYears > 12) {
+              passengerErrors["passengerInfo.birthDate"] =
+                "Child must be between 2 and 12 years old.";
+            }
+          } else if (ptc === "ADT") {
+            if (ageYears <= 12) {
+              passengerErrors["passengerInfo.birthDate"] =
+                "Adult must be older than 12 years.";
+            }
+          }
         }
       }
       if (isEmpty(email)) {

@@ -81,10 +81,14 @@ const HotelBooking = () => {
     }
   };
 
-  // Calculate total nights from check-in and check-out dates
+  // preBook checkIn/checkOut (used when available - may differ from search)
+  const preBookCheckIn = preBookData?.data?.[0]?.hotel?.checkInDate;
+  const preBookCheckOut = preBookData?.data?.[0]?.hotel?.checkOutDate;
+
+  // Calculate total nights from preBook dates (preferred) or bookingParams
   const totalNights = useMemo(() => {
-    const checkIn = bookingParams?.checkIn;
-    const checkOut = bookingParams?.checkOut;
+    const checkIn = preBookCheckIn || bookingParams?.checkIn;
+    const checkOut = preBookCheckOut || bookingParams?.checkOut;
     if (!checkIn || !checkOut) return 1;
     try {
       const d1 = new Date(checkIn);
@@ -95,15 +99,15 @@ const HotelBooking = () => {
     } catch {
       return 1;
     }
-  }, [bookingParams?.checkIn, bookingParams?.checkOut]);
+  }, [preBookCheckIn, preBookCheckOut, bookingParams?.checkIn, bookingParams?.checkOut]);
 
   const pax = bookingParams?.paxData;
 
-  // Prepare booking info (from bookingParams / state so it works when store was cleared)
+  // Prepare booking info (prefer preBook dates; fallback to bookingParams/state)
   const bookingInfo = useMemo(
     () => ({
-      checkIn: bookingParams?.checkIn || "",
-      checkOut: bookingParams?.checkOut || "",
+      checkIn: preBookCheckIn || bookingParams?.checkIn || "",
+      checkOut: preBookCheckOut || bookingParams?.checkOut || "",
       checkInTime: state.hotelDetail?.checkInTime || "",
       checkOutTime: state.hotelDetail?.checkOutTime || "",
       totalNights,
@@ -111,41 +115,45 @@ const HotelBooking = () => {
       adults: pax?.adults ?? 0,
       children: (pax?.children ?? 0) + (pax?.kids ?? 0),
     }),
-    [bookingParams, state.hotelDetail, totalNights, pax],
+    [preBookCheckIn, preBookCheckOut, bookingParams, state.hotelDetail, totalNights, pax],
   );
 
   const hotelDetail = state.hotelDetail || {};
   const selectedRooms = state.selectedRooms ?? [];
-  const totalPrice = state.totalPrice ?? 0;
-  const currency = state.currency ?? "AED";
+  const preBookHotel = preBookData?.data?.[0]?.hotel;
+  const totalPrice =
+    preBookHotel?.totalNet ?? state.totalPrice ?? 0;
+  const currency = preBookHotel?.currency ?? state.currency ?? "AED";
 
-  // Resolve checkIn/checkOut from multiple sources (state may not have bookingParams)
+  // Use preBook checkIn/checkOut (they may have changed); fallback to state
   const effectiveCheckIn =
+    preBookHotel?.checkInDate ||
     bookingInfo.checkIn ||
-    preBookData?.data?.[0]?.hotel?.checkInDate ||
     selectedRooms[0]?.room?.roomRate?.rates?.[0]?.from ||
     "";
   const effectiveCheckOut =
+    preBookHotel?.checkOutDate ||
     bookingInfo.checkOut ||
-    preBookData?.data?.[0]?.hotel?.checkOutDate ||
     selectedRooms[0]?.room?.roomRate?.rates?.[0]?.to ||
     "";
 
   const [hotelBookingPayload, setHotelBookingPayload] =
     useState<HotelBookingPayload | null>(null);
 
+  const effectiveHotelKey = preBookHotel?.hotelKey ?? state.hotelKey ?? "";
+
   useEffect(() => {
     if (
       selectedRooms.length > 0 &&
       state.searchKey &&
-      state.hotelKey &&
+      effectiveHotelKey &&
       effectiveCheckIn &&
       effectiveCheckOut
     ) {
       const payload = buildInitialHotelBookingPayload(
         preBookData,
         state.searchKey,
-        state.hotelKey,
+        effectiveHotelKey,
         totalPrice,
         currency,
         effectiveCheckIn,
@@ -159,7 +167,7 @@ const HotelBooking = () => {
     preBookData,
     selectedRooms,
     state.searchKey,
-    state.hotelKey,
+    effectiveHotelKey,
     totalPrice,
     currency,
     effectiveCheckIn,

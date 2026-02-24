@@ -20,6 +20,8 @@ type Props = {
   onSearchCountries?: (term: string) => void;
   fromCode?: string;
   toCode?: string;
+  departDateValue?: Date | null;
+  arrivalDateValue?: Date | null;
   onChangeFrom?: (code: string) => void;
   onChangeTo?: (code: string) => void;
   passengerSchema?: PassengerSchema;
@@ -60,14 +62,16 @@ const RoundTripForm: React.FC<Props> = ({
   onSearchCountries,
   fromCode = "",
   toCode = "",
-  onChangeFrom = () => { },
-  onChangeTo = () => { },
+  departDateValue = null,
+  arrivalDateValue = null,
+  onChangeFrom = () => {},
+  onChangeTo = () => {},
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => { },
+  onChangeCabinClassId = () => {},
   onChangePassengers,
   onChangeDepartDate,
   onChangeArrivalDate,
@@ -78,16 +82,20 @@ const RoundTripForm: React.FC<Props> = ({
   passengersError = "",
   cabinClassError = "",
   countriesHasMore = false,
-  countriesFetchNext = () => { },
+  countriesFetchNext = () => {},
   countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   // const arrRef = useRef<HTMLInputElement>(null);
-  const [departDate, setDepartDate] = React.useState<Date | null>(null);
-  const [arrivalDate, setArrivalDate] = React.useState<Date | null>(null);
+  const [departDate, setDepartDate] = React.useState<Date | null>(
+    departDateValue,
+  );
+  const [arrivalDate, setArrivalDate] = React.useState<Date | null>(
+    arrivalDateValue,
+  );
   const [, setPaxCounts] = React.useState<{ [k: string]: number }>({});
   const passengerRequestOrder = React.useRef<string[]>(
-    ((passengerSchema as any[]) || []).map((s: any) => s.key)
+    ((passengerSchema as any[]) || []).map((s: any) => s.key),
   );
 
   const handlePaxChange = React.useCallback(
@@ -98,7 +106,7 @@ const RoundTripForm: React.FC<Props> = ({
       setPaxCounts(next as any);
       onChangePassengers?.(next as any, childOrder || []);
     },
-    [onChangePassengers]
+    [onChangePassengers],
   );
   console.log(passengersError, cabinClassError);
   return (
@@ -231,9 +239,11 @@ const RoundTripForm: React.FC<Props> = ({
           </p>
         )}
         {cabinClassError && (
-          <p className={`absolute top-full left-0 text-[12px] text-[#E65959] ${
-            passengersError ? "mt-6" : "mt-1"
-          }`}>
+          <p
+            className={`absolute top-full left-0 text-[12px] text-[#E65959] ${
+              passengersError ? "mt-6" : "mt-1"
+            }`}
+          >
             {cabinClassError}
           </p>
         )}

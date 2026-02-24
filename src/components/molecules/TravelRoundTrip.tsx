@@ -445,142 +445,187 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 index < passData.length - 1 ? "2px solid #E4E4E7" : "none",
             }}
           >
-            <div className="forBorderBottom" style={{ marginBottom: "16px" }}>
-              {renderRoundTopCard(outbound ?? item, item, true)}
+            <div
+              className="topHalfCardWrap"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "24px",
+                padding: "20px 0",
+              }}
+            >
+              <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+                {renderRoundTopCard(outbound ?? item, item, false)}
+                {inbound && renderRoundTopCard(inbound, item, false)}
+              </div>
 
-              {/* inbound (render only when present) */}
-              {inbound && renderRoundTopCard(inbound, item, false)}
-
-              {/* View details / Book Now / Less Details button */}
+              {/* Price and Button Section - Inline Layout (same as TravelOneWay) */}
               <div
+                className="StartingPrice"
                 style={{
                   display: "flex",
-                  justifyContent: "center",
-                  marginTop: "16px",
+                  flexDirection: "column",
+                  alignItems: "flex-end",
+                  gap: "8px",
+                  minWidth: "300px",
                 }}
               >
-                {/* Show View Details button when tabs are NOT active */}
-                {!(
-                  active?.id === index &&
-                  (active?.name === "price" ||
-                    active?.name === "flight" ||
-                    active?.name === "compare")
-                ) && (
-                  <button
-                    onClick={() => {
-                      HandlePriceOption({ id: item.id });
-                      setActive((prev) => ({
-                        ...prev,
-                        name: "price",
-                        id: index,
-                      }));
-                    }}
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "12px",
+                    color: "#64748B",
+                    fontWeight: 400,
+                    alignSelf: "flex-start",
+                  }}
+                >
+                  Starting from
+                </p>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "16px",
+                  }}
+                >
+                  <h5
                     style={{
-                      width: "150px",
-                      height: "47px",
-                      borderRadius: "100px",
-                      padding: "14px 25px",
-                      background:
-                        "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                      color: "#FFFFFF",
-                      fontSize: "15px",
-                      fontWeight: 600,
-                      border: "none",
-                      cursor: "pointer",
-                      boxShadow: "0 4px 12px rgba(35, 81, 163, 0.3)",
-                      transition: "all 0.2s ease",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 6px 16px rgba(35, 81, 163, 0.4)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow =
-                        "0 4px 12px rgba(35, 81, 163, 0.3)";
+                      margin: 0,
+                      fontSize: "27px",
+                      fontWeight: 700,
+                      color: "#2351A3",
+                      lineHeight: 1,
+                      letterSpacing: "-0.5px",
                     }}
                   >
-                    View details
-                  </button>
-                )}
-                {/* Show Book Now button when Price options tab is active */}
-                {active?.id === index && active?.name === "price" && (
-                  <button
-                    onClick={() => handleOfferSelection(item?.offerId, item)}
-                    style={{
-                      width: "130px",
-                      height: "47px",
-                      background:
-                        "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                      borderRadius: "100px",
-                      padding: "14px 25px",
-                      gap: "10px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "#FFFFFF",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      transition: "all 0.3s ease",
-                      boxShadow: "0 2px 8px rgba(35, 81, 163, 0.3)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.transform = "translateY(-2px)";
-                      e.currentTarget.style.boxShadow =
-                        "0 6px 16px rgba(35, 81, 163, 0.4)";
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "translateY(0)";
-                      e.currentTarget.style.boxShadow =
-                        "0 2px 8px rgba(35, 81, 163, 0.3)";
-                    }}
-                  >
-                    Book Now
-                  </button>
-                )}
-                {/* Show Less Details button when Flight details or Compare tab is active */}
-                {active?.id === index &&
-                  (active?.name === "flight" || active?.name === "compare") && (
+                    {item?.raw?.fare?.currencyCode ?? "$"}
+                    {item.rawTotalStartingFare}
+                  </h5>
+                  {/* Show View Details button when tabs are NOT active */}
+                  {!(
+                    active?.id === index &&
+                    (active?.name === "price" ||
+                      active?.name === "flight" ||
+                      active?.name === "compare")
+                  ) && (
                     <button
                       onClick={() => {
+                        HandlePriceOption({ id: item.id });
                         setActive((prev) => ({
                           ...prev,
-                          name: "",
-                          id: -1,
+                          name: "price",
+                          id: index,
                         }));
                       }}
                       style={{
-                        width: "143px",
+                        width: "150px",
                         height: "47px",
                         borderRadius: "100px",
                         padding: "14px 25px",
-                        gap: "10px",
-                        background: "#FFFFFF",
-                        color: "#2351A3",
-                        fontSize: "14px",
+                        background:
+                          "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                        color: "#FFFFFF",
+                        fontSize: "15px",
                         fontWeight: 600,
-                        border: "2px solid #2351A3",
+                        border: "none",
                         cursor: "pointer",
+                        boxShadow: "0 4px 12px rgba(35, 81, 163, 0.3)",
+                        transition: "all 0.2s ease",
+                        flexShrink: 0,
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 6px 16px rgba(35, 81, 163, 0.4)";
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow =
+                          "0 4px 12px rgba(35, 81, 163, 0.3)";
+                      }}
+                    >
+                      View details
+                    </button>
+                  )}
+                  {active?.id === index && active?.name === "price" && (
+                    <button
+                      onClick={() => handleOfferSelection(item?.offerId, item)}
+                      style={{
+                        width: "130px",
+                        height: "47px",
+                        background:
+                          "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                        borderRadius: "100px",
+                        padding: "14px 25px",
+                        gap: "10px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        transition: "all 0.2s ease",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#FFFFFF",
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        transition: "all 0.3s ease",
+                        boxShadow: "0 2px 8px rgba(35, 81, 163, 0.3)",
+                        flexShrink: 0,
                       }}
                       onMouseEnter={(e) => {
-                        e.currentTarget.style.background = "#F1F5F9";
                         e.currentTarget.style.transform = "translateY(-2px)";
+                        e.currentTarget.style.boxShadow =
+                          "0 6px 16px rgba(35, 81, 163, 0.4)";
                       }}
                       onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "#FFFFFF";
                         e.currentTarget.style.transform = "translateY(0)";
+                        e.currentTarget.style.boxShadow =
+                          "0 2px 8px rgba(35, 81, 163, 0.3)";
                       }}
                     >
-                      Less Details
+                      Book Now
                     </button>
                   )}
+                  {active?.id === index &&
+                    (active?.name === "flight" ||
+                      active?.name === "compare") && (
+                      <button
+                        onClick={() => {
+                          setActive((prev) => ({
+                            ...prev,
+                            name: "",
+                            id: -1,
+                          }));
+                        }}
+                        style={{
+                          width: "143px",
+                          height: "47px",
+                          borderRadius: "100px",
+                          padding: "14px 25px",
+                          gap: "10px",
+                          background: "#FFFFFF",
+                          color: "#2351A3",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          border: "2px solid #2351A3",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          transition: "all 0.2s ease",
+                          flexShrink: 0,
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = "#F1F5F9";
+                          e.currentTarget.style.transform = "translateY(-2px)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = "#FFFFFF";
+                          e.currentTarget.style.transform = "translateY(0)";
+                        }}
+                      >
+                        Less Details
+                      </button>
+                    )}
+                </div>
               </div>
             </div>
 

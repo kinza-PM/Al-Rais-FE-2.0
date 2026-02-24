@@ -1342,8 +1342,8 @@ const FlightDetailTemplate: React.FC = () => {
     setResponseData([]);
     setRoundResponseData([]);
     setMulticityResponseData([]);
-    setDepartDate("");
-    setReturnDate("");
+    // setDepartDate("");
+    // setReturnDate("");
     setSelectedCabinClassId("5");
     setPaxCounts({});
     setHasMore(false);

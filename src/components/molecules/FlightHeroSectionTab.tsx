@@ -23,8 +23,10 @@ const FlightHeroSection: React.FC = () => {
   const [selectedCabinClassId, setSelectedCabinClassId] = useState<string>("5");
   const [paxCounts, setPaxCounts] = useState<Record<string, number>>({});
   const [paxOrder, setPaxOrder] = useState<string[]>([]);
-  const [departDate, setDepartDate] = useState<Date | null>(new Date());
-  const [arrivalDate, setArrivalDate] = useState<Date | null>(new Date());
+  // const [departDate, setDepartDate] = useState<Date | null>(new Date());
+  // const [arrivalDate, setArrivalDate] = useState<Date | null>(new Date());
+  const [departDate, setDepartDate] = useState<Date | null>(null);
+  const [arrivalDate, setArrivalDate] = useState<Date | null>(null);
   const [countriesSearchTerm, setCountriesSearchTerm] = useState<string>("");
   const [multicityLegs, setMulticityLegs] = useState<MultiCityLeg[]>([
     { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
@@ -110,8 +112,8 @@ const FlightHeroSection: React.FC = () => {
     setPaxCounts({});
     setPaxOrder([]);
     setSelectedCabinClassId("5");
-    setDepartDate(null);
-    setArrivalDate(null);
+    // setDepartDate(null);
+    // setArrivalDate(null);
     setCountriesSearchTerm("");
     setMulticityLegs([
       { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
@@ -411,6 +413,7 @@ const FlightHeroSection: React.FC = () => {
                 onSearchCountries={setCountriesSearchTerm}
                 fromCode={fromCode}
                 toCode={toCode}
+                departDateValue={departDate}
                 onChangeFrom={setFromCode}
                 onChangeTo={setToCode}
                 passengerSchema={passengers as PassengerSchema}
@@ -453,6 +456,8 @@ const FlightHeroSection: React.FC = () => {
                 onSearchCountries={setCountriesSearchTerm}
                 fromCode={fromCode}
                 toCode={toCode}
+                departDateValue={departDate}
+                arrivalDateValue={arrivalDate}
                 onChangeFrom={setFromCode}
                 onChangeTo={setToCode}
                 passengerSchema={passengers as PassengerSchema}

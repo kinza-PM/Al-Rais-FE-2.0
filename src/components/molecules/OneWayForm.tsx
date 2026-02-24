@@ -21,6 +21,7 @@ type Props = {
   onSearchCountries?: (term: string) => void;
   fromCode?: string;
   toCode?: string;
+  departDateValue?: Date | null;
   onChangeFrom?: (code: string) => void;
   onChangeTo?: (code: string) => void;
   passengerSchema?: PassengerSchema;
@@ -48,14 +49,15 @@ const OneWayForm: React.FC<Props> = ({
   onSearchCountries,
   fromCode = "",
   toCode = "",
-  onChangeFrom = () => { },
-  onChangeTo = () => { },
+  departDateValue = null,
+  onChangeFrom = () => {},
+  onChangeTo = () => {},
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => { },
+  onChangeCabinClassId = () => {},
   onChangePassengers,
   onChangeDepartDate,
   fromError = "",
@@ -64,11 +66,13 @@ const OneWayForm: React.FC<Props> = ({
   passengersError = "",
   cabinClassError = "",
   countriesHasMore = false,
-  countriesFetchNext = () => { },
+  countriesFetchNext = () => {},
   countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
-  const [departDate, setDepartDate] = React.useState<Date | null>(null);
+  const [departDate, setDepartDate] = React.useState<Date | null>(
+    departDateValue,
+  );
 
   // track pax counts to compute order diffs like FlightDetailTemplate
   const [paxCounts, setPaxCounts] = React.useState<{ [k: string]: number }>({});
@@ -95,7 +99,7 @@ const OneWayForm: React.FC<Props> = ({
           ...Object.keys(paxCounts || {}),
           ...Object.keys(next || {}),
           ...((passengerSchema as any[]) || []).map((s: any) => s.key),
-        ])
+        ]),
       );
       const hasChanged = allKeys.some((k) => {
         const prevCount = (paxCounts as any)?.[k] ?? 0;
@@ -109,14 +113,14 @@ const OneWayForm: React.FC<Props> = ({
       }
 
       const schemaKeys = ((passengerSchema as any[]) || []).map(
-        (s: any) => s.key
+        (s: any) => s.key,
       );
       const keys = Array.from(
         new Set([
           ...Object.keys(prevCountsRef.current || {}),
           ...Object.keys(next),
           ...schemaKeys,
-        ])
+        ]),
       );
       const order = passengerRequestOrder.current.slice();
       for (const k of keys) {
@@ -137,7 +141,7 @@ const OneWayForm: React.FC<Props> = ({
       setPaxCounts(next as any);
       onChangePassengers?.(next as any, order);
     },
-    [passengerSchema, onChangePassengers, paxCounts]
+    [passengerSchema, onChangePassengers, paxCounts],
   );
 
   return (
@@ -233,7 +237,7 @@ const OneWayForm: React.FC<Props> = ({
           errorMessage={
             passengersError ||
             (!loadingPassengers &&
-              (!passengerSchema || passengerSchema.length === 0)
+            (!passengerSchema || passengerSchema.length === 0)
               ? "Passenger types are not available right now. Please try again later."
               : null)
           }

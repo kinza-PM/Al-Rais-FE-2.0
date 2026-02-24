@@ -14,7 +14,7 @@ export function calculateFlightDuration(
   startTime: string,
   startDate: string,
   endTime: string,
-  endDate: string
+  endDate: string,
 ): string {
   // Parse into real Date objects
   const start = new Date(`${startDate} ${startTime}`);
@@ -51,7 +51,7 @@ export function formatDate(dateStr: string) {
 }
 
 export function buildFilterPreferenceForFlightSearchRequest(
-  selectedMaxConnections?: number | null
+  selectedMaxConnections?: number | null,
 ) {
   const maxConnections =
     typeof selectedMaxConnections === "number" ? selectedMaxConnections : 0;
@@ -62,7 +62,7 @@ export function buildFilterPreferenceForFlightSearchRequest(
 export function mapFlightSegment(
   item: any,
   assets: AssetBundle = {},
-  defaultHeading = "Flight"
+  defaultHeading = "Flight",
 ) {
   const fd = item?.flight_detail ?? item ?? {};
 
@@ -249,7 +249,7 @@ export function mapFlightSegment(
         amenity.value !== null &&
         amenity.value !== undefined &&
         String(amenity.value).trim() !== "" &&
-        String(amenity.value).trim() !== "—"
+        String(amenity.value).trim() !== "—",
     ),
     dep: {
       time: depTime,
@@ -270,7 +270,7 @@ export function mapFlightSegment(
 
 export function buildFlightSegmentFromTrip(
   trip: any,
-  assets: AssetBundle = {}
+  assets: AssetBundle = {},
 ) {
   if (!trip) return [];
   const expandBySegments = (part: any, baseLabel: string) => {
@@ -286,12 +286,12 @@ export function buildFlightSegmentFromTrip(
           const journeyLabel = isSingleJourney
             ? "Departure flight"
             : isMulticity
-            ? `Flight ${String(jIdx + 1).padStart(2, "0")}`
-            : jIdx === 0
-            ? "Departure flight"
-            : jIdx === 1
-            ? "Return flight"
-            : `Flight ${String(jIdx + 1).padStart(2, "0")}`;
+              ? `Flight ${String(jIdx + 1).padStart(2, "0")}`
+              : jIdx === 0
+                ? "Departure flight"
+                : jIdx === 1
+                  ? "Return flight"
+                  : `Flight ${String(jIdx + 1).padStart(2, "0")}`;
           segs.forEach((seg: any, sIdx: number) => {
             const partClone = {
               ...part,
@@ -334,7 +334,7 @@ export function buildFlightSegmentFromTrip(
   return expandBySegments(trip, "Departure flight");
 }
 
-export function getPriceCabinClassForFlightSummary(trip: any) {  
+export function getPriceCabinClassForFlightSummary(trip: any) {
   // Handle new structure from pending bookings (trip.raw.fare.fareBreakdown)
   // Original logic for normal bookings (trip.price)
   // if (!trip?.price) return null;
@@ -344,7 +344,11 @@ export function getPriceCabinClassForFlightSummary(trip: any) {
     if (values.length > 0) return values[0];
   }
 
-  if (trip?.raw?.fare?.fareBreakdown && Array.isArray(trip.raw.fare.fareBreakdown) && trip.raw.fare.fareBreakdown.length > 0) {
+  if (
+    trip?.raw?.fare?.fareBreakdown &&
+    Array.isArray(trip.raw.fare.fareBreakdown) &&
+    trip.raw.fare.fareBreakdown.length > 0
+  ) {
     const fareType = trip.raw.fare.fareBreakdown[0]?.fareType;
     if (fareType) {
       // Get cabin class from first segment
@@ -352,10 +356,10 @@ export function getPriceCabinClassForFlightSummary(trip: any) {
       const firstSegment = firstJourney?.flightSegments?.[0];
       const cabinClass = firstSegment?.cabinClass || "Economy";
       const priceClassName = firstSegment?.priceClassName || "Economy";
-      
+
       // Format as "Economy - ECO FLEX" or "Economy - Economy"
       const formattedLabel = `${cabinClass} - ${priceClassName}`;
-      
+
       return {
         _priceClasses: [fareType],
         label: formattedLabel,
@@ -411,7 +415,7 @@ export function formatDateToLocalISO(date: Date | null): string | null {
 }
 
 export function parseLocalDateString(
-  dateStr: string | null | undefined
+  dateStr: string | null | undefined,
 ): Date | null {
   if (!dateStr) return null;
   const [y, m, d] = dateStr.split("-");
@@ -421,7 +425,7 @@ export function parseLocalDateString(
 
 export const formatMoney = (
   value: number | undefined | null,
-  currency = "USD"
+  currency = "USD",
 ) => {
   if (value == null || Number.isNaN(value)) return "—";
   try {
@@ -452,5 +456,29 @@ export const formatTo12Hour = (time?: string) => {
 
 export const filterEmailInput = (value: string): string => {
   // Allow only alphanumeric characters and common email special chars: @ . _ - +
-  return value.replace(/[^a-zA-Z0-9@._+\-]/g, '');
+  return value.replace(/[^a-zA-Z0-9@._+\-]/g, "");
+};
+
+export const timeToMinutes = (time: string): number => {
+  const [h, m] = time.split(":").map(Number);
+  return (h || 0) * 60 + (m || 0);
+};
+
+export const minutesToTime = (minutes: number): string => {
+  const totalMinutes = Math.min(minutes, 1439);
+  const h24 = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  const period = h24 < 12 ? "AM" : "PM";
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return m === 0
+    ? `${h12}${period}`
+    : `${h12}:${m.toString().padStart(2, "0")}${period}`;
+};
+
+export const minutesToHHMM = (minutes: number): string => {
+  const h = Math.floor(minutes / 60)
+    .toString()
+    .padStart(2, "0");
+  const m = (minutes % 60).toString().padStart(2, "0");
+  return `${h}:${m}`;
 };

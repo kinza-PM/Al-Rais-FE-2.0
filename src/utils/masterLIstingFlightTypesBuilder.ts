@@ -150,9 +150,9 @@ export function buildCabinClassOptions(
   return (
     (items || [])
       .filter((i) => i.status === 1 && i.category?.trim())
-      .map((i) => ({ id: i.id, label: i.category.trim() }))
+      .map((i) => ({ id: String(i.id), label: i.category.trim() }))
       // optional stable sort by label
-      .sort((a, b) => a.label.localeCompare(b.label))
+      // .sort((a, b) => a.label.localeCompare(b.label))
   );
 }
 
