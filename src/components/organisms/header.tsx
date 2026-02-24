@@ -165,6 +165,9 @@ import avatarImage from "../../assets/images/aavter.png";
 import FlagUSA from "../../assets/svgs/Flag-usa.svg";
 import FlagUAE from "../../assets/svgs/Flag-uae.svg";
 import FlagIND from "../../assets/svgs/Flag-ind.svg";
+import FlagUSCircle from "../../assets/images/flagofunitedstate.png";
+import BasketIcon from "../../assets/images/Basket.png";
+import CurrencyChevronIcon from "../../assets/images/Icon.png";
 
 const { Header } = Layout;
 
@@ -296,13 +299,13 @@ const AppHeader: React.FC<HeaderProps> = ({
       className="bg-white"
       style={{
         background: "#FFFFFF",
-        padding: "0px 80px",
+        padding: "16px 134px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        borderBottom: "1px solid #E4E4E7",
+        borderBottom: "2px solid #C2CAD6",
         height: "auto",
-        minHeight: "56px",
+        minHeight: "88px",
       }}
     >
       {/* Logo */}
@@ -316,16 +319,16 @@ const AppHeader: React.FC<HeaderProps> = ({
         </Link>
       </div>
 
-      {/* Desktop Navigation */}
-      {!isMobile && isAuthenticated && user && (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      {/* Desktop right controls (Figma-style header) */}
+      {!isMobile && (
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
           {/* Hamburger Menu Button */}
           <button
             onClick={() => setDrawerVisible(true)}
             style={{
-              width: "39px",
-              height: "38px",
-              border: "2px solid #5383DA",
+              width: "50px",
+              height: "50px",
+              border: "1.5px solid #5383DA",
               borderRadius: "16px",
               display: "flex",
               alignItems: "center",
@@ -381,13 +384,14 @@ const AppHeader: React.FC<HeaderProps> = ({
           >
             <button
               style={{
-                height: "38px",
-                padding: "0 12px",
-                border: "2px solid #5383DA",
+                width: "110px",
+                height: "50px",
+                padding: "0 16px",
+                border: "1.5px solid #5383DA",
                 borderRadius: "16px",
                 display: "flex",
                 alignItems: "center",
-                gap: "5px",
+                gap: "6px",
                 backgroundColor: "#FFFFFF",
                 cursor: "pointer",
                 transition: "all 0.2s",
@@ -399,10 +403,15 @@ const AppHeader: React.FC<HeaderProps> = ({
                 e.currentTarget.style.backgroundColor = "#FFFFFF";
               }}
             >
-              <FlagIcon src={FlagUSA} size={18} />
+              <FlagIcon src={FlagUSCircle} size={24} />
               <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>
                 USD
               </span>
+              <img
+                src={CurrencyChevronIcon}
+                alt="Open currency dropdown"
+                style={{ width: "16px", height: "16px", objectFit: "contain", marginLeft: "2px" }}
+              />
             </button>
           </Dropdown>
 
@@ -434,9 +443,10 @@ const AppHeader: React.FC<HeaderProps> = ({
           >
             <button
               style={{
-                height: "38px",
-                padding: "0 12px",
-                border: "2px solid #5383DA",
+                width: "84px",
+                height: "50px",
+                padding: "0 16px",
+                border: "1.5px solid #5383DA",
                 borderRadius: "16px",
                 display: "flex",
                 alignItems: "center",
@@ -452,27 +462,111 @@ const AppHeader: React.FC<HeaderProps> = ({
                 e.currentTarget.style.backgroundColor = "#FFFFFF";
               }}
             >
-              <FlagIcon src={FlagUSA} size={18} />
+              <FlagIcon src={FlagUSCircle} size={24} />
               <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>
                 EN
               </span>
             </button>
           </Dropdown>
 
-          {/* Shopping Cart with Badge */}
+          {/* Auth area: avatar when logged in, Login/Sign up when not */}
+          {isAuthenticated && user ? (
+            <Dropdown menu={userMenu} placement="bottomRight" arrow>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  cursor: "pointer",
+                  padding: "4px 10px",
+                  borderRadius: "8px",
+                  transition: "background-color 0.2s",
+                  marginLeft: "2px",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#F9FAFB";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "transparent";
+                }}
+              >
+                <img
+                  src={avatarImage}
+                  alt="User avatar"
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "2px solid #E4E4E7",
+                  }}
+                />
+                <span
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 500,
+                    color: "#0A0C0F",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Welcome, {user.name?.split("@")[0] || "User"}
+                </span>
+              </div>
+            </Dropdown>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginLeft: "8px" }}>
+              <Button
+                onClick={onLoginClick}
+                overrideClasses
+                className="
+                  h-[47px]
+                  px-[40px]
+                  rounded-[16px]
+                  border-[1.5px]
+                  border-[#5383DA]
+                  text-[#2351A3]
+                  text-[14px]
+                  font-semibold
+                  flex items-center justify-center gap-[10px]
+                  bg-white
+                "
+              >
+                Login
+              </Button>
+              <Button
+                onClick={onSignupClick}
+                overrideClasses
+                className="
+                  h-[47px]
+                  px-[40px]
+                  rounded-[16px]
+                  border-[1.5px]
+                  border-[#5383DA]
+                  text-[#2351A3]
+                  text-[14px]
+                  font-semibold
+                  flex items-center justify-center gap-[10px]
+                  bg-white
+                "
+              >
+                Sign up
+              </Button>
+            </div>
+          )}
+
+          {/* Basket icon after Sign up */}
           <button
             onClick={() => navigate("/cart")}
             style={{
-              width: "39px",
-              height: "38px",
-              border: "2px solid #5383DA",
+              width: "50px",
+              height: "50px",
+              border: "1.5px solid #5383DA",
               borderRadius: "16px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: "#FFFFFF",
               cursor: "pointer",
-              position: "relative",
               transition: "all 0.2s",
             }}
             onMouseEnter={(e) => {
@@ -482,95 +576,14 @@ const AppHeader: React.FC<HeaderProps> = ({
               e.currentTarget.style.backgroundColor = "#FFFFFF";
             }}
           >
-            <ShoppingCartOutlined style={{ fontSize: "16px", color: "#3D495C" }} />
-            <div
-              style={{
-                position: "absolute",
-                top: "-7px",
-                right: "-7px",
-                backgroundColor: "#EA0029",
-                color: "#FFFFFF",
-                fontSize: "10px",
-                fontWeight: 700,
-                borderRadius: "50%",
-                width: "20px",
-                height: "20px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                border: "2px solid #FFFFFF",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-              }}
-            >
-              02
-        </div>
+            <img
+              src={BasketIcon}
+              alt="Cart"
+              style={{ width: "24px", height: "24px", objectFit: "contain" }}
+            />
           </button>
-
-          {/* User Profile with Avatar */}
-            <Dropdown menu={userMenu} placement="bottomRight" arrow>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                gap: "8px",
-                  cursor: "pointer",
-                padding: "4px 10px",
-                borderRadius: "8px",
-                transition: "background-color 0.2s",
-                marginLeft: "2px",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#F9FAFB";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "transparent";
-              }}
-            >
-              <img
-                src={avatarImage}
-                alt="User avatar"
-                style={{
-                  width: "38px",
-                  height: "38px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  border: "2px solid #E4E4E7",
-                }}
-              />
-              <span
-                style={{
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  color: "#0A0C0F",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                  Welcome, {user.name?.split("@")[0] || "User"}
-                </span>
-              </div>
-            </Dropdown>
         </div>
       )}
-
-      {/* Desktop Navigation - Not Logged In */}
-      {!isMobile && !isAuthenticated && (
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <Button
-                onClick={onLoginClick}
-                variant="primary"
-                className="px-4 py-2 sm:px-6 sm:py-2 lg:px-7 lg:py-2 text-xs sm:text-sm"
-              >
-                Login
-              </Button>
-              <Button
-                onClick={onSignupClick}
-                variant="secondary"
-                className="px-3 py-2 sm:px-5 sm:py-2 lg:px-6 lg:py-2 text-xs sm:text-sm"
-              >
-                Sign up
-              </Button>
-            </div>
-          )}
 
       <Modal
         title="Notifications"

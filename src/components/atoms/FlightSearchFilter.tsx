@@ -118,20 +118,19 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Number of stops - Collapsible */}
-            <div style={{ 
+            <div className="stopsCollapse" style={{ 
                 width: '280px',
                 borderRadius: '16px',
-                // border: '1.5px solid #C2CAD6',
-                // background: '#F2F2F3',
+                background: '#e1e1e1',
                 overflow: 'hidden'
             }}>
                 <CustomCollapse>
                     <Panel 
                         header="Number of stops" 
                         key="stops"
-                        style={{ border: 'none' }}
+                        style={{ border: 'none', background: '#e1e1e1' }}
                     >
-                        <div style={{ padding: '0 16px 16px 16px' }}>
+                        <div style={{ padding: '0 16px 16px 16px', background: '#e1e1e1' }}>
                             <Radio.Group
                                 block
                                 options={numberStops && numberStops.length ? numberStops : []}
@@ -211,7 +210,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
 
             {/* Transit hours - Collapsible (conditional) */}
             {Number(selectedMaxConnections || 0) > 0 && (
-                <div style={{ 
+                <div className="timeCollapse" style={{ 
                     width: '280px',
                     borderRadius: '16px',
                     overflow: 'hidden'
@@ -355,7 +354,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Airlines - Collapsible */}
-            <div style={{ 
+            <div className="timeCollapse" style={{ 
                 width: '280px',
                 borderRadius: '16px',
                 overflow: 'hidden'

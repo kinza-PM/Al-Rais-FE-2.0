@@ -8,7 +8,7 @@ const WhyChooseUsSection: React.FC = () => {
         padding: "2rem",
       }}
     >
-      <div className="w-full w-full max-w-[1040px] !mt-20 m-auto">
+      <div className="w-full w-full max-w-[1261px] !mt-20 m-auto">
         <h6 className="text-[12px] font-medium text-[#3D495C] opacity-80">
           Why choose us?
         </h6>

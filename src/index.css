@@ -134,3 +134,42 @@ html, body {
 .animate-partners-marquee:hover {
   animation-play-state: paused;
 }
+
+/* Custom arrow sizing to match Figma */
+.custom-arrow {
+  width: 1.25rem; /* default small size */
+  height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .sm\:w-6-figma {
+    width: 5.5rem; /* as requested */
+  }
+  .sm\:h-6-figma {
+    height: 2.5rem; /* as requested */
+  }
+  .custom-arrow {
+    width: 5.5rem;
+    height: 2.5rem;
+  }
+}
+
+/* Hero container size variables (adjust centrally) */
+:root {
+  /* increase defaults so multi-city content is visible */
+  --hero-outer-h: 420px; /* suggested default outer min-height */
+  --hero-inner-h: 380px; /* suggested default inner min-height */
+}
+
+.hero-outer {
+  /* allow the container to expand if content grows */
+  min-height: var(--hero-outer-h);
+}
+
+.hero-inner {
+  min-height: var(--hero-inner-h);
+  display: block;
+}
+
+/* Remove strict max-height so multi-city rows can expand and remain visible */
+/* If needed, we can add scroll inside specific sub-panels instead of restricting whole inner area */

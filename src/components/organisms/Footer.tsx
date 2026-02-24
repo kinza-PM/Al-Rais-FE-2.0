@@ -138,6 +138,16 @@ const Footer: React.FC = () => {
       >
         © Al Rais Travel. All rights reserved.
       </div>
+
+      {/* Custom CSS for exact padding requirements at LG breakpoint */}
+      <style>{`
+        @media (min-width: 1024px) {
+          .lg\\:px-16 {
+            padding-left: 10rem !important;
+            padding-right: 9rem !important;
+          }
+        }
+      `}</style>
     </footer>
   );
 };
