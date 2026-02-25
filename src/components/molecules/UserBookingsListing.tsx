@@ -3,22 +3,63 @@ import { useNavigate } from "react-router-dom";
 import Button from "../atoms/Button";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { transformBookingToFlightBookingFormat } from "../../utils/transformBookingData";
+import airlineDefault from "../../assets/images/emirates.png";
 
 export type BookingStatus = "Confirmed" | "Pending" | "Expired";
 export type TripMode = "Flights" | "Hotels";
 
 function StatusPill({ status }: { status: BookingStatus }) {
-  const cfg =
-    status === "Confirmed"
-      ? { bg: "bg-[#85FFCA]", text: "text-[#00522E]" }
-      : status === "Pending"
-        ? { bg: "bg-[#FFB8C4]", text: "text-[#EA0029]" }
-        : { bg: "bg-[#E4E4E7]", text: "text-[#3D495C]" };
+  if (status === "Confirmed") {
+    return (
+      <span
+        className="inline-flex items-center justify-center text-[12px] font-normal text-white"
+        style={{
+          background: "#85FFCA",
+          lineHeight: "15px",
+          width: "90px",
+          height: "31px",
+          borderRadius: "100px",
+          padding: "8px 15px",
+          gap: "10px",
+          color: "black",
+        }}
+      >
+        Confirmed
+      </span>
+    );
+  }
+
+  if (status === "Pending") {
+    return (
+      <span
+        className="inline-flex items-center justify-center text-[12px] font-normal text-[#EA0029]"
+        style={{
+          background: "#FFB8C4",
+          width: "129px",
+          height: "31px",
+          borderRadius: "100px",
+          padding: "8px 15px",
+          gap: "10px",
+        }}
+      >
+        Pending payment
+      </span>
+    );
+  }
+
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-1 text-[12px] ${cfg.bg} ${cfg.text}`}
+      className="inline-flex items-center justify-center text-[12px] font-normal text-[#3D495C]"
+      style={{
+        background: "#E4E4E7",
+        width: "73px",
+        height: "31px",
+        borderRadius: "100px",
+        padding: "8px 15px",
+        gap: "10px",
+      }}
     >
-      {status === "Pending" ? "Pending payment" : status}
+      Expired
     </span>
   );
 }
@@ -192,6 +233,7 @@ function getPassengerNameFromBooking(booking: any): string {
 function BookingCard({ booking }: { booking: any }) {
   const status = booking.status;
   const isExpired = status === "Expired";
+  const isPending = status === "Pending";
   const journeys = booking.journeys || [];
   const [countdown, setCountdown] = useState(booking.countdown);
   const [openShareModal, setOpenShareModal] = useState(false);
@@ -248,10 +290,33 @@ function BookingCard({ booking }: { booking: any }) {
   return (
     <div
       className={[
-        "relative rounded-2xl border border-[#E4E4E7] bg-white px-5 pb-4 pt-4 shadow-sm transition max-[768px]:pt-8",
+        "relative rounded-[16px] border-[1.5px] px-6 pb-4 pt-6 shadow-sm transition max-w-[1168px] w-full",
         isExpired ? "opacity-50 [filter:grayscale(100%)]" : "",
+        isPending ? "bg-white" : "bg-[#F2F2F3]",
       ].join(" ")}
+      style={{
+        borderColor: "#E4E4E7",
+        height: "229px",
+        width: "1168px",
+        borderRadius: "16px",
+        borderWidth: "1.5px"
+      }}
     >
+      {/* Gradient bar at the top of the card */}
+      <div className="flex justify-center w-full absolute top-0 left-0" style={{ marginTop: "0px" }}>
+        <div
+          className="rounded-tl-[16px] rounded-tr-[16px]"
+          aria-hidden="true"
+          style={{
+            // width: "1168px", 
+            // maxWidth: "100%", 
+            // height: "10px", 
+            // background: "linear-gradient(rgb(196, 207, 225) 0%, rgb(222, 247, 254) 100%)", 
+            // backdropFilter: "blur(10px)" 
+          }}
+        />
+      </div>
+
       <div className="absolute right-4 top-2">
         <StatusPill status={status} />
       </div>
@@ -271,6 +336,15 @@ function BookingCard({ booking }: { booking: any }) {
         {/* Airline info from first journey */}
         {journeys.length > 0 && (
           <div className="flex items-center gap-3">
+            {/* Airline logo/profile */}
+            <div className="flex-shrink-0">
+              <img
+                src={airlineDefault}
+                alt={journeys[0].airline?.name || "Airline"}
+                className="h-12 w-12 rounded-full object-cover"
+              />
+            </div>
+
             <div>
               <div className="text-[15px] font-medium text-[#0A0C0F]">
                 {journeys[0].airline?.name ?? "Airline"}
@@ -326,7 +400,15 @@ function BookingCard({ booking }: { booking: any }) {
           <Button
             type="button"
             onClick={handlePayNow}
-            className="rounded-lg bg-[#2351A3] px-8 py-2 text-[#F2F2F3] text-[15px] font-semibold"
+            className="text-[#F2F2F3] text-[15px] font-semibold"
+            style={{
+              background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+              width: "148px",
+              height: "47px",
+              borderRadius: "100px",
+              padding: "14px 40px",
+              gap: "10px",
+            }}
             overrideClasses
           >
             Pay now
@@ -342,7 +424,16 @@ function BookingCard({ booking }: { booking: any }) {
           <Button
             type="button"
             disabled={true}
-            className="rounded-lg bg-[#2351A3] px-8 py-2 text-[#F2F2F3] text-[15px] font-semibold"
+            className="text-[#F2F2F3] text-[15px] font-semibold opacity-50 cursor-not-allowed"
+            style={{
+              background: "rgb(35, 81, 163)",
+              width: "109px",
+              height: "38px",
+              borderRadius: "100px",
+              // padding: "14px 40px",
+              gap: "10px",
+            }}
+
             overrideClasses
           >
             Pay now
@@ -354,15 +445,6 @@ function BookingCard({ booking }: { booking: any }) {
 
       <div className="mt-6 flex items-center text-[15px] font-medium">
         <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7]">
-          {/* <div className="pr-4">
-            <Button
-              type="button"
-              className="text-[#5383DA] hover:underline"
-              overrideClasses
-            >
-              View details
-            </Button>
-          </div> */}
           {status === "Confirmed" && (
             <>
               <div className="">
@@ -391,24 +473,6 @@ function BookingCard({ booking }: { booking: any }) {
                   Download e-ticket
                 </Button>
               </div>
-              {/* <div className="px-4">
-                <Button
-                  type="button"
-                  className="text-[#5383DA] hover:underline"
-                  overrideClasses
-                >
-                  Request changes
-                </Button>
-              </div>
-              <div className="pl-4">
-                <Button
-                  type="button"
-                  className="text-[#FF5270] hover:underline"
-                  overrideClasses
-                >
-                  Cancel booking
-                </Button>
-              </div> */}
             </>
           )}
         </div>
@@ -464,9 +528,11 @@ export default function UserBookingsListing({
   }
 
   return (
-    <div className="mt-6 space-y-6">
+    <div className="mt-6 space-y-6 flex flex-col items-center">
       {list.map((b) => (
-        <BookingCard key={b.id} booking={b} />
+        <div key={b.id} className="w-full max-w-[1168px]">
+          <BookingCard booking={b} />
+        </div>
       ))}
     </div>
   );
