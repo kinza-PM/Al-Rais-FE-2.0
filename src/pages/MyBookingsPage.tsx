@@ -42,12 +42,8 @@ const MyBookingsPage = () => {
         show={isPending}
         label="Please wait while we are fetching your bookings"
       />
-      <div className="grid grid-cols-[auto_1fr_.7fr] items-center px-10 gap-10 max-[768px]:grid-cols-1 max-[768px]:px-4 max-[768px]:gap-4">
-        <div
-          role="tablist"
-          aria-label="Profile sections"
-          className="flex items-center rounded-2xl ring-1 ring-[#C2CAD6] bg-white p-1 shadow-sm max-[768px]:gap-2 max-[768px]:py-1"
-        >
+      <div className="flex flex-col items-center px-6">
+        <div role="tablist" aria-label="Booking status tabs" className="flex items-center justify-center gap-[10px]">
           {tabs.map((t) => {
             const selected = active === t;
             return (
@@ -57,10 +53,10 @@ const MyBookingsPage = () => {
                 aria-selected={selected}
                 onClick={() => setActive(t)}
                 className={[
-                  "flex-1 rounded-xl px-8 py-2 text-[14px] font-medium transition-colors max-[625px]:px-3 max-[625px]:py-2 max-[625px]:text-[13px]",
+                  "flex items-center justify-center w-[108px] h-[39px] rounded-tl-[16px] rounded-tr-[16px] px-[20px] py-[10px] text-[14px] font-medium transition-colors",
                   selected
                     ? "bg-[#2351A3] text-white shadow-sm"
-                    : "text-[#3D495C]",
+                    : "bg-[#E4E4E7] text-[#3D495C]",
                 ].join(" ")}
                 overrideClasses
               >
@@ -70,7 +66,23 @@ const MyBookingsPage = () => {
           })}
         </div>
 
-        <div className="justify-self-center">
+        {/* Decorative bottom gradient bar matching Figma */}
+        <div className="mt-3 flex justify-center w-full">
+          <div
+            aria-hidden="true"
+            className="rounded-tl-[16px] rounded-tr-[16px]"
+            style={{
+              width: 1168,
+              maxWidth: "100%",
+              height: 10,
+              background: "linear-gradient(180deg, #C4CFE1 0%, #DEF7FE 100%)",
+              backdropFilter: "blur(10px)",
+            }}
+          />
+        </div>
+
+        {/* Mode tabs (Flights/Hotels) - kept centered under main tabs */}
+        <div className="mt-4">
           <div className="flex justify-center gap-10 text-[16px]">
             {modeTabs.map((m) => {
               const selected = mode === m;
@@ -80,25 +92,17 @@ const MyBookingsPage = () => {
                   type="button"
                   onClick={() => setMode(m)}
                   className={[
-                    "relative font-medium", // relative so underline can position under this
+                    "relative font-medium",
                     selected ? "text-[#2351A3]" : "text-[#3D495C]",
                   ].join(" ")}
                   overrideClasses
                 >
                   {m}
-                  {selected && (
-                    <span
-                      aria-hidden="true"
-                      className="pointer-events-none absolute top-full mt-5 h-[4px] w-[50px] -translate-x-1/2 rounded-full bg-[#5383DA] underline-blur max-[768px]:top-[30px]"
-                    />
-                  )}
                 </Button>
               );
             })}
           </div>
         </div>
-
-        <div />
       </div>
 
       <div aria-hidden="true" className="mt-3 h-px bg-[#E4E4E7]" />
