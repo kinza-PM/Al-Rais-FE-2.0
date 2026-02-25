@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import FlightHeroSectionTab from "./FlightHeroSectionTab";
 import HotelHeroSectionTab from "./HotelHeroSectionTab";
 import Celebration from "../../assets/svgs/celebration.svg";
@@ -10,66 +10,26 @@ type Props = {
   onTabChange?: (tab: "flights" | "hotels") => void;
 };
 
-const HeroSection: React.FC<Props> = ({ activeTab, onTabChange }) => {
-  const [internalTab, setInternalTab] = useState<"flights" | "hotels">("flights");
-  const selectedTab = activeTab ?? internalTab;
+const HeroSection: React.FC<Props> = ({ activeTab }) => {
+  const selectedTab = activeTab ?? "flights";
 
-  const handleTabChange = (tab: "flights" | "hotels") => {
-    onTabChange?.(tab);
-    if (!activeTab) setInternalTab(tab);
-  };
+  // Tab changes are controlled by parent via `activeTab` / `onTabChange` when provided.
 
   return (
     <div>
       {/* Outer flight/hotel search container - matches Figma card */}
-      <div className="w-full flex justify-center px-4 mt-10">
+      <div className="w-full flex justify-center px-4" style={{ marginTop: -10 }}>
         <div
-          className="w-full max-w-[1156px] bg-[#CFD5E0] border-[2px] border-[#A4A9AD] rounded-[45px] flex justify-center relative z-10 overflow-visible"
-          style={{ opacity: 1 }}
+          className="hero-outer w-full max-w-[1268px] bg-[#CFD5E0] border-[2px] border-[#A4A9AD] rounded-[45px] flex justify-center relative z-10 overflow-visible"
+          style={{ opacity: 1, transform: "rotate(0deg)" }}
         >
           {/* Inner white panel */}
           <div
-            className="w-full mx-[15px] my-[15px] rounded-[35px] bg-white shadow-[0_8px_28px_rgba(12,40,86,0.08)] overflow-visible"
+          id="hero-search-form"
+          className="hero-inner w-full mx-[15px] my-[15px] rounded-[35px] bg-white shadow-[0_8px_28px_rgba(12,40,86,0.08)] overflow-visible pb-14"
             style={{ opacity: 1 }}
           >
-            <div className="relative h-[50px] px-6">
-            {/* Tab labels */}
-            <div className="absolute inset-x-0 top-3 flex justify-center gap-10 text-[16px]">
-              <button
-                type="button"
-                onClick={() => handleTabChange("flights")}
-                className={`font-medium transition-colors cursor-pointer ${selectedTab === "flights"
-                  ? "text-[#2351A3]"
-                  : "text-[#3D495C] opacity-70"
-                  }`}
-              >
-                Flights
-              </button>
-              <button
-                type="button"
-                onClick={() => handleTabChange("hotels")}
-                className={`font-medium transition-colors cursor-pointer ${selectedTab === "hotels"
-                  ? "text-[#2351A3]"
-                  : "text-[#3D495C] opacity-70"
-                  }`}
-              >
-                Hotels
-              </button>
-            </div>
-
-              <div className="absolute left-0 right-0 bottom-0 h-px bg-[#E4E4E7]" />
-
-            <span
-              className="absolute bottom-0 h-[4px] w-[55px] rounded-full bg-[#5383DA] transition-all duration-300 ease-in-out underline-blur"
-              style={{
-                left: selectedTab === "flights"
-                  ? "calc(48% - 25px)"
-                  : "calc(52% + 25px)",
-                transform: "translateX(-50%)",
-              }}
-            />
-            </div>
-
+            
             {/* Render the appropriate hero section */}
             {selectedTab === "flights" && <FlightHeroSectionTab />}
             {selectedTab === "hotels" && <HotelHeroSectionTab />}
@@ -86,7 +46,7 @@ const HeroSection: React.FC<Props> = ({ activeTab, onTabChange }) => {
 // Extract promotional cards to a separate component
 const PromotionalCards: React.FC = () => (
   <div className="w-full flex justify-center mt-8 px-4">
-    <div className="w-full max-w-[1156px] grid md:grid-cols-3 gap-4 lg:gap-6 justify-items-center">
+    <div className="w-full max-w-[1268px] grid md:grid-cols-3 gap-4 lg:gap-6 justify-items-center">
       {/* Card 1 — Welcome gift */}
       <div
         className="relative flex w-full max-w-[401px] items-center justify-between gap-4 px-4 py-4 shadow-[0_1px_4px_rgba(12,40,86,0.12)] bg-cover bg-right bg-no-repeat rounded-[16px]"

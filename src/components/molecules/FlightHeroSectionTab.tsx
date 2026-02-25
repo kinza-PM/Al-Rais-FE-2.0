@@ -379,24 +379,34 @@ const FlightHeroSection: React.FC = () => {
       ) : (
         <>
           {/* Trip type segmented control */}
-          <div className="flex justify-center mt-4">
-            <div className="flex items-center rounded-xl ring-1 ring-[#D9E2EF] p-1 bg-white">
+          {/* Trip type segmented control */}
+          {/* Trip type segmented control */}
+          <div className="flex justify-center mt-0.5"> {/* Changed from mt-1 to mt-0.5 */}
+            <div className="flex items-center rounded-xl p-1 bg-white">
               {nsLoading.flightTypes && (
                 <div className="px-6 py-2 text-[14px] rounded-xl text-[#3A4350] opacity-60">
                   Loading…
                 </div>
               )}
               {!nsLoading.flightTypes &&
-                tabs.map((t) => (
+                tabs.map((t, index) => (
                   <button
                     key={t.id}
                     type="button"
                     onClick={() => setTrip(t.key)}
-                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${
-                      trip === t.key
-                        ? "bg-[#2351A3] text-white"
-                        : "text-[#3A4350] hover:bg-[#F4F7FD]"
-                    }`}
+                    className={`text-[14px] transition-colors cursor-pointer flex items-center justify-center ${trip === t.key ? "text-white" : "text-[#3A4350]"
+                      }`}
+                    style={{
+                      width: 115,
+                      height: 35,
+                      padding: "0 16px",
+                      borderBottomLeftRadius: 16,
+                      borderBottomRightRadius: 16,
+                      background: trip === t.key ? "var(--primary-300, #2351A3)" : "#F2F2F3",
+                      opacity: 1,
+                      transform: "rotate(0deg)",
+                      marginRight: index < tabs.length - 1 ? 8 : 0,
+                    }}
                   >
                     {t.label}
                   </button>

@@ -4,10 +4,14 @@ import { useAuth } from "../../features/auth/hooks/useAuth";
 import { Splide, SplideSlide } from "@splidejs/react-splide";
 import "@splidejs/react-splide/css";
 
+import ArrowLeftIcon from "../../assets/images/arrow-left-s-line 1.png";
+import ArrowRightIcon from "../../assets/images/arrow-right-s-line 2.png";
+
 import CardImage1 from "../../assets/images/card-images (1).jpg";
 import CardImage2 from "../../assets/images/card-images (2).jpg";
 import CardImage3 from "../../assets/images/card-images (3).jpg";
 import CardImage4 from "../../assets/images/card-images (4).jpg";
+import CardImage5 from "../../assets/images/card-images (1).jpg";
 
 import FlightIcon from "./Flight-icon-for-card.png";
 import HotelIcon from "./Hotel-icon-for -card.png";
@@ -44,14 +48,21 @@ const DEALS: Deal[] = [
     image: CardImage4,
     price: 157,
   },
+  {
+    id: "5",
+    title: "MAKKAH\n& MEDINA",
+    image: CardImage5,
+    price: 157,
+  },
 ];
 
 const FILTER_TABS = ["Below $199", "Below $399", "Below $699", "Below $999"] as const;
 
 const MAIN_MAX_WIDTH = 1464;
-const DEAL_CARD_WIDTH = 350;
-const DEAL_CARD_HEIGHT = 600;
-const DEAL_IMAGE_HEIGHT = 460;
+// Reduced card width so five cards can fit within the main max width with gaps
+const DEAL_CARD_WIDTH = 280;
+const DEAL_CARD_HEIGHT = 520;
+const DEAL_IMAGE_HEIGHT = 370;
 const DEAL_GAP = 20;
 
 const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
@@ -114,14 +125,14 @@ const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
       <div className="mt-3 flex items-start justify-between gap-3">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-[12px] text-[#3D495C]">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#E6EEF9]">
-              <img src={FlightIcon} alt="Flights" className="h-3 w-3" />
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full">
+              <img src={FlightIcon} alt="Flights" className="h-5 w-8" />
             </span>
             <span>Round-trip flights</span>
           </div>
           <div className="flex items-center gap-2 text-[12px] text-[#3D495C]">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#E6EEF9]">
-              <img src={HotelIcon} alt="Hotels" className="h-3 w-3" />
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full">
+              <img src={HotelIcon} alt="Hotels" className="h-5 w-8" />
             </span>
             <span>4 nights hotels</span>
           </div>
@@ -196,6 +207,7 @@ const BestDealsSection: React.FC = () => {
   useEffect(() => {
     const compute = () => {
       const w = window.innerWidth;
+      // show 4 fully visible cards on wide screens so the 5th appears dimmed/peeked
       if (w >= 1280) return 4;
       if (w >= 1024) return 3;
       if (w >= 768) return 2;
@@ -298,7 +310,7 @@ const BestDealsSection: React.FC = () => {
           onClick={goPrev}
           className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-transparent text-[#A1A1AA] hover:text-[#71717A] transition-colors flex items-center justify-center"
         >
-          <span className="text-3xl leading-none">‹</span>
+          <img src={ArrowLeftIcon} alt="Prev" className="custom-arrow" />
         </button>
 
         <div
@@ -324,16 +336,20 @@ const BestDealsSection: React.FC = () => {
               gap: `${DEAL_GAP}px`,
               fixedWidth: `${DEAL_CARD_WIDTH}px`,
               focus: 0,
-              padding: { right: "120px" },
+              padding: { right: `${DEAL_CARD_WIDTH / 2}px` },
               trimSpace: false,
               breakpoints: {
+                1440: {
+                  fixedWidth: `${DEAL_CARD_WIDTH}px`,
+                  padding: { right: `${DEAL_CARD_WIDTH / 2}px` },
+                },
                 1280: {
                   fixedWidth: `${DEAL_CARD_WIDTH}px`,
                   padding: { right: "100px" },
                 },
                 1024: {
                   fixedWidth: `${DEAL_CARD_WIDTH}px`,
-                  padding: { right: "80px" },
+                  padding: { right: "100px" },
                 },
                 768: {
                   fixedWidth: "320px",
@@ -374,7 +390,7 @@ const BestDealsSection: React.FC = () => {
           onClick={goNext}
           className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-transparent text-[#2351A3] hover:text-[#1E4690] transition-colors flex items-center justify-center"
         >
-          <span className="text-3xl leading-none">›</span>
+          <img src={ArrowRightIcon} alt="Next" className="custom-arrow" />
         </button>
       </div>
     </div>
