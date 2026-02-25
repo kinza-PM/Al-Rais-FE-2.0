@@ -14,15 +14,21 @@ import Button from "../atoms/Button";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelSummaryCard from "../atoms/HotelSummaryCard";
+import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
+import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import toast from "react-hot-toast";
+import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
 
 type PaymentMethod = "card" | "apple" | "google";
 
 type HotelBookingPaymentSectionProps = {
   onNext?: () => void;
+  onEditPassengers?: () => void;
   hotelDetail?: any;
   bookingInfo?: any;
   totalPrice?: number;
   currency?: string;
+  hotelBookingPayload?: HotelBookingPayload | null;
 };
 
 function ChevronDown() {
@@ -37,13 +43,67 @@ function ChevronDown() {
 
 export default function HotelBookingPaymentSection({
   onNext,
+  onEditPassengers,
   hotelDetail,
   bookingInfo,
   totalPrice = 0,
   currency = "AED",
+  hotelBookingPayload,
 }: HotelBookingPaymentSectionProps) {
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
   const [openAddress, setOpenAddress] = useState(true);
+
+  const { mutateAsync, isPending } = useHotelReservationBooking();
+
+  const handlePay = async () => {
+    if (!hotelBookingPayload) {
+      console.log("Booking data missing.");
+      return;
+    }
+    try {
+      const response = await mutateAsync(hotelBookingPayload);
+      if (
+        response?.meta?.success &&
+        response?.meta?.statusMessage === "SUCCESS"
+      ) {
+        toast.success(response?.meta?.actionType || "Booking confirmed!");
+        if (typeof onNext === "function") {
+          onNext();
+        }
+      } else {
+        toast.error((t) => (
+          <div>
+            <p>Booking failed. Please try again.</p>
+            <button
+              onClick={() => {
+                toast.dismiss(t.id);
+                if (typeof onEditPassengers === "function") onEditPassengers();
+              }}
+              className="mt-2 text-sm underline hover:no-underline"
+            >
+              Update passenger information?
+            </button>
+          </div>
+        ));
+      }
+    } catch (error) {
+      const err = extractErrorFromAxiosApiError(error);
+      toast.error((t) => (
+        <div>
+          <p>{err}</p>
+          <button
+            onClick={() => {
+              toast.dismiss(t.id);
+              if (typeof onEditPassengers === "function") onEditPassengers();
+            }}
+            className="mt-2 text-sm underline hover:no-underline"
+          >
+            Update passenger information?
+          </button>
+        </div>
+      ));
+    }
+  };
 
   return (
     <section className="mt-10 flex items-center justify-center px-4">
@@ -291,23 +351,17 @@ export default function HotelBookingPaymentSection({
           </div>
         )}
 
-        <HotelPriceBreakdown
-          totalPrice={totalPrice}
-          currency={currency}
-        />
+        <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} />
 
         <div className="mt-16 px-5">
           <Button
             type="button"
             className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold"
             overrideClasses
-            onClick={() => {
-              if (typeof onNext === "function") {
-                onNext();
-              }
-            }}
+            onClick={handlePay}
+            disabled={isPending}
           >
-            Pay
+            {isPending ? "Processing..." : "Pay"}
           </Button>
 
           <div className="my-4 text-center text-[12px] text-[#3D495C]">OR</div>

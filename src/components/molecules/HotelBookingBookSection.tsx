@@ -19,9 +19,9 @@ import {
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import type { CountryOption } from "../../features/flights/types";
-import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
-import toast from "react-hot-toast";
-import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
+// import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+// import toast from "react-hot-toast";
+// import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
 
 type HotelBookingBookSectionProps = {
   hotelBookingPayload: HotelBookingPayload;
@@ -66,7 +66,7 @@ export default function HotelBookingBookSection({
     useState<HotelPassengerFieldErrors>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
 
-  const { mutateAsync, isPending } = useHotelReservationBooking();
+  // const { mutateAsync, isPending } = useHotelReservationBooking();
   const rooms = hotelBookingPayload?.rooms ?? [];
   const flatPassengers = rooms.flatMap((room, roomIdx) =>
     (room.passengers ?? []).map((passenger, pIdx) => ({
@@ -126,31 +126,29 @@ export default function HotelBookingBookSection({
       (ri) => Object.keys(fieldErrors[Number(ri)] || {}).length > 0,
     );
     if (hasErrors) {
-      // toast.error("Please fix the errors before continuing.");
       return;
     }
-    // const { valid, error } =
-    //   validateHotelBookingPassengers(hotelBookingPayload);
-    // if (!valid) {
-    //   toast.error(error || "Validation failed.");
-    //   return;
-    // }
-    try {
-      const response = await mutateAsync(hotelBookingPayload);
-      if (
-        response?.meta?.success &&
-        response?.meta?.statusMessage == "SUCCESS"
-      ) {
-        toast.success(response?.meta?.actionType);
-        if (typeof onNext === "function") {
-          onNext();
-        }
-      }
-    } catch (error) {
-      console.log("error", error);
-      const err = extractErrorFromAxiosApiError(error);
-      toast.error(err);
+
+    if (typeof onNext === "function") {
+      onNext();
     }
+
+    // try {
+    //   const response = await mutateAsync(hotelBookingPayload);
+    //   if (
+    //     response?.meta?.success &&
+    //     response?.meta?.statusMessage == "SUCCESS"
+    //   ) {
+    //     toast.success(response?.meta?.actionType);
+    //     if (typeof onNext === "function") {
+    //       onNext();
+    //     }
+    //   }
+    // } catch (error) {
+    //   console.log("error", error);
+    //   const err = extractErrorFromAxiosApiError(error);
+    //   toast.error(err);
+    // }
   };
 
   return (
@@ -816,9 +814,8 @@ export default function HotelBookingBookSection({
             overrideClasses
             className="mt-6 mx-4 w-[calc(100%-2rem)] rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90"
             onClick={handleContinue}
-            disabled={isPending}
           >
-            {isPending ? "Loading..." : "Continue"}
+            Continue
           </Button>
         </div>
       </div>

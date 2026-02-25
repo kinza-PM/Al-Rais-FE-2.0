@@ -50,36 +50,36 @@ const HotelBooking = () => {
   const { mutateAsync, isPending } = useHotelPreBooking();
   const bookingParams = state.bookingParams ?? hotelFromStore ?? null;
 
-  const init = async () => {
-    if (isAuthenticated) {
-      try {
-        const body = {
-          hotelKey: state.hotelKey ?? "",
-          searchKey: state.searchKey ?? "",
-          rooms: (state.selectedRooms ?? []).flatMap((selectedRoom) =>
-            Array.from({ length: selectedRoom.count }, () => ({
-              roomIndex: selectedRoom.room?.roomIndex ?? 1,
-              roomKey: selectedRoom.roomKey ?? "",
-            })),
-          ),
-        };
-        const response = await mutateAsync(body);
-        if (
-          response?.meta?.success &&
-          response?.meta?.statusMessage === "SUCCESS"
-        ) {
-          setPreBookData(response);
-          toast.success("Hotel Pre Booking Successfully.");
-        } else {
-          window.history.back();
-        }
-      } catch (error) {
-        const err = extractErrorFromAxiosApiError(error);
-        toast.error(err);
-        window.history.back();
-      }
-    }
-  };
+  // const init = async () => {
+  //   if (isAuthenticated) {
+  //     try {
+  //       const body = {
+  //         hotelKey: state.hotelKey ?? "",
+  //         searchKey: state.searchKey ?? "",
+  //         rooms: (state.selectedRooms ?? []).flatMap((selectedRoom) =>
+  //           Array.from({ length: selectedRoom.count }, () => ({
+  //             roomIndex: selectedRoom.room?.roomIndex ?? 1,
+  //             roomKey: selectedRoom.roomKey ?? "",
+  //           })),
+  //         ),
+  //       };
+  //       const response = await mutateAsync(body);
+  //       if (
+  //         response?.meta?.success &&
+  //         response?.meta?.statusMessage === "SUCCESS"
+  //       ) {
+  //         setPreBookData(response);
+  //         toast.success("Hotel Pre Booking Successfully.");
+  //       } else {
+  //         window.history.back();
+  //       }
+  //     } catch (error) {
+  //       const err = extractErrorFromAxiosApiError(error);
+  //       toast.error(err);
+  //       window.history.back();
+  //     }
+  //   }
+  // };
 
   // preBook checkIn/checkOut (used when available - may differ from search)
   const preBookCheckIn = preBookData?.data?.[0]?.hotel?.checkInDate;
@@ -99,11 +99,16 @@ const HotelBooking = () => {
     } catch {
       return 1;
     }
-  }, [preBookCheckIn, preBookCheckOut, bookingParams?.checkIn, bookingParams?.checkOut]);
+  }, [
+    preBookCheckIn,
+    preBookCheckOut,
+    bookingParams?.checkIn,
+    bookingParams?.checkOut,
+  ]);
 
   const pax = bookingParams?.paxData;
   const selectedRooms = state.selectedRooms ?? [];
-  console.log(bookingParams)
+  // console.log(bookingParams);
   // Child ages distribution per room (same logic as hotel search convertPaxToRoom)
   const rawChildAges = (bookingParams as any)?.childAges ?? [];
   const childAgesPerRoom: number[][] = useMemo(() => {
@@ -155,13 +160,19 @@ const HotelBooking = () => {
       adults: pax?.adults ?? 0,
       children: (pax?.children ?? 0) + (pax?.kids ?? 0),
     }),
-    [preBookCheckIn, preBookCheckOut, bookingParams, state.hotelDetail, totalNights, pax],
+    [
+      preBookCheckIn,
+      preBookCheckOut,
+      bookingParams,
+      state.hotelDetail,
+      totalNights,
+      pax,
+    ],
   );
 
   const hotelDetail = state.hotelDetail || {};
   const preBookHotel = preBookData?.data?.[0]?.hotel;
-  const totalPrice =
-    preBookHotel?.totalNet ?? state.totalPrice ?? 0;
+  const totalPrice = preBookHotel?.totalNet ?? state.totalPrice ?? 0;
   const currency = preBookHotel?.currency ?? state.currency ?? "AED";
 
   // Use preBook checkIn/checkOut (they may have changed); fallback to state
@@ -187,7 +198,8 @@ const HotelBooking = () => {
       state.searchKey &&
       effectiveHotelKey &&
       effectiveCheckIn &&
-      effectiveCheckOut
+      effectiveCheckOut &&
+      hotelBookingPayload === null
     ) {
       const payload = buildInitialHotelBookingPayload(
         preBookData,
@@ -198,7 +210,7 @@ const HotelBooking = () => {
         effectiveCheckIn,
         effectiveCheckOut,
         selectedRooms,
-        pax
+        pax,
       );
       setHotelBookingPayload(payload);
     }
@@ -246,23 +258,72 @@ const HotelBooking = () => {
         setNested(
           next.rooms[roomIndex].passengers[passengerIndex],
           path,
-          value
+          value,
         );
         return next;
       });
     },
-    []
+    [],
   );
 
-  const handleBookSectionContinue = useCallback(() => {
+  const handleBookSectionContinue = useCallback(async () => {
     if (!hotelBookingPayload) return;
-    console.log("Hotel booking payload:", hotelBookingPayload);
-    setCurrentStep(1);
-  }, [hotelBookingPayload]);
+    try {
+      const body = {
+        hotelKey: state.hotelKey ?? "",
+        searchKey: state.searchKey ?? "",
+        rooms: (state.selectedRooms ?? []).flatMap((selectedRoom) =>
+          Array.from({ length: selectedRoom.count }, () => ({
+            roomIndex: selectedRoom.room?.roomIndex ?? 1,
+            roomKey: selectedRoom.roomKey ?? "",
+          })),
+        ),
+      };
+      const response = await mutateAsync(body);
+      if (
+        response?.meta?.success &&
+        response?.meta?.statusMessage === "SUCCESS"
+      ) {
+        setPreBookData(response);
+        const preBookHotelData = response?.data?.[0]?.hotel;
+        const bookingKey =
+          preBookHotelData?.bookingKey ?? response?.data?.[0]?.bookingKey ?? "";
+        const preBookRooms = preBookHotelData?.rooms ?? [];
 
-  useEffect(() => {
-    init();
-  }, [isAuthenticated]);
+        setHotelBookingPayload((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            bookingKey,
+            totalNet: preBookHotelData?.totalNet ?? prev.totalNet,
+            stayDateRange: {
+              checkIn:
+                preBookHotelData?.checkInDate ?? prev.stayDateRange.checkIn,
+              checkOut:
+                preBookHotelData?.checkOutDate ?? prev.stayDateRange.checkOut,
+            },
+            rooms: prev.rooms.map((room, idx) => ({
+              ...room,
+              roomKey: preBookRooms[idx]?.roomKey ?? room.roomKey,
+              roomIndex: preBookRooms[idx]?.roomIndex ?? room.roomIndex,
+            })),
+          };
+        });
+        toast.success("Hotel Pre Booking Successfully.");
+        setCurrentStep(1);
+      } else {
+        toast.error("Pre-booking failed. Please try again.");
+      }
+    } catch (error) {
+      const err = extractErrorFromAxiosApiError(error);
+      toast.error(err);
+    }
+    setCurrentStep(1);
+  }, [hotelBookingPayload, state]);
+
+  // useEffect(() => {
+  //   init();
+  // }, [isAuthenticated]);
 
   return (
     <>
@@ -360,10 +421,12 @@ const HotelBooking = () => {
               onNext={() => {
                 setCurrentStep(3);
               }}
+              onEditPassengers={() => setCurrentStep(0)}
               hotelDetail={hotelDetail}
               bookingInfo={bookingInfo}
               totalPrice={totalPrice}
               currency={currency}
+              hotelBookingPayload={hotelBookingPayload}
             />
           )}
           {currentStep === 3 && <HotelBookingETicketSetion />}
