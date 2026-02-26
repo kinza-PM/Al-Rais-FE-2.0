@@ -4,12 +4,12 @@ import shareIcon from "../../assets/svgs/share.svg";
 import secureLockIcon from "../../assets/svgs/secure-lock.svg";
 import visaIcon from "../../assets/svgs/visa.svg";
 import masterCardIcon from "../../assets/svgs/mastercard.svg";
-import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
-import FlagUae from "../../assets/svgs/Flag-uae.svg";
+// import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
+// import FlagUae from "../../assets/svgs/Flag-uae.svg";
 import Tabby from "../../assets/images/tabby.png";
 import Tamara from "../../assets/images/tamara.png";
 import { useState } from "react";
-import CardCollapseToggle from "../common/CardCollapseToggle";
+// import CardCollapseToggle from "../common/CardCollapseToggle";
 import Button from "../atoms/Button";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
@@ -18,9 +18,17 @@ import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
-import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
+import {
+  // validateHotelReservationBookingData,
+  validateHotelReservationBookingDataFields,
+  type HotelPaymentCardDetails,
+} from "../../utils/hotelBookingHelper";
+import {
+  openBlankPopupAndCheckWebisteAllowPopup,
+  waitFor3DSecurePaymentPopupReturnResponse,
+} from "../../utils/flightBookingHelper";
 import { usePayfortPayment } from "../../hooks/usePayment";
-import { validateReservationFlightBookingDataFields } from "../../utils/flightBookingHelper";
+import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
 
 type PaymentMethod = "card" | "apple" | "google";
 
@@ -34,15 +42,15 @@ type HotelBookingPaymentSectionProps = {
   hotelBookingPayload?: HotelBookingPayload | null;
 };
 
-function ChevronDown() {
-  return (
-    <img
-      alt="arrow-icon"
-      src={arrownDownwardIcon}
-      className="pointer-events-none absolute right-3 top-4"
-    />
-  );
-}
+// function ChevronDown() {
+//   return (
+//     <img
+//       alt="arrow-icon"
+//       src={arrownDownwardIcon}
+//       className="pointer-events-none absolute right-3 top-4"
+//     />
+//   );
+// }
 
 export default function HotelBookingPaymentSection({
   onNext,
@@ -54,17 +62,15 @@ export default function HotelBookingPaymentSection({
   hotelBookingPayload,
 }: HotelBookingPaymentSectionProps) {
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
-  const [openAddress, setOpenAddress] = useState(true);
-
-  const [cardDetails, setCardDetails] = useState({
+  // const [openAddress, setOpenAddress] = useState(true);
+  const [email, setEmail] = useState<string>("");
+  const [cardDetails, setCardDetails] = useState<HotelPaymentCardDetails>({
     number: "",
     expiryDisplay: "",
     expiry: "",
     cvv: "",
     holderName: "",
   });
-
-  const [email, setEmail] = useState("");
   const [validationErrors, setValidationErrors] = useState<
     Record<string, string>
   >({});
@@ -77,49 +83,6 @@ export default function HotelBookingPaymentSection({
   const { initiateTokenization, isLoading: isTokenizing } =
     usePayFortTokenization();
 
-  const handleCardFieldChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
-  ) => {
-    const { name, value } = e.target;
-
-    if (name === "number") {
-      const digits = value.replace(/\D/g, "").slice(0, 16);
-      const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
-      setCardDetails((prev) => ({ ...prev, number: formatted }));
-      clearFieldError("card.number");
-      return;
-    }
-    if (name === "expiry") {
-      const digits = value.replace(/\D/g, "").slice(0, 4);
-      const mm = digits.slice(0, 2);
-      const yy = digits.slice(2, 4);
-      let display = mm;
-      if (yy.length) display = `${mm}/${yy}`;
-      const stored = yy.length === 2 && mm.length === 2 ? `${yy}${mm}` : "";
-      setCardDetails((prev) => ({
-        ...prev,
-        expiryDisplay: display,
-        expiry: stored,
-      }));
-      clearFieldError("card.expiry");
-      return;
-    }
-    if (name === "cvv") {
-      const digits = value.replace(/\D/g, "").slice(0, 4);
-      setCardDetails((prev) => ({ ...prev, cvv: digits }));
-      clearFieldError("card.cvv");
-      return;
-    }
-    if (name === "holderName") {
-      setCardDetails((prev) => ({ ...prev, holderName: value }));
-      clearFieldError("card.holderName");
-      return;
-    }
-    setCardDetails((prev) => ({ ...prev, [name]: value }));
-  };
-
   const clearFieldError = (fieldPath: string) => {
     if (hasAttemptedValidation && validationErrors[fieldPath]) {
       setValidationErrors((prev) => {
@@ -130,46 +93,233 @@ export default function HotelBookingPaymentSection({
     }
   };
 
-  const buildFakeReservation = () => ({
-    customerInfo: { emailAddress: email },
-    paymentDetails: {
-      address: {
-        street: ["placeholder"], // validator ko satisfy karne ke liye
-        postalCode: "00000",
-        cityName: "NA",
-        countryCode: "ARE",
-      },
-    },
-  });
+  const handleCardFieldChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = e.target;
 
-  // ─── Validate (only card + email) ────────────────────────────────────────────
-  const validateFields = (): boolean => {
-    setHasAttemptedValidation(true);
-    const fakeReservation = buildFakeReservation();
-    const allErrors = validateReservationFlightBookingDataFields(
-      fakeReservation,
-      cardDetails,
-    );
+    if (name === "number") {
+      const digits = value.replace(/\D/g, "").slice(0, 16);
+      const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
 
-    // Address errors hatao — hotel payment mein address nahi chahiye
-    const filtered: Record<string, string> = {};
-    for (const [key, val] of Object.entries(allErrors)) {
-      if (!key.startsWith("address.")) {
-        filtered[key] = val;
-      }
+      setCardDetails((prev) => ({
+        ...prev,
+        number: formatted,
+      }));
+      clearFieldError("card.number");
+      return;
     }
 
-    setValidationErrors(filtered);
-    return Object.keys(filtered).length === 0;
+    if (name === "expiry") {
+      const digits = value.replace(/\D/g, "").slice(0, 4);
+      const mm = digits.slice(0, 2);
+      const yy = digits.slice(2, 4);
+
+      let display = mm;
+      if (yy.length) display = `${mm}/${yy}`;
+
+      const stored = yy.length === 2 && mm.length === 2 ? `${yy}${mm}` : "";
+
+      setCardDetails((prev) => ({
+        ...prev,
+        expiryDisplay: display,
+        expiry: stored,
+      }));
+      clearFieldError("card.expiry");
+      return;
+    }
+
+    if (name === "cvv") {
+      const digits = value.replace(/\D/g, "").slice(0, 4);
+      setCardDetails((prev) => ({ ...prev, cvv: digits }));
+      clearFieldError("card.cvv");
+      return;
+    }
+
+    if (name === "holderName") {
+      setCardDetails((prev) => ({ ...prev, holderName: value }));
+      clearFieldError("card.holderName");
+      return;
+    }
   };
 
-  const handlePay = async () => {
+  const generatePayfortPaymentTokenization = async () => {
     if (!hotelBookingPayload) {
       console.log("Booking data missing.");
       return;
     }
+
+    const reservation = {
+      paymentDetails: {
+        paymentMode: hotelBookingPayload.paymentDetails.paymentMode,
+        transactionAmount: totalPrice,
+      },
+      customerInfo: {
+        emailAddress: email,
+      },
+    };
+
+    setHasAttemptedValidation(true);
+    const fieldErrors = validateHotelReservationBookingDataFields(
+      reservation,
+      cardDetails,
+    );
+    setValidationErrors(fieldErrors);
+
+    if (Object.keys(fieldErrors).length > 0) {
+      // const { valid, error } = validateHotelReservationBookingData(
+      //   reservation,
+      //   cardDetails,
+      // );
+      // if (!valid && error) {
+      //   toast.error(error);
+      //   return;
+      // }
+      return;
+    }
+
+    setIsProcessing(true);
     try {
-      const response = await mutateAsync(hotelBookingPayload);
+      const cleanCardNumber = (cardDetails.number || "").replace(/\s+/g, "");
+      const expiry = cardDetails.expiry || ""; // YYMM
+      const cvv = cardDetails.cvv || "";
+      const cardHolder = cardDetails.holderName || "Customer";
+
+      const payload = await initiateTokenization({
+        cardNumber: cleanCardNumber,
+        expiry,
+        cvv,
+        cardHolder,
+      });
+
+      if (payload?.response_message === "Success") {
+        const token = payload?.token_name;
+        await handlePayfortHotelPayment(token, reservation);
+        return;
+      }
+
+      toast.error(payload?.response_message || "Tokenization failed.");
+    } catch (err: any) {
+      console.error("Hotel tokenize error:", err);
+      toast.error(err?.message || "Tokenization failed.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handlePayfortHotelPayment = async (
+    tokenization: string,
+    reservation: {
+      paymentDetails: { paymentMode: string; transactionAmount?: number | null };
+      customerInfo: { emailAddress?: string };
+    },
+  ) => {
+    if (!hotelBookingPayload) return;
+
+    let popup: Window | null = null;
+    setIsProcessing(true);
+    try {
+      try {
+        popup = openBlankPopupAndCheckWebisteAllowPopup(
+          "payfort3dsWindowHotel",
+          600,
+          800,
+        );
+      } catch (err: any) {
+        toast.error(err?.message || "Please allow popups for this site.");
+        return;
+      }
+
+      const threeDsMessagePromise =
+        waitFor3DSecurePaymentPopupReturnResponse(120000);
+
+      const paymentPayload = {
+        token_name: tokenization ?? null,
+        amount: String(reservation.paymentDetails.transactionAmount ?? totalPrice ?? 0),
+        email: reservation.customerInfo.emailAddress || "",
+      };
+
+      const response = await paymentMutateAsync(paymentPayload);
+
+      const threeDsUrl = response?.["3ds_url"];
+      if (threeDsUrl) {
+        try {
+          popup!.location.href = threeDsUrl;
+        } catch (err) {
+          try {
+            popup!.location.assign(threeDsUrl);
+          } catch (_) {
+            /* ignore */
+          }
+        }
+
+        const threeDsResult = await threeDsMessagePromise;
+
+        const respMsg = String(
+          threeDsResult?.response_message || "",
+        ).toLowerCase();
+        const acqMsg = String(
+          threeDsResult?.acquirer_response_message || "",
+        ).toLowerCase();
+
+        if (respMsg.includes("success") && acqMsg.includes("success")) {
+          toast.success("Payment successful!");
+          await handleHotelReservationBooking(tokenization, reservation);
+        } else {
+          toast.error(
+            threeDsResult?.response_message || "3DS authentication failed",
+          );
+        }
+      } else {
+        if (
+          String(response?.message || "")
+            .toLowerCase()
+            .includes("success")
+        ) {
+          toast.success("Payment successful!");
+          await handleHotelReservationBooking(tokenization, reservation);
+        } else {
+          toast.error(response?.response_message || "Payment failed");
+        }
+      }
+    } catch (error) {
+      const err = extractErrorFromAxiosApiError(error);
+      toast.error(err);
+    } finally {
+      try {
+        if (popup && !popup.closed) popup.close();
+      } catch (_) { }
+      setIsProcessing(false);
+    }
+  };
+
+  const handleHotelReservationBooking = async (
+    tokenization: string,
+    reservation: {
+      paymentDetails: { paymentMode: string; transactionAmount?: number | null };
+      customerInfo: { emailAddress?: string };
+    },
+  ) => {
+    if (!hotelBookingPayload) return;
+
+    try {
+      const reservationWithToken: HotelBookingPayload = {
+        ...hotelBookingPayload,
+        paymentDetails: {
+          ...(hotelBookingPayload.paymentDetails || { paymentMode: "CR" }),
+          cardInfo: tokenization,
+          transactionAmount: reservation.paymentDetails.transactionAmount,
+        },
+        customerInfo: {
+          ...(hotelBookingPayload.customerInfo || {}),
+          emailAddress: reservation.customerInfo.emailAddress,
+        },
+      };
+
+      const response = await mutateAsync(reservationWithToken);
+
       if (
         response?.meta?.success &&
         response?.meta?.statusMessage === "SUCCESS"
@@ -211,6 +361,17 @@ export default function HotelBookingPaymentSection({
         </div>
       ));
     }
+  };
+
+  const isPayButtonLoading =
+    isPending || isProcessing || isTokenizing || paymentPending;
+
+  const getPayButtonText = () => {
+    if (isTokenizing) return "Preparing secure payment…";
+    if (paymentPending) return "Processing your payment…";
+    if (isPending) return "Confirming your hotel booking…";
+    if (isProcessing) return "Please wait…";
+    return "Pay";
   };
 
   return (
@@ -296,8 +457,23 @@ export default function HotelBookingPaymentSection({
                   <TailwindCustomInput
                     type="email"
                     placeholder="Enter an email"
-                    className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none"
+                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none ${hasAttemptedValidation &&
+                      validationErrors["customerInfo.emailAddress"]
+                      ? "border-[#E65959]"
+                      : "border-[#C2CAD6]"
+                      }`}
                     label="Email"
+                    name="customerInfo.emailAddress"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearFieldError("customerInfo.emailAddress");
+                    }}
+                    error={
+                      hasAttemptedValidation
+                        ? validationErrors["customerInfo.emailAddress"]
+                        : null
+                    }
                   />
 
                   <div>
@@ -308,7 +484,19 @@ export default function HotelBookingPaymentSection({
                       <TailwindCustomInput
                         type="text"
                         placeholder="0000 0000 0000 0000"
-                        className="h-12 w-full rounded-2xl border border-[#C2CAD6] px-4 pr-20 text-[14px]"
+                        className={`h-12 w-full rounded-2xl border px-4 pr-20 text-[14px] ${hasAttemptedValidation &&
+                          validationErrors["card.number"]
+                          ? "border-[#E65959]"
+                          : "border-[#C2CAD6]"
+                          }`}
+                        name="number"
+                        value={cardDetails.number}
+                        onChange={handleCardFieldChange}
+                        error={
+                          hasAttemptedValidation
+                            ? validationErrors["card.number"]
+                            : null
+                        }
                       />
                       <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-3">
                         <img
@@ -329,23 +517,57 @@ export default function HotelBookingPaymentSection({
                     <TailwindCustomInput
                       type="text"
                       placeholder="MM/YY"
-                      className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
+                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation && validationErrors["card.expiry"]
+                        ? "border-[#E65959]"
+                        : "border-[#C2CAD6]"
+                        }`}
+                      name="expiry"
+                      value={cardDetails.expiryDisplay}
+                      onChange={handleCardFieldChange}
+                      error={
+                        hasAttemptedValidation
+                          ? validationErrors["card.expiry"]
+                          : null
+                      }
                     />
                     <TailwindCustomInput
                       type="text"
                       placeholder="000"
-                      className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
+                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation && validationErrors["card.cvv"]
+                        ? "border-[#E65959]"
+                        : "border-[#C2CAD6]"
+                        }`}
+                      name="cvv"
+                      value={cardDetails.cvv}
+                      onChange={handleCardFieldChange}
+                      error={
+                        hasAttemptedValidation
+                          ? validationErrors["card.cvv"]
+                          : null
+                      }
                     />
                   </div>
 
                   <TailwindCustomInput
                     type="text"
                     placeholder="Enter cardholder name"
-                    className="h-12 w-full rounded-2xl border px-4 text-[14px] ..."
+                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation &&
+                      validationErrors["card.holderName"]
+                      ? "border-[#E65959]"
+                      : "border-[#C2CAD6]"
+                      }`}
                     label="Cardholder name"
+                    name="holderName"
+                    value={cardDetails.holderName}
+                    onChange={handleCardFieldChange}
+                    error={
+                      hasAttemptedValidation
+                        ? validationErrors["card.holderName"]
+                        : null
+                    }
                   />
 
-                  <div className="rounded-xl border border-[#C2CAD6] overflow-hidden">
+                  {/* <div className="rounded-xl border border-[#C2CAD6] overflow-hidden">
                     <div
                       role="button"
                       tabIndex={0}
@@ -367,7 +589,7 @@ export default function HotelBookingPaymentSection({
 
                       <CardCollapseToggle
                         open={openAddress}
-                        onClick={() => {}}
+                        onClick={() => { }}
                         className="pointer-events-none"
                       />
                     </div>
@@ -432,7 +654,7 @@ export default function HotelBookingPaymentSection({
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </div> */}
 
                   <div className="mt-8 space-y-1 [font-variant-numeric:tabular-nums]">
                     <div className="flex items-center justify-between text-[15px]">
@@ -464,12 +686,34 @@ export default function HotelBookingPaymentSection({
         <div className="mt-16 px-5">
           <Button
             type="button"
-            className="h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold"
+            className={`h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold flex items-center justify-center gap-2 ${isPayButtonLoading ? "opacity-90 cursor-not-allowed" : ""
+              }`}
             overrideClasses
-            onClick={handlePay}
-            disabled={isPending}
+            onClick={generatePayfortPaymentTokenization}
+            disabled={isPayButtonLoading}
           >
-            {isPending ? "Processing..." : "Pay"}
+            {isPayButtonLoading && (
+              <svg
+                className="h-4 w-4 animate-spin"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="white"
+                  strokeWidth="3"
+                />
+                <path
+                  className="opacity-90"
+                  fill="white"
+                  d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                />
+              </svg>
+            )}
+            <span>{getPayButtonText()}</span>
           </Button>
 
           <div className="my-4 text-center text-[12px] text-[#3D495C]">OR</div>

@@ -250,7 +250,7 @@ export default function HotelBookingETicketSetion({
             <p className="text-xs text-[#3D495C] mt-1">{formatDate(checkIn)}</p>
           </div>
 
-          <div className="col-span-4 flex justify-center mt-8">
+          <div className={`col-span-4 flex justify-center ${hotelDetail?.checkInTime && hotelDetail?.checkOutTime ? "mt-16" : "mt-8"}`}>
             <div className="FlightDirection">
               <div className="hotelVisualGuid">
                 <div className="stopPoint"></div>

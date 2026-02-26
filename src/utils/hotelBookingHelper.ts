@@ -41,7 +41,22 @@ export type HotelBookingPayload = {
       };
     }>;
   }>;
-  paymentDetails: { paymentMode: string };
+  paymentDetails: {
+    paymentMode: string;
+    transactionAmount?: number | null;
+    cardInfo?: string;
+    address?: {
+      label?: string;
+      street?: string[] | string;
+      postalCode?: string;
+      cityName?: string;
+      countryCode?: string;
+      state?: string;
+    };
+  };
+  customerInfo?: {
+    emailAddress?: string;
+  };
 };
 
 const emptyPassenger = (
@@ -170,6 +185,14 @@ export function buildInitialHotelBookingPayload(
     paymentDetails: { paymentMode: "CR" },
   };
 }
+
+export type HotelPaymentCardDetails = {
+  number: string;
+  expiryDisplay: string;
+  expiry: string; // YYMM
+  cvv: string;
+  holderName: string;
+};
 
 export type HotelPassengerFieldErrors = Record<
   number,
@@ -332,3 +355,57 @@ export function validateHotelBookingPassengersFields(
 
   return errors;
 }
+
+export const validateHotelReservationBookingDataFields = (
+  reservation: Pick<HotelBookingPayload, "customerInfo" | "paymentDetails"> | any,
+  card: HotelPaymentCardDetails,
+): Record<string, string> => {
+  const errors: Record<string, string> = {};
+  const isEmpty = (v: any) =>
+    v === undefined || v === null || String(v).trim() === "";
+
+  // Card number
+  if (isEmpty(card.number)) {
+    errors["card.number"] = "Card number is required.";
+  } else {
+    const numericCard = card.number.replace(/\s+/g, "");
+    if (!/^\d{12,19}$/.test(numericCard)) {
+      errors["card.number"] = "Card number looks invalid.";
+    }
+  }
+
+  if (isEmpty(card.expiry)) {
+    errors["card.expiry"] = "Expiry date is required.";
+  } else if (!/^\d{4}$/.test(card.expiry)) {
+    errors["card.expiry"] = "Expiry date is invalid. Please use MM/YY.";
+  } else {
+    const yy = Number(card.expiry.slice(0, 2));
+    const mm = Number(card.expiry.slice(2, 4));
+    if (!(mm >= 1 && mm <= 12)) {
+      errors["card.expiry"] = "Expiry month is invalid.";
+    } else {
+      const fullYear = 2000 + yy;
+      const expiryDate = new Date(fullYear, mm, 0);
+      expiryDate.setHours(23, 59, 59, 999);
+      if (expiryDate < new Date()) {
+        errors["card.expiry"] = "Card expiry is in the past.";
+      }
+    }
+  }
+
+  if (isEmpty(card.cvv)) {
+    errors["card.cvv"] = "Security code (CVV) is required.";
+  } else if (!/^\d{3,4}$/.test(card.cvv)) {
+    errors["card.cvv"] = "Security code should be 3 or 4 digits.";
+  }
+
+  if (isEmpty(card.holderName)) {
+    errors["card.holderName"] = "Cardholder name is required.";
+  }
+
+  if (isEmpty(reservation?.customerInfo?.emailAddress)) {
+    errors["customerInfo.emailAddress"] = "Email is required.";
+  }
+
+  return errors;
+};
