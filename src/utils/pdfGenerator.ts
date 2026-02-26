@@ -106,12 +106,13 @@ export const generateMultiPagePDF = async (
 
   // Create a temporary visible container for PDF generation
   const tempContainer = document.createElement("div");
-  tempContainer.style.position = "absolute";
-  tempContainer.style.left = "-9999px";
+  tempContainer.style.position = "fixed";
+  tempContainer.style.left = "-20000px";
   tempContainer.style.top = "0";
   tempContainer.style.width = "580px";
   tempContainer.style.visibility = "hidden";
   tempContainer.style.pointerEvents = "none";
+  tempContainer.style.zIndex = "-9999";
   tempContainer.id = "temp-pdf-container";
 
   // Clone the content from the container
@@ -124,6 +125,25 @@ export const generateMultiPagePDF = async (
 
   tempContainer.appendChild(clonedContent);
   document.body.appendChild(tempContainer);
+
+  // Wait for all images inside the clone to finish loading
+  const waitForImages = async (root: HTMLElement) => {
+    const images = root.querySelectorAll("img");
+    const promises = Array.from(images).map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete && img.naturalHeight > 0) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // don't block on broken images
+          }
+        })
+    );
+    await Promise.all(promises);
+  };
+
+  await waitForImages(clonedContent);
 
   try {
     // Find all specified elements in the cloned content
@@ -143,14 +163,10 @@ export const generateMultiPagePDF = async (
       );
     }
 
-    // Helper to render a single element to canvas
+    // Helper to render a single element to canvas — uses onclone to avoid touching main DOM
     const renderElementToCanvas = async (el: HTMLElement) => {
-      // Hide elements marked as pdf-hide inside the specific element
-      const elementsToHide = el.querySelectorAll(".pdf-hide");
-      elementsToHide.forEach((node) => {
-        const htmlEl = node as HTMLElement;
-        htmlEl.style.display = "none";
-      });
+      // Defer to next frame so the browser can finish any pending paints
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
       const canvas = await html2canvas(el, {
         scale,
@@ -160,8 +176,13 @@ export const generateMultiPagePDF = async (
         logging: false,
         width: el.scrollWidth,
         height: el.scrollHeight,
-        removeContainer: true,
         foreignObjectRendering: false,
+        onclone: (clonedDoc: Document) => {
+          // Hide pdf-hide elements only in the html2canvas clone, not the live DOM
+          clonedDoc.querySelectorAll(".pdf-hide").forEach((node) => {
+            (node as HTMLElement).style.display = "none";
+          });
+        },
       });
 
       return canvas;
@@ -238,12 +259,13 @@ export const generateMultiPagePDFBlob = async (
   }
 
   const tempContainer = document.createElement("div");
-  tempContainer.style.position = "absolute";
-  tempContainer.style.left = "-9999px";
+  tempContainer.style.position = "fixed";
+  tempContainer.style.left = "-20000px";
   tempContainer.style.top = "0";
   tempContainer.style.width = "580px";
   tempContainer.style.visibility = "hidden";
   tempContainer.style.pointerEvents = "none";
+  tempContainer.style.zIndex = "-9999";
   tempContainer.id = "temp-pdf-container";
 
   const clonedContent = container.cloneNode(true) as HTMLElement;
@@ -255,6 +277,25 @@ export const generateMultiPagePDFBlob = async (
 
   tempContainer.appendChild(clonedContent);
   document.body.appendChild(tempContainer);
+
+  // Wait for all images inside the clone to finish loading
+  const waitForImages = async (root: HTMLElement) => {
+    const images = root.querySelectorAll("img");
+    const promises = Array.from(images).map(
+      (img) =>
+        new Promise<void>((resolve) => {
+          if (img.complete && img.naturalHeight > 0) {
+            resolve();
+          } else {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+          }
+        })
+    );
+    await Promise.all(promises);
+  };
+
+  await waitForImages(clonedContent);
 
   try {
     const elements: HTMLElement[] = [];
@@ -274,11 +315,7 @@ export const generateMultiPagePDFBlob = async (
     }
 
     const renderElementToCanvas = async (el: HTMLElement) => {
-      const elementsToHide = el.querySelectorAll(".pdf-hide");
-      elementsToHide.forEach((node) => {
-        const htmlEl = node as HTMLElement;
-        htmlEl.style.display = "none";
-      });
+      await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
       const canvas = await html2canvas(el, {
         scale,
@@ -288,8 +325,12 @@ export const generateMultiPagePDFBlob = async (
         logging: false,
         width: el.scrollWidth,
         height: el.scrollHeight,
-        removeContainer: true,
         foreignObjectRendering: false,
+        onclone: (clonedDoc: Document) => {
+          clonedDoc.querySelectorAll(".pdf-hide").forEach((node) => {
+            (node as HTMLElement).style.display = "none";
+          });
+        },
       });
 
       return canvas;

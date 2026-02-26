@@ -18,11 +18,14 @@ import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
+import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
+import { usePayfortPayment } from "../../hooks/usePayment";
+import { validateReservationFlightBookingDataFields } from "../../utils/flightBookingHelper";
 
 type PaymentMethod = "card" | "apple" | "google";
 
 type HotelBookingPaymentSectionProps = {
-  onNext?: () => void;
+  onNext?: (bookingResponse: any) => void;
   onEditPassengers?: () => void;
   hotelDetail?: any;
   bookingInfo?: any;
@@ -53,7 +56,112 @@ export default function HotelBookingPaymentSection({
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
   const [openAddress, setOpenAddress] = useState(true);
 
+  const [cardDetails, setCardDetails] = useState({
+    number: "",
+    expiryDisplay: "",
+    expiry: "",
+    cvv: "",
+    holderName: "",
+  });
+
+  const [email, setEmail] = useState("");
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const { mutateAsync, isPending } = useHotelReservationBooking();
+  const { mutateAsync: paymentMutateAsync, isPending: paymentPending } =
+    usePayfortPayment();
+  const { initiateTokenization, isLoading: isTokenizing } =
+    usePayFortTokenization();
+
+  const handleCardFieldChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value } = e.target;
+
+    if (name === "number") {
+      const digits = value.replace(/\D/g, "").slice(0, 16);
+      const formatted = digits.replace(/(.{4})/g, "$1 ").trim();
+      setCardDetails((prev) => ({ ...prev, number: formatted }));
+      clearFieldError("card.number");
+      return;
+    }
+    if (name === "expiry") {
+      const digits = value.replace(/\D/g, "").slice(0, 4);
+      const mm = digits.slice(0, 2);
+      const yy = digits.slice(2, 4);
+      let display = mm;
+      if (yy.length) display = `${mm}/${yy}`;
+      const stored = yy.length === 2 && mm.length === 2 ? `${yy}${mm}` : "";
+      setCardDetails((prev) => ({
+        ...prev,
+        expiryDisplay: display,
+        expiry: stored,
+      }));
+      clearFieldError("card.expiry");
+      return;
+    }
+    if (name === "cvv") {
+      const digits = value.replace(/\D/g, "").slice(0, 4);
+      setCardDetails((prev) => ({ ...prev, cvv: digits }));
+      clearFieldError("card.cvv");
+      return;
+    }
+    if (name === "holderName") {
+      setCardDetails((prev) => ({ ...prev, holderName: value }));
+      clearFieldError("card.holderName");
+      return;
+    }
+    setCardDetails((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const clearFieldError = (fieldPath: string) => {
+    if (hasAttemptedValidation && validationErrors[fieldPath]) {
+      setValidationErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[fieldPath];
+        return updated;
+      });
+    }
+  };
+
+  const buildFakeReservation = () => ({
+    customerInfo: { emailAddress: email },
+    paymentDetails: {
+      address: {
+        street: ["placeholder"], // validator ko satisfy karne ke liye
+        postalCode: "00000",
+        cityName: "NA",
+        countryCode: "ARE",
+      },
+    },
+  });
+
+  // ─── Validate (only card + email) ────────────────────────────────────────────
+  const validateFields = (): boolean => {
+    setHasAttemptedValidation(true);
+    const fakeReservation = buildFakeReservation();
+    const allErrors = validateReservationFlightBookingDataFields(
+      fakeReservation,
+      cardDetails,
+    );
+
+    // Address errors hatao — hotel payment mein address nahi chahiye
+    const filtered: Record<string, string> = {};
+    for (const [key, val] of Object.entries(allErrors)) {
+      if (!key.startsWith("address.")) {
+        filtered[key] = val;
+      }
+    }
+
+    setValidationErrors(filtered);
+    return Object.keys(filtered).length === 0;
+  };
 
   const handlePay = async () => {
     if (!hotelBookingPayload) {
@@ -68,7 +176,7 @@ export default function HotelBookingPaymentSection({
       ) {
         toast.success(response?.meta?.actionType || "Booking confirmed!");
         if (typeof onNext === "function") {
-          onNext();
+          onNext(response);
         }
       } else {
         toast.error((t) => (

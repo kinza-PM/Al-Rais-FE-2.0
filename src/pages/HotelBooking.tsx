@@ -41,6 +41,7 @@ const HotelBooking = () => {
     hotelKey?: string;
   };
   const [preBookData, setPreBookData] = useState<any>(null);
+  const [hotelBookingResponse, setHotelBookingResponse] = useState<any>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, _] = useState<string[]>(["Book", "Review", "Pay", "Receipt"]);
   const { data: countriesOptions } = useCountriesOptions();
@@ -418,7 +419,8 @@ const HotelBooking = () => {
           )}
           {currentStep === 2 && (
             <HotelBookingPaymentSection
-              onNext={() => {
+              onNext={(bookingResponse) => {
+                setHotelBookingResponse(bookingResponse);
                 setCurrentStep(3);
               }}
               onEditPassengers={() => setCurrentStep(0)}
@@ -429,7 +431,12 @@ const HotelBooking = () => {
               hotelBookingPayload={hotelBookingPayload}
             />
           )}
-          {currentStep === 3 && <HotelBookingETicketSetion />}
+          {currentStep === 3 && (
+            <HotelBookingETicketSetion
+              bookingResponse={hotelBookingResponse}
+              hotelDetail={hotelDetail}
+            />
+          )}
         </div>
       </div>
       {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />}
