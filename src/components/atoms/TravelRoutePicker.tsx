@@ -135,7 +135,8 @@ const TravelRoutePicker: React.FC<Props> = ({
         <button
           type="button"
           onClick={swap}
-          className="-mx-0.5 flex h-11 w-12 items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn"
+          className="mx-2 flex items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn"
+          style={{ width: 47, height: 47, minWidth: 47, minHeight: 47, marginTop: 23, marginLeft: 0 }}
         >
           <img src={DoubledArrow} alt="swap-routes" />
         </button>

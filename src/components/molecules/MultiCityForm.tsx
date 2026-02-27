@@ -176,7 +176,7 @@ const MultiCityForm: React.FC<Props> = ({
     <div className="px-6 pb-6 pt-3">
       {/* ROW 1 — Passengers only (cabin is per flight row below) */}
       <div className="flex gap-3 mb-5 justify-center">
-        <div className="relative w-[250px]">
+        <div className="relative w-[200px]">
           <label className="flex items-center gap-2 text-[12px] text-[#3D495C] mb-1">
             Passengers
             <span className="relative inline-flex group/info">
@@ -217,12 +217,12 @@ const MultiCityForm: React.FC<Props> = ({
 
       {/* Dynamic legs */}
       {legs.map((leg, idx) => (
-        <div key={idx} className="space-y-2 mb-6">
+        <div key={idx} className="space-y-4 mb-6">
           <p className="text-[14px] text-[#11253E] font-medium">
             Flight {String(idx + 1).padStart(2, "0")}
           </p>
-          {/* <div className="grid items-end gap-3 md:gap-4 md:grid-cols-[250px_30px_minmax(250px,1fr)_200px_250px_auto]"> */}
-          <div className="grid items-end gap-3 md:gap-4 md:grid-cols-[250px_30px_minmax(250px,1fr)_200px_220px_40px]">
+          {/* grid: From | swap | To (flex) | Departure date | Cabin | Remove */}
+          <div className="grid items-center gap-3 md:gap-4 md:grid-cols-[230px_47px_minmax(230px,1fr)_230px_220px_40px]">
             <TravelRoutePicker
               options={countries}
               loading={loadingCountries}
@@ -245,7 +245,7 @@ const MultiCityForm: React.FC<Props> = ({
               labels={{ from: "From", to: "To" }}
               placeholders={{ from: "Please select", to: "Please select" }}
               disableSameSelection
-              widthClass="w-[250px]"
+              widthClass="w-[230px]"
               fromError={(!leg.fromCode?.trim() && fromError) || undefined}
               toError={(!leg.toCode?.trim() && toError) || undefined}
               onLoadMore={() => {
@@ -255,7 +255,7 @@ const MultiCityForm: React.FC<Props> = ({
               loadingMore={countriesLoadingMore}
             />
 
-            <div>
+            <div className="w-[230px]">
               <label className="block text-[12px] text-[#3D495C] mb-1">
                 Departure date
               </label>
@@ -275,7 +275,7 @@ const MultiCityForm: React.FC<Props> = ({
               />
             </div>
 
-            <div className="w-[200px]">
+            <div className="w-[220px]">
               <SearchableDropdown
                 options={cabinClasses.map((cc) => ({
                   id: cc.id,
@@ -298,7 +298,7 @@ const MultiCityForm: React.FC<Props> = ({
               <button
                 type="button"
                 onClick={() => removeLeg(idx)}
-                className="mb-1 p-2 text-[#DC2626] hover:text-[#B91C1C] hover:bg-red-50 rounded transition-colors"
+                className="p-2 text-[#DC2626] hover:text-[#B91C1C] hover:bg-red-50 rounded transition-colors"
                 aria-label={`Remove flight ${idx + 1}`}
               >
                 <svg

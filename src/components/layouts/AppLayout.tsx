@@ -30,7 +30,8 @@ const AppLayout: React.FC = () => {
     navigate("/auth", { state: { mode: "signup" } });
   };
 
-  const gradientRoutes = ["/", "/about"]; // define routes to show the gradient
+  // Apply gradient only where desired (remove "/" so LandingPage stays neutral)
+  const gradientRoutes = ["/about"]; // define routes to show the gradient
   const shouldAddGradient = gradientRoutes.includes(location.pathname);
 
   return (

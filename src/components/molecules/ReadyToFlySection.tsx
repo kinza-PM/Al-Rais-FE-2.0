@@ -24,8 +24,12 @@ const ReadyToFlySection: React.FC = () => {
       >
         {/* Left: text area — min-height 350.68px */}
         <div
-          className="relative z-10 flex flex-1 flex-col justify-center px-8 py-12 sm:pr-16 md:pr-20 lg:pr-[51rem]"
-          style={{ minHeight: TEXT_AREA_MIN_HEIGHT }}
+          className="relative z-10 flex flex-1 flex-col justify-center py-12"
+          style={{ 
+            minHeight: TEXT_AREA_MIN_HEIGHT,
+            paddingLeft: "10rem", // 10rem left padding
+            paddingRight: "51rem", // This was previously lg:pr-[51rem]
+          }}
         >
           <h2 className="text-left text-2xl font-bold leading-tight text-white sm:text-3xl md:text-4xl">
             Ready to take a trip around the world with us?

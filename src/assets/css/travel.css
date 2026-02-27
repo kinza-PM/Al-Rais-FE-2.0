@@ -771,7 +771,7 @@ input[type="number"] {
   padding: 0px;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
-  border: 1px solid var(--white-300, #e4e4e7);
+  /* border: 1px solid var(--white-300, #e4e4e7); */
   border-top: none;
 }
 
@@ -826,8 +826,14 @@ input[type="number"] {
   margin-bottom: 15px;
 }
 
+/* For round-trip/multi-segment flight cards adjust bottom spacing and hide overflow */
+.flightDetailCards.flightDetailRoundTripCards {
+  margin-bottom: -33px !important;
+  overflow: hidden;
+}
+
 .flightDetailRoundTripCards {
-  border: 1px solid var(--white-300, #e4e4e7);
+  /* border: 1px solid var(--white-300, #e4e4e7); */
   border-radius: 12px;
 }
 
@@ -1410,13 +1416,13 @@ img:hover {
 
 .fromToSelectWidth {
   width: 100%;
-  max-width: 396px;
+  max-width: 318px;
 }
 
 .bottomHeaderFlex .fromToBtn {
   width: 100% !important;
-  height: 48px !important;
-  max-width: 48px;
+  height: 47px !important;
+  max-width: 47px;
 }
 
 .bottomHeaderFlex {
@@ -1424,8 +1430,35 @@ img:hover {
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
-  gap: 14px;
+  gap: 11px;
   flex-wrap: wrap;
+}
+
+@media (min-width: 768px) {
+  .md\:grid-cols-\[250px_30px_minmax\(250px\2c 1fr\)_200px_220px_40px\] {
+    grid-template-columns: 251px 57px minmax(265px, 2fr) 201px 219px 34px;
+  }
+
+  .md\:grid-cols-\[230px_47px_minmax\(230px\2c 1fr\)_230px_220px_40px\] {
+    grid-template-columns: 230px 47px minmax(230px, 2fr) 230px 220px 40px;
+  }
+}
+
+/* Ensure filter collapse header/content use requested background */
+.stopsCollapse .ant-collapse .ant-collapse-header {
+  background: #e1e1e1 !important;
+}
+.stopsCollapse .ant-collapse .ant-collapse-content,
+.stopsCollapse .ant-collapse .ant-collapse-content-box {
+  background: #e1e1e1 !important;
+}
+
+.timeCollapse .ant-collapse .ant-collapse-header {
+  background: #e1e1e1 !important;
+}
+.timeCollapse .ant-collapse .ant-collapse-content,
+.timeCollapse .ant-collapse .ant-collapse-content-box {
+  background: #e1e1e1 !important;
 }
 
 .searchFilterBtn {
@@ -1477,8 +1510,8 @@ img:hover {
 }
 
 .flightDetailTemplateWrap {
-  padding: 0px 32px;
-}
+    padding: 0px 100px;
+  }
 
 .custom-phone-wrapper .react-international-phone-country-selector-button {
   width: 112px !important;
