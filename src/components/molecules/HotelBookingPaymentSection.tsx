@@ -29,6 +29,7 @@ import {
 } from "../../utils/flightBookingHelper";
 import { usePayfortPayment } from "../../hooks/usePayment";
 import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
+import Loader from "../atoms/Loader";
 
 type PaymentMethod = "card" | "apple" | "google";
 
@@ -212,7 +213,10 @@ export default function HotelBookingPaymentSection({
   const handlePayfortHotelPayment = async (
     tokenization: string,
     reservation: {
-      paymentDetails: { paymentMode: string; transactionAmount?: number | null };
+      paymentDetails: {
+        paymentMode: string;
+        transactionAmount?: number | null;
+      };
       customerInfo: { emailAddress?: string };
     },
   ) => {
@@ -237,7 +241,9 @@ export default function HotelBookingPaymentSection({
 
       const paymentPayload = {
         token_name: tokenization ?? null,
-        amount: String(reservation.paymentDetails.transactionAmount ?? totalPrice ?? 0),
+        amount: String(
+          reservation.paymentDetails.transactionAmount ?? totalPrice ?? 0,
+        ),
         email: reservation.customerInfo.emailAddress || "",
       };
 
@@ -290,7 +296,7 @@ export default function HotelBookingPaymentSection({
     } finally {
       try {
         if (popup && !popup.closed) popup.close();
-      } catch (_) { }
+      } catch (_) {}
       setIsProcessing(false);
     }
   };
@@ -298,7 +304,10 @@ export default function HotelBookingPaymentSection({
   const handleHotelReservationBooking = async (
     tokenization: string,
     reservation: {
-      paymentDetails: { paymentMode: string; transactionAmount?: number | null };
+      paymentDetails: {
+        paymentMode: string;
+        transactionAmount?: number | null;
+      };
       customerInfo: { emailAddress?: string };
     },
   ) => {
@@ -376,6 +385,7 @@ export default function HotelBookingPaymentSection({
 
   return (
     <section className="mt-10 flex items-center justify-center px-4">
+      <Loader show={isPending} label="Confirming your flight booking…" />
       <div className="w-full max-w-[550px]">
         <HotelSummaryCard
           paymentPage={true}
@@ -457,11 +467,12 @@ export default function HotelBookingPaymentSection({
                   <TailwindCustomInput
                     type="email"
                     placeholder="Enter an email"
-                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none ${hasAttemptedValidation &&
+                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none ${
+                      hasAttemptedValidation &&
                       validationErrors["customerInfo.emailAddress"]
-                      ? "border-[#E65959]"
-                      : "border-[#C2CAD6]"
-                      }`}
+                        ? "border-[#E65959]"
+                        : "border-[#C2CAD6]"
+                    }`}
                     label="Email"
                     name="customerInfo.emailAddress"
                     value={email}
@@ -484,11 +495,12 @@ export default function HotelBookingPaymentSection({
                       <TailwindCustomInput
                         type="text"
                         placeholder="0000 0000 0000 0000"
-                        className={`h-12 w-full rounded-2xl border px-4 pr-20 text-[14px] ${hasAttemptedValidation &&
+                        className={`h-12 w-full rounded-2xl border px-4 pr-20 text-[14px] ${
+                          hasAttemptedValidation &&
                           validationErrors["card.number"]
-                          ? "border-[#E65959]"
-                          : "border-[#C2CAD6]"
-                          }`}
+                            ? "border-[#E65959]"
+                            : "border-[#C2CAD6]"
+                        }`}
                         name="number"
                         value={cardDetails.number}
                         onChange={handleCardFieldChange}
@@ -517,10 +529,12 @@ export default function HotelBookingPaymentSection({
                     <TailwindCustomInput
                       type="text"
                       placeholder="MM/YY"
-                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation && validationErrors["card.expiry"]
-                        ? "border-[#E65959]"
-                        : "border-[#C2CAD6]"
-                        }`}
+                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
+                        hasAttemptedValidation &&
+                        validationErrors["card.expiry"]
+                          ? "border-[#E65959]"
+                          : "border-[#C2CAD6]"
+                      }`}
                       name="expiry"
                       value={cardDetails.expiryDisplay}
                       onChange={handleCardFieldChange}
@@ -533,10 +547,11 @@ export default function HotelBookingPaymentSection({
                     <TailwindCustomInput
                       type="text"
                       placeholder="000"
-                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation && validationErrors["card.cvv"]
-                        ? "border-[#E65959]"
-                        : "border-[#C2CAD6]"
-                        }`}
+                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
+                        hasAttemptedValidation && validationErrors["card.cvv"]
+                          ? "border-[#E65959]"
+                          : "border-[#C2CAD6]"
+                      }`}
                       name="cvv"
                       value={cardDetails.cvv}
                       onChange={handleCardFieldChange}
@@ -551,11 +566,12 @@ export default function HotelBookingPaymentSection({
                   <TailwindCustomInput
                     type="text"
                     placeholder="Enter cardholder name"
-                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation &&
+                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
+                      hasAttemptedValidation &&
                       validationErrors["card.holderName"]
-                      ? "border-[#E65959]"
-                      : "border-[#C2CAD6]"
-                      }`}
+                        ? "border-[#E65959]"
+                        : "border-[#C2CAD6]"
+                    }`}
                     label="Cardholder name"
                     name="holderName"
                     value={cardDetails.holderName}
@@ -686,8 +702,9 @@ export default function HotelBookingPaymentSection({
         <div className="mt-16 px-5">
           <Button
             type="button"
-            className={`h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold flex items-center justify-center gap-2 ${isPayButtonLoading ? "opacity-90 cursor-not-allowed" : ""
-              }`}
+            className={`h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold flex items-center justify-center gap-2 ${
+              isPayButtonLoading ? "opacity-90 cursor-not-allowed" : ""
+            }`}
             overrideClasses
             onClick={generatePayfortPaymentTokenization}
             disabled={isPayButtonLoading}
