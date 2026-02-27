@@ -416,7 +416,7 @@ const AppHeader: React.FC<HeaderProps> = ({
           </Dropdown>
 
           {/* EN Language Selector */}
-          <Dropdown
+          {/* <Dropdown
             menu={{
               items: [
                 { 
@@ -467,7 +467,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                 EN
               </span>
             </button>
-          </Dropdown>
+          </Dropdown> */}
 
           {/* Auth area: avatar when logged in, Login/Sign up when not */}
           {isAuthenticated && user ? (

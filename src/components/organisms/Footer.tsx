@@ -1,14 +1,18 @@
 import React from "react";
 import footerLogo from "../../assets/images/footerLogo.png";
+import { Link } from "react-router-dom"; // Add this import
 
 const FOOTER_MAIN_HEIGHT = 242;
 
 const COMPANY_LINKS = [
-  "About us",
-  "Overview",
-  "Values & Vision",
-  "Cookies policy",
-  "Privacy & terms of services",
+  { label: "About us", link: "/about" },
+  { label: "Overview", link: "#" },
+  { label: "Values & Vision", link: "#" },
+  { label: "Cookies policy", link: "/cookies-policy" },
+  { label: "Privacy policy", link: "/privacy-policy" },
+  { label: "Terms of services", link: "/terms-of-services" },
+  { label: "Refund & Cancellation", link: "/refund-cancellation-policy" },
+
 ];
 
 const SERVICES_LINKS = [
@@ -20,15 +24,15 @@ const SERVICES_LINKS = [
 ];
 
 const HELP_LINKS = [
-  { label: "FAQs", link: "#" },
-  { label: "Payments", link: "#" },
+  { label: "FAQs", link: "/faq" },
+  { label: "Payments", link: "/payments-help" },
   { label: "Contact support", link: "/customer-support" },
 ];
 
 const Footer: React.FC = () => {
   return (
     <footer className="w-full">
-      {/* Main footer content — display: flex, flex-direction: row (Figma) */}
+      {/* Main footer content */}
       <div
         className="mx-auto w-full max-w-[1920px] px-6 py-12 sm:px-8 md:px-12 lg:px-16"
         style={{
@@ -40,7 +44,7 @@ const Footer: React.FC = () => {
           className="flex flex-row flex-wrap items-start justify-between gap-x-10 gap-y-10 lg:gap-x-12"
           style={{ display: "flex" }}
         >
-          {/* Left column: Brand — logo and description only */}
+          {/* Left column: Brand */}
           <div className="flex min-w-0 flex-1 flex-col md:max-w-[280px] lg:max-w-[320px]">
             <img
               src={footerLogo}
@@ -63,13 +67,13 @@ const Footer: React.FC = () => {
             </h3>
             <ul className="space-y-2">
               {COMPANY_LINKS.map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
+                <li key={item.label}>
+                  <Link
+                    to={item.link}
                     className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
                   >
-                    {item}
-                  </a>
+                    {item.label}
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -102,19 +106,19 @@ const Footer: React.FC = () => {
             <ul className="space-y-2">
               {HELP_LINKS.map((item) => (
                 <li key={item.label}>
-                  <a
-                    href={item.link}
+                  <Link
+                    to={item.link}
                     className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Right column: Social icons — at bottom, fit on the right side */}
-          <div className="flex min-w-0 flex-shrink-0 flex-row items-end justify-end gap-4" style={{ display: "flex" }}>
+          {/* Social icons */}
+          <div className="flex min-w-0 flex-shrink-0 flex-row items-end justify-end gap-4">
             <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="Twitter">
               <TwitterIcon />
             </a>
@@ -131,7 +135,7 @@ const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* Dark strip below — Figma: full width, #3D495C */}
+      {/* Dark strip */}
       <div
         className="w-full py-4 text-center text-sm text-white/90"
         style={{ background: "#3D495C" }}
@@ -139,7 +143,6 @@ const Footer: React.FC = () => {
         © Al Rais Travel. All rights reserved.
       </div>
 
-      {/* Custom CSS for exact padding requirements at LG breakpoint */}
       <style>{`
         @media (min-width: 1024px) {
           .lg\\:px-16 {
@@ -152,6 +155,7 @@ const Footer: React.FC = () => {
   );
 };
 
+// Keep all the icon components exactly as they are in your original code
 function TwitterIcon() {
   return (
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
