@@ -13,6 +13,7 @@ export { default as ResetPasswordForm } from './molecules/ResetPasswordForm';
 // Organisms
 export { default as header } from './organisms/header';
 export { default as AuthModal } from './organisms/AuthModal';
+export { default as ChatBot } from './organisms/ChatBot';
 
 // Templates
 export { default as MainLayout } from './templates/MainLayout';
