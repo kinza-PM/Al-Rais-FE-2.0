@@ -1,6 +1,6 @@
 import React from "react";
 import ReadyToFlySection from "../components/molecules/ReadyToFlySection";
-import Footer from "../components/organisms/Footer"; 
+// import Footer from "../components/organisms/Footer"; 
 
 const CookiesPolicyPage: React.FC = () => {
   return (
