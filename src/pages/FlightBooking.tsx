@@ -430,6 +430,7 @@ const FlightBooking = () => {
         otherAncillaryRequested: true,
         formOfPayment: "CR",
         travelType: "P",
+        searchKey: offerData?.searchKey,
       });
       const ancillarySearch = response?.data?.[0] ?? null;
       setAncillarySearchData(ancillarySearch);
@@ -656,6 +657,7 @@ const FlightBooking = () => {
                 flightAncillarySearch={ancillarySearchData}
                 onNext={() => setCurrentStep(2)}
                 offerId={offerData?.offerId}
+                searchKey={offerData?.searchKey}
               />
             )}
           {currentStep === reviewStepIndex && (

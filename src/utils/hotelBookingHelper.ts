@@ -314,9 +314,20 @@ export function validateHotelBookingPassengersFields(
           }
         }
       }
-      if (isEmpty(email)) {
+      // if (isEmpty(email)) {
+      //   passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
+      //     "Email address is required.";
+      // }
+      const emailVal = email ?? "";
+      if (isEmpty(emailVal)) {
         passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
           "Email address is required.";
+      } else if (emailVal !== emailVal.trim()) {
+        passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
+          "Remove spaces at the beginning or end of your email.";
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim())) {
+        passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
+          "Enter a valid email address.";
       }
       if (isEmpty(phoneValue)) {
         passengerErrors["contact.contactsProvided.0.phone.0"] =
@@ -357,7 +368,9 @@ export function validateHotelBookingPassengersFields(
 }
 
 export const validateHotelReservationBookingDataFields = (
-  reservation: Pick<HotelBookingPayload, "customerInfo" | "paymentDetails"> | any,
+  reservation:
+    | Pick<HotelBookingPayload, "customerInfo" | "paymentDetails">
+    | any,
   card: HotelPaymentCardDetails,
 ): Record<string, string> => {
   const errors: Record<string, string> = {};
@@ -403,8 +416,18 @@ export const validateHotelReservationBookingDataFields = (
     errors["card.holderName"] = "Cardholder name is required.";
   }
 
-  if (isEmpty(reservation?.customerInfo?.emailAddress)) {
+  // if (isEmpty(reservation?.customerInfo?.emailAddress)) {
+  //   errors["customerInfo.emailAddress"] = "Email is required.";
+  // }
+
+  const emailVal = reservation?.customerInfo?.emailAddress ?? "";
+  if (isEmpty(emailVal)) {
     errors["customerInfo.emailAddress"] = "Email is required.";
+  } else if (emailVal !== emailVal.trim()) {
+    errors["customerInfo.emailAddress"] =
+      "Remove spaces at the beginning or end of your email.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim())) {
+    errors["customerInfo.emailAddress"] = "Enter a valid email address.";
   }
 
   return errors;

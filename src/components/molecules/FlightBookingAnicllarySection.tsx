@@ -44,6 +44,7 @@ type FlightBookingAnicllarySectionProps = {
   flightAncillarySearch?: any;
   onNext?: () => void;
   offerId?: string;
+  searchKey?: string;
 };
 
 export default function FlightBookingAnicllarySection({
@@ -52,6 +53,7 @@ export default function FlightBookingAnicllarySection({
   flightAncillarySearch,
   onNext,
   offerId,
+  searchKey
 }: FlightBookingAnicllarySectionProps) {
   const { isAuthenticated } = useAuth();
   const { getAllSelections, clearAll } = useAncillaryStore();
@@ -99,7 +101,7 @@ export default function FlightBookingAnicllarySection({
 
   const handleFlightAncillaryProvBooking = async () => {
     const all = getAllSelections() as AllSelections;
-    const payload = buildAncillaryPayload(all, offerId);
+    const payload = buildAncillaryPayload(all, offerId, searchKey);
 
     try {
       const response = await mutateAsync(payload);

@@ -1,15 +1,9 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "../atoms/Button";
 import { generateMultiPagePDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
-// import HotelImage1 from "../../assets/images/HotelImage1.png";
-// import HotelImage2 from "../../assets/images/HotelImage2.png";
-// import HotelImage3 from "../../assets/images/HotelImage3.png";
-// import HotelImage4 from "../../assets/images/HotelImage4.png";
-
-const IMAGE_PROXY_BASE =
-  "https://hfus5c7uw2.execute-api.eu-west-1.amazonaws.com/dev/imageProxy?url=";
-// const IMAGE_PROXY_BASE = "http://localhost:5000/image-proxy?url=";
+import Loader from "../atoms/Loader";
+import { useHotelProxyImages } from "../../hooks/useHotelProxyImages";
 
 type HotelBookingETicketSectionProps = {
   bookingResponse?: any;
@@ -28,25 +22,31 @@ export default function HotelBookingETicketSetion({
   const currency = hotel?.currency ?? "AED";
   const totalNet = hotel?.totalNet ?? 0;
   const bookingRef = bookingData?.bookingReferenceId ?? "—";
-  // const bookingStatus = bookingData?.bookingStatus ?? "—";
 
   // Images — prebook room images ya hotelDetail images
-  const roomImages = rooms
-    .flatMap((r: any) => r.roomImages?.image ?? [])
-    .map((img: any) => img.path)
-    .filter(Boolean);
-  const hotelImages =
-    hotelDetail?.images?.map((img: any) => img.path).filter(Boolean) ?? [];
-  const displayImages = [...roomImages, ...hotelImages].slice(0, 5);
+  const displayImages = useMemo(() => {
+    const roomImages = (rooms || [])
+      .flatMap((r: any) => r.roomImages?.image ?? [])
+      .map((img: any) => img.path)
+      .filter(Boolean);
+    const hotelImages =
+      hotelDetail?.images?.map((img: any) => img.path).filter(Boolean) || [];
+    return [...roomImages, ...hotelImages].slice(0, 5);
+  }, [rooms, hotelDetail]);
+
+  // React Query based image fetching — follows project pattern
+  const { data: imageDataUrls = [], isLoading: imagesLoading } =
+    useHotelProxyImages(displayImages);
+  const imagesLoaded = !imagesLoading;
 
   // Fallback images
   // const imgSrc = (idx: number) => displayImages[idx] ?? "";
-  const imgSrc = (idx: number) => {
-    const original = displayImages[idx];
-    if (!original) return "";
+  // const imgSrc = (idx: number) => {
+  //   const original = displayImages[idx];
+  //   if (!original) return "";
 
-    return `${IMAGE_PROXY_BASE}${encodeURIComponent(original)}`;
-  };
+  //   return `${IMAGE_PROXY_BASE}${encodeURIComponent(original)}`;
+  // };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "—";
@@ -185,32 +185,29 @@ export default function HotelBookingETicketSetion({
       <>
         {displayImages.length > 0 && (
           <div className="grid grid-cols-4 gap-2 auto-rows-fr">
-            <div className="col-span-2 row-span-2 relative overflow-hidden rounded-2xl h-50">
-              <img
-                src={imgSrc(0)}
-                alt="Hotel"
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).style.display = "none";
-                }}
-              />
-            </div>
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="col-span-1 relative overflow-hidden rounded-2xl h-24"
-              >
+            {imageDataUrls[0] && (
+              <div className="col-span-2 row-span-2 relative overflow-hidden rounded-2xl h-50">
                 <img
-                  src={imgSrc(i)}
+                  src={imageDataUrls[0]}
                   alt="Hotel"
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display =
-                      "none";
-                  }}
                 />
               </div>
-            ))}
+            )}
+            {[1, 2, 3, 4].map((i) =>
+              imageDataUrls[i] ? (
+                <div
+                  key={i}
+                  className="col-span-1 relative overflow-hidden rounded-2xl h-24"
+                >
+                  <img
+                    src={imageDataUrls[i]}
+                    alt="Hotel"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : null,
+            )}
           </div>
         )}
 
@@ -250,7 +247,9 @@ export default function HotelBookingETicketSetion({
             <p className="text-xs text-[#3D495C] mt-1">{formatDate(checkIn)}</p>
           </div>
 
-          <div className={`col-span-4 flex justify-center ${hotelDetail?.checkInTime && hotelDetail?.checkOutTime ? "mt-16" : "mt-8"}`}>
+          <div
+            className={`col-span-4 flex justify-center ${hotelDetail?.checkInTime && hotelDetail?.checkOutTime ? "mt-16" : "mt-8"}`}
+          >
             <div className="FlightDirection">
               <div className="hotelVisualGuid">
                 <div className="stopPoint"></div>
@@ -370,6 +369,10 @@ export default function HotelBookingETicketSetion({
 
   return (
     <section className="mt-8 flex items-center justify-center px-4">
+      <Loader
+        show={!imagesLoaded}
+        label="Please wait while we are retrieving the booking."
+      />
       <div className="w-full max-w-[580px]">
         <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-2 pt-2 pb-2">
           <TicketContent />
@@ -380,7 +383,8 @@ export default function HotelBookingETicketSetion({
               type="button"
               overrideClasses
               onClick={handleDownloadPDF}
-              disabled={isGeneratingPDF}
+              // disabled={isGeneratingPDF}
+              disabled={isGeneratingPDF || !imagesLoaded}
               className="h-11 px-12 rounded-lg bg-[#2351A3] border border-[#2351A3] text-[#F2F2F3] text-[15px] font-semibold"
             >
               {isGeneratingPDF ? "Generating PDF..." : "Download as PDF"}

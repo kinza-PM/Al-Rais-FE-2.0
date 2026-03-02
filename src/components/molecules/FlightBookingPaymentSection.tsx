@@ -40,7 +40,7 @@ import toast from "react-hot-toast";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import {
   openBlankPopupAndCheckWebisteAllowPopup,
-  validateReservationFlightBookingData,
+  // validateReservationFlightBookingData,
   validateReservationFlightBookingDataFields,
   waitFor3DSecurePaymentPopupReturnResponse,
   type FlightFinalReservedBooking,
@@ -241,13 +241,13 @@ export default function FlightBookingPaymentSection({
 
     if (Object.keys(fieldErrors).length > 0) {
       // Still check overall validation for backward compatibility
-      const { valid } = validateReservationFlightBookingData(
-        reservation,
-        cardDetails,
-      );
-      if (!valid) {
-        return;
-      }
+      // const { valid } = validateReservationFlightBookingData(
+      //   reservation,
+      //   cardDetails,
+      // );
+      // if (!valid) {
+      //   return;
+      // }
       return;
     }
     // console.log("cardDetails", cardDetails);
