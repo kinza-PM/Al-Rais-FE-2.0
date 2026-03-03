@@ -14,6 +14,7 @@ type HotellGridCardProps = {
   toggleFavorite?: (hotelKey: string) => void;
   favorites?: { [key: string]: boolean };
   hotelKey?: string;
+  onShare?: () => void;
 };
 
 const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
@@ -22,26 +23,27 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
     // toggleFavorite,
     // favorites,
     // hotelKey = "",
+    onShare,
   }) => {
-  // Process hotel data using utility function
-  const {
-    hasRooms,
-    isAvailable,
-    bestRoom,
-    currency,
-    price,
-    hasFreeCancellation,
-    totalOriginalPrice: originalPrice,
-    uniqueOfferNames,
-    hasOffer,
-  } = processHotelSearchListingData(hotel);
+    // Process hotel data using utility function
+    const {
+      hasRooms,
+      isAvailable,
+      bestRoom,
+      currency,
+      price,
+      hasFreeCancellation,
+      totalOriginalPrice: originalPrice,
+      uniqueOfferNames,
+      hasOffer,
+    } = processHotelSearchListingData(hotel);
 
-  const imageUrl = hotel?.propertyInfo?.imageUrl || HotelImage;
-  const hotelName = hotel?.propertyInfo?.hotelName || "Hotel";
-  const address = hotel?.propertyInfo?.address || "";
-  const location = hotel?.propertyInfo?.location || "";
-  const starRating = hotel?.propertyInfo?.starRating;
-  const roomTypeName = bestRoom?.roomTypeName || "";
+    const imageUrl = hotel?.propertyInfo?.imageUrl || HotelImage;
+    const hotelName = hotel?.propertyInfo?.hotelName || "Hotel";
+    const address = hotel?.propertyInfo?.address || "";
+    const location = hotel?.propertyInfo?.location || "";
+    const starRating = hotel?.propertyInfo?.starRating;
+    const roomTypeName = bestRoom?.roomTypeName || "";
 
     const renderStars = (rating: string | undefined) => {
       const numRating = rating ? parseFloat(rating) : 0;
@@ -114,7 +116,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             <h3 className="text-base font-medium text-[#0A0C0F] flex-1">
               {hotelName}
             </h3>
-            <button className="p-1">
+            <button className="p-1" onClick={onShare}>
               <img src={Share} alt="icon" />
             </button>
           </div>

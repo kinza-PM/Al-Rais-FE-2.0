@@ -1,5 +1,7 @@
-import React from "react";
+import React, { useCallback } from "react";
 import HotellGridCard from "../atoms/HotellGridCard";
+import toast from "react-hot-toast";
+import { useHotelStore } from "../../store/UseHotelStore";
 
 type HotelSearchGridViewProps = {
   hotels: Array<any>;
@@ -8,6 +10,7 @@ type HotelSearchGridViewProps = {
 const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(({
   hotels,
 }) => {
+  const { hotel: bookingParams } = useHotelStore();
   const [favorites, setFavorites] = React.useState<{ [key: string]: boolean }>(
     {}
   );
@@ -17,6 +20,19 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(({
       [hotelKey]: !prev[hotelKey],
     }));
   };
+
+  const handleShare = useCallback((hotelKey: string, searchKey: string) => {
+    const params = new URLSearchParams({
+      searchKey: searchKey ?? "",
+    });
+    if (bookingParams) {
+      params.set("bookingParams", JSON.stringify(bookingParams));
+    }
+
+    const shareUrl = `${window.location.origin}/hotel-detail/${hotelKey}?${params.toString()}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Link copied to clipboard!");
+  }, [bookingParams]);
 
   if (!hotels || hotels.length === 0) {
     return (
@@ -52,6 +68,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(({
                 toggleFavorite={toggleFavorite}
                 hotelKey={hotel.hotelKey || index.toString()}
                 favorites={favorites}
+                onShare={() => handleShare(hotel.hotelKey, hotel.searchKey)}
               />
             );
           })}

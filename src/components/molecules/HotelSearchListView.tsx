@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import HotelImage from "../../../src/assets/images/Hotel Image.png";
 // import Heart from "../../../src/assets/svgs/heart.svg";
 // import RedHeart from "../../../src/assets/svgs/red-heart.svg";
@@ -10,6 +10,7 @@ import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
 import { processHotelSearchListingData } from "../../utils/hotelHelper";
+import toast from "react-hot-toast";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
@@ -56,6 +57,19 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
         </div>
       );
     };
+
+    const handleShare = useCallback((hotelKey: string, searchKey: string) => {
+      const params = new URLSearchParams({
+        searchKey: searchKey ?? "",
+      });
+      if (bookingParams) {
+        params.set("bookingParams", JSON.stringify(bookingParams));
+      }
+
+      const shareUrl = `${window.location.origin}/hotel-detail/${hotelKey}?${params.toString()}`;
+      navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied to clipboard!");
+    }, [bookingParams]);
 
     if (!hotels || hotels.length === 0) {
       return (
@@ -390,7 +404,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                     </div>
 
                     <div className="flex items-center gap-4 w-full mt-3">
-                      <button className="p-2.5">
+                      <button className="p-2.5" onClick={() => handleShare(hotel.hotelKey, hotel.searchKey)}>
                         <img src={Share} alt="icon" />
                       </button>
                       <button

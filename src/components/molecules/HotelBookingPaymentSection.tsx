@@ -385,7 +385,7 @@ export default function HotelBookingPaymentSection({
 
   return (
     <section className="mt-10 flex items-center justify-center px-4">
-      <Loader show={isPending} label="Confirming your flight booking…" />
+      <Loader show={isPending} label="Confirming your hotel booking…" />
       <div className="w-full max-w-[550px]">
         <HotelSummaryCard
           paymentPage={true}

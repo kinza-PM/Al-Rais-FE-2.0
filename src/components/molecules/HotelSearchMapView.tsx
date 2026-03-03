@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useCallback } from "react";
 import HotellGridCard from "../atoms/HotellGridCard";
 import { MapContainer, TileLayer, Marker, Popup, Tooltip } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import toast from "react-hot-toast";
+import { useHotelStore } from "../../store/UseHotelStore";
 
 const redIcon = L.icon({
   iconUrl:
@@ -25,6 +27,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(({ hote
   );
   const [isMapExpanded, setIsMapExpanded] = React.useState(false);
   const mapRef = React.useRef<L.Map | null>(null);
+  const { hotel: bookingParams } = useHotelStore();
 
   const toggleMapExpand = () => {
     setIsMapExpanded(!isMapExpanded);
@@ -71,6 +74,19 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(({ hote
     return [avgLat, avgLng] as [number, number];
   };
 
+  const handleShare = useCallback((hotelKey: string, searchKey: string) => {
+    const params = new URLSearchParams({
+      searchKey: searchKey ?? "",
+    });
+    if (bookingParams) {
+      params.set("bookingParams", JSON.stringify(bookingParams));
+    }
+
+    const shareUrl = `${window.location.origin}/hotel-detail/${hotelKey}?${params.toString()}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Link copied to clipboard!");
+  }, [bookingParams]);
+
   if (!hotels || hotels.length === 0) {
     return (
       <div className="py-16 flex flex-col items-center text-center">
@@ -93,6 +109,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(({ hote
                     toggleFavorite={toggleFavorite}
                     hotelKey={hotel.hotelKey || index.toString()}
                     favorites={favorites}
+                    onShare={() => handleShare(hotel.hotelKey, hotel.searchKey)}
                   />
                 );
               })}
@@ -100,17 +117,15 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(({ hote
           )}
 
           <div
-            className={`${
-              isMapExpanded ? "col-span-4" : "col-span-3"
-            } sticky top-5 h-[calc(100vh-27vh)] mb-4 transition-all duration-300 ease-in-out`}
+            className={`${isMapExpanded ? "col-span-4" : "col-span-3"
+              } sticky top-5 h-[calc(100vh-27vh)] mb-4 transition-all duration-300 ease-in-out`}
           >
             <div className="h-full rounded-xl overflow-hidden">
               <button
-                className={`absolute top-1/2 -translate-y-1/2 z-[1000] bg-[#F2F2F3] py-4 px-5 border border-[#FFFFFF] ${
-                  isMapExpanded
-                    ? "left-0 rounded-r-full border-l-0 px-3"
-                    : "-left-4 rounded-full"
-                }`}
+                className={`absolute top-1/2 -translate-y-1/2 z-[1000] bg-[#F2F2F3] py-4 px-5 border border-[#FFFFFF] ${isMapExpanded
+                  ? "left-0 rounded-r-full border-l-0 px-3"
+                  : "-left-4 rounded-full"
+                  }`}
                 onClick={toggleMapExpand}
               >
                 <svg

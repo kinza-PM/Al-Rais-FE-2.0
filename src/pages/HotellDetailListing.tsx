@@ -91,6 +91,9 @@ const HotelDetailListing = () => {
   const [showHotelDetailImages, setShowHotelDetailImages] =
     useState<boolean>(false);
   const [selectedRooms, setSelectedRooms] = useState<any[]>([]);
+  const [resolvedBookingParams, setResolvedBookingParams] = useState<LocationState["bookingParams"] | undefined>(
+    state.bookingParams
+  );
 
   const { mutateAsync, isPending } = useHotelDetail();
   const {
@@ -103,9 +106,18 @@ const HotelDetailListing = () => {
   // });
 
   const init = async () => {
+    const searchParams = new URLSearchParams(location.search);
+    const searchKeyFromUrl = searchParams.get("searchKey") ?? "";
+    const bookingParamsFromUrl = searchParams.get("bookingParams");
+
+    const resolvedSearchKey = state.searchKey || searchKeyFromUrl;
+    const resolvedBookingParams = state.bookingParams ||
+      (bookingParamsFromUrl ? JSON.parse(decodeURIComponent(bookingParamsFromUrl)) : undefined);
+    setResolvedBookingParams(resolvedBookingParams);
     const body = {
       hotelKey: params.hotelKey ?? "",
-      searchKey: state.searchKey ?? "",
+      searchKey: resolvedSearchKey,
+      // searchKey: state.searchKey ?? "",
       culture: "en",
     };
 
@@ -241,6 +253,20 @@ const HotelDetailListing = () => {
     );
     return maxRoomIndex > 0 ? maxRoomIndex : 1;
   }, [hotelMoreRooms?.rooms]);
+
+  const handleShare = useCallback(() => {
+    const searchParams = new URLSearchParams({
+      searchKey: state.searchKey ?? new URLSearchParams(location.search).get("searchKey") ?? "",
+    });
+
+    if (resolvedBookingParams) {
+      searchParams.set("bookingParams", JSON.stringify(resolvedBookingParams));
+    }
+
+    const shareUrl = `${window.location.origin}/hotel-detail/${params.hotelKey}?${searchParams.toString()}`;
+    navigator.clipboard.writeText(shareUrl);
+    toast.success("Link copied to clipboard!");
+  }, [params.hotelKey, state.searchKey, resolvedBookingParams]);
 
   return !showHotelDetailImages ? (
     <div className="w-full px-16 py-6">
@@ -417,7 +443,7 @@ const HotelDetailListing = () => {
         </div>
 
         <div className="flex items-center">
-          <button className="px-6 py-2 text-[#5383DA] text-base font-medium">
+          <button className="px-6 py-2 text-[#5383DA] text-base font-medium" onClick={handleShare}>
             Share
           </button>
           <div className="border-l border-[#E4E4E7] h-8 mr-6 -ml-1"></div>
@@ -577,8 +603,10 @@ const HotelDetailListing = () => {
                         ...hotelDetailWithoutImages,
                         images: slicedImages,
                       },
-                      searchKey: state.searchKey,
-                      bookingParams: state.bookingParams,
+                      // searchKey: state.searchKey,
+                      // bookingParams: state.bookingParams,
+                      searchKey: state.searchKey || new URLSearchParams(location.search).get("searchKey"),
+                      bookingParams: resolvedBookingParams,
                       selectedRooms,
                       totalPrice,
                       currency,
