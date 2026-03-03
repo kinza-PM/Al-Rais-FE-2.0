@@ -9,8 +9,7 @@ import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
-import { processHotelSearchListingData } from "../../utils/hotelHelper";
-import toast from "react-hot-toast";
+import { handleHotelShare, processHotelSearchListingData } from "../../utils/hotelHelper";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
@@ -58,30 +57,10 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
       );
     };
 
-    const handleShare = useCallback((hotelKey: string, searchKey: string) => {
-      const params = new URLSearchParams({
-        searchKey: searchKey ?? "",
-      });
-      if (bookingParams) {
-        params.set("bookingParams", JSON.stringify(bookingParams));
-      }
-
-      const shareUrl = `${window.location.origin}/hotel-detail/${hotelKey}?${params.toString()}`;
-      if (navigator.clipboard && window.isSecureContext) {
-        navigator.clipboard.writeText(shareUrl);
-      } else {
-        const textArea = document.createElement("textarea");
-        textArea.value = shareUrl;
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.focus();
-        textArea.select();
-        document.execCommand("copy");
-        document.body.removeChild(textArea);
-      }
-      toast.success("Link copied to clipboard!");
-    }, [bookingParams]);
+    const handleShare = useCallback(
+      (hotelKey: string, searchKey: string) => handleHotelShare(hotelKey, searchKey, bookingParams),
+      [bookingParams]
+    );
 
     if (!hotels || hotels.length === 0) {
       return (

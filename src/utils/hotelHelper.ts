@@ -9,6 +9,7 @@ import RoomService from "../assets/svgs/room-service.svg";
 import TeaCoffeeMaker from "../assets/svgs/tea-coffee-maker.svg";
 import HotelBreakfast from "../assets/svgs/hotel-breakfast.svg";
 import Hotel from "../assets/svgs/hotel.svg";
+import toast from "react-hot-toast";
 
 export const FACILITY_KEYWORDS: Record<string, string[]> = {
   bathroom: [
@@ -247,10 +248,10 @@ export const processHotelSearchListingData = (
   let bestRoom =
     availableRooms.length > 0
       ? availableRooms.reduce((cheapest: any, room: any) => {
-          const roomPrice = room?.roomRate?.netAmount || 0;
-          const cheapestPrice = cheapest?.roomRate?.netAmount || 0;
-          return roomPrice < cheapestPrice ? room : cheapest;
-        })
+        const roomPrice = room?.roomRate?.netAmount || 0;
+        const cheapestPrice = cheapest?.roomRate?.netAmount || 0;
+        return roomPrice < cheapestPrice ? room : cheapest;
+      })
       : allRooms[0];
 
   // Fallback to first room if no bestRoom found
@@ -310,11 +311,11 @@ export const processHotelSearchListingData = (
       offers.length > 0 && offers.some((offer: any) => offer.included);
     const totalDiscount = hasOffer
       ? offers
-          .filter((offer: any) => offer.included)
-          .reduce(
-            (sum: number, offer: any) => sum + Math.abs(offer.amount || 0),
-            0
-          )
+        .filter((offer: any) => offer.included)
+        .reduce(
+          (sum: number, offer: any) => sum + Math.abs(offer.amount || 0),
+          0
+        )
       : 0;
     totalOriginalPrice = hasOffer ? price + totalDiscount : price;
 
@@ -350,3 +351,36 @@ export const processHotelSearchListingData = (
     hasOffer,
   };
 };
+
+export const handleHotelShare = (
+  hotelKey: string,
+  searchKey: string,
+  bookingParams?: object | null
+) => {
+  const params = new URLSearchParams({
+    searchKey: searchKey ?? "",
+  });
+
+  if (bookingParams) {
+    params.set("bookingParams", JSON.stringify(bookingParams));
+  }
+
+  const shareUrl = `${window.location.origin}/hotel-detail/${hotelKey}?${params.toString()}`;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(shareUrl);
+  } else {
+    const textArea = document.createElement("textarea");
+    textArea.value = shareUrl;
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+  }
+
+  toast.success("Link copied to clipboard!");
+};
+

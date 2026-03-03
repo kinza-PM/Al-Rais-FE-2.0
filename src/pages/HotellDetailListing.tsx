@@ -18,6 +18,7 @@ import Loader from "../components/atoms/Loader";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
+import { handleHotelShare } from "../utils/hotelHelper";
 
 const tabs = [
   "Overview",
@@ -254,31 +255,10 @@ const HotelDetailListing = () => {
     return maxRoomIndex > 0 ? maxRoomIndex : 1;
   }, [hotelMoreRooms?.rooms]);
 
-  const handleShare = useCallback(() => {
-    const searchParams = new URLSearchParams({
-      searchKey: state.searchKey ?? new URLSearchParams(location.search).get("searchKey") ?? "",
-    });
-
-    if (resolvedBookingParams) {
-      searchParams.set("bookingParams", JSON.stringify(resolvedBookingParams));
-    }
-
-    const shareUrl = `${window.location.origin}/hotel-detail/${params.hotelKey}?${searchParams.toString()}`;
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(shareUrl);
-    } else {
-      const textArea = document.createElement("textarea");
-      textArea.value = shareUrl;
-      textArea.style.position = "fixed";
-      textArea.style.opacity = "0";
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      document.execCommand("copy");
-      document.body.removeChild(textArea);
-    }
-    toast.success("Link copied to clipboard!");
-  }, [params.hotelKey, state.searchKey, resolvedBookingParams]);
+  const handleShare = useCallback(
+    () => handleHotelShare(params.hotelKey ?? "", state.searchKey ?? new URLSearchParams(location.search).get("searchKey") ?? "", resolvedBookingParams),
+    [params.hotelKey, state.searchKey, resolvedBookingParams]
+  );
 
   return !showHotelDetailImages ? (
     <div className="w-full px-16 py-6">
