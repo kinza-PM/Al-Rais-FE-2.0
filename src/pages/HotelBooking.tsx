@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "../components";
 import HotelBookingBookSection from "../components/molecules/HotelBookingBookSection";
@@ -17,6 +17,7 @@ import {
   type HotelBookingPayload,
 } from "../utils/hotelBookingHelper";
 import { useCountriesOptions } from "../hooks/masterListings/listing";
+import * as RemoteUserService from "../services/api/remoteUserService";
 
 const HotelBooking = () => {
   const location = useLocation();
@@ -50,6 +51,8 @@ const HotelBooking = () => {
 
   const { mutateAsync, isPending } = useHotelPreBooking();
   const bookingParams = state.bookingParams ?? hotelFromStore ?? null;
+  const { user } = useAuth(); // isAuthenticated already use ho raha hai, user bhi lo
+  const hasPrefilledRef = useRef(false);
 
   // const init = async () => {
   //   if (isAuthenticated) {
@@ -227,6 +230,34 @@ const HotelBooking = () => {
     pax,
   ]);
 
+  useEffect(() => {
+    if (!user || hasPrefilledRef.current || !hotelBookingPayload) return;
+
+    const fetchAndPrefill = async () => {
+      try {
+        const email = (user.email || "").trim().toLowerCase();
+        const phoneNumber = (user.phone || "").trim();
+
+        const userDetails =
+          email || phoneNumber
+            ? await RemoteUserService.getByIdentifier({
+                email: email || undefined,
+                phoneNumber: phoneNumber || undefined,
+              })
+            : null;
+
+        if (userDetails) {
+          prefillFirstPassengerFromUserDetail(userDetails);
+          hasPrefilledRef.current = true;
+        }
+      } catch (error) {
+        console.error("User detail fetch failed:", error);
+      }
+    };
+
+    fetchAndPrefill();
+  }, [user, hotelBookingPayload]);
+
   const setNested = (obj: any, path: string, value: any) => {
     const parts = path.split(".");
     let cur = obj;
@@ -248,6 +279,45 @@ const HotelBooking = () => {
     } else {
       cur[last] = value;
     }
+  };
+
+  const prefillFirstPassengerFromUserDetail = (ud: any) => {
+    if (!ud) return;
+
+    const fullName = (ud.name || "").trim();
+    const nameParts = fullName.split(" ").filter(Boolean);
+    const surname = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+    const givenName =
+      nameParts.length > 1
+        ? nameParts.slice(0, -1).join(" ")
+        : nameParts[0] || "";
+
+    const titleMap: Record<string, string> = { MR: "MR", MS: "MS", MRS: "MRS" };
+    const nameTitle = titleMap[(ud.title || "").toUpperCase()] ?? "";
+
+    const genderMap: Record<string, string> = {
+      M: "M",
+      F: "F",
+      MALE: "M",
+      FEMALE: "F",
+    };
+    const gender = genderMap[(ud.gender || "").toUpperCase()] ?? "";
+
+    setHotelBookingPayload((prev) => {
+      if (!prev) return prev;
+      const next = JSON.parse(JSON.stringify(prev));
+      if (!next.rooms?.[0]?.passengers?.[0]) return prev;
+
+      next.rooms[0].passengers[0].passengerInfo = {
+        ...next.rooms[0].passengers[0].passengerInfo,
+        nameTitle,
+        givenName,
+        surname,
+        gender,
+      };
+
+      return next;
+    });
   };
 
   const updatePassengerField = useCallback(

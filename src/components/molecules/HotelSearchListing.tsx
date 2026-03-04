@@ -699,7 +699,7 @@ const HotelSearchListing: React.FC = () => {
                 />
               </div>
             </Flex>
-            <Flex vertical style={{ width: "100%", maxWidth: 430 }}>
+            <Flex vertical style={{ width: "100%", maxWidth: 500 }}>
               <div>
                 <label className="block text-[12px] text-[#3D495C] mb-1">
                   Dates
@@ -717,7 +717,8 @@ const HotelSearchListing: React.FC = () => {
                     buttonIconSrc={true}
                     overridesClass={true}
                     showCalendarIconRight={false}
-                    inputClass="h-10 w-[165px] rounded-xl border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                    // inputClass="h-10 w-[165px] rounded-xl border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                    inputClass="h-10 w-[240px] rounded-xl border-none outline-none pl-10 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
                     disablePastDates={true}
                     tooltip="Select check-in date"
                   />
@@ -736,7 +737,8 @@ const HotelSearchListing: React.FC = () => {
                     buttonIconSrc={true}
                     overridesClass={true}
                     showCalendarIconRight={false}
-                    inputClass="h-10 w-[165px] rounded-xl border-none pl-10 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                    // inputClass="h-10 w-[165px] rounded-xl border-none pl-10 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                    inputClass="h-10 w-[240px] rounded-xl border-none pl-10 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
                     disablePastDates={true}
                     minDate={new Date(searchState.checkIn)}
                     tooltip="Select check-out date"

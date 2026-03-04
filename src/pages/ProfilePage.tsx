@@ -1,96 +1,104 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {useRef, useState } from "react";
 import { Button } from "../components";
 import ProfileMilesSummary from "../components/molecules/ProfileMilesSummary";
 import LoyaltyPrograms from "../components/molecules/LoyaltyPrograms";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import toast from "react-hot-toast";
 import { Form, Input, Modal } from "antd";
-import type { RemoteUserRecord } from "../services/api/remoteUserService";
+// import type { RemoteUserRecord } from "../services/api/remoteUserService";
 import * as RemoteUserService from "../services/api/remoteUserService";
+import { useUserProfileStore } from "../store/userProfileStore";
 
 const tabs = ["Basics", "Air miles", "Payments", "Account"] as const;
 
 const ProfilePage: React.FC = () => {
   const [active, setActive] = useState<(typeof tabs)[number]>("Air miles");
   const { user } = useAuth();
-  const [remoteUser, setRemoteUser] = useState<RemoteUserRecord | null>(null);
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [loadingProfile, setLoadingProfile] = useState(false);
+  // const [remoteUser, setRemoteUser] = useState<RemoteUserRecord | null>(null);
+  // const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  // const [loadingProfile, setLoadingProfile] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [editForm] = Form.useForm();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => {
-    const run = async () => {
-      if (!user) return;
-      setLoadingProfile(true);
-      try {
-        const email = (user.email || "").trim().toLowerCase();
-        const phoneNumber = (user.phone || "").trim();
+  const {
+    remoteUser, setRemoteUser,
+    avatarUrl, setAvatarUrl,
+    loading: loadingProfile,
+    initials, displayName
+  } = useUserProfileStore();
 
-        let record =
-          (email || phoneNumber)
-            ? await RemoteUserService.getByIdentifier({ email: email || undefined, phoneNumber: phoneNumber || undefined })
-            : null;
+  // useEffect(() => {
+  //   const run = async () => {
+  //     if (!user) return;
+  //     setLoadingProfile(true);
+  //     try {
+  //       const email = (user.email || "").trim().toLowerCase();
+  //       const phoneNumber = (user.phone || "").trim();
 
-        if (!record) {
-          record = await RemoteUserService.createUser({
-            userId: user.id,
-            email: email || undefined,
-            phoneNumber: phoneNumber || undefined,
-            name: user.full_name || user.name || undefined,
-            signupMethod: phoneNumber?.startsWith("+") ? "PHONE" : "EMAIL",
-          });
-        }
+  //       let record =
+  //         (email || phoneNumber)
+  //           ? await RemoteUserService.getByIdentifier({ email: email || undefined, phoneNumber: phoneNumber || undefined })
+  //           : null;
 
-        setRemoteUser(record);
+  //       if (!record) {
+  //         record = await RemoteUserService.createUser({
+  //           userId: user.id,
+  //           email: email || undefined,
+  //           phoneNumber: phoneNumber || undefined,
+  //           name: user.full_name || user.name || undefined,
+  //           signupMethod: phoneNumber?.startsWith("+") ? "PHONE" : "EMAIL",
+  //         });
+  //       }
 
-        try {
-          const av = await RemoteUserService.getAvatarViewUrl(record.userId, record.createdAt);
-          setAvatarUrl(av.url);
-        } catch {
-          setAvatarUrl(null);
-        }
-      } finally {
-        setLoadingProfile(false);
-      }
-    };
+  //       setRemoteUser(record);
 
-    void run();
-  }, [user]);
+  //       try {
+  //         const av = await RemoteUserService.getAvatarViewUrl(record.userId, record.createdAt);
+  //         setAvatarUrl(av.url);
+  //       } catch {
+  //         setAvatarUrl(null);
+  //       }
+  //     } finally {
+  //       setLoadingProfile(false);
+  //     }
+  //   };
 
-  const displayName = useMemo(() => {
-    return (
-      remoteUser?.name ||
-      user?.full_name ||
-      user?.name ||
-      remoteUser?.email ||
-      user?.email ||
-      "User"
-    );
-  }, [remoteUser?.email, remoteUser?.name, user?.email, user?.full_name, user?.name]);
+  //   void run();
+  // }, [user]);
+
+  // const displayName = useMemo(() => {
+  //   return (
+  //     remoteUser?.name ||
+  //     user?.full_name ||
+  //     user?.name ||
+  //     remoteUser?.email ||
+  //     user?.email ||
+  //     "User"
+  //   );
+  // }, [remoteUser?.email, remoteUser?.name, user?.email, user?.full_name, user?.name]);
 
   const displayEmail = remoteUser?.email || user?.email || "-";
   const displayPhone = remoteUser?.phoneNumber || user?.phone || "-";
 
-  const initials = useMemo(() => {
-    const raw =
-      (remoteUser?.name || user?.full_name || user?.name || "").trim() ||
-      (remoteUser?.email || user?.email || "").trim();
-    if (!raw) return "U";
+  // const initials = useMemo(() => {
+  //   const raw =
+  //     (remoteUser?.name || user?.full_name || user?.name || "").trim() ||
+  //     (remoteUser?.email || user?.email || "").trim();
+  //   if (!raw) return "U";
 
-    // Prefer name: take first letter of first 2 words ("Hammad Ahmed" -> "HA")
-    const words = raw
-      .replace(/@.*/, "") // in case it's email, keep local-part for fallback
-      .replace(/[^a-zA-Z0-9\s]/g, " ")
-      .split(/\s+/)
-      .filter(Boolean);
-    if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
-    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
-    return raw.slice(0, 2).toUpperCase();
-  }, [remoteUser?.email, remoteUser?.name, user?.email, user?.full_name, user?.name]);
+  //   // Prefer name: take first letter of first 2 words ("Hammad Ahmed" -> "HA")
+  //   const words = raw
+  //     .replace(/@.*/, "") // in case it's email, keep local-part for fallback
+  //     .replace(/[^a-zA-Z0-9\s]/g, " ")
+  //     .split(/\s+/)
+  //     .filter(Boolean);
+  //   if (words.length >= 2) return (words[0][0] + words[1][0]).toUpperCase();
+  //   if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  //   return raw.slice(0, 2).toUpperCase();
+  // }, [remoteUser?.email, remoteUser?.name, user?.email, user?.full_name, user?.name]);
 
   const openEdit = () => {
     editForm.setFieldsValue({

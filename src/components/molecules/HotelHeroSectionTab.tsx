@@ -266,8 +266,8 @@ const HotelHeroSectionTab: React.FC = () => {
   return (
     <div className="px-10 pb-8 pt-6">
       <Loader show={isCityOptionsLoading} label="Loading cities..." />
-      <div className="flex flex-wrap items-end gap-4">
-        <div className="w-[250px]">
+      <div className="flex flex-wrap items-start gap-4">
+        <div className={`w-[250px] ${countryError ? "pb-5" : ""}`}>
           <SearchableDropdown
             options={
               countriesOptions?.map((c) => ({
@@ -290,7 +290,7 @@ const HotelHeroSectionTab: React.FC = () => {
           />
         </div>
 
-        <div className="w-[250px]">
+        <div className={`w-[250px] ${cityError ? "pb-5" : ""}`}>
           <SearchableDropdown
             options={
               citiesData?.map((c, index) => ({
@@ -310,7 +310,7 @@ const HotelHeroSectionTab: React.FC = () => {
           />
         </div>
 
-        <div className="w-[400px]">
+        <div className={`w-[500px] ${datesContainerError ? "pb-5" : ""}`}>
           <label className="block text-[12px] text-[#3D495C] mb-1">Dates</label>
           <div
             className={`h-11 w-full rounded-xl px-1 flex items-center ${
@@ -326,7 +326,8 @@ const HotelHeroSectionTab: React.FC = () => {
               buttonIconSrc={true}
               overridesClass={true}
               showCalendarIconRight={false}
-              inputClass="h-10 w-[190px] rounded-xl border-none outline-none pl-10 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+              // inputClass="h-10 w-[190px] rounded-xl border-none outline-none pl-10 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+              inputClass="h-10 w-[230px] rounded-xl border-none outline-none pl-10 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
               disablePastDates={true}
               tooltip="Select check-in date"
               error={checkInError || null}
@@ -339,7 +340,8 @@ const HotelHeroSectionTab: React.FC = () => {
               buttonIconSrc={true}
               overridesClass={true}
               showCalendarIconRight={false}
-              inputClass="h-10 w-[190px] rounded-xl border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+              // inputClass="h-10 w-[190px] rounded-xl border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+              inputClass="h-10 w-[230px] rounded-xl border-none pl-10 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
               disablePastDates={true}
               minDate={checkInDate}
               tooltip="Select check-out date"
@@ -348,7 +350,7 @@ const HotelHeroSectionTab: React.FC = () => {
           </div>
         </div>
 
-        <div className="w-[270px]">
+        <div className={`w-[270px] ${nationalityError ? "pb-5" : ""}`}>
           <SearchableDropdown
             options={
               countriesOptions?.map((c) => ({
@@ -368,7 +370,7 @@ const HotelHeroSectionTab: React.FC = () => {
           />
         </div>
 
-        <div className="w-[270px] relative">
+        <div className={`w-[270px] relative ${travellersError ? "pb-5" : ""}`}>
           <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
             Travellers and rooms{" "}
             <span className="relative inline-flex group/info">
@@ -401,7 +403,7 @@ const HotelHeroSectionTab: React.FC = () => {
             errorMessage={travellersError || null}
           />
           {travellersError && (
-            <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
+            <p className="absolute left-0 text-[12px] text-[#E65959] whitespace-nowrap">
               {travellersError}
             </p>
           )}
