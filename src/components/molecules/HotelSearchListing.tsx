@@ -542,76 +542,57 @@ const HotelSearchListing: React.FC = () => {
         }`}
       />
       <div className="topHeaderSetting">
-        <div className="topHeaderSettingInner">
-          <div className="tadioButtonGroupWrap py-pxTopHeader">
-            <div className="radioButtonGroup">
-              <Segmented
-                value={hotelView}
-                style={{ marginBottom: 0 }}
-                onChange={(v) => setHotelView(v as HotelViewType)}
-                options={hotelViewTypes}
-              />
-            </div>
-          </div>
-          <div className="topHeaderTabs">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            position: "relative",
+            padding: "0 32px",
+          }}
+        >
+          {/* Centered Flights / Hotels tabs */}
+          <div
+            style={{
+              position: "absolute",
+              left: "50%",
+              transform: "translateX(-50%)",
+            }}
+          >
             <Tabs
               defaultActiveKey="2"
               className="customIndicate"
               items={items}
               onChange={onChange}
-              tabBarStyle={{ marginBottom: "16px !important" }}
-              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
+              tabBarStyle={{ marginBottom: "0 !important" }}
             />
           </div>
-          <div className="countrySelectAndGetHelp py-pxTopHeader">
+
+          {/* Right side: US dropdown + Get help (pushed to far right) */}
+          <div
+            className="countrySelectAndGetHelp"
+            style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "12px", paddingTop: "8px", paddingBottom: "14px" }}
+          >
             <div>
               <Select
                 className="countrySelectBox"
                 defaultValue="US"
-                style={{
-                  width: 100,
-                  borderRadius: 12,
-                  height: 44,
-                }}
+                style={{ width: 100, borderRadius: 12, height: 44 }}
                 onChange={handleChange}
                 options={[
                   {
                     value: "US",
                     label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagUsa}
-                          alt="US Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
+                      <span style={{ display: "flex", alignItems: "center", gap: "5px", fontWeight: 500 }}>
+                        <img src={FlagUsa} alt="US Flag" style={{ width: 28, height: 28 }} />
                         US
                       </span>
                     ),
                   },
-
                   {
                     value: "UAE",
                     label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagUae}
-                          alt="UAE Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
+                      <span style={{ display: "flex", alignItems: "center", gap: "5px", fontWeight: 500 }}>
+                        <img src={FlagUae} alt="UAE Flag" style={{ width: 28, height: 28 }} />
                         UAE
                       </span>
                     ),
@@ -619,19 +600,8 @@ const HotelSearchListing: React.FC = () => {
                   {
                     value: "Ind",
                     label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagInd}
-                          alt="IND Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
+                      <span style={{ display: "flex", alignItems: "center", gap: "5px", fontWeight: 500 }}>
+                        <img src={FlagInd} alt="IND Flag" style={{ width: 28, height: 28 }} />
                         IND
                       </span>
                     ),
@@ -642,7 +612,6 @@ const HotelSearchListing: React.FC = () => {
             <div className="smalSeparater">
               <img src={colSeparater} alt="" style={{ width: 1, height: 30 }} />
             </div>
-
             <div className="getHelpLink">
               <a href="#">Get help</a>
             </div>
@@ -652,140 +621,129 @@ const HotelSearchListing: React.FC = () => {
 
       <div className="flightDetailTemplateWrap">
         <div className="bottomHeaderSetting">
-          <Flex className="bottomHeaderFlex">
-            <Flex vertical style={{ width: "100%", maxWidth: 450 }}>
-              <div>
-                <SearchableDropdown
-                  options={
-                    countriesOptions?.map((c) => ({
-                      id: c.iso2,
-                      value: c.label,
-                      label: c.label,
-                    })) || []
-                  }
-                  // options={[{ id: "1", value: "France", label: "France" }]}
-                  value={searchState.country}
-                  onChange={(value) => {
-                    handleSearchChange("country", value);
-                    handleSearchChange("city", "");
+          {/* Row 1: View, Country, City, Dates */}
+          <div className="flex flex-wrap items-end gap-[14px] w-full mb-3">
+            <div style={{ flex: "1 1 180px", minWidth: 287, maxWidth: 220 }}>
+              <SearchableDropdown
+                options={hotelViewTypes.map((t) => ({ id: t.value, value: t.value, label: t.label }))}
+                value={hotelView}
+                onChange={(v) => setHotelView(v as HotelViewType)}
+                label="View"
+                widthClass="w-full"
+                searchPlaceholder="Search"
+              />
+            </div>
+            <div style={{ flex: "2 1 240px", minWidth: 220, maxWidth: 360 }}>
+              <SearchableDropdown
+                options={
+                  countriesOptions?.map((c) => ({
+                    id: c.iso2,
+                    value: c.label,
+                    label: c.label,
+                  })) || []
+                }
+                value={searchState.country}
+                onChange={(value) => {
+                  handleSearchChange("country", value);
+                  handleSearchChange("city", "");
+                }}
+                placeholder="Where are you traveling to?"
+                label="Country"
+                widthClass="w-full"
+                searchPlaceholder="Search"
+                tooltip="Where are you traveling to?"
+              />
+            </div>
+            <div style={{ flex: "2 1 240px", minWidth: 220, maxWidth: 360 }}>
+              <SearchableDropdown
+                options={
+                  citiesData?.map((c, index) => ({
+                    id: `${index}-${c.value}`,
+                    value: c.value,
+                    label: c.label,
+                  })) || []
+                }
+                value={searchState.city}
+                onChange={(value) => handleSearchChange("city", value)}
+                placeholder="Where are you traveling to?"
+                label="City"
+                widthClass="w-full"
+                searchPlaceholder="Search"
+                tooltip="Where are you traveling to?"
+              />
+            </div>
+            <div style={{ flex: "4 1 380px", minWidth: 340 }}>
+              <label className="block text-[12px] text-[#3D495C] mb-1">Dates</label>
+              <div className="h-[50px] w-full rounded-[16px] border border-[#C2CAD6] px-2 flex items-center" style={{ background: 'var(--white-200, #FFFFFF)' }}>
+                <TailiwindCustomDatePicker
+                  value={searchState.checkIn ? new Date(searchState.checkIn) : null}
+                  onChange={(date) => {
+                    const dateStr = convertDateToString(date);
+                    handleSearchChange("checkIn", dateStr);
                   }}
-                  // onChange={(value) => handleSearchChange("country", value)}
-                  placeholder="Where are you traveling to?"
-                  label="Country"
-                  widthClass="w-full"
-                  searchPlaceholder="Search"
-                  tooltip="Where are you traveling to?"
+                  placeholder="Check-in date"
+                  buttonIconSrc={true}
+                  overridesClass={true}
+                  showCalendarIconRight={false}
+                  inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
+                  disablePastDates={true}
+                  tooltip="Select check-in date"
                 />
-              </div>
-            </Flex>
-            <Flex vertical style={{ width: "100%", maxWidth: 450 }}>
-              <div>
-                <SearchableDropdown
-                  options={
-                    citiesData?.map((c, index) => ({
-                      id: `${index}-${c.value}`,
-                      value: c.value,
-                      label: c.label,
-                    })) || []
-                  }
-                  // options={[{ id: "1", value: "Paris", label: "Paris" }]}
-                  value={searchState.city}
-                  onChange={(value) => handleSearchChange("city", value)}
-                  placeholder="Where are you traveling to?"
-                  label="City"
-                  widthClass="w-full"
-                  searchPlaceholder="Search"
-                  tooltip="Where are you traveling to?"
-                />
-              </div>
-            </Flex>
-            <Flex vertical style={{ width: "100%", maxWidth: 430 }}>
-              <div>
-                <label className="block text-[12px] text-[#3D495C] mb-1">
-                  Dates
-                </label>
-                <div className="h-11 w-full rounded-xl border border-[#DFE7F3] px-3 flex items-center">
-                  <TailiwindCustomDatePicker
-                    value={
-                      searchState.checkIn ? new Date(searchState.checkIn) : null
-                    }
-                    onChange={(date) => {
-                      const dateStr = convertDateToString(date);
-                      handleSearchChange("checkIn", dateStr);
-                    }}
-                    placeholder="Check-in date"
-                    buttonIconSrc={true}
-                    overridesClass={true}
-                    showCalendarIconRight={false}
-                    inputClass="h-10 w-[165px] rounded-xl border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
-                    disablePastDates={true}
-                    tooltip="Select check-in date"
-                  />
-                  <span className="text-[#94A3B8] select-none">-</span>
-                  <TailiwindCustomDatePicker
-                    value={
-                      searchState.checkOut
-                        ? new Date(searchState.checkOut)
-                        : null
-                    }
-                    onChange={(date) => {
-                      const dateStr = convertDateToString(date);
-                      handleSearchChange("checkOut", dateStr);
-                    }}
-                    placeholder="Check-out date"
-                    buttonIconSrc={true}
-                    overridesClass={true}
-                    showCalendarIconRight={false}
-                    inputClass="h-10 w-[165px] rounded-xl border-none pl-10 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
-                    disablePastDates={true}
-                    minDate={new Date(searchState.checkIn)}
-                    tooltip="Select check-out date"
-                  />
-                </div>
-              </div>
-            </Flex>
-            <Flex vertical style={{ width: "100%", maxWidth: 380 }}>
-              <div>
-                <SearchableDropdown
-                  options={
-                    countriesOptions?.map((c) => ({
-                      id: c.iso2,
-                      value: `${c.label},${c.iso2}`,
-                      label: c.label,
-                    })) || []
-                  }
-                  // options={[{ id: "1", value: "INDIA,IN", label: "INDIA" }]}
-                  value={searchState.travelerNationality}
-                  onChange={(value) => {
-                    handleSearchChange("travelerNationality", value);
-                    handleSearchChange("travelerCountryOfResidence", value);
+                <span className="text-[#94A3B8] select-none px-1 flex-shrink-0">—</span>
+                <TailiwindCustomDatePicker
+                  value={searchState.checkOut ? new Date(searchState.checkOut) : null}
+                  onChange={(date) => {
+                    const dateStr = convertDateToString(date);
+                    handleSearchChange("checkOut", dateStr);
                   }}
-                  placeholder="Country of Residence?"
-                  label="Nationality"
-                  widthClass="w-full"
-                  searchPlaceholder="Search"
-                  tooltip="Select your country of residence"
+                  placeholder="Check-out date"
+                  buttonIconSrc={true}
+                  overridesClass={true}
+                  showCalendarIconRight={false}
+                  inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
+                  disablePastDates={true}
+                  minDate={new Date(searchState.checkIn)}
+                  tooltip="Select check-out date"
                 />
               </div>
-            </Flex>
-            <div className="w-full">
+            </div>
+          </div>
+
+          {/* Row 2: Nationality, Travellers & Rooms, Star Rating, Search */}
+          <div className="flex flex-wrap items-end gap-[14px] w-full">
+            <div style={{ flex: "1 1 180px", minWidth: 287, maxWidth: 220 }}>
+              <SearchableDropdown
+                options={
+                  countriesOptions?.map((c) => ({
+                    id: c.iso2,
+                    value: `${c.label},${c.iso2}`,
+                    label: c.label,
+                  })) || []
+                }
+                value={searchState.travelerNationality}
+                onChange={(value) => {
+                  handleSearchChange("travelerNationality", value);
+                  handleSearchChange("travelerCountryOfResidence", value);
+                }}
+                placeholder="Country of Residence?"
+                label="Nationality"
+                widthClass="w-full"
+                searchPlaceholder="Search"
+                tooltip="Select your country of residence"
+              />
+            </div>
+            <div style={{ flex: "1 1 180px", minWidth: 300, maxWidth: 220 }}>
               <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
                 Travellers and rooms{" "}
                 <span className="relative inline-flex group/info">
-                  <img
-                    src={Info}
-                    alt="info"
-                    className="w-4 h-4 inline-block align-middle"
-                  />
+                  <img src={Info} alt="info" className="w-4 h-4 inline-block align-middle" />
                   <span
                     className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
                     role="tooltip"
                   >
                     Minimum 1 adult required per room <br />
-                    Maximum 2 adults allowed per room
-                    <br />
-                    Maximum 2 children allowed per room
-                    <br />
+                    Maximum 2 adults allowed per room <br />
+                    Maximum 2 children allowed per room <br />
                     Child age must be within 2 and 12 years
                   </span>
                 </span>
@@ -800,33 +758,30 @@ const HotelSearchListing: React.FC = () => {
                 tooltip="Select passengers and rooms"
               />
             </div>
-            <Flex vertical style={{ width: "100%", maxWidth: 350 }}>
-              <div>
-                <CheckableDropdown
-                  options={starRatingOptions}
-                  value={
-                    searchState.filters.minStarRating === 0
-                      ? ""
-                      : String(searchState.filters.minStarRating)
-                  }
-                  onChange={(value) => {
-                    const rating = value === "" ? 0 : Number(value);
-                    handleFilterChange("minStarRating", rating);
-                  }}
-                  placeholder="Select rating"
-                  label="Star Rating"
-                  singleSelect={true}
-                  tooltip="Select star rating"
-                />
-              </div>
-            </Flex>
-            <CustomButton
-              className="searchFilterBtn"
-              onClick={handleSearchHotels}
-            >
-              {isPending ? "Searching..." : "Search Hotels"}
-            </CustomButton>
-          </Flex>
+            <div style={{ flex: "1 1 180px", minWidth: 298, maxWidth: 220 }}>
+              <CheckableDropdown
+                options={starRatingOptions}
+                value={
+                  searchState.filters.minStarRating === 0
+                    ? ""
+                    : String(searchState.filters.minStarRating)
+                }
+                onChange={(value) => {
+                  const rating = value === "" ? 0 : Number(value);
+                  handleFilterChange("minStarRating", rating);
+                }}
+                placeholder="Select rating"
+                label="Star Rating"
+                singleSelect={true}
+                tooltip="Select star rating"
+              />
+            </div>
+            <div className="flex-shrink-0 self-end ml-auto">
+              <CustomButton className="searchFilterBtn" onClick={handleSearchHotels}>
+                {isPending ? "Searching..." : "Search Hotels"}
+              </CustomButton>
+            </div>
+          </div>
         </div>
 
         {!screens.lg && (
@@ -850,7 +805,7 @@ const HotelSearchListing: React.FC = () => {
           </div>
         )}
 
-        <div className="contentWrapFlex">
+        <div className="contentWrapFlex" style={{ marginLeft: '30px' }}>
           {screens.lg && (
             <div className="flightDetailFilter">
               <HotelsSearchFilter

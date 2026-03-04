@@ -12,6 +12,7 @@ import PolygonShape from "../assets/images/Polygon 1.png";
 import ArrowLeft from "../assets/images/arrow-left-s-line 1.png";
 import ArrowRight from "../assets/images/arrow-right-s-line 2.png";
 import PopularDestinationSection from "../components/molecules/PopularDestinationSection";
+import RecentSearchesSection from "../components/molecules/RecentSearchesSection";
 import BestDealsSection from "../components/molecules/BestDealsSection";
 import CustomersFeedbackSection from "../components/molecules/CustomersFeedbackSection";
 
@@ -247,6 +248,7 @@ const LandingPage: React.FC = () => {
       </div>
 
       <div className="bg-white">
+        <RecentSearchesSection />
         <PopularDestinationSection />
         <BestDealsSection />
         {/* <PartnersSection /> */}
