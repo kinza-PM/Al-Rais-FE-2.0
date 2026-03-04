@@ -281,10 +281,10 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   }, [searchTerm, remoteSearch, onSearchChange]);
 
   const baseClasses = `
-    appearance-none h-11 w-full rounded-xl border pl-4 pr-8 text-[14px] text-[#0F172A] 
-    outline-none 
+    appearance-none h-[50px] w-full rounded-[16px] border pl-4 pr-8 text-[14px] text-[#0F172A]
+    outline-none
     ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"}
-    ${error && isValidationError ? "border-red-500" : "border-[#DFE7F3]"}
+    ${error && isValidationError ? "border-red-500" : "border-[#C2CAD6]"}
   `;
 
   return (

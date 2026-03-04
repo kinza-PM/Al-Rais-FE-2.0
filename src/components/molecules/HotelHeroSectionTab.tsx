@@ -266,175 +266,190 @@ const HotelHeroSectionTab: React.FC = () => {
   return (
     <div className="px-10 pb-8 pt-6">
       <Loader show={isCityOptionsLoading} label="Loading cities..." />
-      <div className="flex flex-wrap items-end gap-4">
-        <div className="w-[250px]">
-          <SearchableDropdown
-            options={
-              countriesOptions?.map((c) => ({
-                id: c.iso2,
-                value: c.label,
-                label: c.label,
-              })) || []
-            }
-            value={country}
-            onChange={(value) => {
-              setCountry(value);
-              setCity("");
-            }}
-            placeholder="Where are you traveling to?"
-            label="Country"
-            widthClass="w-full"
-            searchPlaceholder="Search"
-            tooltip="Select country where you want to stay"
-            error={countryError || null}
-          />
-        </div>
-
-        <div className="w-[250px]">
-          <SearchableDropdown
-            options={
-              citiesData?.map((c, index) => ({
-                id: `${index}-${c.value}`,
-                value: c.value,
-                label: c.label,
-              })) || []
-            }
-            value={city}
-            onChange={setCity}
-            placeholder="Where are you traveling to?"
-            label="City"
-            widthClass="w-full"
-            searchPlaceholder="Search"
-            tooltip="Select your destination city to view hotels"
-            error={cityError || null}
-          />
-        </div>
-
-        <div className="w-[400px]">
-          <label className="block text-[12px] text-[#3D495C] mb-1">Dates</label>
-          <div
-            className={`h-11 w-full rounded-xl px-1 flex items-center ${
-              datesContainerError
-                ? "border-2 border-[#E65959]"
-                : "border border-[#DFE7F3]"
-            }`}
-          >
-            <TailiwindCustomDatePicker
-              value={checkInDate}
-              onChange={setCheckInDate}
-              placeholder="Check-in date"
-              buttonIconSrc={true}
-              overridesClass={true}
-              showCalendarIconRight={false}
-              inputClass="h-10 w-[190px] rounded-xl border-none outline-none pl-10 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
-              disablePastDates={true}
-              tooltip="Select check-in date"
-              error={checkInError || null}
+      <div className="flex flex-col gap-4">
+        {/* First row - Country, City, Dates */}
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Country */}
+          <div className="flex-1 min-w-[200px]">
+            <SearchableDropdown
+              options={
+                countriesOptions?.map((c) => ({
+                  id: c.iso2,
+                  value: c.label,
+                  label: c.label,
+                })) || []
+              }
+              value={country}
+              onChange={(value) => {
+                setCountry(value);
+                setCity("");
+              }}
+              placeholder="Where are you traveling to?"
+              label="Country"
+              widthClass="w-full"
+              searchPlaceholder="Search"
+              tooltip="Select country where you want to stay"
+              error={countryError || null}
             />
-            <span className="text-[#94A3B8] select-none">-</span>
-            <TailiwindCustomDatePicker
-              value={checkOutDate}
-              onChange={setCheckOutDate}
-              placeholder="Check-out date"
-              buttonIconSrc={true}
-              overridesClass={true}
-              showCalendarIconRight={false}
-              inputClass="h-10 w-[190px] rounded-xl border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
-              disablePastDates={true}
-              minDate={checkInDate}
-              tooltip="Select check-out date"
-              error={checkOutError || null}
+          </div>
+
+          {/* City */}
+          <div className="flex-1 min-w-[200px]">
+            <SearchableDropdown
+              options={
+                citiesData?.map((c, index) => ({
+                  id: `${index}-${c.value}`,
+                  value: c.value,
+                  label: c.label,
+                })) || []
+              }
+              value={city}
+              onChange={setCity}
+              placeholder="Where are you traveling to?"
+              label="City"
+              widthClass="w-full"
+              searchPlaceholder="Search"
+              tooltip="Select your destination city to view hotels"
+              error={cityError || null}
             />
+          </div>
+
+          {/* Dates */}
+          <div className="flex-[2] min-w-[360px]">
+            <label className="block text-[12px] text-[#3D495C] mb-1">Dates</label>
+            <div
+              className={`h-[50px] w-full rounded-[16px] px-1 flex items-center ${
+                datesContainerError
+                  ? "border-2 border-[#E65959]"
+                  : "border border-[#C2CAD6]"
+              }`}
+            >
+              <TailiwindCustomDatePicker
+                value={checkInDate}
+                onChange={setCheckInDate}
+                placeholder="Check-in date"
+                buttonIconSrc={true}
+                overridesClass={true}
+                showCalendarIconRight={false}
+                inputClass="h-[50px] w-full rounded-[16px] border-none outline-none pl-10 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                disablePastDates={true}
+                tooltip="Select check-in date"
+                error={checkInError || null}
+              />
+              <span className="text-[#94A3B8] select-none px-1">—</span>
+              <TailiwindCustomDatePicker
+                value={checkOutDate}
+                onChange={setCheckOutDate}
+                placeholder="Check-out date"
+                buttonIconSrc={true}
+                overridesClass={true}
+                showCalendarIconRight={false}
+                inputClass="h-[50px] w-full rounded-[16px] border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                disablePastDates={true}
+                minDate={checkInDate}
+                tooltip="Select check-out date"
+                error={checkOutError || null}
+              />
+            </div>
           </div>
         </div>
 
-        <div className="w-[270px]">
-          <SearchableDropdown
-            options={
-              countriesOptions?.map((c) => ({
-                id: c.iso2,
-                value: `${c.label},${c.iso2}`,
-                label: c.label,
-              })) || []
-            }
-            value={nationality}
-            onChange={setNationality}
-            placeholder="Country of residence?"
-            label="Nationality"
-            widthClass="w-full"
-            searchPlaceholder="Search"
-            tooltip="Select your country of residence"
-            error={nationalityError || null}
-          />
-        </div>
+        {/* Second row - Nationality, Travellers, Star Rating, Search button */}
+        <div className="flex flex-wrap items-end gap-3">
+          {/* Nationality */}
+          <div className="flex-1 min-w-[200px]">
+            <SearchableDropdown
+              options={
+                countriesOptions?.map((c) => ({
+                  id: c.iso2,
+                  value: `${c.label},${c.iso2}`,
+                  label: c.label,
+                })) || []
+              }
+              value={nationality}
+              onChange={setNationality}
+              placeholder="Country of residence?"
+              label="Nationality"
+              widthClass="w-full"
+              searchPlaceholder="Search"
+              tooltip="Select your country of residence"
+              error={nationalityError || null}
+            />
+          </div>
 
-        <div className="w-[270px] relative">
-          <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
-            Travellers and rooms{" "}
-            <span className="relative inline-flex group/info">
-              <img
-                src={Info}
-                alt="info"
-                className="w-4 h-4 inline-block align-middle"
+          {/* Travellers and rooms */}
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
+                Travellers and rooms{" "}
+                <span className="relative inline-flex group/info">
+                  <img
+                    src={Info}
+                    alt="info"
+                    className="w-4 h-4 inline-block align-middle"
+                  />
+                  <span
+                    className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
+                    role="tooltip"
+                  >
+                    Minimum 1 adult required per room <br />
+                    Maximum 2 adults allowed per room
+                    <br />
+                    Maximum 2 children allowed per room
+                    <br />
+                    Child age must be within 2 and 12 years
+                  </span>
+                </span>
+              </label>
+              <TravellersAndRoomDropdown
+                maxTotal={100}
+                schema={passengers as PassengerSchema}
+                value={paxData}
+                onChange={handlePaxChange}
+                initialChildAges={childAges}
+                onChildrenAgesChange={handleChildrenAgesChange}
+                tooltip="Select passengers and rooms"
+                errorMessage={travellersError || null}
               />
-              <span
-                className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
-                role="tooltip"
-              >
-                Minimum 1 adult required per room <br />
-                Maximum 2 adults allowed per room
-                <br />
-                Maximum 2 children allowed per room
-                <br />
-                Child age must be within 2 and 12 years
-              </span>
-            </span>
-          </label>
-          <TravellersAndRoomDropdown
-            maxTotal={100}
-            schema={passengers as PassengerSchema}
-            value={paxData}
-            onChange={handlePaxChange}
-            initialChildAges={childAges}
-            onChildrenAgesChange={handleChildrenAgesChange}
-            tooltip="Select passengers and rooms"
-            errorMessage={travellersError || null}
-          />
-          {travellersError && (
-            <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
-              {travellersError}
-            </p>
-          )}
-        </div>
+              {travellersError && (
+                <p className="absolute top-full left-0 mt-1 text-[12px] text-[#E65959] whitespace-nowrap">
+                  {travellersError}
+                </p>
+              )}
+            </div>
+          </div>
 
-        <div className="w-[190px]">
-          <CheckableDropdown
-            options={starRatingOptions}
-            value={starRating}
-            onChange={(v) => setStarRating(Array.isArray(v) ? (v[0] ?? "") : v)}
-            placeholder="Select rating"
-            label="Star Rating"
-            singleSelect={true}
-            tooltip="Select star rating"
-          />
-        </div>
-      </div>
+          {/* Star Rating */}
+          <div className="w-[200px] flex-shrink-0">
+            <CheckableDropdown
+              options={starRatingOptions}
+              value={starRating}
+              onChange={(v) => setStarRating(Array.isArray(v) ? (v[0] ?? "") : v)}
+              placeholder="Select rating"
+              label="Star Rating"
+              singleSelect={true}
+              tooltip="Select star rating"
+            />
+          </div>
 
-      <div className="flex justify-center mt-8">
-        <button
-          className="text-[16px] font-medium text-white"
-          style={{
-            width: 137,
-            height: 47,
-            borderRadius: 100,
-            padding: "14px 40px",
-            background:
-              "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-          }}
-          onClick={handleSearch}
-        >
-          Search
-        </button>
+          {/* Search button */}
+          <div className="flex-shrink-0">
+            <button
+              className="text-[16px] font-medium text-white whitespace-nowrap"
+              style={{
+                width: 137,
+                height: 47,
+                borderRadius: 100,
+                padding: "14px 40px",
+                background:
+                  "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+              }}
+              onClick={handleSearch}
+            >
+              Search
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
