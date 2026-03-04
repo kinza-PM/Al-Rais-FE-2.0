@@ -216,8 +216,8 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
           className={`${
             overridesClass
               ? inputClass
-              : `h-11 w-full rounded-xl border pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer ${
-                  error ? "border-[#E65959]" : "border-[#DFE7F3]"
+              : `h-[50px] w-full rounded-[16px] border pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer ${
+                  error ? "border-[#E65959]" : "border-[#C2CAD6]"
                 }`
           }`}
         />

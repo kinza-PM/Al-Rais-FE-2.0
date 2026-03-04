@@ -132,8 +132,8 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
   };
 
   const baseClasses = `
-        appearance-none h-11 w-full rounded-xl border pl-4 pr-8 text-[14px] text-[#0F172A] 
-        outline-none border-[#DFE7F3]
+        appearance-none h-[50px] w-full rounded-[16px] border pl-4 pr-8 text-[14px] text-[#0F172A]
+        outline-none border-[#C2CAD6]
         ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"}
         ${error ? "border-red-500" : ""}
     `;

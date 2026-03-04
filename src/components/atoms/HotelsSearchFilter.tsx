@@ -165,29 +165,45 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       <div className="relative">
         <button
           onClick={() => setIsSortOpen(!isSortOpen)}
-          className="w-full bg-white rounded-2xl border border-[#E7EEF7] px-4 py-3 text-left"
+          className="w-full bg-white text-left flex flex-col justify-center"
+          style={{
+            height: '70px',
+            borderRadius: '16px',
+            border: '1px solid #C2CAD6',
+            padding: '12px 16px',
+          }}
         >
-          <div style={{ fontSize: 12, fontWeight: 400, color: "#3D495C" }}>
+          <div
+            style={{
+              fontFamily: 'Inter, sans-serif',
+              fontSize: '12px',
+              fontWeight: 400,
+              color: '#3D495C',
+              lineHeight: '100%',
+              marginBottom: '6px',
+            }}
+          >
             Sort by
           </div>
-          <div className="flex items-center justify-between mt-1">
-            <span style={{ fontSize: 14, fontWeight: 500, color: "#0A0C0F" }}>
+          <div className="flex items-center justify-between">
+            <span
+              style={{
+                fontFamily: 'Inter, sans-serif',
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#0A0C0F',
+                lineHeight: '100%',
+              }}
+            >
               {selectedLabel}
             </span>
             <svg
-              className={`w-5 h-5 transition-transform ${
-                isSortOpen ? "rotate-180" : ""
-              }`}
+              className={`w-5 h-5 transition-transform flex-shrink-0 ${isSortOpen ? 'rotate-180' : ''}`}
               fill="none"
               stroke="#3D495C"
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>
         </button>
@@ -267,46 +283,51 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               placeholder="Search for a hotel"
               value={filters.hotelName}
               onChange={(e) => handleFilterChange("hotelName", e.target.value)}
-              className="w-full border border-[#C2CAD6] focus:outline-none focus:ring-0 focus:border-[#C2CAD6]"
+              style={{
+                height: '50px',
+                borderRadius: '16px',
+                border: '1px solid #C2CAD6',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 500,
+                fontSize: '16px',
+                color: '#0A0C0F',
+                width: '100%',
+                paddingLeft: '16px',
+                boxShadow: 'none',
+              }}
             />
           </Panel>
         </CustomCollapse>
 
-        {/* <CustomCollapse>
-          <Panel header="Point of interest" key="point_intereset">
+        <CustomCollapse>
+          <Panel header="Point of interest" key="point_interest">
             <Input
               placeholder="Enter a location"
-              className="w-full border border-[#C2CAD6] focus:outline-none focus:ring-0 focus:border-[#C2CAD6]"
+              style={{
+                height: '50px',
+                borderRadius: '16px',
+                border: '1px solid #C2CAD6',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 500,
+                fontSize: '16px',
+                color: '#0A0C0F',
+                width: '100%',
+                paddingLeft: '16px',
+                boxShadow: 'none',
+              }}
             />
           </Panel>
-        </CustomCollapse> */}
+        </CustomCollapse>
 
-        {/* <CustomCollapse>
+        <CustomCollapse>
           <Panel header="Previously used filters" key="previously">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-[10px]">
               <Checkbox className="baggageCheckbox">Top reviewed</Checkbox>
               <Checkbox className="baggageCheckbox">Discounts first</Checkbox>
-              <Checkbox className="baggageCheckbox">
-                Closest from downtown
-              </Checkbox>
+              <Checkbox className="baggageCheckbox">Closest from downtown</Checkbox>
             </div>
           </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Popular filters" key="popular">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">5 stars</Checkbox>
-              <Checkbox className="baggageCheckbox">Vacation homes</Checkbox>
-              <Checkbox className="baggageCheckbox">Spa</Checkbox>
-              <Checkbox className="baggageCheckbox">Guesthouses</Checkbox>
-              <Checkbox className="baggageCheckbox">Villas</Checkbox>
-              <Checkbox className="baggageCheckbox">Restaurants</Checkbox>
-              <Checkbox className="baggageCheckbox">Hotels</Checkbox>
-              <Checkbox className="baggageCheckbox">Air conditioning</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
+        </CustomCollapse>
 
         <CustomCollapse>
           <Panel header="Property type" key="property">

@@ -1,15 +1,17 @@
 import React, { useCallback } from "react";
 import HotelImage from "../../../src/assets/images/Hotel Image.png";
-// import Heart from "../../../src/assets/svgs/heart.svg";
-// import RedHeart from "../../../src/assets/svgs/red-heart.svg";
+import FavrtHeart from "../../../src/assets/images/favrt-heart.png";
+import GreenTick from "../../../src/assets/images/tik.png";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
-import AvailableTick from "../../../src/assets/svgs/available-tick.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
-import { handleHotelShare, processHotelSearchListingData } from "../../utils/hotelHelper";
+import {
+  handleHotelShare,
+  processHotelSearchListingData,
+} from "../../utils/hotelHelper";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
@@ -58,8 +60,9 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
     };
 
     const handleShare = useCallback(
-      (hotelKey: string, searchKey: string) => handleHotelShare(hotelKey, searchKey, bookingParams),
-      [bookingParams]
+      (hotelKey: string, searchKey: string) =>
+        handleHotelShare(hotelKey, searchKey, bookingParams),
+      [bookingParams],
     );
 
     if (!hotels || hotels.length === 0) {
@@ -95,28 +98,45 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
             return (
               <div
-                className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-[#E4E4E7] overflow-hidden mb-4"
+                className="bg-[#FFFFFF] rounded-2xl shadow-sm overflow-hidden mb-4"
                 key={index}
               >
                 <div className="flex p-2">
-                  <div className="relative flex-shrink-0 w-64 h-48 mr-4">
+                  <div
+                    className="relative flex-shrink-0 mr-4"
+                    style={{ width: "244px", height: "220px" }}
+                  >
                     <img
                       src={imageUrl}
                       alt="Hotel"
-                      className="w-full h-full object-cover rounded-xl"
+                      className="w-full h-full object-cover"
+                      style={{ borderRadius: "16px" }}
                       onError={(e) => {
                         e.currentTarget.src = HotelImage;
                       }}
                     />
-                    {/* <button
-                    className="absolute top-2 left-2 w-10 h-10 bg-white/60 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white/70 transition"
-                    onClick={() => toggleFavorite(hotel.hotelKey)}
-                  >
-                    <img
-                      src={favorites[hotel.hotelKey] ? RedHeart : Heart}
-                      alt="heart"
-                    />
-                  </button> */}
+                    {/* Heart / Favourite button — Figma: 36×36, top:15px, left:15px */}
+                    <button
+                      className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform"
+                      style={{
+                        top: "15px",
+                        left: "15px",
+                        width: "36px",
+                        height: "36px",
+                        background: "#FFFFFF99",
+                      }}
+                      aria-label="Add to favourites"
+                    >
+                      <img
+                        src={FavrtHeart}
+                        alt="favourite"
+                        style={{
+                          width: "20px",
+                          height: "20px",
+                          objectFit: "contain",
+                        }}
+                      />
+                    </button>
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -137,39 +157,96 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                     )}
 
                     <span className="block w-full h-px bg-[#E4E4E7] mb-3 -mr-8" />
+
                     {hasRooms && isAvailable && bestRoom && (
                       <>
-                        <div>
-                          <h4 className="text-base font-semibold text-[#0A0C0F]">
-                            {bestRoom.roomTypeName}
+                        {/* Row 1: Room name + "Only X rooms left on Al Rais" */}
+                        <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                          <h4 className="text-[14px] font-semibold text-[#0A0C0F] leading-tight">
+                            {bestRoom.roomTypeName || ""}
                           </h4>
+                          {/* <span
+                            style={{
+                              fontFamily: "Inter, sans-serif",
+                              fontWeight: 400,
+                              fontSize: "12px",
+                              lineHeight: "100%",
+                              letterSpacing: "0%",
+                              color: "#EA0029",
+                            }}
+                          >
+                            Only 2 rooms left on Al Rais
+                          </span> */}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-4 mt-3">
+                        {/* Row 2: Bed type */}
+                        <p
+                          className="mb-2"
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: "12px",
+                            color: "#3D495C",
+                            lineHeight: "100%",
+                          }}
+                        >
+                          {bestRoom.bedType || ""}
+                        </p>
+
+                        {/* Row 3: Amenities with green tick — exactly 4 items as per Figma */}
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                          {/* Free cancellation - always show if hasFreeCancellation, else show as static */}
                           {hasFreeCancellation && (
-                            <div className="flex items-center gap-1">
-                              <div className="flex items-center justify-center">
-                                <img src={AvailableTick} alt="icon" />
-                              </div>
-                              <p className="text-[#3D495C] text-xs leading-none">
+                            <div className="flex items-center gap-1.5">
+                              <img
+                                src={GreenTick}
+                                alt="tick"
+                                className="w-[18px] h-[18px] flex-shrink-0"
+                              />
+                              <span
+                                style={{
+                                  fontFamily: "Inter, sans-serif",
+                                  fontSize: "12px",
+                                  color: "#3D495C",
+                                }}
+                              >
                                 Free cancellation
-                              </p>
+                              </span>
                             </div>
                           )}
+
                           {hotel.propertyInfo?.facilities &&
-                            hotel.propertyInfo.facilities.length > 0 && (
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center justify-center">
-                                  <img src={AvailableTick} alt="icon" />
+                          hotel.propertyInfo.facilities.length > 0 ? (
+                            hotel.propertyInfo.facilities
+                              .slice(0, 3)
+                              .map((facility: string, fIdx: number) => (
+                                <div
+                                  key={fIdx}
+                                  className="flex items-center gap-1.5"
+                                >
+                                  <img
+                                    src={GreenTick}
+                                    alt="tick"
+                                    className="w-[18px] h-[18px] flex-shrink-0"
+                                  />
+                                  <span
+                                    style={{
+                                      fontFamily: "Inter, sans-serif",
+                                      fontSize: "12px",
+                                      color: "#3D495C",
+                                    }}
+                                  >
+                                    {facility}
+                                  </span>
                                 </div>
-                                <p className="text-[#3D495C] text-xs leading-none">
-                                  Facilities available
-                                </p>
-                              </div>
-                            )}
+                              ))
+                          ) : (
+                            <>
+                            </>
+                          )}
                         </div>
                       </>
                     )}
+
                     {hasRooms && !isAvailable && (
                       <div className="text-xs flex flex-col gap-2 mt-3">
                         <p className="text-[#EA0029]">
@@ -341,21 +418,58 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
                   <span className="inline-block w-px bg-[#E4E4E7] self-stretch -my-2" />
 
-                  <div className="flex flex-col items-start w-80 flex-shrink-0 pr-8 pl-4">
-                    {/* <div className="flex items-center gap-4 mb-3">
-                    <div className="bg-[#A7C0EC] text-[#2351A3] font-semibold text-base px-6 py-3 rounded-[50px]">
-                      9.1
-                    </div>
-                    <div className="text-left">
-                      <div className="text-[#00B868] font-semibold text-sm mb-0.5">
-                        Excellent
+                  {/* ── Right panel ── */}
+                  <div className="flex flex-col items-start w-72 flex-shrink-0 pl-4 pr-2">
+                    {/* Row 1: Rating badge + Excellent + guest reviews */}
+                    {/* <div className="flex items-center gap-3 mb-3">
+                      <div
+                        className="flex items-center justify-center rounded-[100px] flex-shrink-0"
+                        style={{
+                          background: "#A7C0EC",
+                          padding: "15px 25px",
+                          minWidth: "71px",
+                          height: "49px",
+                        }}
+                      >
+                        <span
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 600,
+                            fontSize: "16px",
+                            lineHeight: "100%",
+                            color: "#2351A3",
+                          }}
+                        >
+                          9.1
+                        </span>
                       </div>
-                      <div className="text-sm text-[#3D495C]">
-                        283 guest reviews
+                      <div className="flex flex-col gap-0.5">
+                        <span
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 600,
+                            fontSize: "14px",
+                            lineHeight: "100%",
+                            color: "#00B868",
+                          }}
+                        >
+                          Excellent
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 400,
+                            fontSize: "12px",
+                            color: "#3D495C",
+                            lineHeight: "100%",
+                          }}
+                        >
+                          283 guest reviews
+                        </span>
                       </div>
-                    </div>
-                  </div> */}
+                    </div> */}
 
+                    {/* Row 2: Smashing deal / offer badge */}
                     {hasOffer && uniqueOfferNames.length > 0 && (
                       <div className="mb-3 flex flex-wrap gap-2">
                         {uniqueOfferNames.map((offerName, idx) => (
@@ -369,37 +483,90 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                       </div>
                     )}
 
-                    <div className="mb-3 w-full">
-                      <div className="text-xs text-[#3D495C] mb-1">
-                        Starting from (including VAT)
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-col items-start sm:items-end gap-0.5">
-                          {hasOffer && originalPrice > price && (
-                            <span className="text-[#EA0029] line-through text-lg font-bold whitespace-nowrap">
-                              {currency} {originalPrice.toFixed(2)}
-                            </span>
-                          )}
-                          <span className="text-lg font-bold text-[#0A0C0F] whitespace-nowrap">
-                            {currency} {price.toFixed(2)}
-                            {/* <span className="text-xs align-baseline">
-                              /Night
-                            </span> */}
-                          </span>
-                        </div>
-                        <HotelPriceSummaryTooltip
-                          totalPrice={price}
-                          currency={currency}
-                        />
-                      </div>
+                    {/* Row 3: "Starting from (including VAT)" label */}
+                    <div
+                      className="mb-1"
+                      style={{
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 400,
+                        fontSize: "12px",
+                        color: "#3D495C",
+                        lineHeight: "100%",
+                      }}
+                    >
+                      Starting from (including VAT)
                     </div>
 
-                    <div className="flex items-center gap-4 w-full mt-3">
-                      <button className="p-2.5" onClick={() => handleShare(hotel.hotelKey, hotel.searchKey)}>
-                        <img src={Share} alt="icon" />
+                    {/* Row 4: Prices — strikethrough original + current /Night + tooltip */}
+                    <div className="flex items-center gap-2 mb-4 w-full">
+                      <div className="flex flex-col items-start sm:items-end gap-0.5">
+                        {hasOffer && originalPrice > price && (
+                          <span
+                            style={{
+                              fontFamily: "Inter, sans-serif",
+                              fontWeight: 700,
+                              fontSize: "32px",
+                              lineHeight: "100%",
+                              color: "#EA0029",
+                              textDecoration: "line-through",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {currency} {originalPrice.toFixed(2)}
+                          </span>
+                        )}
+                        <span
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 700,
+                            fontSize: "32px",
+                            lineHeight: "100%",
+                            color: "#0A0C0F",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {currency} {price.toFixed(2)}
+                        </span>
+                        {/* <span
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 700,
+                            fontSize: "12px",
+                            color: "#0A0C0F",
+                            lineHeight: "100%",
+                          }}
+                        >
+                          /Night
+                        </span> */}
+                      </div>
+                      <HotelPriceSummaryTooltip
+                        totalPrice={price}
+                        currency={currency}
+                      />
+                    </div>
+
+                    {/* Row 5: Share icon + Check availability button */}
+                    <div className="flex items-center gap-3 w-full">
+                      <button
+                        className="p-2 flex-shrink-0"
+                        aria-label="Share"
+                        onClick={() =>
+                          handleShare(hotel.hotelKey, hotel.searchKey)
+                        }
+                      >
+                        <img src={Share} alt="share" />
                       </button>
                       <button
-                        className="bg-[#2351A3] text-[#F2F2F3] text-base font-semibold py-3 px-10 rounded-lg disabled:bg-[#C2CAD6]"
+                        className="flex-1 text-[#F2F2F3] font-semibold rounded-[100px] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                        style={{
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: "14px",
+                          fontWeight: 600,
+                          padding: "14px 20px",
+                          background: isAvailable
+                            ? "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)"
+                            : "#C2CAD6",
+                        }}
                         disabled={!isAvailable}
                         onClick={() => {
                           navigate(`/hotel-detail/${hotel.hotelKey}`, {
@@ -408,7 +575,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               bookingParams: bookingParams ?? undefined,
                             },
                           });
-                          clearHotel(); // Clear store so back navigation shows empty form + no data
+                          clearHotel();
                         }}
                       >
                         Check availability
@@ -422,7 +589,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
         </div>
       </div>
     );
-  }
+  },
 );
 
 HotelSearchListView.displayName = "HotelSearchListView";

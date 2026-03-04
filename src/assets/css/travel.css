@@ -4,6 +4,14 @@
   --black-200: #3d495c;
 }
 
+/* Force Ant Design select visual to match Figma / element.style
+   Applies a single 16px radius and 1.5px #cdcbcb border to the selector */
+.ant-select-selector {
+  border-radius: 16px !important;
+  border: 1.5px solid #cdcbcb !important;
+  box-shadow: none !important;
+}
+
 .auth-bg-btn {
   background: linear-gradient(90.59deg, #5383da 0%, #2351a3 50%, #081326 100%) !important;
 }
@@ -140,7 +148,7 @@ input[type="number"] {
 }
 
 .topHeaderTabs {
-  margin-right: 100px;
+  margin-right: 0;
 }
 
 .topHeaderTabs
@@ -243,12 +251,16 @@ input[type="number"] {
 }
 
 .flightDetailFilter {
-  /* width: 100%; */
+  width: 280px;
+  min-width: 280px;
+  flex-shrink: 0;
 }
 
 .filterSectionStyle {
   width: 100%;
-  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .flightDetailMainContent {
@@ -256,38 +268,47 @@ input[type="number"] {
 }
 
 .collapseStyle {
-  border-radius: 15px !important;
+  border-radius: 16px !important;
   overflow: hidden;
+  border: 1px solid #e4e4e7 !important;
+  background: #ffffff !important;
 }
 
 .collapseStyle .ant-collapse-header-text {
-  color: #3d495c;
+  color: #0a0c0f;
   letter-spacing: 0px;
-  font-size: 12px;
-  font-weight: 400;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .collapseStyle .ant-collapse-header {
-  background: #ffffff;
-}
-
-.collapseStyle .ant-collapse-header {
+  background: #ffffff !important;
   align-items: center !important;
+  padding: 14px 16px !important;
+  min-height: 52px;
 }
 
 .collapseStyle .ant-collapse-content {
   border: none !important;
+  background: #ffffff !important;
 }
 
 .collapseStyle .ant-collapse-content-box {
-  padding-top: 0px !important;
+  padding: 0 12px 14px 12px !important;
+  background: #ffffff !important;
+}
+
+.collapseStyle .ant-collapse-item {
+  border: none !important;
 }
 
 .filterHeading {
   display: flex;
   justify-content: space-between;
-  margin-top: 25px;
-  margin-bottom: 15px;
+  align-items: center;
+  margin-top: 16px;
+  margin-bottom: 12px;
 }
 
 .stopsRadioStyle {
@@ -351,13 +372,17 @@ input[type="number"] {
 }
 
 .baggageCheckbox {
-  color: #3d495c;
+  color: #0a0c0f;
+  font-family: Inter, sans-serif;
   font-size: 14px;
   font-weight: 500;
+  line-height: 100%;
 }
 
 .baggageCheckbox .ant-checkbox-inner {
-  border-radius: 6px !important;
+  border-radius: 4px !important;
+  width: 16px !important;
+  height: 16px !important;
 }
 
 .departureArrival {
@@ -397,10 +422,14 @@ input[type="number"] {
 
 .filterHeading h4 {
   color: #0a0c0f;
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 1;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 100%;
   letter-spacing: 0px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .smallDot {
@@ -410,6 +439,7 @@ input[type="number"] {
 }
 
 .lightActiveText {
+  font-family: Inter, sans-serif;
   font-size: 14px;
   color: #3d495c;
   font-weight: 400;
@@ -417,14 +447,16 @@ input[type="number"] {
 }
 
 .resetAllBtn a {
+  font-family: Inter, sans-serif;
   color: #5383da;
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 14px;
+  font-weight: 500;
   letter-spacing: 0;
+  text-decoration: none;
 }
 
 .collapseStyle {
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 
 .departureArrivalHeading {
@@ -614,6 +646,82 @@ input[type="number"] {
   color: #0a0c0f;
   font-size: 14px;
   font-weight: 500;
+.hotel-view-select .ant-select-selector {
+  height: 50px !important;
+  border-radius: 16px !important;
+  background: var(--white-200, #FFFFFF) !important;
+  border: 1px solid var(--black-100, #C2CAD6) !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 12px !important;
+}
+.hotel-view-select .ant-select-selection-item {
+  color: #0F172A !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 50px !important;
+}
+.hotel-view-select .ant-select-arrow {
+  right: 12px !important;
+}
+.hotel-view-select .ant-select-selection-search-input {
+  opacity: 0 !important;
+  height: 50px !important;
+}
+.hotel-view-select .ant-select-selector .ant-select-selection-item,
+.hotel-view-select .ant-select-selector .ant-select-selection-placeholder {
+  padding: 0 !important;
+}
+.hotel-view-select-popup .rc-virtual-list-holder {
+  /* leave default */
+}
+
+/* Ensure all Ant Design select selectors use 16px radius to match Figma */
+.ant-select-selector {
+  border-radius: 16px !important;
+}
+
+/* Ensure only the internal selector shows a single border for hotel view select */
+.hotel-view-select.ant-select {
+  /* remove outer border/outline from the host element */
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.hotel-view-select .ant-select-selector {
+  /* single visible border */
+  border: 1px solid var(--black-100, #C2CAD6) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+
+/* If the top header's radioButtonGroup is empty, remove its border to avoid duplicate outline */
+.tadioButtonGroupWrap .radioButtonGroup:empty {
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Remove wrapper border in the top header so only the Select's selector shows a border */
+.tadioButtonGroupWrap .radioButtonGroup {
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Ensure hotel view select has no focus outline or shadow */
+.hotel-view-select .ant-select-selector,
+.hotel-view-select .ant-select-selector:focus,
+.hotel-view-select .ant-select-focused .ant-select-selector {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Tune padding for visually centered text */
+.hotel-view-select .ant-select-selection-item {
+  padding-left: 16px !important;
+}
   letter-spacing: 0px;
 }
 
@@ -1430,7 +1538,7 @@ img:hover {
   display: flex;
   align-items: flex-end;
   justify-content: flex-start;
-  gap: 11px;
+  gap: 14px;
   flex-wrap: wrap;
 }
 

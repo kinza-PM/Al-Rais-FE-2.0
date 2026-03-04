@@ -36,11 +36,10 @@ const IconBtn: React.FC<{
     aria-label={label}
     onClick={onClick}
     disabled={disabled}
-    className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-[14px] ${
-      disabled
-        ? "bg-[#E6EEFF] text-[#9BB3E8] cursor-not-allowed"
-        : "bg-[#2351A3]"
-    }`}
+    className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-[14px] ${disabled
+      ? "bg-[#E6EEFF] text-[#9BB3E8] cursor-not-allowed"
+      : "bg-[#2351A3]"
+      }`}
   >
     <span className="block leading-none transform -translate-y-px">
       {children}
@@ -149,6 +148,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
       "required",
       "Please complete",
       "Maximum",
+      "Please specify"
     ];
     return validationKeywords.some((keyword) =>
       errorMessage.toLowerCase().includes(keyword.toLowerCase()),
@@ -173,8 +173,8 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   const childRowKey = useMemo(
     () =>
       rows.find((r) => r.key === "kids")?.key as
-        | (keyof Pax & string)
-        | undefined,
+      | (keyof Pax & string)
+      | undefined,
     [rows],
   );
 
@@ -251,7 +251,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
               handleToggle();
             }
           }}
-          className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none ${errorMessage && isValidationError ? "border-red-500" : "border-[#DFE7F3]"}`}
+          className={`h-[51px] w-full rounded-[16px] border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none ${errorMessage && isValidationError ? "border-red-500" : "border-[1.5px] border-[#bfbfbf]"}`}
           aria-haspopup="dialog"
           aria-expanded={open || showError}
           aria-invalid={showError}
