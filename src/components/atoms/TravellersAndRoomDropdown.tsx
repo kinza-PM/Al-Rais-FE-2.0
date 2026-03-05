@@ -203,17 +203,34 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
 
   const handleChildAgeChange = (index: number, value: string) => {
     // const num = value === "" ? null : Math.max(2, Math.min(12, Number(value)));
+    if (value !== "" && !/^\d+$/.test(value)) return;
     const num = value === "" ? null : Number(value);
+    if (value === "") {
+      setChildAges((prev) => {
+        const next = [...prev];
+        next[index] = null;
+        return next;
+      });
+      return;
+    }
     setChildAges((prev) => {
       const next = [...prev];
       next[index] = num;
       return next;
     });
-  };
+  }
 
   const handleChildAgeBlur = (index: number, value: string) => {
-    // Focus chorne ke baad clamp karo
     if (value === "") return;
+    // Guard against browser autofill or paste edge-cases that bypass onChange
+    if (!/^\d+$/.test(value)) {
+      setChildAges((prev) => {
+        const next = [...prev];
+        next[index] = null;
+        return next;
+      });
+      return;
+    }
     const num = Math.max(2, Math.min(12, Number(value)));
     setChildAges((prev) => {
       const next = [...prev];
@@ -357,6 +374,11 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
                         ? ""
                         : String(childAges[i])
                     }
+                    onKeyDown={(e) => {
+                      if ([".", "-", "+", "e", "E"].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     onChange={(e) => handleChildAgeChange(i, e.target.value)}
                     onBlur={(e) => handleChildAgeBlur(i, e.target.value)}
                     className="w-20 h-9 rounded-xl border border-[#EDEFF6] pl-3 text-[14px] text-[#0F172A] bg-white placeholder:text-[#94A3B8] focus:outline-none focus:ring-0"
