@@ -251,7 +251,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
               handleToggle();
             }
           }}
-          className={`h-[51px] w-full rounded-[16px] border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none ${errorMessage && isValidationError ? "border-red-500" : "border-[1.5px] border-[#bfbfbf]"}`}
+          className={`h-[50px] w-full rounded-[16px] border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none ${errorMessage && isValidationError ? "border-red-500" : "border-[#C2CAD6]"}`}
           aria-haspopup="dialog"
           aria-expanded={open || showError}
           aria-invalid={showError}

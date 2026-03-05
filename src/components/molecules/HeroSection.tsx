@@ -13,37 +13,30 @@ type Props = {
 const HeroSection: React.FC<Props> = ({ activeTab }) => {
   const selectedTab = activeTab ?? "flights";
 
-  // Tab changes are controlled by parent via `activeTab` / `onTabChange` when provided.
-
   return (
     <div>
-      {/* Outer flight/hotel search container - matches Figma card */}
+      {/* Outer container — gray border pill matching Figma */}
       <div className="w-full flex justify-center px-4" style={{ marginTop: -10 }}>
         <div
-          className="hero-outer w-full max-w-[1268px] bg-[#CFD5E0] border-[2px] border-[#A4A9AD] rounded-[45px] flex justify-center relative z-10 overflow-visible"
-          style={{ opacity: 1, transform: "rotate(0deg)" }}
+          className="w-full max-w-[1268px] bg-[#CFD5E0] border-[2px] border-[#A4A9AD] rounded-[45px] flex justify-center relative z-10 overflow-visible"
         >
-          {/* Inner white panel */}
+          {/* Inner white panel — 15px inset on all sides, NO forced bottom padding */}
           <div
-          id="hero-search-form"
-          className="hero-inner w-full mx-[15px] my-[15px] rounded-[35px] bg-white shadow-[0_8px_28px_rgba(12,40,86,0.08)] overflow-visible pb-14"
-            style={{ opacity: 1 }}
+            id="hero-search-form"
+            className="w-full mx-[15px] my-[15px] rounded-[35px] bg-white shadow-[0_8px_28px_rgba(12,40,86,0.08)] overflow-visible"
           >
-            
-            {/* Render the appropriate hero section */}
             {selectedTab === "flights" && <FlightHeroSectionTab />}
             {selectedTab === "hotels" && <HotelHeroSectionTab />}
           </div>
         </div>
       </div>
 
-      {/* Promotional cards - Common for both */}
+      {/* Promotional cards */}
       <PromotionalCards />
     </div>
   );
 };
 
-// Extract promotional cards to a separate component
 const PromotionalCards: React.FC = () => (
   <div className="w-full flex justify-center mt-8 px-4">
     <div className="w-full max-w-[1268px] grid md:grid-cols-3 gap-4 lg:gap-6 justify-items-center">
@@ -59,15 +52,10 @@ const PromotionalCards: React.FC = () => (
         <span
           className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full text-white text-[12px] font-medium shadow-[0_2px_8px_rgba(12,40,86,0.18)]"
           style={{
-            background:
-            "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+            background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
           }}
         >
-          <img
-            src={Celebration}
-            alt="celebration"
-            className="w-[16px] h-[16px] shrink-0"
-          />
+          <img src={Celebration} alt="celebration" className="w-[16px] h-[16px] shrink-0" />
           Welcome gift
         </span>
         <div className="pt-6">
@@ -80,9 +68,6 @@ const PromotionalCards: React.FC = () => (
             booking
           </p>
         </div>
-        {/* <button className="shrink-0 h-10 px-5 rounded-[999px] bg-[#0A0C0F] text-white text-[14px] font-medium shadow-sm">
-          Sign in to claim
-        </button> */}
       </div>
 
       {/* Card 2 — Did you know */}
@@ -90,17 +75,14 @@ const PromotionalCards: React.FC = () => (
         className="flex w-full max-w-[401px] items-center justify-between gap-4 px-6 py-4 text-white shadow-[0_8px_28px_rgba(12,40,86,0.18)] rounded-[16px]"
         style={{
           height: 113,
-          background:
-            "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+          background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
         }}
       >
         <div>
           <p className="text-[12px] opacity-90 mb-2">Did you know?</p>
           <p
             className="text-[14px] leading-[1] font-normal opacity-95 max-w-[260px]"
-            style={{
-              fontSize: "9px",
-            }}
+            style={{ fontSize: "9px" }}
           >
             Al-Rais members get better deals
             <br />

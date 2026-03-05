@@ -172,7 +172,7 @@ const OneWayForm: React.FC<Props> = ({
       />
 
       {/* Departure date */}
-      <div className="w-[195px]">
+      <div className="w-[220px]">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
@@ -211,7 +211,7 @@ const OneWayForm: React.FC<Props> = ({
       </div>
 
       {/* Passengers */}
-      <div className="w-[170px] relative">
+      <div className="w-[210px] relative">
         <label className="flex items-center gap-2 text-[12px] text-[#3D495C] mb-1">
           Passengers
           <span className="relative inline-flex group/info">
@@ -250,7 +250,7 @@ const OneWayForm: React.FC<Props> = ({
       </div>
 
       {/* Cabin class */}
-      <div className="w-[185px] relative">
+      <div className="w-[210px] relative">
         <SearchableDropdown
           options={cabinClasses.map((cc) => ({
             id: cc.id,
