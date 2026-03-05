@@ -256,13 +256,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                     key={ri}
                     type="button"
                     onClick={() => scrollToRoom(ri)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      isSelected
-                        ? "bg-[#2351A3] text-white"
-                        : isExpanded
-                          ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
-                          : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
-                    }`}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isSelected
+                      ? "bg-[#2351A3] text-white"
+                      : isExpanded
+                        ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
+                        : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
+                      }`}
                   >
                     <span>Room {ri}</span>
                     {isSelected && (
@@ -499,7 +498,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                               {roomImages.map((img: any, idx: number) => {
                                 const fallback =
                                   DEFAULT_ROOM_IMAGES[
-                                    idx % DEFAULT_ROOM_IMAGES.length
+                                  idx % DEFAULT_ROOM_IMAGES.length
                                   ];
                                 return (
                                   <div
@@ -532,129 +531,129 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                   0 ||
                                   categorizedAmenities.kitchen.length > 0 ||
                                   categorizedAmenities.bedrooms.length > 0) && (
-                                  <div
-                                    className={`grid items-start ${categorizedAmenities.greatForYourStay.length > 0 && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0 ? "grid-cols-[2.7fr_1fr_1fr]" : (categorizedAmenities.greatForYourStay.length > 0 && (categorizedAmenities.kitchen.length > 0 || categorizedAmenities.bedrooms.length > 0)) || (!categorizedAmenities.greatForYourStay.length && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0) ? "grid-cols-[2.7fr_1fr]" : "grid-cols-1"}`}
-                                  >
-                                    {categorizedAmenities.greatForYourStay
-                                      .length > 0 && (
-                                      <div>
-                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                          <img alt="icon" src={GreatStayIcon} />
-                                          <h5>Great for your stay</h5>
-                                        </div>
-                                        <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
-                                          {categorizedAmenities.greatForYourStay.map(
-                                            (item: string) => (
-                                              <span
-                                                key={item}
-                                                className="flex items-center gap-1 whitespace-nowrap"
-                                              >
-                                                <CheckIcon />
-                                                <span>{item}</span>
-                                              </span>
-                                            ),
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {categorizedAmenities.kitchen.length >
-                                      0 && (
-                                      <div>
-                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                          <img alt="icon" src={KnifeIcon} />
-                                          <h5>Kitchen</h5>
-                                        </div>
-                                        <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
-                                          {categorizedAmenities.kitchen.map(
-                                            (it: string) => (
-                                              <span
-                                                key={it}
-                                                className="flex items-center gap-1 whitespace-nowrap"
-                                              >
-                                                <CheckIcon />
-                                                <span>{it}</span>
-                                              </span>
-                                            ),
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {categorizedAmenities.bedrooms.length >
-                                      0 && (
-                                      <div>
-                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                          <img alt="icon" src={BedroomIcon} />
-                                          <h5>Bedrooms</h5>
-                                        </div>
-                                        <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
-                                          {categorizedAmenities.bedrooms.map(
-                                            (it: string) => (
-                                              <span
-                                                key={it}
-                                                className="flex items-center gap-1 whitespace-nowrap"
-                                              >
-                                                <CheckIcon />
-                                                <span>{it}</span>
-                                              </span>
-                                            ),
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                                    <div
+                                      className={`grid items-start ${categorizedAmenities.greatForYourStay.length > 0 && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0 ? "grid-cols-[2.7fr_1fr_1fr]" : (categorizedAmenities.greatForYourStay.length > 0 && (categorizedAmenities.kitchen.length > 0 || categorizedAmenities.bedrooms.length > 0)) || (!categorizedAmenities.greatForYourStay.length && categorizedAmenities.kitchen.length > 0 && categorizedAmenities.bedrooms.length > 0) ? "grid-cols-[2.7fr_1fr]" : "grid-cols-1"}`}
+                                    >
+                                      {categorizedAmenities.greatForYourStay
+                                        .length > 0 && (
+                                          <div>
+                                            <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                              <img alt="icon" src={GreatStayIcon} />
+                                              <h5>Great for your stay</h5>
+                                            </div>
+                                            <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
+                                              {categorizedAmenities.greatForYourStay.map(
+                                                (item: string) => (
+                                                  <span
+                                                    key={item}
+                                                    className="flex items-center gap-1 whitespace-nowrap"
+                                                  >
+                                                    <CheckIcon />
+                                                    <span>{item}</span>
+                                                  </span>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      {categorizedAmenities.kitchen.length >
+                                        0 && (
+                                          <div>
+                                            <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                              <img alt="icon" src={KnifeIcon} />
+                                              <h5>Kitchen</h5>
+                                            </div>
+                                            <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
+                                              {categorizedAmenities.kitchen.map(
+                                                (it: string) => (
+                                                  <span
+                                                    key={it}
+                                                    className="flex items-center gap-1 whitespace-nowrap"
+                                                  >
+                                                    <CheckIcon />
+                                                    <span>{it}</span>
+                                                  </span>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      {categorizedAmenities.bedrooms.length >
+                                        0 && (
+                                          <div>
+                                            <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                              <img alt="icon" src={BedroomIcon} />
+                                              <h5>Bedrooms</h5>
+                                            </div>
+                                            <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-col gap-2">
+                                              {categorizedAmenities.bedrooms.map(
+                                                (it: string) => (
+                                                  <span
+                                                    key={it}
+                                                    className="flex items-center gap-1 whitespace-nowrap"
+                                                  >
+                                                    <CheckIcon />
+                                                    <span>{it}</span>
+                                                  </span>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                    </div>
+                                  )}
                                 {(categorizedAmenities.mediaAndTechnology
                                   .length > 0 ||
                                   categorizedAmenities.bathroom.length > 0) && (
-                                  <div
-                                    className={`grid items-start mt-2 gap-2 ${categorizedAmenities.mediaAndTechnology.length > 0 && categorizedAmenities.bathroom.length > 0 ? "grid-cols-[2.7fr_2fr]" : "grid-cols-1"}`}
-                                  >
-                                    {categorizedAmenities.mediaAndTechnology
-                                      .length > 0 && (
-                                      <div>
-                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                          <img alt="icon" src={MediaIcon} />
-                                          <h5>Media & Technology</h5>
-                                        </div>
-                                        <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
-                                          {categorizedAmenities.mediaAndTechnology.map(
-                                            (item: string) => (
-                                              <span
-                                                key={item}
-                                                className="flex items-center gap-1 whitespace-nowrap"
-                                              >
-                                                <CheckIcon />
-                                                <span>{item}</span>
-                                              </span>
-                                            ),
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {categorizedAmenities.bathroom.length >
-                                      0 && (
-                                      <div>
-                                        <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
-                                          <img alt="icon" src={BathroomIcon} />
-                                          <h5>Bathroom</h5>
-                                        </div>
-                                        <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-wrap gap-2">
-                                          {categorizedAmenities.bathroom.map(
-                                            (it: string) => (
-                                              <span
-                                                key={it}
-                                                className="flex items-center gap-1 whitespace-nowrap"
-                                              >
-                                                <CheckIcon />
-                                                <span>{it}</span>
-                                              </span>
-                                            ),
-                                          )}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                                    <div
+                                      className={`grid items-start mt-2 gap-2 ${categorizedAmenities.mediaAndTechnology.length > 0 && categorizedAmenities.bathroom.length > 0 ? "grid-cols-[2.7fr_2fr]" : "grid-cols-1"}`}
+                                    >
+                                      {categorizedAmenities.mediaAndTechnology
+                                        .length > 0 && (
+                                          <div>
+                                            <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                              <img alt="icon" src={MediaIcon} />
+                                              <h5>Media & Technology</h5>
+                                            </div>
+                                            <div className="text-xs text-[#3D495C] font-normal flex flex-wrap items-center gap-3 mt-3">
+                                              {categorizedAmenities.mediaAndTechnology.map(
+                                                (item: string) => (
+                                                  <span
+                                                    key={item}
+                                                    className="flex items-center gap-1 whitespace-nowrap"
+                                                  >
+                                                    <CheckIcon />
+                                                    <span>{item}</span>
+                                                  </span>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                      {categorizedAmenities.bathroom.length >
+                                        0 && (
+                                          <div>
+                                            <div className="flex items-center gap-2 text-sm text-[#0A0C0F] font-semibold">
+                                              <img alt="icon" src={BathroomIcon} />
+                                              <h5>Bathroom</h5>
+                                            </div>
+                                            <div className="text-xs text-[#3D495C] font-normal mt-3 flex flex-wrap gap-2">
+                                              {categorizedAmenities.bathroom.map(
+                                                (it: string) => (
+                                                  <span
+                                                    key={it}
+                                                    className="flex items-center gap-1 whitespace-nowrap"
+                                                  >
+                                                    <CheckIcon />
+                                                    <span>{it}</span>
+                                                  </span>
+                                                ),
+                                              )}
+                                            </div>
+                                          </div>
+                                        )}
+                                    </div>
+                                  )}
                               </>
                             ) : (
                               <span className="text-[#94A3B8] text-xs">
@@ -679,11 +678,11 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                             const hasOffers = offers.length > 0;
                             const originalPrice = hasOffers
                               ? price -
-                                offers.reduce(
-                                  (sum: number, offer: any) =>
-                                    sum + (offer.amount || 0),
-                                  0,
-                                )
+                              offers.reduce(
+                                (sum: number, offer: any) =>
+                                  sum + (offer.amount || 0),
+                                0,
+                              )
                               : price;
                             const roomKey =
                               room.roomKey ||

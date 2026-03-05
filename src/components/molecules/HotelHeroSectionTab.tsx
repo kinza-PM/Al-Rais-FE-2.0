@@ -18,6 +18,8 @@ const starRatingOptions = [
   { id: "3", value: "3", label: "3 stars" },
   { id: "4", value: "4", label: "4 stars" },
   { id: "5", value: "5", label: "5 stars" },
+  { id: "6", value: "6", label: "6 stars" },
+  { id: "7", value: "7", label: "7 stars" },
 ];
 
 const convertDateToString = (date: Date | null): string => {

@@ -52,6 +52,8 @@ const starRatingOptions = [
   { id: "3", value: "3", label: "3 stars" },
   { id: "4", value: "4", label: "4 stars" },
   { id: "5", value: "5", label: "5 stars" },
+  { id: "6", value: "6", label: "6 stars" },
+  { id: "7", value: "7", label: "7 stars" },
 ];
 
 const hotelViewTypes = [
@@ -324,7 +326,7 @@ const HotelSearchListing: React.FC = () => {
         !searchState.checkIn || searchState.checkIn.trim() === "",
         !searchState.checkOut || searchState.checkOut.trim() === "",
         !searchState.travelerCountryOfResidence ||
-          searchState.travelerCountryOfResidence.trim() === "",
+        searchState.travelerCountryOfResidence.trim() === "",
       ].filter(Boolean).length > 1;
 
     if (hasMultipleErrors) {
@@ -394,8 +396,7 @@ const HotelSearchListing: React.FC = () => {
       return false;
     } else if (totalAdults > maxAdultsAllowed) {
       setValidationError(
-        `Maximum ${maxAdultsAllowed} adults allowed for ${numRooms} room${
-          numRooms > 1 ? "s" : ""
+        `Maximum ${maxAdultsAllowed} adults allowed for ${numRooms} room${numRooms > 1 ? "s" : ""
         } (2 per room)`,
       );
       return false;
@@ -405,8 +406,7 @@ const HotelSearchListing: React.FC = () => {
     const maxChildrenAllowed = numRooms * 2;
     if (totalChildren > maxChildrenAllowed) {
       setValidationError(
-        `Maximum ${maxChildrenAllowed} children allowed for ${numRooms} room${
-          numRooms > 1 ? "s" : ""
+        `Maximum ${maxChildrenAllowed} children allowed for ${numRooms} room${numRooms > 1 ? "s" : ""
         } (2 per room)`,
       );
       return false;
@@ -521,13 +521,12 @@ const HotelSearchListing: React.FC = () => {
     <div className="">
       <Loader
         show={isPending || isCountriesLoading || isCitiesLoading}
-        label={`${
-          isPending
-            ? "Please wait while we are looking for available hotels"
-            : isCitiesLoading
-              ? "Loading cities..."
-              : "Please wait while we are fetching details"
-        }`}
+        label={`${isPending
+          ? "Please wait while we are looking for available hotels"
+          : isCitiesLoading
+            ? "Loading cities..."
+            : "Please wait while we are fetching details"
+          }`}
       />
       <div className="topHeaderSetting"></div>
 
