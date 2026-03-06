@@ -273,7 +273,7 @@ const HotelHeroSectionTab: React.FC = () => {
   const labelBaseClass = "block text-[12px] text-[#3D495C]";
 
   return (
-    <div className="px-10 pb-8 pt-6">
+    <div className="px-10 pt-5 pb-5">
       <Loader show={isCityOptionsLoading} label="Loading cities..." />
       <div className="flex flex-col gap-4">
         {/* First row - Country, City, Dates */}
@@ -377,7 +377,7 @@ const HotelHeroSectionTab: React.FC = () => {
             }`}
         >
           {/* Nationality */}
-          <div className="flex-1 min-w-[200px]">
+          <div className="w-[285px] flex-shrink-0">
             <label className={labelBaseClass}>Nationality</label>
             <SearchableDropdown
               options={
@@ -399,7 +399,7 @@ const HotelHeroSectionTab: React.FC = () => {
           </div>
 
           {/* Travellers and rooms */}
-          <div className="flex-1 min-w-[200px]">
+          <div className="w-[285px] flex-shrink-0">
             <div className="relative">
               <label className={`${labelBaseClass} flex items-center gap-2`}>
                 Travellers and rooms{" "}
@@ -456,7 +456,7 @@ const HotelHeroSectionTab: React.FC = () => {
           </div>
 
           {/* Search button */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 ml-auto">
             <button
               className="text-[16px] font-medium text-white whitespace-nowrap"
               style={{

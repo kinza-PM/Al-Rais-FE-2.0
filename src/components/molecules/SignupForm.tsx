@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Input from "../atoms/Input";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import logoSmall from "../../assets/images/logo-small.png";
@@ -29,11 +29,13 @@ import { PhoneInput } from "react-international-phone";
 interface SignupFormProps {
   onLoginClick: () => void;
   onSignupSuccess?: () => void;
+  onClose?: () => void;
 }
 
 const SignupForm: React.FC<SignupFormProps> = ({
   onLoginClick,
   onSignupSuccess,
+  onClose,
 }) => {
   const [formData, setFormData] = useState({
     title: "MR",
@@ -443,13 +445,25 @@ const SignupForm: React.FC<SignupFormProps> = ({
 
   return (
     <div
-      className="w-full max-w-[468px] space-y-4 rounded-xl border border-[#E4E4E7] bg-white shadow-lg transition-shadow sm:rounded-2xl"
+      className="relative w-full max-w-[468px] space-y-4 rounded-xl border border-[#E4E4E7] bg-white shadow-lg transition-shadow sm:rounded-2xl"
       style={{
         opacity: 1,
         width: "100%",
         minHeight: 0,
       }}
     >
+      {/* Close button — inside the card, top-right corner */}
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-[#3D495C] hover:bg-[#F2F2F3] transition-colors z-10"
+          aria-label="Close"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+          </svg>
+        </button>
+      )}
       <div className="px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
         {!showOtpInput ? (
           <div>

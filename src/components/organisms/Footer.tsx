@@ -16,11 +16,11 @@ const COMPANY_LINKS = [
 ];
 
 const SERVICES_LINKS = [
-  "Book Flights",
-  "Book Hotels",
-  "Rent a car",
-  "Buy travel packages",
-  "Manage your bookings",
+  { label: "Book Flights", link: "/search_flight" },
+  { label: "Book Hotels", link: "/search-hotel" },
+  { label: "Rent a car", link: null },
+  { label: "Buy travel packages", link: "/packages" },
+  { label: "Manage your bookings", link: "/my-bookings" },
 ];
 
 const HELP_LINKS = [
@@ -85,16 +85,24 @@ const Footer: React.FC = () => {
               Services
             </h3>
             <ul className="space-y-2">
-              {SERVICES_LINKS.map((item) => (
-                <li key={item}>
-                  <a
-                    href="#"
-                    className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
-                  >
-                    {item}
-                  </a>
-                </li>
-              ))}
+              {SERVICES_LINKS.map((item) =>
+                item.link ? (
+                  <li key={item.label}>
+                    <Link
+                      to={item.link}
+                      className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ) : (
+                  <li key={item.label}>
+                    <span className="text-sm text-[#A4A9AD] cursor-not-allowed">
+                      {item.label}
+                    </span>
+                  </li>
+                )
+              )}
             </ul>
           </div>
 

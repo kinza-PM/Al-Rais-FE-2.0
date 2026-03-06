@@ -137,7 +137,7 @@ const RoundTripForm: React.FC<Props> = ({
       />
 
       {/* Departure date */}
-      <div className="w-[200px] relative">
+      <div className="w-[240px] relative">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
@@ -180,7 +180,7 @@ const RoundTripForm: React.FC<Props> = ({
         </div> */}
       </div>
 
-      <div className="w-[200px] relative">
+      <div className="w-[240px] relative">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Return date
         </label>
@@ -220,7 +220,7 @@ const RoundTripForm: React.FC<Props> = ({
       </div>
 
       {/* Passengers */}
-      <div className="w-[190px] relative">
+      <div className="w-[240px] relative">
         <PassengerCabinDropdown
           schema={passengerSchema}
           loadingPassengers={loadingPassengers}
