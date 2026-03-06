@@ -241,9 +241,9 @@ const HotelBooking = () => {
         const userDetails =
           email || phoneNumber
             ? await RemoteUserService.getByIdentifier({
-                email: email || undefined,
-                phoneNumber: phoneNumber || undefined,
-              })
+              email: email || undefined,
+              phoneNumber: phoneNumber || undefined,
+            })
             : null;
 
         if (userDetails) {

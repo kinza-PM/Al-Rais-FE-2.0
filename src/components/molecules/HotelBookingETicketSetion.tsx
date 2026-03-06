@@ -4,6 +4,7 @@ import { generateMultiPagePDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
 import Loader from "../atoms/Loader";
 import { useHotelProxyImages } from "../../hooks/useHotelProxyImages";
+import { useNavigate } from "react-router-dom";
 
 type HotelBookingETicketSectionProps = {
   bookingResponse?: any;
@@ -14,6 +15,7 @@ export default function HotelBookingETicketSetion({
   bookingResponse,
   hotelDetail,
 }: HotelBookingETicketSectionProps) {
+  const navigate = useNavigate();
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const bookingData = bookingResponse?.data?.[0];
   const hotel = bookingData?.hotel;
@@ -393,6 +395,7 @@ export default function HotelBookingETicketSetion({
               type="button"
               className="text-[15px] font-medium text-[#5383DA] hover:underline"
               overrideClasses
+              onClick={() => navigate("/my-bookings")}
             >
               Manage bookings
             </Button>
