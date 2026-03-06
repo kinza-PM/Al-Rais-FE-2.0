@@ -29,6 +29,11 @@ const AppLayout: React.FC = () => {
     void checkAuth();
   }, [location.pathname]);
 
+  // Scroll to top when navigating to a new page (e.g. footer links)
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [location.pathname]);
+
   const openLogin = () => {
     setAuthMode("login");
     setAuthModalOpen(true);
