@@ -1,4 +1,4 @@
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
@@ -11,7 +11,7 @@ import { useAuth } from "../../features/auth/hooks/useAuth";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const { refreshAuth } = useAuth();
 
   const [hideHeader, setHideHeader] = useState<boolean>(false);

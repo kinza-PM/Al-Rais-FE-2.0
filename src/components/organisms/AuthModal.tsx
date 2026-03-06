@@ -4,8 +4,9 @@ import SignupForm from '../molecules/SignupForm';
 import ForgotPasswordForm from '../molecules/ForgotPasswordForm';
 import ResetPasswordForm from '../molecules/ResetPasswordForm';
 import LoginFailedCard from '../molecules/LoginFailedCard';
+import type { AuthMode } from '../../types/AuthTypes';
 
-type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password' | 'login-failed';
+// type AuthMode = 'login' | 'signup' | 'forgot-password' | 'reset-password' | 'login-failed';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -75,38 +76,38 @@ const AuthModal: React.FC<AuthModalProps> = ({
       {/* Centering wrapper — allows vertical scroll on small screens */}
       <div className="relative flex min-h-full items-center justify-center p-4 py-8">
 
-      {/* Form container */}
-      <div className="relative z-10 w-full max-w-[468px] mx-auto">
+        {/* Form container */}
+        <div className="relative z-10 w-full max-w-[468px] mx-auto">
 
-        {mode === 'login' ? (
-          <LoginForm
-            onSignupClick={handleModeSwitch}
-            onLoginSuccess={handleSuccess}
-            onForgotPasswordClick={handleForgotPassword}
-            onLoginFailed={() => onModeChange('login-failed')}
-            onClose={onClose}
-          />
-        ) : mode === 'login-failed' ? (
-          <LoginFailedCard onTryAgain={() => onModeChange('login')} />
-        ) : mode === 'signup' ? (
-          <SignupForm
-            onLoginClick={handleModeSwitch}
-            onSignupSuccess={handleSuccess}
-            onClose={onClose}
-          />
-        ) : mode === 'forgot-password' ? (
-          <ForgotPasswordForm
-            onBackToLogin={handleBackToLogin}
-            onOTPSent={handleOTPSent}
-          />
-        ) : mode === 'reset-password' ? (
-          <ResetPasswordForm
-            email={forgotPasswordEmail}
-            onPasswordReset={handlePasswordReset}
-            onBackToOTP={handleBackToOTP}
-          />
-        ) : null}
-      </div>
+          {mode === 'login' ? (
+            <LoginForm
+              onSignupClick={handleModeSwitch}
+              onLoginSuccess={handleSuccess}
+              onForgotPasswordClick={handleForgotPassword}
+              onLoginFailed={() => onModeChange('login-failed')}
+              onClose={onClose}
+            />
+          ) : mode === 'login-failed' ? (
+            <LoginFailedCard onTryAgain={() => onModeChange('login')} />
+          ) : mode === 'signup' ? (
+            <SignupForm
+              onLoginClick={handleModeSwitch}
+              onSignupSuccess={handleSuccess}
+              onClose={onClose}
+            />
+          ) : mode === 'forgot-password' ? (
+            <ForgotPasswordForm
+              onBackToLogin={handleBackToLogin}
+              onOTPSent={handleOTPSent}
+            />
+          ) : mode === 'reset-password' ? (
+            <ResetPasswordForm
+              email={forgotPasswordEmail}
+              onPasswordReset={handlePasswordReset}
+              onBackToOTP={handleBackToOTP}
+            />
+          ) : null}
+        </div>
       </div>
     </div>
   );
