@@ -226,6 +226,73 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     });
   }, []);
 
+  // ✅ get selected item for specific roomIndex + roomKey
+const getSelectedItem = useCallback(
+  (roomIndex: number, roomKey: string) => {
+    return (selectedRoomsFromParent ?? []).find(
+      (s) => (s.room?.roomIndex ?? 1) === roomIndex && s.roomKey === roomKey,
+    );
+  },
+  [selectedRoomsFromParent],
+);
+
+// ✅ Stepper behavior like Figma (+ / -)
+const updateRoomCount = useCallback(
+  (roomIndex: number, roomKey: string, room: any, delta: number) => {
+    if (!onRoomsChange) return;
+
+    const current = (selectedRoomsFromParent ?? []).slice();
+    const idx = current.findIndex(
+      (s) => (s.room?.roomIndex ?? 1) === roomIndex && s.roomKey === roomKey,
+    );
+
+    // If not selected yet: only allow + to select
+    if (idx === -1) {
+      if (delta <= 0) return;
+      // remove any other selected option for same roomIndex (Figma shows one option selected)
+      const withoutThisRoomIndex = current.filter(
+        (s) => (s.room?.roomIndex ?? 1) !== roomIndex,
+      );
+      const next = [
+        ...withoutThisRoomIndex,
+        { roomIndex, roomKey, room, count: 1, selectedAt: Date.now() } as any,
+      ];
+      next.sort((a, b) => (a.room?.roomIndex ?? 1) - (b.room?.roomIndex ?? 1));
+      onRoomsChange(next);
+      return;
+    }
+
+    const nextCount = (current[idx].count ?? 1) + delta;
+
+    if (nextCount <= 0) {
+      // remove selection
+      const next = current.filter((_, i) => i !== idx);
+      onRoomsChange(next);
+      return;
+    }
+
+    current[idx] = { ...current[idx], count: nextCount };
+    onRoomsChange(current);
+  },
+  [onRoomsChange, selectedRoomsFromParent],
+);
+
+// ✅ A simple heuristic to show red X vs green check (optional)
+const isNegativePolicy = (text?: string) => {
+  const t = (text ?? "").toLowerCase();
+  return t.includes("non refundable") || t.includes("non-refundable") || t.includes("no amendments");
+};
+
+// ✅ Red cross icon (small) for “bad” items (matches Figma vibe)
+const UnavailableIcon = () => (
+  <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+    <path
+      d="M8.5 0C3.805 0 0 3.805 0 8.5S3.805 17 8.5 17 17 13.195 17 8.5 13.195 0 8.5 0Zm2.74 11.24a.9.9 0 0 1-1.273 0L8.5 9.773 7.033 11.24a.9.9 0 1 1-1.273-1.273L7.227 8.5 5.76 7.033a.9.9 0 1 1 1.273-1.273L8.5 7.227l1.467-1.467a.9.9 0 1 1 1.273 1.273L9.773 8.5l1.467 1.467a.9.9 0 0 1 0 1.273Z"
+      fill="#EA0029"
+    />
+  </svg>
+);
+
   // const getMaxOccupancy = (room: any) => {
   //   if (room.maxOccupancy && room.maxOccupancy > 0) {
   //     return `${room.maxOccupancy} ${
@@ -236,8 +303,10 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   // };
 
   return (
-    <div className="mt-6">
+    <div className="mt-10">
+    <div className="mx-auto max-w-6xl">
       <h4 className="text-[#0A0C0F] text-base font-bold">Rooms availability</h4>
+      <div className="mt-2 border-t border-[#E4E4E7]" />
 
       {/* Sticky progress bar: Room 1 ✓ | Room 2 ✓ | Room 3 → | ... - click to scroll */}
       {numberOfRooms > 1 &&
@@ -691,173 +760,303 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                               getSelectedForRoomIndex(roomIndex);
                             const isSelected = selectedRoomKey === roomKey;
 
-                            return (
-                              <div key={roomKey || index}>
-                                <div
-                                  onClick={() =>
-                                    price > 0 &&
-                                    handleSelectForRoomIndex(
-                                      roomIndex,
-                                      roomKey,
-                                      room,
-                                    )
-                                  }
-                                  className={`flex items-center gap-5 py-4 px-4 -mx-3 rounded-xl transition-all duration-200 ${price > 0 ? "cursor-pointer" : "cursor-not-allowed opacity-60"} ${isSelected ? "border border-[#2351A3] bg-[#F0F5FF] shadow-sm" : ""}`}
-                                >
-                                  <div className="flex-shrink-0">
-                                    <div
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (price > 0)
-                                          handleSelectForRoomIndex(
-                                            roomIndex,
-                                            roomKey,
-                                            room,
-                                          );
-                                      }}
-                                      className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-all ${isSelected ? "bg-[#2351A3] border-[#2351A3]" : "border-[#C2CAD6] bg-white"}`}
-                                    >
-                                      {isSelected && (
-                                        <svg
-                                          width="12"
-                                          height="10"
-                                          viewBox="0 0 12 10"
-                                          fill="none"
-                                          xmlns="http://www.w3.org/2000/svg"
-                                        >
-                                          <path
-                                            d="M1 5L4.5 8.5L11 1"
-                                            stroke="white"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                          />
-                                        </svg>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="w-48 flex-shrink-0">
-                                    <h4 className="font-semibold text-sm text-[#3D495C] mb-3">
-                                      {mealPlan}
-                                    </h4>
-                                    <div className="space-y-2 text-sm text-[#3D495C] font-normal">
-                                      <div className="flex items-center gap-2">
-                                        <AvaialableIcon />
-                                        <span>{mealPlan}</span>
-                                      </div>
-                                      {cancelPolicy && (
-                                        <div className="flex items-center gap-2">
-                                          <AvaialableIcon />
-                                          <span>{cancelPolicy}</span>
-                                        </div>
-                                      )}
-                                      {hasOffers && (
-                                        <div className="flex items-center gap-2">
-                                          <AvaialableIcon />
-                                          <span
-                                            dangerouslySetInnerHTML={{
-                                              __html:
-                                                offers[0]?.name ||
-                                                "Special offer",
-                                            }}
-                                          />
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="flex-1">
-                                    <p className="text-sm text-[#3D495C] font-normal leading-relaxed">
-                                      {room.roomTypeDesc ||
-                                        room.roomTypeName ||
-                                        "Room description not available"}
-                                    </p>
-                                    {hasOffers && (
-                                      <div className="mt-2 flex items-center gap-2">
-                                        <span className="text-xs text-[#3D495C] line-through">
-                                          {formatPrice(originalPrice, currency)}
-                                        </span>
-                                        <span className="text-sm font-semibold text-[#EA0029]">
-                                          {formatPrice(price, currency)}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {!hasOffers && price > 0 && (
-                                      <div className="mt-2">
-                                        <span className="text-sm font-semibold text-[#0A0C0F]">
-                                          {formatPrice(price, currency)}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center gap-6">
-                                    {room.roomRate?.rates &&
-                                      room.roomRate.rates.length > 1 && (
-                                        <div className="text-sm text-[#3D495C] font-normal">
-                                          {room.roomRate.rates.map(
-                                            (rate: any, idx: number) => (
-                                              <div
-                                                key={idx}
-                                                className="flex items-center gap-2 mb-1"
-                                              >
-                                                <span className="text-xs">
-                                                  {new Date(
-                                                    rate.from,
-                                                  ).toLocaleDateString(
-                                                    "en-GB",
-                                                    {
-                                                      day: "2-digit",
-                                                      month: "short",
-                                                    },
-                                                  )}{" "}
-                                                  -{" "}
-                                                  {new Date(
-                                                    rate.to,
-                                                  ).toLocaleDateString(
-                                                    "en-GB",
-                                                    {
-                                                      day: "2-digit",
-                                                      month: "short",
-                                                    },
-                                                  )}
-                                                </span>
-                                                <span className="text-xs font-medium">
-                                                  {formatPrice(
-                                                    rate.amount,
-                                                    room.roomRate.currency,
-                                                  )}
-                                                  /night
-                                                </span>
-                                              </div>
-                                            ),
-                                          )}
-                                        </div>
-                                      )}
-                                    {price > 0 ? (
-                                      <div className="text-right text-sm text-[#0A0C0F] max-w-64 font-semibold">
-                                        <div>
-                                          {formatPrice(price, currency)}
-                                        </div>
-                                        <div className="text-[11px] text-[#6B7280] font-normal">
-                                          Total for 1 room
-                                        </div>
-                                      </div>
-                                    ) : (
-                                      <div className="text-sm text-[#EA0029] max-w-64">
-                                        Select dates, travelers and rooms to see
-                                        prices.
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                                {index < group.rooms.length - 1 && (
-                                  <Seperator />
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
+      <button
+        type="button"
+        className="text-[13px] text-[#2351A3] font-medium hover:underline"
+        onClick={(e) => e.stopPropagation()}
+      >
+        View details
+      </button>
+    </div>
+
+    <div className="border-t border-[#EEF2F6]" />
+
+    {/* TOP AREA: gallery left + amenities right (NO vertical divider like your current UI) */}
+    <div className="px-6 py-5 grid grid-cols-[260px_1fr] gap-8">
+      {/* LEFT: Gallery (Figma uses one clean block, not overlapped images) */}
+      <div>
+        <div className="grid grid-cols-2 gap-2">
+          {/* big image */}
+          <div className="col-span-2 h-[120px] rounded-xl overflow-hidden bg-[#F1F5F9]">
+            <img
+              src={roomImages?.[0]}
+              alt="Room"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const t = e.currentTarget as HTMLImageElement;
+                t.src = DEFAULT_ROOM_IMAGES[0];
+              }}
+            />
+          </div>
+
+          {/* two small images */}
+          <div className="h-[72px] rounded-xl overflow-hidden bg-[#F1F5F9]">
+            <img
+              src={roomImages?.[1]}
+              alt="Room"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const t = e.currentTarget as HTMLImageElement;
+                t.src = DEFAULT_ROOM_IMAGES[1];
+              }}
+            />
+          </div>
+          <div className="h-[72px] rounded-xl overflow-hidden bg-[#F1F5F9]">
+            <img
+              src={roomImages?.[2]}
+              alt="Room"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                const t = e.currentTarget as HTMLImageElement;
+                t.src = DEFAULT_ROOM_IMAGES[2];
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Room size like Figma */}
+        <div className="mt-3 text-[12px] text-[#64748B]">
+          Room size:{" "}
+          <span className="text-[#0A0C0F]">
+            {firstRoom?.roomSize || "30 m²"}
+          </span>
+        </div>
+      </div>
+
+      {/* RIGHT: Amenities (Figma grid look) */}
+      <div className="min-w-0">
+        {Object.values(categorizedAmenities).some((arr) => arr.length > 0) ? (
+          <div className="grid grid-cols-3 gap-x-10 gap-y-4">
+            {/* Great for your stay */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
+                <img alt="icon" src={GreatStayIcon} className="w-4 h-4" />
+                <span>Great for your stay</span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-[#475569]">
+                {categorizedAmenities.greatForYourStay.slice(0, 6).map((it: string) => (
+                  <span key={it} className="flex items-center gap-1 whitespace-nowrap">
+                    <CheckIcon />
+                    <span className="truncate max-w-[180px]">{it}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Kitchen */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
+                <img alt="icon" src={KnifeIcon} className="w-4 h-4" />
+                <span>Kitchen</span>
+              </div>
+              <div className="mt-3 flex flex-col gap-2 text-[11px] text-[#475569]">
+                {categorizedAmenities.kitchen.slice(0, 6).map((it: string) => (
+                  <span key={it} className="flex items-center gap-1 whitespace-nowrap">
+                    <CheckIcon />
+                    <span className="truncate">{it}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Bedrooms */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
+                <img alt="icon" src={BedroomIcon} className="w-4 h-4" />
+                <span>Bedrooms</span>
+              </div>
+              <div className="mt-3 flex flex-col gap-2 text-[11px] text-[#475569]">
+                {categorizedAmenities.bedrooms.slice(0, 6).map((it: string) => (
+                  <span key={it} className="flex items-center gap-1 whitespace-nowrap">
+                    <CheckIcon />
+                    <span className="truncate">{it}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Media */}
+            <div className="min-w-0 col-span-2">
+              <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
+                <img alt="icon" src={MediaIcon} className="w-4 h-4" />
+                <span>Media & Technology</span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-[#475569]">
+                {categorizedAmenities.mediaAndTechnology.slice(0, 8).map((it: string) => (
+                  <span key={it} className="flex items-center gap-1 whitespace-nowrap">
+                    <CheckIcon />
+                    <span className="truncate max-w-[200px]">{it}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Bathroom */}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
+                <img alt="icon" src={BathroomIcon} className="w-4 h-4" />
+                <span>Bathroom</span>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-[11px] text-[#475569]">
+                {categorizedAmenities.bathroom.slice(0, 8).map((it: string) => (
+                  <span key={it} className="flex items-center gap-1 whitespace-nowrap">
+                    <CheckIcon />
+                    <span className="truncate max-w-[140px]">{it}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <span className="text-[#94A3B8] text-xs">No amenities listed</span>
+        )}
+      </div>
+    </div>
+
+    <div className="border-t border-[#EEF2F6]" />
+
+    {/* SELECT OPTION TITLE */}
+    <div className="px-6 py-3 text-[13px] font-semibold text-[#0A0C0F]">
+      Select an option
+    </div>
+
+    <div className="border-t border-[#EEF2F6]" />
+
+    {/* OPTIONS TABLE (Figma-like rows) */}
+    <div className="divide-y divide-[#EEF2F6]">
+      {group.rooms.map((room: any, index: number) => {
+        const price = room.roomRate?.netAmount || 0;
+        const currency = room.roomRate?.currency || "AED";
+        const mealPlan = room.ratePlan?.meal || "Room Only";
+        const cancelPolicy = room.ratePlan?.cancelPolicyIndicator || "";
+        const offers = room.offers || [];
+        const hasOffers = offers.length > 0;
+        const originalPrice = hasOffers
+          ? price - offers.reduce((sum: number, offer: any) => sum + (offer.amount || 0), 0)
+          : price;
+
+        const roomKey = room.roomKey || `${group.roomTypeName}-${roomIndex}-${index}`;
+
+        const selectedItem = getSelectedItem(roomIndex, roomKey);
+        const count = selectedItem?.count ?? 0;
+
+        return (
+          <div
+            key={roomKey}
+            className="px-6 py-5 grid grid-cols-[180px_1fr_120px_260px_120px] gap-6 items-center"
+          >
+            {/* Meal plan + inclusions */}
+            <div className="min-w-0">
+              <div className="text-[12px] font-semibold text-[#0A0C0F]">
+                {mealPlan}
+              </div>
+
+              <div className="mt-3 space-y-2 text-[12px] text-[#475569]">
+                <div className="flex items-center gap-2">
+                  <AvaialableIcon />
+                  <span className="truncate">{mealPlan}</span>
+                </div>
+
+                {cancelPolicy && (
+                  <div className="flex items-center gap-2">
+                    {isNegativePolicy(cancelPolicy) ? <UnavailableIcon /> : <AvaialableIcon />}
+                    <span className="truncate">{cancelPolicy}</span>
+                  </div>
+                )}
+
+                {hasOffers && (
+                  <div className="flex items-center gap-2">
+                    <AvaialableIcon />
+                    <span
+                      className="truncate"
+                      dangerouslySetInnerHTML={{
+                        __html: offers[0]?.name || "Special offer",
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="min-w-0 text-[12px] text-[#475569] leading-5">
+              {room.roomTypeDesc || room.roomTypeName || "Room description not available"}
+            </div>
+
+            {/* Occupancy (Figma shows “2 Adults”) */}
+            <div className="text-[12px] text-[#475569] flex items-center gap-2 whitespace-nowrap">
+              <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#CBD5E1] text-[10px] text-[#64748B]">
+                👤
+              </span>
+              <span>{room?.maxOccupancy ? `${room.maxOccupancy} Adults` : "2 Adults"}</span>
+            </div>
+
+            {/* Price / message */}
+            <div className="min-w-0">
+              {price > 0 ? (
+                <div className="text-right">
+                  {hasOffers ? (
+                    <div className="flex items-center justify-end gap-2">
+                      <span className="text-[12px] text-[#64748B] line-through">
+                        {formatPrice(originalPrice, currency)}
+                      </span>
+                      <span className="text-[14px] font-semibold text-[#EA0029]">
+                        {formatPrice(price, currency)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="text-[14px] font-semibold text-[#0A0C0F]">
+                      {formatPrice(price, currency)}
+                    </div>
+                  )}
+
+                  <div className="text-[11px] text-[#94A3B8]">Total for 1 room</div>
+                </div>
+              ) : (
+                <div className="text-[12px] text-[#EA0029] text-right">
+                  Select dates, travelers and rooms to see prices.
+                </div>
+              )}
+            </div>
+
+            {/* Stepper */}
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => updateRoomCount(roomIndex, roomKey, room, -1)}
+                className="h-8 w-8 rounded-full bg-[#E2E8F0] text-[#334155] flex items-center justify-center"
+              >
+                –
+              </button>
+
+              <div className="w-6 text-center text-[12px] font-semibold text-[#0A0C0F]">
+                {String(count).padStart(2, "0")}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => updateRoomCount(roomIndex, roomKey, room, +1)}
+                className="h-8 w-8 rounded-full bg-[#2351A3] text-white flex items-center justify-center"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+
+    {/* Figma has “See more” centered (optional UI only) */}
+    <div className="py-5 flex items-center justify-center">
+      <button
+        type="button"
+        className="h-10 px-4 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-[12px] text-[#334155] flex items-center gap-2"
+      >
+        See more <span className="text-[14px]">⌄</span>
+      </button>
+    </div>
+  </div>
+);
                   })}
                 </>
               )}
@@ -865,6 +1064,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
           );
         });
       })()}
+    </div>
     </div>
   );
 };

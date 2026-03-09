@@ -261,7 +261,8 @@ const HotelDetailListing = () => {
   );
 
   return !showHotelDetailImages ? (
-    <div className="w-full px-16 py-6">
+    <div className="w-full py-6">
+      <div className="mx-auto w-full max-w-[1240px] px-6 lg:px-16">
       <Loader
         show={isPending || isHotelMoreRoomsPending}
         label="Please wait while we are fetching hotel details"
@@ -389,13 +390,14 @@ const HotelDetailListing = () => {
       </div>
 
       {/* TITLE SECTION/ADD TO FAVORITES */}
-      <div className="mt-10 flex items-start justify-between">
+      <div className="mt-8 flex items-start justify-between gap-6">
         <div className="flex-1">
-          <h1 className="text-base font-bold text-[#0A0C0F] mb-1">
-            {hotelDetail?.name}
-          </h1>
+          <h1 className="text-[28px] leading-[34px] font-bold text-[#0A0C0F] mb-1">
+  {hotelDetail?.name}
+</h1>
 
-          <div className="flex items-center gap-1 text-[#3D495C] text-xs mb-3">
+
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[#3D495C] text-sm mb-3">
             <svg
               width="14"
               height="13"
@@ -427,53 +429,69 @@ const HotelDetailListing = () => {
               )}
           </div>
 
-          <div className="flex items-center gap-2">
-            {Array.from({ length: starRatingCount }, (_, index) => (
-              <img src={FilledStar} alt="icon" key={index} />
-            ))}
-          </div>
+          <div className="flex items-center gap-1.5">
+  {Array.from({ length: starRatingCount }, (_, index) => (
+    <img src={FilledStar} alt="icon" key={index} className="w-4 h-4" />
+  ))}
+</div>
         </div>
 
-        <div className="flex items-center">
-          <button className="px-6 py-2 text-[#5383DA] text-base font-medium" onClick={handleShare}>
-            Share
-          </button>
-          <div className="border-l border-[#E4E4E7] h-8 mr-6 -ml-1"></div>
-          <button className="px-10 py-3 bg-[#2351A3] text-[#F2F2F3] font-semibold rounded-lg text-base">
-            Add to favorites
-          </button>
-        </div>
+        <div className="flex items-center gap-4">
+  <button
+    className="px-4 py-2 text-[#2351A3] text-sm font-medium hover:underline"
+    onClick={handleShare}
+  >
+    Share
+  </button>
+  <div className="border-l border-[#E4E4E7] h-8" />
+  <button className="px-8 py-3 bg-[#2351A3] text-[#F2F2F3] font-semibold rounded-full text-sm shadow-sm hover:opacity-95">
+    Add to favorites
+  </button>
+</div>
       </div>
 
       {/* TABS SECTION */}
-      <div className="mt-8 w-full max-w-4xl mx-auto">
-        <div
-          role="tablist"
-          aria-label="Profile sections"
-          className="flex w-full items-center rounded-2xl ring-1 ring-[#C2CAD6] bg-white p-1 shadow-sm"
-        >
-          {tabs.map((t) => {
-            const selected = activeTab === t;
-            return (
-              <Button
-                key={t}
-                type="button"
-                aria-selected={selected}
-                onClick={() => handleTabChange(t)}
-                className={[
-                  "flex-1 rounded-xl px-6 py-2 text-sm max-[625px]:px-3 max-[625px]:py-2 max-[625px]:text-[13px]",
-                  selected
-                    ? "bg-[#2351A3] text-white shadow-sm"
-                    : "text-[#3D495C]",
-                ].join(" ")}
-                overrideClasses
-              >
-                {t}
-              </Button>
-            );
-          })}
-        </div>
-      </div>
+      <div className="mt-6 w-full">
+  {/* Tabs Row */}
+  <div className="flex justify-center">
+    <div className="flex items-center gap-6">
+      {tabs.map((t) => {
+        const selected = activeTab === t;
+
+        return (
+          <button
+            key={t}
+            type="button"
+            role="tab"
+            aria-selected={selected}
+            onClick={() => handleTabChange(t)}
+            className={[
+              // Size close to Figma
+              "w-[190px] h-[52px] rounded-[14px]",
+              "text-[16px] font-semibold",
+              "flex items-center justify-center",
+              "transition-all duration-200",
+              selected
+                ? "text-white bg-gradient-to-b from-[#2FD0E3] to-[#1BA8C6] shadow-[0_14px_22px_rgba(27,168,198,0.35)]"
+                : "text-[#2B3340] bg-[#EEF3F9] hover:bg-[#E6EEF7]",
+            ].join(" ")}
+          >
+            {t}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+
+  {/* Underline (NO extra padding like your screenshot) */}
+  <div className=" w-full">
+    {/* thick soft bar */}
+    <div className="mx-auto h-[10px] w-[92%] rounded-full bg-[#AFC3EE] opacity-70" />
+    {/* thin sharp line */}
+    <div className="mx-auto -mt-[10px] h-[3px] w-[92%] rounded-full bg-[#8FAAE3]" />
+  </div>
+</div>
+
 
       {/* OVERVIEW SECTION */}
       {activeTab === "Overview" && (
@@ -613,6 +631,7 @@ const HotelDetailListing = () => {
           </div>
         </div>
       </div>
+    </div>
     </div>
   ) : (
     <HotelImages
