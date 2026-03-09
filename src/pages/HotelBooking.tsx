@@ -398,7 +398,7 @@ const HotelBooking = () => {
 
   return (
     <>
-      <div className={`p-8`}>
+      <div className="py-8 px-24">
         <Loader
           show={isPending}
           label="Please wait while we complete your provisional booking"
@@ -496,6 +496,7 @@ const HotelBooking = () => {
               onEditPassengers={() => setCurrentStep(0)}
               hotelDetail={hotelDetail}
               bookingInfo={bookingInfo}
+              selectedRooms={selectedRooms}
               totalPrice={totalPrice}
               currency={currency}
               hotelBookingPayload={hotelBookingPayload}

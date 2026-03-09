@@ -10,8 +10,7 @@ import Loader from "../components/atoms/Loader";
 import { transformBookingsResponse } from "../utils/transformBookingData";
 
 const tabs = ["All", "Pending", "Confirmed", "Expired"] as const;
-const modeTabs = ["Flights"] as const;
-// const modeTabs = ["Flights", "Hotels"] as const;
+const modeTabs = ["Flights", "Hotels"] as const;
 
 const MyBookingsPage = () => {
   const [active, setActive] = useState<(typeof tabs)[number]>("All");
