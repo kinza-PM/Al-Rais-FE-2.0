@@ -146,54 +146,6 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     return `${currency} ${amount.toFixed(2)}`;
   };
 
-  const handleSelectForRoomIndex = useCallback(
-    (roomIndex: number, roomKey: string, room: any) => {
-      if (!onRoomsChange) return;
-
-      const current = selectionByRoomIndex.get(roomIndex);
-      const isDeselecting = current?.roomKey === roomKey;
-
-      if (isDeselecting) {
-        const next = (selectedRoomsFromParent ?? []).filter(
-          (s) => (s.room?.roomIndex ?? 1) !== roomIndex,
-        );
-        onRoomsChange(next);
-        setExpandedRoomIndices((prev) => new Set(prev).add(roomIndex));
-        return;
-      }
-
-      const others = (selectedRoomsFromParent ?? []).filter(
-        (s) => (s.room?.roomIndex ?? 1) !== roomIndex,
-      );
-
-      const next: SelectedRoom[] = [...others, { roomKey, room, count: 1 }];
-      next.sort((a, b) => (a.room?.roomIndex ?? 1) - (b.room?.roomIndex ?? 1));
-      onRoomsChange(next);
-
-      const selectedIndices = new Set(next.map((s) => s.room?.roomIndex ?? 1));
-      const nextUnselected = roomIndices.find((ri) => !selectedIndices.has(ri));
-
-      setExpandedRoomIndices((prev) => {
-        const nextSet = new Set(prev);
-        nextSet.delete(roomIndex);
-        if (nextUnselected != null) nextSet.add(nextUnselected);
-        return nextSet.size > 0 ? nextSet : new Set();
-      });
-
-      if (nextUnselected != null) {
-        setTimeout(() => {
-          const el = roomSectionRefs.current.get(nextUnselected);
-          if (!el) return;
-          const rect = el.getBoundingClientRect();
-          const headerOffset = 140;
-          const absoluteY = window.scrollY + rect.top - headerOffset;
-          window.scrollTo({ top: Math.max(0, absoluteY), behavior: "smooth" });
-        }, 100);
-      }
-    },
-    [onRoomsChange, selectedRoomsFromParent, selectionByRoomIndex, roomIndices],
-  );
-
   useEffect(() => {
     const nextUnselected = roomIndices.find(
       (ri) => !selectionByRoomIndex.has(ri),
