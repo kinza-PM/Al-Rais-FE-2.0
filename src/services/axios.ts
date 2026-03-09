@@ -31,6 +31,7 @@ const hotelApis = [
 const locationApis = ["/countries/cities", "/countries"];
 // const resonApis = ["/countries/cities", "/countries"];
 const ticketApis = ["/ticket"];
+const hotelFavouriteApis = ["/addHotelFavourites","getHotelFavourites"];
 
 export const API_BASE =
   import.meta.env.VITE_API_BASE ||
@@ -52,6 +53,9 @@ export const LOCATION_API_BASE = "https://countriesnow.space/api/v0.1";
 
 export const TICKET_API_BASE =
   "https://roj8jj0e3h.execute-api.eu-west-1.amazonaws.com/dev";
+
+export const HOTEL_FAVOURITE_API_BASE =
+  "https://iqgovf9bf7.execute-api.eu-west-1.amazonaws.com/dev";
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
@@ -97,6 +101,9 @@ axiosClient.interceptors.request.use(async (config) => {
     config.baseURL = LOCATION_API_BASE;
   } else if (ticketApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = TICKET_API_BASE;
+  }
+  else if (hotelFavouriteApis.some((prefix) => config.url?.startsWith(prefix))) {
+    config.baseURL = HOTEL_FAVOURITE_API_BASE;
   }
 
   return config;

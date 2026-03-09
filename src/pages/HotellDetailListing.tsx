@@ -13,7 +13,7 @@ import HotelDetailAmenetiesSection from "../components/molecules/HotelDetailAmen
 import HotelImages from "../components/molecules/HotelImages";
 import HotelDetailRoomSection from "../components/molecules/HotelDetailRoomSection";
 // import { useMasterListings } from "../hooks/masterListings/useMasterListings";
-import { useHotelDetail, useHotelGetMoreRooms } from "../hooks/useHotelSearch";
+import { useHotelDetail, useHotelGetMoreRooms,useAddHotelFavourite  } from "../hooks/useHotelSearch";
 import Loader from "../components/atoms/Loader";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
@@ -54,6 +54,11 @@ const redIcon = L.icon({
   popupAnchor: [1, -34],
   shadowSize: [41, 41],
 });
+
+const { mutateAsync: addHotelFavouriteAsync, isPending: isAddingFavourite } =
+  useAddHotelFavourite();
+
+  
 
 const MapAutoFix = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
@@ -149,6 +154,8 @@ const HotelDetailListing = () => {
       // toast.error("Unexpected error");
     }
   };
+
+  
 
   useEffect(() => {
     init();
@@ -259,6 +266,139 @@ const HotelDetailListing = () => {
     () => handleHotelShare(params.hotelKey ?? "", state.searchKey ?? new URLSearchParams(location.search).get("searchKey") ?? "", resolvedBookingParams),
     [params.hotelKey, state.searchKey, resolvedBookingParams]
   );
+
+  const handleAddToFavourite = useCallback(async () => {
+  const searchParams = new URLSearchParams(location.search);
+  const resolvedSearchKey = state.searchKey || searchParams.get("searchKey") || "";
+
+  const favouriteRooms =
+    selectedRooms.length > 0
+      ? selectedRooms.map((selected) => ({
+          roomIndex: selected?.room?.roomIndex ?? 1,
+          roomKey: selected?.room?.roomKey ?? "",
+          roomId: selected?.room?.roomId ?? "",
+          roomTypeName: selected?.room?.roomTypeName ?? "",
+          roomTypeDesc:
+            selected?.room?.roomTypeDesc ?? selected?.room?.roomTypeName ?? "",
+          maxOccupancy: selected?.room?.maxOccupancy ?? -1,
+          roomFacilities: selected?.room?.roomFacilities ?? [],
+          ratePlan: {
+            supplierCode: selected?.room?.ratePlan?.supplierCode ?? "",
+            meal: selected?.room?.ratePlan?.meal ?? "",
+            availableStatus: selected?.room?.ratePlan?.availableStatus ?? "",
+            cancelPolicyIndicator:
+              selected?.room?.ratePlan?.cancelPolicyIndicator ?? "",
+            code: selected?.room?.ratePlan?.code ?? "",
+            isPackage: selected?.room?.ratePlan?.isPackage ?? false,
+            fixedCombo: selected?.room?.ratePlan?.fixedCombo ?? false,
+            gstAssured: selected?.room?.ratePlan?.gstAssured ?? false,
+            lastCancellationDate:
+              selected?.room?.ratePlan?.lastCancellationDate ?? "",
+          },
+          roomRate: {
+            currency: selected?.room?.roomRate?.currency ?? "AED",
+            netAmount: selected?.room?.roomRate?.netAmount ?? 0,
+            rates: selected?.room?.roomRate?.rates ?? [],
+          },
+          rateNotes: selected?.room?.rateNotes ?? "",
+          financialInfo: {
+            tmc: selected?.room?.financialInfo?.tmc ?? "",
+            supplier: selected?.room?.financialInfo?.supplier ?? "",
+          },
+          isAllPaxInfoMandatory:
+            selected?.room?.isAllPaxInfoMandatory ?? false,
+        }))
+      : (hotelMoreRooms?.rooms || []).slice(0, 1).map((room: any) => ({
+          roomIndex: room?.roomIndex ?? 1,
+          roomKey: room?.roomKey ?? "",
+          roomId: room?.roomId ?? "",
+          roomTypeName: room?.roomTypeName ?? "",
+          roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+          maxOccupancy: room?.maxOccupancy ?? -1,
+          roomFacilities: room?.roomFacilities ?? [],
+          ratePlan: {
+            supplierCode: room?.ratePlan?.supplierCode ?? "",
+            meal: room?.ratePlan?.meal ?? "",
+            availableStatus: room?.ratePlan?.availableStatus ?? "",
+            cancelPolicyIndicator: room?.ratePlan?.cancelPolicyIndicator ?? "",
+            code: room?.ratePlan?.code ?? "",
+            isPackage: room?.ratePlan?.isPackage ?? false,
+            fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+            gstAssured: room?.ratePlan?.gstAssured ?? false,
+            lastCancellationDate: room?.ratePlan?.lastCancellationDate ?? "",
+          },
+          roomRate: {
+            currency: room?.roomRate?.currency ?? "AED",
+            netAmount: room?.roomRate?.netAmount ?? 0,
+            rates: room?.roomRate?.rates ?? [],
+          },
+          rateNotes: room?.rateNotes ?? "",
+          financialInfo: {
+            tmc: room?.financialInfo?.tmc ?? "",
+            supplier: room?.financialInfo?.supplier ?? "",
+          },
+          isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+        }));
+
+  const facilities =
+    hotelDetail?.hotelFacilities
+      ?.map((facility: any) =>
+        typeof facility === "string" ? facility : facility?.name,
+      )
+      ?.filter(Boolean) ?? [];
+
+  const payload = {
+    hotelKey: params.hotelKey ?? "",
+    propertyInfo: {
+      providerHotelId:
+        hotelDetail?.providerHotelId?.toString() ||
+        hotelDetail?.hotelCode?.toString() ||
+        hotelDetail?.code?.toString() ||
+        "",
+      hotelName: hotelDetail?.name || "",
+      address: hotelDetail?.address || "",
+      phoneNumber: hotelDetail?.phoneNumber || "",
+      location:
+        hotelDetail?.location ||
+        hotelDetail?.city ||
+        hotelDetail?.destination ||
+        "",
+      latitude: hotelDetail?.latitude?.toString() || "",
+      longitude: hotelDetail?.longitude?.toString() || "",
+      imageUrl: primaryImages?.[0]?.path || "",
+      facilities,
+      propertyType: hotelDetail?.propertyType || "",
+      starRating: hotelDetail?.starRating?.toString() || "",
+    },
+    rooms: favouriteRooms,
+    totalPrice:
+      totalPrice > 0
+        ? totalPrice
+        : favouriteRooms.reduce(
+            (sum: number, room: any) => sum + (room?.roomRate?.netAmount || 0),
+            0,
+          ),
+    searchKey: resolvedSearchKey,
+  };
+
+  try {
+    await addHotelFavouriteAsync(payload);
+    toast.success("Hotel added to favourites");
+  } catch (error: any) {
+    const err = extractErrorFromAxiosApiError(error);
+    toast.error(err || "Failed to add hotel to favourites");
+  }
+}, [
+  addHotelFavouriteAsync,
+  hotelDetail,
+  hotelMoreRooms?.rooms,
+  location.search,
+  params.hotelKey,
+  primaryImages,
+  selectedRooms,
+  state.searchKey,
+  totalPrice,
+]);
 
   return !showHotelDetailImages ? (
     <div className="w-full py-6">
@@ -444,9 +584,17 @@ const HotelDetailListing = () => {
     Share
   </button>
   <div className="border-l border-[#E4E4E7] h-8" />
-  <button className="px-8 py-3 bg-[#2351A3] text-[#F2F2F3] font-semibold rounded-full text-sm shadow-sm hover:opacity-95">
-    Add to favorites
-  </button>
+  <button
+  onClick={handleAddToFavourite}
+  disabled={isAddingFavourite}
+  className={`px-8 py-3 text-[#F2F2F3] font-semibold rounded-full text-sm shadow-sm transition-all ${
+    isAddingFavourite
+      ? "bg-[#AEB8C5] cursor-not-allowed"
+      : "bg-[#2351A3] hover:opacity-95"
+  }`}
+>
+  {isAddingFavourite ? "Adding..." : "Add to favorites"}
+</button>
 </div>
       </div>
 

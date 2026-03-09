@@ -6,7 +6,10 @@ import {
   type HotelDetailRequest,
   type HotelSearchRequest,
 } from "../services/api/hotelSearch";
-
+import {
+  type AddHotelFavouriteRequest,
+  postAddHotelFavouriteData,
+} from "../services/api/hotelFavourite";
 export function useHotelSearch() {
   return useMutation({
     mutationFn: (body: HotelSearchRequest) => postHotelSearchData(body),
@@ -24,3 +27,9 @@ export function useHotelGetMoreRooms() {
     mutationFn: (body: HotelDetailRequest) => postHotelGetMoreRoomsData(body),
   });
 }
+
+export const useAddHotelFavourite = () => {
+  return useMutation({
+    mutationFn:(body: AddHotelFavouriteRequest) =>  postAddHotelFavouriteData(body),
+  });``
+};
