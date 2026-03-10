@@ -55,8 +55,7 @@ const redIcon = L.icon({
   shadowSize: [41, 41],
 });
 
-const { mutateAsync: addHotelFavouriteAsync, isPending: isAddingFavourite } =
-  useAddHotelFavourite();
+
 
   
 
@@ -106,6 +105,9 @@ const HotelDetailListing = () => {
     mutateAsync: fetchMoreRoomsAsync,
     isPending: isHotelMoreRoomsPending,
   } = useHotelGetMoreRooms();
+
+  const { mutateAsync: addHotelFavouriteAsync, isPending: isAddingFavourite } =
+  useAddHotelFavourite();
 
   // const { passengers } = useMasterListings({
   //   include: ["passengers"],

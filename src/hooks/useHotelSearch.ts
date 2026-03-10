@@ -31,5 +31,5 @@ export function useHotelGetMoreRooms() {
 export const useAddHotelFavourite = () => {
   return useMutation({
     mutationFn:(body: AddHotelFavouriteRequest) =>  postAddHotelFavouriteData(body),
-  });``
+  });
 };
