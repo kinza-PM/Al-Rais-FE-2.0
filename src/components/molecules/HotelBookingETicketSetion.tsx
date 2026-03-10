@@ -56,18 +56,8 @@ export default function HotelBookingETicketSetion({
       const date = new Date(dateString);
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const months = [
-        "Jan",
-        "Feb",
-        "Mar",
-        "Apr",
-        "May",
-        "Jun",
-        "Jul",
-        "Aug",
-        "Sep",
-        "Oct",
-        "Nov",
-        "Dec",
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December",
       ];
       return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
     } catch {
@@ -138,8 +128,8 @@ export default function HotelBookingETicketSetion({
 
   const NotchDivider = () => (
     <div className="relative mt-7 mb-10">
-      <div className="absolute inset-x-0 bottom-2">
-        <div className="border-t border-dashed border-[#E4E4E7]" />
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
+        <div className="border-t border-dashed border-[#E4E4E7]" style={{ borderWidth: 1, marginTop: -10 }} />
       </div>
 
       <span
@@ -147,7 +137,7 @@ export default function HotelBookingETicketSetion({
         style={{ transform: "translate(-9px, -50%)" }}
       >
         <svg
-          width="10"
+          width="9.14"
           height="20"
           viewBox="0 0 10 20"
           fill="none"
@@ -155,8 +145,9 @@ export default function HotelBookingETicketSetion({
         >
           <path
             d="M0.5 0.512695C5.51429 0.772696 9.5 4.92101 9.5 10C9.5 15.079 5.51426 19.2263 0.5 19.4863V0.512695Z"
-            fill="white"
+            fill="#FFFFFF"
             stroke="#C2CAD6"
+            strokeWidth="1"
           />
         </svg>
       </span>
@@ -166,7 +157,7 @@ export default function HotelBookingETicketSetion({
         style={{ transform: "translate(9px, -50%)" }}
       >
         <svg
-          width="10"
+          width="9.14"
           height="20"
           viewBox="0 0 10 20"
           fill="none"
@@ -174,8 +165,9 @@ export default function HotelBookingETicketSetion({
         >
           <path
             d="M9.5 0.512695C4.48571 0.772696 0.5 4.92101 0.5 10C0.5 15.079 4.48574 19.2263 9.5 19.4863V0.512695Z"
-            fill="white"
+            fill="#FFFFFF"
             stroke="#C2CAD6"
+            strokeWidth="1"
           />
         </svg>
       </span>
@@ -213,10 +205,10 @@ export default function HotelBookingETicketSetion({
           </div>
         )}
 
-        <div className="flex flex-col items-center justify-center mt-10 text-[#0A0C0F]">
+        <div className="flex flex-col items-center justify-center mt-10 text-[#0A0C0F] text-center">
           <h2 className="text-lg font-bold">Your Trip is Booked!</h2>
           <h5 className="text-sm mt-3">
-            Your booking confirmation number is: {bookingRef}
+            Your booking confirmation number is: <span className="font-semibold">{bookingRef}</span>
           </h5>
           <p className="text-[#3D495C] text-xs mt-5 mb-3">
             We've sent a copy of this receipt to your email address.
@@ -226,7 +218,7 @@ export default function HotelBookingETicketSetion({
         <NotchDivider />
 
         <div>
-          <h3 className="text-base font-medium text-[#0A0C0F]">
+          <h3 className="text-base font-bold text-[#0A0C0F]">
             {hotel?.name ?? hotelDetail?.name ?? "Hotel"}
           </h3>
           <p className="text-xs text-[#3D495C]">
@@ -268,7 +260,7 @@ export default function HotelBookingETicketSetion({
             </div>
           </div>
 
-          <div className="col-span-4 text-left">
+          <div className="col-span-4 text-right">
             <p className="text-base font-semibold text-[#0A0C0F]">Check-out</p>
             <p
               className={`text-base font-medium text-[#0A0C0F] ${hotelDetail?.checkOutTime ? "mt-4" : ""}`}
@@ -343,26 +335,26 @@ export default function HotelBookingETicketSetion({
 
         <NotchDivider />
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1.4fr]">
-          <div className="grid grid-cols-[1fr_auto] items-center gap-y-2">
-            <div className="text-xs text-[#3D495C]">Subtotal</div>
-            <div className="text-[15px] font-medium text-[#0A0C0F] text-right">
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-[#3D495C]">Subtotal</span>
+            <span className="text-[15px] font-medium text-[#0A0C0F]">
               {currency} {totalNet.toFixed(2)}
+            </span>
+          </div>
+          {taxTotal > 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-[#3D495C]">Taxes and fees</span>
+              <span className="text-[15px] font-medium text-[#0A0C0F]">
+                {currency} {taxTotal.toFixed(2)}
+              </span>
             </div>
-
-            {taxTotal > 0 && (
-              <>
-                <div className="text-xs text-[#3D495C]">Taxes and fees</div>
-                <div className="text-[15px] font-medium text-[#0A0C0F] text-right">
-                  {currency} {taxTotal.toFixed(2)}
-                </div>
-              </>
-            )}
-
-            <div className="text-xs text-[#3D495C]">Total Paid</div>
-            <div className="text-[15px] font-medium text-[#0A0C0F] text-right">
+          )}
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-[#3D495C]">Total Paid</span>
+            <span className="text-[15px] font-semibold text-[#0A0C0F]">
               {currency} {(totalNet + taxTotal).toFixed(2)}
-            </div>
+            </span>
           </div>
         </div>
       </>
@@ -375,27 +367,47 @@ export default function HotelBookingETicketSetion({
         show={!imagesLoaded}
         label="Please wait while we are retrieving the booking."
       />
-      <div className="w-full max-w-[580px]">
-        <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-2 pt-2 pb-2">
+      <div className="w-full max-w-[476px]">
+        <div
+          className="rounded-[16px] border bg-[#FFFFFF] px-2 pt-6 pb-6"
+          style={{ borderWidth: 1, borderColor: "#C2CAD6" }}
+        >
           <TicketContent />
           <NotchDivider />
 
-          <div className="pb-2 flex items-center justify-center gap-8">
+          <div className="flex items-center justify-between gap-6">
             <Button
               type="button"
               overrideClasses
               onClick={handleDownloadPDF}
-              // disabled={isGeneratingPDF}
               disabled={isGeneratingPDF || !imagesLoaded}
-              className="h-11 px-12 rounded-lg bg-[#2351A3] border border-[#2351A3] text-[#F2F2F3] text-[15px] font-semibold"
+              className="flex items-center justify-center gap-2.5 text-[#F2F2F3] border-0"
+              style={{
+                width: 222,
+                height: 47,
+                padding: "14px 40px",
+                borderRadius: 100,
+                background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+              }}
             >
               {isGeneratingPDF ? "Generating PDF..." : "Download as PDF"}
             </Button>
             <Button
               type="button"
-              className="text-[15px] font-medium text-[#5383DA] hover:underline"
               overrideClasses
               onClick={() => navigate("/my-bookings")}
+              className="flex items-center justify-center gap-2.5 bg-transparent border-0 text-[#5383DA] hover:underline"
+              style={{
+                width: 225,
+                height: 47,
+                // padding: "14px 40px",
+                fontFamily: "Inter",
+                fontWeight: 600,
+                fontSize: 16,
+                lineHeight: "100%",
+                letterSpacing: "0.5px",
+                textAlign: "center",
+              }}
             >
               Manage bookings
             </Button>
@@ -408,7 +420,7 @@ export default function HotelBookingETicketSetion({
             position: "absolute",
             left: "-20000px",
             top: 0,
-            width: "580px",
+            width: "576px",
             overflow: "visible",
             pointerEvents: "none",
             zIndex: -1,
@@ -416,9 +428,42 @@ export default function HotelBookingETicketSetion({
         >
           <div
             id="hotel-ticket-content-clone"
-            className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-2 pt-2 pb-2"
+            className="rounded-[16px] border bg-[#FFFFFF] px-2 pt-6 pb-6"
+            style={{ borderWidth: 1, borderColor: "#C2CAD6" }}
           >
             <TicketContent />
+            <NotchDivider />
+            <div className="flex items-center justify-between gap-6">
+              <span
+                className="flex items-center justify-center gap-2.5 text-[#F2F2F3]"
+                style={{
+                  width: 222,
+                  height: 47,
+                  padding: "14px 40px",
+                  borderRadius: 100,
+                  background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                }}
+              >
+                Download as PDF
+              </span>
+              <span
+                className="flex items-center justify-center"
+                style={{
+                  width: 225,
+                  height: 47,
+                  padding: "14px 40px",
+                  fontFamily: "Inter",
+                  fontWeight: 600,
+                  fontSize: 16,
+                  lineHeight: "100%",
+                  letterSpacing: "0.5px",
+                  textAlign: "center",
+                  color: "#5383DA",
+                }}
+              >
+                Manage bookings
+              </span>
+            </div>
           </div>
         </div>
       </div>

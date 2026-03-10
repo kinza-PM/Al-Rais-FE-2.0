@@ -1,13 +1,11 @@
-import applePay from "../../assets/svgs/ApplePay.svg";
-import googlePay from "../../assets/svgs/GooglePay.svg";
+import applePay from "../../assets/images/ApplePay (1).png";
+import googlePay from "../../assets/images/GooglePay.png";
 import shareIcon from "../../assets/svgs/share.svg";
 import secureLockIcon from "../../assets/svgs/secure-lock.svg";
 import visaIcon from "../../assets/svgs/visa.svg";
 import masterCardIcon from "../../assets/svgs/mastercard.svg";
-// import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
-// import FlagUae from "../../assets/svgs/Flag-uae.svg";
-import Tabby from "../../assets/images/tabby.png";
-import Tamara from "../../assets/images/tamara.png";
+import Tabby from "../../assets/images/tabbycard.png";
+import Tamara from "../../assets/images/tamara1.png";
 import { useState } from "react";
 // import CardCollapseToggle from "../common/CardCollapseToggle";
 import Button from "../atoms/Button";
@@ -31,6 +29,12 @@ import { usePayfortPayment } from "../../hooks/usePayment";
 import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
 import Loader from "../atoms/Loader";
 
+/**
+ * TESTING BYPASS: Set to true to skip payment and go directly to receipt.
+ * REVERT: Set back to false before production.
+ */
+const HOTEL_PAYMENT_BYPASS_FOR_TESTING = false;
+
 type PaymentMethod = "card" | "apple" | "google";
 
 type HotelBookingPaymentSectionProps = {
@@ -38,6 +42,7 @@ type HotelBookingPaymentSectionProps = {
   onEditPassengers?: () => void;
   hotelDetail?: any;
   bookingInfo?: any;
+  selectedRooms?: any[];
   totalPrice?: number;
   currency?: string;
   hotelBookingPayload?: HotelBookingPayload | null;
@@ -58,6 +63,7 @@ export default function HotelBookingPaymentSection({
   onEditPassengers,
   hotelDetail,
   bookingInfo,
+  selectedRooms = [],
   totalPrice = 0,
   currency = "AED",
   hotelBookingPayload,
@@ -149,6 +155,31 @@ export default function HotelBookingPaymentSection({
   const generatePayfortPaymentTokenization = async () => {
     if (!hotelBookingPayload) {
       console.log("Booking data missing.");
+      return;
+    }
+
+    // TESTING BYPASS: Skip payment, show receipt immediately. REVERT: Set HOTEL_PAYMENT_BYPASS_FOR_TESTING to false.
+    if (HOTEL_PAYMENT_BYPASS_FOR_TESTING) {
+      const rooms = selectedRooms.map((sr) => sr?.room).filter(Boolean);
+      const passengers = hotelBookingPayload.rooms?.flatMap((r: any) => r.passengers ?? []) ?? [];
+      const mockResponse = {
+        data: [
+          {
+            hotel: {
+              rooms,
+              checkInDate: bookingInfo?.checkIn ?? hotelBookingPayload?.stayDateRange?.checkIn,
+              checkOutDate: bookingInfo?.checkOut ?? hotelBookingPayload?.stayDateRange?.checkOut,
+              currency: currency ?? "AED",
+              totalNet: totalPrice ?? 0,
+            },
+            passengers,
+            bookingReferenceId: `TEST-${Date.now()}`,
+          },
+        ],
+        meta: { success: true, actionType: "Booking confirmed (TEST)" },
+      };
+      toast.success("Testing mode: Receipt shown without payment.");
+      onNext?.(mockResponse);
       return;
     }
 
@@ -394,51 +425,98 @@ export default function HotelBookingPaymentSection({
         />
 
         <div className="mt-6">
-          {/* <div className="grid grid-cols-1 sm:grid-cols-3 gap-3"> */}
-          <div className="grid grid-cols-3 sm:grid-cols-3 gap-3">
+          <div className="flex flex-wrap items-center justify-center gap-[0.45rem]">
+            {/* Pay with card */}
             <Button
               type="button"
               onClick={() => setPayMethod("card")}
               aria-pressed={payMethod === "card"}
               className={[
-                "h-12 w-full rounded-xl border px-5 text-[14px] font-semibold flex items-center justify-center",
+                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
+                "w-[102px] h-[65px] rounded-[8px] border-[1.5px]",
                 payMethod === "card"
                   ? "bg-[rgba(167,192,236,0.3)] text-[#2351A3] border-[#2351A3]"
-                  : "bg-white text-[#0A0C0F] border-[#F9F7F6] hover:bg-[#F8FAFC]",
+                  : "bg-white text-[#0A0C0F] border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
               ].join(" ")}
               overrideClasses
             >
-              Pay with card
+              <span className="text-[12px] font-semibold text-center px-2">
+                Pay with card
+              </span>
             </Button>
 
+            {/* Apple Pay */}
             <Button
               type="button"
               onClick={() => setPayMethod("apple")}
               aria-pressed={payMethod === "apple"}
               className={[
-                "h-12 w-full rounded-xl border px-5 flex items-center justify-center",
+                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
+                "w-[102px] h-[65px] rounded-[8px] border-[1.5px] p-8",
                 payMethod === "apple"
                   ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
-                  : "bg-white border-[#F9F7F6] hover:bg-[#F8FAFC]",
+                  : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
               ].join(" ")}
               overrideClasses
             >
-              <img src={applePay} alt="Apple Pay" className="h-5 w-auto" />
+              <img
+                src={applePay}
+                alt="Apple Pay"
+                className="h-auto w-full object-contain"
+              />
             </Button>
 
+            {/* Google Pay */}
             <Button
               type="button"
               onClick={() => setPayMethod("google")}
               aria-pressed={payMethod === "google"}
               className={[
-                "h-12 w-full rounded-xl border px-5 flex items-center justify-center",
+                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
+                "w-[103px] h-[65px] rounded-[6px] border-[1.5px] p-8",
                 payMethod === "google"
                   ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
-                  : "bg-white border-[#F9F7F6] hover:bg-[#F8FAFC]",
+                  : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
               ].join(" ")}
               overrideClasses
             >
-              <img src={googlePay} alt="Google Pay" className="h-5 w-auto" />
+              <img
+                src={googlePay}
+                alt="Google Pay"
+                className="h-auto w-full object-contain"
+              />
+            </Button>
+
+            {/* Tabby */}
+            <Button
+              type="button"
+              className="flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 w-[103px] h-[65px] rounded-[6px] border-[1.5px] border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm p-3 focus:outline-none"
+              overrideClasses
+            >
+              <img
+                src={Tabby}
+                alt="Tabby"
+                className="w-10 h-4 object-contain"
+              />
+              <span className="text-[9px] text-[#64748B] text-center">
+                Buy now pay later
+              </span>
+            </Button>
+
+            {/* Tamara */}
+            <Button
+              type="button"
+              className="flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 w-[103px] h-[65px] rounded-[6px] border-[1.5px] border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm p-3 focus:outline-none"
+              overrideClasses
+            >
+              <img
+                src={Tamara}
+                alt="Tamara"
+                className="w-10 h-4 object-contain"
+              />
+              <span className="text-[9px] text-[#64748B] text-center">
+                Buy now pay later
+              </span>
             </Button>
           </div>
         </div>
@@ -699,13 +777,16 @@ export default function HotelBookingPaymentSection({
 
         <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} />
 
-        <div className="mt-16 px-5">
+        <div className="mt-16 flex flex-col items-center">
           <Button
             type="button"
-            className={`h-11 w-full rounded-xl bg-[#2351A3] text-[#F2F2F3] text-[16px] font-semibold flex items-center justify-center gap-2 ${
-              isPayButtonLoading ? "opacity-90 cursor-not-allowed" : ""
-            }`}
             overrideClasses
+            className={`w-[110px] h-[47px] rounded-[100px] px-10 py-[14px] text-[16px] font-semibold text-white flex items-center justify-center gap-2 transition-opacity ${
+              isPayButtonLoading ? "opacity-90 cursor-not-allowed" : "hover:opacity-95 active:opacity-90"
+            }`}
+            style={{
+              background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+            }}
             onClick={generatePayfortPaymentTokenization}
             disabled={isPayButtonLoading}
           >
@@ -732,30 +813,6 @@ export default function HotelBookingPaymentSection({
             )}
             <span>{getPayButtonText()}</span>
           </Button>
-
-          <div className="my-4 text-center text-[12px] text-[#3D495C]">OR</div>
-
-          <div>
-            <p className="text-[15px] font-medium text-[#0A0C0F]">
-              Buy now, Pay later with:
-            </p>
-            <div className="mt-3 flex items-center justify-center gap-4">
-              <Button
-                type="button"
-                className="rounded-xl focus:outline-none"
-                overrideClasses
-              >
-                <img src={Tabby} alt="Tabby" className="h-10 w-auto" />
-              </Button>
-              <Button
-                type="button"
-                className="rounded-xl focus:outline-none"
-                overrideClasses
-              >
-                <img src={Tamara} alt="Tamara" className="h-10 w-auto" />
-              </Button>
-            </div>
-          </div>
 
           <div className="mt-6 text-center text-[12px] text-[#3D495C]">
             Secure payments by Al Rais • Terms • Privacy

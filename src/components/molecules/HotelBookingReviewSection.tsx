@@ -342,8 +342,11 @@ export default function HotelBookingReviewSection({
       <div className="mt-5 flex justify-center w-full">
         <Button
           type="button"
-          className="h-10 w-full max-w-lg rounded-lg bg-[#2351A3] px-8 text-[15px] font-semibold text-[#F2F2F3]"
           overrideClasses
+          className="w-[252px] h-[47px] rounded-[100px] px-10 py-[14px] text-[15px] font-semibold text-white hover:opacity-95 active:opacity-90 transition-opacity flex items-center justify-center"
+          style={{
+            background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+          }}
           onClick={() => {
             if (typeof onNext === "function") {
               onNext();
