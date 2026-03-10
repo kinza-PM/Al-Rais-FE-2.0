@@ -273,16 +273,11 @@ const HotelHeroSectionTab: React.FC = () => {
   const labelBaseClass = "block text-[12px] text-[#3D495C]";
 
   return (
-    <div className="px-10 pt-5 pb-5">
+    <div className="px-4 sm:px-6 lg:px-10 pt-5 pb-5">
       <Loader show={isCityOptionsLoading} label="Loading cities..." />
-      <div className="flex flex-col gap-4">
-        {/* First row - Country, City, Dates */}
-        <div
-          className={`flex flex-wrap items-end gap-3 transition-all duration-200 ${hasErrorRow1 ? "pb-4" : ""
-            }`}
-        >
-          {/* Country */}
-          <div className="flex-1 min-w-[200px]">
+      <div className="hotelSearchFilterCard">
+        <div className={`hotel-filter-grid-hero ${hasErrorRow1 || hasErrorRow2 ? "pb-4" : ""}`}>
+          <div className="hero-country w-full min-w-0">
             <label className={labelBaseClass}>Country</label>
             <SearchableDropdown
               options={
@@ -306,8 +301,7 @@ const HotelHeroSectionTab: React.FC = () => {
             />
           </div>
 
-          {/* City */}
-          <div className="flex-1 min-w-[200px]">
+          <div className="hero-city w-full min-w-0">
             <label className={labelBaseClass}>City</label>
             <SearchableDropdown
               options={
@@ -328,16 +322,15 @@ const HotelHeroSectionTab: React.FC = () => {
             />
           </div>
 
-          {/* Dates */}
-          <div className="flex-[2] min-w-[360px]">
+          <div className="hero-dates w-full min-w-0">
             <label className={labelBaseClass}>Dates</label>
             <div
-              className={`h-[50px] w-full rounded-[16px] px-1 flex items-center ${datesContainerError
+              className={`h-[50px] w-full rounded-[16px] px-2 flex items-center ${datesContainerError
                 ? "border-2 border-[#E65959]"
                 : "border border-[#C2CAD6]"
                 }`}
             >
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <TailiwindCustomDatePicker
                   value={checkInDate}
                   onChange={setCheckInDate}
@@ -345,14 +338,14 @@ const HotelHeroSectionTab: React.FC = () => {
                   buttonIconSrc={true}
                   overridesClass={true}
                   showCalendarIconRight={false}
-                  inputClass="h-[50px] w-full rounded-[16px] border-none outline-none pl-10 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                  inputClass="h-[50px] w-full min-w-0 rounded-[16px] border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
                   disablePastDates={true}
                   tooltip="Select check-in date"
                   error={checkInError || null}
                 />
               </div>
-              <span className="text-[#94A3B8] select-none px-1">—</span>
-              <div className="flex-1">
+              <span className="text-[#94A3B8] select-none px-1 flex-shrink-0">—</span>
+              <div className="flex-1 min-w-0">
                 <TailiwindCustomDatePicker
                   value={checkOutDate}
                   onChange={setCheckOutDate}
@@ -360,7 +353,7 @@ const HotelHeroSectionTab: React.FC = () => {
                   buttonIconSrc={true}
                   overridesClass={true}
                   showCalendarIconRight={false}
-                  inputClass="h-[50px] w-full rounded-[16px] border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
+                  inputClass="h-[50px] w-full min-w-0 rounded-[16px] border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
                   disablePastDates={true}
                   minDate={checkInDate}
                   tooltip="Select check-out date"
@@ -369,15 +362,8 @@ const HotelHeroSectionTab: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Second row - Nationality, Travellers, Star Rating, Search button */}
-        <div
-          className={`flex flex-wrap items-end gap-3 transition-all duration-200 ${hasErrorRow2 ? "pb-4" : ""
-            }`}
-        >
-          {/* Nationality */}
-          <div className="w-[285px] flex-shrink-0">
+          <div className="hero-nationality w-full min-w-0">
             <label className={labelBaseClass}>Nationality</label>
             <SearchableDropdown
               options={
@@ -398,8 +384,7 @@ const HotelHeroSectionTab: React.FC = () => {
             />
           </div>
 
-          {/* Travellers and rooms */}
-          <div className="w-[285px] flex-shrink-0">
+          <div className="hero-travellers w-full min-w-0">
             <div className="relative">
               <label className={`${labelBaseClass} flex items-center gap-2`}>
                 Travellers and rooms{" "}
@@ -440,8 +425,7 @@ const HotelHeroSectionTab: React.FC = () => {
             </div>
           </div>
 
-          {/* Star Rating */}
-          <div className="w-[200px] flex-shrink-0">
+          <div className="hero-star w-full min-w-0">
             <CheckableDropdown
               options={starRatingOptions}
               value={starRating}
@@ -455,21 +439,16 @@ const HotelHeroSectionTab: React.FC = () => {
             />
           </div>
 
-          {/* Search button */}
-          <div className="flex-shrink-0 ml-auto">
+          <div className="hero-search">
             <button
-              className="text-[16px] font-medium text-white whitespace-nowrap"
+              className="w-full xl:w-[137px] h-[47px] text-[14px] sm:text-[16px] font-medium text-white whitespace-nowrap rounded-[100px] px-6 xl:px-10 hotel-search-btn-responsive"
               style={{
-                width: 137,
-                height: 47,
-                borderRadius: 100,
-                padding: "14px 40px",
                 background:
                   "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               }}
               onClick={handleSearch}
             >
-              Search
+              Search Hotels
             </button>
           </div>
         </div>

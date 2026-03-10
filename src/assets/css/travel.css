@@ -238,6 +238,167 @@ input[type="number"] {
   gap: 20px;
   padding: 24px 32px;
   border-radius: 16px;
+  /* Safari/Edge: ensure flex children don't overflow */
+  min-width: 0;
+}
+
+/* Hotel search filters - match design image: white card, no border */
+.hotelSearchFilterCard {
+  background: #FFFFFF;
+  border: none;
+  border-radius: 16px;
+  padding: 20px 24px;
+  gap: 16px;
+}
+@media (max-width: 767px) {
+  .hotelSearchFilterCard {
+    padding: 16px;
+    gap: 14px;
+  }
+}
+
+/* Hotel filter grid - all 8 fields in 4 equal columns, Search button in col 4 like Dates */
+.hotel-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+  align-items: end;
+}
+@media (min-width: 640px) {
+  .hotel-filter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .hotel-filter-grid {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto auto;
+  }
+}
+.hotel-filter-grid > * {
+  min-width: 0;
+}
+/* Row 1: View(1) Country(2) City(3) Dates(4) */
+.hotel-filter-grid .hotel-filter-view { grid-column: 1; grid-row: 1; }
+.hotel-filter-grid .hotel-filter-country { grid-column: 2; grid-row: 1; }
+.hotel-filter-grid .hotel-filter-city { grid-column: 3; grid-row: 1; }
+.hotel-filter-grid .hotel-filter-dates { grid-column: 4; grid-row: 1; }
+/* Row 2: Nationality(1)=View, Travellers(2)=Country, Star(3)=City, Search(4)=Dates */
+.hotel-filter-grid .hotel-filter-nationality { grid-column: 1; grid-row: 2; }
+.hotel-filter-grid .hotel-filter-travellers { grid-column: 2; grid-row: 2; }
+.hotel-filter-grid .hotel-filter-star { grid-column: 3; grid-row: 2; }
+.hotel-filter-grid .hotel-filter-search {
+  grid-column: 4;
+  grid-row: 2;
+  display: flex;
+  align-items: stretch;
+}
+.hotel-filter-grid .hotel-filter-search .searchFilterBtn,
+.hotel-filter-grid .hotel-filter-search button {
+  width: 100%;
+}
+@media (max-width: 1279px) {
+  .hotel-filter-grid .hotel-filter-view,
+  .hotel-filter-grid .hotel-filter-country,
+  .hotel-filter-grid .hotel-filter-city,
+  .hotel-filter-grid .hotel-filter-dates,
+  .hotel-filter-grid .hotel-filter-nationality,
+  .hotel-filter-grid .hotel-filter-travellers,
+  .hotel-filter-grid .hotel-filter-star,
+  .hotel-filter-grid .hotel-filter-search {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+/* Fallback: hotel-filter-row for flex layout when not using grid */
+.hotel-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  width: 100%;
+}
+.hotel-filter-row > *:not(.hotel-search-btn-cell) {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.hotel-filter-row .hotel-search-btn-cell {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 0;
+}
+/* Hero section: 4 cols - Country, City, Dates | Nationality, Travellers, Star Rating, Search - all same widths */
+.hotel-filter-grid-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+  align-items: end;
+}
+@media (min-width: 640px) {
+  .hotel-filter-grid-hero {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .hotel-filter-grid-hero {
+    grid-template-columns: 1fr 1fr 1.5fr 1fr;
+    grid-template-rows: auto auto;
+  }
+}
+/* Hero row 1: Country, City, Dates (wider for check-in/check-out) */
+.hotel-filter-grid-hero .hero-country { grid-column: 1; grid-row: 1; }
+.hotel-filter-grid-hero .hero-city { grid-column: 2; grid-row: 1; }
+.hotel-filter-grid-hero .hero-dates { grid-column: 3 / span 2; grid-row: 1; }
+/* Hero row 2: Nationality=Country, Travellers=City, Star=Dates width, Search in col 4 */
+.hotel-filter-grid-hero .hero-nationality { grid-column: 1; grid-row: 2; }
+.hotel-filter-grid-hero .hero-travellers { grid-column: 2; grid-row: 2; }
+.hotel-filter-grid-hero .hero-star { grid-column: 3; grid-row: 2; }
+.hotel-filter-grid-hero .hero-search {
+  grid-column: 4;
+  grid-row: 2;
+  display: flex;
+  align-items: stretch;
+}
+.hotel-filter-grid-hero .hero-search button {
+  width: 100%;
+}
+.hotel-filter-grid-hero > * {
+  min-width: 0;
+}
+@media (max-width: 1279px) {
+  .hotel-filter-grid-hero .hero-country,
+  .hotel-filter-grid-hero .hero-city,
+  .hotel-filter-grid-hero .hero-dates,
+  .hotel-filter-grid-hero .hero-nationality,
+  .hotel-filter-grid-hero .hero-travellers,
+  .hotel-filter-grid-hero .hero-star,
+  .hotel-filter-grid-hero .hero-search { grid-column: auto; grid-row: auto; }
+}
+
+/* Legacy: hotel-filter-row-3 */
+.hotel-filter-row-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+  align-items: end;
+}
+@media (min-width: 640px) {
+  .hotel-filter-row-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .hotel-filter-row-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.hotel-filter-row > *,
+.hotel-filter-row-3 > * {
+  min-width: 0;
 }
 
 .fromToIcon svg {
@@ -1595,6 +1756,15 @@ img:hover {
   max-height: 57px;
 }
 
+/* Hotel search filters - responsive for Edge, Safari, all screens */
+/* Search button fills its grid cell - same width as other fields */
+.hotel-search-btn-responsive {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 50px !important;
+  min-height: 50px !important;
+}
+
 .stopsOnSmall {
   display: none;
 }
@@ -1618,8 +1788,28 @@ img:hover {
 }
 
 .flightDetailTemplateWrap {
-    padding: 0px 100px;
+  padding: 0 16px;
+}
+@media (min-width: 576px) {
+  .flightDetailTemplateWrap {
+    padding: 0 24px;
   }
+}
+@media (min-width: 768px) {
+  .flightDetailTemplateWrap {
+    padding: 0 48px;
+  }
+}
+@media (min-width: 1024px) {
+  .flightDetailTemplateWrap {
+    padding: 0 64px;
+  }
+}
+@media (min-width: 1280px) {
+  .flightDetailTemplateWrap {
+    padding: 0 100px;
+  }
+}
 
 .custom-phone-wrapper .react-international-phone-country-selector-button {
   width: 112px !important;

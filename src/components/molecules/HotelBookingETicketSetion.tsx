@@ -143,9 +143,15 @@ export default function HotelBookingETicketSetion({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
+          {/* Fill - full shape (no stroke on vertical line) */}
           <path
             d="M0.5 0.512695C5.51429 0.772696 9.5 4.92101 9.5 10C9.5 15.079 5.51426 19.2263 0.5 19.4863V0.512695Z"
             fill="#FFFFFF"
+          />
+          {/* Stroke - curve only (removes right-side vertical line border) */}
+          <path
+            d="M0.5 0.512695C5.51429 0.772696 9.5 4.92101 9.5 10C9.5 15.079 4.48574 19.2263 0.5 19.4863"
+            fill="none"
             stroke="#C2CAD6"
             strokeWidth="1"
           />
@@ -375,7 +381,7 @@ export default function HotelBookingETicketSetion({
           <TicketContent />
           <NotchDivider />
 
-          <div className="flex items-center justify-between gap-6">
+          <div className="flex items-center justify-center gap-6 px-14">
             <Button
               type="button"
               overrideClasses
@@ -383,9 +389,9 @@ export default function HotelBookingETicketSetion({
               disabled={isGeneratingPDF || !imagesLoaded}
               className="flex items-center justify-center gap-2.5 text-[#F2F2F3] border-0"
               style={{
-                width: 222,
+                width: 243,
                 height: 47,
-                padding: "14px 40px",
+                // padding: "-1px 52px",
                 borderRadius: 100,
                 background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               }}
@@ -433,13 +439,13 @@ export default function HotelBookingETicketSetion({
           >
             <TicketContent />
             <NotchDivider />
-            <div className="flex items-center justify-between gap-6">
+            <div className="flex items-center justify-center gap-6 px-14">
               <span
                 className="flex items-center justify-center gap-2.5 text-[#F2F2F3]"
                 style={{
-                  width: 222,
+                  width: 243,
                   height: 47,
-                  padding: "14px 40px",
+                  padding: "14px 52px",
                   borderRadius: 100,
                   background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
                 }}

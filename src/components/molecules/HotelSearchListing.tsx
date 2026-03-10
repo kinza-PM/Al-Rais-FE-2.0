@@ -531,10 +531,10 @@ const HotelSearchListing: React.FC = () => {
       <div className="topHeaderSetting"></div>
 
       <div className="flightDetailTemplateWrap">
-        <div className="bottomHeaderSetting">
-          {/* Row 1: View, Country, City, Dates */}
-          <div className="flex flex-wrap items-end gap-[14px] w-full mb-3">
-            <div style={{ flex: "1 1 180px", minWidth: 287, maxWidth: 220 }}>
+        <div className="bottomHeaderSetting hotelSearchFilterCard">
+          {/* Grid: Row 1 (View, Country, City, Dates) | Row 2 (Nationality, Travellers, Star Rating, Search) - widths aligned */}
+          <div className="hotel-filter-grid">
+            <div className="hotel-filter-view w-full min-w-0">
               <SearchableDropdown
                 options={hotelViewTypes.map((t) => ({
                   id: t.value,
@@ -548,7 +548,7 @@ const HotelSearchListing: React.FC = () => {
                 searchPlaceholder="Search"
               />
             </div>
-            <div style={{ flex: "2 1 240px", minWidth: 220, maxWidth: 360 }}>
+            <div className="hotel-filter-country w-full min-w-0">
               <SearchableDropdown
                 options={
                   countriesOptions?.map((c) => ({
@@ -569,7 +569,7 @@ const HotelSearchListing: React.FC = () => {
                 tooltip="Where are you traveling to?"
               />
             </div>
-            <div style={{ flex: "2 1 240px", minWidth: 220, maxWidth: 360 }}>
+            <div className="hotel-filter-city w-full min-w-0">
               <SearchableDropdown
                 options={
                   citiesData?.map((c, index) => ({
@@ -587,12 +587,12 @@ const HotelSearchListing: React.FC = () => {
                 tooltip="Where are you traveling to?"
               />
             </div>
-            <div style={{ flex: "4 1 380px", minWidth: 340 }}>
+            <div className="hotel-filter-dates w-full min-w-0">
               <label className="block text-[12px] text-[#3D495C] mb-1">
                 Dates
               </label>
               <div
-                className="h-[50px] w-full rounded-[16px] border border-[#C2CAD6] px-2 flex items-center"
+                className="h-[50px] w-full min-w-0 rounded-[16px] border border-[#C2CAD6] px-2 flex items-center"
                 style={{ background: "var(--white-200, #FFFFFF)" }}
               >
                 <TailiwindCustomDatePicker
@@ -607,7 +607,7 @@ const HotelSearchListing: React.FC = () => {
                   buttonIconSrc={true}
                   overridesClass={true}
                   showCalendarIconRight={false}
-                  inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
+                  inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none outline-none pl-10 pr-1 text-[12px] sm:text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
                   disablePastDates={true}
                   tooltip="Select check-in date"
                 />
@@ -626,18 +626,15 @@ const HotelSearchListing: React.FC = () => {
                   buttonIconSrc={true}
                   overridesClass={true}
                   showCalendarIconRight={false}
-                  inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
+                  inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none pl-10 pr-2 outline-none text-[12px] sm:text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
                   disablePastDates={true}
                   minDate={new Date(searchState.checkIn)}
                   tooltip="Select check-out date"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Row 2: Nationality, Travellers & Rooms, Star Rating, Search */}
-          <div className="flex flex-wrap items-end gap-[14px] w-full">
-            <div style={{ flex: "1 1 180px", minWidth: 287, maxWidth: 220 }}>
+            <div className="hotel-filter-nationality w-full min-w-0">
               <SearchableDropdown
                 options={
                   countriesOptions?.map((c) => ({
@@ -658,14 +655,14 @@ const HotelSearchListing: React.FC = () => {
                 tooltip="Select your country of residence"
               />
             </div>
-            <div style={{ flex: "1 1 180px", minWidth: 300, maxWidth: 220 }}>
+            <div className="hotel-filter-travellers w-full min-w-0">
               <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
                 Travellers and rooms{" "}
                 <span className="relative inline-flex group/info">
                   <img
                     src={Info}
                     alt="info"
-                    className="w-4 h-4 inline-block align-middle"
+                    className="w-4 h-4 inline-block align-middle flex-shrink-0"
                   />
                   <span
                     className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
@@ -688,7 +685,7 @@ const HotelSearchListing: React.FC = () => {
                 tooltip="Select passengers and rooms"
               />
             </div>
-            <div style={{ flex: "1 1 180px", minWidth: 298, maxWidth: 220 }}>
+            <div className="hotel-filter-star w-full min-w-0">
               <CheckableDropdown
                 options={starRatingOptions}
                 value={
@@ -706,9 +703,9 @@ const HotelSearchListing: React.FC = () => {
                 tooltip="Select star rating"
               />
             </div>
-            <div className="flex-shrink-0 self-end ml-auto">
+            <div className="hotel-filter-search">
               <CustomButton
-                className="searchFilterBtn"
+                className="searchFilterBtn hotel-search-btn-responsive"
                 onClick={handleSearchHotels}
               >
                 {isPending ? "Searching..." : "Search Hotels"}
