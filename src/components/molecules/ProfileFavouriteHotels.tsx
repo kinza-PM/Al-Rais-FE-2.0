@@ -4,7 +4,6 @@ import toast from "react-hot-toast";
 
 import HotelImage from "../../assets/images/Hotel Image.png";
 import FavrtHeart from "../../assets/images/favrt-heart.png";
-import GreenTick from "../../assets/images/tik.png";
 import FilledStar from "../../assets/svgs/filled_star.svg";
 import EmptyStar from "../../assets/svgs/empty_star.svg";
 import Share from "../../assets/svgs/share-icon.svg";
@@ -245,9 +244,6 @@ const ProfileFavouriteHotels: React.FC = () => {
         const address = propertyInfo?.address || "";
         const location = propertyInfo?.location || "";
         const starRating = propertyInfo?.starRating || "0";
-        const facilities = Array.isArray(propertyInfo?.facilities)
-          ? propertyInfo.facilities
-          : [];
 
         const currency = bestRoom?.roomRate?.currency || "AED";
         const totalPrice =
