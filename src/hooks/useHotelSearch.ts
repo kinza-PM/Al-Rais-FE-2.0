@@ -1,4 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
+import { useMutation,useQuery  } from "@tanstack/react-query";
 import {
   postHotelDetailData,
   postHotelGetMoreRoomsData,
@@ -9,6 +9,7 @@ import {
 import {
   type AddHotelFavouriteRequest,
   postAddHotelFavouriteData,
+  getHotelFavouritesData
 } from "../services/api/hotelFavourite";
 export function useHotelSearch() {
   return useMutation({
@@ -33,3 +34,11 @@ export const useAddHotelFavourite = () => {
     mutationFn:(body: AddHotelFavouriteRequest) =>  postAddHotelFavouriteData(body),
   });
 };
+
+export function useGetHotelFavourites(enabled: boolean = true) {
+  return useQuery({
+    queryKey: ["hotel-favourites"],
+    queryFn: () => getHotelFavouritesData(),
+    enabled,
+  });
+}

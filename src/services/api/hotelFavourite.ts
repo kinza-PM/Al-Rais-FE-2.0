@@ -64,12 +64,29 @@ export type AddHotelFavouriteRequest = {
   searchKey: string;
 };
 
+export type GetHotelFavouriteItem = {
+  hotelKey: string;
+  propertyInfo: FavouritePropertyInfo;
+  rooms: FavouriteRoom[];
+  totalPrice: number;
+  searchKey: string;
+};
+
 export async function postAddHotelFavouriteData<TResp = any>(
   body: AddHotelFavouriteRequest
 ): Promise<TResp> {
   const source = "postAddHotelFavouriteData";
   try {
     return await api.post<TResp>("/addHotelFavourites", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}
+
+export async function getHotelFavouritesData<TResp = GetHotelFavouriteItem[]>() {
+  const source = "getHotelFavouritesData";
+  try {
+    return await api.get<TResp>("/getHotelFavourites");
   } catch (err) {
     throw toApiError(source, err);
   }

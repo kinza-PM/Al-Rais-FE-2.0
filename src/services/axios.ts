@@ -31,7 +31,7 @@ const hotelApis = [
 const locationApis = ["/countries/cities", "/countries"];
 // const resonApis = ["/countries/cities", "/countries"];
 const ticketApis = ["/ticket"];
-const hotelFavouriteApis = ["/addHotelFavourites","getHotelFavourites"];
+const hotelFavouriteApis = ["/addHotelFavourites","/getHotelFavourites"];
 
 export const API_BASE =
   import.meta.env.VITE_API_BASE ||
