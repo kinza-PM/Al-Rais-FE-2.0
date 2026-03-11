@@ -8,7 +8,7 @@ import toast from "react-hot-toast";
 import { useMyBooking } from "../hooks/useUserProfileBooking";
 import Loader from "../components/atoms/Loader";
 import { transformBookingsResponse } from "../utils/transformBookingData";
-
+import UserHotelBookingsListing from "../components/molecules/UserHotelBookingsListing";
 const tabs = ["All", "Pending", "Confirmed", "Expired"] as const;
 const modeTabs = ["Flights", "Hotels"] as const;
 
@@ -113,6 +113,18 @@ const MyBookingsPage = () => {
           mode={mode as TripMode}
         />
       </div>
+
+     <div className="px-10">
+  {mode === "Flights" ? (
+    <UserBookingsListing
+      bookings={userMyFlightBooking}
+      filterStatus={active}
+      mode={mode as TripMode}
+    />
+  ) : (
+    <UserHotelBookingsListing filterStatus={active} />
+  )}
+</div>
     </div>
   );
 };
