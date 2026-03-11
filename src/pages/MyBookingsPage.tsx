@@ -107,14 +107,6 @@ const MyBookingsPage = () => {
       <div aria-hidden="true" className="mt-3 h-px bg-[#E4E4E7]" />
 
       <div className="px-10">
-        <UserBookingsListing
-          bookings={userMyFlightBooking}
-          filterStatus={active}
-          mode={mode as TripMode}
-        />
-      </div>
-
-     <div className="px-10">
   {mode === "Flights" ? (
     <UserBookingsListing
       bookings={userMyFlightBooking}

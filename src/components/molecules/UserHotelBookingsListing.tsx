@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState } from "react";
 import Button from "../atoms/Button";
-
+import { useNavigate } from "react-router-dom";
 export type BookingStatus = "Confirmed" | "Pending" | "Expired";
 
 type HotelBookingCardItem = {
@@ -121,6 +121,7 @@ function StayTimeline({
 }
 
 function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
+    const navigate = useNavigate();
   const isPending = booking.status === "Pending";
   const isExpired = booking.status === "Expired";
   const [countdown, setCountdown] = useState(
@@ -298,12 +299,20 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
                 Request changes
               </Button>
               <Button
-                type="button"
-                className="pl-4 text-[#EA0029] hover:underline"
-                overrideClasses
-              >
-                Cancel booking
-              </Button>
+  type="button"
+  className="pl-4 text-[#EA0029] hover:underline"
+  overrideClasses
+  onClick={() =>
+    navigate("/hotel-cancellation", {
+      state: {
+        bookingReferenceId: booking.bookingRef,
+        hotelName: booking.hotelName,
+      },
+    })
+  }
+>
+  Cancel booking
+</Button>
             </>
           )}
 
@@ -342,7 +351,7 @@ const staticHotelBookings: HotelBookingCardItem[] = [
     checkOutDate: "Fri, 22 August 2025",
     totalStay: "Total stay: 1 night",
     roomLabel: "01, Royal Deluxe",
-    bookingRef: "6DFFX8901HAE",
+    bookingRef: "BKR-2026-000294",
   },
   {
     id: "hotel-pending-1",

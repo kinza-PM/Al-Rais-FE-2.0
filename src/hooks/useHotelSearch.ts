@@ -11,6 +11,16 @@ import {
   postAddHotelFavouriteData,
   getHotelFavouritesData
 } from "../services/api/hotelFavourite";
+import {
+  postHotelCancellationChargesData,
+  type HotelCancellationChargesRequest,
+} from "../services/api/hotelCancellation";
+
+import {
+  postHotelCancellationData,
+  type HotelCancellationRequest,
+} from "../services/api/hotelCancellation";
+
 export function useHotelSearch() {
   return useMutation({
     mutationFn: (body: HotelSearchRequest) => postHotelSearchData(body),
@@ -40,5 +50,18 @@ export function useGetHotelFavourites(enabled: boolean = true) {
     queryKey: ["hotel-favourites"],
     queryFn: () => getHotelFavouritesData(),
     enabled,
+  });
+}
+export function useHotelCancellationCharges() {
+  return useMutation({
+    mutationFn: (body: HotelCancellationChargesRequest) =>
+      postHotelCancellationChargesData(body),
+  });
+}
+
+export function useHotelCancellation() {
+  return useMutation({
+    mutationFn: (body: HotelCancellationRequest) =>
+      postHotelCancellationData(body),
   });
 }
