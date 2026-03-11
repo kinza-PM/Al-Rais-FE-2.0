@@ -6,7 +6,7 @@ import visaIcon from "../../assets/svgs/visa.svg";
 import masterCardIcon from "../../assets/svgs/mastercard.svg";
 import Tabby from "../../assets/images/tabbycard.png";
 import Tamara from "../../assets/images/tamara1.png";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 // import CardCollapseToggle from "../common/CardCollapseToggle";
 import Button from "../atoms/Button";
 import TailwindCustomInput from "../common/TailwindCustomInput";
@@ -83,6 +83,7 @@ export default function HotelBookingPaymentSection({
   >({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showMinimumLoading, setShowMinimumLoading] = useState(false);
 
   const { mutateAsync, isPending } = useHotelReservationBooking();
   const { mutateAsync: paymentMutateAsync, isPending: paymentPending } =
@@ -213,6 +214,7 @@ export default function HotelBookingPaymentSection({
     }
 
     setIsProcessing(true);
+    setShowMinimumLoading(true);
     try {
       const cleanCardNumber = (cardDetails.number || "").replace(/\s+/g, "");
       const expiry = cardDetails.expiry || ""; // YYMM
@@ -403,14 +405,20 @@ export default function HotelBookingPaymentSection({
     }
   };
 
+  useEffect(() => {
+    if (!showMinimumLoading) return;
+    const timer = setTimeout(() => setShowMinimumLoading(false), 1000);
+    return () => clearTimeout(timer);
+  }, [showMinimumLoading]);
+
   const isPayButtonLoading =
-    isPending || isProcessing || isTokenizing || paymentPending;
+    isPending || isProcessing || isTokenizing || paymentPending || showMinimumLoading;
 
   const getPayButtonText = () => {
-    if (isTokenizing) return "Preparing secure payment…";
-    if (paymentPending) return "Processing your payment…";
-    if (isPending) return "Confirming your hotel booking…";
-    if (isProcessing) return "Please wait…";
+    if (isTokenizing || showMinimumLoading) return "Preparing secure payment";
+    if (paymentPending) return "Processing your payment";
+    if (isPending) return "Confirming your hotel booking";
+    if (isProcessing) return "Please wait";
     return "Pay";
   };
 
@@ -781,8 +789,8 @@ export default function HotelBookingPaymentSection({
           <Button
             type="button"
             overrideClasses
-            className={`w-[110px] h-[47px] rounded-[100px] px-10 py-[14px] text-[16px] font-semibold text-white flex items-center justify-center gap-2 transition-opacity ${
-              isPayButtonLoading ? "opacity-90 cursor-not-allowed" : "hover:opacity-95 active:opacity-90"
+            className={`min-w-[200px] h-[48px] rounded-[100px] px-8 py-[14px] text-[15px] font-semibold text-white flex items-center justify-center gap-3 transition-all duration-200 ${
+              isPayButtonLoading ? "opacity-95 cursor-not-allowed" : "hover:opacity-95 active:opacity-90"
             }`}
             style={{
               background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
@@ -792,26 +800,27 @@ export default function HotelBookingPaymentSection({
           >
             {isPayButtonLoading && (
               <svg
-                className="h-4 w-4 animate-spin"
+                className="h-5 w-5 flex-shrink-0 animate-spin"
                 viewBox="0 0 24 24"
                 fill="none"
+                aria-hidden
               >
                 <circle
-                  className="opacity-25"
+                  className="opacity-30"
                   cx="12"
                   cy="12"
                   r="10"
-                  stroke="white"
+                  stroke="currentColor"
                   strokeWidth="3"
                 />
                 <path
-                  className="opacity-90"
-                  fill="white"
-                  d="M22 12a10 10 0 00-10-10v3a7 7 0 017 7h3z"
+                  className="opacity-100"
+                  fill="currentColor"
+                  d="M12 2a10 10 0 0 1 10 10h-3a7 7 0 0 0-7-7V2z"
                 />
               </svg>
             )}
-            <span>{getPayButtonText()}</span>
+            <span className="tracking-tight">{getPayButtonText()}</span>
           </Button>
 
           <div className="mt-6 text-center text-[12px] text-[#3D495C]">
