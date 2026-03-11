@@ -7,7 +7,6 @@ import SearchHotel from "../pages/SearchHotel";
 import HotellDetailListing from "../pages/HotellDetailListing";
 const LandingPage = lazy(() => import("../pages/LandingPage"));
 // const TravelPage = lazy(() => import("../pages/TravelPage"));
-const AuthPage = lazy(() => import("../pages/AuthPage"));
 const PackagesPage = lazy(() => import("../pages/PackagesPage"));
 const AboutPage = lazy(() => import("../pages/AboutPage"));
 const MyBookingsPage = lazy(() => import("../pages/MyBookingsPage"));
@@ -39,7 +38,7 @@ const router = createBrowserRouter([
       },
       {
         path: "auth",
-        element: <AuthPage />,
+        element: <LandingPage />,
       },
       {
         path: "travel",

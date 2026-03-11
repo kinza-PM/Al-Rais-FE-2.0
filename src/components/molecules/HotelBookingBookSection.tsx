@@ -166,9 +166,9 @@ export default function HotelBookingBookSection({
                     </h3>
                   </div>
                   <div className="px-4 py-4">
-                    <div className="grid gap-x-1 gap-y-3 md:grid-cols-[1.2fr_1.8fr] pr-4">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 min-w-0">
                       <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
                           options={[
@@ -204,7 +204,7 @@ export default function HotelBookingBookSection({
                         />
                       </div>
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -239,7 +239,7 @@ export default function HotelBookingBookSection({
                         />
                       </div>
                       <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -274,7 +274,7 @@ export default function HotelBookingBookSection({
                         />
                       </div>
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
                           options={[
@@ -320,8 +320,8 @@ export default function HotelBookingBookSection({
                     </h3>
                   </div>
                   <div className="px-4 py-4 rounded-b-2xl">
-                    <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
-                      <div className="relative w-full">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-4 min-w-0">
+                      <div className="relative w-full min-w-0">
                         <TailwindCustomInput
                           type="text"
                           placeholder="Pax type"
@@ -332,7 +332,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       {roomOptions.length > 0 && (
-                        <div className="relative w-full">
+                        <div className="relative w-full min-w-0">
                           <SearchableDropdown
                             options={roomOptions}
                             value={String(roomIndex)}
@@ -347,7 +347,7 @@ export default function HotelBookingBookSection({
                       )}
 
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
+                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Birth date
@@ -386,7 +386,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -423,7 +423,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
                           options={
@@ -465,7 +465,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
+                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Date of issue
@@ -506,7 +506,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
+                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Expiry date
@@ -547,7 +547,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
                       >
                         <TailwindCustomInput
                           type="email"

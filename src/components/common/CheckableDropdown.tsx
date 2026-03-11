@@ -90,6 +90,7 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
       // Radio-like behavior: select only this option
       const newValue = value === optionValue ? "" : optionValue;
       onChange(newValue);
+      setIsOpen(false);
     } else {
       // Multi-select behavior: toggle option
       const currentValue = value as string[];

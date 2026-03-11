@@ -1,4 +1,4 @@
-import { Outlet, useLocation } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
@@ -11,7 +11,7 @@ import { useAuth } from "../../features/auth/hooks/useAuth";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
-  // const navigate = useNavigate();
+  const navigate = useNavigate();
   const { refreshAuth } = useAuth();
 
   const [hideHeader, setHideHeader] = useState<boolean>(false);
@@ -28,6 +28,15 @@ const AppLayout: React.FC = () => {
 
     void checkAuth();
   }, [location.pathname]);
+
+  // When on /auth route, show the auth modal (same as navbar) instead of full page
+  useEffect(() => {
+    if (location.pathname === "/auth") {
+      const mode = (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
+      setAuthMode(mode);
+      setAuthModalOpen(true);
+    }
+  }, [location.pathname, location.state]);
 
   // Scroll to top when navigating to a new page (e.g. footer links)
   useEffect(() => {
@@ -46,6 +55,9 @@ const AppLayout: React.FC = () => {
 
   const closeAuthModal = () => {
     setAuthModalOpen(false);
+    if (location.pathname === "/auth") {
+      navigate("/", { replace: true });
+    }
   };
 
   const handleAuthSuccess = async () => {

@@ -37,7 +37,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(({
   return (
     <div className="min-h-screen">
       <div className="mx-auto">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-4 gap-x-8 gap-y-8">
           {hotels.map((hotel, index) => {
             // Show promo card at index 3 (4th position)
             // if (index === 3) {

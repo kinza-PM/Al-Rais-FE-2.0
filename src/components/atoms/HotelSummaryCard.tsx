@@ -202,8 +202,10 @@ const HotelBookingDetailContent = ({
 
                 <div className="stopsDetail">
                   <span className="mb-5">
-                    Total stay: {totalNights}{" "}
-                    {totalNights === 1 ? "night" : "nights"}
+                    <span style={{ fontWeight: "bold" }} className="text-xl font-extrabold">Total stay:</span>{" "}
+                    <span style={{ fontWeight: "bold" }}>
+                      {totalNights} {totalNights === 1 ? "night" : "nights"}
+                    </span>
                   </span>
                 </div>
 

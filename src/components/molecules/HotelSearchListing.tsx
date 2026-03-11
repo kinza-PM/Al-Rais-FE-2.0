@@ -47,6 +47,7 @@ import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
 // ];
 
 const starRatingOptions = [
+  { id: "0", value: "", label: "Any rating" },
   { id: "1", value: "1", label: "1 star" },
   { id: "2", value: "2", label: "2 stars" },
   { id: "3", value: "3", label: "3 stars" },

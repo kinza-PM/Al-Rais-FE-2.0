@@ -37,7 +37,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
     // const { hotel: bookingParams, clearHotel } = useHotelStore();
 
     const {
-      // isAvailable,
+      isAvailable,
       bestRoom,
       currency,
       price,
@@ -45,6 +45,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       uniqueOfferNames,
       hasOffer,
       hasFreeCancellation,
+      availableRooms,
     } = processHotelSearchListingData(hotel);
 
     // Pull up to 3 distinct images from the API (images array or imageUrl fallback)
@@ -82,9 +83,23 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
     const roomTypeName = bestRoom?.roomTypeName || "";
     const bedType = bestRoom?.bedType || "";
 
-    // Facilities — Free cancellation first, then up to 3 dynamic, fallback statics
-    const dynamicFacilities: string[] =
-      hotel?.propertyInfo?.facilities?.slice(0, 3) || [];
+    // Facilities — Figma: Free cancellation, Free child stay, High speed internet, Free parking
+    const rawFacilities = hotel?.propertyInfo?.facilities || [];
+    const facilityNames = rawFacilities.map((f: any) =>
+      typeof f === "string" ? f : f?.name || ""
+    ).filter(Boolean);
+    const displayAmenities: string[] = [];
+    if (hasFreeCancellation) displayAmenities.push("Free cancellation");
+    const childMatch = facilityNames.find((n: string) => /child|family|kids/i.test(n));
+    const internetMatch = facilityNames.find((n: string) => /wifi|internet|wi-fi/i.test(n));
+    const parkingMatch = facilityNames.find((n: string) => /parking|car park/i.test(n));
+    if (childMatch) displayAmenities.push(childMatch);
+    else displayAmenities.push("Free child stay");
+    if (internetMatch) displayAmenities.push(internetMatch);
+    else displayAmenities.push("High internet");
+    if (parkingMatch) displayAmenities.push(parkingMatch);
+    else displayAmenities.push("Free parking");
+    const amenitiesToShow = displayAmenities.slice(0, 4);
 
     const renderStars = (rating: string | undefined) => {
       const num = rating ? parseFloat(rating) : 0;
@@ -106,24 +121,20 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
 
     return (
       <div
-        className="bg-white overflow-hidden flex flex-col"
+        className="w-full min-w-0 bg-transparent overflow-hidden flex flex-col rounded-2xl"
         style={{
-          width: "280px",
-          borderRadius: "16px",
-          border: "1px solid #E4E4E7",
-          marginBottom: "16px",
+          border: "1px solid var(--white-300, #E4E4E7)",
         }}
       >
         {/* ── Image section ── */}
         <div
-          className="relative flex-shrink-0"
-          style={{ height: "210px", padding: "10px" }}
+          className="relative flex-shrink-0 w-full"
+          style={{ padding: "10px" }}
         >
-          <div className="flex h-full" style={{ gap: "5px" }}>
-            {/* Main image: 145×190 */}
+          <div className="flex w-full aspect-[260/210]" style={{ gap: "5px" }}>
+            {/* Main image: ~56% width */}
             <div
-              className="flex-shrink-0 overflow-hidden"
-              style={{ width: "145px", height: "190px", borderRadius: "16px" }}
+              className="flex-1 min-w-0 overflow-hidden rounded-2xl"
             >
               <img
                 src={imageUrl}
@@ -137,13 +148,11 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
 
             {/* Right column: two stacked images */}
             <div
-              className="flex flex-col flex-shrink-0"
-              style={{ gap: "6px", width: "110px" }}
+              className="flex flex-col flex-[0_0_42%] min-w-0 gap-1.5"
             >
-              {/* 2nd image: 110×92 */}
+              {/* 2nd image */}
               <div
-                className="overflow-hidden flex-shrink-0"
-                style={{ width: "110px", height: "92px", borderRadius: "16px" }}
+                className="overflow-hidden flex-1 min-h-0 rounded-2xl"
               >
                 <img
                   src={imageUrl2}
@@ -154,10 +163,9 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                   }}
                 />
               </div>
-              {/* 3rd image: 110×92 */}
+              {/* 3rd image */}
               <div
-                className="overflow-hidden flex-shrink-0"
-                style={{ width: "110px", height: "92px", borderRadius: "16px" }}
+                className="overflow-hidden flex-1 min-h-0 rounded-2xl"
               >
                 <img
                   src={imageUrl3}
@@ -420,17 +428,19 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             >
               {roomTypeName}
             </span>
-            {/* <span
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 400,
-                fontSize: "11px",
-                color: "#EA0029",
-                lineHeight: "100%",
-              }}
-            >
-              Only 2 rooms left on Al Rais
-            </span> */}
+            {isAvailable && availableRooms.length > 0 && availableRooms.length <= 5 && (
+              <span
+                style={{
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 400,
+                  fontSize: "11px",
+                  color: "#EA0029",
+                  lineHeight: "100%",
+                }}
+              >
+                Only {availableRooms.length} room{availableRooms.length > 1 ? "s" : ""} left on Al Rais
+              </span>
+            )}
           </div>
 
           {/* Bed type */}
@@ -447,28 +457,9 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             {bedType}
           </p>
 
-          {/* Amenities */}
+          {/* Amenities with green ticks — Figma design */}
           <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
-            {hasFreeCancellation && (
-              <div className="flex items-center gap-1.5">
-                <img
-                  src={GreenTick}
-                  alt="tick"
-                  style={{ width: "16px", height: "16px", flexShrink: 0 }}
-                />
-                <span
-                  style={{
-                    fontFamily: "Inter, sans-serif",
-                    fontSize: "11px",
-                    color: "#3D495C",
-                    lineHeight: "100%",
-                  }}
-                >
-                  Free Cancellation
-                </span>
-              </div>
-            )}
-            {dynamicFacilities.map((item, i) => (
+            {amenitiesToShow.map((amenity, i) => (
               <div key={i} className="flex items-center gap-1.5">
                 <img
                   src={GreenTick}
@@ -483,7 +474,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                     lineHeight: "100%",
                   }}
                 >
-                  {item}
+                  {amenity}
                 </span>
               </div>
             ))}
