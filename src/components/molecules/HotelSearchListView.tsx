@@ -20,7 +20,7 @@ type HotelSearchListViewProps = {
 const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
   ({ hotels }) => {
     const navigate = useNavigate();
-    const { hotel: bookingParams, clearHotel } = useHotelStore();
+    const { hotel: bookingParams } = useHotelStore();
     // const [favorites, setFavorites] = React.useState<{ [key: string]: boolean }>(
     //   {}
     // );
@@ -577,7 +577,6 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               bookingParams: bookingParams ?? undefined,
                             },
                           });
-                          clearHotel();
                         }}
                       >
                         Check availability

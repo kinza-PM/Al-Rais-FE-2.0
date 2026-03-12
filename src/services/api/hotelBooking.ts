@@ -32,3 +32,18 @@ export async function postHotelReservationBooking<TResp = any>(
     throw toApiError(source, err);
   }
 }
+
+export type MyHotelBookingRequest = {
+  status: string;
+};
+
+export async function postMyHotelBookings<TResp = any>(
+  body: MyHotelBookingRequest
+): Promise<TResp> {
+  const source = "postMyHotelBookings";
+  try {
+    return await api.post<TResp>("/myHotelBooking", body);
+  } catch (err) {
+    throw toApiError(source, err);
+  }
+}

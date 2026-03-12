@@ -47,7 +47,7 @@ import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
 // ];
 
 const starRatingOptions = [
-  { id: "0", value: "", label: "Any rating" },
+  { id: "0", value: "", label: "Clear rating", hideSelectionIcon: true },
   { id: "1", value: "1", label: "1 star" },
   { id: "2", value: "2", label: "2 stars" },
   { id: "3", value: "3", label: "3 stars" },
@@ -274,8 +274,8 @@ const HotelSearchListing: React.FC = () => {
     [paxData, convertPaxToRoom, handleSearchChange],
   );
 
-  // Hydrate from store only when coming from HotelHeroSectionTab (pre-fill + auto-search)
-  // When user navigates to hotel detail, clearHotel() is called - so back = empty form, no data
+  // Hydrate from store when coming from HotelHeroSectionTab or when returning from hotel detail (back button)
+  // Store is preserved on navigate to detail so back button restores search context
   const hydratedHotelSnapshotRef = useRef<string | null>(null);
   const shouldAutoSearchRef = useRef(false);
 

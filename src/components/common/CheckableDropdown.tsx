@@ -6,6 +6,7 @@ export interface DropdownOption {
   value: string;
   label: string;
   disabled?: boolean;
+  hideSelectionIcon?: boolean;
 }
 
 interface CheckableDropdownProps {
@@ -228,26 +229,35 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
                 options.map((option) => (
                   <label
                     key={option.id}
+                    role="option"
+                    aria-selected={valueArray.includes(option.value)}
                     className={`
                                             flex items-center w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
                                             ${option.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                                             ${valueArray.includes(option.value) ? "bg-[#2351A3]/5" : ""}
                                         `}
+                    onClick={
+                      option.hideSelectionIcon
+                        ? () => handleOptionToggle(option.value)
+                        : undefined
+                    }
                   >
-                    <input
-                      type={singleSelect ? "radio" : "checkbox"}
-                      name={singleSelect ? "radio-group" : undefined}
-                      checked={valueArray.includes(option.value)}
-                      onChange={() => handleOptionToggle(option.value)}
-                      disabled={option.disabled}
-                      className={
-                        singleSelect
-                          ? "h-4 w-4 text-[#2351A3] border-[#DFE7F3] focus:ring-[#2351A3] focus:ring-offset-0"
-                          : "h-4 w-4 text-[#2351A3] border-[#DFE7F3] rounded focus:ring-[#2351A3] focus:ring-offset-0"
-                      }
-                    />
+                    {!option.hideSelectionIcon && (
+                      <input
+                        type={singleSelect ? "radio" : "checkbox"}
+                        name={singleSelect ? "radio-group" : undefined}
+                        checked={valueArray.includes(option.value)}
+                        onChange={() => handleOptionToggle(option.value)}
+                        disabled={option.disabled}
+                        className={
+                          singleSelect
+                            ? "h-4 w-4 text-[#2351A3] border-[#DFE7F3] focus:ring-[#2351A3] focus:ring-offset-0"
+                            : "h-4 w-4 text-[#2351A3] border-[#DFE7F3] rounded focus:ring-[#2351A3] focus:ring-offset-0"
+                        }
+                      />
+                    )}
                     <span
-                      className={`ml-3 ${valueArray.includes(option.value) ? "text-[#2351A3] font-medium" : "text-[#0F172A]"}`}
+                      className={`${option.hideSelectionIcon ? "" : "ml-3"} ${valueArray.includes(option.value) ? "text-[#2351A3] font-medium" : "text-[#0F172A]"}`}
                     >
                       {option.label}
                     </span>

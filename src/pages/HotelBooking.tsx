@@ -296,12 +296,12 @@ const HotelBooking = () => {
     const nameTitle = titleMap[(ud.title || "").toUpperCase()] ?? "";
 
     const genderMap: Record<string, string> = {
-      M: "M",
-      F: "F",
-      MALE: "M",
-      FEMALE: "F",
+      M: "male",
+      F: "female",
+      MALE: "male",
+      FEMALE: "female",
     };
-    const gender = genderMap[(ud.gender || "").toUpperCase()] ?? "";
+    const gender = (ud.gender && genderMap[(ud.gender || "").toUpperCase()]) ?? "";
 
     setHotelBookingPayload((prev) => {
       if (!prev) return prev;
