@@ -23,7 +23,6 @@ import Loader from "../components/atoms/Loader";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
-import { handleHotelShare } from "../utils/hotelHelper";
 
 const tabs = [
   "Overview",
@@ -267,18 +266,6 @@ const HotelDetailListing = () => {
     );
     return maxRoomIndex > 0 ? maxRoomIndex : 1;
   }, [hotelMoreRooms?.rooms]);
-
-  const handleShare = useCallback(
-    () =>
-      handleHotelShare(
-        params.hotelKey ?? "",
-        state.searchKey ??
-          new URLSearchParams(location.search).get("searchKey") ??
-          "",
-        resolvedBookingParams,
-      ),
-    [params.hotelKey, state.searchKey, resolvedBookingParams, location.search],
-  );
 
   const handleAddToFavourite = useCallback(async () => {
     const searchParams = new URLSearchParams(location.search);
