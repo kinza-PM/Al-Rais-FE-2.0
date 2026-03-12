@@ -74,6 +74,7 @@ const HotelCancellationPage: React.FC = () => {
 
   const bookingReferenceId = location.state?.bookingReferenceId || "";
   const hotelName = location.state?.hotelName || "Hotel Booking";
+  const bookingKey = location.state?.bookingKey || "";
 
   const {
     mutateAsync: getCancellationChargesAsync,
@@ -124,6 +125,7 @@ const HotelCancellationPage: React.FC = () => {
     const response = await cancelHotelAsync({
       command: "cancel",
       bookingReferenceId,
+      bookingKey
     });
 
     if (response?.meta?.success) {

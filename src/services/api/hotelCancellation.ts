@@ -34,6 +34,7 @@ export type HotelCancellationChargesResponse = {
 export type HotelCancellationRequest = {
   command: "cancel";
   bookingReferenceId: string;
+  bookingKey:string
 };
 
 export type HotelCancellationResponse = {

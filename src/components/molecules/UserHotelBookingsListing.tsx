@@ -307,6 +307,7 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
       state: {
         bookingReferenceId: booking.bookingRef,
         hotelName: booking.hotelName,
+        bookingKey: booking.id
       },
     })
   }
