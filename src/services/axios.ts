@@ -28,7 +28,8 @@ const hotelApis = [
   "/hotelBooking",
   "/imageProxy",
   "/getHotelCancellationCharges",
-  "/hotelCancellation"
+  "/hotelCancellation",
+  "/myHotelBooking",
 ];
 const locationApis = ["/countries/cities", "/countries"];
 // const resonApis = ["/countries/cities", "/countries"];
@@ -98,7 +99,8 @@ axiosClient.interceptors.request.use(async (config) => {
   } else if (paymentApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = PAYMENT_API_BASE;
   } else if (hotelApis.some((prefix) => config.url?.startsWith(prefix))) {
-    config.baseURL = HOTEL_API_BASE;
+    config.baseURL =
+      import.meta.env.DEV ? "/api/hotel-proxy" : HOTEL_API_BASE;
   } else if (locationApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = LOCATION_API_BASE;
   } else if (ticketApis.some((prefix) => config.url?.startsWith(prefix))) {

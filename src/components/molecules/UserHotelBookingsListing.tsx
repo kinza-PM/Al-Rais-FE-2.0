@@ -340,62 +340,18 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
   );
 }
 
-const staticHotelBookings: HotelBookingCardItem[] = [
-  {
-    id: "hotel-confirmed-1",
-    status: "Confirmed",
-    hotelName: "The Nishat Hotel",
-    address: "Abdul Haque Road, Johar Town, 54600 Lahore, Pakistan",
-    checkInTime: "2:00 PM – 12:00 AM",
-    checkInDate: "Fri, 22 August 2025",
-    checkOutTime: "2:00 PM – 12:00 AM",
-    checkOutDate: "Fri, 22 August 2025",
-    totalStay: "Total stay: 1 night",
-    roomLabel: "01, Royal Deluxe",
-    bookingRef: "BKR-2026-000294",
-  },
-  {
-    id: "hotel-pending-1",
-    status: "Pending",
-    hotelName: "The Nishat Hotel",
-    address: "Abdul Haque Road, Johar Town, 54600 Lahore, Pakistan",
-    checkInTime: "2:00 PM – 12:00 AM",
-    checkInDate: "Fri, 22 August 2025",
-    checkOutTime: "2:00 PM – 12:00 AM",
-    checkOutDate: "Fri, 22 August 2025",
-    totalStay: "Total stay: 1 night",
-    roomLabel: "02, Superior Rooms",
-    bookingRef: "6DFFX8901HAE",
-    countdown: {
-      hours: "00",
-      mins: "35",
-      secs: "49",
-    },
-  },
-  {
-    id: "hotel-expired-1",
-    status: "Expired",
-    hotelName: "The Nishat Hotel",
-    address: "Abdul Haque Road, Johar Town, 54600 Lahore, Pakistan",
-    checkInTime: "2:00 PM – 12:00 AM",
-    checkInDate: "Fri, 22 August 2025",
-    checkOutTime: "2:00 PM – 12:00 AM",
-    checkOutDate: "Fri, 22 August 2025",
-    totalStay: "Total stay: 1 night",
-    roomLabel: "02, Superior Rooms",
-    bookingRef: "6DFFX8901HAE",
-  },
-];
-
 export default function UserHotelBookingsListing({
   filterStatus,
+  bookings = [],
 }: {
   filterStatus: "All" | BookingStatus;
+  bookings?: HotelBookingCardItem[];
 }) {
   const list = useMemo(() => {
-    if (filterStatus === "All") return staticHotelBookings;
-    return staticHotelBookings.filter((b) => b.status === filterStatus);
-  }, [filterStatus]);
+    if (!bookings?.length) return [];
+    if (filterStatus === "All") return bookings;
+    return bookings.filter((b) => b.status === filterStatus);
+  }, [bookings, filterStatus]);
 
   if (!list.length) {
     return (

@@ -6,8 +6,12 @@ import UserBookingsListing, {
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useMyBooking } from "../hooks/useUserProfileBooking";
+import { useMyHotelBooking } from "../hooks/useMyHotelBooking";
 import Loader from "../components/atoms/Loader";
-import { transformBookingsResponse } from "../utils/transformBookingData";
+import {
+  transformBookingsResponse,
+  transformHotelBookingsResponse,
+} from "../utils/transformBookingData";
 import UserHotelBookingsListing from "../components/molecules/UserHotelBookingsListing";
 const tabs = ["All", "Pending", "Confirmed", "Expired"] as const;
 const modeTabs = ["Flights", "Hotels"] as const;
@@ -16,13 +20,17 @@ const MyBookingsPage = () => {
   const [active, setActive] = useState<(typeof tabs)[number]>("All");
   const [mode, setMode] = useState<(typeof modeTabs)[number]>("Flights");
   const [userMyFlightBooking, setUserMyFlightBookings] = useState<any>([]);
+  const [userMyHotelBookings, setUserMyHotelBookings] = useState<any[]>([]);
 
   const { mutateAsync, isPending } = useMyBooking();
+  const { mutateAsync: fetchHotelBookings, isPending: isHotelPending } =
+    useMyHotelBooking();
 
   const init = async () => {
     try {
-      const response = await mutateAsync({ status: active === "Confirmed" ? "completed" : active.toLowerCase() });
-      // Transform API response to booking format
+      const response = await mutateAsync({
+        status: active === "Confirmed" ? "completed" : active.toLowerCase(),
+      });
       const transformedBookings = transformBookingsResponse(response);
       setUserMyFlightBookings(transformedBookings);
     } catch (error) {
@@ -31,14 +39,36 @@ const MyBookingsPage = () => {
     }
   };
 
+  const initHotel = async () => {
+    try {
+      const status =
+        active === "Confirmed" ? "completed" : active.toLowerCase();
+      const response = await fetchHotelBookings({ status });
+      const transformed = transformHotelBookingsResponse(response ?? {});
+      setUserMyHotelBookings(Array.isArray(transformed) ? transformed : []);
+    } catch (error) {
+      const err = extractErrorFromAxiosApiError(error);
+      toast.error(err || "Unable to load hotel bookings. Please try again.");
+      setUserMyHotelBookings([]);
+    }
+  };
+
   useEffect(() => {
-    init();
-  }, [active]);
+    if (mode === "Flights") {
+      init();
+    }
+  }, [active, mode]);
+
+  useEffect(() => {
+    if (mode === "Hotels") {
+      initHotel();
+    }
+  }, [active, mode]);
 
   return (
     <div className="py-6">
       <Loader
-        show={isPending}
+        show={isPending || isHotelPending}
         label="Please wait while we are fetching your bookings"
       />
       <div className="flex flex-col items-center px-6">
@@ -114,7 +144,10 @@ const MyBookingsPage = () => {
       mode={mode as TripMode}
     />
   ) : (
-    <UserHotelBookingsListing filterStatus={active} />
+    <UserHotelBookingsListing
+      filterStatus={active}
+      bookings={userMyHotelBookings}
+    />
   )}
 </div>
     </div>

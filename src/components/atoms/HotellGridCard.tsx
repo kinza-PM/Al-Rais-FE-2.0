@@ -9,8 +9,8 @@ import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "./HotelPriceSummaryTooltip";
 import { processHotelSearchListingData } from "../../utils/hotelHelper";
-// import { useNavigate } from "react-router-dom";
-// import { useHotelStore } from "../../store/UseHotelStore";
+import { useNavigate } from "react-router-dom";
+import { useHotelStore } from "../../store/UseHotelStore";
 
 type HotellGridCardProps = {
   hotel?: any;
@@ -33,8 +33,18 @@ const getReviewLabel = (score: number): string => {
 
 const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
   ({ hotel, onShare }) => {
-    // const navigate = useNavigate();
-    // const { hotel: bookingParams, clearHotel } = useHotelStore();
+    const navigate = useNavigate();
+    const { hotel: bookingParams } = useHotelStore();
+
+    const handleNavigateToDetail = () => {
+      if (!hotel?.hotelKey) return;
+      navigate(`/hotel-detail/${hotel.hotelKey}`, {
+        state: {
+          searchKey: hotel.searchKey,
+          bookingParams: bookingParams ?? undefined,
+        },
+      });
+    };
 
     const {
       isAvailable,
@@ -131,7 +141,20 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
           className="relative flex-shrink-0 w-full"
           style={{ padding: "10px" }}
         >
-          <div className="flex w-full aspect-[260/210]" style={{ gap: "5px" }}>
+          <div
+            className="flex w-full aspect-[260/210] cursor-pointer"
+            style={{ gap: "5px" }}
+            onClick={handleNavigateToDetail}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleNavigateToDetail();
+              }
+            }}
+            role="button"
+            tabIndex={0}
+            aria-label={`View ${hotelName} details`}
+          >
             {/* Main image: ~56% width */}
             <div
               className="flex-1 min-w-0 overflow-hidden rounded-2xl"
@@ -181,6 +204,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
 
           {/* Heart button — top: 10+12=22, left: 10+12=22 */}
           <button
+            type="button"
             className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform"
             style={{
               top: "22px",
@@ -190,6 +214,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               background: "rgba(255,255,255,0.6)",
             }}
             aria-label="Add to favourites"
+            onClick={(e) => e.stopPropagation()}
           >
             <img
               src={FavrtHeart}
@@ -200,6 +225,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
 
           {/* Share button */}
           <button
+            type="button"
             className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform"
             style={{
               top: "22px",
@@ -209,7 +235,10 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               background: "rgba(255,255,255,0.6)",
             }}
             aria-label="Share"
-            onClick={onShare}
+            onClick={(e) => {
+              e.stopPropagation();
+              onShare?.();
+            }}
           >
             <img
               src={Share}
@@ -223,7 +252,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
         <div className="flex flex-col flex-1 px-3 pb-3 pt-2">
           {/* Hotel name */}
           <h3
-            className="mb-0.5"
+            className="mb-0.5 cursor-pointer hover:underline hover:text-[#2351A3] transition-colors"
             style={{
               fontFamily: "Inter, sans-serif",
               fontWeight: 600,
@@ -231,6 +260,15 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               color: "#0A0C0F",
               lineHeight: "130%",
             }}
+            onClick={handleNavigateToDetail}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                handleNavigateToDetail();
+              }
+            }}
+            role="button"
+            tabIndex={0}
           >
             {hotelName}
           </h3>

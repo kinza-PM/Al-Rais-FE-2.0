@@ -210,3 +210,165 @@ export function transformBookingsResponse(apiResponse: any): any[] {
 
   return apiResponse.items.map((item: any) => transformBookingItem(item));
 }
+
+// --- Hotel bookings transform ---
+export type HotelBookingCardItem = {
+  id: string;
+  status: BookingStatus;
+  hotelName: string;
+  address: string;
+  checkInTime: string;
+  checkInDate: string;
+  checkOutTime: string;
+  checkOutDate: string;
+  totalStay: string;
+  roomLabel: string;
+  bookingRef: string;
+  countdown?: { hours: string; mins: string; secs: string };
+};
+
+function formatDateForHotel(dateStr: string): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTimeForHotel(dateStr: string): string {
+  if (!dateStr) return "";
+  try {
+    return new Date(dateStr).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
+  const statusMap: Record<string, BookingStatus> = {
+    expired: "Expired",
+    pending: "Pending",
+    active: "Confirmed",
+    completed: "Confirmed",
+    confirmed: "Confirmed",
+  };
+  const rawStatus = (apiItem.status || apiItem.bookingStatus || "").toLowerCase();
+  const status = statusMap[rawStatus] || "Pending";
+
+  const hotel = apiItem.hotel || apiItem.propertyInfo || apiItem.property || {};
+  const hotelName =
+    hotel.name ||
+    hotel.hotelName ||
+    apiItem.hotelName ||
+    hotel.propertyName ||
+    "Hotel";
+
+  const address =
+    hotel.address ||
+    apiItem.address ||
+    [hotel.city, hotel.country].filter(Boolean).join(", ") ||
+    "";
+
+  const checkIn =
+    apiItem.checkInDate ||
+    apiItem.checkIn ||
+    apiItem.stayDateRange?.checkIn ||
+    hotel.checkInDate ||
+    "";
+  const checkOut =
+    apiItem.checkOutDate ||
+    apiItem.checkOut ||
+    apiItem.stayDateRange?.checkOut ||
+    hotel.checkOutDate ||
+    "";
+
+  const totalNights =
+    apiItem.totalNights ??
+    apiItem.nights ??
+    (checkIn && checkOut
+      ? Math.ceil(
+          (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
+            (1000 * 60 * 60 * 24)
+        )
+      : 1);
+  const totalStay = `Total stay: ${totalNights} ${totalNights === 1 ? "night" : "nights"}`;
+
+  const rooms = apiItem.rooms || apiItem.roomDetails || [];
+  const roomParts = rooms.map((r: any) => {
+    const count = r.count ?? r.roomCount ?? 1;
+    const name = r.roomTypeName ?? r.roomType ?? r.name ?? "Room";
+    return `${String(count).padStart(2, "0")}, ${name}`;
+  });
+  const roomLabel = roomParts.length > 0 ? roomParts.join("; ") : "01, Room";
+
+  const bookingRef =
+    apiItem.bookingReferenceId ||
+    apiItem.bookingRef ||
+    apiItem.bookingReference ||
+    apiItem.supplierLocator ||
+    apiItem.detail?.supplierLocator ||
+    apiItem.id ||
+    "N/A";
+
+  const id = apiItem.id || apiItem.bookingKey || bookingRef || `hotel-${Date.now()}`;
+
+  const createdAt = apiItem.createdAt || apiItem.created_at;
+  const countdown =
+    status === "Pending" && createdAt
+      ? (() => {
+          const createdTime = new Date(createdAt).getTime();
+          const currentTime = Date.now();
+          const totalMs = 15 * 60 * 1000;
+          const remainingMs = Math.max(0, totalMs - (currentTime - createdTime));
+          const mins = Math.floor(remainingMs / 60000);
+          const secs = Math.floor((remainingMs % 60000) / 1000);
+          return {
+            hours: String(Math.floor(mins / 60)).padStart(2, "0"),
+            mins: String(mins % 60).padStart(2, "0"),
+            secs: String(secs).padStart(2, "0"),
+          };
+        })()
+      : undefined;
+
+  return {
+    id,
+    status,
+    hotelName,
+    address,
+    checkInTime: formatTimeForHotel(checkIn) || "2:00 PM",
+    checkInDate: formatDateForHotel(checkIn) || "—",
+    checkOutTime: formatTimeForHotel(checkOut) || "12:00 PM",
+    checkOutDate: formatDateForHotel(checkOut) || "—",
+    totalStay,
+    roomLabel,
+    bookingRef,
+    countdown,
+  };
+}
+
+export function transformHotelBookingsResponse(apiResponse: any): HotelBookingCardItem[] {
+  if (apiResponse == null) return [];
+  const items =
+    apiResponse?.data ??
+    apiResponse?.items ??
+    apiResponse?.bookings ??
+    apiResponse?.body ??
+    (Array.isArray(apiResponse) ? apiResponse : []);
+  if (!Array.isArray(items)) return [];
+  try {
+    return items.map((item: any) => transformHotelBookingItem(item));
+  } catch {
+    return [];
+  }
+}
