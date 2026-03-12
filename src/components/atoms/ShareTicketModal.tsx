@@ -8,25 +8,30 @@ import AlRaisLogo from "../../assets/images/alraisLogo.png";
 
 type ShareTicketProps = {
   closeModal: () => void;
-  bookingRef: string;
+  bookingRef?: string;
   passengerName?: string;
   onPrint?: () => void;
-  /** URL of the uploaded ticket PDF (from S3) for sharing */
   ticketPdfUrl?: string | null;
-  /** Show Print option (e.g. hide in My Bookings listing) */
   showPrint?: boolean;
-  /** Optional flight route info for the info card */
   routeFrom?: string;
   routeTo?: string;
   airlines?: string;
   flightDates?: string;
   pricePerSeat?: string;
   currency?: string;
+
+  /** new generic mode support */
+  title?: string;
+  description?: string;
+  shareUrl?: string;
+  cardTitle?: string;
+  cardSubtitle?: string;
+  mode?: "flight" | "hotel";
 };
 
 export default function ShareTicketModal({
   closeModal,
-  bookingRef,
+  bookingRef = "N/A",
   passengerName = "Valued Customer",
   onPrint,
   ticketPdfUrl,
@@ -37,47 +42,76 @@ export default function ShareTicketModal({
   flightDates,
   pricePerSeat,
   currency = "$",
+  title,
+  description,
+  shareUrl,
+  cardTitle,
+  cardSubtitle,
+  mode = "flight",
 }: ShareTicketProps) {
   const [copied, setCopied] = useState(false);
 
-  const shareUrl = ticketPdfUrl || window.location.href;
+  const finalShareUrl = shareUrl || ticketPdfUrl || window.location.href;
+  const showFlightCard = Boolean(routeFrom && routeTo);
+
+  const modalTitle =
+    title || (mode === "hotel" ? "Share Hotel" : "Share your Ticket");
+
+  const modalDescription =
+    description ||
+    (mode === "hotel"
+      ? "Send this hotel to family and friends. Share the property details and location instantly."
+      : "Send your flight info to family and friends. Save them the search. Share your arrival time and terminal instantly.");
+
+  const infoCardTitle =
+    cardTitle ||
+    (showFlightCard
+      ? `${routeFrom} - ${routeTo}`
+      : mode === "hotel"
+        ? "Hotel details"
+        : `Ref: ${bookingRef}`);
+
+  const infoCardSubtitle =
+    cardSubtitle ||
+    (showFlightCard
+      ? `${airlines ?? "Multiple Airlines"}${flightDates ? ` • ${flightDates}` : ""}`
+      : mode === "hotel"
+        ? passengerName
+        : passengerName);
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(shareUrl);
+      await navigator.clipboard.writeText(finalShareUrl);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      /* ignore */
+      //
     }
   };
 
   const handleEmailShare = () => {
     const subject = encodeURIComponent(
-      `Flight Booking Confirmation - ${bookingRef}`,
+      mode === "hotel"
+        ? `${infoCardTitle} - Hotel Details`
+        : `Flight Booking Confirmation - ${bookingRef}`,
     );
+
     const body = encodeURIComponent(
-      `Dear ${passengerName},\n\n` +
-        `Thank you for booking with Al Rais Travels!\n\n` +
-        `Your booking has been confirmed with the following details:\n` +
-        `Booking Reference: ${bookingRef}\n\n` +
-        (ticketPdfUrl ? `Your e-ticket: ${ticketPdfUrl}\n\n` : ``) +
-        `We wish you a pleasant journey!\n\n` +
-        `Best regards,\n` +
-        `Al Rais Travels Team`,
+      mode === "hotel"
+        ? `Hello,\n\nHere are the hotel details:\n\n${infoCardTitle}\n${infoCardSubtitle}\n\nView here: ${finalShareUrl}\n\nBest regards,\nAl Rais Travels`
+        : `Dear ${passengerName},\n\nThank you for booking with Al Rais Travels!\n\nYour booking has been confirmed with the following details:\nBooking Reference: ${bookingRef}\n\n${ticketPdfUrl ? `Your e-ticket: ${ticketPdfUrl}\n\n` : ""}We wish you a pleasant journey!\n\nBest regards,\nAl Rais Travels Team`,
     );
+
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
 
   const handleWhatsAppShare = () => {
     const message = encodeURIComponent(
-      `✈️ *Flight Booking Confirmed* ✈️\n\n` +
-        `Dear ${passengerName},\n\n` +
-        `Your booking with Al Rais Travels has been confirmed!\n\n` +
-        `📋 *Booking Reference:* ${bookingRef}\n\n` +
-        (ticketPdfUrl ? `📄 Your e-ticket: ${ticketPdfUrl}\n\n` : ``) +
-        `Have a safe journey! 🌍✨`,
+      mode === "hotel"
+        ? `🏨 *Hotel Details* 🏨\n\n${infoCardTitle}\n${infoCardSubtitle}\n\n🔗 View hotel: ${finalShareUrl}`
+        : `✈️ *Flight Booking Confirmed* ✈️\n\nDear ${passengerName},\n\nYour booking with Al Rais Travels has been confirmed!\n\n📋 *Booking Reference:* ${bookingRef}\n\n${ticketPdfUrl ? `📄 Your e-ticket: ${ticketPdfUrl}\n\n` : ""}Have a safe journey! 🌍✨`,
     );
+
     window.open(`https://wa.me/?text=${message}`, "_blank");
   };
 
@@ -87,23 +121,24 @@ export default function ShareTicketModal({
     }
   };
 
-  const showFlightCard = Boolean(routeFrom && routeTo);
-
   return (
-    <div className="fixed inset-0 z-50 share-modal">
+    <div className="fixed inset-0 z-[1200] share-modal">
       <div className="absolute inset-0 bg-black/60" onClick={closeModal} />
 
       <div className="relative z-10 grid min-h-full place-items-center p-4">
-        {/* Modal card */}
         <div
           className="relative bg-white shadow-2xl overflow-hidden"
-          style={{ width: "100%", maxWidth: 630, minHeight: 425, borderRadius: 12 }}
+          style={{
+            width: "100%",
+            maxWidth: 630,
+            minHeight: 425,
+            borderRadius: 12,
+          }}
           role="dialog"
           aria-modal="true"
           aria-labelledby="share-ticket-title"
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Close button */}
           <button
             type="button"
             onClick={closeModal}
@@ -113,9 +148,7 @@ export default function ShareTicketModal({
             <img src={Cross} alt="close" className="w-4 h-4" />
           </button>
 
-          {/* ── Header section with gradient border ── */}
           <div style={{ padding: "15px 15px 0 15px" }}>
-            {/* Outer gradient-border wrapper */}
             <div
               style={{
                 background:
@@ -124,7 +157,6 @@ export default function ShareTicketModal({
                 padding: 1,
               }}
             >
-              {/* Inner gradient fill */}
               <div
                 style={{
                   background:
@@ -137,7 +169,6 @@ export default function ShareTicketModal({
                   paddingTop: 30,
                 }}
               >
-                {/* Share icon container */}
                 <div
                   style={{
                     width: 62,
@@ -158,7 +189,6 @@ export default function ShareTicketModal({
                   />
                 </div>
 
-                {/* "Share your Ticket" title */}
                 <h2
                   id="share-ticket-title"
                   style={{
@@ -172,10 +202,9 @@ export default function ShareTicketModal({
                     marginBottom: 0,
                   }}
                 >
-                  Share your Ticket
+                  {modalTitle}
                 </h2>
 
-                {/* Description */}
                 <p
                   style={{
                     fontFamily: "Inter, sans-serif",
@@ -190,14 +219,12 @@ export default function ShareTicketModal({
                     padding: "0 12px",
                   }}
                 >
-                  Send your flight info to family and friends. Save them the
-                  search. Share your arrival time and terminal instantly.
+                  {modalDescription}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* ── Flight info card ── */}
           <div style={{ padding: "12px 15px" }}>
             <div
               style={{
@@ -211,7 +238,6 @@ export default function ShareTicketModal({
               }}
             >
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                {/* Al Rais logo circle */}
                 <div
                   style={{
                     width: 52,
@@ -233,7 +259,6 @@ export default function ShareTicketModal({
                   />
                 </div>
 
-                {/* Route & airline details */}
                 <div>
                   <div
                     style={{
@@ -245,9 +270,7 @@ export default function ShareTicketModal({
                       marginBottom: 6,
                     }}
                   >
-                    {showFlightCard
-                      ? `${routeFrom} - ${routeTo}`
-                      : `Ref: ${bookingRef}`}
+                    {infoCardTitle}
                   </div>
                   <div
                     style={{
@@ -258,14 +281,11 @@ export default function ShareTicketModal({
                       lineHeight: "100%",
                     }}
                   >
-                    {showFlightCard
-                      ? `${airlines ?? "Multiple Airlines"}${flightDates ? ` • ${flightDates}` : ""}`
-                      : passengerName}
+                    {infoCardSubtitle}
                   </div>
                 </div>
               </div>
 
-              {/* Price (only when route info provided) */}
               {showFlightCard && pricePerSeat && (
                 <div style={{ textAlign: "right", flexShrink: 0 }}>
                   <div
@@ -292,7 +312,11 @@ export default function ShareTicketModal({
                     {currency}
                     {pricePerSeat}
                     <span
-                      style={{ fontWeight: 400, fontSize: 13, color: "#3D495C" }}
+                      style={{
+                        fontWeight: 400,
+                        fontSize: 13,
+                        color: "#3D495C",
+                      }}
                     >
                       /per seat
                     </span>
@@ -302,7 +326,6 @@ export default function ShareTicketModal({
             </div>
           </div>
 
-          {/* ── Action buttons ── */}
           <div
             style={{
               padding: "8px 15px 24px",
@@ -312,7 +335,6 @@ export default function ShareTicketModal({
               gap: 32,
             }}
           >
-            {/* Copy link */}
             <button
               type="button"
               className="flex flex-col items-center gap-2"
@@ -356,7 +378,6 @@ export default function ShareTicketModal({
               </span>
             </button>
 
-            {/* Email */}
             <button
               type="button"
               className="flex flex-col items-center gap-2"
@@ -379,7 +400,6 @@ export default function ShareTicketModal({
               </span>
             </button>
 
-            {/* WhatsApp */}
             <button
               type="button"
               className="flex flex-col items-center gap-2"
@@ -402,7 +422,6 @@ export default function ShareTicketModal({
               </span>
             </button>
 
-            {/* Print (conditional) */}
             {showPrint && (
               <button
                 type="button"

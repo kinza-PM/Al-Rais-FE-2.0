@@ -171,5 +171,7 @@ html, body {
   display: block;
 }
 
+
+
 /* Remove strict max-height so multi-city rows can expand and remain visible */
 /* If needed, we can add scroll inside specific sub-panels instead of restricting whole inner area */

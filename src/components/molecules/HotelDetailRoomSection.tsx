@@ -463,14 +463,14 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                             <h2 className="text-[13px] font-semibold text-[#0A0C0F]">
                               {firstRoom?.roomTypeName || group.roomTypeName || "Room"}
                             </h2>
-
+{/* 
                             <button
                               type="button"
                               className="text-[13px] text-[#2351A3] font-medium hover:underline"
                               onClick={(e) => e.stopPropagation()}
                             >
                               View details
-                            </button>
+                            </button> */}
                           </div>
 
                           <div className="border-t border-[#EEF2F6]" />
@@ -830,14 +830,6 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                             })}
                           </div>
 
-                          <div className="py-5 flex items-center justify-center">
-                            <button
-                              type="button"
-                              className="h-10 px-4 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-[12px] text-[#334155] flex items-center gap-2"
-                            >
-                              See more <span className="text-[14px]">⌄</span>
-                            </button>
-                          </div>
                         </div>
                       );
                     })}
