@@ -64,14 +64,13 @@ const hotelViewTypes = [
 ];
 
 const HotelSearchListing: React.FC = () => {
-  const [hotelView, setHotelView] = useState<HotelViewType>("listview");
   const [open, setOpen] = useState(false);
   const showDrawer = () => setOpen(true);
   const onClose = () => setOpen(false);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
 
-  const { hotel, setHotel } = useHotelStore();
+  const { hotel, setHotel, hotelView, setHotelView } = useHotelStore();
 
   const { passengers } = useMasterListings({
     include: ["passengers"],
