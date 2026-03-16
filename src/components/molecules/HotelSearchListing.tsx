@@ -504,9 +504,15 @@ const HotelSearchListing: React.FC = () => {
   const filteredAndSortedHotels = React.useMemo(() => {
     let result = [...hotelSearchResults];
 
-    // Apply filters
+    // Apply filters (merge star rating from search bar into filters)
     if (hasSearched && result.length > 0) {
-      result = filterHotels(result, filters);
+      const minStarRating = searchState.filters?.minStarRating ?? 0;
+      const effectiveFilters = {
+        ...filters,
+        ratings:
+          minStarRating > 0 ? [minStarRating] : filters.ratings,
+      };
+      result = filterHotels(result, effectiveFilters);
     }
 
     // Apply sorting
@@ -515,7 +521,7 @@ const HotelSearchListing: React.FC = () => {
     }
 
     return result;
-  }, [hotelSearchResults, filters, sortOption, hasSearched]);
+  }, [hotelSearchResults, filters, sortOption, hasSearched, searchState.filters?.minStarRating]);
 
   return (
     <div className="">
