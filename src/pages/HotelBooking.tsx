@@ -73,7 +73,7 @@ const HotelBooking = () => {
   //         response?.meta?.statusMessage === "SUCCESS"
   //       ) {
   //         setPreBookData(response);
-  //         toast.success("Hotel Pre Booking Successfully.");
+  //         toast.success("Hotel pre-booking successful");
   //       } else {
   //         window.history.back();
   //       }
@@ -380,7 +380,7 @@ const HotelBooking = () => {
             })),
           };
         });
-        toast.success("Hotel Pre Booking Successfully.");
+        toast.success("Hotel pre-booking successful");
         setCurrentStep(1);
       } else {
         toast.error("Pre-booking failed. Please try again.");
