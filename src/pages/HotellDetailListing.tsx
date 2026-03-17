@@ -37,6 +37,28 @@ type LocationState = {
   };
 };
 
+const buildHotelShareUrl = (
+  hotelKey: string,
+  searchKey: string,
+  bookingParams?: object | null
+) => {
+  const params = new URLSearchParams();
+
+  if (searchKey) {
+    params.set("searchKey", searchKey);
+  }
+
+  if (bookingParams) {
+    params.set("bookingParams", JSON.stringify(bookingParams));
+  }
+
+  const queryString = params.toString();
+
+  return `${window.location.origin}/hotel-detail/${hotelKey}${
+    queryString ? `?${queryString}` : ""
+  }`;
+};
+
 const redIcon = L.icon({
   iconUrl:
     "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
@@ -91,6 +113,9 @@ const HotelDetailListing = () => {
   const [resolvedBookingParams, setResolvedBookingParams] = useState<
     LocationState["bookingParams"] | undefined
   >(state.bookingParams);
+  const [resolvedSearchKey, setResolvedSearchKey] = useState<string>(
+    state.searchKey ?? ""
+  );
   const [isFavourite, setIsFavourite] = useState(false);
 
   const { mutateAsync, isPending } = useHotelDetail();
@@ -130,7 +155,7 @@ const HotelDetailListing = () => {
     }
 
     const exists = favouriteItems.some(
-      (item: any) => item?.hotelKey === currentHotelKey,
+      (item: any) => item?.hotelKey === currentHotelKey
     );
 
     setIsFavourite(exists);
@@ -141,18 +166,19 @@ const HotelDetailListing = () => {
     const searchKeyFromUrl = searchParams.get("searchKey") ?? "";
     const bookingParamsFromUrl = searchParams.get("bookingParams");
 
-    const resolvedSearchKey = state.searchKey || searchKeyFromUrl;
-    const resolvedBookingParams =
+    const nextResolvedSearchKey = state.searchKey || searchKeyFromUrl;
+    const nextResolvedBookingParams =
       state.bookingParams ||
       (bookingParamsFromUrl
         ? JSON.parse(decodeURIComponent(bookingParamsFromUrl))
         : undefined);
 
-    setResolvedBookingParams(resolvedBookingParams);
+    setResolvedSearchKey(nextResolvedSearchKey);
+    setResolvedBookingParams(nextResolvedBookingParams);
 
     const body = {
       hotelKey: params.hotelKey ?? "",
-      searchKey: resolvedSearchKey,
+      searchKey: nextResolvedSearchKey,
       culture: "en",
     };
 
@@ -181,11 +207,11 @@ const HotelDetailListing = () => {
 
   useEffect(() => {
     init();
-  }, [params.hotelKey, state.searchKey]);
+  }, [params.hotelKey, state.searchKey, location.search]);
 
   const primaryImages = useMemo(
     () => hotelDetail?.images || [],
-    [hotelDetail?.images],
+    [hotelDetail?.images]
   );
 
   const dynamicImages = useMemo(() => {
@@ -205,7 +231,7 @@ const HotelDetailListing = () => {
         ? parseFloat(hotelDetail.longitude)
         : 67.0011,
     }),
-    [hotelDetail?.latitude, hotelDetail?.longitude],
+    [hotelDetail?.latitude, hotelDetail?.longitude]
   );
 
   const nearbyInfo = useMemo(() => {
@@ -225,10 +251,10 @@ const HotelDetailListing = () => {
           7,
           Number.isFinite(Number(hotelDetail?.starRating))
             ? Number(hotelDetail?.starRating)
-            : 0,
-        ),
+            : 0
+        )
       ),
-    [hotelDetail?.starRating],
+    [hotelDetail?.starRating]
   );
 
   const handleShowImages = useCallback(() => {
@@ -284,17 +310,13 @@ const HotelDetailListing = () => {
       return 1;
     }
     const maxRoomIndex = Math.max(
-      ...hotelMoreRooms.rooms.map((room: any) => room.roomIndex || 1),
+      ...hotelMoreRooms.rooms.map((room: any) => room.roomIndex || 1)
     );
     return maxRoomIndex > 0 ? maxRoomIndex : 1;
   }, [hotelMoreRooms?.rooms]);
 
   const buildFavouritePayload = useCallback(
     (flag: boolean) => {
-      const searchParams = new URLSearchParams(location.search);
-      const resolvedSearchKey =
-        state.searchKey || searchParams.get("searchKey") || "";
-
       const favouriteRooms =
         selectedRooms.length > 0
           ? selectedRooms.map((selected) => ({
@@ -372,7 +394,7 @@ const HotelDetailListing = () => {
       const facilities =
         hotelDetail?.hotelFacilities
           ?.map((facility: any) =>
-            typeof facility === "string" ? facility : facility?.name,
+            typeof facility === "string" ? facility : facility?.name
           )
           ?.filter(Boolean) ?? [];
 
@@ -406,7 +428,7 @@ const HotelDetailListing = () => {
             : favouriteRooms.reduce(
                 (sum: number, room: any) =>
                   sum + (room?.roomRate?.netAmount || 0),
-                0,
+                0
               ),
         searchKey: resolvedSearchKey,
         flag,
@@ -415,13 +437,12 @@ const HotelDetailListing = () => {
     [
       hotelDetail,
       hotelMoreRooms?.rooms,
-      location.search,
       params.hotelKey,
       primaryImages,
       selectedRooms,
-      state.searchKey,
       totalPrice,
-    ],
+      resolvedSearchKey,
+    ]
   );
 
   const handleToggleFavourite = useCallback(async () => {
@@ -438,14 +459,19 @@ const HotelDetailListing = () => {
       toast.success(
         nextState
           ? "Hotel added to favourites"
-          : "Hotel removed from favourites",
+          : "Hotel removed from favourites"
       );
     } catch (error: any) {
       setIsFavourite(previousState);
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err || "Failed to update favourites");
     }
-  }, [isFavourite, buildFavouritePayload, addHotelFavouriteAsync, refetchFavourites]);
+  }, [
+    isFavourite,
+    buildFavouritePayload,
+    addHotelFavouriteAsync,
+    refetchFavourites,
+  ]);
 
   const addressText = [
     hotelDetail?.address,
@@ -470,8 +496,8 @@ const HotelDetailListing = () => {
             isAddingFavourite
               ? "Please wait while we are updating favourites"
               : isGetFavouritesLoading
-                ? "Please wait while we are checking favourites"
-                : "Please wait while we are fetching hotel details"
+              ? "Please wait while we are checking favourites"
+              : "Please wait while we are fetching hotel details"
           }
         />
 
@@ -686,8 +712,8 @@ const HotelDetailListing = () => {
                 isAddingFavourite || isGetFavouritesLoading
                   ? "bg-[#AEB8C5] cursor-not-allowed"
                   : isFavourite
-                    ? "bg-[#EA0029] hover:opacity-95"
-                    : "bg-[#2351A3] hover:opacity-95"
+                  ? "bg-[#EA0029] hover:opacity-95"
+                  : "bg-[#2351A3] hover:opacity-95"
               }`}
             >
               {isAddingFavourite
@@ -695,8 +721,8 @@ const HotelDetailListing = () => {
                   ? "Removing..."
                   : "Adding..."
                 : isFavourite
-                  ? "Remove from favorites"
-                  : "Add to favorites"}
+                ? "Remove from favorites"
+                : "Add to favorites"}
             </button>
           </div>
         </div>
@@ -867,7 +893,7 @@ const HotelDetailListing = () => {
                           images: slicedImages,
                         },
                         searchKey:
-                          state.searchKey ||
+                          resolvedSearchKey ||
                           new URLSearchParams(location.search).get("searchKey"),
                         bookingParams: resolvedBookingParams,
                         selectedRooms,
@@ -891,7 +917,11 @@ const HotelDetailListing = () => {
           closeModal={() => setOpenShareModal(false)}
           mode="hotel"
           showPrint={false}
-          shareUrl={`${window.location.origin}/hotel-detail/${params.hotelKey}${location.search || ""}`}
+          shareUrl={buildHotelShareUrl(
+            params.hotelKey ?? "",
+            resolvedSearchKey,
+            resolvedBookingParams ?? null
+          )}
           title="Share this Hotel"
           description="Send this hotel to family and friends. Share the property details and location instantly."
           cardTitle={hotelDetail?.name || "Hotel details"}

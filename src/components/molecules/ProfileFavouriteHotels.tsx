@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import HotelImage from "../../assets/images/Hotel Image.png";
@@ -96,9 +96,30 @@ const safeJsonParse = <T,>(value: unknown, fallback: T): T => {
   }
 };
 
+const buildHotelShareUrl = (
+  hotelKey: string,
+  searchKey: string,
+  bookingParams?: object | null
+) => {
+  const params = new URLSearchParams();
+
+  if (searchKey) {
+    params.set("searchKey", searchKey);
+  }
+
+  if (bookingParams) {
+    params.set("bookingParams", JSON.stringify(bookingParams));
+  }
+
+  const queryString = params.toString();
+
+  return `${window.location.origin}/hotel-detail/${hotelKey}${
+    queryString ? `?${queryString}` : ""
+  }`;
+};
+
 const ProfileFavouriteHotels: React.FC = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { hotel: bookingParams } = useHotelStore();
 
   const {
@@ -123,18 +144,18 @@ const ProfileFavouriteHotels: React.FC = () => {
     const raw = Array.isArray(data)
       ? data
       : Array.isArray((data as any)?.data)
-        ? (data as any).data
-        : [];
+      ? (data as any).data
+      : [];
 
     return raw.map((item: FavouriteApiItem) => {
       const propertyInfo = safeJsonParse<ParsedPropertyInfo>(
         item.propertyInfo,
-        {},
+        {}
       );
 
       const roomDetails = safeJsonParse<ParsedRoomDetails[]>(
         item.roomDetails,
-        [],
+        []
       );
 
       return {
@@ -220,68 +241,68 @@ const ProfileFavouriteHotels: React.FC = () => {
   };
 
   const buildFavouritePayload = useCallback((hotel: any, flag: boolean) => {
-  const propertyInfo: ParsedPropertyInfo = hotel?.propertyInfoParsed || {};
-  const roomDetails: ParsedRoomDetails[] = hotel?.roomDetailsParsed || [];
+    const propertyInfo: ParsedPropertyInfo = hotel?.propertyInfoParsed || {};
+    const roomDetails: ParsedRoomDetails[] = hotel?.roomDetailsParsed || [];
 
-  const rooms = roomDetails.map((room: ParsedRoomDetails) => ({
-    roomIndex: room?.roomIndex ?? 1,
-    roomKey: room?.roomKey ?? "",
-    roomId: room?.roomId ?? "",
-    roomTypeName: room?.roomTypeName ?? "",
-    roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
-    maxOccupancy: room?.maxOccupancy ?? -1,
-    roomFacilities: room?.roomFacilities ?? [],
-    ratePlan: {
-      supplierCode: room?.ratePlan?.supplierCode ?? "",
-      meal: room?.ratePlan?.meal ?? "",
-      availableStatus: room?.ratePlan?.availableStatus ?? "",
-      cancelPolicyIndicator: room?.ratePlan?.cancelPolicyIndicator ?? "",
-      code: room?.ratePlan?.code ?? "",
-      isPackage: room?.ratePlan?.isPackage ?? false,
-      fixedCombo: room?.ratePlan?.fixedCombo ?? false,
-      gstAssured: room?.ratePlan?.gstAssured ?? false,
-      lastCancellationDate: room?.ratePlan?.lastCancellationDate ?? "",
-    },
-    roomRate: {
-      currency: room?.roomRate?.currency ?? "AED",
-      netAmount: room?.roomRate?.netAmount ?? 0,
-      rates: (room?.roomRate?.rates ?? []).map((rate) => ({
-        name: rate?.name ?? "",
-        amount: rate?.amount ?? 0,
-        from: rate?.from ?? "",
-        rateIndex: rate?.rateIndex ?? "",
-        to: rate?.to ?? "",
-      })),
-    },
-    rateNotes: room?.rateNotes ?? "",
-    financialInfo: {
-      tmc: room?.financialInfo?.tmc ?? "",
-      supplier: room?.financialInfo?.supplier ?? "",
-    },
-    isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
-  }));
+    const rooms = roomDetails.map((room: ParsedRoomDetails) => ({
+      roomIndex: room?.roomIndex ?? 1,
+      roomKey: room?.roomKey ?? "",
+      roomId: room?.roomId ?? "",
+      roomTypeName: room?.roomTypeName ?? "",
+      roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+      maxOccupancy: room?.maxOccupancy ?? -1,
+      roomFacilities: room?.roomFacilities ?? [],
+      ratePlan: {
+        supplierCode: room?.ratePlan?.supplierCode ?? "",
+        meal: room?.ratePlan?.meal ?? "",
+        availableStatus: room?.ratePlan?.availableStatus ?? "",
+        cancelPolicyIndicator: room?.ratePlan?.cancelPolicyIndicator ?? "",
+        code: room?.ratePlan?.code ?? "",
+        isPackage: room?.ratePlan?.isPackage ?? false,
+        fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+        gstAssured: room?.ratePlan?.gstAssured ?? false,
+        lastCancellationDate: room?.ratePlan?.lastCancellationDate ?? "",
+      },
+      roomRate: {
+        currency: room?.roomRate?.currency ?? "AED",
+        netAmount: room?.roomRate?.netAmount ?? 0,
+        rates: (room?.roomRate?.rates ?? []).map((rate) => ({
+          name: rate?.name ?? "",
+          amount: rate?.amount ?? 0,
+          from: rate?.from ?? "",
+          rateIndex: rate?.rateIndex ?? "",
+          to: rate?.to ?? "",
+        })),
+      },
+      rateNotes: room?.rateNotes ?? "",
+      financialInfo: {
+        tmc: room?.financialInfo?.tmc ?? "",
+        supplier: room?.financialInfo?.supplier ?? "",
+      },
+      isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+    }));
 
-  return {
-    hotelKey: hotel?.hotelKey ?? "",
-    propertyInfo: {
-      providerHotelId: propertyInfo?.providerHotelId?.toString() ?? "",
-      hotelName: propertyInfo?.hotelName ?? "",
-      address: propertyInfo?.address ?? "",
-      phoneNumber: propertyInfo?.phoneNumber ?? "",
-      location: propertyInfo?.location ?? "",
-      latitude: propertyInfo?.latitude?.toString() ?? "",
-      longitude: propertyInfo?.longitude?.toString() ?? "",
-      imageUrl: propertyInfo?.imageUrl ?? "",
-      facilities: propertyInfo?.facilities ?? [],
-      propertyType: propertyInfo?.propertyType ?? "",
-      starRating: propertyInfo?.starRating?.toString() ?? "",
-    },
-    rooms,
-    totalPrice: Number(hotel?.totalPriceParsed || 0),
-    searchKey: hotel?.searchKey ?? "",
-    flag,
-  };
-}, []);
+    return {
+      hotelKey: hotel?.hotelKey ?? "",
+      propertyInfo: {
+        providerHotelId: propertyInfo?.providerHotelId?.toString() ?? "",
+        hotelName: propertyInfo?.hotelName ?? "",
+        address: propertyInfo?.address ?? "",
+        phoneNumber: propertyInfo?.phoneNumber ?? "",
+        location: propertyInfo?.location ?? "",
+        latitude: propertyInfo?.latitude?.toString() ?? "",
+        longitude: propertyInfo?.longitude?.toString() ?? "",
+        imageUrl: propertyInfo?.imageUrl ?? "",
+        facilities: propertyInfo?.facilities ?? [],
+        propertyType: propertyInfo?.propertyType ?? "",
+        starRating: propertyInfo?.starRating?.toString() ?? "",
+      },
+      rooms,
+      totalPrice: Number(hotel?.totalPriceParsed || 0),
+      searchKey: hotel?.searchKey ?? "",
+      flag,
+    };
+  }, []);
 
   const handleRemoveFavourite = useCallback(
     async (hotel: any) => {
@@ -297,7 +318,31 @@ const ProfileFavouriteHotels: React.FC = () => {
         toast.error(errorMessage || "Failed to remove favourite");
       }
     },
-    [buildFavouritePayload, addHotelFavouriteAsync, refetchFavourites],
+    [buildFavouritePayload, addHotelFavouriteAsync, refetchFavourites]
+  );
+
+  const handleCheckAvailability = useCallback(
+    (hotel: any) => {
+      if (!hotel?.hotelKey) {
+        toast.error("Hotel Id not found");
+        return;
+      }
+
+      if (!hotel?.searchKey) {
+        toast.error("Search session expired. Please search hotels again.");
+        return;
+      }
+
+      const shareUrl = buildHotelShareUrl(
+        hotel.hotelKey,
+        hotel.searchKey,
+        bookingParams ?? null
+      );
+
+      const url = new URL(shareUrl);
+      navigate(`${url.pathname}${url.search}`);
+    },
+    [navigate, bookingParams]
   );
 
   if (isLoading) {
@@ -459,7 +504,9 @@ const ProfileFavouriteHotels: React.FC = () => {
                               >
                                 <div
                                   className={`text-[11px] mb-1 ${
-                                    idx === 0 ? "text-[#2351A3]" : "text-[#3D495C]"
+                                    idx === 0
+                                      ? "text-[#2351A3]"
+                                      : "text-[#3D495C]"
                                   }`}
                                 >
                                   {formatDateShort(rate?.from)}
@@ -474,7 +521,9 @@ const ProfileFavouriteHotels: React.FC = () => {
                                 >
                                   {idx === 0 && availabilityMessage
                                     ? "No rooms"
-                                    : `${currency} ${Number(rate?.amount || 0).toFixed(2)}`}
+                                    : `${currency} ${Number(
+                                        rate?.amount || 0
+                                      ).toFixed(2)}`}
                                 </div>
 
                                 {idx === 0 && (
@@ -523,8 +572,8 @@ const ProfileFavouriteHotels: React.FC = () => {
                         {Number(propertyInfo?.starRating || 0) >= 4
                           ? "Excellent"
                           : Number(propertyInfo?.starRating || 0) >= 3
-                            ? "Very good"
-                            : "Good"}
+                          ? "Very good"
+                          : "Good"}
                       </p>
                       <p className="text-[12px] text-[#3D495C] mt-1">
                         {bestRoom?.maxOccupancy && bestRoom.maxOccupancy > 0
@@ -579,28 +628,7 @@ const ProfileFavouriteHotels: React.FC = () => {
                         background:
                           "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
                       }}
-                      onClick={() => {
-                        if (!hotel?.hotelKey) {
-                          toast.error("Hotel Id not found");
-                          return;
-                        }
-
-                        if (!hotel?.searchKey) {
-                          toast.error(
-                            "Search session expired. Please search hotels again.",
-                          );
-                          return;
-                        }
-
-                        navigate(`/hotel-detail/${hotel.hotelKey}`, {
-                          state: {
-                            searchKey: hotel.searchKey,
-                            bookingParams: bookingParams ?? undefined,
-                            fromFavourite: true,
-                            favouriteHotel: hotel,
-                          },
-                        });
-                      }}
+                      onClick={() => handleCheckAvailability(hotel)}
                     >
                       Check availability
                     </button>
@@ -622,7 +650,11 @@ const ProfileFavouriteHotels: React.FC = () => {
           }}
           mode="hotel"
           showPrint={false}
-          shareUrl={`${window.location.origin}/hotel-detail/${selectedShareHotel.hotelKey}${location.search || ""}`}
+          shareUrl={buildHotelShareUrl(
+            selectedShareHotel?.hotelKey ?? "",
+            selectedShareHotel?.searchKey ?? "",
+            bookingParams ?? null
+          )}
           title="Share this Hotel"
           description="Send this hotel to family and friends. Share the property details and location instantly."
           cardTitle={

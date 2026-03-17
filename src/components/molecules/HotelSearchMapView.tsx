@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import HotellGridCard from "../atoms/HotellGridCard";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { MapContainer, TileLayer, Marker, Tooltip } from "react-leaflet";
-import { useLocation } from "react-router-dom";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import FilledStar from "../../assets/svgs/filled_star.svg";
@@ -15,6 +14,7 @@ import {
   useGetHotelFavourites,
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import { useHotelStore } from "../../store/UseHotelStore";
 
 type HotelSearchMapViewProps = {
   hotels: Array<any>;
@@ -33,6 +33,28 @@ const escapeHtml = (value: string = "") =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+
+const buildHotelShareUrl = (
+  hotelKey: string,
+  searchKey: string,
+  bookingParams?: object | null
+) => {
+  const params = new URLSearchParams();
+
+  if (searchKey) {
+    params.set("searchKey", searchKey);
+  }
+
+  if (bookingParams) {
+    params.set("bookingParams", JSON.stringify(bookingParams));
+  }
+
+  const queryString = params.toString();
+
+  return `${window.location.origin}/hotel-detail/${hotelKey}${
+    queryString ? `?${queryString}` : ""
+  }`;
+};
 
 const createHotelMarkerIcon = (hotelName: string) =>
   L.divIcon({
@@ -248,7 +270,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
     const [openShareModal, setOpenShareModal] = useState(false);
     const [selectedShareHotel, setSelectedShareHotel] = useState<any>(null);
 
-    const location = useLocation();
+    const { hotel: bookingParams } = useHotelStore();
     const mapRef = React.useRef<L.Map | null>(null);
 
     const {
@@ -347,7 +369,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
         Number(hotel?.totalPrice) ||
         rooms.reduce(
           (sum: number, room: any) => sum + (room?.roomRate?.netAmount || 0),
-          0,
+          0
         );
 
       return {
@@ -395,7 +417,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
           toast.success(
             nextFlag
               ? "Hotel added to favourites"
-              : "Hotel removed from favourites",
+              : "Hotel removed from favourites"
           );
 
           await refetchFavourites();
@@ -409,7 +431,12 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
           toast.error(err || "Failed to update favourite");
         }
       },
-      [favorites, buildFavouritePayload, addHotelFavouriteAsync, refetchFavourites],
+      [
+        favorites,
+        buildFavouritePayload,
+        addHotelFavouriteAsync,
+        refetchFavourites,
+      ]
     );
 
     const getMapCenter = () => {
@@ -419,7 +446,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
 
       const validHotels = hotels.filter(
         (hotel) =>
-          hotel.propertyInfo?.latitude && hotel.propertyInfo?.longitude,
+          hotel.propertyInfo?.latitude && hotel.propertyInfo?.longitude
       );
 
       if (validHotels.length === 0) {
@@ -429,13 +456,13 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
       const avgLat =
         validHotels.reduce(
           (sum, hotel) => sum + parseFloat(hotel.propertyInfo.latitude),
-          0,
+          0
         ) / validHotels.length;
 
       const avgLng =
         validHotels.reduce(
           (sum, hotel) => sum + parseFloat(hotel.propertyInfo.longitude),
-          0,
+          0
         ) / validHotels.length;
 
       return [avgLat, avgLng] as [number, number];
@@ -533,7 +560,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
                       .filter(
                         (hotel) =>
                           hotel.propertyInfo?.latitude &&
-                          hotel.propertyInfo?.longitude,
+                          hotel.propertyInfo?.longitude
                       )
                       .map((hotel) => {
                         const lat = parseFloat(hotel.propertyInfo.latitude);
@@ -578,7 +605,11 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
             }}
             mode="hotel"
             showPrint={false}
-            shareUrl={`${window.location.origin}/hotel-detail/${selectedShareHotel.hotelKey}${location.search || ""}`}
+            shareUrl={buildHotelShareUrl(
+              selectedShareHotel?.hotelKey ?? "",
+              selectedShareHotel?.searchKey ?? "",
+              bookingParams ?? null
+            )}
             title="Share this Hotel"
             description="Send this hotel to family and friends. Share the property details and location instantly."
             cardTitle={
@@ -597,7 +628,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
         )}
       </>
     );
-  },
+  }
 );
 
 HotelSearchMapView.displayName = "HotelSearchMapView";

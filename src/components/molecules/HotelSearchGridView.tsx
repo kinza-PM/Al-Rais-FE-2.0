@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
 import HotellGridCard from "../atoms/HotellGridCard";
 import Loader from "../atoms/Loader";
 import ShareTicketModal from "../atoms/ShareTicketModal";
@@ -9,14 +8,37 @@ import {
   useGetHotelFavourites,
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import { useHotelStore } from "../../store/UseHotelStore";
 
 type HotelSearchGridViewProps = {
   hotels: Array<any>;
 };
 
+const buildHotelShareUrl = (
+  hotelKey: string,
+  searchKey: string,
+  bookingParams?: object | null
+) => {
+  const params = new URLSearchParams();
+
+  if (searchKey) {
+    params.set("searchKey", searchKey);
+  }
+
+  if (bookingParams) {
+    params.set("bookingParams", JSON.stringify(bookingParams));
+  }
+
+  const queryString = params.toString();
+
+  return `${window.location.origin}/hotel-detail/${hotelKey}${
+    queryString ? `?${queryString}` : ""
+  }`;
+};
+
 const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
   ({ hotels }) => {
-    const location = useLocation();
+    const { hotel: bookingParams } = useHotelStore();
 
     const {
       mutateAsync: addHotelFavouriteAsync,
@@ -109,7 +131,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
         Number(hotel?.totalPrice) ||
         rooms.reduce(
           (sum: number, room: any) => sum + (room?.roomRate?.netAmount || 0),
-          0,
+          0
         );
 
       return {
@@ -158,7 +180,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
           toast.success(
             nextFlag
               ? "Hotel added to favourites"
-              : "Hotel removed from favourites",
+              : "Hotel removed from favourites"
           );
 
           await refetchFavourites();
@@ -172,7 +194,12 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
           toast.error(err || "Failed to update favourite");
         }
       },
-      [favorites, buildFavouritePayload, addHotelFavouriteAsync, refetchFavourites],
+      [
+        favorites,
+        buildFavouritePayload,
+        addHotelFavouriteAsync,
+        refetchFavourites,
+      ]
     );
 
     if (!hotels || hotels.length === 0) {
@@ -229,7 +256,11 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
             }}
             mode="hotel"
             showPrint={false}
-            shareUrl={`${window.location.origin}/hotel-detail/${selectedShareHotel.hotelKey}${location.search || ""}`}
+            shareUrl={buildHotelShareUrl(
+              selectedShareHotel?.hotelKey ?? "",
+              selectedShareHotel?.searchKey ?? "",
+              bookingParams ?? null
+            )}
             title="Share this Hotel"
             description="Send this hotel to family and friends. Share the property details and location instantly."
             cardTitle={
@@ -248,7 +279,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
         )}
       </>
     );
-  },
+  }
 );
 
 HotelSearchGridView.displayName = "HotelSearchGridView";

@@ -5,7 +5,7 @@ import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
 import { processHotelSearchListingData } from "../../utils/hotelHelper";
 import Loader from "../atoms/Loader";
@@ -21,10 +21,31 @@ type HotelSearchListViewProps = {
   hotels: Array<any>;
 };
 
+const buildHotelShareUrl = (
+  hotelKey: string,
+  searchKey: string,
+  bookingParams?: object | null
+) => {
+  const params = new URLSearchParams();
+
+  if (searchKey) {
+    params.set("searchKey", searchKey);
+  }
+
+  if (bookingParams) {
+    params.set("bookingParams", JSON.stringify(bookingParams));
+  }
+
+  const queryString = params.toString();
+
+  return `${window.location.origin}/hotel-detail/${hotelKey}${
+    queryString ? `?${queryString}` : ""
+  }`;
+};
+
 const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
   ({ hotels }) => {
     const navigate = useNavigate();
-    const location = useLocation();
     const { hotel: bookingParams } = useHotelStore();
 
     const [openShareModal, setOpenShareModal] = useState(false);
@@ -141,7 +162,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
         Number(hotel?.totalPrice) ||
         rooms.reduce(
           (sum: number, room: any) => sum + (room?.roomRate?.netAmount || 0),
-          0,
+          0
         );
 
       return {
@@ -190,7 +211,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
           toast.success(
             nextFlag
               ? "Hotel added to favourites"
-              : "Hotel removed from favourites",
+              : "Hotel removed from favourites"
           );
 
           await refetchFavourites();
@@ -204,13 +225,44 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
           toast.error(err || "Failed to update favourite");
         }
       },
-      [favorites, buildFavouritePayload, addHotelFavouriteAsync, refetchFavourites],
+      [
+        favorites,
+        buildFavouritePayload,
+        addHotelFavouriteAsync,
+        refetchFavourites,
+      ]
     );
 
     const handleShareClick = useCallback((hotel: any) => {
       setSelectedShareHotel(hotel);
       setOpenShareModal(true);
     }, []);
+
+    const handleCheckAvailability = useCallback(
+      (hotel: any) => {
+        const hotelKey = hotel?.hotelKey ?? "";
+        const searchKey = hotel?.searchKey ?? "";
+
+        if (!hotelKey) return;
+
+        const params = new URLSearchParams();
+
+        if (searchKey) {
+          params.set("searchKey", searchKey);
+        }
+
+        if (bookingParams) {
+          params.set("bookingParams", JSON.stringify(bookingParams));
+        }
+
+        const queryString = params.toString();
+
+        navigate(
+          `/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""}`
+        );
+      },
+      [navigate, bookingParams]
+    );
 
     if (!hotels || hotels.length === 0) {
       return (
@@ -295,13 +347,13 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 .filter(Boolean);
 
               const childMatch = facilityNames.find((n: string) =>
-                /child|family|kids/i.test(n),
+                /child|family|kids/i.test(n)
               );
               const internetMatch = facilityNames.find((n: string) =>
-                /wifi|internet|wi-fi/i.test(n),
+                /wifi|internet|wi-fi/i.test(n)
               );
               const parkingMatch = facilityNames.find((n: string) =>
-                /parking|car park/i.test(n),
+                /parking|car park/i.test(n)
               );
 
               const displayAmenities: string[] = [];
@@ -312,10 +364,10 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
               if (displayAmenities.length < 4) {
                 const used = new Set(
-                  displayAmenities.map((a) => a.toLowerCase()),
+                  displayAmenities.map((a) => a.toLowerCase())
                 );
                 const extra = facilityNames.find(
-                  (n: string) => !used.has(n.toLowerCase()),
+                  (n: string) => !used.has(n.toLowerCase())
                 );
                 displayAmenities.push(extra || "Breakfast included");
               }
@@ -597,14 +649,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               : "#C2CAD6",
                           }}
                           disabled={!isAvailable}
-                          onClick={() => {
-                            navigate(`/hotel-detail/${hotel.hotelKey}`, {
-                              state: {
-                                searchKey: hotel.searchKey,
-                                bookingParams: bookingParams ?? undefined,
-                              },
-                            });
-                          }}
+                          onClick={() => handleCheckAvailability(hotel)}
                         >
                           Check availability
                         </button>
@@ -625,7 +670,11 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
             }}
             mode="hotel"
             showPrint={false}
-            shareUrl={`${window.location.origin}/hotel-detail/${selectedShareHotel.hotelKey}${location.search || ""}`}
+            shareUrl={buildHotelShareUrl(
+              selectedShareHotel?.hotelKey ?? "",
+              selectedShareHotel?.searchKey ?? "",
+              bookingParams ?? null
+            )}
             title="Share this Hotel"
             description="Send this hotel to family and friends. Share the property details and location instantly."
             cardTitle={
@@ -644,7 +693,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
         )}
       </>
     );
-  },
+  }
 );
 
 HotelSearchListView.displayName = "HotelSearchListView";
