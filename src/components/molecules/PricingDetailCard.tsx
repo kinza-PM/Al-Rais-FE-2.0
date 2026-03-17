@@ -172,7 +172,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                       <div className="cardPrice">
                         <p>
                           {plan.price != null ? `$${plan.price}` : "—"}
-                          <span>/per seat</span>
+                          <span>/per person</span>
                         </p>
 
                         <Radio

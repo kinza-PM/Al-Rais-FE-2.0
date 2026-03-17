@@ -121,18 +121,18 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             <div className="stopsCollapse" style={{ 
                 width: '280px',
                 borderRadius: '16px',
-                background: '#e1e1e1',
-                overflow: 'hidden'
+                background: '#F2F2F3',
+                overflow: 'hidden',
+                border: '1.5px solid #E4E4E7'
             }}>
                 <CustomCollapse>
                     <Panel 
                         header="Number of stops" 
                         key="stops"
-                        style={{ border: 'none', background: '#e1e1e1' }}
+                        style={{ border: 'none', background: '#F2F2F3' }}
                     >
-                        <div style={{ padding: '0 16px 16px 16px', background: '#e1e1e1' }}>
+                        <div style={{ padding: '14px 16px 18px', background: '#F2F2F3' }}>
                             <Radio.Group
-                                block
                                 options={numberStops && numberStops.length ? numberStops : []}
                                 value={String(selectedMaxConnections)}
                                 optionType="button"
@@ -146,7 +146,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                 </CustomCollapse>
             </div>
 
-            {/* Price per seat - Collapsible */}
+            {/* Price per person - Collapsible */}
             <div style={{ 
                 width: '280px',
                 borderRadius: '16px',
@@ -154,7 +154,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             }}>
                 <CustomCollapse>
                     <Panel 
-                        header="Price per seat" 
+                        header="Price per person" 
                         key="price"
                         style={{ border: 'none' }}
                     >
