@@ -99,7 +99,7 @@ const safeJsonParse = <T,>(value: unknown, fallback: T): T => {
 const ProfileFavouriteHotels: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { hotel: bookingParams, clearHotel } = useHotelStore();
+  const { hotel: bookingParams } = useHotelStore();
 
   const {
     data,
@@ -220,63 +220,68 @@ const ProfileFavouriteHotels: React.FC = () => {
   };
 
   const buildFavouritePayload = useCallback((hotel: any, flag: boolean) => {
-    const propertyInfo: ParsedPropertyInfo = hotel?.propertyInfoParsed || {};
-    const roomDetails: ParsedRoomDetails[] = hotel?.roomDetailsParsed || [];
+  const propertyInfo: ParsedPropertyInfo = hotel?.propertyInfoParsed || {};
+  const roomDetails: ParsedRoomDetails[] = hotel?.roomDetailsParsed || [];
 
-    const rooms = roomDetails.map((room: ParsedRoomDetails) => ({
-      roomIndex: room?.roomIndex ?? 1,
-      roomKey: room?.roomKey ?? "",
-      roomId: room?.roomId ?? "",
-      roomTypeName: room?.roomTypeName ?? "",
-      roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
-      maxOccupancy: room?.maxOccupancy ?? -1,
-      roomFacilities: room?.roomFacilities ?? [],
-      ratePlan: {
-        supplierCode: room?.ratePlan?.supplierCode ?? "",
-        meal: room?.ratePlan?.meal ?? "",
-        availableStatus: room?.ratePlan?.availableStatus ?? "",
-        cancelPolicyIndicator: room?.ratePlan?.cancelPolicyIndicator ?? "",
-        code: room?.ratePlan?.code ?? "",
-        isPackage: room?.ratePlan?.isPackage ?? false,
-        fixedCombo: room?.ratePlan?.fixedCombo ?? false,
-        gstAssured: room?.ratePlan?.gstAssured ?? false,
-        lastCancellationDate: room?.ratePlan?.lastCancellationDate ?? "",
-      },
-      roomRate: {
-        currency: room?.roomRate?.currency ?? "AED",
-        netAmount: room?.roomRate?.netAmount ?? 0,
-        rates: room?.roomRate?.rates ?? [],
-      },
-      rateNotes: room?.rateNotes ?? "",
-      financialInfo: {
-        tmc: room?.financialInfo?.tmc ?? "",
-        supplier: room?.financialInfo?.supplier ?? "",
-      },
-      isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
-    }));
+  const rooms = roomDetails.map((room: ParsedRoomDetails) => ({
+    roomIndex: room?.roomIndex ?? 1,
+    roomKey: room?.roomKey ?? "",
+    roomId: room?.roomId ?? "",
+    roomTypeName: room?.roomTypeName ?? "",
+    roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+    maxOccupancy: room?.maxOccupancy ?? -1,
+    roomFacilities: room?.roomFacilities ?? [],
+    ratePlan: {
+      supplierCode: room?.ratePlan?.supplierCode ?? "",
+      meal: room?.ratePlan?.meal ?? "",
+      availableStatus: room?.ratePlan?.availableStatus ?? "",
+      cancelPolicyIndicator: room?.ratePlan?.cancelPolicyIndicator ?? "",
+      code: room?.ratePlan?.code ?? "",
+      isPackage: room?.ratePlan?.isPackage ?? false,
+      fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+      gstAssured: room?.ratePlan?.gstAssured ?? false,
+      lastCancellationDate: room?.ratePlan?.lastCancellationDate ?? "",
+    },
+    roomRate: {
+      currency: room?.roomRate?.currency ?? "AED",
+      netAmount: room?.roomRate?.netAmount ?? 0,
+      rates: (room?.roomRate?.rates ?? []).map((rate) => ({
+        name: rate?.name ?? "",
+        amount: rate?.amount ?? 0,
+        from: rate?.from ?? "",
+        rateIndex: rate?.rateIndex ?? "",
+        to: rate?.to ?? "",
+      })),
+    },
+    rateNotes: room?.rateNotes ?? "",
+    financialInfo: {
+      tmc: room?.financialInfo?.tmc ?? "",
+      supplier: room?.financialInfo?.supplier ?? "",
+    },
+    isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+  }));
 
-    return {
-      hotelKey: hotel?.hotelKey ?? "",
-      propertyInfo: {
-        providerHotelId:
-          propertyInfo?.providerHotelId?.toString() || "",
-        hotelName: propertyInfo?.hotelName ?? "",
-        address: propertyInfo?.address ?? "",
-        phoneNumber: propertyInfo?.phoneNumber ?? "",
-        location: propertyInfo?.location ?? "",
-        latitude: propertyInfo?.latitude?.toString() ?? "",
-        longitude: propertyInfo?.longitude?.toString() ?? "",
-        imageUrl: propertyInfo?.imageUrl ?? "",
-        facilities: propertyInfo?.facilities ?? [],
-        propertyType: propertyInfo?.propertyType ?? "",
-        starRating: propertyInfo?.starRating?.toString() ?? "",
-      },
-      rooms,
-      totalPrice: Number(hotel?.totalPriceParsed || 0),
-      searchKey: hotel?.searchKey ?? "",
-      flag,
-    };
-  }, []);
+  return {
+    hotelKey: hotel?.hotelKey ?? "",
+    propertyInfo: {
+      providerHotelId: propertyInfo?.providerHotelId?.toString() ?? "",
+      hotelName: propertyInfo?.hotelName ?? "",
+      address: propertyInfo?.address ?? "",
+      phoneNumber: propertyInfo?.phoneNumber ?? "",
+      location: propertyInfo?.location ?? "",
+      latitude: propertyInfo?.latitude?.toString() ?? "",
+      longitude: propertyInfo?.longitude?.toString() ?? "",
+      imageUrl: propertyInfo?.imageUrl ?? "",
+      facilities: propertyInfo?.facilities ?? [],
+      propertyType: propertyInfo?.propertyType ?? "",
+      starRating: propertyInfo?.starRating?.toString() ?? "",
+    },
+    rooms,
+    totalPrice: Number(hotel?.totalPriceParsed || 0),
+    searchKey: hotel?.searchKey ?? "",
+    flag,
+  };
+}, []);
 
   const handleRemoveFavourite = useCallback(
     async (hotel: any) => {
