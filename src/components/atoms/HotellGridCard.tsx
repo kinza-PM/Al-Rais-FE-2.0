@@ -2,7 +2,6 @@ import React from "react";
 import HotelImage from "../../../src/assets/images/Hotel Image.png";
 import HotelImage2 from "../../../src/assets/images/hotel-detail-room-1.png";
 import HotelImage3 from "../../../src/assets/images/hotel-detail-room-2.png";
-import FavrtHeart from "../../../src/assets/images/favrt-heart.png";
 import GreenTick from "../../../src/assets/images/tik.png";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
@@ -14,9 +13,9 @@ import { useHotelStore } from "../../store/UseHotelStore";
 
 type HotellGridCardProps = {
   hotel?: any;
-  toggleFavorite?: (hotelKey: string) => void;
-  favorites?: { [key: string]: boolean };
-  hotelKey?: string;
+  isFavourite?: boolean;
+  isFavouriteLoading?: boolean;
+  onToggleFavourite?: () => void;
   onShare?: () => void;
 };
 
@@ -32,7 +31,13 @@ const getReviewLabel = (score: number): string => {
 };
 
 const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
-  ({ hotel, onShare }) => {
+  ({
+    hotel,
+    onShare,
+    onToggleFavourite,
+    isFavourite = false,
+    isFavouriteLoading = false,
+  }) => {
     const navigate = useNavigate();
     const { hotel: bookingParams } = useHotelStore();
 
@@ -58,7 +63,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       availableRooms,
     } = processHotelSearchListingData(hotel);
 
-    // Pull up to 3 distinct images from the API (images array or imageUrl fallback)
     const apiImages: string[] =
       hotel?.propertyInfo?.images
         ?.map((img: any) => img?.url || img?.imageUrl || img)
@@ -83,32 +87,43 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       hotel?.propertyInfo?.guestScore ??
       hotel?.reviewScore ??
       undefined;
+
     const reviewCount: number | undefined =
       hotel?.propertyInfo?.reviewCount ??
       hotel?.propertyInfo?.totalReviews ??
       hotel?.reviewCount ??
       undefined;
 
-    // Room details
     const roomTypeName = bestRoom?.roomTypeName || "";
     const bedType = bestRoom?.bedType || "";
 
-    // Facilities — Figma: Free cancellation, Free child stay, High speed internet, Free parking
     const rawFacilities = hotel?.propertyInfo?.facilities || [];
-    const facilityNames = rawFacilities.map((f: any) =>
-      typeof f === "string" ? f : f?.name || ""
-    ).filter(Boolean);
+    const facilityNames = rawFacilities
+      .map((f: any) => (typeof f === "string" ? f : f?.name || ""))
+      .filter(Boolean);
+
     const displayAmenities: string[] = [];
     if (hasFreeCancellation) displayAmenities.push("Free cancellation");
-    const childMatch = facilityNames.find((n: string) => /child|family|kids/i.test(n));
-    const internetMatch = facilityNames.find((n: string) => /wifi|internet|wi-fi/i.test(n));
-    const parkingMatch = facilityNames.find((n: string) => /parking|car park/i.test(n));
+
+    const childMatch = facilityNames.find((n: string) =>
+      /child|family|kids/i.test(n),
+    );
+    const internetMatch = facilityNames.find((n: string) =>
+      /wifi|internet|wi-fi/i.test(n),
+    );
+    const parkingMatch = facilityNames.find((n: string) =>
+      /parking|car park/i.test(n),
+    );
+
     if (childMatch) displayAmenities.push(childMatch);
     else displayAmenities.push("Free child stay");
+
     if (internetMatch) displayAmenities.push(internetMatch);
     else displayAmenities.push("High internet");
+
     if (parkingMatch) displayAmenities.push(parkingMatch);
     else displayAmenities.push("Free parking");
+
     const amenitiesToShow = displayAmenities.slice(0, 4);
 
     const renderStars = (rating: string | undefined) => {
@@ -136,7 +151,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
           border: "1px solid var(--white-300, #E4E4E7)",
         }}
       >
-        {/* ── Image section ── */}
         <div
           className="relative flex-shrink-0 w-full"
           style={{ padding: "10px" }}
@@ -155,10 +169,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             tabIndex={0}
             aria-label={`View ${hotelName} details`}
           >
-            {/* Main image: ~56% width */}
-            <div
-              className="flex-1 min-w-0 overflow-hidden rounded-2xl"
-            >
+            <div className="flex-1 min-w-0 overflow-hidden rounded-2xl">
               <img
                 src={imageUrl}
                 alt={hotelName}
@@ -169,14 +180,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               />
             </div>
 
-            {/* Right column: two stacked images */}
-            <div
-              className="flex flex-col flex-[0_0_42%] min-w-0 gap-1.5"
-            >
-              {/* 2nd image */}
-              <div
-                className="overflow-hidden flex-1 min-h-0 rounded-2xl"
-              >
+            <div className="flex flex-col flex-[0_0_42%] min-w-0 gap-1.5">
+              <div className="overflow-hidden flex-1 min-h-0 rounded-2xl">
                 <img
                   src={imageUrl2}
                   alt={hotelName}
@@ -186,10 +191,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                   }}
                 />
               </div>
-              {/* 3rd image */}
-              <div
-                className="overflow-hidden flex-1 min-h-0 rounded-2xl"
-              >
+
+              <div className="overflow-hidden flex-1 min-h-0 rounded-2xl">
                 <img
                   src={imageUrl3}
                   alt={hotelName}
@@ -202,10 +205,9 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             </div>
           </div>
 
-          {/* Heart button — top: 10+12=22, left: 10+12=22 */}
           <button
             type="button"
-            className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform"
+            className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform disabled:opacity-60"
             style={{
               top: "22px",
               left: "22px",
@@ -214,16 +216,24 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               background: "rgba(255,255,255,0.6)",
             }}
             aria-label="Add to favourites"
-            onClick={(e) => e.stopPropagation()}
+            disabled={isFavouriteLoading}
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavourite?.();
+            }}
           >
-            <img
-              src={FavrtHeart}
-              alt="favourite"
-              style={{ width: "20px", height: "20px", objectFit: "contain" }}
-            />
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill={isFavourite ? "#EA0029" : "white"}
+              stroke={isFavourite ? "#EA0029" : "#2351A3"}
+              strokeWidth="2"
+            >
+              <path d="M12 21s-6.716-4.35-9.193-7.146C.894 11.692 1.163 8.24 3.514 6.56c1.925-1.376 4.48-1.072 6.104.64L12 9.09l2.382-1.89c1.624-1.712 4.179-2.016 6.104-.64 2.351 1.68 2.62 5.132.707 7.294C18.716 16.65 12 21 12 21z" />
+            </svg>
           </button>
 
-          {/* Share button */}
           <button
             type="button"
             className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform"
@@ -248,9 +258,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
           </button>
         </div>
 
-        {/* ── Card body ── */}
         <div className="flex flex-col flex-1 px-3 pb-3 pt-2">
-          {/* Hotel name */}
           <h3
             className="mb-0.5 cursor-pointer hover:underline hover:text-[#2351A3] transition-colors"
             style={{
@@ -273,7 +281,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             {hotelName}
           </h3>
 
-          {/* Address */}
           <p
             className="mb-2"
             style={{
@@ -288,10 +295,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             {location && ` • ${location}`}
           </p>
 
-          {/* Stars */}
           {renderStars(starRating)}
 
-          {/* Rating + Excellent + reviews */}
           {reviewScore != null && (
             <div className="flex items-center gap-2 mb-2">
               <div
@@ -344,7 +349,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             </div>
           )}
 
-          {/* Description */}
           {description && (
             <p
               className="mb-3 line-clamp-3"
@@ -360,23 +364,11 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             </p>
           )}
 
-          {/* Offer badge */}
           {hasOffer && uniqueOfferNames.length > 0 && (
             <div className="mb-2 flex flex-wrap gap-1.5">
               {uniqueOfferNames.map((offerName, idx) => (
                 <span
                   key={idx}
-                  // style={{
-                  //   background: "#00B868",
-                  //   color: "#FFFFFF",
-                  //   fontFamily: "Inter, sans-serif",
-                  //   fontWeight: 600,
-                  //   fontSize: "11px",
-                  //   borderRadius: "100px",
-                  //   padding: "5px 12px",
-                  //   display: "inline-block",
-                  //   whiteSpace: "nowrap",
-                  // }}
                   className="bg-[#00B868] text-[#FFFFFF] text-xs font-semibold px-4 py-1.5 rounded-full inline-block max-w-full break-words"
                 >
                   {offerName}
@@ -385,10 +377,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             </div>
           )}
 
-          {/* Divider */}
           <div className="border-t border-[#E4E4E7] my-2" />
 
-          {/* Price section */}
           <div className="mb-2">
             <div
               style={{
@@ -431,17 +421,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                 >
                   {currency} {price.toFixed(2)}
                 </span>
-                {/* <span
-                  style={{
-                    fontFamily: "Inter, sans-serif",
-                    fontWeight: 700,
-                    fontSize: "11px",
-                    color: "#0A0C0F",
-                    lineHeight: "100%",
-                  }}
-                >
-                  /Night
-                </span> */}
               </div>
               <HotelPriceSummaryTooltip
                 totalPrice={price}
@@ -450,10 +429,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             </div>
           </div>
 
-          {/* Divider */}
           <div className="border-t border-[#E4E4E7] my-2" />
 
-          {/* Room name + rooms left */}
           <div className="flex items-center flex-wrap gap-x-2 gap-y-0.5 mb-1">
             <span
               style={{
@@ -466,22 +443,24 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             >
               {roomTypeName}
             </span>
-            {isAvailable && availableRooms.length > 0 && availableRooms.length <= 5 && (
-              <span
-                style={{
-                  fontFamily: "Inter, sans-serif",
-                  fontWeight: 400,
-                  fontSize: "11px",
-                  color: "#EA0029",
-                  lineHeight: "100%",
-                }}
-              >
-                Only {availableRooms.length} room{availableRooms.length > 1 ? "s" : ""} left on Al Rais
-              </span>
-            )}
+            {isAvailable &&
+              availableRooms.length > 0 &&
+              availableRooms.length <= 5 && (
+                <span
+                  style={{
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 400,
+                    fontSize: "11px",
+                    color: "#EA0029",
+                    lineHeight: "100%",
+                  }}
+                >
+                  Only {availableRooms.length} room
+                  {availableRooms.length > 1 ? "s" : ""} left on Al Rais
+                </span>
+              )}
           </div>
 
-          {/* Bed type */}
           <p
             className="mb-2"
             style={{
@@ -495,7 +474,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             {bedType}
           </p>
 
-          {/* Amenities with green ticks — Figma design */}
           <div className="grid grid-cols-2 gap-x-2 gap-y-1.5">
             {amenitiesToShow.map((amenity, i) => (
               <div key={i} className="flex items-center gap-1.5">
@@ -517,32 +495,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               </div>
             ))}
           </div>
-
-          {/* Check availability button */}
-          {/* <button
-            className="w-full mt-3 text-white font-semibold rounded-[100px] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            style={{
-              fontFamily: "Inter, sans-serif",
-              fontSize: "14px",
-              fontWeight: 600,
-              padding: "12px 20px",
-              background: isAvailable
-                ? "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)"
-                : "#C2CAD6",
-            }}
-            disabled={!isAvailable}
-            onClick={() => {
-              navigate(`/hotel-detail/${hotel.hotelKey}`, {
-                state: {
-                  searchKey: hotel.searchKey,
-                  bookingParams: bookingParams ?? undefined,
-                },
-              });
-              clearHotel();
-            }}
-          >
-            Check availability
-          </button> */}
         </div>
       </div>
     );

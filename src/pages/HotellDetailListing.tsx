@@ -5,33 +5,22 @@ import FilledStar from "../assets/svgs/filled_star.svg";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "../components";
 import HotelDetailOverviewSection from "../components/molecules/HotelDetailOverviewSection";
-// import HotelDetailGuestReviewSection from "../components/molecules/HotelDetailGuestReviewSection";
 import HotelDetailAmenetiesSection from "../components/molecules/HotelDetailAmenetiesSection";
-// import HotelDetailFaqSection from "../components/molecules/HotelDetailFaqSection";
-// import HotelDetailRulesSection from "../components/molecules/HotelDetailRulesSection";
-// import HotellGridCard from "../components/atoms/HotellGridCard";
 import HotelImages from "../components/molecules/HotelImages";
 import HotelDetailRoomSection from "../components/molecules/HotelDetailRoomSection";
 import ShareTicketModal from "../components/atoms/ShareTicketModal";
-// import { useMasterListings } from "../hooks/masterListings/useMasterListings";
 import {
   useHotelDetail,
   useHotelGetMoreRooms,
   useAddHotelFavourite,
+  useGetHotelFavourites,
 } from "../hooks/useHotelSearch";
 import Loader from "../components/atoms/Loader";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 
-const tabs = [
-  "Overview",
-  "Rooms",
-  // "Guest reviews",
-  "Ameneties",
-  // "FAQs",
-  // "Rules",
-] as const;
+const tabs = ["Overview", "Rooms", "Ameneties"] as const;
 
 type LocationState = {
   searchKey?: string;
@@ -89,8 +78,8 @@ const HotelDetailListing = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const state = (location.state || {}) as LocationState;
-  const [openShareModal, setOpenShareModal] = useState(false);
 
+  const [openShareModal, setOpenShareModal] = useState(false);
   const [hotelDetail, setHotelDetail] = useState<any>(null);
   const [hotelMoreRooms, setHotelMoreRooms] = useState<any>(null);
   const [activeTab, setActiveTab] =
@@ -102,6 +91,7 @@ const HotelDetailListing = () => {
   const [resolvedBookingParams, setResolvedBookingParams] = useState<
     LocationState["bookingParams"] | undefined
   >(state.bookingParams);
+  const [isFavourite, setIsFavourite] = useState(false);
 
   const { mutateAsync, isPending } = useHotelDetail();
   const {
@@ -113,6 +103,38 @@ const HotelDetailListing = () => {
     mutateAsync: addHotelFavouriteAsync,
     isPending: isAddingFavourite,
   } = useAddHotelFavourite();
+
+  const {
+    data: favouriteHotelsResponse,
+    isLoading: isGetFavouritesLoading,
+    refetch: refetchFavourites,
+  } = useGetHotelFavourites();
+
+  const favouriteItems = useMemo(() => {
+    if (Array.isArray(favouriteHotelsResponse)) {
+      return favouriteHotelsResponse;
+    }
+
+    if (Array.isArray((favouriteHotelsResponse as any)?.data)) {
+      return (favouriteHotelsResponse as any).data;
+    }
+
+    return [];
+  }, [favouriteHotelsResponse]);
+
+  useEffect(() => {
+    const currentHotelKey = params.hotelKey ?? "";
+    if (!currentHotelKey) {
+      setIsFavourite(false);
+      return;
+    }
+
+    const exists = favouriteItems.some(
+      (item: any) => item?.hotelKey === currentHotelKey,
+    );
+
+    setIsFavourite(exists);
+  }, [favouriteItems, params.hotelKey]);
 
   const init = async () => {
     const searchParams = new URLSearchParams(location.search);
@@ -267,150 +289,190 @@ const HotelDetailListing = () => {
     return maxRoomIndex > 0 ? maxRoomIndex : 1;
   }, [hotelMoreRooms?.rooms]);
 
-  const handleAddToFavourite = useCallback(async () => {
-    const searchParams = new URLSearchParams(location.search);
-    const resolvedSearchKey =
-      state.searchKey || searchParams.get("searchKey") || "";
+  const buildFavouritePayload = useCallback(
+    (flag: boolean) => {
+      const searchParams = new URLSearchParams(location.search);
+      const resolvedSearchKey =
+        state.searchKey || searchParams.get("searchKey") || "";
 
-    const favouriteRooms =
-      selectedRooms.length > 0
-        ? selectedRooms.map((selected) => ({
-            roomIndex: selected?.room?.roomIndex ?? 1,
-            roomKey: selected?.room?.roomKey ?? "",
-            roomId: selected?.room?.roomId ?? "",
-            roomTypeName: selected?.room?.roomTypeName ?? "",
-            roomTypeDesc:
-              selected?.room?.roomTypeDesc ??
-              selected?.room?.roomTypeName ??
-              "",
-            maxOccupancy: selected?.room?.maxOccupancy ?? -1,
-            roomFacilities: selected?.room?.roomFacilities ?? [],
-            ratePlan: {
-              supplierCode: selected?.room?.ratePlan?.supplierCode ?? "",
-              meal: selected?.room?.ratePlan?.meal ?? "",
-              availableStatus: selected?.room?.ratePlan?.availableStatus ?? "",
-              cancelPolicyIndicator:
-                selected?.room?.ratePlan?.cancelPolicyIndicator ?? "",
-              code: selected?.room?.ratePlan?.code ?? "",
-              isPackage: selected?.room?.ratePlan?.isPackage ?? false,
-              fixedCombo: selected?.room?.ratePlan?.fixedCombo ?? false,
-              gstAssured: selected?.room?.ratePlan?.gstAssured ?? false,
-              lastCancellationDate:
-                selected?.room?.ratePlan?.lastCancellationDate ?? "",
-            },
-            roomRate: {
-              currency: selected?.room?.roomRate?.currency ?? "AED",
-              netAmount: selected?.room?.roomRate?.netAmount ?? 0,
-              rates: selected?.room?.roomRate?.rates ?? [],
-            },
-            rateNotes: selected?.room?.rateNotes ?? "",
-            financialInfo: {
-              tmc: selected?.room?.financialInfo?.tmc ?? "",
-              supplier: selected?.room?.financialInfo?.supplier ?? "",
-            },
-            isAllPaxInfoMandatory:
-              selected?.room?.isAllPaxInfoMandatory ?? false,
-          }))
-        : (hotelMoreRooms?.rooms || []).slice(0, 1).map((room: any) => ({
-            roomIndex: room?.roomIndex ?? 1,
-            roomKey: room?.roomKey ?? "",
-            roomId: room?.roomId ?? "",
-            roomTypeName: room?.roomTypeName ?? "",
-            roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
-            maxOccupancy: room?.maxOccupancy ?? -1,
-            roomFacilities: room?.roomFacilities ?? [],
-            ratePlan: {
-              supplierCode: room?.ratePlan?.supplierCode ?? "",
-              meal: room?.ratePlan?.meal ?? "",
-              availableStatus: room?.ratePlan?.availableStatus ?? "",
-              cancelPolicyIndicator:
-                room?.ratePlan?.cancelPolicyIndicator ?? "",
-              code: room?.ratePlan?.code ?? "",
-              isPackage: room?.ratePlan?.isPackage ?? false,
-              fixedCombo: room?.ratePlan?.fixedCombo ?? false,
-              gstAssured: room?.ratePlan?.gstAssured ?? false,
-              lastCancellationDate: room?.ratePlan?.lastCancellationDate ?? "",
-            },
-            roomRate: {
-              currency: room?.roomRate?.currency ?? "AED",
-              netAmount: room?.roomRate?.netAmount ?? 0,
-              rates: room?.roomRate?.rates ?? [],
-            },
-            rateNotes: room?.rateNotes ?? "",
-            financialInfo: {
-              tmc: room?.financialInfo?.tmc ?? "",
-              supplier: room?.financialInfo?.supplier ?? "",
-            },
-            isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
-          }));
+      const favouriteRooms =
+        selectedRooms.length > 0
+          ? selectedRooms.map((selected) => ({
+              roomIndex: selected?.room?.roomIndex ?? 1,
+              roomKey: selected?.room?.roomKey ?? "",
+              roomId: selected?.room?.roomId ?? "",
+              roomTypeName: selected?.room?.roomTypeName ?? "",
+              roomTypeDesc:
+                selected?.room?.roomTypeDesc ??
+                selected?.room?.roomTypeName ??
+                "",
+              maxOccupancy: selected?.room?.maxOccupancy ?? -1,
+              roomFacilities: selected?.room?.roomFacilities ?? [],
+              ratePlan: {
+                supplierCode: selected?.room?.ratePlan?.supplierCode ?? "",
+                meal: selected?.room?.ratePlan?.meal ?? "",
+                availableStatus:
+                  selected?.room?.ratePlan?.availableStatus ?? "",
+                cancelPolicyIndicator:
+                  selected?.room?.ratePlan?.cancelPolicyIndicator ?? "",
+                code: selected?.room?.ratePlan?.code ?? "",
+                isPackage: selected?.room?.ratePlan?.isPackage ?? false,
+                fixedCombo: selected?.room?.ratePlan?.fixedCombo ?? false,
+                gstAssured: selected?.room?.ratePlan?.gstAssured ?? false,
+                lastCancellationDate:
+                  selected?.room?.ratePlan?.lastCancellationDate ?? "",
+              },
+              roomRate: {
+                currency: selected?.room?.roomRate?.currency ?? "AED",
+                netAmount: selected?.room?.roomRate?.netAmount ?? 0,
+                rates: selected?.room?.roomRate?.rates ?? [],
+              },
+              rateNotes: selected?.room?.rateNotes ?? "",
+              financialInfo: {
+                tmc: selected?.room?.financialInfo?.tmc ?? "",
+                supplier: selected?.room?.financialInfo?.supplier ?? "",
+              },
+              isAllPaxInfoMandatory:
+                selected?.room?.isAllPaxInfoMandatory ?? false,
+            }))
+          : (hotelMoreRooms?.rooms || []).slice(0, 1).map((room: any) => ({
+              roomIndex: room?.roomIndex ?? 1,
+              roomKey: room?.roomKey ?? "",
+              roomId: room?.roomId ?? "",
+              roomTypeName: room?.roomTypeName ?? "",
+              roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+              maxOccupancy: room?.maxOccupancy ?? -1,
+              roomFacilities: room?.roomFacilities ?? [],
+              ratePlan: {
+                supplierCode: room?.ratePlan?.supplierCode ?? "",
+                meal: room?.ratePlan?.meal ?? "",
+                availableStatus: room?.ratePlan?.availableStatus ?? "",
+                cancelPolicyIndicator:
+                  room?.ratePlan?.cancelPolicyIndicator ?? "",
+                code: room?.ratePlan?.code ?? "",
+                isPackage: room?.ratePlan?.isPackage ?? false,
+                fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+                gstAssured: room?.ratePlan?.gstAssured ?? false,
+                lastCancellationDate:
+                  room?.ratePlan?.lastCancellationDate ?? "",
+              },
+              roomRate: {
+                currency: room?.roomRate?.currency ?? "AED",
+                netAmount: room?.roomRate?.netAmount ?? 0,
+                rates: room?.roomRate?.rates ?? [],
+              },
+              rateNotes: room?.rateNotes ?? "",
+              financialInfo: {
+                tmc: room?.financialInfo?.tmc ?? "",
+                supplier: room?.financialInfo?.supplier ?? "",
+              },
+              isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+            }));
 
-    const facilities =
-      hotelDetail?.hotelFacilities
-        ?.map((facility: any) =>
-          typeof facility === "string" ? facility : facility?.name,
-        )
-        ?.filter(Boolean) ?? [];
+      const facilities =
+        hotelDetail?.hotelFacilities
+          ?.map((facility: any) =>
+            typeof facility === "string" ? facility : facility?.name,
+          )
+          ?.filter(Boolean) ?? [];
 
-    const payload = {
-      hotelKey: params.hotelKey ?? "",
-      propertyInfo: {
-        providerHotelId:
-          hotelDetail?.providerHotelId?.toString() ||
-          hotelDetail?.hotelCode?.toString() ||
-          hotelDetail?.code?.toString() ||
-          "",
-        hotelName: hotelDetail?.name || "",
-        address: hotelDetail?.address || "",
-        phoneNumber: hotelDetail?.phoneNumber || "",
-        location:
-          hotelDetail?.location ||
-          hotelDetail?.city ||
-          hotelDetail?.destination ||
-          "",
-        latitude: hotelDetail?.latitude?.toString() || "",
-        longitude: hotelDetail?.longitude?.toString() || "",
-        imageUrl: primaryImages?.[0]?.path || "",
-        facilities,
-        propertyType: hotelDetail?.propertyType || "",
-        starRating: hotelDetail?.starRating?.toString() || "",
-      },
-      rooms: favouriteRooms,
-      totalPrice:
-        totalPrice > 0
-          ? totalPrice
-          : favouriteRooms.reduce(
-              (sum: number, room: any) =>
-                sum + (room?.roomRate?.netAmount || 0),
-              0,
-            ),
-      searchKey: resolvedSearchKey,
-    };
+      return {
+        hotelKey: params.hotelKey ?? "",
+        propertyInfo: {
+          providerHotelId:
+            hotelDetail?.providerHotelId?.toString() ||
+            hotelDetail?.hotelCode?.toString() ||
+            hotelDetail?.code?.toString() ||
+            "",
+          hotelName: hotelDetail?.name || "",
+          address: hotelDetail?.address || "",
+          phoneNumber: hotelDetail?.phoneNumber || "",
+          location:
+            hotelDetail?.location ||
+            hotelDetail?.city ||
+            hotelDetail?.destination ||
+            "",
+          latitude: hotelDetail?.latitude?.toString() || "",
+          longitude: hotelDetail?.longitude?.toString() || "",
+          imageUrl: primaryImages?.[0]?.path || "",
+          facilities,
+          propertyType: hotelDetail?.propertyType || "",
+          starRating: hotelDetail?.starRating?.toString() || "",
+        },
+        rooms: favouriteRooms,
+        totalPrice:
+          totalPrice > 0
+            ? totalPrice
+            : favouriteRooms.reduce(
+                (sum: number, room: any) =>
+                  sum + (room?.roomRate?.netAmount || 0),
+                0,
+              ),
+        searchKey: resolvedSearchKey,
+        flag,
+      };
+    },
+    [
+      hotelDetail,
+      hotelMoreRooms?.rooms,
+      location.search,
+      params.hotelKey,
+      primaryImages,
+      selectedRooms,
+      state.searchKey,
+      totalPrice,
+    ],
+  );
+
+  const handleToggleFavourite = useCallback(async () => {
+    const previousState = isFavourite;
+    const nextState = !previousState;
+
+    setIsFavourite(nextState);
 
     try {
+      const payload = buildFavouritePayload(nextState);
       await addHotelFavouriteAsync(payload);
-      toast.success("Hotel added to favourites");
+      await refetchFavourites();
+
+      toast.success(
+        nextState
+          ? "Hotel added to favourites"
+          : "Hotel removed from favourites",
+      );
     } catch (error: any) {
+      setIsFavourite(previousState);
       const err = extractErrorFromAxiosApiError(error);
-      toast.error(err || "Failed to add hotel to favourites");
+      toast.error(err || "Failed to update favourites");
     }
-  }, [
-    addHotelFavouriteAsync,
-    hotelDetail,
-    hotelMoreRooms?.rooms,
-    location.search,
-    params.hotelKey,
-    primaryImages,
-    selectedRooms,
-    state.searchKey,
-    totalPrice,
-  ]);
+  }, [isFavourite, buildFavouritePayload, addHotelFavouriteAsync, refetchFavourites]);
+
+  const addressText = [
+    hotelDetail?.address,
+    hotelDetail?.city,
+    hotelDetail?.postalCode,
+    hotelDetail?.country,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return !showHotelDetailImages ? (
     <div className="w-full py-6">
       <div className="mx-auto w-full max-w-[1240px] px-6 lg:px-16">
         <Loader
-          show={isPending || isHotelMoreRoomsPending}
-          label="Please wait while we are fetching hotel details"
+          show={
+            isPending ||
+            isHotelMoreRoomsPending ||
+            isAddingFavourite ||
+            isGetFavouritesLoading
+          }
+          label={
+            isAddingFavourite
+              ? "Please wait while we are updating favourites"
+              : isGetFavouritesLoading
+                ? "Please wait while we are checking favourites"
+                : "Please wait while we are fetching hotel details"
+          }
         />
 
         <div className="grid grid-cols-12 gap-2 h-[35vh]">
@@ -523,7 +585,7 @@ const HotelDetailListing = () => {
                 >
                   <TileLayer
                     attribution="&copy; OpenStreetMap"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{y}.png"
+                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                   />
                   <Marker
                     position={[coordinates.latitude, coordinates.longitude]}
@@ -535,42 +597,48 @@ const HotelDetailListing = () => {
           </>
         </div>
 
-        {/* TITLE SECTION/ADD TO FAVORITES */}
         <div className="mt-8 flex items-start justify-between gap-6">
           <div className="flex-1">
-            <h1 className="text-[28px] leading-[34px] font-bold text-[#0A0C0F] mb-1">
+            <h1 className="text-[28px] leading-[34px] font-bold text-[#0A0C0F] mb-2">
               {hotelDetail?.name}
             </h1>
 
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[#3D495C] text-sm mb-3">
-              <svg
-                width="14"
-                height="13"
-                viewBox="0 0 14 13"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="shrink-0"
-              >
-                <path
-                  d="M6.5 4.94949V9.49949C6.5 9.6321 6.55268 9.75928 6.64645 9.85304C6.74021 9.94681 6.86739 9.99949 7 9.99949C7.13261 9.99949 7.25979 9.94681 7.35355 9.85304C7.44732 9.75928 7.5 9.6321 7.5 9.49949V4.94949C8.10702 4.82558 8.64641 4.4807 9.0136 3.9817C9.38078 3.48269 9.54961 2.86513 9.48734 2.24873C9.42507 1.63233 9.13614 1.061 8.67658 0.645522C8.21701 0.23004 7.61954 0 7 0C6.38046 0 5.78299 0.23004 5.32342 0.645522C4.86385 1.061 4.57493 1.63233 4.51266 2.24873C4.45039 2.86513 4.61921 3.48269 4.9864 3.9817C5.35359 4.4807 5.89298 4.82558 6.5 4.94949ZM7 0.99949C7.29667 0.99949 7.58668 1.08746 7.83335 1.25229C8.08003 1.41711 8.27229 1.65138 8.38582 1.92546C8.49935 2.19955 8.52906 2.50115 8.47118 2.79213C8.4133 3.0831 8.27044 3.35037 8.06066 3.56015C7.85088 3.76993 7.58361 3.91279 7.29264 3.97067C7.00166 4.02855 6.70006 3.99884 6.42597 3.88531C6.15189 3.77178 5.91762 3.57952 5.7528 3.33285C5.58797 3.08617 5.5 2.79616 5.5 2.49949C5.5 2.10167 5.65804 1.72013 5.93934 1.43883C6.22064 1.15753 6.60218 0.99949 7 0.99949ZM14 9.49949C14 11.4482 10.3931 12.4995 7 12.4995C3.60687 12.4995 0 11.4482 0 9.49949C0 9.01574 0.238125 8.30386 1.375 7.66136C2.14125 7.22761 3.195 6.89449 4.42312 6.69761C4.48809 6.68736 4.55444 6.68999 4.61838 6.70537C4.68232 6.72076 4.74261 6.74858 4.7958 6.78726C4.84899 6.82594 4.89405 6.87472 4.92838 6.93082C4.96272 6.98691 4.98568 7.04921 4.99594 7.11418C5.0062 7.17914 5.00356 7.24549 4.98818 7.30943C4.9728 7.37338 4.94497 7.43367 4.90629 7.48686C4.86761 7.54005 4.81883 7.5851 4.76274 7.61944C4.70664 7.65378 4.64434 7.67673 4.57937 7.68699C3.48312 7.86324 2.51687 8.16387 1.86562 8.53386C1.31562 8.84324 1 9.19574 1 9.49949C1 10.3345 3.2825 11.4995 7 11.4995C10.7175 11.4995 13 10.3345 13 9.49949C13 9.19574 12.6844 8.84324 12.1344 8.53136C11.4806 8.16136 10.5169 7.86074 9.42062 7.68449C9.35428 7.67582 9.29035 7.65393 9.23263 7.62011C9.1749 7.58628 9.12455 7.54122 9.08455 7.48758C9.04456 7.43394 9.01573 7.37283 8.99979 7.30785C8.98385 7.24287 8.98111 7.17535 8.99173 7.10929C9.00236 7.04323 9.02614 6.97998 9.06165 6.92328C9.09717 6.86658 9.1437 6.81758 9.1985 6.77919C9.2533 6.7408 9.31525 6.7138 9.38067 6.69979C9.44609 6.68578 9.51366 6.68504 9.57938 6.69761C10.8075 6.89449 11.8612 7.22761 12.6275 7.66136C13.7619 8.30386 14 9.01574 14 9.49949Z"
-                  fill="#1E1E22"
-                />
-              </svg>
+            <div className="flex items-start flex-wrap gap-x-2 gap-y-2 text-[#3D495C] text-sm mb-3">
+              <div className="flex items-start gap-2 max-w-full">
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="shrink-0 mt-[2px]"
+                >
+                  <path
+                    d="M12 21C12 21 18 15.75 18 10.5C18 7.18629 15.3137 4.5 12 4.5C8.68629 4.5 6 7.18629 6 10.5C6 15.75 12 21 12 21Z"
+                    stroke="#2351A3"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <circle
+                    cx="12"
+                    cy="10.5"
+                    r="2.25"
+                    stroke="#2351A3"
+                    strokeWidth="2"
+                  />
+                </svg>
 
-              <span>
-                {hotelDetail?.address}
-                {hotelDetail?.city ? `, ${hotelDetail.city}` : ""}
-                {hotelDetail?.postalCode ? `, ${hotelDetail.postalCode}` : ""}
-                {hotelDetail?.country ? `, ${hotelDetail.country}` : ""}
-              </span>
+                <span className="leading-6">{addressText}</span>
+              </div>
 
               {(hotelDetail?.latitude || hotelDetail?.longitude) && (
                 <>
-                  <span>•</span>
+                  <span className="text-[#7C8899] font-medium leading-6">-</span>
                   <button
                     type="button"
                     onClick={handleShowLocationMap}
-                    className="text-[#2351A3] font-medium hover:underline"
+                    className="text-[#2351A3] text-[15px] font-bold leading-6 hover:underline underline-offset-2"
                   >
                     Show on map
                   </button>
@@ -580,8 +648,8 @@ const HotelDetailListing = () => {
               {nearbyInfo.nearbyDistanceKm &&
                 nearbyInfo.firstNearbyArea?.name && (
                   <>
-                    <span>•</span>
-                    <span>
+                    <span className="text-[#7C8899] leading-6">•</span>
+                    <span className="leading-6">
                       {nearbyInfo.nearbyDistanceKm} km from{" "}
                       {nearbyInfo.firstNearbyArea.name}
                     </span>
@@ -603,74 +671,81 @@ const HotelDetailListing = () => {
 
           <div className="flex items-center gap-4">
             <button
-  className="px-4 py-2 text-[#2351A3] text-sm font-medium hover:underline"
-  onClick={() => setOpenShareModal(true)}
->
-  Share
-</button>
+              className="px-4 py-2 text-[#2351A3] text-sm font-medium hover:underline"
+              onClick={() => setOpenShareModal(true)}
+            >
+              Share
+            </button>
+
             <div className="border-l border-[#E4E4E7] h-8" />
+
             <button
-              onClick={handleAddToFavourite}
-              disabled={isAddingFavourite}
+              onClick={handleToggleFavourite}
+              disabled={isAddingFavourite || isGetFavouritesLoading}
               className={`px-8 py-3 text-[#F2F2F3] font-semibold rounded-full text-sm shadow-sm transition-all ${
-                isAddingFavourite
+                isAddingFavourite || isGetFavouritesLoading
                   ? "bg-[#AEB8C5] cursor-not-allowed"
-                  : "bg-[#2351A3] hover:opacity-95"
+                  : isFavourite
+                    ? "bg-[#EA0029] hover:opacity-95"
+                    : "bg-[#2351A3] hover:opacity-95"
               }`}
             >
-              {isAddingFavourite ? "Adding..." : "Add to favorites"}
+              {isAddingFavourite
+                ? isFavourite
+                  ? "Removing..."
+                  : "Adding..."
+                : isFavourite
+                  ? "Remove from favorites"
+                  : "Add to favorites"}
             </button>
           </div>
         </div>
 
-        {/* TABS SECTION */}
-<div className="mt-6 w-full">
-  <div className="flex justify-center">
-    <div className="flex items-center gap-6">
-      {tabs.map((t) => {
-        const selected = activeTab === t;
+        <div className="mt-6 w-full">
+          <div className="flex justify-center">
+            <div className="flex items-center gap-6">
+              {tabs.map((t) => {
+                const selected = activeTab === t;
 
-        return (
-          <button
-            key={t}
-            type="button"
-            role="tab"
-            aria-selected={selected}
-            onClick={() => handleTabChange(t)}
-            className={[
-              "w-[240px] h-[64px] rounded-[18px]",
-              "flex items-center justify-center",
-              "text-[18px] font-semibold leading-none",
-              "border-0 outline-none appearance-none",
-              "transition-all duration-200",
-              selected
-                ? "text-white bg-[linear-gradient(180deg,#36CFE3_0%,#19A7C4_100%)] shadow-[0_14px_24px_rgba(44,193,219,0.32)]"
-                : "text-[#24324A] bg-[#EEF3F9] hover:bg-[#E7EEF7]",
-            ].join(" ")}
-            style={{
-              WebkitAppearance: "none",
-              appearance: "none",
-            }}
-          >
-            {t}
-          </button>
-        );
-      })}
-    </div>
-  </div>
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => handleTabChange(t)}
+                    className={[
+                      "w-[240px] h-[64px] rounded-[18px]",
+                      "flex items-center justify-center",
+                      "text-[18px] font-semibold leading-none",
+                      "border-0 outline-none appearance-none",
+                      "transition-all duration-200",
+                      selected
+                        ? "text-white bg-[linear-gradient(180deg,#36CFE3_0%,#19A7C4_100%)] shadow-[0_14px_24px_rgba(44,193,219,0.32)]"
+                        : "text-[#24324A] bg-[#EEF3F9] hover:bg-[#E7EEF7]",
+                    ].join(" ")}
+                    style={{
+                      WebkitAppearance: "none",
+                      appearance: "none",
+                    }}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-  <div className="mt-4 w-full">
-    <div className="mx-auto h-[10px] w-[92%] rounded-full bg-[#C9DAF8] blur-[1px]" />
-    <div className="mx-auto -mt-[10px] h-[3px] w-[92%] rounded-full bg-[#9EB8EE]" />
-  </div>
-</div>
+          <div className="mt-4 w-full">
+            <div className="mx-auto h-[10px] w-[92%] rounded-full bg-[#C9DAF8] blur-[1px]" />
+            <div className="mx-auto -mt-[10px] h-[3px] w-[92%] rounded-full bg-[#9EB8EE]" />
+          </div>
+        </div>
 
-        {/* OVERVIEW SECTION */}
         {activeTab === "Overview" && (
           <HotelDetailOverviewSection hotelDetail={hotelDetail} />
         )}
 
-        {/* ROOM SECTION */}
         {activeTab === "Rooms" && (
           <HotelDetailRoomSection
             hotelMoreRooms={hotelMoreRooms}
@@ -679,7 +754,6 @@ const HotelDetailListing = () => {
           />
         )}
 
-        {/* AMENETIES SECTION */}
         {activeTab === "Ameneties" && (
           <HotelDetailAmenetiesSection
             hotelDetail={hotelDetail}
@@ -687,7 +761,6 @@ const HotelDetailListing = () => {
           />
         )}
 
-        {/* SHOW ON MAP MODAL */}
         {showLocationMap && (
           <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/50 px-4">
             <div className="relative w-full max-w-4xl rounded-2xl bg-white shadow-2xl overflow-hidden">
@@ -704,14 +777,7 @@ const HotelDetailListing = () => {
                 <h3 className="text-xl font-bold text-[#0A0C0F]">
                   {hotelDetail?.name || "Hotel location"}
                 </h3>
-                <p className="mt-2 text-sm text-[#3D495C]">
-                  {hotelDetail?.address}
-                  {hotelDetail?.city ? `, ${hotelDetail.city}` : ""}
-                  {hotelDetail?.postalCode
-                    ? `, ${hotelDetail.postalCode}`
-                    : ""}
-                  {hotelDetail?.country ? `, ${hotelDetail.country}` : ""}
-                </p>
+                <p className="mt-2 text-sm text-[#3D495C]">{addressText}</p>
               </div>
 
               <div className="h-[500px] w-full">
@@ -819,28 +885,23 @@ const HotelDetailListing = () => {
           </div>
         </div>
       </div>
-      {openShareModal && (
-  <ShareTicketModal
-    closeModal={() => setOpenShareModal(false)}
-    mode="hotel"
-    showPrint={false}
-    shareUrl={`${window.location.origin}/hotel-detail/${params.hotelKey}${location.search || ""}`}
-    title="Share this Hotel"
-    description="Send this hotel to family and friends. Share the property details and location instantly."
-    cardTitle={hotelDetail?.name || "Hotel details"}
-    cardSubtitle={[
-      hotelDetail?.address,
-      hotelDetail?.city,
-      hotelDetail?.country,
-    ]
-      .filter(Boolean)
-      .join(", ")}
-    passengerName={hotelDetail?.name || "Hotel details"}
-  />
-)}
-    </div>
 
-    
+      {openShareModal && (
+        <ShareTicketModal
+          closeModal={() => setOpenShareModal(false)}
+          mode="hotel"
+          showPrint={false}
+          shareUrl={`${window.location.origin}/hotel-detail/${params.hotelKey}${location.search || ""}`}
+          title="Share this Hotel"
+          description="Send this hotel to family and friends. Share the property details and location instantly."
+          cardTitle={hotelDetail?.name || "Hotel details"}
+          cardSubtitle={[hotelDetail?.address, hotelDetail?.city, hotelDetail?.country]
+            .filter(Boolean)
+            .join(", ")}
+          passengerName={hotelDetail?.name || "Hotel details"}
+        />
+      )}
+    </div>
   ) : (
     <HotelImages
       setShowHotelDetailImages={handleHideImages}

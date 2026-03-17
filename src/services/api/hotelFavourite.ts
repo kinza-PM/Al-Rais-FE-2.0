@@ -62,6 +62,7 @@ export type AddHotelFavouriteRequest = {
   rooms: FavouriteRoom[];
   totalPrice: number;
   searchKey: string;
+  flag: boolean;
 };
 
 export type GetHotelFavouriteItem = {
