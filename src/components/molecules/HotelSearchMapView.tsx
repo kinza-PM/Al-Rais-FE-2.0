@@ -20,8 +20,11 @@ type HotelSearchMapViewProps = {
   hotels: Array<any>;
 };
 
-const markerIconUrl =
+const defaultMarkerIconUrl =
   "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png";
+
+const activeMarkerIconUrl =
+  "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png";
 
 const shadowUrl =
   "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png";
@@ -56,19 +59,23 @@ const buildHotelShareUrl = (
   }`;
 };
 
-const createHotelMarkerIcon = (hotelName: string) =>
+const createHotelMarkerIcon = (
+  hotelName: string,
+  isActive: boolean = false
+) =>
   L.divIcon({
     className: "custom-hotel-marker-wrapper",
     html: `
       <div style="position: relative; display: inline-flex; align-items: center;">
         <div style="position: relative; width: 25px; height: 41px; flex-shrink: 0;">
           <img
-            src="${markerIconUrl}"
+            src="${isActive ? activeMarkerIconUrl : defaultMarkerIconUrl}"
             alt="marker"
             style="
               width: 25px;
               height: 41px;
               display: block;
+              filter: ${isActive ? "drop-shadow(0 0 6px rgba(37,81,163,0.35))" : "none"};
             "
           />
         </div>
@@ -76,19 +83,19 @@ const createHotelMarkerIcon = (hotelName: string) =>
         <div
           style="
             margin-left: 8px;
-            background: rgba(255,255,255,0.95);
+            background: ${isActive ? "rgba(235,243,255,0.98)" : "rgba(255,255,255,0.95)"};
             color: #111827;
             font-size: 12px;
             font-weight: 600;
             line-height: 1.2;
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 999px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.18);
             white-space: nowrap;
             max-width: 180px;
             overflow: hidden;
             text-overflow: ellipsis;
-            border: 1px solid #E5E7EB;
+            border: 1px solid ${isActive ? "#5383DA" : "#E5E7EB"};
           "
           title="${escapeHtml(hotelName)}"
         >
@@ -165,7 +172,6 @@ const getPreviewData = (hotel: any) => {
     beachDistance,
   };
 };
-
 const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
   const imageUrl = hotel.propertyInfo?.imageUrl || HotelImage;
   const hotelName = hotel.propertyInfo?.hotelName || "Hotel";
@@ -188,11 +194,32 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
   } = getPreviewData(hotel);
 
   return (
-    <div className="hotel-map-hover-card">
+    <div
+      className="hotel-map-hover-card"
+      style={{
+        background: "#FFFFFF",
+        border: "1px solid #D9DEE7",
+        borderRadius: "12px",
+        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
+        width: "180px",
+      }}
+    >
       <button
         type="button"
         className="hotel-map-hover-close"
         onClick={(e) => e.preventDefault()}
+        style={{
+          position: "absolute",
+          top: "4px",
+          left: "6px",
+          zIndex: 2,
+          fontSize: "14px",
+          color: "#6B7280",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          lineHeight: 1,
+        }}
       >
         ×
       </button>
@@ -205,46 +232,77 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
           onError={(e) => {
             e.currentTarget.src = HotelImage;
           }}
+          style={{
+            width: "100%",
+            height: "92px",
+            objectFit: "cover",
+            borderTopLeftRadius: "12px",
+            borderTopRightRadius: "12px",
+          }}
         />
       </div>
 
-      <div className="hotel-map-hover-content">
-        <h3 className="hotel-map-hover-title">{hotelName}</h3>
+      <div
+        className="hotel-map-hover-content"
+        style={{
+          padding: "8px 10px 10px",
+        }}
+      >
+        <h3
+          className="hotel-map-hover-title"
+          style={{
+            fontSize: "12px",
+            fontWeight: 500,
+            color: "#0A0C0F",
+            margin: 0,
+          }}
+        >
+          {hotelName}
+        </h3>
+
+        <div
+          className="hotel-map-hover-price"
+          style={{
+            fontWeight: 700,
+            fontSize: "14px",
+            color: "#0A0C0F",
+            marginTop: "6px",
+            marginBottom: "4px",
+          }}
+        >
+          {currency} {Number(price).toLocaleString()}
+        </div>
 
         {renderStars(starRating)}
 
-        <div className="hotel-map-hover-distance">{beachDistance}</div>
-
-        <div className="hotel-map-hover-rating-row">
-          <span className="hotel-map-hover-score">{reviewScore}</span>
-          <span className="hotel-map-hover-rating-text">
-            {reviewText} · {reviewCount} reviews
-          </span>
+        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "2px" }}>
+          {beachDistance}
         </div>
 
-        <div className="hotel-map-hover-location-score">
+        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "2px" }}>
+          {reviewScore}
+          {reviewText} · {reviewCount} reviews
+        </div>
+
+        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "4px" }}>
           {locationScore} Location
         </div>
 
-        <div className="hotel-map-hover-room">
+        <div style={{ fontSize: "11px", color: "#0A0C0F", marginBottom: "2px" }}>
           <strong>{roomName}:</strong> {adults > 1 ? `${adults} beds` : "1 bed"}
         </div>
 
-        <div className="hotel-map-hover-meta">
+        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "2px" }}>
           {nights} night{nights > 1 ? "s" : ""}, {adults} adult
           {adults > 1 ? "s" : ""}
         </div>
 
-        <div className="hotel-map-hover-price">
-          {currency} {Number(price).toLocaleString()}
-        </div>
-
-        <div className="hotel-map-hover-tax">
+        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "4px" }}>
           +{currency} {Number(taxesAndFees).toLocaleString()} taxes and fees
         </div>
 
         {meal && (
-          <div className="hotel-map-hover-green">
+          <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "2px" }}>
             {meal.toLowerCase().includes("breakfast")
               ? "Breakfast included"
               : meal}
@@ -252,7 +310,7 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
         )}
 
         {cancellationPolicy && (
-          <div className="hotel-map-hover-green">
+          <div style={{ fontSize: "11px", color: "#3D495C" }}>
             {cancellationPolicy.toLowerCase().includes("free")
               ? "Free cancellation"
               : cancellationPolicy}
@@ -269,6 +327,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
     const [isMapExpanded, setIsMapExpanded] = useState(false);
     const [openShareModal, setOpenShareModal] = useState(false);
     const [selectedShareHotel, setSelectedShareHotel] = useState<any>(null);
+    const [activeHotelKey, setActiveHotelKey] = useState<string | null>(null);
 
     const { hotel: bookingParams } = useHotelStore();
     const mapRef = React.useRef<L.Map | null>(null);
@@ -311,6 +370,11 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
     const handleShareClick = useCallback((hotel: any) => {
       setSelectedShareHotel(hotel);
       setOpenShareModal(true);
+    }, []);
+
+    const handleMarkerClick = useCallback((hotel: any) => {
+      const key = hotel?.hotelKey ?? null;
+      setActiveHotelKey((prev) => (prev === key ? null : key));
     }, []);
 
     const toggleMapExpand = () => {
@@ -468,6 +532,22 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
       return [avgLat, avgLng] as [number, number];
     };
 
+    const validHotels = useMemo(() => {
+      return hotels.filter(
+        (hotel) =>
+          hotel.propertyInfo?.latitude && hotel.propertyInfo?.longitude
+      );
+    }, [hotels]);
+
+    const displayedHotels = useMemo(() => {
+      if (!activeHotelKey) {
+        return hotels.slice(0, 10);
+      }
+
+      const selected = hotels.find((hotel) => hotel.hotelKey === activeHotelKey);
+      return selected ? [selected] : hotels.slice(0, 10);
+    }, [hotels, activeHotelKey]);
+
     if (!hotels || hotels.length === 0) {
       return (
         <>
@@ -502,15 +582,24 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
             <div className="grid grid-cols-4 gap-5">
               {!isMapExpanded && (
                 <div className="col-span-1 flex flex-col gap-4 transition-all duration-300 ease-in-out">
-                  {hotels.slice(0, 10).map((hotel, index) => (
-                    <HotellGridCard
-                      key={hotel.hotelKey || index}
-                      hotel={hotel}
-                      isFavourite={!!favorites[hotel.hotelKey]}
-                      isFavouriteLoading={isAddFavouritePending}
-                      onToggleFavourite={() => handleToggleFavourite(hotel)}
-                      onShare={() => handleShareClick(hotel)}
-                    />
+                  {/* {activeHotelKey && (
+  <div className="mb-1 px-1">
+    <p className="text-sm font-semibold text-[#0A0C0F]">
+      Selected hotel
+    </p>
+  </div>
+)} */}
+
+                  {displayedHotels.map((hotel, index) => (
+                    <div key={hotel.hotelKey || index}>
+                      <HotellGridCard
+                        hotel={hotel}
+                        isFavourite={!!favorites[hotel.hotelKey]}
+                        isFavouriteLoading={isAddFavouritePending}
+                        onToggleFavourite={() => handleToggleFavourite(hotel)}
+                        onShare={() => handleShareClick(hotel)}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -556,40 +645,38 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
                       url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
                     />
 
-                    {hotels
-                      .filter(
-                        (hotel) =>
-                          hotel.propertyInfo?.latitude &&
-                          hotel.propertyInfo?.longitude
-                      )
-                      .map((hotel) => {
-                        const lat = parseFloat(hotel.propertyInfo.latitude);
-                        const lng = parseFloat(hotel.propertyInfo.longitude);
-                        const hotelName =
-                          hotel?.propertyInfo?.hotelName || "Hotel";
+                    {validHotels.map((hotel) => {
+                      const lat = parseFloat(hotel.propertyInfo.latitude);
+                      const lng = parseFloat(hotel.propertyInfo.longitude);
+                      const hotelName =
+                        hotel?.propertyInfo?.hotelName || "Hotel";
+                      const isActive = activeHotelKey === hotel.hotelKey;
 
-                        if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
+                      if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
 
-                        return (
-                          <Marker
-                            key={hotel.hotelKey}
-                            position={[lat, lng]}
-                            icon={createHotelMarkerIcon(hotelName)}
+                      return (
+                        <Marker
+                          key={hotel.hotelKey}
+                          position={[lat, lng]}
+                          icon={createHotelMarkerIcon(hotelName, isActive)}
+                          eventHandlers={{
+                            click: () => handleMarkerClick(hotel),
+                          }}
+                        >
+                          <Tooltip
+                            direction="right"
+                            offset={[20, -10]}
+                            opacity={1}
+                            permanent={false}
+                            sticky={true}
+                            interactive={true}
+                            className="hotel-map-custom-tooltip"
                           >
-                            <Tooltip
-                              direction="right"
-                              offset={[20, -10]}
-                              opacity={1}
-                              permanent={false}
-                              sticky={true}
-                              interactive={true}
-                              className="hotel-map-custom-tooltip"
-                            >
-                              <HotelMapHoverCard hotel={hotel} />
-                            </Tooltip>
-                          </Marker>
-                        );
-                      })}
+                            <HotelMapHoverCard hotel={hotel} />
+                          </Tooltip>
+                        </Marker>
+                      );
+                    })}
                   </MapContainer>
                 </div>
               </div>
