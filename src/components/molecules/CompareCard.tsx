@@ -4,6 +4,7 @@ import { Col, Row, Modal } from "antd";
 
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
+import BaggageInfoModal from "../common/BaggageInfoModal";
 // import entertainmentIcon from "../../assets/svgs/entertainment.svg";
 // import mealIcon from "../../assets/svgs/meals.svg";
 // import portsIcon from "../../assets/svgs/ports.svg";
@@ -30,6 +31,8 @@ const CompareCard: React.FC<CompareCardProps> = ({
   const [newFlightData, setNewFlightData] = useState<any[]>([]);
   const [localAvailable, setLocalAvailable] = useState<any[]>([]);
   const [isCurrentPinned, setIsCurrentPinned] = useState(false);
+  const [baggageModalOpen, setBaggageModalOpen] = useState(false);
+  const [baggageModalSegments, setBaggageModalSegments] = useState<any[]>([]);
   // console.log("available->", availableFlights);
   const normalize = (x: any) => (x == null ? x : String(x));
 
@@ -252,9 +255,18 @@ const CompareCard: React.FC<CompareCardProps> = ({
   };
 
   // helper to render a single segment (brief summary)
-  const renderSegmentSummary = (seg: any, opts?: { showIcons?: boolean }) => {
+  const renderSegmentSummary = (
+    seg: any,
+    opts?: { showIcons?: boolean; allSegmentsForBaggage?: any[] }
+  ) => {
     if (!seg) return null;
     const showIcons = !!opts?.showIcons;
+    const segmentsForBaggage = opts?.allSegmentsForBaggage ?? [seg];
+
+    const openBaggageModal = () => {
+      setBaggageModalSegments(segmentsForBaggage);
+      setBaggageModalOpen(true);
+    };
     const fd = seg.flight_detail ?? {};
     const flightNum = fd.flight_number ?? fd.flightNumber ?? "...";
     const flightClass = fd.flight_class ?? fd.cabinClass ?? "—";
@@ -295,10 +307,21 @@ const CompareCard: React.FC<CompareCardProps> = ({
                 <img src={cabinIcon} alt="cabin" />
                 <span className="tooltip">Cabin: {flightClass}</span>
               </span>
-              {seg.baggageChecked && (
-                <span className="featureIconTooltipWrap">
+              {(seg.baggageChecked || seg.baggageCarry) && (
+                <span
+                  className="featureIconTooltipWrap"
+                  role="button"
+                  tabIndex={0}
+                  onClick={openBaggageModal}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && openBaggageModal()
+                  }
+                  style={{ cursor: "pointer" }}
+                >
                   <img src={baggageIcon} alt="baggage" />
-                  <span className="tooltip">Baggage: {seg.baggageChecked}</span>
+                  <span className="tooltip">
+                    Baggage: {seg.baggageChecked || seg.baggageCarry || "—"}
+                  </span>
                 </span>
               )}
               {seg.seatsAvailable && (
@@ -556,7 +579,10 @@ const CompareCard: React.FC<CompareCardProps> = ({
               {/* outbound + inbound summaries (multi-segment) */}
               {outboundSegs.map((seg, i) => (
                 <div key={`c-out-${i}`}>
-                  {renderSegmentSummary(seg, { showIcons: true })}
+                  {renderSegmentSummary(seg, {
+                    showIcons: true,
+                    allSegmentsForBaggage: outboundSegs,
+                  })}
                 </div>
               ))}
               {outboundSegs.length > 0 && inboundSegs.length > 0 && (
@@ -567,7 +593,10 @@ const CompareCard: React.FC<CompareCardProps> = ({
               )}
               {inboundSegs.map((seg, i) => (
                 <div key={`c-in-${i}`}>
-                  {renderSegmentSummary(seg, { showIcons: true })}
+                  {renderSegmentSummary(seg, {
+                    showIcons: true,
+                    allSegmentsForBaggage: inboundSegs,
+                  })}
                 </div>
               ))}
 
@@ -663,7 +692,10 @@ const CompareCard: React.FC<CompareCardProps> = ({
                   </div>
                   {group.map((seg, i) => (
                     <div key={`mc-${groupIdx}-${i}`}>
-                      {renderSegmentSummary(seg, { showIcons: true })}
+                      {renderSegmentSummary(seg, {
+                        showIcons: true,
+                        allSegmentsForBaggage: group,
+                      })}
                     </div>
                   ))}
                 </div>
@@ -724,7 +756,10 @@ const CompareCard: React.FC<CompareCardProps> = ({
               <>
                 {oneWaySegs.map((seg, i) => (
                   <div key={`c-ow-${i}`}>
-                    {renderSegmentSummary(seg, { showIcons: true })}
+                    {renderSegmentSummary(seg, {
+                      showIcons: true,
+                      allSegmentsForBaggage: oneWaySegs,
+                    })}
                   </div>
                 ))}
                 <div className="StartingPrice mt-5">
@@ -1029,6 +1064,17 @@ const CompareCard: React.FC<CompareCardProps> = ({
           )}
         </div>
       </Modal>
+
+      <BaggageInfoModal
+        open={baggageModalOpen}
+        onClose={() => setBaggageModalOpen(false)}
+        segments={baggageModalSegments.map((s) => ({
+          fromCode: s.fromCode ?? s.departureAirportCode,
+          toCode: s.toCode ?? s.arrivalAirportCode,
+          baggageChecked: s.baggageChecked ?? null,
+          baggageCarry: s.baggageCarry ?? null,
+        }))}
+      />
     </div>
   );
 };

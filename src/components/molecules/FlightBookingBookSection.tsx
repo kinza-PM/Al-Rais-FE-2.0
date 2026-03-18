@@ -55,6 +55,7 @@ type FlightBookingBookSectionProps = {
     financialInfo?: any;
     journey?: any;
   }) => void;
+  onChangeFlight?: () => void;
 };
 
 // function ChevronDown() {
@@ -76,6 +77,7 @@ export default function FlightBookingBookSection({
   fareBookingSearchRules,
   onNext,
   onUpdateFlightRaw,
+  onChangeFlight,
 }: FlightBookingBookSectionProps) {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -150,7 +152,11 @@ export default function FlightBookingBookSection({
     value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
     changeText: "Change",
     onChangeClick: () => {
-      navigate("/search_flight");
+      if (typeof onChangeFlight === "function") {
+        onChangeFlight();
+      } else {
+        navigate("/search_flight");
+      }
     },
   };
 

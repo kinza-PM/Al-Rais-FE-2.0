@@ -3,6 +3,7 @@ import "../../assets/css/travel.css";
 import CrossIcon from "../../assets/svgs/redCross.svg";
 import OkCheckIcon from "../../assets/svgs/greenTic.svg";
 import { Col, Row, Radio } from "antd";
+import BaggageInfoModal from "../common/BaggageInfoModal";
 
 type PricingDetailCardProps = {
   passSome: any[];
@@ -21,6 +22,28 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
   const [selectedPlan, setSelectedPlan] = useState<string | null>(
     headers[0] ?? null
   );
+  const [baggageModalOpen, setBaggageModalOpen] = useState(false);
+  const [baggageModalSegments, setBaggageModalSegments] = useState<
+    { fromCode?: string; toCode?: string; baggageChecked?: string | null; baggageCarry?: string | null }[]
+  >([]);
+
+  const openBaggageModal = (plan: any) => {
+    const segs = Array.isArray(plan?.segments) ? plan.segments : [];
+    const mapped = segs.map((s: any) => ({
+      fromCode: s?.fromCode,
+      toCode: s?.toCode,
+      baggageChecked: s?.baggage && s.baggage !== "—" ? s.baggage : null,
+      baggageCarry: s?.personalItem && s.personalItem !== "—" ? s.personalItem : null,
+    }));
+    if (mapped.length === 0 && (plan?.baggage || plan?.personalItem)) {
+      mapped.push({
+        baggageChecked: plan.baggage && plan.baggage !== "—" ? plan.baggage : null,
+        baggageCarry: plan.personalItem && plan.personalItem !== "—" ? plan.personalItem : null,
+      });
+    }
+    setBaggageModalSegments(mapped);
+    setBaggageModalOpen(true);
+  };
 
   useEffect(() => {
     if (!selectedPlan && headers.length) setSelectedPlan(headers[0]);
@@ -58,6 +81,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
   const renderFeature = (plan: any, featureKey: string) => {
     const segs = Array.isArray(plan?.segments) ? plan.segments : null;
     const showRouteLabel = segs && segs.length > 1;
+    const isBaggage = featureKey === "baggage";
 
     if (segs && segs.length > 1) {
       return (
@@ -72,6 +96,8 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                 s?.flightNumber ?? s?.segmentKey ?? "seg"
               }`}
               className="pricingCardRouteSegments"
+              onClick={isBaggage ? () => openBaggageModal(plan) : undefined}
+              style={isBaggage ? { cursor: "pointer" } : undefined}
             >
               {showRouteLabel && <span>{s.label}</span>}
               <img
@@ -93,7 +119,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
       );
     }
 
-    return (
+    const content = (
       <div className="parahAlign">
         <img
           src={
@@ -106,6 +132,18 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
         <p>{plan?.[featureKey] ?? "—"}</p>
       </div>
     );
+
+    if (isBaggage) {
+      return (
+        <div
+          onClick={() => openBaggageModal(plan)}
+          style={{ cursor: "pointer" }}
+        >
+          {content}
+        </div>
+      );
+    }
+    return content;
   };
 
   return (
@@ -195,6 +233,11 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
           </Col>
         </Row>
       </div>
+      <BaggageInfoModal
+        open={baggageModalOpen}
+        onClose={() => setBaggageModalOpen(false)}
+        segments={baggageModalSegments}
+      />
     </div>
   );
 };

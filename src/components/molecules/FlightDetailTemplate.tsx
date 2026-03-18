@@ -341,6 +341,8 @@ const FlightDetailTemplate: React.FC = () => {
         duration: formatDuration(seg.departureDateTime, seg.arrivalDateTime),
         departureCode: seg.departureAirportCode,
         arrivalCode: seg.arrivalAirportCode,
+        departureTerminal: seg.departureTerminal ?? seg.depTerminal,
+        arrivalTerminal: seg.arrivalTerminal ?? seg.arrTerminal,
         start_time_iso: seg.departureDateTime,
         end_time_iso: seg.arrivalDateTime,
       },
