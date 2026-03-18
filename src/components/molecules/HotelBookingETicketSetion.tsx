@@ -1,10 +1,12 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Button from "../atoms/Button";
 import { generateMultiPagePDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
 import Loader from "../atoms/Loader";
 import { useHotelProxyImages } from "../../hooks/useHotelProxyImages";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useHotelRetrieve } from "../../hooks/useHotelBooking";
+import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 
 type HotelBookingETicketSectionProps = {
   bookingResponse?: any;
@@ -16,39 +18,85 @@ export default function HotelBookingETicketSetion({
   hotelDetail,
 }: HotelBookingETicketSectionProps) {
   const navigate = useNavigate();
+  const location = useLocation();
+
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-  const bookingData = bookingResponse?.data?.[0];
+  const [retrieveResponse, setRetrieveResponse] = useState<any>(null);
+
+  const { mutateAsync: retrieveHotelBookingAsync, isPending: isRetrieving } =
+    useHotelRetrieve();
+
+  const stateBookingReferenceId =
+    location.state?.bookingReferenceId ||
+    location.state?.bookingResponse?.data?.[0]?.bookingReferenceId ||
+    "";
+
+  const stateSearchKey =
+    location.state?.searchKey ||
+    location.state?.bookingResponse?.searchKey ||
+    location.state?.bookingResponse?.data?.[0]?.searchKey ||
+    "";
+
+  const fallbackBookingReferenceId =
+    bookingResponse?.data?.[0]?.bookingReferenceId || "";
+
+  const fallbackSearchKey =
+    bookingResponse?.searchKey || bookingResponse?.data?.[0]?.searchKey || "";
+
+  const bookingReferenceId =
+    stateBookingReferenceId || fallbackBookingReferenceId;
+
+  const searchKey = stateSearchKey || fallbackSearchKey;
+
+  useEffect(() => {
+    const initRetrieve = async () => {
+      if (!bookingReferenceId || !searchKey) return;
+
+      try {
+        const resp = await retrieveHotelBookingAsync({
+          productType: "H",
+          bookingReferenceId,
+          clientReferenceId: "",
+          bookingKey: "",
+          searchKey,
+        });
+
+        setRetrieveResponse(resp);
+      } catch (error) {
+        const err = extractErrorFromAxiosApiError(error);
+        toast.error(err || "Failed to retrieve booking details");
+      }
+    };
+
+    initRetrieve();
+  }, [bookingReferenceId, searchKey, retrieveHotelBookingAsync]);
+
+  const activeResponse = retrieveResponse || bookingResponse;
+  const bookingData = activeResponse?.data?.[0];
+
   const hotel = bookingData?.hotel;
   const passengers = bookingData?.passengers ?? [];
   const rooms = hotel?.rooms ?? [];
   const currency = hotel?.currency ?? "AED";
-  const totalNet = hotel?.totalNet ?? 0;
+  const totalNet = Number(hotel?.totalNet ?? 0);
   const bookingRef = bookingData?.bookingReferenceId ?? "—";
 
-  // Images — prebook room images ya hotelDetail images
   const displayImages = useMemo(() => {
     const roomImages = (rooms || [])
       .flatMap((r: any) => r.roomImages?.image ?? [])
       .map((img: any) => img.path)
       .filter(Boolean);
+
     const hotelImages =
       hotelDetail?.images?.map((img: any) => img.path).filter(Boolean) || [];
+
     return [...roomImages, ...hotelImages].slice(0, 5);
   }, [rooms, hotelDetail]);
 
-  // React Query based image fetching — follows project pattern
   const { data: imageDataUrls = [], isLoading: imagesLoading } =
     useHotelProxyImages(displayImages);
+
   const imagesLoaded = !imagesLoading;
-
-  // Fallback images
-  // const imgSrc = (idx: number) => displayImages[idx] ?? "";
-  // const imgSrc = (idx: number) => {
-  //   const original = displayImages[idx];
-  //   if (!original) return "";
-
-  //   return `${IMAGE_PROXY_BASE}${encodeURIComponent(original)}`;
-  // };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "—";
@@ -56,10 +104,22 @@ export default function HotelBookingETicketSetion({
       const date = new Date(dateString);
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December",
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
       ];
-      return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+      return `${days[date.getDay()]}, ${date.getDate()} ${
+        months[date.getMonth()]
+      } ${date.getFullYear()}`;
     } catch {
       return dateString ?? "—";
     }
@@ -67,6 +127,7 @@ export default function HotelBookingETicketSetion({
 
   const checkIn = hotel?.checkInDate;
   const checkOut = hotel?.checkOutDate;
+
   const totalNights = (() => {
     if (!checkIn || !checkOut) return 1;
     const d1 = new Date(checkIn);
@@ -79,7 +140,9 @@ export default function HotelBookingETicketSetion({
 
   const guestNames = passengers
     .map((p: any) =>
-      `${p.passengerInfo?.givenName ?? ""} ${p.passengerInfo?.surname ?? ""}`.trim(),
+      `${p.passengerInfo?.givenName ?? ""} ${
+        p.passengerInfo?.surname ?? ""
+      }`.trim(),
     )
     .filter(Boolean)
     .join(", ");
@@ -87,6 +150,7 @@ export default function HotelBookingETicketSetion({
   const adults = passengers.filter(
     (p: any) => (p.ptc ?? "").toUpperCase() === "ADT",
   ).length;
+
   const children = passengers.filter(
     (p: any) => (p.ptc ?? "").toUpperCase() === "CHD",
   ).length;
@@ -97,7 +161,9 @@ export default function HotelBookingETicketSetion({
         ? `${String(adults).padStart(2, "0")} Adult${adults > 1 ? "s" : ""}`
         : "",
       children > 0
-        ? `${String(children).padStart(2, "0")} Child${children > 1 ? "ren" : ""}`
+        ? `${String(children).padStart(2, "0")} Child${
+            children > 1 ? "ren" : ""
+          }`
         : "",
     ]
       .filter(Boolean)
@@ -108,6 +174,8 @@ export default function HotelBookingETicketSetion({
     (sum: number, t: any) => sum + (t.included ? 0 : (t.amount ?? 0)),
     0,
   );
+
+  const totalPaid = totalNet + taxTotal;
 
   const handleDownloadPDF = async () => {
     try {
@@ -129,7 +197,10 @@ export default function HotelBookingETicketSetion({
   const NotchDivider = () => (
     <div className="relative mt-7 mb-10">
       <div className="absolute inset-x-0 top-1/2 -translate-y-1/2">
-        <div className="border-t border-dashed border-[#E4E4E7]" style={{ borderWidth: 1, marginTop: -10 }} />
+        <div
+          className="border-t border-dashed border-[#E4E4E7]"
+          style={{ borderWidth: 1, marginTop: -10 }}
+        />
       </div>
 
       <span
@@ -143,12 +214,10 @@ export default function HotelBookingETicketSetion({
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
-          {/* Fill - full shape (no stroke on vertical line) */}
           <path
             d="M0.5 0.512695C5.51429 0.772696 9.5 4.92101 9.5 10C9.5 15.079 5.51426 19.2263 0.5 19.4863V0.512695Z"
             fill="#FFFFFF"
           />
-          {/* Stroke - curve only (removes right-side vertical line border) */}
           <path
             d="M0.5 0.512695C5.51429 0.772696 9.5 4.92101 9.5 10C9.5 15.079 4.48574 19.2263 0.5 19.4863"
             fill="none"
@@ -214,7 +283,8 @@ export default function HotelBookingETicketSetion({
         <div className="flex flex-col items-center justify-center mt-10 text-[#0A0C0F] text-center">
           <h2 className="text-lg font-bold">Your Trip is Booked!</h2>
           <h5 className="text-sm mt-3">
-            Your booking confirmation number is: <span className="font-semibold">{bookingRef}</span>
+            Your booking confirmation number is:{" "}
+            <span className="font-semibold">{bookingRef}</span>
           </h5>
           <p className="text-[#3D495C] text-xs mt-5 mb-3">
             We've sent a copy of this receipt to your email address.
@@ -229,7 +299,9 @@ export default function HotelBookingETicketSetion({
           </h3>
           <p className="text-xs text-[#3D495C]">
             {hotelDetail?.address
-              ? `${hotelDetail.address}${hotelDetail.city ? `, ${hotelDetail.city}` : ""}${hotelDetail.country ? `, ${hotelDetail.country}` : ""}`
+              ? `${hotelDetail.address}${
+                  hotelDetail.city ? `, ${hotelDetail.city}` : ""
+                }${hotelDetail.country ? `, ${hotelDetail.country}` : ""}`
               : ""}
           </p>
         </div>
@@ -240,7 +312,9 @@ export default function HotelBookingETicketSetion({
           <div className="col-span-4">
             <p className="text-lg font-semibold text-[#0A0C0F]">Check-in</p>
             <p
-              className={`text-base font-medium text-[#0A0C0F] ${hotelDetail?.checkInTime ? "mt-4" : ""}`}
+              className={`text-base font-medium text-[#0A0C0F] ${
+                hotelDetail?.checkInTime ? "mt-4" : ""
+              }`}
             >
               {hotelDetail?.checkInTime || ""}
             </p>
@@ -248,7 +322,11 @@ export default function HotelBookingETicketSetion({
           </div>
 
           <div
-            className={`col-span-4 flex justify-center ${hotelDetail?.checkInTime && hotelDetail?.checkOutTime ? "mt-16" : "mt-8"}`}
+            className={`col-span-4 flex justify-center ${
+              hotelDetail?.checkInTime && hotelDetail?.checkOutTime
+                ? "mt-16"
+                : "mt-8"
+            }`}
           >
             <div className="FlightDirection">
               <div className="hotelVisualGuid">
@@ -269,7 +347,9 @@ export default function HotelBookingETicketSetion({
           <div className="col-span-4 text-right">
             <p className="text-base font-semibold text-[#0A0C0F]">Check-out</p>
             <p
-              className={`text-base font-medium text-[#0A0C0F] ${hotelDetail?.checkOutTime ? "mt-4" : ""}`}
+              className={`text-base font-medium text-[#0A0C0F] ${
+                hotelDetail?.checkOutTime ? "mt-4" : ""
+              }`}
             >
               {hotelDetail?.checkOutTime || ""}
             </p>
@@ -289,7 +369,6 @@ export default function HotelBookingETicketSetion({
             </div>
           </div>
 
-          {/* Fixed width blocks */}
           <div className="shrink-0">
             <div className="text-[13px] text-[#3D495C]">Travelers</div>
             <div className="text-[15px] font-medium text-[#0A0C0F]">
@@ -348,6 +427,7 @@ export default function HotelBookingETicketSetion({
               {currency} {totalNet.toFixed(2)}
             </span>
           </div>
+
           {taxTotal > 0 && (
             <div className="flex justify-between items-center">
               <span className="text-xs text-[#3D495C]">Taxes and fees</span>
@@ -356,10 +436,11 @@ export default function HotelBookingETicketSetion({
               </span>
             </div>
           )}
+
           <div className="flex justify-between items-center">
             <span className="text-xs text-[#3D495C]">Total Paid</span>
             <span className="text-[15px] font-semibold text-[#0A0C0F]">
-              {currency} {(totalNet + taxTotal).toFixed(2)}
+              {currency} {totalPaid.toFixed(2)}
             </span>
           </div>
         </div>
@@ -370,9 +451,14 @@ export default function HotelBookingETicketSetion({
   return (
     <section className="mt-8 flex items-center justify-center px-4">
       <Loader
-        show={!imagesLoaded}
-        label="Please wait while we are retrieving the booking."
+        show={isRetrieving || !imagesLoaded}
+        label={
+          isRetrieving
+            ? "Please wait while we are retrieving the booking."
+            : "Please wait while we are loading images."
+        }
       />
+
       <div className="w-full max-w-[476px]">
         <div
           className="rounded-[16px] border bg-[#FFFFFF] px-2 pt-6 pb-6"
@@ -386,18 +472,19 @@ export default function HotelBookingETicketSetion({
               type="button"
               overrideClasses
               onClick={handleDownloadPDF}
-              disabled={isGeneratingPDF || !imagesLoaded}
+              disabled={isGeneratingPDF || !imagesLoaded || isRetrieving}
               className="flex items-center justify-center gap-2.5 text-[#F2F2F3] border-0"
               style={{
                 width: 243,
                 height: 47,
-                // padding: "-1px 52px",
                 borderRadius: 100,
-                background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                background:
+                  "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               }}
             >
               {isGeneratingPDF ? "Generating PDF..." : "Download as PDF"}
             </Button>
+
             <Button
               type="button"
               overrideClasses
@@ -406,7 +493,6 @@ export default function HotelBookingETicketSetion({
               style={{
                 width: 225,
                 height: 47,
-                // padding: "14px 40px",
                 fontFamily: "Inter",
                 fontWeight: 600,
                 fontSize: 16,
@@ -419,6 +505,7 @@ export default function HotelBookingETicketSetion({
             </Button>
           </div>
         </div>
+
         <div
           id="hotel-ticket-pdf"
           aria-hidden="true"
@@ -447,7 +534,8 @@ export default function HotelBookingETicketSetion({
                   height: 47,
                   padding: "14px 52px",
                   borderRadius: 100,
-                  background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                  background:
+                    "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
                 }}
               >
                 Download as PDF
