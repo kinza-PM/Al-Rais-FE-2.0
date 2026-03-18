@@ -1,4 +1,3 @@
-import React from "react";
 import { Modal } from "antd";
 import baggageIcon from "../../assets/svgs/baggage.svg";
 

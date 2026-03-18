@@ -66,8 +66,6 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     arrivalFlightRange,
     onDepartureRangeChange,
     onArrivalRangeChange,
-    openTimePicker,
-    timeRefs,
 
     airline,
     selectedAirlineIds,
