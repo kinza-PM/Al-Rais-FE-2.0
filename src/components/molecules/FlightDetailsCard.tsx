@@ -17,6 +17,28 @@ import durationIcon from "../../assets/svgs/duration.svg";
 // import wifiIcon from "../../assets/svgs/wifi.svg";
 import { extractFlightFeatures } from "../../utils/searchFlightListingHelpers";
 import { getAirportCoords } from "../../utils/geolocationHelper";
+import BaggageInfoModal from "../common/BaggageInfoModal";
+
+/** Maps short terminal codes to proper display labels (e.g. M → Main, 2 → Terminal 2) */
+const formatTerminalLabel = (code: string | null | undefined): string => {
+  if (!code || String(code).trim() === "") return "—";
+  const val = String(code).trim();
+  const valUpper = val.toUpperCase();
+  const singleLetterMap: Record<string, string> = {
+    M: "Main",
+    A: "Terminal A",
+    B: "Terminal B",
+    C: "Terminal C",
+    D: "Terminal D",
+    E: "Terminal E",
+    F: "Terminal F",
+  };
+  if (singleLetterMap[valUpper]) return singleLetterMap[valUpper];
+  if (/^T\d+$/i.test(val)) return `Terminal ${val.slice(1)}`;
+  if (/^\d+$/.test(val)) return `Terminal ${val}`;
+  if (/^terminal\s+/i.test(val) || /^main$/i.test(val)) return val;
+  return `Terminal ${val}`;
+};
 
 type FlightDetailsCardProps = {
   details: any;
@@ -24,6 +46,8 @@ type FlightDetailsCardProps = {
 
 const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
   const [mapLocations, setMapLocations] = React.useState<any[]>([]);
+  const [baggageModalOpen, setBaggageModalOpen] = React.useState(false);
+  const [baggageModalSegments, setBaggageModalSegments] = React.useState<any[]>([]);
 
   const seg = details?.outbound ?? details;
 
@@ -62,11 +86,17 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         ? formatDate(lastSegment.arrivalDateTime)
         : fd?.end_date;
 
-      // Get airports and terminals from segments
+      // Get airports and terminals from segments (support common API field names)
       const startAirport = firstSegment?.departureAirportCode ?? airport?.startAirport;
-      const startTerminal = firstSegment?.departureTerminal ?? airport?.startTerminal;
+      const startTerminal =
+        firstSegment?.departureTerminal ??
+        firstSegment?.depTerminal ??
+        airport?.startTerminal;
       const endAirport = lastSegment?.arrivalAirportCode ?? airport?.endAirport;
-      const endTerminal = lastSegment?.arrivalTerminal ?? airport?.endTerminal;
+      const endTerminal =
+        lastSegment?.arrivalTerminal ??
+        lastSegment?.arrTerminal ??
+        airport?.endTerminal;
 
       // Use shared function to extract features
       const visibleFeatures = extractFlightFeatures(
@@ -201,6 +231,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
   }, [displayRows]);
 
   return (
+    <>
     <div className="flight_detail_card">
       {displayRows.map((row: any, idx: number) => (
         <Flex
@@ -305,7 +336,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                   variant="title"
                 >
                   {row.startAirport} <br />
-                  <span className="common_typography_fd">Terminal: {row.startTerminal ?? "—"}</span>
+                  <span className="common_typography_fd">Terminal: {formatTerminalLabel(row.startTerminal)}</span>
                 </CustomTypography>
               </div>
 
@@ -318,21 +349,44 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                     rowGap: "10px",
                   }}
                 >
-                  {row?.features?.map((f: any) => (
-                    <Flex
-                      key={f.key}
-                      style={{
-                        width: "30%",
-                      }}
-                      gap={5}
-                      align="center"
-                    >
-                      <img src={f.icon} alt={f.key} />
-                      <CustomTypography className="common_typography_fd">
-                        {f.label}
-                      </CustomTypography>
-                    </Flex>
-                  ))}
+                  {row?.features?.map((f: any) => {
+                    const isBaggage = f.key === "baggage";
+                    const openBaggage = () => {
+                      const rawSegs = row?.segments ?? [];
+                      const mapped = rawSegs.map((s: any) => {
+                        const checked = s?.baggageAllowance?.checkedInBaggage?.[0];
+                        const carry = s?.baggageAllowance?.carryOnBaggage?.[0];
+                        return {
+                          fromCode: s?.departureAirportCode,
+                          toCode: s?.arrivalAirportCode,
+                          baggageChecked: checked ? `${checked.value}${checked.unit ?? ""}` : null,
+                          baggageCarry: carry ? `${carry.value}${carry.unit ?? ""}` : null,
+                        };
+                      });
+                      setBaggageModalSegments(mapped);
+                      setBaggageModalOpen(true);
+                    };
+                    return (
+                      <Flex
+                        key={f.key}
+                        style={{
+                          width: "30%",
+                          cursor: isBaggage ? "pointer" : undefined,
+                        }}
+                        gap={5}
+                        align="center"
+                        onClick={isBaggage ? openBaggage : undefined}
+                        onKeyDown={isBaggage ? (e) => e.key === "Enter" && openBaggage() : undefined}
+                        role={isBaggage ? "button" : undefined}
+                        tabIndex={isBaggage ? 0 : undefined}
+                      >
+                        <img src={f.icon} alt={f.key} />
+                        <CustomTypography className="common_typography_fd">
+                          {f.label}
+                        </CustomTypography>
+                      </Flex>
+                    );
+                  })}
                 </Flex>
               </div>
 
@@ -677,7 +731,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                 variant="title"
               >
                 {row?.endAirport} <br />
-                <span className="common_typography_fd">Terminal: {row?.endTerminal ?? "—"}</span>
+                <span className="common_typography_fd">Terminal: {formatTerminalLabel(row?.endTerminal)}</span>
               </CustomTypography>
             </div>
           </Flex>
@@ -714,6 +768,13 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         </Flex>
       ))}
     </div>
+
+    <BaggageInfoModal
+      open={baggageModalOpen}
+      onClose={() => setBaggageModalOpen(false)}
+      segments={baggageModalSegments}
+    />
+  </>
   );
 };
 // <LineWithPoints orientation="vertical" thickness={2} />

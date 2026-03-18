@@ -318,7 +318,7 @@ export default function ShareTicketModal({
                         color: "#3D495C",
                       }}
                     >
-                      /per seat
+                      /per person
                     </span>
                   </div>
                 </div>

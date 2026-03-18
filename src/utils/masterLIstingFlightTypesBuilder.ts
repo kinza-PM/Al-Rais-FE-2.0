@@ -178,14 +178,28 @@ export function buildPriceSortOptions(
   return opts.sort((a, b) => rank(a.label) - rank(b.label));
 }
 
+const STOPS_LABEL_MAP: Record<string, string> = {
+  "0": "Non-stop",
+  "01": "1 Stop",
+  "1": "1 Stop",
+  "02": "2 Stops",
+  "2": "2 Stops",
+};
+
 export function buildNumberStopsOptions(
   items: NumberStopsItem[]
 ): NumberStopsOption[] {
   const opts = (items || [])
     .filter((i) => i.status === 1 && i.category?.trim())
-    .map((i) => ({ label: i.category.trim(), value: i.category.trim() }));
-  if (!opts.length) return [{ label: "0", value: "0" }];
-  // numeric-ish sort: 0, 01, 02 ...
+    .map((i) => {
+      const val = i.category.trim();
+      const numVal = parseInt(val, 10);
+      const label =
+        STOPS_LABEL_MAP[val] ??
+        (numVal === 0 ? "Non-stop" : numVal === 1 ? "1 Stop" : `${numVal} Stops`);
+      return { label, value: val };
+    });
+  if (!opts.length) return [{ label: "Non-stop", value: "0" }];
   return opts.sort((a, b) => parseInt(a.value, 10) - parseInt(b.value, 10));
 }
 

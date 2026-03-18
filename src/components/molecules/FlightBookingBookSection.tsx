@@ -55,6 +55,7 @@ type FlightBookingBookSectionProps = {
     financialInfo?: any;
     journey?: any;
   }) => void;
+  onChangeFlight?: () => void;
 };
 
 // function ChevronDown() {
@@ -76,6 +77,7 @@ export default function FlightBookingBookSection({
   fareBookingSearchRules,
   onNext,
   onUpdateFlightRaw,
+  onChangeFlight,
 }: FlightBookingBookSectionProps) {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -150,7 +152,11 @@ export default function FlightBookingBookSection({
     value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
     changeText: "Change",
     onChangeClick: () => {
-      navigate("/search_flight");
+      if (typeof onChangeFlight === "function") {
+        onChangeFlight();
+      } else {
+        navigate("/search_flight");
+      }
     },
   };
 
@@ -285,7 +291,7 @@ export default function FlightBookingBookSection({
                           clearFieldError(idx, "passengerInfo.nameTitle");
                         }}
                         placeholder="Select title"
-                        label="Title"
+                        label="Title *"
                         widthClass="w-full"
                         error={
                           hasAttemptedValidation
@@ -301,7 +307,7 @@ export default function FlightBookingBookSection({
                       <TailwindCustomInput
                         type="text"
                         placeholder="Enter your full name"
-                        label="Full name (Filled based on ID/Passport/Driver’s license)"
+                        label="Full name (Filled based on ID/Passport/Driver’s license) *"
                         value={p.passengerInfo?.givenName ?? ""}
                         onChange={(evOrVal) => {
                           const v =
@@ -330,7 +336,7 @@ export default function FlightBookingBookSection({
                       <TailwindCustomInput
                         type="text"
                         placeholder="Enter your surname"
-                        label="Surname"
+                        label="Surname *"
                         value={p.passengerInfo?.surname ?? ""}
                         onChange={(evOrVal) => {
                           const v =
@@ -371,7 +377,7 @@ export default function FlightBookingBookSection({
                           clearFieldError(idx, "passengerInfo.gender");
                         }}
                         placeholder="Select gender"
-                        label="Gender"
+                        label="Gender *"
                         widthClass="w-full"
                         error={
                           hasAttemptedValidation
@@ -461,7 +467,7 @@ export default function FlightBookingBookSection({
                             : p.identityDocuments?.[0]?.idType === "DL"
                               ? "Driving licence"
                               : "National ID"
-                        }`}
+                        } *`}
                         value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
                         onChange={(evOrVal) => {
                           const v =
@@ -523,7 +529,7 @@ export default function FlightBookingBookSection({
                           );
                         }}
                         placeholder="Select issuing country"
-                        label="Issuing country"
+                        label="Issuing country *"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
                         error={
@@ -543,7 +549,7 @@ export default function FlightBookingBookSection({
                         className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Date of issue
+                          Date of issue *
                         </label>
                         <TailiwindCustomDatePicker
                           value={
@@ -584,7 +590,7 @@ export default function FlightBookingBookSection({
                       className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
                     >
                       <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                        Expiry date
+                        Expiry date *
                       </label>
                       <TailiwindCustomDatePicker
                         value={
@@ -654,7 +660,7 @@ export default function FlightBookingBookSection({
                           );
                         }}
                         placeholder="Select residence country"
-                        label="Residence Country"
+                        label="Residence Country *"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
                         error={
@@ -676,7 +682,7 @@ export default function FlightBookingBookSection({
                       <TailwindCustomInput
                         type="email"
                         placeholder="Enter an email"
-                        label="Email"
+                        label="Email *"
                         value={
                           p.contact?.contactsProvided?.[0]?.emailAddress?.[0] ??
                           ""
@@ -712,7 +718,7 @@ export default function FlightBookingBookSection({
                         className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Birth date
+                          Birth date *
                         </label>
                         <TailiwindCustomDatePicker
                           placeholder="Please select"
@@ -970,7 +976,7 @@ export default function FlightBookingBookSection({
                     </div> */}
                     <div className="relative w-full max-w-[561px]">
                       <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                        Phone
+                        Phone *
                       </label>
                       <div
                         className={

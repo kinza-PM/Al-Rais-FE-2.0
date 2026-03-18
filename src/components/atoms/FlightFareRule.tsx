@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
+import BaggageInfoModal from "../common/BaggageInfoModal";
 
 export default function FLightFareRule({ trip }: { trip: any }) {
+    const [baggageModalOpen, setBaggageModalOpen] = useState(false);
     const fare = trip?.fare;
 
     const journeys: any[] = trip?.raw?.journey ?? trip?.journey ?? [];
@@ -32,10 +34,33 @@ export default function FLightFareRule({ trip }: { trip: any }) {
 
     const list = entries.length ? entries : (singleEntry ? [singleEntry] : []);
 
+    const baggageModalSegments = list.map((e) => {
+        const parts = (e.route || "").split("→").map((s) => s?.trim()).filter(Boolean);
+        return {
+            fromCode: parts[0] || undefined,
+            toCode: parts[1] || undefined,
+            baggageChecked: e.checked ? formatWeight(e.checked) : null,
+            baggageCarry: e.carryOn ? formatWeight(e.carryOn) : null,
+        };
+    });
+
+    const hasBaggageInfo = list.some((e) => e.checked || e.carryOn);
+
     return (
         <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm max-w-[576px]">
-            <div className="px-4 py-3 text-[16px] font-semibold text-[#0A0C0F]">
-                Important fare rules
+            <div className="px-4 py-3 flex items-center justify-between">
+                <span className="text-[16px] font-semibold text-[#0A0C0F]">
+                    Important fare rules
+                </span>
+                {hasBaggageInfo && (
+                    <button
+                        type="button"
+                        onClick={() => setBaggageModalOpen(true)}
+                        className="text-[12px] text-[#2563EB] hover:underline cursor-pointer"
+                    >
+                        View baggage details
+                    </button>
+                )}
             </div>
             <div className="h-[1.5px] bg-[#E4E4E7]" />
 
@@ -69,6 +94,12 @@ export default function FLightFareRule({ trip }: { trip: any }) {
                     </li>
                 )}
             </ul>
+
+            <BaggageInfoModal
+                open={baggageModalOpen}
+                onClose={() => setBaggageModalOpen(false)}
+                segments={baggageModalSegments}
+            />
         </div>
     );
 }
