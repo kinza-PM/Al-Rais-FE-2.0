@@ -18,7 +18,6 @@ import {
     buildFlightSegmentFromTrip,
     getPriceCabinClassForFlightSummary,
 } from "../../utils/helpers";
-import { useNavigate } from "react-router-dom";
 import type { CountryOption } from "../../features/flights/types";
 
 const CardShell = ({
@@ -59,28 +58,26 @@ type FlightBookingReviewSectionProps = {
     trip: any;
     fareBookingSearchRules?: any;
     flightBookingPayload?: any;
-    // cities?: Array<{ id: string; code: string; label: string; city: string }>;
     countries: CountryOption[];
     onNext?: () => void;
-    onPrevious?: () => void;
+    onEditDetails?: () => void;
+    onChangeFlight?: () => void;
 };
 
 export default function FlightBookingReviewSection({
     trip,
-    // fareBookingSearchRules,
     flightBookingPayload,
     countries = [],
     onNext,
-    onPrevious
+    onEditDetails,
+    onChangeFlight,
 }: FlightBookingReviewSectionProps) {
-    const navigate = useNavigate();
     const [openPrice, setOpenPrice] = useState(false);
     const passengers = flightBookingPayload?.passengers || [];
 
-    // generic helpers
     const startEdit = () => {
-        if (typeof onPrevious === "function") {
-            onPrevious();
+        if (typeof onEditDetails === "function") {
+            onEditDetails();
         }
     };
 
@@ -102,7 +99,9 @@ export default function FlightBookingReviewSection({
         value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
         changeText: "Change",
         onChangeClick: () => {
-            navigate('/search_flight');
+            if (typeof onChangeFlight === "function") {
+                onChangeFlight();
+            }
         },
     };
 
@@ -408,10 +407,10 @@ export default function FlightBookingReviewSection({
                 <div>
                     <FlightSummaryCard
                         title="Flight details"
-                        // headerActionText="View all"
-                        // onHeaderActionClick={() => {
-                        //     /* handle view all */
-                        // }}
+                        headerActionText="Change"
+                        onHeaderActionClick={() => {
+                            if (typeof onChangeFlight === "function") onChangeFlight();
+                        }}
                         segments={segments}
                         fare={priceFareFamily}
                     />

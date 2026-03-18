@@ -1035,7 +1035,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                   <p>Start from</p>
                   <h5>
                     {item?.raw?.fare?.currencyCode ?? "$"}
-                    {item.rawTotalStartingFare}/per seat
+                    {item.rawTotalStartingFare}/per person
                   </h5>
                 </div>
               </div>

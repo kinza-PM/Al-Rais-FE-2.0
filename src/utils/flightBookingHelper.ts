@@ -113,6 +113,7 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     if (isEmpty(pi.surname)) {
       passengerErrors["passengerInfo.surname"] = "Surname is required.";
     }
+    // API requires gender (VAL-004) - backend validates airPassengers[0].passengerInfo.gender
     if (isEmpty(pi.gender)) {
       passengerErrors["passengerInfo.gender"] = "Gender is required.";
     }
@@ -181,6 +182,7 @@ export const validatePassengersForFlightProvisionalBookingFields = (
       passengerErrors["identityDocuments.0.dateOfIssue"] =
         "Date of issue is required.";
     }
+    // API requires residenceCountryCode (VAL-004)
     if (isEmpty(id.residenceCountryCode)) {
       passengerErrors["identityDocuments.0.residenceCountryCode"] =
         "Residence country is required.";
@@ -310,12 +312,7 @@ export const validatePassengersForFlightProvisionalBooking = (
         id.dateOfIssue,
         "Date of issue is required.",
       ],
-      [
-        // pRules.isResidenceCountryCodeMandatory,
-        true,
-        id.residenceCountryCode,
-        "Residence country is required.",
-      ],
+      [true, id.residenceCountryCode, "Residence country is required."],
       // [
       //   fareBookingRules?.isLeadEmailAddressMandatory,
       //   email,

@@ -109,6 +109,8 @@ export function buildFlightSearchPriceOptions(raw: any) {
                 journeyIndex: jIdx,
                 segmentIndex: sIdx,
                 label,
+                fromCode: on,
+                toCode: off,
                 priceClassName: segPriceClass,
                 personalItem: features?.baggageCarry ?? "—",
                 baggage: features?.baggageChecked ?? "—",

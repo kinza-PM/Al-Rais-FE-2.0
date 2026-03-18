@@ -74,6 +74,14 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     onAirlineToggle,
     onReset,
 }) => {
+    const timeToSliderValue = (time: string | undefined, roundUp = false): number => {
+        if (!time) return roundUp ? 1440 : 0;
+        const [h, m] = time.split(':').map(Number);
+        const mins = (h || 0) * 60 + (m || 0);
+        const step = roundUp ? Math.ceil(mins / 30) * 30 : Math.floor(mins / 30) * 30;
+        return Math.min(1440, Math.max(0, step));
+    };
+
     const activeCount = (() => {
         let cnt = 0;
         if (
@@ -121,18 +129,18 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             <div className="stopsCollapse" style={{ 
                 width: '280px',
                 borderRadius: '16px',
-                background: '#e1e1e1',
-                overflow: 'hidden'
+                background: '#F2F2F3',
+                overflow: 'hidden',
+                border: '1.5px solid #E4E4E7'
             }}>
                 <CustomCollapse>
                     <Panel 
                         header="Number of stops" 
                         key="stops"
-                        style={{ border: 'none', background: '#e1e1e1' }}
+                        style={{ border: 'none', background: '#F2F2F3' }}
                     >
-                        <div style={{ padding: '0 16px 16px 16px', background: '#e1e1e1' }}>
+                        <div style={{ padding: '14px 16px 18px', background: '#F2F2F3' }}>
                             <Radio.Group
-                                block
                                 options={numberStops && numberStops.length ? numberStops : []}
                                 value={String(selectedMaxConnections)}
                                 optionType="button"
@@ -146,7 +154,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                 </CustomCollapse>
             </div>
 
-            {/* Price per seat - Collapsible */}
+            {/* Price per person - Collapsible */}
             <div style={{ 
                 width: '280px',
                 borderRadius: '16px',
@@ -154,7 +162,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             }}>
                 <CustomCollapse>
                     <Panel 
-                        header="Price per seat" 
+                        header="Price per person" 
                         key="price"
                         style={{ border: 'none' }}
                     >
@@ -238,115 +246,71 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                 </div>
             )}
 
-            {/* Flight time - Collapsible */}
-            <div style={{ 
+            {/* Flight time - Collapsible (FL201: Slider + time inputs for preferred departure/arrival) */}
+            <div className="flightTimeFilter" style={{ 
                 width: '280px',
                 borderRadius: '16px',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                background: '#F2F2F3',
+                border: '1.5px solid #E4E4E7'
             }}>
                 <CustomCollapse>
                     <Panel 
-                        header="Flight time" 
+                        header="Preferred departure & arrival time" 
                         key="time"
-                        style={{ border: 'none' }}
+                        style={{ border: 'none', background: '#F2F2F3' }}
                     >
-                        <div style={{ padding: '0 16px 16px 16px' }}>
-                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 500, marginBottom: '8px', marginTop: 0 }}>
-                                Departure
+                        <div style={{ padding: '14px 16px 18px', background: '#F2F2F3' }}>
+                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, marginBottom: '10px', marginTop: 0 }}>
+                                Departure time range
                             </p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
-                                <input
-                                    type="time"
-                                    className="timeBox"
-                                    style={{
-                                        flex: 1,
-                                        height: '40px',
-                                        border: '1.5px solid #C2CAD6',
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        fontSize: '14px',
-                                        color: '#0F172A',
-                                        background: '#FFFFFF'
+                            <div style={{ marginBottom: '16px' }}>
+                                <Slider
+                                    range
+                                    min={0}
+                                    max={1440}
+                                    step={30}
+                                    value={[
+                                        timeToSliderValue(departureFlightRange.start, false),
+                                        timeToSliderValue(departureFlightRange.end, true)
+                                    ]}
+                                    onChange={([a, b]) => {
+                                        const toTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+                                        onDepartureRangeChange({ start: toTime(a), end: toTime(b) });
                                     }}
-                                    ref={(el) => {
-                                        timeRefs.current["departureFlightStartTime"] = el;
-                                    }}
-                                    onClick={() => openTimePicker("departureFlightStartTime")}
-                                    onChange={(e) =>
-                                        onDepartureRangeChange({ start: e.target.value, end: departureFlightRange.end })
-                                    }
+                                    tooltip={{ formatter: (v) => `${String(Math.floor(Number(v) / 60)).padStart(2, '0')}:${String(Number(v) % 60).padStart(2, '0')}` }}
+                                    style={{ marginBottom: 8 }}
                                 />
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#3D495C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <input
-                                    type="time"
-                                    className="timeBox"
-                                    style={{
-                                        flex: 1,
-                                        height: '40px',
-                                        border: '1.5px solid #C2CAD6',
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        fontSize: '14px',
-                                        color: '#0F172A',
-                                        background: '#FFFFFF'
-                                    }}
-                                    ref={(el) => {
-                                        timeRefs.current["departureFlightEndTime"] = el;
-                                    }}
-                                    onClick={() => openTimePicker("departureFlightEndTime")}
-                                    onChange={(e) =>
-                                        onDepartureRangeChange({ start: departureFlightRange.start, end: e.target.value })
-                                    }
-                                />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B' }}>
+                                    <span>{departureFlightRange.start || '00:00'}</span>
+                                    <span>{departureFlightRange.end || '24:00'}</span>
+                                </div>
                             </div>
 
-                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 500, marginBottom: '8px', marginTop: 0 }}>
-                                Arrival
+                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, marginBottom: '10px', marginTop: 0 }}>
+                                Arrival time range
                             </p>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                <input
-                                    type="time"
-                                    className="timeBox"
-                                    style={{
-                                        flex: 1,
-                                        height: '40px',
-                                        border: '1.5px solid #C2CAD6',
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        fontSize: '14px',
-                                        color: '#0F172A',
-                                        background: '#FFFFFF'
+                            <div>
+                                <Slider
+                                    range
+                                    min={0}
+                                    max={1440}
+                                    step={30}
+                                    value={[
+                                        timeToSliderValue(arrivalFlightRange.start, false),
+                                        timeToSliderValue(arrivalFlightRange.end, true)
+                                    ]}
+                                    onChange={([a, b]) => {
+                                        const toTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
+                                        onArrivalRangeChange({ start: toTime(a), end: toTime(b) });
                                     }}
-                                    ref={(el) => {
-                                        timeRefs.current["arrivalFlightStartTime"] = el;
-                                    }}
-                                    onClick={() => openTimePicker("arrivalFlightStartTime")}
-                                    onChange={(e) => onArrivalRangeChange({ start: e.target.value, end: arrivalFlightRange.end })}
+                                    tooltip={{ formatter: (v) => `${String(Math.floor(Number(v) / 60)).padStart(2, '0')}:${String(Number(v) % 60).padStart(2, '0')}` }}
+                                    style={{ marginBottom: 8 }}
                                 />
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="#3D495C" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                                </svg>
-                                <input
-                                    type="time"
-                                    className="timeBox"
-                                    style={{
-                                        flex: 1,
-                                        height: '40px',
-                                        border: '1.5px solid #C2CAD6',
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        fontSize: '14px',
-                                        color: '#0F172A',
-                                        background: '#FFFFFF'
-                                    }}
-                                    ref={(el) => {
-                                        timeRefs.current["arrivalFlightEndTime"] = el;
-                                    }}
-                                    onClick={() => openTimePicker("arrivalFlightEndTime")}
-                                    onChange={(e) => onArrivalRangeChange({ start: arrivalFlightRange.start, end: e.target.value })}
-                                />
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B' }}>
+                                    <span>{arrivalFlightRange.start || '00:00'}</span>
+                                    <span>{arrivalFlightRange.end || '24:00'}</span>
+                                </div>
                             </div>
                         </div>
                     </Panel>

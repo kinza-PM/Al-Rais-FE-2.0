@@ -341,6 +341,8 @@ const FlightDetailTemplate: React.FC = () => {
         duration: formatDuration(seg.departureDateTime, seg.arrivalDateTime),
         departureCode: seg.departureAirportCode,
         arrivalCode: seg.arrivalAirportCode,
+        departureTerminal: seg.departureTerminal ?? seg.depTerminal,
+        arrivalTerminal: seg.arrivalTerminal ?? seg.arrTerminal,
         start_time_iso: seg.departureDateTime,
         end_time_iso: seg.arrivalDateTime,
       },
@@ -607,9 +609,12 @@ const FlightDetailTemplate: React.FC = () => {
       originalResponseRef.current = oneWayFormatted;
       originalRoundResponseRef.current = roundFormatted;
       originalMulticityResponseRef.current = multiCityFormatted;
-      setResponseData(oneWayFormatted);
-      setRoundResponseData(roundFormatted);
-      setMulticityResponseData(trip === "multicity" ? multiCityFormatted : []);
+      // SR208: Sort by lowest price by default
+      const sortByPriceLow = (arr: any[]) =>
+        [...arr].sort((a, b) => (a.price?.totalPrice || a.rawTotalStartingFare || a.raw?.fare?.totalFare || 0) - (b.price?.totalPrice || b.rawTotalStartingFare || b.raw?.fare?.totalFare || 0));
+      setResponseData(sortByPriceLow(oneWayFormatted));
+      setRoundResponseData(sortByPriceLow(roundFormatted));
+      setMulticityResponseData(trip === "multicity" ? sortByPriceLow(multiCityFormatted) : []);
       setHighDemandIndicators(highDemand);
       // start inactivity timers only based on API results
       startResultInactivityTimers();
@@ -1108,8 +1113,11 @@ const FlightDetailTemplate: React.FC = () => {
     const finalOneWay = applyPrice(filteredOneWay);
     const finalRound = applyPrice(filteredRound);
 
-    setResponseData(finalOneWay);
-    setRoundResponseData(finalRound);
+    // SR208: Maintain sort by lowest price when filters apply
+    const sortByPriceLow = (arr: any[]) =>
+      [...arr].sort((a, b) => (a.price?.totalPrice || a.rawTotalStartingFare || a.raw?.fare?.totalFare || 0) - (b.price?.totalPrice || b.rawTotalStartingFare || b.raw?.fare?.totalFare || 0));
+    setResponseData(sortByPriceLow(finalOneWay));
+    setRoundResponseData(sortByPriceLow(finalRound));
   }
 
   useEffect(() => {
