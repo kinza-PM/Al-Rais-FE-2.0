@@ -1161,7 +1161,6 @@ const FlightDetailTemplate: React.FC = () => {
 
   const sortOptions = [
     { value: "lowest_price", label: "Lowest price" },
-    { value: "highest_price", label: "Highest price" },
     { value: "shortest_duration", label: "Shortest duration" },
     { value: "earliest_departure", label: "Earliest departure" },
   ];
@@ -1180,8 +1179,6 @@ const FlightDetailTemplate: React.FC = () => {
       switch (value) {
         case "lowest_price":
           return sorted.sort((a, b) => (a.price?.totalPrice || 0) - (b.price?.totalPrice || 0));
-        case "highest_price":
-          return sorted.sort((a, b) => (b.price?.totalPrice || 0) - (a.price?.totalPrice || 0));
         case "shortest_duration":
           return sorted.sort((a, b) => (a.totalDuration || 0) - (b.totalDuration || 0));
         case "earliest_departure":

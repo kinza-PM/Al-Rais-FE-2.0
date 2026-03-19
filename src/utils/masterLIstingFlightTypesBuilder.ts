@@ -91,7 +91,7 @@ export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
       .map((i, key) => ({
         id: `${key}`,
         // label: `${i.city}, ${i.country}`,
-        label: `${i.city}, ${i.country} (${i.iataCode})`,
+        label: `${i.airportName || i.city} – ${i.iataCode}`,
         // label: `${i.airportName}`,
         // label: `${i.city} (${i.cityCode}), ${i.country}`,
         code: i.iataCode,
