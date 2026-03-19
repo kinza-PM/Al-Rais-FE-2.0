@@ -175,10 +175,14 @@ html, body {
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
+  max-width: none !important;
 }
 
 .hotel-map-custom-tooltip .leaflet-tooltip-content {
   margin: 0 !important;
+  min-width: 220px;
+  max-width: 260px;
+  width: max-content;
 }
 
 .hotel-map-custom-tooltip::before {

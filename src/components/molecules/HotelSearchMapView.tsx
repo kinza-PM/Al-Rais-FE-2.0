@@ -116,7 +116,7 @@ const renderStars = (rating: string | number | undefined) => {
   const totalStars = 5;
 
   return (
-    <div className="flex items-center gap-[3px] mt-1 mb-3">
+    <div className="flex items-center gap-[3px] mt-1 mb-0">
       {Array.from({ length: numRating }).map((_, i) => (
         <img
           key={`filled-${i}`}
@@ -197,11 +197,15 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
     <div
       className="hotel-map-hover-card"
       style={{
+        position: "relative",
         background: "#FFFFFF",
         border: "1px solid #D9DEE7",
-        borderRadius: "12px",
+        borderRadius: "14px",
         boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
-        width: "180px",
+        width: "100%",
+        minWidth: "220px",
+        maxWidth: "260px",
+        overflow: "hidden",
       }}
     >
       <button
@@ -210,8 +214,8 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
         onClick={(e) => e.preventDefault()}
         style={{
           position: "absolute",
-          top: "4px",
-          left: "6px",
+          top: "6px",
+          left: "8px",
           zIndex: 2,
           fontSize: "14px",
           color: "#6B7280",
@@ -219,6 +223,7 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
           border: "none",
           cursor: "pointer",
           lineHeight: 1,
+          padding: 0,
         }}
       >
         ×
@@ -234,10 +239,9 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
           }}
           style={{
             width: "100%",
-            height: "92px",
+            height: "96px",
             objectFit: "cover",
-            borderTopLeftRadius: "12px",
-            borderTopRightRadius: "12px",
+            display: "block",
           }}
         />
       </div>
@@ -245,7 +249,8 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
       <div
         className="hotel-map-hover-content"
         style={{
-          padding: "8px 10px 10px",
+          padding: "10px 12px 12px",
+          minWidth: 0,
         }}
       >
         <h3
@@ -255,6 +260,10 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
             fontWeight: 500,
             color: "#0A0C0F",
             margin: 0,
+            lineHeight: "16px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
           }}
         >
           {hotelName}
@@ -266,43 +275,116 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
             fontWeight: 700,
             fontSize: "14px",
             color: "#0A0C0F",
-            marginTop: "6px",
-            marginBottom: "4px",
+            marginTop: "8px",
+            marginBottom: "6px",
+            lineHeight: "18px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
           }}
         >
           {currency} {Number(price).toLocaleString()}
         </div>
 
-        {renderStars(starRating)}
+        <div className="mb-2">{renderStars(starRating)}</div>
 
-        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "2px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "3px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
           {beachDistance}
         </div>
 
-        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "2px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "3px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
           {reviewScore}
           {reviewText} · {reviewCount} reviews
         </div>
 
-        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "4px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "6px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
           {locationScore} Location
         </div>
 
-        <div style={{ fontSize: "11px", color: "#0A0C0F", marginBottom: "2px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#0A0C0F",
+            marginBottom: "3px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
           <strong>{roomName}:</strong> {adults > 1 ? `${adults} beds` : "1 bed"}
         </div>
 
-        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "2px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "3px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
           {nights} night{nights > 1 ? "s" : ""}, {adults} adult
           {adults > 1 ? "s" : ""}
         </div>
 
-        <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "4px" }}>
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "6px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
           +{currency} {Number(taxesAndFees).toLocaleString()} taxes and fees
         </div>
 
         {meal && (
-          <div style={{ fontSize: "11px", color: "#3D495C", marginBottom: "2px" }}>
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#3D495C",
+              marginBottom: cancellationPolicy ? "3px" : "0",
+              lineHeight: "15px",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
+            }}
+          >
             {meal.toLowerCase().includes("breakfast")
               ? "Breakfast included"
               : meal}
@@ -310,7 +392,16 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
         )}
 
         {cancellationPolicy && (
-          <div style={{ fontSize: "11px", color: "#3D495C" }}>
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#3D495C",
+              lineHeight: "15px",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
+            }}
+          >
             {cancellationPolicy.toLowerCase().includes("free")
               ? "Free cancellation"
               : cancellationPolicy}
@@ -320,7 +411,6 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
     </div>
   );
 };
-
 const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
   ({ hotels }) => {
     const [favorites, setFavorites] = useState<Record<string, boolean>>({});
