@@ -30,6 +30,7 @@ const hotelApis = [
   "/getHotelCancellationCharges",
   "/hotelCancellation",
   "/myHotelBooking",
+  "/hotelRetrieve"
 ];
 const locationApis = ["/countries/cities", "/countries"];
 // const resonApis = ["/countries/cities", "/countries"];

@@ -170,8 +170,20 @@ html, body {
   min-height: var(--hero-inner-h);
   display: block;
 }
+.hotel-map-custom-tooltip.leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
 
+.hotel-map-custom-tooltip .leaflet-tooltip-content {
+  margin: 0 !important;
+}
 
+.hotel-map-custom-tooltip::before {
+  display: none !important;
+}
 
 /* Remove strict max-height so multi-city rows can expand and remain visible */
 /* If needed, we can add scroll inside specific sub-panels instead of restricting whole inner area */

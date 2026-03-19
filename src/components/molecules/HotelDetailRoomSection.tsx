@@ -1,8 +1,14 @@
 import { memo, useMemo, useState, useEffect, useRef, useCallback } from "react";
+import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
+import type { PassengerSchema } from "../../features/flights/types";
 import HotelDetailRoom1 from "../../assets/images/hotel-detail-room-1.png";
 import HotelDetailRoom2 from "../../assets/images/hotel-detail-room-2.png";
 import HotelDetailRoom3 from "../../assets/images/hotel-detail-room-3.png";
 import HotelDetailRoom4 from "../../assets/images/hotel-detail-room-4.png";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
+import TravellersAndRoomDropdown from "../atoms/TravellersAndRoomDropdown";
+import RoomImageGalleryModal from "../common/RoomImageGalleryModal";
+import Info from "../../assets/svgs/info-black.svg";
 import GreatStayIcon from "../../assets/svgs/great_stay.svg";
 import KnifeIcon from "../../assets/svgs/knife.svg";
 import BedroomIcon from "../../assets/svgs/bedroom.svg";
@@ -13,6 +19,12 @@ import {
   FACILITY_KEYWORDS,
   GREAT_KEYWORDS,
 } from "../../utils/hotelHelper";
+import {
+  convertDateToString,
+  getHotelBookingValidationError,
+  normalizeHotelBookingParams,
+  type HotelBookingParams,
+} from "../../utils/hotelBookingParams";
 
 type SelectedRoom = {
   roomKey: string;
@@ -22,9 +34,13 @@ type SelectedRoom = {
 };
 
 type HotelDetailRoomSectionProps = {
+  bookingParams?: HotelBookingParams;
+  hotelDetail?: any;
   hotelMoreRooms?: any;
   selectedRooms?: SelectedRoom[];
   onRoomsChange?: (selectedRooms: SelectedRoom[]) => void;
+  onBookingParamsChange?: (bookingParams: HotelBookingParams) => void;
+  isSearching?: boolean;
 };
 
 function buildGroupedRoomsForRooms(
@@ -89,10 +105,21 @@ function selectedRoomsToMap(
 }
 
 const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
+  bookingParams,
+  hotelDetail,
   hotelMoreRooms,
   selectedRooms: selectedRoomsFromParent,
   onRoomsChange,
+  onBookingParamsChange,
+  isSearching = false,
 }) => {
+  const { passengers } = useMasterListings({
+    include: ["passengers"],
+  });
+  const normalizedBookingParams = useMemo(
+    () => normalizeHotelBookingParams(bookingParams),
+    [bookingParams],
+  );
   const selectionByRoomIndex = useMemo(
     () => selectedRoomsToMap(selectedRoomsFromParent),
     [selectedRoomsFromParent],
@@ -244,11 +271,321 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     );
   };
 
+  const getAvailabilityCount = (room: any) => {
+    const matchingAvailableRooms = (hotelMoreRooms?.rooms || []).filter(
+      (candidate: any) => {
+        const candidateRatePlan = candidate?.ratePlan || {};
+        const roomRatePlan = room?.ratePlan || {};
+
+        return (
+          candidate?.roomTypeName === room?.roomTypeName &&
+          (candidateRatePlan?.meal || "") === (roomRatePlan?.meal || "") &&
+          (candidateRatePlan?.code || "") === (roomRatePlan?.code || "") &&
+          (candidateRatePlan?.cancelPolicyIndicator || "") ===
+            (roomRatePlan?.cancelPolicyIndicator || "") &&
+          candidateRatePlan?.availableStatus === "Available"
+        );
+      },
+    ).length;
+
+    if (matchingAvailableRooms > 0) {
+      return matchingAvailableRooms;
+    }
+
+    const candidates = [
+      room?.availableRooms?.length,
+      room?.availableRoomsCount,
+      room?.availableRoomCount,
+      room?.roomRate?.availableRoomsCount,
+      room?.roomRate?.remainingRooms,
+      room?.roomRate?.allotment,
+      room?.allotment,
+    ];
+
+    return (
+      candidates.find((value) => typeof value === "number" && value > 0) ?? null
+    );
+  };
+
+  const getRoomDescription = (room: any) =>
+    room?.roomTypeDesc ||
+    room?.description ||
+    room?.roomTypeName ||
+    "Room description not available";
+
+  const getRoomSize = (room: any) => room?.roomSize || room?.size || "25 m²";
+
+  const getMealPlanLabel = (room: any) =>
+    room?.ratePlan?.meal?.trim() || "Room Only";
+
+  const getPlanHighlights = (room: any, mealPlan: string) => {
+    const items: Array<{
+      text: string;
+      negative?: boolean;
+      html?: boolean;
+    }> = [];
+
+    if (mealPlan) {
+      items.push({ text: mealPlan });
+    }
+
+    if (room?.ratePlan?.cancelPolicyIndicator) {
+      items.push({
+        text: room.ratePlan.cancelPolicyIndicator,
+        negative: isNegativePolicy(room.ratePlan.cancelPolicyIndicator),
+      });
+    }
+
+    if (Array.isArray(room?.offers)) {
+      room.offers.forEach((offer: any) => {
+        if (offer?.name) {
+          items.push({
+            text: offer.name,
+            html: true,
+          });
+        }
+      });
+    }
+
+    return items.slice(0, 5);
+  };
+
+  const [checkInDate, setCheckInDate] = useState<Date | null>(
+    normalizedBookingParams?.checkIn
+      ? new Date(normalizedBookingParams.checkIn)
+      : null,
+  );
+  const [checkOutDate, setCheckOutDate] = useState<Date | null>(
+    normalizedBookingParams?.checkOut
+      ? new Date(normalizedBookingParams.checkOut)
+      : null,
+  );
+  const [paxData, setPaxData] = useState<{
+    adults?: number;
+    kids?: number;
+    children?: number;
+    rooms?: number;
+  }>({
+    adults: normalizedBookingParams?.paxData?.adults ?? 1,
+    kids:
+      normalizedBookingParams?.paxData?.kids ??
+      normalizedBookingParams?.paxData?.children ??
+      0,
+    children:
+      normalizedBookingParams?.paxData?.children ??
+      normalizedBookingParams?.paxData?.kids ??
+      0,
+    rooms: normalizedBookingParams?.paxData?.rooms ?? numberOfRooms ?? 1,
+  });
+  const [childAges, setChildAges] = useState<Array<number | null>>(
+    normalizedBookingParams?.childAges ?? [],
+  );
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
+  const [galleryRoomTitle, setGalleryRoomTitle] = useState("Room images");
+  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+
+  useEffect(() => {
+    setCheckInDate(
+      normalizedBookingParams?.checkIn
+        ? new Date(normalizedBookingParams.checkIn)
+        : null,
+    );
+    setCheckOutDate(
+      normalizedBookingParams?.checkOut
+        ? new Date(normalizedBookingParams.checkOut)
+        : null,
+    );
+    setPaxData({
+      adults: normalizedBookingParams?.paxData?.adults ?? 1,
+      kids:
+        normalizedBookingParams?.paxData?.kids ??
+        normalizedBookingParams?.paxData?.children ??
+        0,
+      children:
+        normalizedBookingParams?.paxData?.children ??
+        normalizedBookingParams?.paxData?.kids ??
+        0,
+      rooms: normalizedBookingParams?.paxData?.rooms ?? numberOfRooms ?? 1,
+    });
+    setChildAges(normalizedBookingParams?.childAges ?? []);
+    setValidationError(null);
+  }, [normalizedBookingParams, numberOfRooms]);
+
+  const handlePaxChange = useCallback(
+    (nextPax: {
+      adults?: number;
+      kids?: number;
+      children?: number;
+      rooms?: number;
+    }) => {
+      setPaxData(nextPax);
+    },
+    [],
+  );
+
+  const handleChildrenAgesChange = useCallback(
+    (ages: Array<number | null>) => {
+      setChildAges(ages);
+    },
+    [],
+  );
+
+  const validateToolbarSearch = useCallback(() => {
+    const validationMessage = getHotelBookingValidationError({
+      country: normalizedBookingParams?.country,
+      city: normalizedBookingParams?.city,
+      checkIn: convertDateToString(checkInDate),
+      checkOut: convertDateToString(checkOutDate),
+      travelerCountryOfResidence:
+        normalizedBookingParams?.travelerCountryOfResidence,
+      paxData,
+      childAges,
+      requireSearchContext: true,
+    });
+
+    if (validationMessage) {
+      setValidationError(validationMessage);
+      return false;
+    }
+
+    setValidationError(null);
+    return true;
+  }, [
+    normalizedBookingParams?.country,
+    normalizedBookingParams?.city,
+    normalizedBookingParams?.travelerCountryOfResidence,
+    checkInDate,
+    checkOutDate,
+    paxData,
+    childAges,
+  ]);
+
+  const handleToolbarSearch = useCallback(() => {
+    if (!validateToolbarSearch()) {
+      return;
+    }
+
+    onBookingParamsChange?.({
+      ...normalizedBookingParams,
+      checkIn: convertDateToString(checkInDate),
+      checkOut: convertDateToString(checkOutDate),
+      paxData: {
+        adults: paxData.adults ?? 1,
+        children: paxData.children ?? paxData.kids ?? 0,
+        kids: paxData.kids ?? paxData.children ?? 0,
+        rooms: paxData.rooms ?? 1,
+      },
+      childAges,
+    });
+  }, [
+    validateToolbarSearch,
+    normalizedBookingParams,
+    checkInDate,
+    checkOutDate,
+    paxData,
+    childAges,
+    onBookingParamsChange,
+  ]);
+
+  const openRoomImageGallery = useCallback(
+    (images: string[], initialIndex: number, roomTitle?: string) => {
+      setGalleryImages(images);
+      setGalleryInitialIndex(initialIndex);
+      setGalleryRoomTitle(roomTitle || "Room images");
+      setIsGalleryOpen(true);
+    },
+    [],
+  );
+
   return (
     <div className="mt-6">
       <div className="mx-auto max-w-6xl">
         <h4 className="text-[#0A0C0F] text-base font-bold">Rooms availability</h4>
         <div className="mt-2 border-t border-[#E4E4E7]" />
+
+        <div className="mt-8 flex items-end justify-center gap-4">
+          <div className="hotel-filter-dates w-full max-w-[460px] min-w-0">
+            <div className="mb-2 text-[12px] font-normal text-[#3D495C]">Dates</div>
+            <div
+              className="h-[50px] w-full min-w-0 rounded-[16px] border border-[#C2CAD6] px-2 flex items-center"
+              style={{ background: "var(--white-200, #FFFFFF)" }}
+            >
+              <TailiwindCustomDatePicker
+                value={checkInDate}
+                onChange={setCheckInDate}
+                placeholder="Check-in date"
+                buttonIconSrc={true}
+                overridesClass={true}
+                showCalendarIconRight={false}
+                inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none outline-none pl-10 pr-1 text-[12px] sm:text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
+                disablePastDates={true}
+              />
+              <span className="select-none px-1 text-[#94A3B8]">—</span>
+              <TailiwindCustomDatePicker
+                value={checkOutDate}
+                onChange={setCheckOutDate}
+                placeholder="Check-out date"
+                buttonIconSrc={true}
+                overridesClass={true}
+                showCalendarIconRight={false}
+                inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none outline-none pl-10 pr-2 text-[12px] sm:text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
+                disablePastDates={true}
+                minDate={checkInDate || undefined}
+              />
+            </div>
+          </div>
+
+          <div className="hotel-filter-travellers w-full max-w-[360px] min-w-0">
+            <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
+              Travellers and rooms{" "}
+              <span className="relative inline-flex group/info">
+                <img
+                  src={Info}
+                  alt="info"
+                  className="w-4 h-4 inline-block align-middle flex-shrink-0"
+                />
+                <span
+                  className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
+                  role="tooltip"
+                >
+                  Minimum 1 adult required per room <br />
+                  Maximum 2 adults allowed per room <br />
+                  Maximum 2 children allowed per room <br />
+                  Child age must be within 2 and 12 years
+                </span>
+              </span>
+            </label>
+            <TravellersAndRoomDropdown
+              maxTotal={100}
+              schema={passengers as PassengerSchema}
+              value={paxData}
+              onChange={handlePaxChange}
+              initialChildAges={childAges}
+              onChildrenAgesChange={handleChildrenAgesChange}
+              errorMessage={
+                validationError &&
+                /adult|required for|children|ages|room/i.test(validationError)
+                  ? validationError
+                  : null
+              }
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleToolbarSearch}
+            disabled={isSearching}
+            className="flex h-[50px] min-w-[140px] items-center justify-center rounded-[12px] bg-[#2351A3] px-7 text-[15px] font-semibold text-[#F2F2F3] disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSearching ? "Searching..." : "Search"}
+          </button>
+        </div>
+
+        {validationError && (
+          <p className="mt-3 text-[12px] text-[#E65959]">{validationError}</p>
+        )}
 
         {numberOfRooms > 1 &&
           (() => {
@@ -413,7 +750,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       </h3>
                     </div>
 
-                    {groupedRoomsForIndex.map((group) => {
+                    {groupedRoomsForIndex.map((group, groupIndex) => {
                       const firstRoom = group.rooms[0];
                       const allRoomImages: string[] = [];
 
@@ -430,10 +767,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                         }
                       });
 
-                      const roomImages =
-                        allRoomImages.length > 0
-                          ? allRoomImages.slice(0, 4)
-                          : DEFAULT_ROOM_IMAGES;
+                      const gallerySourceImages =
+                        allRoomImages.length > 0 ? allRoomImages : DEFAULT_ROOM_IMAGES;
+                      const roomImages = gallerySourceImages.slice(0, 4);
 
                       const categories = [
                         "greatForYourStay",
@@ -443,9 +779,36 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                         "bathroom",
                       ];
 
-                      const allFacilities = group.rooms.flatMap(
+                      const unwantedKeywords = [
+                        "total number",
+                        "hotel",
+                        "american express",
+                        "mastercard",
+                        "visa",
+                        "identification",
+                        "**",
+                        "payment",
+                        "card",
+                      ];
+                      const roomFacilities = group.rooms.flatMap(
                         (room: any) => room?.roomFacilities || [],
                       );
+                      const hotelFacilities = hotelDetail?.hotelFacilities || [];
+                      const rawFacilities =
+                        roomFacilities.length > 0
+                          ? [...hotelFacilities, ...roomFacilities]
+                          : hotelFacilities;
+                      const allFacilities = rawFacilities.filter((facility: any) => {
+                        const cleanName = facility?.name?.replace(/\*\*/g, "").trim();
+                        const lowerName = cleanName?.toLowerCase() || "";
+
+                        return (
+                          cleanName &&
+                          !unwantedKeywords.some((keyword) =>
+                            lowerName.includes(keyword),
+                          )
+                        );
+                      });
 
                       const categorizedAmenities = categorizeFacilities(
                         [allFacilities],
@@ -457,236 +820,139 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       return (
                         <div
                           key={`${roomIndex}-${group.roomTypeName}`}
-                          className="border border-[#EAECEF] bg-white rounded-2xl overflow-hidden"
+                          className={`overflow-hidden rounded-[16px] border border-[#E4E4E7] bg-white ${
+                            groupIndex > 0 ? "mt-6" : ""
+                          }`}
                         >
-                          <div className="px-6 py-4 flex items-center justify-between">
-                            <h2 className="text-[13px] font-semibold text-[#0A0C0F]">
+                          <div className="flex items-center justify-between px-[15px] py-[14px]">
+                            <h2 className="text-[16px] font-medium text-[#0A0C0F]">
                               {firstRoom?.roomTypeName || group.roomTypeName || "Room"}
                             </h2>
-{/* 
                             <button
                               type="button"
-                              className="text-[13px] text-[#2351A3] font-medium hover:underline"
-                              onClick={(e) => e.stopPropagation()}
+                              className="text-[16px] font-normal text-[#5383DA] hover:underline"
                             >
                               View details
-                            </button> */}
+                            </button>
                           </div>
 
-                          <div className="border-t border-[#EEF2F6]" />
+                          <div className="border-t border-[#E4E4E7]" />
 
-                          <div className="px-6 py-5 grid grid-cols-[260px_1fr] gap-8">
+                          <div className="grid grid-cols-[340px_1px_minmax(0,1fr)] gap-4 px-[15px] py-[12px]">
                             <div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="col-span-2 h-[120px] rounded-xl overflow-hidden bg-[#F1F5F9]">
-                                  <img
-                                    src={roomImages?.[0]}
-                                    alt="Room"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const t = e.currentTarget as HTMLImageElement;
-                                      t.src = DEFAULT_ROOM_IMAGES[0];
-                                    }}
-                                  />
-                                </div>
-
-                                <div className="h-[72px] rounded-xl overflow-hidden bg-[#F1F5F9]">
-                                  <img
-                                    src={roomImages?.[1]}
-                                    alt="Room"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const t = e.currentTarget as HTMLImageElement;
-                                      t.src = DEFAULT_ROOM_IMAGES[1];
-                                    }}
-                                  />
-                                </div>
-
-                                <div className="h-[72px] rounded-xl overflow-hidden bg-[#F1F5F9]">
-                                  <img
-                                    src={roomImages?.[2]}
-                                    alt="Room"
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      const t = e.currentTarget as HTMLImageElement;
-                                      t.src = DEFAULT_ROOM_IMAGES[2];
-                                    }}
-                                  />
-                                </div>
+                              <div className="flex items-start overflow-hidden">
+                                {roomImages.slice(0, 4).map((image, imageIndex) => (
+                                  <button
+                                    key={`${image}-${imageIndex}`}
+                                    type="button"
+                                    onClick={() =>
+                                      openRoomImageGallery(
+                                        gallerySourceImages,
+                                        imageIndex,
+                                        firstRoom?.roomTypeName ||
+                                          group.roomTypeName ||
+                                          "Room images",
+                                      )
+                                    }
+                                    className={`h-[130px] w-[130px] shrink-0 overflow-hidden rounded-[10px] border border-white bg-[#F1F5F9] ${
+                                      imageIndex === 0 ? "" : "-ml-[65px]"
+                                    } cursor-zoom-in`}
+                                  >
+                                    <img
+                                      src={image}
+                                      alt="Room"
+                                      className="h-full w-full object-cover"
+                                      onError={(e) => {
+                                        const t = e.currentTarget as HTMLImageElement;
+                                        t.src =
+                                          DEFAULT_ROOM_IMAGES[
+                                            imageIndex % DEFAULT_ROOM_IMAGES.length
+                                          ];
+                                      }}
+                                    />
+                                  </button>
+                                ))}
                               </div>
 
-                              <div className="mt-3 text-[12px] text-[#64748B]">
-                                Room size:{" "}
-                                <span className="text-[#0A0C0F]">
-                                  {firstRoom?.roomSize || "30 m²"}
-                                </span>
+                              <div className="mt-[8px] text-[14px] font-normal text-[#3D495C]">
+                                Room size: {getRoomSize(firstRoom)}
                               </div>
                             </div>
 
-                            <div className="min-w-0">
+                            <div className="my-[4px] bg-[#E4E4E7]" />
+
+                            <div className="min-w-0 py-[2px]">
                               {Object.values(categorizedAmenities).some(
                                 (arr) => arr.length > 0,
                               ) ? (
-                                <div className="grid grid-cols-3 gap-x-10 gap-y-4">
+                                <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)] gap-x-[28px] gap-y-[12px]">
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
-                                      <img
-                                        alt="icon"
-                                        src={GreatStayIcon}
-                                        className="w-4 h-4"
-                                      />
-                                      <span>Great for your stay</span>
-                                    </div>
-                                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-[#475569]">
-                                      {categorizedAmenities.greatForYourStay
-                                        .slice(0, 6)
-                                        .map((it: string) => (
-                                          <span
-                                            key={it}
-                                            className="flex items-center gap-1 whitespace-nowrap"
-                                          >
-                                            <CheckIcon />
-                                            <span className="truncate max-w-[180px]">
-                                              {it}
-                                            </span>
-                                          </span>
-                                        ))}
-                                    </div>
+                                    <SectionHeading icon={GreatStayIcon} title="Great for your stay" />
+                                    <AmenitiesInlineList
+                                      items={categorizedAmenities.greatForYourStay.slice(0, 7)}
+                                    />
                                   </div>
 
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
-                                      <img
-                                        alt="icon"
-                                        src={KnifeIcon}
-                                        className="w-4 h-4"
-                                      />
-                                      <span>Kitchen</span>
-                                    </div>
-                                    <div className="mt-3 flex flex-col gap-2 text-[11px] text-[#475569]">
-                                      {categorizedAmenities.kitchen
-                                        .slice(0, 6)
-                                        .map((it: string) => (
-                                          <span
-                                            key={it}
-                                            className="flex items-center gap-1 whitespace-nowrap"
-                                          >
-                                            <CheckIcon />
-                                            <span className="truncate">{it}</span>
-                                          </span>
-                                        ))}
-                                    </div>
+                                    <SectionHeading icon={KnifeIcon} title="Kitchen" />
+                                    <AmenitiesStackList
+                                      items={categorizedAmenities.kitchen.slice(0, 6)}
+                                    />
                                   </div>
 
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
-                                      <img
-                                        alt="icon"
-                                        src={BedroomIcon}
-                                        className="w-4 h-4"
-                                      />
-                                      <span>Bedrooms</span>
-                                    </div>
-                                    <div className="mt-3 flex flex-col gap-2 text-[11px] text-[#475569]">
-                                      {categorizedAmenities.bedrooms
-                                        .slice(0, 6)
-                                        .map((it: string) => (
-                                          <span
-                                            key={it}
-                                            className="flex items-center gap-1 whitespace-nowrap"
-                                          >
-                                            <CheckIcon />
-                                            <span className="truncate">{it}</span>
-                                          </span>
-                                        ))}
-                                    </div>
+                                    <SectionHeading icon={BedroomIcon} title="Bedrooms" />
+                                    <AmenitiesStackList
+                                      items={categorizedAmenities.bedrooms.slice(0, 6)}
+                                    />
                                   </div>
 
                                   <div className="min-w-0 col-span-2">
-                                    <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
-                                      <img
-                                        alt="icon"
-                                        src={MediaIcon}
-                                        className="w-4 h-4"
-                                      />
-                                      <span>Media & Technology</span>
-                                    </div>
-                                    <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[11px] text-[#475569]">
-                                      {categorizedAmenities.mediaAndTechnology
-                                        .slice(0, 8)
-                                        .map((it: string) => (
-                                          <span
-                                            key={it}
-                                            className="flex items-center gap-1 whitespace-nowrap"
-                                          >
-                                            <CheckIcon />
-                                            <span className="truncate max-w-[200px]">
-                                              {it}
-                                            </span>
-                                          </span>
-                                        ))}
-                                    </div>
+                                    <SectionHeading icon={MediaIcon} title="Media & Technology" />
+                                    <AmenitiesInlineList
+                                      items={categorizedAmenities.mediaAndTechnology.slice(0, 8)}
+                                    />
                                   </div>
 
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-2 text-[12px] font-semibold text-[#0A0C0F]">
-                                      <img
-                                        alt="icon"
-                                        src={BathroomIcon}
-                                        className="w-4 h-4"
-                                      />
-                                      <span>Bathroom</span>
-                                    </div>
-                                    <div className="mt-3 flex flex-wrap gap-x-3 gap-y-2 text-[11px] text-[#475569]">
-                                      {categorizedAmenities.bathroom
-                                        .slice(0, 8)
-                                        .map((it: string) => (
-                                          <span
-                                            key={it}
-                                            className="flex items-center gap-1 whitespace-nowrap"
-                                          >
-                                            <CheckIcon />
-                                            <span className="truncate max-w-[140px]">
-                                              {it}
-                                            </span>
-                                          </span>
-                                        ))}
-                                    </div>
+                                    <SectionHeading icon={BathroomIcon} title="Bathroom" />
+                                    <AmenitiesInlineList
+                                      items={categorizedAmenities.bathroom.slice(0, 9)}
+                                    />
                                   </div>
                                 </div>
                               ) : (
-                                <span className="text-[#94A3B8] text-xs">
+                                <span className="text-xs text-[#94A3B8]">
                                   No amenities listed
                                 </span>
                               )}
                             </div>
                           </div>
 
-                          <div className="border-t border-[#EEF2F6]" />
+                          <div className="border-t border-[#E4E4E7]" />
 
-                          <div className="px-6 py-3 text-[13px] font-semibold text-[#0A0C0F]">
+                          <div className="px-[15px] py-[14px] text-[16px] font-normal text-[#0A0C0F]">
                             Select an option
                           </div>
 
-                          <div className="border-t border-[#EEF2F6]" />
+                          <div className="border-t border-[#E4E4E7]" />
 
-                          <div className="divide-y divide-[#EEF2F6]">
+                          <div className="divide-y divide-[#E4E4E7]">
                             {group.rooms.map((room: any, index: number) => {
                               const price = room.roomRate?.netAmount || 0;
                               const currency = room.roomRate?.currency || "AED";
-                              const mealPlan = room.ratePlan?.meal || "Room Only";
-                              const cancelPolicy =
-                                room.ratePlan?.cancelPolicyIndicator || "";
-                              const offers = room.offers || [];
-                              const hasOffers = offers.length > 0;
+                              const mealPlan = getMealPlanLabel(room);
+                              const highlights = getPlanHighlights(room, mealPlan);
+                              const hasOffers = Array.isArray(room?.offers) && room.offers.length > 0;
                               const originalPrice = hasOffers
                                 ? price -
-                                  offers.reduce(
+                                  room.offers.reduce(
                                     (sum: number, offer: any) =>
                                       sum + (offer.amount || 0),
                                     0,
                                   )
                                 : price;
+                              const availabilityCount = getAvailabilityCount(room);
 
                               const roomKey =
                                 room.roomKey ||
@@ -701,58 +967,45 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                               return (
                                 <div
                                   key={roomKey}
-                                  className="px-6 py-5 grid grid-cols-[180px_1fr_120px_260px_120px] gap-6 items-center"
+                                  className="grid grid-cols-[170px_minmax(0,1fr)_100px_220px_40px_116px] items-center gap-6 px-[15px] py-[18px]"
                                 >
                                   <div className="min-w-0">
-                                    <div className="text-[12px] font-semibold text-[#0A0C0F]">
+                                    <div className="text-[14px] font-semibold text-[#3D495C]">
                                       {mealPlan}
                                     </div>
 
-                                    <div className="mt-3 space-y-2 text-[12px] text-[#475569]">
-                                      <div className="flex items-center gap-2">
-                                        <AvaialableIcon />
-                                        <span className="truncate">{mealPlan}</span>
-                                      </div>
-
-                                      {cancelPolicy && (
-                                        <div className="flex items-center gap-2">
-                                          {isNegativePolicy(cancelPolicy) ? (
+                                    <div className="mt-[12px] space-y-[6px] text-[14px] text-[#3D495C]">
+                                      {highlights.map((item) => (
+                                        <div
+                                          key={`${mealPlan}-${item.text}`}
+                                          className="flex items-center gap-2"
+                                        >
+                                          {item.negative ? (
                                             <UnavailableIcon />
                                           ) : (
                                             <AvaialableIcon />
                                           )}
-                                          <span className="truncate">
-                                            {cancelPolicy}
-                                          </span>
+                                          {item.html ? (
+                                            <span
+                                              className="truncate"
+                                              dangerouslySetInnerHTML={{
+                                                __html: item.text,
+                                              }}
+                                            />
+                                          ) : (
+                                            <span className="truncate">{item.text}</span>
+                                          )}
                                         </div>
-                                      )}
-
-                                      {hasOffers && (
-                                        <div className="flex items-center gap-2">
-                                          <AvaialableIcon />
-                                          <span
-                                            className="truncate"
-                                            dangerouslySetInnerHTML={{
-                                              __html:
-                                                offers[0]?.name ||
-                                                "Special offer",
-                                            }}
-                                          />
-                                        </div>
-                                      )}
+                                      ))}
                                     </div>
                                   </div>
 
-                                  <div className="min-w-0 text-[12px] text-[#475569] leading-5">
-                                    {room.roomTypeDesc ||
-                                      room.roomTypeName ||
-                                      "Room description not available"}
+                                  <div className="min-w-0 text-[14px] leading-[20px] text-[#3D495C]">
+                                    {getRoomDescription(room)}
                                   </div>
 
-                                  <div className="text-[12px] text-[#475569] flex items-center gap-2 whitespace-nowrap">
-                                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-[#CBD5E1] text-[10px] text-[#64748B]">
-                                      👤
-                                    </span>
+                                  <div className="flex items-center gap-[5px] whitespace-nowrap text-[14px] text-[#3D495C]">
+                                    <GuestsIcon />
                                     <span>
                                       {room?.maxOccupancy && room?.maxOccupancy > 0
                                         ? `${room.maxOccupancy} Adults`
@@ -762,35 +1015,45 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
 
                                   <div className="min-w-0">
                                     {price > 0 ? (
-                                      <div className="text-right">
+                                      <div className="text-left">
                                         {hasOffers ? (
-                                          <div className="flex items-center justify-end gap-2">
+                                          <div className="flex items-center gap-2">
                                             <span className="text-[12px] text-[#64748B] line-through">
                                               {formatPrice(originalPrice, currency)}
                                             </span>
-                                            <span className="text-[14px] font-semibold text-[#EA0029]">
+                                            <span className="text-[18px] font-bold text-[#EA0029]">
                                               {formatPrice(price, currency)}
                                             </span>
                                           </div>
                                         ) : (
-                                          <div className="text-[14px] font-semibold text-[#0A0C0F]">
+                                          <div className="text-[18px] font-bold text-[#0A0C0F]">
                                             {formatPrice(price, currency)}
+                                            <span className="ml-[2px] text-[14px] font-normal text-[#3D495C]">
+                                              /per night
+                                            </span>
                                           </div>
                                         )}
 
-                                        <div className="text-[11px] text-[#94A3B8]">
-                                          Total for 1 room
-                                        </div>
+                                        {availabilityCount && availabilityCount <= 5 ? (
+                                          <div className="mt-[3px] text-[12px] text-[#EA0029]">
+                                            Only {availabilityCount} room
+                                            {availabilityCount > 1 ? "s" : ""} left on Al Rais
+                                          </div>
+                                        ) : null}
                                       </div>
                                     ) : (
-                                      <div className="text-[12px] text-[#EA0029] text-right">
+                                      <div className="text-[14px] text-[#EA0029]">
                                         Select dates, travelers and rooms to see
                                         prices.
                                       </div>
                                     )}
                                   </div>
 
-                                  <div className="flex items-center justify-end gap-3">
+                                  <div className="flex justify-center">
+                                    <InfoIcon />
+                                  </div>
+
+                                  <div className="flex items-center justify-end gap-[10px]">
                                     <button
                                       type="button"
                                       onClick={() =>
@@ -801,12 +1064,16 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                           -1,
                                         )
                                       }
-                                      className="h-8 w-8 rounded-full bg-[#E2E8F0] text-[#334155] flex items-center justify-center"
+                                      className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${
+                                        count > 0
+                                          ? "bg-[#2351A3] text-white"
+                                          : "bg-[#C2CAD6] text-white"
+                                      }`}
                                     >
                                       –
                                     </button>
 
-                                    <div className="w-6 text-center text-[12px] font-semibold text-[#0A0C0F]">
+                                    <div className="w-[22px] text-center text-[16px] font-normal text-[#0A0C0F]">
                                       {String(count).padStart(2, "0")}
                                     </div>
 
@@ -820,7 +1087,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                           +1,
                                         )
                                       }
-                                      className="h-8 w-8 rounded-full bg-[#2351A3] text-white flex items-center justify-center"
+                                      className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#2351A3] text-[20px] leading-none text-white"
                                     >
                                       +
                                     </button>
@@ -840,6 +1107,14 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
           });
         })()}
       </div>
+
+      <RoomImageGalleryModal
+        open={isGalleryOpen}
+        images={galleryImages}
+        initialIndex={galleryInitialIndex}
+        roomTitle={galleryRoomTitle}
+        onClose={() => setIsGalleryOpen(false)}
+      />
     </div>
   );
 };
@@ -888,3 +1163,97 @@ const AvaialableIcon = () => {
     </svg>
   );
 };
+
+const SectionHeading = ({
+  icon,
+  title,
+}: {
+  icon: string;
+  title: string;
+}) => (
+  <div className="flex items-center gap-[5px] text-[14px] font-semibold text-[#0A0C0F]">
+    <img alt="" src={icon} className="h-5 w-5 shrink-0" />
+    <span>{title}</span>
+  </div>
+);
+
+const AmenitiesInlineList = ({ items }: { items: string[] }) => (
+  <div className="mt-[10px] flex flex-wrap gap-x-[14px] gap-y-[8px] text-[12px] text-[#3D495C]">
+    {items.map((item) => (
+      <span key={item} className="flex items-center gap-[5px] whitespace-nowrap">
+        <CheckIcon />
+        <span className="truncate">{item}</span>
+      </span>
+    ))}
+  </div>
+);
+
+const AmenitiesStackList = ({ items }: { items: string[] }) => (
+  <div className="mt-[10px] flex flex-col gap-[8px] text-[12px] text-[#3D495C]">
+    {items.map((item) => (
+      <span key={item} className="flex items-center gap-[5px] whitespace-nowrap">
+        <CheckIcon />
+        <span className="truncate">{item}</span>
+      </span>
+    ))}
+  </div>
+);
+
+const GuestsIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M6.25 9.16667C7.86083 9.16667 9.16667 7.86083 9.16667 6.25C9.16667 4.63917 7.86083 3.33333 6.25 3.33333C4.63917 3.33333 3.33333 4.63917 3.33333 6.25C3.33333 7.86083 4.63917 9.16667 6.25 9.16667Z"
+      stroke="#2351A3"
+      strokeWidth="1.5"
+    />
+    <path
+      d="M11.6667 8.33333C12.8173 8.33333 13.75 7.40059 13.75 6.25C13.75 5.09941 12.8173 4.16667 11.6667 4.16667"
+      stroke="#2351A3"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M1.66667 15.8333C1.66667 13.9924 3.15905 12.5 5 12.5H7.5C9.34095 12.5 10.8333 13.9924 10.8333 15.8333"
+      stroke="#2351A3"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+    <path
+      d="M11.6667 12.5H12.5C14.341 12.5 15.8333 13.9924 15.8333 15.8333"
+      stroke="#2351A3"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    />
+  </svg>
+);
+
+const InfoIcon = () => (
+  <button
+    type="button"
+    className="flex h-8 w-8 items-center justify-center rounded-full text-[#2351A3]"
+    aria-label="Room information"
+  >
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 20 20"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="10" cy="10" r="8.5" stroke="currentColor" />
+      <path
+        d="M10 9V13"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+      <circle cx="10" cy="6.5" r="1" fill="currentColor" />
+    </svg>
+  </button>
+);
