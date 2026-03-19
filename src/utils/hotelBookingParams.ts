@@ -54,7 +54,12 @@ export const normalizeHotelBookingParams = (
     checkOut: bookingParams.checkOut ?? "",
     travelerCountryOfResidence: bookingParams.travelerCountryOfResidence ?? "",
     travelerNationality: bookingParams.travelerNationality ?? "",
-    paxData: normalizePaxData(bookingParams.paxData, bookingParams),
+    paxData: normalizePaxData(bookingParams.paxData, {
+      adults: bookingParams.adults,
+      children: bookingParams.children,
+      kids: bookingParams.kids,
+      rooms: bookingParams.rooms,
+    }),
     childAges: Array.isArray(bookingParams.childAges)
       ? bookingParams.childAges
       : [],

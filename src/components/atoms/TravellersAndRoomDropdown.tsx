@@ -184,9 +184,9 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   // --- CHILDREN AGES HANDLING ---
   // detect children key in schema (support 'kids' or 'children')
   const childRowKey = useMemo(() => {
-    const explicitKey = rows.find(
-      (r) => r.key === "kids" || r.key === "children",
-    )?.key as (keyof Pax & string) | undefined;
+    const explicitKey = rows.find((r) => r.key === "kids")?.key as
+      | (keyof Pax & string)
+      | undefined;
 
     if (explicitKey) return explicitKey;
     if ((pax.kids ?? 0) > 0) return "kids";
