@@ -20,8 +20,8 @@ import {
   GREAT_KEYWORDS,
 } from "../../utils/hotelHelper";
 import {
-  convertDateToString,
-  getHotelBookingValidationError,
+  // convertDateToString,
+  // getHotelBookingValidationError,
   normalizeHotelBookingParams,
   type HotelBookingParams,
 } from "../../utils/hotelBookingParams";
@@ -110,8 +110,8 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   hotelMoreRooms,
   selectedRooms: selectedRoomsFromParent,
   onRoomsChange,
-  onBookingParamsChange,
-  isSearching = false,
+  // onBookingParamsChange,
+  // isSearching = false,
 }) => {
   const { passengers } = useMasterListings({
     include: ["passengers"],
@@ -432,62 +432,62 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     [],
   );
 
-  const validateToolbarSearch = useCallback(() => {
-    const validationMessage = getHotelBookingValidationError({
-      country: normalizedBookingParams?.country,
-      city: normalizedBookingParams?.city,
-      checkIn: convertDateToString(checkInDate),
-      checkOut: convertDateToString(checkOutDate),
-      travelerCountryOfResidence:
-        normalizedBookingParams?.travelerCountryOfResidence,
-      paxData,
-      childAges,
-      requireSearchContext: true,
-    });
+  // const validateToolbarSearch = useCallback(() => {
+  //   const validationMessage = getHotelBookingValidationError({
+  //     country: normalizedBookingParams?.country,
+  //     city: normalizedBookingParams?.city,
+  //     checkIn: convertDateToString(checkInDate),
+  //     checkOut: convertDateToString(checkOutDate),
+  //     travelerCountryOfResidence:
+  //       normalizedBookingParams?.travelerCountryOfResidence,
+  //     paxData,
+  //     childAges,
+  //     requireSearchContext: true,
+  //   });
 
-    if (validationMessage) {
-      setValidationError(validationMessage);
-      return false;
-    }
+  //   if (validationMessage) {
+  //     setValidationError(validationMessage);
+  //     return false;
+  //   }
 
-    setValidationError(null);
-    return true;
-  }, [
-    normalizedBookingParams?.country,
-    normalizedBookingParams?.city,
-    normalizedBookingParams?.travelerCountryOfResidence,
-    checkInDate,
-    checkOutDate,
-    paxData,
-    childAges,
-  ]);
+  //   setValidationError(null);
+  //   return true;
+  // }, [
+  //   normalizedBookingParams?.country,
+  //   normalizedBookingParams?.city,
+  //   normalizedBookingParams?.travelerCountryOfResidence,
+  //   checkInDate,
+  //   checkOutDate,
+  //   paxData,
+  //   childAges,
+  // ]);
 
-  const handleToolbarSearch = useCallback(() => {
-    if (!validateToolbarSearch()) {
-      return;
-    }
+  // const handleToolbarSearch = useCallback(() => {
+  //   if (!validateToolbarSearch()) {
+  //     return;
+  //   }
 
-    onBookingParamsChange?.({
-      ...normalizedBookingParams,
-      checkIn: convertDateToString(checkInDate),
-      checkOut: convertDateToString(checkOutDate),
-      paxData: {
-        adults: paxData.adults ?? 1,
-        children: paxData.children ?? paxData.kids ?? 0,
-        kids: paxData.kids ?? paxData.children ?? 0,
-        rooms: paxData.rooms ?? 1,
-      },
-      childAges,
-    });
-  }, [
-    validateToolbarSearch,
-    normalizedBookingParams,
-    checkInDate,
-    checkOutDate,
-    paxData,
-    childAges,
-    onBookingParamsChange,
-  ]);
+  //   onBookingParamsChange?.({
+  //     ...normalizedBookingParams,
+  //     checkIn: convertDateToString(checkInDate),
+  //     checkOut: convertDateToString(checkOutDate),
+  //     paxData: {
+  //       adults: paxData.adults ?? 1,
+  //       children: paxData.children ?? paxData.kids ?? 0,
+  //       kids: paxData.kids ?? paxData.children ?? 0,
+  //       rooms: paxData.rooms ?? 1,
+  //     },
+  //     childAges,
+  //   });
+  // }, [
+  //   validateToolbarSearch,
+  //   normalizedBookingParams,
+  //   checkInDate,
+  //   checkOutDate,
+  //   paxData,
+  //   childAges,
+  //   onBookingParamsChange,
+  // ]);
 
   const openRoomImageGallery = useCallback(
     (images: string[], initialIndex: number, roomTitle?: string) => {
