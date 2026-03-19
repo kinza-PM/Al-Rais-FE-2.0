@@ -43,12 +43,28 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
 
     const handleNavigateToDetail = () => {
       if (!hotel?.hotelKey) return;
-      navigate(`/hotel-detail/${hotel.hotelKey}`, {
-        state: {
-          searchKey: hotel.searchKey,
-          bookingParams: bookingParams ?? undefined,
-        },
-      });
+
+      const params = new URLSearchParams();
+
+      if (hotel?.searchKey) {
+        params.set("searchKey", hotel.searchKey);
+      }
+
+      if (bookingParams) {
+        params.set("bookingParams", JSON.stringify(bookingParams));
+      }
+
+      const queryString = params.toString();
+
+      navigate(
+        `/hotel-detail/${hotel.hotelKey}${queryString ? `?${queryString}` : ""}`,
+        {
+          state: {
+            searchKey: hotel.searchKey,
+            bookingParams: bookingParams ?? undefined,
+          },
+        }
+      );
     };
 
     const {
@@ -392,8 +408,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             >
               Starting from (including VAT)
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="flex items-baseline gap-1">
+            <div className="flex items-start gap-1.5">
+              <div className="min-w-0">
                 {hasOffer && originalPrice > price && (
                   <span
                     style={{
@@ -403,7 +419,9 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                       color: "#EA0029",
                       textDecoration: "line-through",
                       lineHeight: "100%",
-                      whiteSpace: "nowrap",
+                      maxWidth: "100%",
+                      overflowWrap: "anywhere",
+                      display: "block",
                     }}
                   >
                     {currency} {originalPrice.toFixed(2)}
@@ -416,7 +434,9 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                     fontSize: "22px",
                     color: "#0A0C0F",
                     lineHeight: "100%",
-                    whiteSpace: "nowrap",
+                    maxWidth: "100%",
+                    overflowWrap: "anywhere",
+                    display: "block",
                   }}
                 >
                   {currency} {price.toFixed(2)}

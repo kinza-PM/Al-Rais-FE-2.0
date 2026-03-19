@@ -385,6 +385,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
   const [galleryRoomTitle, setGalleryRoomTitle] = useState("Room images");
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const [expandedOptionGroups, setExpandedOptionGroups] = useState<
+    Record<string, boolean>
+  >({});
 
   useEffect(() => {
     setCheckInDate(
@@ -817,6 +820,14 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                         GREAT_KEYWORDS,
                       );
 
+                      const optionGroupKey = `${roomIndex}-${group.roomTypeName}`;
+                      const hasMoreOptions = group.rooms.length > 3;
+                      const isOptionGroupExpanded =
+                        expandedOptionGroups[optionGroupKey] ?? false;
+                      const visibleRooms = isOptionGroupExpanded
+                        ? group.rooms
+                        : group.rooms.slice(0, 3);
+
                       return (
                         <div
                           key={`${roomIndex}-${group.roomTypeName}`}
@@ -936,7 +947,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                           <div className="border-t border-[#E4E4E7]" />
 
                           <div className="divide-y divide-[#E4E4E7]">
-                            {group.rooms.map((room: any, index: number) => {
+                            {visibleRooms.map((room: any, index: number) => {
                               const price = room.roomRate?.netAmount || 0;
                               const currency = room.roomRate?.currency || "AED";
                               const mealPlan = getMealPlanLabel(room);
@@ -1094,6 +1105,26 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                             })}
                           </div>
 
+                          {hasMoreOptions && (
+                            <div className="border-t border-[#E4E4E7] px-[15px] py-[14px]">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedOptionGroups((prev) => ({
+                                    ...prev,
+                                    [optionGroupKey]: !isOptionGroupExpanded,
+                                  }))
+                                }
+                                className="mx-auto flex items-center gap-[6px] rounded-full border border-[#E4E4E7] bg-white px-[16px] py-[8px] text-[13px] font-semibold text-[#2351A3] shadow-[0_2px_8px_rgba(10,12,15,0.05)] transition hover:bg-[#F8FAFC]"
+                              >
+                                <span>
+                                  {isOptionGroupExpanded ? "See less" : "See more"}
+                                </span>
+                                <ChevronIcon direction={isOptionGroupExpanded ? "up" : "down"} />
+                              </button>
+                            </div>
+                          )}
+
                         </div>
                       );
                     })}
@@ -1174,27 +1205,37 @@ const SectionHeading = ({
   </div>
 );
 
-const AmenitiesInlineList = ({ items }: { items: string[] }) => (
-  <div className="mt-[10px] flex flex-wrap gap-x-[14px] gap-y-[8px] text-[12px] text-[#3D495C]">
-    {items.map((item) => (
-      <span key={item} className="flex items-center gap-[5px] whitespace-nowrap">
-        <CheckIcon />
-        <span className="truncate">{item}</span>
-      </span>
-    ))}
-  </div>
+const EmptyAmenitiesMessage = () => (
+  <div className="mt-[10px] text-[12px] text-[#94A3B8]">No details available</div>
 );
 
-const AmenitiesStackList = ({ items }: { items: string[] }) => (
-  <div className="mt-[10px] flex flex-col gap-[8px] text-[12px] text-[#3D495C]">
-    {items.map((item) => (
-      <span key={item} className="flex items-center gap-[5px] whitespace-nowrap">
-        <CheckIcon />
-        <span className="truncate">{item}</span>
-      </span>
-    ))}
-  </div>
-);
+const AmenitiesInlineList = ({ items }: { items: string[] }) =>
+  items.length > 0 ? (
+    <div className="mt-[10px] flex flex-wrap gap-x-[14px] gap-y-[8px] text-[12px] text-[#3D495C]">
+      {items.map((item) => (
+        <span key={item} className="flex items-center gap-[5px] whitespace-nowrap">
+          <CheckIcon />
+          <span className="truncate">{item}</span>
+        </span>
+      ))}
+    </div>
+  ) : (
+    <EmptyAmenitiesMessage />
+  );
+
+const AmenitiesStackList = ({ items }: { items: string[] }) =>
+  items.length > 0 ? (
+    <div className="mt-[10px] flex flex-col gap-[8px] text-[12px] text-[#3D495C]">
+      {items.map((item) => (
+        <span key={item} className="flex items-center gap-[5px] whitespace-nowrap">
+          <CheckIcon />
+          <span className="truncate">{item}</span>
+        </span>
+      ))}
+    </div>
+  ) : (
+    <EmptyAmenitiesMessage />
+  );
 
 const GuestsIcon = () => (
   <svg
@@ -1253,4 +1294,26 @@ const InfoIcon = () => (
       <circle cx="10" cy="6.5" r="1" fill="currentColor" />
     </svg>
   </button>
+);
+
+const ChevronIcon = ({
+  direction,
+}: {
+  direction: "up" | "down";
+}) => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 20 20"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d={direction === "up" ? "M5 12.5L10 7.5L15 12.5" : "M5 7.5L10 12.5L15 7.5"}
+      stroke="#2351A3"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
 );

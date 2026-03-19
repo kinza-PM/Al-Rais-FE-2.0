@@ -168,7 +168,7 @@ const HotelSearchListing: React.FC = () => {
       //   setValidationError(null);
       // }
     },
-    [validationError],
+    [],
   );
 
   // Handle nested filter changes
@@ -212,20 +212,34 @@ const HotelSearchListing: React.FC = () => {
       rooms?: number;
     }) => {
       setPaxData(pax);
-      const room = convertPaxToRoom(pax, childAges);
-      handleSearchChange("rooms", room);
     },
-    [childAges, convertPaxToRoom, handleSearchChange],
+    [],
   );
 
   const handleChildrenAgesChange = useCallback(
     (ages: Array<number | null>) => {
       setChildAges(ages);
-      const room = convertPaxToRoom(paxData, ages);
-      handleSearchChange("rooms", room);
     },
-    [paxData, convertPaxToRoom, handleSearchChange],
+    [],
   );
+
+  useEffect(() => {
+    const nextRooms = convertPaxToRoom(paxData, childAges);
+
+    setSearchState((prev) => {
+      const currentRooms = JSON.stringify(prev.rooms ?? []);
+      const upcomingRooms = JSON.stringify(nextRooms);
+
+      if (currentRooms === upcomingRooms) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        rooms: nextRooms,
+      };
+    });
+  }, [paxData, childAges, convertPaxToRoom]);
 
   // Hydrate from store when coming from HotelHeroSectionTab or when returning from hotel detail (back button)
   // Store is preserved on navigate to detail so back button restores search context

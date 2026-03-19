@@ -94,11 +94,11 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
       const totalStars = 7;
 
       return (
-        <div className="flex items-center gap-1 mb-4">
+        <div className="mb-3 flex items-center gap-[5px]">
           {Array.from({ length: fullStars }).map((_, i) => (
             <img
               key={`filled-${i}`}
-              className="cursor-pointer"
+              className="h-5 w-5"
               src={FilledStar}
               alt="filled"
             />
@@ -106,7 +106,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
           {Array.from({ length: totalStars - fullStars }).map((_, i) => (
             <img
               key={`empty-${i}`}
-              className="cursor-pointer"
+              className="h-5 w-5"
               src={EmptyStar}
               alt="empty"
             />
@@ -245,21 +245,18 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
         if (!hotelKey) return;
 
-        const params = new URLSearchParams();
-
-        if (searchKey) {
-          params.set("searchKey", searchKey);
-        }
-
-        if (bookingParams) {
-          params.set("bookingParams", JSON.stringify(bookingParams));
-        }
-
-        const queryString = params.toString();
-
-        navigate(
-          `/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""}`
+        const detailUrl = buildHotelShareUrl(
+          hotelKey,
+          searchKey,
+          bookingParams ?? null
         );
+        const url = new URL(detailUrl);
+        navigate(`${url.pathname}${url.search}`, {
+          state: {
+            searchKey,
+            bookingParams: bookingParams ?? undefined,
+          },
+        });
       },
       [navigate, bookingParams]
     );
@@ -373,16 +370,20 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
               }
 
               const amenitiesToShow = displayAmenities.slice(0, 4);
+              const dealBadgeLabel =
+                hasOffer && uniqueOfferNames.length > 0
+                  ? uniqueOfferNames[0]
+                  : "Smashing deal";
 
               return (
                 <div
-                  className="bg-transparent overflow-hidden mb-4"
+                  className="mb-4 overflow-hidden bg-transparent"
                   style={{ borderBottom: "2px solid var(--black-100, #C2CAD6)" }}
                   key={hotel.hotelKey || index}
                 >
-                  <div className="flex p-2">
+                  <div className="flex gap-4 p-[10px]">
                     <div
-                      className="relative flex-shrink-0 mr-4"
+                      className="relative h-[220px] w-[244px] flex-shrink-0"
                       style={{ width: "244px", height: "220px" }}
                     >
                       <img
@@ -423,38 +424,48 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-[#0A0C0F] mb-1">
+                      <h3 className="mb-[6px] text-[16px] font-medium leading-none text-[#0A0C0F]">
                         {hotelName}
                       </h3>
 
-                      <p className="text-xs text-[#3D495C] mb-2">
-                        {address}
-                        {locationText && ` • ${locationText}`}
-                        {distanceFromCenter && ` • ${distanceFromCenter}`}
-                      </p>
+                      <div className="mb-3 flex flex-wrap items-center gap-[5px] text-[12px] leading-none text-[#3D495C]">
+                        {address ? <span>{address}</span> : null}
+                        {locationText ? (
+                          <>
+                            <span className="h-1 w-1 rounded-full bg-[#3D495C]" />
+                            <span>{locationText}</span>
+                          </>
+                        ) : null}
+                        {distanceFromCenter ? (
+                          <>
+                            <span className="h-1 w-1 rounded-full bg-[#3D495C]" />
+                            <span>{distanceFromCenter}</span>
+                          </>
+                        ) : null}
+                      </div>
 
                       {renderStars(starRating)}
 
                       {description && (
-                        <p className="text-xs text-[#3D495C] leading-relaxed mb-3 line-clamp-3">
+                        <p className="mb-4 line-clamp-3 max-w-[568px] text-[12px] leading-[1.3] text-[#3D495C]">
                           {description}
                         </p>
                       )}
 
-                      <span className="block w-full h-px bg-[#E4E4E7] mb-3 -mr-8" />
+                      <span className="mb-3 block h-px w-full bg-[#E4E4E7]" />
 
                       {hasRooms && isAvailable && bestRoom && (
                         <>
-                          <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                            <h4 className="text-[14px] font-semibold text-[#0A0C0F] leading-tight">
+                          <div className="mb-1 flex flex-wrap items-center gap-[8px]">
+                            <h4 className="text-[16px] font-semibold leading-none text-[#0A0C0F]">
                               {bestRoom.roomTypeName || ""}
                             </h4>
                             {availableRooms.length > 0 &&
                               availableRooms.length <= 5 && (
-                                <span className="text-xs text-[#EA0029] font-normal">
+                                <span className="text-[12px] font-normal leading-none text-[#EA0029]">
                                   Only {availableRooms.length} room
                                   {availableRooms.length > 1 ? "s" : ""} left on
-                                  Al Rais
+                                  {" "}Al Rais
                                 </span>
                               )}
                           </div>
@@ -471,11 +482,11 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                             {bestRoom.bedType || ""}
                           </p>
 
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                          <div className="flex flex-wrap items-center gap-x-[15px] gap-y-[6px]">
                             {amenitiesToShow.map((amenity, aIdx) => (
                               <div
                                 key={aIdx}
-                                className="flex items-center gap-1.5"
+                                className="flex items-center gap-[5px]"
                               >
                                 <img
                                   src={GreenTick}
@@ -487,6 +498,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                                     fontFamily: "Inter, sans-serif",
                                     fontSize: "12px",
                                     color: "#3D495C",
+                                    lineHeight: "100%",
                                   }}
                                 >
                                   {amenity}
@@ -509,11 +521,11 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                       )}
                     </div>
 
-                    <span className="inline-block w-px bg-[#E4E4E7] self-stretch -my-2" />
+                    <span className="inline-block self-stretch bg-[#E4E4E7]" style={{ width: "1px" }} />
 
-                    <div className="flex flex-col items-start w-72 flex-shrink-0 pl-4 pr-2">
+                    <div className="flex w-[272px] flex-shrink-0 flex-col items-start pl-4 pr-[10px]">
                       {reviewScore != null && (
-                        <div className="flex items-center gap-3 mb-3">
+                        <div className="mb-[18px] flex items-start gap-[12px]">
                           <div
                             className="flex items-center justify-center rounded-[100px] flex-shrink-0"
                             style={{
@@ -535,7 +547,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               {Number(reviewScore).toFixed(1)}
                             </span>
                           </div>
-                          <div className="flex flex-col gap-0.5">
+                          <div className="flex flex-col gap-[6px] pt-[2px]">
                             <span
                               style={{
                                 fontFamily: "Inter, sans-serif",
@@ -564,20 +576,15 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         </div>
                       )}
 
-                      {hasOffer && uniqueOfferNames.length > 0 && (
-                        <div className="mb-3 flex flex-wrap gap-2">
-                          {uniqueOfferNames.map((offerName, idx) => (
-                            <span
-                              key={idx}
-                              className="bg-[#00B868] text-[#FFFFFF] text-xs font-semibold px-4 py-1.5 rounded-full inline-block max-w-full break-words"
-                            >
-                              {offerName}
-                            </span>
-                          ))}
+                      {hasOffer && (
+                        <div className="mb-[18px]">
+                          <span className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] px-[15px] py-[8px] text-[12px] font-semibold leading-none text-white">
+                            {dealBadgeLabel}
+                          </span>
                         </div>
                       )}
 
-                      <div className="flex items-center gap-1.5 mb-1">
+                      <div className="mb-[2px] flex items-center gap-[8px]">
                         <span
                           style={{
                             fontFamily: "Inter, sans-serif",
@@ -595,7 +602,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         />
                       </div>
 
-                      <div className="flex flex-col items-start sm:items-end gap-0.5 mb-4 w-full">
+                      <div className="mb-[22px] flex w-full flex-col items-start gap-[2px]">
                         {hasOffer && originalPrice > price && (
                           <span
                             style={{
@@ -605,32 +612,36 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               lineHeight: "100%",
                               color: "#EA0029",
                               textDecoration: "line-through",
-                              whiteSpace: "nowrap",
+                              maxWidth: "100%",
+                              wordBreak: "break-word",
                             }}
                           >
                             {currency} {originalPrice.toFixed(2)}
                           </span>
                         )}
-                        <span
-                          style={{
-                            fontFamily: "Inter, sans-serif",
-                            fontWeight: 700,
-                            fontSize: "32px",
-                            lineHeight: "100%",
-                            color: "#0A0C0F",
-                            whiteSpace: "nowrap",
-                          }}
-                        >
-                          {currency} {price.toFixed(2)}
-                          <span className="text-base font-normal text-[#0A0C0F] ml-0.5">
+                        <div className="flex max-w-full flex-wrap items-end gap-x-[2px] gap-y-[6px]">
+                          <span
+                            style={{
+                              fontFamily: "Inter, sans-serif",
+                              fontWeight: 700,
+                              fontSize: "32px",
+                              lineHeight: "100%",
+                              color: "#0A0C0F",
+                              maxWidth: "100%",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {currency} {price.toFixed(2)}
+                          </span>
+                          <span className="text-[12px] font-normal leading-none text-[#3D495C]">
                             /Night
                           </span>
-                        </span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-3 w-full">
+                      <div className="flex w-full items-center gap-[18px]">
                         <button
-                          className="p-2 flex-shrink-0"
+                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
                           aria-label="Share"
                           onClick={() => handleShareClick(hotel)}
                         >

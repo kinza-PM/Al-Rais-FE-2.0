@@ -29,7 +29,7 @@ const Loader: React.FC<Props> = ({
                 <img
                     src={Logo}
                     alt="loading"
-                    className="h-10 w-10 object-contain"
+                    className="h-20 w-20 object-contain sm:h-20 sm:w-20"
                     draggable={false}
                 />
                 <p className="text-[16px] text-[#081326] text-center">

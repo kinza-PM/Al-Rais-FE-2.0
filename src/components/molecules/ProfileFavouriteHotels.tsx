@@ -340,7 +340,12 @@ const ProfileFavouriteHotels: React.FC = () => {
       );
 
       const url = new URL(shareUrl);
-      navigate(`${url.pathname}${url.search}`);
+      navigate(`${url.pathname}${url.search}`, {
+        state: {
+          searchKey: hotel?.searchKey ?? "",
+          bookingParams: bookingParams ?? undefined,
+        },
+      });
     },
     [navigate, bookingParams]
   );
@@ -593,12 +598,12 @@ const ProfileFavouriteHotels: React.FC = () => {
                     Starting from (including VAT)
                   </div>
 
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="flex items-end gap-1 flex-wrap">
-                      <span className="text-[14px] font-bold text-[#0A0C0F]">
+                  <div className="mb-4 flex items-start gap-2">
+                    <div className="min-w-0">
+                      <span className="block text-[14px] font-bold text-[#0A0C0F] [overflow-wrap:anywhere]">
                         {currency} {nightPrice.toFixed(2)}
                       </span>
-                      <span className="text-[12px] font-semibold text-[#0A0C0F]">
+                      <span className="mt-1 block text-[12px] font-semibold text-[#0A0C0F]">
                         /Night
                       </span>
                     </div>
