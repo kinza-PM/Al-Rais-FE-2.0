@@ -282,7 +282,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
           (candidateRatePlan?.meal || "") === (roomRatePlan?.meal || "") &&
           (candidateRatePlan?.code || "") === (roomRatePlan?.code || "") &&
           (candidateRatePlan?.cancelPolicyIndicator || "") ===
-            (roomRatePlan?.cancelPolicyIndicator || "") &&
+          (roomRatePlan?.cancelPolicyIndicator || "") &&
           candidateRatePlan?.availableStatus === "Available"
         );
       },
@@ -505,12 +505,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
         <h4 className="text-[#0A0C0F] text-base font-bold">Rooms availability</h4>
         <div className="mt-2 border-t border-[#E4E4E7]" />
 
-        <div className="mt-8 flex items-end justify-center gap-4">
+        <div className="mt-8 flex items-end justify-start gap-4">
           <div className="hotel-filter-dates w-full max-w-[460px] min-w-0">
             <div className="mb-2 text-[12px] font-normal text-[#3D495C]">Dates</div>
             <div
               className="h-[50px] w-full min-w-0 rounded-[16px] border border-[#C2CAD6] px-2 flex items-center"
-              style={{ background: "var(--white-200, #FFFFFF)" }}
+              style={{ background: "var(--white-200, #FFFFFF)", pointerEvents: "none" }}
             >
               <TailiwindCustomDatePicker
                 value={checkInDate}
@@ -557,30 +557,32 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                 </span>
               </span>
             </label>
-            <TravellersAndRoomDropdown
-              maxTotal={100}
-              schema={passengers as PassengerSchema}
-              value={paxData}
-              onChange={handlePaxChange}
-              initialChildAges={childAges}
-              onChildrenAgesChange={handleChildrenAgesChange}
-              errorMessage={
-                validationError &&
-                /adult|required for|children|ages|room/i.test(validationError)
-                  ? validationError
-                  : null
-              }
-            />
+            <div style={{ pointerEvents: "none"}}>
+              <TravellersAndRoomDropdown
+                maxTotal={100}
+                schema={passengers as PassengerSchema}
+                value={paxData}
+                onChange={handlePaxChange}
+                initialChildAges={childAges}
+                onChildrenAgesChange={handleChildrenAgesChange}
+                errorMessage={
+                  validationError &&
+                    /adult|required for|children|ages|room/i.test(validationError)
+                    ? validationError
+                    : null
+                }
+              />
+            </div>
           </div>
 
-          <button
+          {/* <button
             type="button"
             onClick={handleToolbarSearch}
             disabled={isSearching}
             className="flex h-[50px] min-w-[140px] items-center justify-center rounded-[12px] bg-[#2351A3] px-7 text-[15px] font-semibold text-[#F2F2F3] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSearching ? "Searching..." : "Search"}
-          </button>
+          </button> */}
         </div>
 
         {validationError && (
@@ -605,13 +607,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       key={ri}
                       type="button"
                       onClick={() => scrollToRoom(ri)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                        isSelected
-                          ? "bg-[#2351A3] text-white"
-                          : isExpanded
-                            ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
-                            : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
-                      }`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isSelected
+                        ? "bg-[#2351A3] text-white"
+                        : isExpanded
+                          ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
+                          : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
+                        }`}
                     >
                       <span>Room {ri}</span>
                       {isSelected && (
@@ -720,9 +721,8 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                         height="16"
                         viewBox="0 0 16 16"
                         fill="none"
-                        className={`transition-transform ${
-                          isExpanded ? "rotate-180" : ""
-                        }`}
+                        className={`transition-transform ${isExpanded ? "rotate-180" : ""
+                          }`}
                       >
                         <path
                           d="M4 6L8 10L12 6"
@@ -820,20 +820,19 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       return (
                         <div
                           key={`${roomIndex}-${group.roomTypeName}`}
-                          className={`overflow-hidden rounded-[16px] border border-[#E4E4E7] bg-white ${
-                            groupIndex > 0 ? "mt-6" : ""
-                          }`}
+                          className={`overflow-hidden rounded-[16px] border border-[#E4E4E7] bg-white ${groupIndex > 0 ? "mt-6" : ""
+                            }`}
                         >
                           <div className="flex items-center justify-between px-[15px] py-[14px]">
                             <h2 className="text-[16px] font-medium text-[#0A0C0F]">
                               {firstRoom?.roomTypeName || group.roomTypeName || "Room"}
                             </h2>
-                            <button
+                            {/* <button
                               type="button"
                               className="text-[16px] font-normal text-[#5383DA] hover:underline"
                             >
                               View details
-                            </button>
+                            </button> */}
                           </div>
 
                           <div className="border-t border-[#E4E4E7]" />
@@ -850,13 +849,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                         gallerySourceImages,
                                         imageIndex,
                                         firstRoom?.roomTypeName ||
-                                          group.roomTypeName ||
-                                          "Room images",
+                                        group.roomTypeName ||
+                                        "Room images",
                                       )
                                     }
-                                    className={`h-[130px] w-[130px] shrink-0 overflow-hidden rounded-[10px] border border-white bg-[#F1F5F9] ${
-                                      imageIndex === 0 ? "" : "-ml-[65px]"
-                                    } cursor-zoom-in`}
+                                    className={`h-[130px] w-[130px] shrink-0 overflow-hidden rounded-[10px] border border-white bg-[#F1F5F9] ${imageIndex === 0 ? "" : "-ml-[65px]"
+                                      } cursor-zoom-in`}
                                   >
                                     <img
                                       src={image}
@@ -866,7 +864,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                         const t = e.currentTarget as HTMLImageElement;
                                         t.src =
                                           DEFAULT_ROOM_IMAGES[
-                                            imageIndex % DEFAULT_ROOM_IMAGES.length
+                                          imageIndex % DEFAULT_ROOM_IMAGES.length
                                           ];
                                       }}
                                     />
@@ -946,11 +944,11 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                               const hasOffers = Array.isArray(room?.offers) && room.offers.length > 0;
                               const originalPrice = hasOffers
                                 ? price -
-                                  room.offers.reduce(
-                                    (sum: number, offer: any) =>
-                                      sum + (offer.amount || 0),
-                                    0,
-                                  )
+                                room.offers.reduce(
+                                  (sum: number, offer: any) =>
+                                    sum + (offer.amount || 0),
+                                  0,
+                                )
                                 : price;
                               const availabilityCount = getAvailabilityCount(room);
 
@@ -1064,11 +1062,10 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                           -1,
                                         )
                                       }
-                                      className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${
-                                        count > 0
-                                          ? "bg-[#2351A3] text-white"
-                                          : "bg-[#C2CAD6] text-white"
-                                      }`}
+                                      className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${count > 0
+                                        ? "bg-[#2351A3] text-white"
+                                        : "bg-[#C2CAD6] text-white"
+                                        }`}
                                     >
                                       –
                                     </button>

@@ -6,9 +6,9 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "../components";
 import HotelDetailOverviewSection from "../components/molecules/HotelDetailOverviewSection";
 import HotelDetailAmenetiesSection from "../components/molecules/HotelDetailAmenetiesSection";
-import HotelDetailGuestReviewSection from "../components/molecules/HotelDetailGuestReviewSection";
-import HotelDetailFaqSection from "../components/molecules/HotelDetailFaqSection";
-import HotelDetailRulesSection from "../components/molecules/HotelDetailRulesSection";
+// import HotelDetailGuestReviewSection from "../components/molecules/HotelDetailGuestReviewSection";
+// import HotelDetailFaqSection from "../components/molecules/HotelDetailFaqSection";
+// import HotelDetailRulesSection from "../components/molecules/HotelDetailRulesSection";
 import HotelImages from "../components/molecules/HotelImages";
 import HotelDetailRoomSection from "../components/molecules/HotelDetailRoomSection";
 import ShareTicketModal from "../components/atoms/ShareTicketModal";
@@ -38,10 +38,10 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 const tabItems = [
   { label: "Overview", value: "Overview" },
   { label: "Rooms", value: "Rooms" },
-  { label: "Reviews", value: "Reviews" },
+  // { label: "Reviews", value: "Reviews" },
   { label: "Amenities", value: "Amenities" },
-  { label: "FAQs", value: "FAQs" },
-  { label: "Rules", value: "Rules" },
+  // { label: "FAQs", value: "FAQs" },
+  // { label: "Rules", value: "Rules" },
 ] as const;
 
 type HotelDetailTab = (typeof tabItems)[number]["value"];
@@ -978,7 +978,7 @@ const HotelDetailListing = () => {
           />
         )}
 
-        {activeTab === "Reviews" && <HotelDetailGuestReviewSection />}
+        {/* {activeTab === "Reviews" && <HotelDetailGuestReviewSection />} */}
 
         {activeTab === "Amenities" && (
           <HotelDetailAmenetiesSection
@@ -987,9 +987,9 @@ const HotelDetailListing = () => {
           />
         )}
 
-        {activeTab === "FAQs" && <HotelDetailFaqSection />}
+        {/* {activeTab === "FAQs" && <HotelDetailFaqSection />} */}
 
-        {activeTab === "Rules" && <HotelDetailRulesSection />}
+        {/* {activeTab === "Rules" && <HotelDetailRulesSection />} */}
 
         {showLocationMap && (
           <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/50 px-4">
