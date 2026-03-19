@@ -27,6 +27,7 @@ const FAQPage = lazy(() => import("../pages/FAQPage"));
 const PaymentsHelpPage = lazy(() => import("../pages/PaymentsHelpPage"));
 const RefundCancellationPolicyPage = lazy(() => import("../pages/RefundCancellationPolicyPage")); // New import
 const HotelCancellationPage = lazy(() => import("../pages/HotelCancellationPage"));
+const HotelBookingDetailPage = lazy(() => import("../pages/HotelBookingDetailPage"));
 
 const router = createBrowserRouter([
   {
@@ -137,6 +138,14 @@ const router = createBrowserRouter([
       {
         path: "hotel-cancellation", // New route added
         element: <HotelCancellationPage />,
+      },
+      {
+        path: "hotel-booking-detail",
+        element: (
+          <ProtectedRoute>
+            <HotelBookingDetailPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "*",

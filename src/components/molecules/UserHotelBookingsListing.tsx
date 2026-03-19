@@ -1,6 +1,13 @@
 import { useMemo, useEffect, useState } from "react";
+import { Tooltip } from "antd";
 import Button from "../atoms/Button";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import ShareTicketModal from "../atoms/ShareTicketModal";
+import { InfoCircleOutlined } from "@ant-design/icons";
+
+const actionLinkClass =
+  "text-[13px] font-medium text-[#5383DA] hover:underline cursor-pointer whitespace-nowrap";
+
 export type BookingStatus = "Confirmed" | "Pending" | "Expired";
 
 type HotelBookingCardItem = {
@@ -20,6 +27,10 @@ type HotelBookingCardItem = {
     mins: string;
     secs: string;
   };
+  cancellationDeadline?: string;
+  cancellationDeadlineDate?: string;
+  searchKey?: string;
+  bookingKey?: string;
 };
 
 function StatusPill({ status }: { status: BookingStatus }) {
@@ -121,7 +132,7 @@ function StayTimeline({
 }
 
 function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
-    const navigate = useNavigate();
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const isPending = booking.status === "Pending";
   const isExpired = booking.status === "Expired";
   const [countdown, setCountdown] = useState(
@@ -214,6 +225,18 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
         </div>
       </div>
 
+      {booking.cancellationDeadline && booking.status === "Confirmed" && (
+        <>
+          <CardDivider />
+          <div className="px-4 py-3">
+            <div className="text-[12px] text-[#3D495C]">
+              <span className="font-semibold text-[#0A0C0F]">Free cancellation until:</span>{" "}
+              {booking.cancellationDeadline}
+            </div>
+          </div>
+        </>
+      )}
+
       {(isPending || isExpired) && <CardDivider />}
 
       {isPending && (
@@ -274,68 +297,105 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
       <CardDivider />
 
       <div className="px-4 py-3 flex items-center justify-between text-[13px] font-medium">
-        <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7]">
+        <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7] gap-0">
           {booking.status === "Confirmed" && (
             <>
-              <Button
-                type="button"
-                className="pr-4 text-[#5383DA] hover:underline"
-                overrideClasses
+              <Link
+                to="/hotel-booking-detail"
+                state={{
+                  bookingReferenceId: booking.bookingRef,
+                  searchKey: booking.searchKey || booking.bookingRef,
+                  bookingKey: booking.bookingKey || booking.id,
+                }}
+                className={`${actionLinkClass} pr-4`}
               >
                 View details
-              </Button>
-              <Button
-                type="button"
-                className="px-4 text-[#5383DA] hover:underline"
-                overrideClasses
+              </Link>
+              <Link
+                to="/hotel-booking-detail"
+                state={{
+                  bookingReferenceId: booking.bookingRef,
+                  searchKey: booking.searchKey || booking.bookingRef,
+                  bookingKey: booking.bookingKey || booking.id,
+                }}
+                className={`${actionLinkClass} px-4`}
               >
                 Download receipt
-              </Button>
-              <Button
-                type="button"
-                className="px-4 text-[#5383DA] hover:underline"
-                overrideClasses
+              </Link>
+              <Link
+                to="/customer-support"
+                className={`${actionLinkClass} px-4`}
               >
                 Request changes
-              </Button>
-              <Button
-  type="button"
-  className="pl-4 text-[#EA0029] hover:underline"
-  overrideClasses
-  onClick={() =>
-    navigate("/hotel-cancellation", {
-      state: {
-        bookingReferenceId: booking.bookingRef,
-        hotelName: booking.hotelName,
-        bookingKey: booking.id
-      },
-    })
-  }
->
-  Cancel booking
-</Button>
+              </Link>
+              {(() => {
+                const isPastCancellationDeadline =
+                  booking.cancellationDeadlineDate &&
+                  new Date() > new Date(booking.cancellationDeadlineDate);
+                if (isPastCancellationDeadline) {
+                  return (
+                    <Tooltip title="This booking can't be cancelled">
+                      <span className="inline-flex items-center pl-4 cursor-not-allowed text-[#98A4B3]">
+                        <span className="font-medium">Cancel booking</span>
+                        <InfoCircleOutlined
+                          className="ml-1 text-[#98A4B3]"
+                          style={{ fontSize: 14 }}
+                        />
+                      </span>
+                    </Tooltip>
+                  );
+                }
+                return (
+                  <Link
+                    to="/hotel-cancellation"
+                    state={{
+                      bookingReferenceId: booking.bookingRef,
+                      hotelName: booking.hotelName,
+                      bookingKey: booking.id,
+                    }}
+                    className={`${actionLinkClass} pl-4 text-[#EA0029]`}
+                  >
+                    Cancel booking
+                  </Link>
+                );
+              })()}
             </>
           )}
 
           {booking.status !== "Confirmed" && (
-            <Button
-              type="button"
-              className="text-[#5383DA] hover:underline"
-              overrideClasses
+            <Link
+              to="/hotel-booking-detail"
+              state={{
+                bookingReferenceId: booking.bookingRef,
+                searchKey: booking.searchKey || booking.bookingRef,
+                bookingKey: booking.bookingKey || booking.id,
+              }}
+              className={actionLinkClass}
             >
               View details
-            </Button>
+            </Link>
           )}
         </div>
 
-        <Button
+        <button
           type="button"
-          className="text-[#5383DA] hover:underline"
-          overrideClasses
+          onClick={() => setShareModalOpen(true)}
+          className={`${actionLinkClass} bg-transparent border-none p-0`}
         >
           Share
-        </Button>
+        </button>
       </div>
+
+      {shareModalOpen && (
+        <ShareTicketModal
+          closeModal={() => setShareModalOpen(false)}
+          mode="hotel"
+          cardTitle={booking.hotelName}
+          cardSubtitle={booking.address}
+          shareUrl={`${window.location.origin}/my-bookings?ref=${booking.bookingRef}`}
+          bookingRef={booking.bookingRef}
+        />
+      )}
     </div>
   );
 }
@@ -348,9 +408,10 @@ export default function UserHotelBookingsListing({
   bookings?: HotelBookingCardItem[];
 }) {
   const list = useMemo(() => {
-    if (!bookings?.length) return [];
+    if (!bookings || !Array.isArray(bookings) || bookings.length === 0)
+      return [];
     if (filterStatus === "All") return bookings;
-    return bookings.filter((b) => b.status === filterStatus);
+    return bookings.filter((b) => b?.status === filterStatus);
   }, [bookings, filterStatus]);
 
   if (!list.length) {

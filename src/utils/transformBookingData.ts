@@ -225,6 +225,13 @@ export type HotelBookingCardItem = {
   roomLabel: string;
   bookingRef: string;
   countdown?: { hours: string; mins: string; secs: string };
+  /** Free cancellation deadline date (e.g. "Mon, 16 Jun 2025") */
+  cancellationDeadline?: string;
+  /** Raw date string for comparison (e.g. "2025-06-16") - used to disable Cancel if past deadline */
+  cancellationDeadlineDate?: string;
+  /** Required for hotelRetrieve / View details */
+  searchKey?: string;
+  bookingKey?: string;
 };
 
 function formatDateForHotel(dateStr: string): string {
@@ -323,6 +330,24 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
 
   const id = apiItem.id || apiItem.bookingKey || bookingRef || `hotel-${Date.now()}`;
 
+  const searchKey =
+    apiItem.searchKey ||
+    apiItem.search_key ||
+    apiItem.detail?.searchKey ||
+    "";
+  const bookingKey = apiItem.bookingKey || apiItem.booking_key || id || "";
+
+  const cancellationDeadlineRaw =
+    apiItem.lastCancellationDate ||
+    apiItem.cancellationDeadline ||
+    hotel?.lastCancellationDate ||
+    (rooms[0] as any)?.ratePlan?.lastCancellationDate ||
+    (rooms[0] as any)?.lastCancellationDate ||
+    "";
+  const cancellationDeadline = cancellationDeadlineRaw
+    ? formatDateForHotel(cancellationDeadlineRaw)
+    : undefined;
+
   const createdAt = apiItem.createdAt || apiItem.created_at;
   const countdown =
     status === "Pending" && createdAt
@@ -354,18 +379,24 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     roomLabel,
     bookingRef,
     countdown,
+    cancellationDeadline,
+    cancellationDeadlineDate: cancellationDeadlineRaw || undefined,
+    searchKey: searchKey || undefined,
+    bookingKey: bookingKey || undefined,
   };
 }
 
 export function transformHotelBookingsResponse(apiResponse: any): HotelBookingCardItem[] {
   if (apiResponse == null) return [];
-  const items =
+  const raw =
+    apiResponse?.data?.items ??
+    apiResponse?.data?.data ??
     apiResponse?.data ??
     apiResponse?.items ??
     apiResponse?.bookings ??
     apiResponse?.body ??
-    (Array.isArray(apiResponse) ? apiResponse : []);
-  if (!Array.isArray(items)) return [];
+    apiResponse;
+  const items = Array.isArray(raw) ? raw : [];
   try {
     return items.map((item: any) => transformHotelBookingItem(item));
   } catch {

@@ -182,11 +182,7 @@ export const validatePassengersForFlightProvisionalBookingFields = (
       passengerErrors["identityDocuments.0.dateOfIssue"] =
         "Date of issue is required.";
     }
-    // API requires residenceCountryCode (VAL-004)
-    if (isEmpty(id.residenceCountryCode)) {
-      passengerErrors["identityDocuments.0.residenceCountryCode"] =
-        "Residence country is required.";
-    }
+    // BK212: Residence country is not mandatory
     if (pRules.isPANMandatory && isEmpty(pi.PAN)) {
       passengerErrors["passengerInfo.PAN"] = "PAN is required.";
     }
@@ -312,7 +308,7 @@ export const validatePassengersForFlightProvisionalBooking = (
         id.dateOfIssue,
         "Date of issue is required.",
       ],
-      [true, id.residenceCountryCode, "Residence country is required."],
+      [false, id.residenceCountryCode, "Residence country is required."], // BK212: Not mandatory
       // [
       //   fareBookingRules?.isLeadEmailAddressMandatory,
       //   email,

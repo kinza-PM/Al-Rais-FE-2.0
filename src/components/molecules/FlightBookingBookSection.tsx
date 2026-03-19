@@ -660,7 +660,7 @@ export default function FlightBookingBookSection({
                           );
                         }}
                         placeholder="Select residence country"
-                        label="Residence Country *"
+                        label="Residence Country"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
                         error={
