@@ -32,6 +32,11 @@ import {
   type HotelFilters,
   type SortOption,
 } from "../../utils/hotelFilters";
+import {
+  convertDateToString as formatHotelBookingDate,
+  convertPaxToRooms,
+  getHotelBookingValidationError,
+} from "../../utils/hotelBookingParams";
 import { useHotelStore } from "../../store/UseHotelStore";
 import { useCountriesOptions } from "../../hooks/masterListings/listing";
 import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
@@ -180,13 +185,10 @@ const HotelSearchListing: React.FC = () => {
     [],
   );
 
-  const convertDateToString = useCallback((date: Date | null): string => {
-    if (!date) return "";
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }, []);
+  const convertDateToString = useCallback(
+    (date: Date | null): string => formatHotelBookingDate(date),
+    [],
+  );
 
   const convertPaxToRoom = useCallback(
     (
@@ -197,55 +199,7 @@ const HotelSearchListing: React.FC = () => {
         rooms?: number;
       },
       ages: Array<number | null>,
-    ): RoomData[] => {
-      const numRooms = pax.rooms || 1;
-      const totalAdults = pax.adults || 0;
-      const totalChildren = pax.kids || pax.children || 0;
-
-      const childAgeArray: number[] = ages
-        .filter((age): age is number => age !== null)
-        .slice(0, totalChildren);
-
-      const rooms: RoomData[] = [];
-
-      const baseAdultsPerRoom = Math.floor(totalAdults / numRooms);
-      const extraAdults = totalAdults % numRooms;
-
-      const baseChildrenPerRoom = Math.floor(totalChildren / numRooms);
-      const extraChildren = totalChildren % numRooms;
-
-      let childAgeIndex = 0;
-
-      for (let i = 0; i < numRooms; i++) {
-        const adultsInRoom = Math.min(
-          baseAdultsPerRoom + (i < extraAdults ? 1 : 0),
-          2, // Max 2 per room
-        );
-
-        // Distribute children: base + 1 extra for first few rooms
-        const childrenInRoom = Math.min(
-          baseChildrenPerRoom + (i < extraChildren ? 1 : 0),
-          2, // Max 2 per room
-        );
-
-        const childAgesForRoom: number[] = [];
-        for (let j = 0; j < childrenInRoom; j++) {
-          if (childAgeIndex < childAgeArray.length) {
-            childAgesForRoom.push(childAgeArray[childAgeIndex]);
-            childAgeIndex++;
-          }
-        }
-
-        rooms.push({
-          adult: adultsInRoom,
-          child: childrenInRoom,
-          childAge: childAgesForRoom,
-          roomIndex: i + 1,
-        });
-      }
-
-      return rooms;
-    },
+    ): RoomData[] => convertPaxToRooms(pax, ages),
     [],
   );
 
@@ -316,116 +270,25 @@ const HotelSearchListing: React.FC = () => {
   }, [hotel, convertPaxToRoom]);
 
   const validateForm = useCallback((): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const validationMessage = getHotelBookingValidationError({
+      country: searchState.country,
+      city: searchState.city,
+      checkIn: searchState.checkIn,
+      checkOut: searchState.checkOut,
+      travelerCountryOfResidence: searchState.travelerCountryOfResidence,
+      paxData,
+      childAges,
+      requireSearchContext: true,
+    });
 
-    const hasMultipleErrors =
-      [
-        !searchState.country || searchState.country.trim() === "",
-        !searchState.city || searchState.city.trim() === "",
-        !searchState.checkIn || searchState.checkIn.trim() === "",
-        !searchState.checkOut || searchState.checkOut.trim() === "",
-        !searchState.travelerCountryOfResidence ||
-        searchState.travelerCountryOfResidence.trim() === "",
-      ].filter(Boolean).length > 1;
-
-    if (hasMultipleErrors) {
-      setValidationError(
-        "Please complete all required fields before searching.",
-      );
+    if (validationMessage) {
+      setValidationError(validationMessage);
       return false;
-    }
-
-    if (!searchState.country || searchState.country.trim() === "") {
-      setValidationError("Country is required");
-      return false;
-    }
-
-    if (!searchState.city || searchState.city.trim() === "") {
-      setValidationError("City is required");
-      return false;
-    }
-
-    if (!searchState.checkIn || searchState.checkIn.trim() === "") {
-      setValidationError("Check-in date is required");
-      return false;
-    }
-
-    if (!searchState.checkOut || searchState.checkOut.trim() === "") {
-      setValidationError("Check-out date is required");
-      return false;
-    }
-
-    const checkInDate = new Date(searchState.checkIn);
-    checkInDate.setHours(0, 0, 0, 0);
-    if (checkInDate < today) {
-      setValidationError("Check-in date cannot be in the past");
-      return false;
-    }
-
-    const checkOutDate = new Date(searchState.checkOut);
-    checkOutDate.setHours(0, 0, 0, 0);
-    if (checkOutDate < today) {
-      setValidationError("Check-out date cannot be in the past");
-      return false;
-    }
-
-    if (checkOutDate <= checkInDate) {
-      setValidationError("Check-out date must be after check-in date");
-      return false;
-    }
-
-    if (
-      !searchState.travelerCountryOfResidence ||
-      searchState.travelerCountryOfResidence.trim() === ""
-    ) {
-      setValidationError("Nationality is required");
-      return false;
-    }
-
-    const numRooms = paxData.rooms || 1;
-    const totalAdults = paxData.adults || 0;
-    const totalChildren = paxData.kids || paxData.children || 0;
-
-    // Check if adults exceed room capacity (2 per room)
-    const maxAdultsAllowed = numRooms * 2;
-    if (totalAdults < numRooms) {
-      setValidationError(
-        `Minimum ${numRooms} adult${numRooms > 1 ? "s" : ""} required for ${numRooms} room${numRooms > 1 ? "s" : ""} (1 per room)`,
-      );
-      return false;
-    } else if (totalAdults > maxAdultsAllowed) {
-      setValidationError(
-        `Maximum ${maxAdultsAllowed} adults allowed for ${numRooms} room${numRooms > 1 ? "s" : ""
-        } (2 per room)`,
-      );
-      return false;
-    }
-
-    // Check if children exceed room capacity (2 per room)
-    const maxChildrenAllowed = numRooms * 2;
-    if (totalChildren > maxChildrenAllowed) {
-      setValidationError(
-        `Maximum ${maxChildrenAllowed} children allowed for ${numRooms} room${numRooms > 1 ? "s" : ""
-        } (2 per room)`,
-      );
-      return false;
-    }
-
-    // Validate child ages - all children must have ages specified
-    if (totalChildren > 0) {
-      const validChildAges = childAges.filter(
-        (age): age is number => age !== null,
-      );
-      if (validChildAges.length !== totalChildren) {
-        setValidationError(`Please specify ages for all children`);
-        return false;
-      }
     }
 
     setValidationError(null);
     return true;
-  }, [searchState]);
+  }, [searchState, paxData, childAges]);
 
   // Handle search button click
   const handleSearchHotels = useCallback(async () => {

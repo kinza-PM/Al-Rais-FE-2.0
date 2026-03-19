@@ -6,35 +6,49 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "../components";
 import HotelDetailOverviewSection from "../components/molecules/HotelDetailOverviewSection";
 import HotelDetailAmenetiesSection from "../components/molecules/HotelDetailAmenetiesSection";
+import HotelDetailGuestReviewSection from "../components/molecules/HotelDetailGuestReviewSection";
+import HotelDetailFaqSection from "../components/molecules/HotelDetailFaqSection";
+import HotelDetailRulesSection from "../components/molecules/HotelDetailRulesSection";
 import HotelImages from "../components/molecules/HotelImages";
 import HotelDetailRoomSection from "../components/molecules/HotelDetailRoomSection";
 import ShareTicketModal from "../components/atoms/ShareTicketModal";
 import {
+  useHotelSearch,
   useHotelDetail,
   useHotelGetMoreRooms,
   useAddHotelFavourite,
   useGetHotelFavourites,
 } from "../hooks/useHotelSearch";
+import { useHotelStore } from "../store/UseHotelStore";
+import type {
+  HotelSearchRequest,
+} from "../services/api/hotelSearch";
 import Loader from "../components/atoms/Loader";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
+import {
+  convertPaxToRooms,
+  normalizeHotelBookingParams,
+  safeParseHotelBookingParams,
+  serializeHotelBookingParams,
+  type HotelBookingParams,
+} from "../utils/hotelBookingParams";
 import toast from "react-hot-toast";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 
-const tabs = ["Overview", "Rooms", "Ameneties"] as const;
+const tabItems = [
+  { label: "Overview", value: "Overview" },
+  { label: "Rooms", value: "Rooms" },
+  { label: "Reviews", value: "Reviews" },
+  { label: "Amenities", value: "Amenities" },
+  { label: "FAQs", value: "FAQs" },
+  { label: "Rules", value: "Rules" },
+] as const;
+
+type HotelDetailTab = (typeof tabItems)[number]["value"];
 
 type LocationState = {
   searchKey?: string;
-  bookingParams?: {
-    checkIn?: string;
-    checkOut?: string;
-    paxData?: {
-      adults?: number;
-      children?: number;
-      kids?: number;
-      rooms?: number;
-    };
-    [key: string]: any;
-  };
+  bookingParams?: HotelBookingParams;
 };
 
 const buildHotelShareUrl = (
@@ -49,7 +63,7 @@ const buildHotelShareUrl = (
   }
 
   if (bookingParams) {
-    params.set("bookingParams", JSON.stringify(bookingParams));
+    params.set("bookingParams", serializeHotelBookingParams(bookingParams));
   }
 
   const queryString = params.toString();
@@ -100,25 +114,30 @@ const HotelDetailListing = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const state = (location.state || {}) as LocationState;
+  const { hotel: hotelSearchState, setHotel: setHotelSearchState } =
+    useHotelStore();
 
   const [openShareModal, setOpenShareModal] = useState(false);
   const [hotelDetail, setHotelDetail] = useState<any>(null);
   const [hotelMoreRooms, setHotelMoreRooms] = useState<any>(null);
-  const [activeTab, setActiveTab] =
-    useState<(typeof tabs)[number]>("Overview");
+  const [activeTab, setActiveTab] = useState<HotelDetailTab>("Overview");
   const [showHotelDetailImages, setShowHotelDetailImages] =
     useState<boolean>(false);
   const [showLocationMap, setShowLocationMap] = useState<boolean>(false);
   const [selectedRooms, setSelectedRooms] = useState<any[]>([]);
   const [resolvedBookingParams, setResolvedBookingParams] = useState<
-    LocationState["bookingParams"] | undefined
-  >(state.bookingParams);
+    HotelBookingParams | undefined
+  >(normalizeHotelBookingParams(state.bookingParams));
   const [resolvedSearchKey, setResolvedSearchKey] = useState<string>(
     state.searchKey ?? ""
   );
   const [isFavourite, setIsFavourite] = useState(false);
 
   const { mutateAsync, isPending } = useHotelDetail();
+  const {
+    mutateAsync: searchHotelsAsync,
+    isPending: isHotelSearchPending,
+  } = useHotelSearch();
   const {
     mutateAsync: fetchMoreRoomsAsync,
     isPending: isHotelMoreRoomsPending,
@@ -161,53 +180,69 @@ const HotelDetailListing = () => {
     setIsFavourite(exists);
   }, [favouriteItems, params.hotelKey]);
 
-  const init = async () => {
+  const fetchHotelData = useCallback(
+    async (searchKey: string) => {
+      const body = {
+        hotelKey: params.hotelKey ?? "",
+        searchKey,
+        culture: "en",
+      };
+
+      try {
+        const results = await Promise.allSettled([
+          mutateAsync(body),
+          fetchMoreRoomsAsync(body),
+        ]);
+
+        const [detailResult, roomsResult] = results;
+
+        if (detailResult.status === "fulfilled") {
+          setHotelDetail(detailResult.value?.data?.[0] ?? null);
+        } else {
+          const err = extractErrorFromAxiosApiError(detailResult.reason);
+          toast.error(err);
+        }
+
+        if (roomsResult.status === "fulfilled") {
+          setHotelMoreRooms(roomsResult.value?.data?.[0] ?? null);
+        } else {
+          const err = extractErrorFromAxiosApiError(roomsResult.reason);
+          toast.error(err);
+        }
+      } catch (unexpected) {
+        console.log("unexpected promised failed--------------", unexpected);
+      }
+    },
+    [params.hotelKey, mutateAsync, fetchMoreRoomsAsync],
+  );
+
+  const init = useCallback(async () => {
     const searchParams = new URLSearchParams(location.search);
     const searchKeyFromUrl = searchParams.get("searchKey") ?? "";
-    const bookingParamsFromUrl = searchParams.get("bookingParams");
+    const bookingParamsFromUrl = safeParseHotelBookingParams(
+      searchParams.get("bookingParams"),
+    );
+    const bookingParamsFromState = normalizeHotelBookingParams(state.bookingParams);
 
     const nextResolvedSearchKey = state.searchKey || searchKeyFromUrl;
     const nextResolvedBookingParams =
-      state.bookingParams ||
-      (bookingParamsFromUrl
-        ? JSON.parse(decodeURIComponent(bookingParamsFromUrl))
-        : undefined);
+      bookingParamsFromUrl || bookingParamsFromState;
 
     setResolvedSearchKey(nextResolvedSearchKey);
     setResolvedBookingParams(nextResolvedBookingParams);
 
-    const body = {
-      hotelKey: params.hotelKey ?? "",
-      searchKey: nextResolvedSearchKey,
-      culture: "en",
-    };
-
-    try {
-      const results = await Promise.allSettled([
-        mutateAsync(body),
-        fetchMoreRoomsAsync(body),
-      ]);
-
-      const [detailResult, roomsResult] = results;
-
-      if (detailResult.status === "fulfilled") {
-        setHotelDetail(detailResult.value?.data?.[0]);
-      } else {
-        const err = extractErrorFromAxiosApiError(detailResult.reason);
-        toast.error(err);
-      }
-
-      if (roomsResult.status === "fulfilled") {
-        setHotelMoreRooms(roomsResult.value?.data?.[0]);
-      }
-    } catch (unexpected) {
-      console.log("unexpected promised failed--------------", unexpected);
+    if (!nextResolvedSearchKey) {
+      setHotelDetail(null);
+      setHotelMoreRooms(null);
+      return;
     }
-  };
+
+    await fetchHotelData(nextResolvedSearchKey);
+  }, [location.search, state.searchKey, state.bookingParams, fetchHotelData]);
 
   useEffect(() => {
     init();
-  }, [params.hotelKey, state.searchKey, location.search]);
+  }, [init]);
 
   const primaryImages = useMemo(
     () => hotelDetail?.images || [],
@@ -273,13 +308,162 @@ const HotelDetailListing = () => {
     setShowLocationMap(false);
   }, []);
 
-  const handleTabChange = useCallback((tab: (typeof tabs)[number]) => {
+  const handleTabChange = useCallback((tab: HotelDetailTab) => {
     setActiveTab(tab);
   }, []);
 
   const handleRoomsChange = useCallback((rooms: any[]) => {
     setSelectedRooms(rooms);
   }, []);
+
+  const handleRoomToolbarSearch = useCallback(
+    async (nextBookingParams: HotelBookingParams) => {
+      const normalizedBookingParams =
+        normalizeHotelBookingParams(nextBookingParams) ?? undefined;
+
+      if (!normalizedBookingParams) {
+        return;
+      }
+
+      const nextStoreHotel = {
+        country:
+          normalizedBookingParams.country ??
+          hotelSearchState?.country ??
+          "",
+        city:
+          normalizedBookingParams.city ??
+          hotelSearchState?.city ??
+          "",
+        checkIn:
+          normalizedBookingParams.checkIn ??
+          hotelSearchState?.checkIn ??
+          "",
+        checkOut:
+          normalizedBookingParams.checkOut ??
+          hotelSearchState?.checkOut ??
+          "",
+        travelerCountryOfResidence:
+          normalizedBookingParams.travelerCountryOfResidence ??
+          hotelSearchState?.travelerCountryOfResidence ??
+          "",
+        travelerNationality:
+          normalizedBookingParams.travelerNationality ??
+          hotelSearchState?.travelerNationality ??
+          "",
+        paxData:
+          normalizedBookingParams.paxData ??
+          hotelSearchState?.paxData ?? {
+            adults: 1,
+            children: 0,
+            kids: 0,
+            rooms: 1,
+          },
+        childAges:
+          normalizedBookingParams.childAges ??
+          hotelSearchState?.childAges ??
+          [],
+        minStarRating:
+          normalizedBookingParams.minStarRating ??
+          hotelSearchState?.minStarRating ??
+          0,
+      };
+
+      if (params.hotelKey) {
+        const body: HotelSearchRequest = {
+          country: nextStoreHotel.country,
+          city: nextStoreHotel.city,
+          checkIn: nextStoreHotel.checkIn,
+          checkOut: nextStoreHotel.checkOut,
+          rooms: convertPaxToRooms(
+            nextStoreHotel.paxData,
+            nextStoreHotel.childAges,
+          ),
+          travelerCountryOfResidence:
+            nextStoreHotel.travelerCountryOfResidence,
+          travelerNationality: nextStoreHotel.travelerNationality,
+          culture: "en",
+          filters: {
+            currency: "AED",
+            minStarRating: nextStoreHotel.minStarRating ?? 0,
+          },
+        };
+
+        try {
+          const response = await searchHotelsAsync(body);
+          const nextSearchKey = response?.commonData?.searchKey || "";
+
+          if (nextSearchKey) {
+            setHotelSearchState(nextStoreHotel);
+            setResolvedSearchKey(nextSearchKey);
+            setResolvedBookingParams({
+              ...normalizedBookingParams,
+              ...nextStoreHotel,
+            });
+            setSelectedRooms([]);
+            await fetchHotelData(nextSearchKey);
+
+            const queryParams = new URLSearchParams();
+            queryParams.set("searchKey", nextSearchKey);
+            queryParams.set(
+              "bookingParams",
+              serializeHotelBookingParams({
+                ...normalizedBookingParams,
+                ...nextStoreHotel,
+              }),
+            );
+
+            navigate(`${location.pathname}?${queryParams.toString()}`, {
+              replace: true,
+              state: {
+                ...(location.state || {}),
+                searchKey: nextSearchKey,
+                bookingParams: {
+                  ...normalizedBookingParams,
+                  ...nextStoreHotel,
+                },
+              },
+            });
+            return;
+          }
+        } catch (error) {
+          const err = extractErrorFromAxiosApiError(error);
+          toast.error(err);
+          return;
+        }
+      }
+
+      const queryParams = new URLSearchParams(location.search);
+      if (resolvedSearchKey) {
+        queryParams.set("searchKey", resolvedSearchKey);
+      }
+      setResolvedBookingParams(normalizedBookingParams);
+      queryParams.set(
+        "bookingParams",
+        serializeHotelBookingParams(normalizedBookingParams),
+      );
+
+      navigate(`${location.pathname}?${queryParams.toString()}`, {
+        replace: true,
+        state: {
+          ...(location.state || {}),
+          searchKey: resolvedSearchKey,
+          bookingParams: normalizedBookingParams,
+        },
+      });
+    },
+    [
+      hotelSearchState,
+      params.hotelKey,
+      searchHotelsAsync,
+      setHotelSearchState,
+      fetchHotelData,
+      location.pathname,
+      location.search,
+      location.state,
+      navigate,
+      resolvedSearchKey,
+    ],
+  );
 
   const totalPrice = useMemo(() => {
     return selectedRooms.reduce((total, selectedRoom) => {
@@ -307,13 +491,21 @@ const HotelDetailListing = () => {
 
   const numberOfRooms = useMemo(() => {
     if (!hotelMoreRooms?.rooms || !Array.isArray(hotelMoreRooms.rooms)) {
-      return 1;
+      return resolvedBookingParams?.paxData?.rooms ?? 1;
     }
     const maxRoomIndex = Math.max(
       ...hotelMoreRooms.rooms.map((room: any) => room.roomIndex || 1)
     );
-    return maxRoomIndex > 0 ? maxRoomIndex : 1;
-  }, [hotelMoreRooms?.rooms]);
+    return maxRoomIndex > 0 ? maxRoomIndex : resolvedBookingParams?.paxData?.rooms ?? 1;
+  }, [hotelMoreRooms?.rooms, resolvedBookingParams?.paxData?.rooms]);
+
+  useEffect(() => {
+    const requestedRooms = resolvedBookingParams?.paxData?.rooms ?? 1;
+
+    setSelectedRooms((prev) =>
+      prev.filter((selected) => (selected?.room?.roomIndex ?? 1) <= requestedRooms),
+    );
+  }, [resolvedBookingParams?.paxData?.rooms]);
 
   const buildFavouritePayload = useCallback(
     (flag: boolean) => {
@@ -484,16 +676,19 @@ const HotelDetailListing = () => {
 
   return !showHotelDetailImages ? (
     <div className="w-full py-6">
-      <div className="mx-auto w-full max-w-[1240px] px-6 lg:px-16">
+      <div className="mx-auto w-full max-w-[90%] px-6 lg:px-14 ">
         <Loader
           show={
             isPending ||
+            isHotelSearchPending ||
             isHotelMoreRoomsPending ||
             isAddingFavourite ||
             isGetFavouritesLoading
           }
           label={
-            isAddingFavourite
+            isHotelSearchPending
+              ? "Please wait while we are updating room availability"
+              : isAddingFavourite
               ? "Please wait while we are updating favourites"
               : isGetFavouritesLoading
               ? "Please wait while we are checking favourites"
@@ -729,42 +924,41 @@ const HotelDetailListing = () => {
 
         <div className="mt-6 w-full">
           <div className="flex justify-center">
-            <div className="flex items-center gap-6">
-              {tabs.map((t) => {
-                const selected = activeTab === t;
+            <div className="flex items-end gap-[14px]">
+              {tabItems.map((tab) => {
+                const selected = activeTab === tab.value;
 
                 return (
                   <button
-                    key={t}
+                    key={tab.value}
                     type="button"
                     role="tab"
                     aria-selected={selected}
-                    onClick={() => handleTabChange(t)}
+                    onClick={() => handleTabChange(tab.value)}
                     className={[
-                      "w-[240px] h-[64px] rounded-[18px]",
+                      "h-[44px] min-w-[105px] rounded-t-[16px] rounded-b-none px-6",
                       "flex items-center justify-center",
-                      "text-[18px] font-semibold leading-none",
+                      "text-[14px] leading-none",
                       "border-0 outline-none appearance-none",
                       "transition-all duration-200",
                       selected
-                        ? "text-white bg-[linear-gradient(180deg,#36CFE3_0%,#19A7C4_100%)] shadow-[0_14px_24px_rgba(44,193,219,0.32)]"
-                        : "text-[#24324A] bg-[#EEF3F9] hover:bg-[#E7EEF7]",
+                        ? "bg-[#43C6E2] font-medium text-[#F2F2F3]"
+                        : "bg-[#F2F2F3] font-normal text-[#3D495C] hover:bg-[#ECECEF]",
                     ].join(" ")}
                     style={{
                       WebkitAppearance: "none",
                       appearance: "none",
                     }}
                   >
-                    {t}
+                    {tab.label}
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div className="mt-4 w-full">
-            <div className="mx-auto h-[10px] w-[92%] rounded-full bg-[#C9DAF8] blur-[1px]" />
-            <div className="mx-auto -mt-[10px] h-[3px] w-[92%] rounded-full bg-[#9EB8EE]" />
+          <div className="mx-auto mt-0 h-[14px] w-full max-w-[1000px]">
+            <div className="h-[10px] w-full rounded-t-[16px] bg-[#D7EAF8] blur-[5px]" />
           </div>
         </div>
 
@@ -774,18 +968,28 @@ const HotelDetailListing = () => {
 
         {activeTab === "Rooms" && (
           <HotelDetailRoomSection
+            bookingParams={resolvedBookingParams}
+            hotelDetail={hotelDetail}
             hotelMoreRooms={hotelMoreRooms}
             selectedRooms={selectedRooms}
             onRoomsChange={handleRoomsChange}
+            onBookingParamsChange={handleRoomToolbarSearch}
+            isSearching={isHotelSearchPending}
           />
         )}
 
-        {activeTab === "Ameneties" && (
+        {activeTab === "Reviews" && <HotelDetailGuestReviewSection />}
+
+        {activeTab === "Amenities" && (
           <HotelDetailAmenetiesSection
             hotelDetail={hotelDetail}
             onSeeRooms={() => handleTabChange("Rooms")}
           />
         )}
+
+        {activeTab === "FAQs" && <HotelDetailFaqSection />}
+
+        {activeTab === "Rules" && <HotelDetailRulesSection />}
 
         {showLocationMap && (
           <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/50 px-4">
@@ -844,7 +1048,7 @@ const HotelDetailListing = () => {
           />
 
           <div className="relative max-w-5xl mx-auto px-4 py-6">
-            <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4E4E7] px-4 py-3">
+            <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EE7] px-4 py-3">
               <div className="flex items-center justify-between gap-6">
                 <div className="flex-shrink-0 flex-1">
                   <p className="text-xs text-[#3D495C]">Your selection</p>

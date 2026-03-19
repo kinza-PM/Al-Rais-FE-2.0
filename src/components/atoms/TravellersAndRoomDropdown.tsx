@@ -84,9 +84,17 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   // schema rows (from API)
   const rows = useMemo(() => schema ?? [], [schema]);
 
-  // initial pax state (keeps shape from schema)
+  // Initial pax state should preserve incoming values even before schema loads.
   const initialPax = useMemo<Pax>(() => {
-    const p: Pax = { rooms: value?.rooms ?? 0 };
+    const p: Pax = {
+      adults: value?.adults ?? 0,
+      kids: value?.kids ?? 0,
+      children: value?.children ?? 0,
+      infants: value?.infants ?? 0,
+      seniors: value?.seniors ?? 0,
+      rooms: value?.rooms ?? 1,
+    };
+
     for (const r of rows) (p as any)[r.key] = (value as any)?.[r.key] ?? 0;
     return p;
   }, [rows, value]);
@@ -97,10 +105,15 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   const ref = useRef<HTMLDivElement>(null);
   const isUpdatingFromProps = useRef(false);
 
-  // total passengers (sum of rows keys)
+  // Total passengers should not depend on schema loading, otherwise refresh can
+  // briefly show 00 passengers while rows are still empty.
   const total = useMemo(
-    () => rows.reduce((acc, r) => acc + ((pax as any)[r.key] || 0), 0),
-    [rows, pax],
+    () =>
+      (pax.adults || 0) +
+      (pax.kids || pax.children || 0) +
+      (pax.infants || 0) +
+      (pax.seniors || 0),
+    [pax],
   );
 
   useEffect(() => {
@@ -170,13 +183,16 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
 
   // --- CHILDREN AGES HANDLING ---
   // detect children key in schema (support 'kids' or 'children')
-  const childRowKey = useMemo(
-    () =>
-      rows.find((r) => r.key === "kids")?.key as
-      | (keyof Pax & string)
-      | undefined,
-    [rows],
-  );
+  const childRowKey = useMemo(() => {
+    const explicitKey = rows.find(
+      (r) => r.key === "kids" || r.key === "children",
+    )?.key as (keyof Pax & string) | undefined;
+
+    if (explicitKey) return explicitKey;
+    if ((pax.kids ?? 0) > 0) return "kids";
+    if ((pax.children ?? 0) > 0) return "children";
+    return undefined;
+  }, [rows, pax.kids, pax.children]);
 
   const childCount = (childRowKey && ((pax as any)[childRowKey] || 0)) || 0;
 
@@ -246,9 +262,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    if (initialChildAges && initialChildAges.length > 0) {
-      setChildAges(initialChildAges);
-    }
+    setChildAges(initialChildAges ?? []);
   }, [initialChildAges]);
 
   return (
