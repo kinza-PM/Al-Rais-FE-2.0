@@ -42,7 +42,7 @@ const MyBookingsPage = () => {
   const initHotel = async () => {
     try {
       const status =
-        active === "Confirmed" ? "completed" : active.toLowerCase();
+        active === "Confirmed" ? "confirmed" : active.toLowerCase();
       const response = await fetchHotelBookings({ status });
       const transformed = transformHotelBookingsResponse(response ?? {});
       setUserMyHotelBookings(Array.isArray(transformed) ? transformed : []);
