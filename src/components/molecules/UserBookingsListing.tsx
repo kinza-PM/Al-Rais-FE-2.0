@@ -443,11 +443,11 @@ function BookingCard({ booking }: { booking: any }) {
 
       <CardDivider />
 
-      <div className="mt-6 flex items-center text-[15px] font-medium">
+       <div className="mt-6 flex items-center text-[15px] font-medium">
         <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7]">
           {status === "Confirmed" && (
             <>
-              <div className="">
+              <div className="pr-4">
                 <Button
                   type="button"
                   className="text-[#5383DA] hover:underline"
@@ -472,6 +472,53 @@ function BookingCard({ booking }: { booking: any }) {
                 >
                   Download e-ticket
                 </Button>
+              </div>
+
+              <div className="px-4">
+                <Button
+  type="button"
+  className="text-[#EA0029] hover:underline"
+  overrideClasses
+  onClick={() => {
+    debugger;
+    const firstJourney = booking?.journeys?.[0];
+
+    const rawIssueDate = booking?.createdAt || "";
+    let formattedIssueDate = "";
+
+    if (rawIssueDate) {
+      const d = new Date(rawIssueDate);
+      formattedIssueDate = Number.isNaN(d.getTime())
+        ? rawIssueDate
+        : d.toLocaleDateString("en-GB");
+    }
+
+    const passengersCount = booking?.request?.passengers?.length || 0;
+    const passengersLabel =
+      passengersCount > 0
+        ? `${passengersCount.toString().padStart(2, "0")} ${
+            passengersCount === 1 ? "Adult" : "Adults"
+          }`
+        : booking?.passengersLabel || "";
+
+    navigate("/flight-cancellation", {
+      state: {
+        bookingReferenceId: booking?.bookingRef || "",
+        supplierLocator: booking?.originalApiItem?.detail?.supplierLocator || "",
+        issueDate: formattedIssueDate,
+        bookingId: booking?.offerId || booking?.id || "",
+        airlineName: firstJourney?.airline?.name || "Airline",
+        routeLabel: firstJourney
+          ? `${firstJourney?.from?.code || ""} → ${firstJourney?.to?.code || ""}`
+          : "Flight booking",
+        passengersLabel,
+        totalAmount: Number(booking?.price?.totalFare || 0),
+      },
+    });
+  }}
+>
+  Cancel booking
+</Button>
               </div>
             </>
           )}

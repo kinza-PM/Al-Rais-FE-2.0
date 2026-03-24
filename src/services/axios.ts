@@ -20,6 +20,7 @@ const flightApis = [
 ];
 const paymentApis = ["/pay"];
 const flightAncillaryApis = ["/ancillarySearch", "/bookAncillary"];
+const flightCancellation = ["/flightCancellationCharge", "/flightCancellation"];
 const hotelApis = [
   "/hotelSearch",
   "/hotelDetail",
@@ -60,6 +61,9 @@ export const TICKET_API_BASE =
 
 export const HOTEL_FAVOURITE_API_BASE =
   "https://iqgovf9bf7.execute-api.eu-west-1.amazonaws.com/dev";
+
+  export const FLIGHT_CANCELLATION =
+  "https://orvmy7zbb5.execute-api.eu-west-1.amazonaws.com/dev";
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,
@@ -109,6 +113,9 @@ axiosClient.interceptors.request.use(async (config) => {
   }
   else if (hotelFavouriteApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = HOTEL_FAVOURITE_API_BASE;
+  }
+  else if (flightCancellation.some((prefix) => config.url?.startsWith(prefix))) {
+    config.baseURL = FLIGHT_CANCELLATION;
   }
 
   return config;
