@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 import Whatsapp from "../../assets/images/whatsapp.png";
 import Printer from "../../assets/svgs/printer.svg";
 import Mail from "../../assets/svgs/mail.svg";
@@ -19,8 +20,6 @@ type ShareTicketProps = {
   flightDates?: string;
   pricePerSeat?: string;
   currency?: string;
-
-  /** new generic mode support */
   title?: string;
   description?: string;
   shareUrl?: string;
@@ -28,6 +27,59 @@ type ShareTicketProps = {
   cardSubtitle?: string;
   mode?: "flight" | "hotel";
 };
+
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  if (!text) return false;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (error) {
+      console.warn("Clipboard API failed. Falling back.", error);
+    }
+  }
+
+  try {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.setAttribute("readonly", "");
+
+    textArea.style.position = "fixed";
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.width = "1px";
+    textArea.style.height = "1px";
+    textArea.style.padding = "0";
+    textArea.style.border = "none";
+    textArea.style.outline = "none";
+    textArea.style.boxShadow = "none";
+    textArea.style.background = "transparent";
+    textArea.style.opacity = "0";
+    textArea.style.pointerEvents = "none";
+    textArea.style.zIndex = "-1";
+
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, text.length);
+
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textArea);
+
+    if (copied) return true;
+  } catch (error) {
+    console.warn("execCommand fallback failed.", error);
+  }
+
+  try {
+    window.prompt("Copy this link manually:", text);
+  } catch {
+    // ignore
+  }
+
+  return false;
+}
 
 export default function ShareTicketModal({
   closeModal,
@@ -50,12 +102,13 @@ export default function ShareTicketModal({
   mode = "flight",
 }: ShareTicketProps) {
   const [copied, setCopied] = useState(false);
+  const [isCopying, setIsCopying] = useState(false);
 
   const finalShareUrl = shareUrl || ticketPdfUrl || window.location.href;
   const showFlightCard = Boolean(routeFrom && routeTo);
 
   const modalTitle =
-    title || (mode === "hotel" ? "Share Hotel" : "Share your Ticket");
+    title || (mode === "hotel" ? "Share this Hotel" : "Share your Ticket");
 
   const modalDescription =
     description ||
@@ -74,18 +127,33 @@ export default function ShareTicketModal({
   const infoCardSubtitle =
     cardSubtitle ||
     (showFlightCard
-      ? `${airlines ?? "Multiple Airlines"}${flightDates ? ` • ${flightDates}` : ""}`
+      ? `${airlines ?? "Multiple Airlines"}${
+          flightDates ? ` • ${flightDates}` : ""
+        }`
       : mode === "hotel"
         ? passengerName
         : passengerName);
 
   const handleCopyLink = async () => {
+    if (!finalShareUrl) {
+      toast.error("Link not available.");
+      return;
+    }
+
+    setIsCopying(true);
+
     try {
-      await navigator.clipboard.writeText(finalShareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      //
+      const success = await copyTextToClipboard(finalShareUrl);
+
+      if (success) {
+        setCopied(true);
+        toast.success("Link copied to clipboard!");
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        toast.error("Unable to copy automatically. Please copy it manually.");
+      }
+    } finally {
+      setIsCopying(false);
     }
   };
 
@@ -93,13 +161,15 @@ export default function ShareTicketModal({
     const subject = encodeURIComponent(
       mode === "hotel"
         ? `${infoCardTitle} - Hotel Details`
-        : `Flight Booking Confirmation - ${bookingRef}`,
+        : `Flight Booking Confirmation - ${bookingRef}`
     );
 
     const body = encodeURIComponent(
       mode === "hotel"
         ? `Hello,\n\nHere are the hotel details:\n\n${infoCardTitle}\n${infoCardSubtitle}\n\nView here: ${finalShareUrl}\n\nBest regards,\nAl Rais Travels`
-        : `Dear ${passengerName},\n\nThank you for booking with Al Rais Travels!\n\nYour booking has been confirmed with the following details:\nBooking Reference: ${bookingRef}\n\n${ticketPdfUrl ? `Your e-ticket: ${ticketPdfUrl}\n\n` : ""}We wish you a pleasant journey!\n\nBest regards,\nAl Rais Travels Team`,
+        : `Dear ${passengerName},\n\nThank you for booking with Al Rais Travels!\n\nYour booking has been confirmed with the following details:\nBooking Reference: ${bookingRef}\n\n${
+            ticketPdfUrl ? `Your e-ticket: ${ticketPdfUrl}\n\n` : ""
+          }We wish you a pleasant journey!\n\nBest regards,\nAl Rais Travels Team`
     );
 
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
@@ -109,7 +179,9 @@ export default function ShareTicketModal({
     const message = encodeURIComponent(
       mode === "hotel"
         ? `🏨 *Hotel Details* 🏨\n\n${infoCardTitle}\n${infoCardSubtitle}\n\n🔗 View hotel: ${finalShareUrl}`
-        : `✈️ *Flight Booking Confirmed* ✈️\n\nDear ${passengerName},\n\nYour booking with Al Rais Travels has been confirmed!\n\n📋 *Booking Reference:* ${bookingRef}\n\n${ticketPdfUrl ? `📄 Your e-ticket: ${ticketPdfUrl}\n\n` : ""}Have a safe journey! 🌍✨`,
+        : `✈️ *Flight Booking Confirmed* ✈️\n\nDear ${passengerName},\n\nYour booking with Al Rais Travels has been confirmed!\n\n📋 *Booking Reference:* ${bookingRef}\n\n${
+            ticketPdfUrl ? `📄 Your e-ticket: ${ticketPdfUrl}\n\n` : ""
+          }Have a safe journey! 🌍✨`
     );
 
     window.open(`https://wa.me/?text=${message}`, "_blank");
@@ -339,6 +411,7 @@ export default function ShareTicketModal({
               type="button"
               className="flex flex-col items-center gap-2"
               onClick={handleCopyLink}
+              disabled={isCopying}
             >
               <span
                 className="flex h-12 w-12 items-center justify-center rounded-full"
@@ -374,7 +447,7 @@ export default function ShareTicketModal({
                   color: "#3D495C",
                 }}
               >
-                {copied ? "Copied!" : "Copy link"}
+                {isCopying ? "Copying..." : copied ? "Copied!" : "Copy link"}
               </span>
             </button>
 
