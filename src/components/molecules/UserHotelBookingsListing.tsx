@@ -4,34 +4,13 @@ import Button from "../atoms/Button";
 import { Link } from "react-router-dom";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { InfoCircleOutlined } from "@ant-design/icons";
+import type { HotelBookingCardItem } from "../../utils/transformBookingData";
+import type { BookingStatus } from "./UserBookingsListing";
 
 const actionLinkClass =
   "text-[13px] font-medium text-[#5383DA] hover:underline cursor-pointer whitespace-nowrap";
 
-export type BookingStatus = "Confirmed" | "Pending" | "Expired";
-
-type HotelBookingCardItem = {
-  id: string;
-  status: BookingStatus;
-  hotelName: string;
-  address: string;
-  checkInTime: string;
-  checkInDate: string;
-  checkOutTime: string;
-  checkOutDate: string;
-  totalStay: string;
-  roomLabel: string;
-  bookingRef: string;
-  countdown?: {
-    hours: string;
-    mins: string;
-    secs: string;
-  };
-  cancellationDeadline?: string;
-  cancellationDeadlineDate?: string;
-  searchKey?: string;
-  bookingKey?: string;
-};
+export type { BookingStatus };
 
 function StatusPill({ status }: { status: BookingStatus }) {
   if (status === "Confirmed") {
@@ -351,7 +330,11 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
                     state={{
                       bookingReferenceId: booking.bookingRef,
                       hotelName: booking.hotelName,
-                      bookingKey: booking.id,
+                      bookingKey: booking.bookingKey || booking.id,
+                      cancellationDeadline: booking.cancellationDeadline,
+                      cancellationDeadlineDate: booking.cancellationDeadlineDate,
+                      totalPaid: booking.totalPaid,
+                      currency: booking.currency,
                     }}
                     className={`${actionLinkClass} pl-4 text-[#EA0029]`}
                   >

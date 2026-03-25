@@ -7,7 +7,13 @@ import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "./HotelPriceSummaryTooltip";
-import { processHotelSearchListingData } from "../../utils/hotelHelper";
+import {
+  processHotelSearchListingData,
+  getHotelGuestReviewMeta,
+  getHotelListingDescription,
+  resolveHotelListingReviewDisplay,
+  HOTEL_LISTING_REVIEW_FALLBACK,
+} from "../../utils/hotelHelper";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
 
@@ -17,17 +23,6 @@ type HotellGridCardProps = {
   isFavouriteLoading?: boolean;
   onToggleFavourite?: () => void;
   onShare?: () => void;
-};
-
-const getReviewLabel = (score: number): string => {
-  if (score >= 9.5) return "Exceptional";
-  if (score >= 9.0) return "Excellent";
-  if (score >= 8.5) return "Superb";
-  if (score >= 8.0) return "Fabulous";
-  if (score >= 7.5) return "Very Good";
-  if (score >= 7.0) return "Good";
-  if (score >= 6.5) return "Pleasant";
-  return "Reviewed";
 };
 
 const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
@@ -95,20 +90,17 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
     const address = hotel?.propertyInfo?.address || "";
     const location = hotel?.propertyInfo?.location || "";
     const starRating = hotel?.propertyInfo?.starRating;
-    const description =
-      bestRoom?.roomTypeDesc || hotel?.propertyInfo?.description || "";
+    const listingDescription = getHotelListingDescription(hotel, bestRoom);
 
-    const reviewScore: number | undefined =
-      hotel?.propertyInfo?.reviewScore ??
-      hotel?.propertyInfo?.guestScore ??
-      hotel?.reviewScore ??
-      undefined;
-
-    const reviewCount: number | undefined =
-      hotel?.propertyInfo?.reviewCount ??
-      hotel?.propertyInfo?.totalReviews ??
-      hotel?.reviewCount ??
-      undefined;
+    const { reviewScore, reviewCount } = getHotelGuestReviewMeta(hotel);
+    const reviewDisplay = resolveHotelListingReviewDisplay(
+      reviewScore,
+      reviewCount,
+    );
+    const dealBadgeLabel =
+      uniqueOfferNames.length > 0
+        ? uniqueOfferNames[0]
+        : HOTEL_LISTING_REVIEW_FALLBACK.dealLabel;
 
     const roomTypeName = bestRoom?.roomTypeName || "";
     const bedType = bestRoom?.bedType || "";
@@ -313,89 +305,92 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
 
           {renderStars(starRating)}
 
-          {reviewScore != null && (
-            <div className="flex items-center gap-2 mb-2">
+          {listingDescription.trim() ? (
+            <p
+              className="mb-3 line-clamp-3 w-full max-w-[568px] overflow-hidden"
+              style={{
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 400,
+                fontSize: "12px",
+                color: "#3D495C",
+                lineHeight: "1.45",
+              }}
+            >
+              {listingDescription}
+            </p>
+          ) : null}
+
+          <div className="border-t border-[#E4E4E7] my-2" />
+
+          {/* Figma: same tokens as list (scaled for grid) */}
+          <div className="mb-3 flex w-full flex-col items-baseline gap-[10px]">
+            <div className="flex items-start justify-end gap-[10px]">
               <div
-                className="flex items-center justify-center rounded-[100px] flex-shrink-0"
+                className="flex flex-shrink-0 items-center justify-center rounded-[100px] box-border"
                 style={{
                   background: "#A7C0EC",
-                  padding: "8px 14px",
-                  minWidth: "48px",
-                  height: "36px",
+                  minWidth: "71px",
+                  minHeight: "49px",
+                  padding: "15px 25px",
+                  boxSizing: "border-box",
                 }}
               >
                 <span
                   style={{
                     fontFamily: "Inter, sans-serif",
                     fontWeight: 600,
-                    fontSize: "14px",
-                    color: "#2351A3",
+                    fontSize: "16px",
                     lineHeight: "100%",
+                    color: "#2351A3",
                   }}
                 >
-                  {reviewScore.toFixed(1)}
+                  {reviewDisplay.score.toFixed(1)}
                 </span>
               </div>
-              <div className="flex flex-col gap-0.5">
+              <div className="flex max-w-[160px] flex-col gap-[6px] pt-[5px] text-justify">
                 <span
                   style={{
                     fontFamily: "Inter, sans-serif",
                     fontWeight: 600,
-                    fontSize: "13px",
-                    color: "#00B868",
+                    fontSize: "14px",
                     lineHeight: "100%",
+                    color: "#00B868",
                   }}
                 >
-                  {getReviewLabel(reviewScore)}
+                  {reviewDisplay.label}
                 </span>
-                {reviewCount != null && (
+                {reviewDisplay.count != null && (
                   <span
                     style={{
                       fontFamily: "Inter, sans-serif",
                       fontWeight: 400,
-                      fontSize: "11px",
-                      color: "#3D495C",
+                      fontSize: "14px",
                       lineHeight: "100%",
+                      color: "#3D495C",
                     }}
                   >
-                    {reviewCount} guest reviews
+                    {reviewDisplay.count} guest reviews
                   </span>
                 )}
               </div>
             </div>
-          )}
-
-          {description && (
-            <p
-              className="mb-3 line-clamp-3"
+            <span
+              className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
               style={{
+                padding: "8px 15px",
+                minHeight: "31px",
                 fontFamily: "Inter, sans-serif",
-                fontWeight: 400,
+                fontWeight: 600,
                 fontSize: "12px",
-                color: "#3D495C",
-                lineHeight: "150%",
+                lineHeight: "100%",
+                color: "#FFFFFF",
               }}
             >
-              {description}
-            </p>
-          )}
+              {dealBadgeLabel}
+            </span>
+          </div>
 
-          {hasOffer && uniqueOfferNames.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-1.5">
-              {uniqueOfferNames.map((offerName, idx) => (
-                <span
-                  key={idx}
-                  className="bg-[#00B868] text-[#FFFFFF] text-xs font-semibold px-4 py-1.5 rounded-full inline-block max-w-full break-words"
-                >
-                  {offerName}
-                </span>
-              ))}
-            </div>
-          )}
-
-          <div className="border-t border-[#E4E4E7] my-2" />
-
-          <div className="mb-2">
+          <div className="mb-2 text-right">
             <div
               style={{
                 fontFamily: "Inter, sans-serif",
@@ -408,8 +403,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             >
               Starting from (including VAT)
             </div>
-            <div className="flex items-start gap-1.5">
-              <div className="min-w-0">
+            <div className="flex items-start justify-end gap-1.5">
+              <div className="min-w-0 text-right">
                 {hasOffer && originalPrice > price && (
                   <span
                     style={{

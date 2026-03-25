@@ -7,7 +7,13 @@ import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
-import { processHotelSearchListingData } from "../../utils/hotelHelper";
+import {
+  processHotelSearchListingData,
+  getHotelGuestReviewMeta,
+  getHotelListingDescription,
+  resolveHotelListingReviewDisplay,
+  HOTEL_LISTING_REVIEW_FALLBACK,
+} from "../../utils/hotelHelper";
 import Loader from "../atoms/Loader";
 import toast from "react-hot-toast";
 import {
@@ -311,32 +317,17 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
               const address = hotel.propertyInfo?.address || "";
               const locationText = hotel.propertyInfo?.location || "";
               const starRating = hotel.propertyInfo?.starRating;
-              const description =
-                hotel.propertyInfo?.description || bestRoom?.roomTypeDesc || "";
+              const listingDescription = getHotelListingDescription(
+                hotel,
+                bestRoom,
+              );
               const distanceFromCenter =
                 hotel.propertyInfo?.distanceFromCenter ??
                 hotel.propertyInfo?.distanceFromDowntown ??
                 "";
-              const reviewScore =
-                hotel.propertyInfo?.reviewScore ??
-                hotel.propertyInfo?.guestScore ??
-                hotel?.reviewScore;
-              const reviewCount =
-                hotel.propertyInfo?.reviewCount ??
-                hotel.propertyInfo?.totalReviews ??
-                hotel?.reviewCount;
+              const { reviewScore, reviewCount } = getHotelGuestReviewMeta(hotel);
 
               const isFavourite = !!favorites[hotel.hotelKey];
-
-              const getReviewLabel = (score: number) => {
-                if (score >= 9.5) return "Exceptional";
-                if (score >= 9.0) return "Excellent";
-                if (score >= 8.5) return "Superb";
-                if (score >= 8.0) return "Fabulous";
-                if (score >= 7.5) return "Very Good";
-                if (score >= 7.0) return "Good";
-                return "Reviewed";
-              };
 
               const rawFacilities = hotel.propertyInfo?.facilities || [];
               const facilityNames = rawFacilities
@@ -370,10 +361,14 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
               }
 
               const amenitiesToShow = displayAmenities.slice(0, 4);
+              const reviewDisplay = resolveHotelListingReviewDisplay(
+                reviewScore,
+                reviewCount,
+              );
               const dealBadgeLabel =
-                hasOffer && uniqueOfferNames.length > 0
+                uniqueOfferNames.length > 0
                   ? uniqueOfferNames[0]
-                  : "Smashing deal";
+                  : HOTEL_LISTING_REVIEW_FALLBACK.dealLabel;
 
               return (
                 <div
@@ -446,11 +441,17 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
                       {renderStars(starRating)}
 
-                      {description && (
-                        <p className="mb-4 line-clamp-3 max-w-[568px] text-[12px] leading-[1.3] text-[#3D495C]">
-                          {description}
+                      {listingDescription.trim() ? (
+                        <p
+                          className="mb-4 line-clamp-3 max-w-[568px] overflow-hidden text-[12px] font-normal text-[#3D495C]"
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            lineHeight: "1.45",
+                          }}
+                        >
+                          {listingDescription}
                         </p>
-                      )}
+                      ) : null}
 
                       <span className="mb-3 block h-px w-full bg-[#E4E4E7]" />
 
@@ -523,16 +524,19 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
                     <span className="inline-block self-stretch bg-[#E4E4E7]" style={{ width: "1px" }} />
 
-                    <div className="flex w-[272px] flex-shrink-0 flex-col items-start pl-4 pr-[10px]">
-                      {reviewScore != null && (
-                        <div className="mb-[18px] flex items-start gap-[12px]">
+                    <div className="flex w-[272px] flex-shrink-0 flex-col items-end text-right">
+                      {/* Figma: guest score row + deal pill above price (right-aligned) */}
+                      <div className="mb-[14px] flex w-full flex-col items-baseline gap-[10px]">
+                        {/* Figma: score pill 71×49, #A7C0EC, gap 10px to copy */}
+                        <div className="flex items-start justify-end gap-[10px]">
                           <div
-                            className="flex items-center justify-center rounded-[100px] flex-shrink-0"
+                            className="flex flex-shrink-0 items-center justify-center rounded-[100px] box-border"
                             style={{
                               background: "#A7C0EC",
-                              padding: "15px 25px",
                               minWidth: "71px",
-                              height: "49px",
+                              minHeight: "49px",
+                              padding: "15px 25px",
+                              boxSizing: "border-box",
                             }}
                           >
                             <span
@@ -542,12 +546,13 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                                 fontSize: "16px",
                                 lineHeight: "100%",
                                 color: "#2351A3",
+                                verticalAlign: "middle",
                               }}
                             >
-                              {Number(reviewScore).toFixed(1)}
+                              {reviewDisplay.score.toFixed(1)}
                             </span>
                           </div>
-                          <div className="flex flex-col gap-[6px] pt-[2px]">
+                          <div className="flex flex-col gap-[6px] pt-[5px] text-justify">
                             <span
                               style={{
                                 fontFamily: "Inter, sans-serif",
@@ -555,36 +560,46 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                                 fontSize: "14px",
                                 lineHeight: "100%",
                                 color: "#00B868",
+                                verticalAlign: "middle",
                               }}
                             >
-                              {getReviewLabel(Number(reviewScore))}
+                              {reviewDisplay.label}
                             </span>
-                            {reviewCount != null && (
+                            {reviewDisplay.count != null && (
                               <span
                                 style={{
                                   fontFamily: "Inter, sans-serif",
                                   fontWeight: 400,
-                                  fontSize: "12px",
-                                  color: "#3D495C",
+                                  fontSize: "14px",
                                   lineHeight: "100%",
+                                  color: "#3D495C",
+                                  verticalAlign: "middle",
                                 }}
                               >
-                                {reviewCount} guest reviews
+                                {reviewDisplay.count} guest reviews
                               </span>
                             )}
                           </div>
                         </div>
-                      )}
 
-                      {hasOffer && (
-                        <div className="mb-[18px]">
-                          <span className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] px-[15px] py-[8px] text-[12px] font-semibold leading-none text-white">
-                            {dealBadgeLabel}
-                          </span>
-                        </div>
-                      )}
+                        <span
+                          className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
+                          style={{
+                            padding: "8px 15px",
+                            minHeight: "31px",
+                            fontFamily: "Inter, sans-serif",
+                            fontWeight: 600,
+                            fontSize: "12px",
+                            lineHeight: "100%",
+                            color: "#FFFFFF",
+                            verticalAlign: "middle",
+                          }}
+                        >
+                          {dealBadgeLabel}
+                        </span>
+                      </div>
 
-                      <div className="mb-[2px] flex items-center gap-[8px]">
+                      <div className="mb-[2px] flex w-full items-center justify-end gap-[8px]">
                         <span
                           style={{
                             fontFamily: "Inter, sans-serif",
@@ -602,7 +617,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         />
                       </div>
 
-                      <div className="mb-[22px] flex w-full flex-col items-start gap-[2px]">
+                      <div className="mb-[22px] flex w-full flex-col items-end gap-[2px]">
                         {hasOffer && originalPrice > price && (
                           <span
                             style={{
@@ -639,7 +654,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         </div>
                       </div>
 
-                      <div className="flex w-full items-center gap-[18px]">
+                      <div className="flex w-full items-center justify-end gap-[18px]">
                         <button
                           className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
                           aria-label="Share"

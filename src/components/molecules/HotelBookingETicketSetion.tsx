@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import Button from "../atoms/Button";
+import ShareTicketModal from "../atoms/ShareTicketModal";
 import { generateMultiPagePDF } from "../../utils/pdfGenerator";
 import toast from "react-hot-toast";
 import Loader from "../atoms/Loader";
@@ -21,6 +22,7 @@ export default function HotelBookingETicketSetion({
   const location = useLocation();
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   const [retrieveResponse, setRetrieveResponse] = useState<any>(null);
 
   const { mutateAsync: retrieveHotelBookingAsync, isPending: isRetrieving } =
@@ -36,6 +38,8 @@ export default function HotelBookingETicketSetion({
     location.state?.bookingResponse?.searchKey ||
     location.state?.bookingResponse?.data?.[0]?.searchKey ||
     "";
+
+  const stateBookingKey = location.state?.bookingKey ?? "";
 
   const fallbackBookingReferenceId =
     bookingResponse?.data?.[0]?.bookingReferenceId || "";
@@ -57,7 +61,7 @@ export default function HotelBookingETicketSetion({
           productType: "H",
           bookingReferenceId,
           clientReferenceId: "",
-          bookingKey: "",
+          bookingKey: stateBookingKey || "",
           searchKey,
         });
 
@@ -69,7 +73,12 @@ export default function HotelBookingETicketSetion({
     };
 
     initRetrieve();
-  }, [bookingReferenceId, searchKey, retrieveHotelBookingAsync]);
+  }, [
+    bookingReferenceId,
+    searchKey,
+    stateBookingKey,
+    retrieveHotelBookingAsync,
+  ]);
 
   const activeResponse = retrieveResponse || bookingResponse;
   const bookingData = activeResponse?.data?.[0];
@@ -176,6 +185,27 @@ export default function HotelBookingETicketSetion({
   );
 
   const totalPaid = totalNet + taxTotal;
+
+  const hotelCardTitle = hotel?.name ?? hotelDetail?.name ?? "Hotel";
+  const hotelCardSubtitle = useMemo(() => {
+    if (hotelDetail?.address) {
+      return [
+        hotelDetail.address,
+        hotelDetail.city,
+        hotelDetail.country,
+      ]
+        .filter(Boolean)
+        .join(", ");
+    }
+    return (hotel as any)?.address ?? "";
+  }, [hotel, hotelDetail]);
+
+  const shareBookingUrl = useMemo(() => {
+    if (typeof window === "undefined" || !bookingRef || bookingRef === "—") {
+      return "";
+    }
+    return `${window.location.origin}/my-bookings?ref=${encodeURIComponent(bookingRef)}`;
+  }, [bookingRef]);
 
   const handleDownloadPDF = async () => {
     try {
@@ -459,7 +489,7 @@ export default function HotelBookingETicketSetion({
         }
       />
 
-      <div className="w-full max-w-[476px]">
+      <div className="w-full max-w-[560px]">
         <div
           className="rounded-[16px] border bg-[#FFFFFF] px-2 pt-6 pb-6"
           style={{ borderWidth: 1, borderColor: "#C2CAD6" }}
@@ -467,44 +497,71 @@ export default function HotelBookingETicketSetion({
           <TicketContent />
           <NotchDivider />
 
-          <div className="flex items-center justify-center gap-6 px-14">
+          <div className="grid w-full grid-cols-3 gap-2 px-2 sm:gap-3 sm:px-4">
             <Button
               type="button"
               overrideClasses
               onClick={handleDownloadPDF}
               disabled={isGeneratingPDF || !imagesLoaded || isRetrieving}
-              className="flex items-center justify-center gap-2.5 text-[#F2F2F3] border-0"
+              title="Download as PDF"
+              className="flex min-h-[44px] w-full min-w-0 items-center justify-center border-0 px-2 text-center text-[11px] font-semibold leading-tight text-[#F2F2F3] sm:min-h-[46px] sm:text-[12px] sm:leading-snug"
               style={{
-                width: 243,
-                height: 47,
                 borderRadius: 100,
                 background:
                   "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               }}
             >
-              {isGeneratingPDF ? "Generating PDF..." : "Download as PDF"}
+              <span className="block w-full truncate text-center sm:whitespace-normal sm:overflow-visible">
+                {isGeneratingPDF ? "Generating…" : "Download as PDF"}
+              </span>
+            </Button>
+
+            <Button
+              type="button"
+              overrideClasses
+              onClick={() => setShareModalOpen(true)}
+              disabled={isRetrieving || !bookingRef || bookingRef === "—"}
+              title="Share booking"
+              className="flex min-h-[44px] w-full min-w-0 items-center justify-center border border-[#2351A3] bg-white px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] hover:bg-[#EEF4FF] sm:min-h-[46px] sm:text-[13px]"
+              style={{
+                borderRadius: 100,
+                fontFamily: "Inter, sans-serif",
+              }}
+            >
+              Share
             </Button>
 
             <Button
               type="button"
               overrideClasses
               onClick={() => navigate("/my-bookings")}
-              className="flex items-center justify-center gap-2.5 bg-transparent border-0 text-[#5383DA] hover:underline"
+              title="Manage bookings"
+              className="flex min-h-[44px] w-full min-w-0 items-center justify-center border border-[#C2CAD6] bg-[#F8FAFC] px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] hover:border-[#2351A3] hover:bg-[#EEF4FF] sm:min-h-[46px] sm:text-[12px] sm:leading-snug"
               style={{
-                width: 225,
-                height: 47,
-                fontFamily: "Inter",
-                fontWeight: 600,
-                fontSize: 16,
-                lineHeight: "100%",
-                letterSpacing: "0.5px",
-                textAlign: "center",
+                borderRadius: 100,
+                fontFamily: "Inter, sans-serif",
               }}
             >
-              Manage bookings
+              <span className="block w-full truncate text-center sm:whitespace-normal sm:overflow-visible">
+                Manage bookings
+              </span>
             </Button>
           </div>
         </div>
+
+        {shareModalOpen && (
+          <ShareTicketModal
+            closeModal={() => setShareModalOpen(false)}
+            mode="hotel"
+            bookingRef={bookingRef}
+            cardTitle={hotelCardTitle}
+            cardSubtitle={hotelCardSubtitle || "Hotel booking"}
+            shareUrl={shareBookingUrl || window.location.href}
+            title="Share booking confirmation"
+            description="Share your confirmation number and trip details with travel companions."
+            showPrint={false}
+          />
+        )}
 
         <div
           id="hotel-ticket-pdf"
@@ -526,13 +583,10 @@ export default function HotelBookingETicketSetion({
           >
             <TicketContent />
             <NotchDivider />
-            <div className="flex items-center justify-center gap-6 px-14">
+            <div className="grid w-full grid-cols-3 gap-2 px-2 sm:gap-3 sm:px-4">
               <span
-                className="flex items-center justify-center gap-2.5 text-[#F2F2F3]"
+                className="flex min-h-[46px] items-center justify-center px-2 text-center text-[11px] font-semibold leading-tight text-[#F2F2F3] sm:text-[12px]"
                 style={{
-                  width: 243,
-                  height: 47,
-                  padding: "14px 52px",
                   borderRadius: 100,
                   background:
                     "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
@@ -541,18 +595,19 @@ export default function HotelBookingETicketSetion({
                 Download as PDF
               </span>
               <span
-                className="flex items-center justify-center"
+                className="flex min-h-[46px] items-center justify-center border border-[#2351A3] bg-white px-2 text-center text-[11px] font-semibold text-[#2351A3] sm:text-[13px]"
                 style={{
-                  width: 225,
-                  height: 47,
-                  padding: "14px 40px",
-                  fontFamily: "Inter",
-                  fontWeight: 600,
-                  fontSize: 16,
-                  lineHeight: "100%",
-                  letterSpacing: "0.5px",
-                  textAlign: "center",
-                  color: "#5383DA",
+                  borderRadius: 100,
+                  fontFamily: "Inter, sans-serif",
+                }}
+              >
+                Share
+              </span>
+              <span
+                className="flex min-h-[46px] items-center justify-center border border-[#C2CAD6] bg-[#F8FAFC] px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] sm:text-[12px]"
+                style={{
+                  borderRadius: 100,
+                  fontFamily: "Inter, sans-serif",
                 }}
               >
                 Manage bookings
