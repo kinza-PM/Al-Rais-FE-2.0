@@ -232,6 +232,9 @@ export type HotelBookingCardItem = {
   /** Required for hotelRetrieve / View details */
   searchKey?: string;
   bookingKey?: string;
+  /** Paid total for refund estimate on cancellation page (if API provides it) */
+  totalPaid?: number;
+  currency?: string;
 };
 
 function formatDateForHotel(dateStr: string): string {
@@ -337,6 +340,29 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     "";
   const bookingKey = apiItem.bookingKey || apiItem.booking_key || id || "";
 
+  const rawTotal =
+    apiItem.totalPaid ??
+    apiItem.totalPrice ??
+    apiItem.paidAmount ??
+    apiItem.grandTotal ??
+    apiItem.totalAmount ??
+    apiItem.amount ??
+    apiItem.financialInfo?.total ??
+    hotel?.totalPrice ??
+    hotel?.totalAmount;
+  const totalNum =
+    rawTotal != null && rawTotal !== ""
+      ? Number(rawTotal)
+      : Number.NaN;
+  const totalPaid =
+    Number.isFinite(totalNum) && totalNum > 0 ? totalNum : undefined;
+  const currency =
+    apiItem.currency ||
+    apiItem.currencyCode ||
+    apiItem.detail?.currency ||
+    hotel?.currency ||
+    "AED";
+
   const cancellationDeadlineRaw =
     apiItem.lastCancellationDate ||
     apiItem.cancellationDeadline ||
@@ -383,6 +409,8 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     cancellationDeadlineDate: cancellationDeadlineRaw || undefined,
     searchKey: searchKey || undefined,
     bookingKey: bookingKey || undefined,
+    totalPaid,
+    currency: currency || "AED",
   };
 }
 

@@ -44,7 +44,7 @@ const HotelHeroSectionTab: React.FC = () => {
     rooms?: number;
   }>({ adults: 1, rooms: 1 });
   const [childAges, setChildAges] = useState<Array<number | null>>([]);
-  const [starRating, setStarRating] = useState<string>("");
+  const [starRatings, setStarRatings] = useState<string[]>([]);
 
   const [validationErrors, setValidationErrors] = useState({
     country: "",
@@ -226,6 +226,13 @@ const HotelHeroSectionTab: React.FC = () => {
     const checkOutStr = convertDateToString(checkOutDate);
 
     // travelerCountryOfResidence and travelerNationality use same value (country,code format from dropdown)
+    const resolvedStarRatings = (() => {
+      const nums = starRatings
+        .map(Number)
+        .filter((n) => Number.isFinite(n) && n >= 1 && n <= 7);
+      return [...new Set(nums)].sort((a, b) => a - b);
+    })();
+
     setHotel({
       country,
       city,
@@ -235,7 +242,10 @@ const HotelHeroSectionTab: React.FC = () => {
       travelerNationality: nationality,
       paxData,
       childAges,
-      minStarRating: starRating ? Number(starRating) : 0,
+      starRatings: resolvedStarRatings,
+      minStarRating: resolvedStarRatings.length
+        ? Math.min(...resolvedStarRatings)
+        : 0,
     });
 
     navigate("/search-hotel");
@@ -247,7 +257,7 @@ const HotelHeroSectionTab: React.FC = () => {
     nationality,
     paxData,
     childAges,
-    starRating,
+    starRatings,
     validateForm,
     setHotel,
     navigate,
@@ -429,14 +439,14 @@ const HotelHeroSectionTab: React.FC = () => {
           <div className="hero-star w-full min-w-0">
             <CheckableDropdown
               options={starRatingOptions}
-              value={starRating}
+              value={starRatings}
               onChange={(v) =>
-                setStarRating(Array.isArray(v) ? (v[0] ?? "") : v)
+                setStarRatings(Array.isArray(v) ? v : v ? [v] : [])
               }
               placeholder="Select rating"
               label="Star Rating"
-              singleSelect={true}
-              tooltip="Select star rating"
+              singleSelect={false}
+              tooltip="Select one or more star ratings"
             />
           </div>
 

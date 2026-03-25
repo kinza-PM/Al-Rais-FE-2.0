@@ -101,6 +101,7 @@ const HotelSearchListing: React.FC = () => {
     filters: {
       currency: "AED",
       minStarRating: 0,
+      starRatings: [],
     },
   });
   // Local state for TravellersAndRoomDropdown (Pax format)
@@ -271,7 +272,18 @@ const HotelSearchListing: React.FC = () => {
       rooms: convertPaxToRoom(hotel.paxData, hotel.childAges),
       filters: {
         ...prev.filters,
-        minStarRating: hotel.minStarRating ?? 0,
+        starRatings:
+          hotel.starRatings && hotel.starRatings.length > 0
+            ? hotel.starRatings
+            : hotel.minStarRating && hotel.minStarRating > 0
+              ? [hotel.minStarRating]
+              : [],
+        minStarRating:
+          hotel.starRatings && hotel.starRatings.length > 0
+            ? Math.min(...hotel.starRatings)
+            : hotel.minStarRating && hotel.minStarRating > 0
+              ? hotel.minStarRating
+              : 0,
       },
     }));
     setPaxData(hotel.paxData);
@@ -339,6 +351,7 @@ const HotelSearchListing: React.FC = () => {
           paxData,
           childAges,
           minStarRating: searchState.filters?.minStarRating ?? 0,
+          starRatings: searchState.filters?.starRatings ?? [],
         });
       } else {
         setHotelSearchResults([]);
@@ -383,11 +396,11 @@ const HotelSearchListing: React.FC = () => {
 
     // Apply filters (merge star rating from search bar into filters)
     if (hasSearched && result.length > 0) {
-      const minStarRating = searchState.filters?.minStarRating ?? 0;
+      const barStarRatings = searchState.filters?.starRatings ?? [];
       const effectiveFilters = {
         ...filters,
         ratings:
-          minStarRating > 0 ? [minStarRating] : filters.ratings,
+          barStarRatings.length > 0 ? barStarRatings : filters.ratings,
       };
       result = filterHotels(result, effectiveFilters);
     }
@@ -398,7 +411,13 @@ const HotelSearchListing: React.FC = () => {
     }
 
     return result;
-  }, [hotelSearchResults, filters, sortOption, hasSearched, searchState.filters?.minStarRating]);
+  }, [
+    hotelSearchResults,
+    filters,
+    sortOption,
+    hasSearched,
+    searchState.filters?.starRatings,
+  ]);
 
   return (
     <div className="">
@@ -571,19 +590,30 @@ const HotelSearchListing: React.FC = () => {
             <div className="hotel-filter-star w-full min-w-0">
               <CheckableDropdown
                 options={starRatingOptions}
-                value={
-                  searchState.filters.minStarRating === 0
-                    ? ""
-                    : String(searchState.filters.minStarRating)
-                }
+                value={(searchState.filters.starRatings ?? []).map(String)}
                 onChange={(value) => {
-                  const rating = value === "" ? 0 : Number(value);
-                  handleFilterChange("minStarRating", rating);
+                  if (!Array.isArray(value)) return;
+                  const nums = [
+                    ...new Set(
+                      value
+                        .filter((v) => v !== "")
+                        .map((v) => Number(v))
+                        .filter((n) => Number.isFinite(n) && n >= 1 && n <= 7),
+                    ),
+                  ].sort((a, b) => a - b);
+                  setSearchState((prev) => ({
+                    ...prev,
+                    filters: {
+                      ...prev.filters,
+                      starRatings: nums,
+                      minStarRating: nums.length ? Math.min(...nums) : 0,
+                    },
+                  }));
                 }}
                 placeholder="Select rating"
                 label="Star Rating"
-                singleSelect={true}
-                tooltip="Select star rating"
+                singleSelect={false}
+                tooltip="Select one or more star ratings"
               />
             </div>
             <div className="hotel-filter-search">

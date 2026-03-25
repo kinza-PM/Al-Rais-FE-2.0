@@ -17,6 +17,7 @@ export type HotelBookingParams = {
   paxData?: BookingPaxData;
   childAges?: Array<number | null>;
   minStarRating?: number;
+  starRatings?: number[];
   [key: string]: any;
 };
 
@@ -39,12 +40,42 @@ const normalizePaxData = (
   rooms: Math.max(1, toCount(paxData?.rooms ?? fallback?.rooms, 1)),
 });
 
+const normalizeStarRatings = (
+  starRatings: unknown,
+  minStarRating: unknown,
+): number[] => {
+  const fromArray = Array.isArray(starRatings)
+    ? starRatings
+        .map((n) => (typeof n === "string" ? Number(n) : Number(n)))
+        .filter((n) => Number.isFinite(n) && n >= 1 && n <= 7)
+    : [];
+  if (fromArray.length > 0) {
+    return [...new Set(fromArray)].sort((a, b) => a - b);
+  }
+  const min =
+    typeof minStarRating === "string" && minStarRating.trim() !== ""
+      ? Number(minStarRating)
+      : typeof minStarRating === "number"
+        ? minStarRating
+        : 0;
+  return Number.isFinite(min) && min > 0 ? [Math.floor(min)] : [];
+};
+
 export const normalizeHotelBookingParams = (
   bookingParams?: HotelBookingParams | null,
 ): HotelBookingParams | undefined => {
   if (!bookingParams || typeof bookingParams !== "object") {
     return undefined;
   }
+
+  const starRatings = normalizeStarRatings(
+    bookingParams.starRatings,
+    bookingParams.minStarRating,
+  );
+  const minStarRating =
+    starRatings.length > 0
+      ? Math.min(...starRatings)
+      : toCount(bookingParams.minStarRating, 0);
 
   return {
     ...bookingParams,
@@ -63,7 +94,8 @@ export const normalizeHotelBookingParams = (
     childAges: Array.isArray(bookingParams.childAges)
       ? bookingParams.childAges
       : [],
-    minStarRating: bookingParams.minStarRating ?? 0,
+    starRatings,
+    minStarRating,
   };
 };
 

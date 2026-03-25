@@ -93,11 +93,16 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
       onChange(newValue);
       setIsOpen(false);
     } else {
-      // Multi-select behavior: toggle option
-      const currentValue = value as string[];
+      // Multi-select: "Clear" row (empty value) resets all selections
+      if (optionValue === "") {
+        onChange([]);
+        setIsOpen(false);
+        return;
+      }
+      const currentValue = (value as string[]) || [];
       const newValue = currentValue.includes(optionValue)
-        ? currentValue.filter((val) => val !== optionValue) // Remove if already selected
-        : [...currentValue, optionValue]; // Add if not selected
+        ? currentValue.filter((val) => val !== optionValue)
+        : [...currentValue, optionValue];
 
       onChange(newValue);
     }

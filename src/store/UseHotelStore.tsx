@@ -16,6 +16,8 @@ export type HotelSearchState = {
   };
   childAges: Array<number | null>;
   minStarRating: number;
+  /** Multi-select star filter from search bar (detail page / URL may round-trip this) */
+  starRatings?: number[];
 };
 
 type Store = {

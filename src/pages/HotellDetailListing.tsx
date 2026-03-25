@@ -325,6 +325,21 @@ const HotelDetailListing = () => {
         return;
       }
 
+      const starRatingsForStore =
+        normalizedBookingParams.starRatings &&
+        normalizedBookingParams.starRatings.length > 0
+          ? normalizedBookingParams.starRatings
+          : hotelSearchState?.starRatings &&
+              hotelSearchState.starRatings.length > 0
+            ? hotelSearchState.starRatings
+            : (() => {
+                const m =
+                  normalizedBookingParams.minStarRating ??
+                  hotelSearchState?.minStarRating ??
+                  0;
+                return m > 0 ? [Math.floor(m)] : [];
+              })();
+
       const nextStoreHotel = {
         country:
           normalizedBookingParams.country ??
@@ -362,10 +377,11 @@ const HotelDetailListing = () => {
           normalizedBookingParams.childAges ??
           hotelSearchState?.childAges ??
           [],
+        starRatings: starRatingsForStore,
         minStarRating:
-          normalizedBookingParams.minStarRating ??
-          hotelSearchState?.minStarRating ??
-          0,
+          starRatingsForStore.length > 0
+            ? Math.min(...starRatingsForStore)
+            : 0,
       };
 
       if (params.hotelKey) {
@@ -385,6 +401,10 @@ const HotelDetailListing = () => {
           filters: {
             currency: "AED",
             minStarRating: nextStoreHotel.minStarRating ?? 0,
+            ...(nextStoreHotel.starRatings &&
+            nextStoreHotel.starRatings.length > 0
+              ? { starRatings: nextStoreHotel.starRatings }
+              : {}),
           },
         };
 
