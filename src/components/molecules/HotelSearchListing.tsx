@@ -618,7 +618,10 @@ const HotelSearchListing: React.FC = () => {
           </div>
         )}
 
-        <div className="contentWrapFlex" style={{ marginLeft: "30px" }}>
+        <div
+          className="contentWrapFlex flex-col lg:flex-row"
+          style={{ marginLeft: screens.lg ? "30px" : "0px" }}
+        >
           {screens.lg && (
             <div className="flightDetailFilter">
               <HotelsSearchFilter
@@ -630,7 +633,7 @@ const HotelSearchListing: React.FC = () => {
               />
             </div>
           )}
-          <div className="flightDetailMainContent" style={{ width: "100%" }}>
+          <div className="flightDetailMainContent min-w-0" style={{ width: "100%" }}>
             {!screens.lg && (
               <Button
                 className="filterToggleBtn"

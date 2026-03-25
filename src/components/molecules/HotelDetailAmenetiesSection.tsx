@@ -73,17 +73,17 @@ const HotelDetailAmenetiesSection = ({
 
   const columnClass =
     categoryCount >= 6
-      ? "columns-4"
+      ? "columns-1 sm:columns-2 lg:columns-3 xl:columns-4"
       : categoryCount >= 4
-        ? "columns-3"
+        ? "columns-1 sm:columns-2 lg:columns-3"
         : categoryCount >= 2
-          ? "columns-2"
+          ? "columns-1 sm:columns-2"
           : "columns-1";
 
   return (
-    <div className="mt-10">
-      <div className="mx-auto max-w-6xl">
-        <div className="flex items-start justify-between gap-6">
+    <div className="mt-8 lg:mt-10">
+      <div className="mx-auto max-w-8xl">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div>
             <h4 className="text-[#0A0C0F] text-base font-bold">
               Facilities of {hotelDetail?.name || "Hotel"}
@@ -102,7 +102,7 @@ const HotelDetailAmenetiesSection = ({
           <Button
             type="button"
             overrideClasses
-            className="bg-[#2351A3] text-[#F2F2F3] text-sm font-semibold px-8 py-3 border-none rounded-full shadow-sm hover:opacity-95"
+            className="w-full sm:w-auto bg-[#2351A3] text-[#F2F2F3] text-sm font-semibold px-8 py-3 border-none rounded-full shadow-sm hover:opacity-95"
             onClick={onSeeRooms}
           >
             See rooms
@@ -133,7 +133,7 @@ const HotelDetailAmenetiesSection = ({
 
         {/* categories */}
         <div className="mt-12">
-          <div className={`${columnClass} gap-14`}>
+          <div className={`${columnClass} gap-8 lg:gap-14`}>
             {Object.entries(categorizedAmenities)
               .filter(([_, items]) => items.length > 0)
               .map(([cat, items], idx) => (

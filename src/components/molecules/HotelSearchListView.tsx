@@ -381,10 +381,9 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                   style={{ borderBottom: "2px solid var(--black-100, #C2CAD6)" }}
                   key={hotel.hotelKey || index}
                 >
-                  <div className="flex gap-4 p-[10px]">
+                  <div className="flex flex-col lg:flex-row gap-4 p-[10px]">
                     <div
-                      className="relative h-[220px] w-[244px] flex-shrink-0"
-                      style={{ width: "244px", height: "220px" }}
+                      className="relative h-[220px] w-full lg:w-[244px] lg:flex-shrink-0"
                     >
                       <img
                         src={imageUrl}
@@ -521,9 +520,12 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                       )}
                     </div>
 
-                    <span className="inline-block self-stretch bg-[#E4E4E7]" style={{ width: "1px" }} />
+                    <span
+                      className="hidden lg:inline-block self-stretch bg-[#E4E4E7]"
+                      style={{ width: "1px" }}
+                    />
 
-                    <div className="flex w-[272px] flex-shrink-0 flex-col items-start pl-4 pr-[10px]">
+                    <div className="flex w-full lg:w-[272px] lg:flex-shrink-0 flex-col items-start lg:pl-4 pr-[10px]">
                       {reviewScore != null && (
                         <div className="mb-[18px] flex items-start gap-[12px]">
                           <div
@@ -602,7 +604,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         />
                       </div>
 
-                      <div className="mb-[22px] flex w-full flex-col items-start gap-[2px]">
+                      <div className="mb-[18px] lg:mb-[22px] flex w-full flex-col items-start gap-[2px]">
                         {hasOffer && originalPrice > price && (
                           <span
                             style={{
@@ -639,7 +641,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         </div>
                       </div>
 
-                      <div className="flex w-full items-center gap-[18px]">
+                      <div className="flex w-full items-center gap-3 sm:gap-[18px]">
                         <button
                           className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
                           aria-label="Share"
@@ -649,7 +651,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         </button>
 
                         <button
-                          className="flex-1 text-[#F2F2F3] font-semibold rounded-[100px] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                          className="flex-1 text-[#F2F2F3] font-semibold rounded-[100px] disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
                           style={{
                             fontFamily: "Inter, sans-serif",
                             fontSize: "14px",

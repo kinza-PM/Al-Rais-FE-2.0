@@ -233,7 +233,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
 
         <div className="min-h-screen">
           <div className="mx-auto">
-            <div className="grid grid-cols-4 gap-x-8 gap-y-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 lg:gap-x-8 lg:gap-y-8">
               {hotels.map((hotel, index) => (
                 <HotellGridCard
                   key={hotel.hotelKey || index}

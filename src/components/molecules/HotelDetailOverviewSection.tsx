@@ -67,7 +67,7 @@ const HotelDetailOverviewSection = ({
     return facilities.slice(0, 10);
   }, [hotelDetail?.hotelFacilities]);
   return (
-    <div className="mt-6 grid grid-cols-2 gap-x-40">
+    <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-x-40">
       <div>
         <h4 className="text-[#0A0C0F] text-base font-bold">
           Get the celebrity treatment with world-class service at{" "}
@@ -161,7 +161,7 @@ const HotelDetailOverviewSection = ({
           })}
         </div> */}
         {displayFacilities.length > 0 ? (
-          <div className="text-[#3D495C] text-sm mt-4 flex flex-wrap items-center gap-5">
+          <div className="text-[#3D495C] text-sm mt-4 flex flex-wrap items-center gap-4 lg:gap-5">
             {displayFacilities.map((facility, index) => (
               <FacilityItem
                 key={`${facility.name}-${index}`}

@@ -675,8 +675,8 @@ const HotelDetailListing = () => {
     .join(", ");
 
   return !showHotelDetailImages ? (
-    <div className="w-full py-6">
-      <div className="mx-auto w-full max-w-[90%] px-6 lg:px-14 ">
+    <div className="w-full py-4 lg:py-6">
+      <div className="mx-auto w-full max-w-[90%] px-4 sm:px-6 lg:px-14 pb-36 lg:pb-0">
         <Loader
           show={
             isPending ||
@@ -696,7 +696,8 @@ const HotelDetailListing = () => {
           }
         />
 
-        <div className="grid grid-cols-12 gap-2 h-[35vh]">
+        {/* Desktop gallery */}
+        <div className="hidden lg:grid grid-cols-12 gap-2 h-[35vh]">
           <>
             {dynamicImages[0] && (
               <div className="col-span-5 row-span-2 relative overflow-hidden rounded-2xl hover:opacity-90 transition-opacity">
@@ -818,14 +819,136 @@ const HotelDetailListing = () => {
           </>
         </div>
 
-        <div className="mt-8 flex items-start justify-between gap-6">
+        {/* Mobile gallery */}
+        <div className="lg:hidden space-y-2">
+          {dynamicImages[0] && (
+            <div className="w-full h-56 relative overflow-hidden rounded-2xl">
+              <img
+                src={dynamicImages[0].path}
+                alt={dynamicImages[0].description || "Hotel image 1"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
+          {(dynamicImages[1] || dynamicImages[2]) && (
+            <div className="grid grid-cols-2 gap-2">
+              {dynamicImages[1] && (
+                <div className="h-36 relative overflow-hidden rounded-2xl">
+                  <img
+                    src={dynamicImages[1].path}
+                    alt={dynamicImages[1].description || "Hotel image 2"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              {dynamicImages[2] && (
+                <div className="h-36 relative overflow-hidden rounded-2xl">
+                  <img
+                    src={dynamicImages[2].path}
+                    alt={dynamicImages[2].description || "Hotel image 3"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="w-full h-44 relative overflow-hidden rounded-2xl">
+            <MapContainer
+              center={[coordinates.latitude, coordinates.longitude]}
+              zoom={13}
+              style={{ height: "100%", width: "100%" }}
+              zoomControl={false}
+              scrollWheelZoom={false}
+              attributionControl={false}
+            >
+              <TileLayer
+                attribution="&copy; OpenStreetMap"
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
+              <Marker
+                position={[coordinates.latitude, coordinates.longitude]}
+                icon={redIcon}
+              />
+              <MapAutoFix lat={coordinates.latitude} lng={coordinates.longitude} />
+            </MapContainer>
+          </div>
+
+          {(dynamicImages[3] || dynamicImages[4]) && (
+            <div className="grid grid-cols-2 gap-2">
+              {dynamicImages[3] && (
+                <div className="h-32 relative overflow-hidden rounded-2xl">
+                  <img
+                    src={dynamicImages[3].path}
+                    alt={dynamicImages[3].description || "Hotel image 4"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              {dynamicImages[4] && (
+                <div className="h-32 relative overflow-hidden rounded-2xl">
+                  <img
+                    src={dynamicImages[4].path}
+                    alt={dynamicImages[4].description || "Hotel image 5"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {dynamicImages[5] && (
+            <div
+              className="w-full h-32 relative overflow-hidden rounded-2xl cursor-pointer"
+              onClick={handleShowImages}
+            >
+              <img
+                src={dynamicImages[5].path}
+                alt={dynamicImages[5].description || "Hotel image 6"}
+                className="w-full h-full object-cover blur-[2px]"
+              />
+              {primaryImages.length > 6 && (
+                <div className="absolute inset-0 bg-[#0A0C0F1A] bg-opacity-10 flex items-center justify-center">
+                  <span className="text-[#FFFFFF] text-3xl font-bold">
+                    +{primaryImages.length - 6}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {primaryImages.length === 0 && (
+            <div className="w-full h-56 relative overflow-hidden rounded-2xl">
+              <MapContainer
+                center={[coordinates.latitude, coordinates.longitude]}
+                zoom={13}
+                style={{ height: "100%", width: "100%" }}
+                zoomControl={false}
+                scrollWheelZoom={false}
+                attributionControl={false}
+              >
+                <TileLayer
+                  attribution="&copy; OpenStreetMap"
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Marker
+                  position={[coordinates.latitude, coordinates.longitude]}
+                  icon={redIcon}
+                />
+              </MapContainer>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-6 lg:mt-8 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
           <div className="flex-1">
-            <h1 className="text-[28px] leading-[34px] font-bold text-[#0A0C0F] mb-2">
+            <h1 className="text-[22px] leading-[30px] lg:text-[28px] lg:leading-[34px] font-bold text-[#0A0C0F] mb-2">
               {hotelDetail?.name}
             </h1>
 
             <div className="flex items-start flex-wrap gap-x-2 gap-y-2 text-[#3D495C] text-sm mb-3">
-              <div className="flex items-start gap-2 max-w-full">
+              <div className="flex items-start gap-2 max-w-full min-w-0">
                 <svg
                   width="18"
                   height="18"
@@ -850,7 +973,7 @@ const HotelDetailListing = () => {
                   />
                 </svg>
 
-                <span className="leading-6">{addressText}</span>
+                <span className="leading-6 break-words">{addressText}</span>
               </div>
 
               {(hotelDetail?.latitude || hotelDetail?.longitude) && (
@@ -890,7 +1013,8 @@ const HotelDetailListing = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          {/* Desktop actions */}
+          <div className="hidden lg:flex items-center gap-4">
             <button
               className="px-4 py-2 text-[#2351A3] text-sm font-medium hover:underline"
               onClick={() => setOpenShareModal(true)}
@@ -922,9 +1046,39 @@ const HotelDetailListing = () => {
           </div>
         </div>
 
+        {/* Mobile actions */}
+        <div className="mt-4 lg:hidden flex flex-col gap-3">
+          <button
+            className="w-full rounded-lg border border-[#E4E4E7] px-4 py-2 text-[#2351A3] text-sm font-medium"
+            onClick={() => setOpenShareModal(true)}
+          >
+            Share
+          </button>
+
+          <button
+            onClick={handleToggleFavourite}
+            disabled={isAddingFavourite || isGetFavouritesLoading}
+            className={`w-full px-4 py-3 text-[#F2F2F3] font-semibold rounded-lg text-sm shadow-sm transition-all ${
+              isAddingFavourite || isGetFavouritesLoading
+                ? "bg-[#AEB8C5] cursor-not-allowed"
+                : isFavourite
+                ? "bg-[#EA0029] hover:opacity-95"
+                : "bg-[#2351A3] hover:opacity-95"
+            }`}
+          >
+            {isAddingFavourite
+              ? isFavourite
+                ? "Removing..."
+                : "Adding..."
+              : isFavourite
+              ? "Remove from favorites"
+              : "Add to favorites"}
+          </button>
+        </div>
+
         <div className="mt-6 w-full">
           <div className="flex justify-center">
-            <div className="flex items-end gap-[14px]">
+            <div className="flex w-full items-end gap-2 overflow-x-auto pb-1 sm:gap-3 lg:w-auto lg:gap-[14px] lg:overflow-visible">
               {tabItems.map((tab) => {
                 const selected = activeTab === tab.value;
 
@@ -936,9 +1090,10 @@ const HotelDetailListing = () => {
                     aria-selected={selected}
                     onClick={() => handleTabChange(tab.value)}
                     className={[
-                      "h-[44px] min-w-[105px] rounded-t-[16px] rounded-b-none px-6",
+                      "h-[44px] min-w-[96px] lg:min-w-[105px] rounded-t-[16px] rounded-b-none px-4 lg:px-6",
                       "flex items-center justify-center",
                       "text-[14px] leading-none",
+                      "shrink-0",
                       "border-0 outline-none appearance-none",
                       "transition-all duration-200",
                       selected
@@ -957,7 +1112,7 @@ const HotelDetailListing = () => {
             </div>
           </div>
 
-          <div className="mx-auto mt-0 h-[14px] w-full max-w-[1000px]">
+          <div className="mx-auto mt-0 h-[14px] w-full max-w-[1000px] hidden lg:block">
             <div className="h-[10px] w-full rounded-t-[16px] bg-[#D7EAF8] blur-[5px]" />
           </div>
         </div>
@@ -1003,14 +1158,14 @@ const HotelDetailListing = () => {
                 ✕
               </button>
 
-              <div className="px-6 pt-6 pb-4 border-b border-[#E4E4E7]">
+              <div className="px-4 lg:px-6 pt-5 lg:pt-6 pb-4 border-b border-[#E4E4E7]">
                 <h3 className="text-xl font-bold text-[#0A0C0F]">
                   {hotelDetail?.name || "Hotel location"}
                 </h3>
                 <p className="mt-2 text-sm text-[#3D495C]">{addressText}</p>
               </div>
 
-              <div className="h-[500px] w-full">
+              <div className="h-[60vh] lg:h-[500px] w-full">
                 <MapContainer
                   center={[coordinates.latitude, coordinates.longitude]}
                   zoom={15}
@@ -1037,7 +1192,8 @@ const HotelDetailListing = () => {
           </div>
         )}
 
-        <div className="fixed bottom-4 left-0 right-0 z-50">
+        {/* Desktop sticky bar */}
+        <div className="hidden lg:block fixed bottom-4 left-0 right-0 z-50">
           <div
             className="absolute inset-0"
             style={{
@@ -1111,6 +1267,78 @@ const HotelDetailListing = () => {
                   Continue to booking
                 </Button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile sticky bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "rgba(0, 0, 0, 0.001)",
+              backdropFilter: "blur(10px)",
+              WebkitBackdropFilter: "blur(10px)",
+            }}
+          />
+          <div className="relative px-4 py-3">
+            <div className="bg-[#FFFFFF] rounded-t-2xl border border-[#E4EE7] px-4 py-3">
+              <p className="text-xs text-[#3D495C]">Your selection</p>
+              {selectedRooms.length > 0 ? (
+                <>
+                  <p className="text-base font-medium text-[#0A0C0F]">
+                    {totalRoomsCount} room
+                    {totalRoomsCount > 1 ? "s" : ""} selected
+                  </p>
+                  <div className="text-base font-semibold text-[#0A0C0F] mt-2 pt-2 border-t border-[#E4E4E7]">
+                    Total: {formatPrice(totalPrice, currency)}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-base font-medium text-[#0A0C0F]">
+                    No rooms selected
+                  </p>
+                  <button className="text-sm text-[#EA0029] mt-1 font-normal">
+                    Select dates, travelers and rooms to see prices.
+                  </button>
+                </>
+              )}
+
+              <Button
+                disabled={totalRoomsCount < numberOfRooms}
+                className={
+                  totalRoomsCount >= numberOfRooms
+                    ? "mt-3 w-full bg-[#2351A3] text-[#F2F2F3] px-6 py-3 rounded-lg font-semibold text-base"
+                    : "mt-3 w-full bg-[#C2CAD6] text-[#F2F2F3] px-6 py-3 rounded-lg font-semibold text-base cursor-not-allowed"
+                }
+                overrideClasses
+                onClick={() => {
+                  const { images, ...hotelDetailWithoutImages } =
+                    hotelDetail ?? {};
+                  const slicedImages = Array.isArray(images)
+                    ? images.slice(0, 5)
+                    : [];
+                  navigate("/hotel-booking", {
+                    state: {
+                      hotelDetail: {
+                        ...hotelDetailWithoutImages,
+                        images: slicedImages,
+                      },
+                      searchKey:
+                        resolvedSearchKey ||
+                        new URLSearchParams(location.search).get("searchKey"),
+                      bookingParams: resolvedBookingParams,
+                      selectedRooms,
+                      totalPrice,
+                      currency,
+                      hotelKey: params.hotelKey,
+                    },
+                  });
+                }}
+              >
+                Continue to booking
+              </Button>
             </div>
           </div>
         </div>

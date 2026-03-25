@@ -65,6 +65,9 @@ const AppHeader: React.FC<HeaderProps> = ({
   const { isAuthenticated, user, signOut } = useAuth();
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isTablet, setIsTablet] = useState(
+    window.innerWidth >= 768 && window.innerWidth < 1200,
+  );
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notifNextToken, setNotifNextToken] = useState<string | null>(null);
@@ -75,7 +78,10 @@ const AppHeader: React.FC<HeaderProps> = ({
     useUserProfileStore();
 
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1200);
+    };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -162,6 +168,7 @@ const AppHeader: React.FC<HeaderProps> = ({
 
   // Navigation links
   const navItems = [
+    { key: "home", label: <Link to="/">Home</Link> },
     { key: "travel", label: <Link to="/travel">Travel</Link> },
     { key: "packages", label: <Link to="/packages">Packages</Link> },
     { key: "about", label: <Link to="/about">About</Link> },
@@ -180,13 +187,15 @@ const AppHeader: React.FC<HeaderProps> = ({
       className="bg-white"
       style={{
         background: "#FFFFFF",
-        padding: "16px 134px",
+        padding: isMobile ? "12px 16px" : isTablet ? "14px 24px" : "16px 134px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
         borderBottom: "2px solid #C2CAD6",
         height: "auto",
-        minHeight: "88px",
+        minHeight: isMobile ? "72px" : "88px",
+        width: "100%",
+        boxSizing: "border-box",
       }}
     >
       {/* Logo */}
@@ -202,13 +211,13 @@ const AppHeader: React.FC<HeaderProps> = ({
 
       {/* Desktop right controls (Figma-style header) */}
       {!isMobile && (
-        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isTablet ? "8px" : "12px" }}>
           {/* Hamburger Menu Button */}
           <button
             onClick={() => setDrawerVisible(true)}
             style={{
-              width: "50px",
-              height: "50px",
+              width: isTablet ? "44px" : "50px",
+              height: isTablet ? "44px" : "50px",
               border: "1.5px solid #5383DA",
               borderRadius: "16px",
               display: "flex",
@@ -310,9 +319,9 @@ const AppHeader: React.FC<HeaderProps> = ({
           >
             <button
               style={{
-                width: "110px",
-                height: "50px",
-                padding: "0 16px",
+                width: isTablet ? "96px" : "110px",
+                height: isTablet ? "44px" : "50px",
+                padding: isTablet ? "0 12px" : "0 16px",
                 border: "1.5px solid #5383DA",
                 borderRadius: "16px",
                 display: "flex",
@@ -329,9 +338,13 @@ const AppHeader: React.FC<HeaderProps> = ({
                 e.currentTarget.style.backgroundColor = "#FFFFFF";
               }}
             >
-              <FlagIcon src={FlagUSCircle} size={24} />
+              <FlagIcon src={FlagUSCircle} size={isTablet ? 20 : 24} />
               <span
-                style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}
+                style={{
+                  fontSize: isTablet ? "12px" : "13px",
+                  fontWeight: 500,
+                  color: "#0A0C0F",
+                }}
               >
                 USD
               </span>
@@ -348,59 +361,7 @@ const AppHeader: React.FC<HeaderProps> = ({
             </button>
           </Dropdown>
 
-          {/* EN Language Selector */}
-          {/* <Dropdown
-            menu={{
-              items: [
-                { 
-                  key: "en", 
-                  label: (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 0" }}>
-                      <FlagIcon src={FlagUSA} size={20} />
-                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>English</span>
-                    </div>
-                  )
-                },
-                { 
-                  key: "ar", 
-                  label: (
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px", padding: "4px 0" }}>
-                      <FlagIcon src={FlagUAE} size={20} />
-                      <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>العربية (Arabic)</span>
-                    </div>
-                  )
-                },
-              ],
-            }}
-            placement="bottomRight"
-          >
-            <button
-              style={{
-                width: "84px",
-                height: "50px",
-                padding: "0 16px",
-                border: "1.5px solid #5383DA",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                gap: "5px",
-                backgroundColor: "#FFFFFF",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#F0F7FF";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#FFFFFF";
-              }}
-            >
-              <FlagIcon src={FlagUSCircle} size={24} />
-              <span style={{ fontSize: "13px", fontWeight: 500, color: "#0A0C0F" }}>
-                EN
-              </span>
-            </button>
-          </Dropdown> */}
+          {/* EN Language Selector — removed from header per request */}
 
           {/* Auth area: avatar when logged in, Login/Sign up when not */}
           {isAuthenticated && user ? (
@@ -476,7 +437,7 @@ const AppHeader: React.FC<HeaderProps> = ({
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "8px",
+                gap: isTablet ? "6px" : "8px",
                 marginLeft: "8px",
               }}
             >
@@ -485,12 +446,12 @@ const AppHeader: React.FC<HeaderProps> = ({
                 overrideClasses
                 className="
                   h-[47px]
-                  px-[40px]
+                  px-[20px] xl:px-[40px]
                   rounded-[16px]
                   border-[1.5px]
                   border-[#5383DA]
                   text-[#2351A3]
-                  text-[14px]
+                  text-[13px] xl:text-[14px]
                   font-semibold
                   flex items-center justify-center gap-[10px]
                   bg-white
@@ -503,12 +464,12 @@ const AppHeader: React.FC<HeaderProps> = ({
                 overrideClasses
                 className="
                   h-[47px]
-                  px-[40px]
+                  px-[20px] xl:px-[40px]
                   rounded-[16px]
                   border-[1.5px]
                   border-[#5383DA]
                   text-[#2351A3]
-                  text-[14px]
+                  text-[13px] xl:text-[14px]
                   font-semibold
                   flex items-center justify-center gap-[10px]
                   bg-white
@@ -523,8 +484,8 @@ const AppHeader: React.FC<HeaderProps> = ({
           <button
             onClick={() => navigate("/cart")}
             style={{
-              width: "50px",
-              height: "50px",
+              width: isTablet ? "44px" : "50px",
+              height: isTablet ? "44px" : "50px",
               border: "1.5px solid #5383DA",
               borderRadius: "16px",
               display: "flex",
@@ -706,18 +667,35 @@ const AppHeader: React.FC<HeaderProps> = ({
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <Button
             onClick={onLoginClick}
-            variant="primary"
-            className="px-3 py-1.5 text-xs"
+            overrideClasses
+            className="h-[40px] px-3 rounded-[12px] border-[1.5px] border-[#5383DA] bg-[#2351A3] text-[#FFFFFF] text-xs font-semibold"
           >
             Login
           </Button>
           <Button
             onClick={onSignupClick}
-            variant="secondary"
-            className="px-3 py-1.5 text-xs"
+            overrideClasses
+            className="h-[40px] px-3 rounded-[12px] border-[1.5px] border-[#5383DA] bg-[#FFFFFF] text-[#2351A3] text-xs font-semibold"
           >
             Sign up
           </Button>
+          <button
+            onClick={() => setDrawerVisible(true)}
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "2px solid #5383DA",
+              borderRadius: "16px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "#FFFFFF",
+              cursor: "pointer",
+            }}
+            aria-label="Open menu"
+          >
+            <MenuOutlined style={{ fontSize: "16px", color: "#3D495C" }} />
+          </button>
         </div>
       )}
 
@@ -728,6 +706,7 @@ const AppHeader: React.FC<HeaderProps> = ({
         open={drawerVisible}
         width={280}
       >
+
         {/* User Profile in Drawer */}
         {isAuthenticated && user && (
           <div
@@ -856,6 +835,76 @@ const AppHeader: React.FC<HeaderProps> = ({
           style={{ borderRight: "none" }}
           onClick={() => setDrawerVisible(false)}
         />
+
+        {!isAuthenticated && (
+          <div
+            style={{
+              marginTop: 20,
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px",
+            }}
+          >
+            <button
+              onClick={() => {
+                setDrawerVisible(false);
+                onLoginClick();
+              }}
+              style={{
+                padding: "12px 16px",
+                border: "1.5px solid #5383DA",
+                borderRadius: "14px",
+                backgroundColor: "#2351A3",
+                color: "#FFFFFF",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 600,
+              }}
+            >
+              Login
+            </button>
+            <button
+              onClick={() => {
+                setDrawerVisible(false);
+                onSignupClick();
+              }}
+              style={{
+                padding: "12px 16px",
+                border: "1.5px solid #5383DA",
+                borderRadius: "14px",
+                backgroundColor: "#FFFFFF",
+                color: "#2351A3",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 600,
+              }}
+            >
+              Sign up
+            </button>
+            <button
+              onClick={() => {
+                setDrawerVisible(false);
+                navigate("/cart");
+              }}
+              style={{
+                padding: "12px 16px",
+                border: "1.5px solid #E4E4E7",
+                borderRadius: "14px",
+                backgroundColor: "#FFFFFF",
+                color: "#0A0C0F",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 500,
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+              }}
+            >
+              <ShoppingCartOutlined />
+              Go to cart
+            </button>
+          </div>
+        )}
 
         {/* Drawer Actions */}
         {isAuthenticated && user && (

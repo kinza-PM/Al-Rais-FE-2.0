@@ -504,12 +504,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
 
   return (
     <div className="mt-6">
-      <div className="mx-auto max-w-6xl">
+      <div className="mx-auto max-w-8xl">
         <h4 className="text-[#0A0C0F] text-base font-bold">Rooms availability</h4>
         <div className="mt-2 border-t border-[#E4E4E7]" />
 
-        <div className="mt-8 flex items-end justify-start gap-4">
-          <div className="hotel-filter-dates w-full max-w-[460px] min-w-0">
+        <div className="mt-8 flex flex-col items-stretch justify-start gap-4 lg:flex-row lg:items-end">
+          <div className="hotel-filter-dates w-full min-w-0 lg:max-w-[460px]">
             <div className="mb-2 text-[12px] font-normal text-[#3D495C]">Dates</div>
             <div
               className="h-[50px] w-full min-w-0 rounded-[16px] border border-[#C2CAD6] px-2 flex items-center"
@@ -540,7 +540,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
             </div>
           </div>
 
-          <div className="hotel-filter-travellers w-full max-w-[360px] min-w-0">
+          <div className="hotel-filter-travellers w-full min-w-0 lg:max-w-[360px]">
             <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
               Travellers and rooms{" "}
               <span className="relative inline-flex group/info">
@@ -600,7 +600,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
             if (!hasAnyRooms) return null;
 
             return (
-              <div className="sticky top-0 z-10 mt-4 mb-4 py-2 px-3 bg-[#F8FAFC] border border-[#E4E4E7] rounded-xl flex flex-wrap items-center gap-2 shadow-sm">
+              <div className="sticky top-0 z-10 mt-4 mb-4 py-2 px-3 bg-[#F8FAFC] border border-[#E4E4E7] rounded-xl flex items-center gap-2 shadow-sm overflow-x-auto">
                 {roomIndices.map((ri) => {
                   const isSelected = selectionByRoomIndex.has(ri);
                   const isExpanded = expandedRoomIndices.has(ri);
@@ -679,9 +679,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                 {showCollapsed && (
                   <div
                     onClick={() => toggleExpanded(roomIndex)}
-                    className="border border-[#2351A3] bg-[#F0F5FF] rounded-xl p-4 cursor-pointer hover:bg-[#E8EEF7] transition-colors flex items-center justify-between gap-4"
+                    className="border border-[#2351A3] bg-[#F0F5FF] rounded-xl p-4 cursor-pointer hover:bg-[#E8EEF7] transition-colors flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center sm:gap-4"
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <svg
                         width="14"
                         height="14"
@@ -848,7 +848,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
 
                           <div className="border-t border-[#E4E4E7]" />
 
-                          <div className="grid grid-cols-[340px_1px_minmax(0,1fr)] gap-4 px-[15px] py-[12px]">
+                          <div className="grid grid-cols-1 gap-4 px-[15px] py-[12px] lg:grid-cols-[340px_1px_minmax(0,1fr)]">
                             <div>
                               <div className="flex items-start overflow-hidden">
                                 {roomImages.slice(0, 4).map((image, imageIndex) => (
@@ -864,7 +864,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                         "Room images",
                                       )
                                     }
-                                    className={`h-[130px] w-[130px] shrink-0 overflow-hidden rounded-[10px] border border-white bg-[#F1F5F9] ${imageIndex === 0 ? "" : "-ml-[65px]"
+                                    className={`h-[100px] w-[100px] sm:h-[115px] sm:w-[115px] lg:h-[130px] lg:w-[130px] shrink-0 overflow-hidden rounded-[10px] border border-white bg-[#F1F5F9] ${imageIndex === 0 ? "" : "-ml-[35px] sm:-ml-[48px] lg:-ml-[65px]"
                                       } cursor-zoom-in`}
                                   >
                                     <img
@@ -888,13 +888,13 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                               </div>
                             </div>
 
-                            <div className="my-[4px] bg-[#E4E4E7]" />
+                            <div className="hidden lg:block my-[4px] bg-[#E4E4E7]" />
 
                             <div className="min-w-0 py-[2px]">
                               {Object.values(categorizedAmenities).some(
                                 (arr) => arr.length > 0,
                               ) ? (
-                                <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)] gap-x-[28px] gap-y-[12px]">
+                                <div className="grid grid-cols-1 gap-x-[28px] gap-y-[12px] sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)]">
                                   <div className="min-w-0">
                                     <SectionHeading icon={GreatStayIcon} title="Great for your stay" />
                                     <AmenitiesInlineList
@@ -916,7 +916,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                     />
                                   </div>
 
-                                  <div className="min-w-0 col-span-2">
+                                  <div className="min-w-0 sm:col-span-2 lg:col-span-2">
                                     <SectionHeading icon={MediaIcon} title="Media & Technology" />
                                     <AmenitiesInlineList
                                       items={categorizedAmenities.mediaAndTechnology.slice(0, 8)}
@@ -976,7 +976,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                               return (
                                 <div
                                   key={roomKey}
-                                  className="grid grid-cols-[170px_minmax(0,1fr)_100px_220px_40px_116px] items-center gap-6 px-[15px] py-[18px]"
+                                  className="grid grid-cols-1 gap-4 px-[15px] py-[18px] lg:grid-cols-[170px_minmax(0,1fr)_100px_220px_40px_116px] lg:items-center lg:gap-6"
                                 >
                                   <div className="min-w-0">
                                     <div className="text-[14px] font-semibold text-[#3D495C]">
@@ -1058,11 +1058,11 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                     )}
                                   </div>
 
-                                  <div className="flex justify-center">
+                                  <div className="hidden lg:flex justify-center">
                                     <InfoIcon />
                                   </div>
 
-                                  <div className="flex items-center justify-end gap-[10px]">
+                                  <div className="flex items-center justify-start gap-[10px] lg:justify-end">
                                     <button
                                       type="button"
                                       onClick={() =>

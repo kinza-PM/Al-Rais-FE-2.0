@@ -669,9 +669,9 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
 
         <div className="min-h-screen">
           <div className="mx-auto">
-            <div className="grid grid-cols-4 gap-5">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-5">
               {!isMapExpanded && (
-                <div className="col-span-1 flex flex-col gap-4 transition-all duration-300 ease-in-out">
+                <div className="order-2 lg:order-1 col-span-1 flex flex-col gap-4 transition-all duration-300 ease-in-out lg:max-h-[calc(100vh-27vh)] lg:overflow-y-auto">
                   {/* {activeHotelKey && (
   <div className="mb-1 px-1">
     <p className="text-sm font-semibold text-[#0A0C0F]">
@@ -696,12 +696,12 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
 
               <div
                 className={`${
-                  isMapExpanded ? "col-span-4" : "col-span-3"
-                } sticky top-5 h-[calc(100vh-27vh)] mb-4 transition-all duration-300 ease-in-out`}
+                  isMapExpanded ? "lg:col-span-4" : "lg:col-span-3"
+                } order-1 lg:order-2 col-span-1 lg:sticky lg:top-5 h-[55vh] sm:h-[60vh] lg:h-[calc(100vh-27vh)] mb-3 lg:mb-4 transition-all duration-300 ease-in-out`}
               >
                 <div className="h-full rounded-xl overflow-hidden relative">
                   <button
-                    className={`absolute top-1/2 -translate-y-1/2 z-[1000] bg-[#F2F2F3] py-4 px-5 border border-[#FFFFFF] ${
+                    className={`hidden lg:block absolute top-1/2 -translate-y-1/2 z-[1000] bg-[#F2F2F3] py-4 px-5 border border-[#FFFFFF] ${
                       isMapExpanded
                         ? "left-0 rounded-r-full border-l-0 px-3"
                         : "-left-4 rounded-full"
