@@ -503,7 +503,6 @@ export default function HotelBookingETicketSetion({
               overrideClasses
               onClick={handleDownloadPDF}
               disabled={isGeneratingPDF || !imagesLoaded || isRetrieving}
-              title="Download as PDF"
               className="flex min-h-[44px] w-full min-w-0 items-center justify-center border-0 px-2 text-center text-[11px] font-semibold leading-tight text-[#F2F2F3] sm:min-h-[46px] sm:text-[12px] sm:leading-snug"
               style={{
                 borderRadius: 100,
@@ -521,7 +520,6 @@ export default function HotelBookingETicketSetion({
               overrideClasses
               onClick={() => setShareModalOpen(true)}
               disabled={isRetrieving || !bookingRef || bookingRef === "—"}
-              title="Share booking"
               className="flex min-h-[44px] w-full min-w-0 items-center justify-center border border-[#2351A3] bg-white px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] hover:bg-[#EEF4FF] sm:min-h-[46px] sm:text-[13px]"
               style={{
                 borderRadius: 100,
@@ -535,7 +533,6 @@ export default function HotelBookingETicketSetion({
               type="button"
               overrideClasses
               onClick={() => navigate("/my-bookings")}
-              title="Manage bookings"
               className="flex min-h-[44px] w-full min-w-0 items-center justify-center border border-[#C2CAD6] bg-[#F8FAFC] px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] hover:border-[#2351A3] hover:bg-[#EEF4FF] sm:min-h-[46px] sm:text-[12px] sm:leading-snug"
               style={{
                 borderRadius: 100,

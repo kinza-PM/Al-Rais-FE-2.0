@@ -172,20 +172,6 @@ const HotelSearchListing: React.FC = () => {
     [],
   );
 
-  // Handle nested filter changes
-  const handleFilterChange = useCallback(
-    (field: keyof HotelSearchRequest["filters"], value: any) => {
-      setSearchState((prev) => ({
-        ...prev,
-        filters: {
-          ...prev.filters,
-          [field]: value,
-        },
-      }));
-    },
-    [],
-  );
-
   const convertDateToString = useCallback(
     (date: Date | null): string => formatHotelBookingDate(date),
     [],
