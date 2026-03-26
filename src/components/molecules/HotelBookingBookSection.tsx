@@ -152,8 +152,8 @@ export default function HotelBookingBookSection({
   };
 
   return (
-    <section className="mx-auto max-w-full px-10 flight-booking-section">
-      <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
+    <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
           {flatPassengers.map(
             ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
@@ -166,7 +166,7 @@ export default function HotelBookingBookSection({
                     </h3>
                   </div>
                   <div className="px-4 py-4">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-3 min-w-0">
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-3 min-w-0 md:grid-cols-2">
                       <div
                         className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
                       >
@@ -320,7 +320,7 @@ export default function HotelBookingBookSection({
                     </h3>
                   </div>
                   <div className="px-4 py-4 rounded-b-2xl">
-                    <div className="grid grid-cols-2 gap-x-4 gap-y-4 min-w-0">
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-4 min-w-0 md:grid-cols-2">
                       <div className="relative w-full min-w-0">
                         <TailwindCustomInput
                           type="text"
@@ -585,7 +585,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full max-w-[561px] ${
+                        className={`relative w-full min-w-0 ${
                           hasAttemptedValidation &&
                           validationErrors[roomIndex]?.[passengerIndex]?.[
                             "contact.contactsProvided.0.phone.0"
@@ -743,7 +743,7 @@ export default function HotelBookingBookSection({
                   return (
                     <div
                       key={selectedRoom.roomKey || index}
-                      className="w-[270px] min-h-[593px] flex flex-col rounded-[16px] border border-[#E4E4E7] bg-[#FFFFFF] overflow-hidden"
+                      className="w-full sm:w-[270px] min-h-[593px] flex flex-col rounded-[16px] border border-[#E4E4E7] bg-[#FFFFFF] overflow-hidden"
                     >
                       {/* Image gallery: 1 large left, 2 smaller right */}
                       <div className="flex gap-1.5 p-2">
@@ -841,7 +841,7 @@ export default function HotelBookingBookSection({
           )}
         </div>
 
-        <div>
+        <div className="min-w-0">
           <HotelSummaryCard
             hotelDetail={hotelDetail}
             bookingInfo={bookingInfo}
@@ -858,7 +858,7 @@ export default function HotelBookingBookSection({
             <Button
               type="button"
               overrideClasses
-              className="w-[155px] h-[47px] rounded-[100px] px-10 py-[14px] text-[16px] font-semibold text-white hover:opacity-95 active:opacity-90 transition-opacity flex items-center justify-center gap-2.5"
+              className="h-[47px] w-full sm:w-[155px] rounded-[100px] px-6 sm:px-10 py-[14px] text-[16px] font-semibold text-white hover:opacity-95 active:opacity-90 transition-opacity flex items-center justify-center gap-2.5"
               style={{
                 background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               }}

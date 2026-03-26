@@ -735,17 +735,34 @@ const AppHeader: React.FC<HeaderProps> = ({
                   border: "2px solid #E4E4E7",
                 }}
               />
-              <div>
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
                 <div
                   style={{
                     fontSize: "16px",
                     fontWeight: 600,
                     color: "#0A0C0F",
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
                   {user.name?.split("@")[0] || "User"}
                 </div>
-                <div style={{ fontSize: "13px", color: "#3D495C" }}>
+                <div
+                  style={{
+                    fontSize: "13px",
+                    color: "#3D495C",
+                    maxWidth: "100%",
+                    lineHeight: 1.35,
+                    overflowWrap: "anywhere",
+                    wordBreak: "break-word",
+                  }}
+                >
                   {user.email || ""}
                 </div>
               </div>

@@ -18,6 +18,7 @@ import {
 } from "../utils/hotelBookingHelper";
 import { useCountriesOptions } from "../hooks/masterListings/listing";
 import * as RemoteUserService from "../services/api/remoteUserService";
+import { AuthService } from "../features/auth/services/authService";
 
 const HotelBooking = () => {
   const location = useLocation();
@@ -53,6 +54,11 @@ const HotelBooking = () => {
   const bookingParams = state.bookingParams ?? hotelFromStore ?? null;
   const { user } = useAuth(); // isAuthenticated already use ho raha hai, user bhi lo
   const hasPrefilledRef = useRef(false);
+  const [resolvedUser, setResolvedUser] = useState(user);
+
+  useEffect(() => {
+    if (user) setResolvedUser(user);
+  }, [user]);
 
   // const init = async () => {
   //   if (isAuthenticated) {
@@ -231,12 +237,26 @@ const HotelBooking = () => {
   ]);
 
   useEffect(() => {
-    if (!user || hasPrefilledRef.current || !hotelBookingPayload) return;
+    const syncAuthUser = async () => {
+      const currentUser = await AuthService.getCurrentUser();
+      if (currentUser) setResolvedUser(currentUser);
+    };
+
+    const onAuthChanged = () => {
+      void syncAuthUser();
+    };
+
+    window.addEventListener("alrais:auth-changed", onAuthChanged);
+    return () => window.removeEventListener("alrais:auth-changed", onAuthChanged);
+  }, []);
+
+  useEffect(() => {
+    if (!resolvedUser || hasPrefilledRef.current || !hotelBookingPayload) return;
 
     const fetchAndPrefill = async () => {
       try {
-        const email = (user.email || "").trim().toLowerCase();
-        const phoneNumber = (user.phone || "").trim();
+        const email = (resolvedUser.email || "").trim().toLowerCase();
+        const phoneNumber = (resolvedUser.phone || "").trim();
 
         const userDetails =
           email || phoneNumber
@@ -248,15 +268,19 @@ const HotelBooking = () => {
 
         if (userDetails) {
           prefillFirstPassengerFromUserDetail(userDetails);
-          hasPrefilledRef.current = true;
+        } else {
+          prefillFirstPassengerFromAuthUser(resolvedUser);
         }
+        hasPrefilledRef.current = true;
       } catch (error) {
         console.error("User detail fetch failed:", error);
+        prefillFirstPassengerFromAuthUser(resolvedUser);
+        hasPrefilledRef.current = true;
       }
     };
 
     fetchAndPrefill();
-  }, [user, hotelBookingPayload]);
+  }, [resolvedUser, hotelBookingPayload]);
 
   const setNested = (obj: any, path: string, value: any) => {
     const parts = path.split(".");
@@ -316,6 +340,27 @@ const HotelBooking = () => {
         gender,
       };
 
+      return next;
+    });
+  };
+
+  const prefillFirstPassengerFromAuthUser = (authUser: { name?: string }) => {
+    const fullName = (authUser?.name || "").trim();
+    if (!fullName) return;
+
+    const nameParts = fullName.split(" ").filter(Boolean);
+    const surname = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+    const givenName =
+      nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0] || "";
+
+    setHotelBookingPayload((prev) => {
+      if (!prev) return prev;
+      const next = JSON.parse(JSON.stringify(prev));
+      const passengerInfo = next.rooms?.[0]?.passengers?.[0]?.passengerInfo;
+      if (!passengerInfo) return prev;
+
+      passengerInfo.givenName = passengerInfo.givenName || givenName;
+      passengerInfo.surname = passengerInfo.surname || surname;
       return next;
     });
   };
@@ -398,7 +443,7 @@ const HotelBooking = () => {
 
   return (
     <>
-      <div className="py-8 px-24">
+      <div className="px-3 py-4 sm:px-6 sm:py-6 lg:px-12 lg:py-8">
         <Loader
           show={isPending}
           label="Please wait while we complete your provisional booking"
@@ -415,7 +460,7 @@ const HotelBooking = () => {
             </div>
           </div>
 
-          <ol className="relative z-10 flex items-center justify-between">
+          <ol className="relative z-10 flex items-center justify-between gap-2">
             {steps.map((label, i) => {
               const isReached = i <= currentStep;
 
@@ -440,7 +485,7 @@ const HotelBooking = () => {
                     type="button"
                     // onClick={() => setCurrentStep(i)}
                     className={[
-                      "mt-2 text-sm transition-colors bg-transparent border-none hover:text-[#2351A3]",
+                      "mt-2 text-xs sm:text-sm transition-colors bg-transparent border-none hover:text-[#2351A3]",
                       isReached
                         ? "text-[#2351A3] font-medium"
                         : "text-[#3D495C]",

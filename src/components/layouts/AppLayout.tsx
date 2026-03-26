@@ -3,7 +3,7 @@ import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
 import AuthModal from "../organisms/AuthModal";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SessionExpiryWarning from "../../features/auth/components/SessionExpiryWarning";
 import { AuthService } from "../../features/auth/services/authService";
 import type { AuthMode } from "../../types/AuthTypes";
@@ -56,7 +56,18 @@ const AppLayout: React.FC = () => {
   const closeAuthModal = () => {
     setAuthModalOpen(false);
     if (location.pathname === "/auth") {
-      navigate("/", { replace: true });
+      const state = (location.state || {}) as {
+        returnUrl?: string;
+        bookingData?: unknown;
+        from?: string;
+      };
+
+      const targetPath = state.returnUrl || state.from || "/";
+
+      navigate(targetPath, {
+        replace: true,
+        state: state.bookingData ?? undefined,
+      });
     }
   };
 
@@ -64,6 +75,17 @@ const AppLayout: React.FC = () => {
     await refreshAuth();
     setHeaderKey((prev) => prev + 1);
   };
+
+  // Keep header/auth UI in sync when auth is completed from non-shared hooks (e.g. booking modals).
+  const handleExternalAuthChanged = useCallback(() => {
+    void handleAuthSuccess();
+  }, [refreshAuth]);
+
+  useEffect(() => {
+    const onAuthChanged = () => handleExternalAuthChanged();
+    window.addEventListener("alrais:auth-changed", onAuthChanged);
+    return () => window.removeEventListener("alrais:auth-changed", onAuthChanged);
+  }, [handleExternalAuthChanged]);
 
   // Apply gradient only where desired (remove "/" so LandingPage stays neutral)
   const gradientRoutes = ["/about"]; // define routes to show the gradient

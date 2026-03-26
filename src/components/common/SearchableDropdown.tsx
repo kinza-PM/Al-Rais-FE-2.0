@@ -301,14 +301,18 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           disabled={disabled}
           className={`${
             className ? className : baseClasses
-          } flex items-center justify-between`}
+          } flex min-w-0 items-center justify-between`}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-invalid={!!error}
           aria-describedby={error && showError ? "dropdown-error" : undefined}
         >
-          <span>
-            {/* <span className={`${!selectedOption ? "text-[#98A4B3]" : ""}`}> */}
+          <span
+            className={`block min-w-0 flex-1 truncate whitespace-nowrap text-left ${
+              !selectedOption && !value ? "text-[#98A4B3]" : ""
+            }`}
+            title={typeof displayValue === "string" ? displayValue : undefined}
+          >
             {displayValue}
           </span>
 

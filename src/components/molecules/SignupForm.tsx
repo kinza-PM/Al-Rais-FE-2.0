@@ -30,12 +30,18 @@ interface SignupFormProps {
   onLoginClick: () => void;
   onSignupSuccess?: () => void;
   onClose?: () => void;
+  compact?: boolean;
+  returnUrl?: string;
+  bookingData?: unknown;
 }
 
 const SignupForm: React.FC<SignupFormProps> = ({
   onLoginClick,
   onSignupSuccess,
   onClose,
+  compact = false,
+  returnUrl: returnUrlProp,
+  bookingData: bookingDataProp,
 }) => {
   const [formData, setFormData] = useState({
     title: "MR",
@@ -83,8 +89,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
   } = useAuth();
   const { isOnline } = useNetworkStatus();
 
-  const returnUrl = (location.state as any)?.returnUrl;
-  const bookingData = (location.state as any)?.bookingData;
+  const returnUrl = returnUrlProp ?? (location.state as any)?.returnUrl;
+  const bookingData = bookingDataProp ?? (location.state as any)?.bookingData;
 
   function ChevronDown() {
     return (
@@ -213,15 +219,22 @@ const SignupForm: React.FC<SignupFormProps> = ({
     if (result.success) {
       // Fallback: if page doesn't reload in 2 seconds, close modal
       toast.success("Account verified successfully!");
+      // If parent provided onSignupSuccess (e.g. modal flow), always prefer that so the modal can close.
+      if (onSignupSuccess) {
+        setTimeout(() => {
+          onSignupSuccess();
+        }, 600);
+        return;
+      }
+
       if (returnUrl && bookingData) {
         setTimeout(() => {
           navigate(returnUrl, { state: bookingData, replace: true });
         }, 1500);
-      } else {
-        setTimeout(() => {
-          onSignupSuccess?.();
-        }, 2000);
+        return;
       }
+
+      // No modal callback and no return target: keep current state.
     } else {
       //useeffect error will handle this (useAuth)
       // toast.error(result.message || "Invalid verification code...");
@@ -367,23 +380,27 @@ const SignupForm: React.FC<SignupFormProps> = ({
       ) {
         // Auto-login was successful
         toast.success("Account created and logged in successfully!");
+        if (onSignupSuccess) {
+          onSignupSuccess();
+          return;
+        }
         if (returnUrl && bookingData) {
           setTimeout(() => {
             navigate(returnUrl, { state: bookingData, replace: true });
           }, 1500);
-        } else {
-          onSignupSuccess?.();
         }
       } else {
         toast.success(result.message || "Account created successfully!");
+        if (onSignupSuccess) {
+          setTimeout(() => {
+            onSignupSuccess();
+          }, 400);
+          return;
+        }
         if (returnUrl && bookingData) {
           setTimeout(() => {
             navigate(returnUrl, { state: bookingData, replace: true });
           }, 1500);
-        } else {
-          setTimeout(() => {
-            onSignupSuccess?.();
-          }, 1000);
         }
       }
     } else {
@@ -445,7 +462,10 @@ const SignupForm: React.FC<SignupFormProps> = ({
 
   return (
     <div
-      className="relative w-full max-w-[468px] space-y-4 rounded-xl border border-[#E4E4E7] bg-white shadow-lg transition-shadow sm:rounded-2xl"
+      className={[
+        "relative w-full max-w-[468px] rounded-xl border border-[#E4E4E7] bg-white shadow-lg transition-shadow sm:rounded-2xl",
+        compact ? "space-y-2" : "space-y-4",
+      ].join(" ")}
       style={{
         opacity: 1,
         width: "100%",
@@ -464,10 +484,17 @@ const SignupForm: React.FC<SignupFormProps> = ({
           </svg>
         </button>
       )}
-      <div className="px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
+      <div
+        className={[
+          "px-4",
+          compact
+            ? "py-2 sm:py-3 md:px-6 md:py-4"
+            : "py-6 sm:py-8 md:px-8 md:py-10",
+        ].join(" ")}
+      >
         {!showOtpInput ? (
           <div>
-            <div className="flex justify-center mb-6">
+            <div className={compact ? "flex justify-center mb-2" : "flex justify-center mb-6"}>
               <Link
                 to="/"
                 aria-label="Go to home page"
@@ -482,15 +509,15 @@ const SignupForm: React.FC<SignupFormProps> = ({
               </Link>
             </div>
 
-            <h2 className="mb-1 text-center text-xl font-semibold text-[#0A0C0F] sm:text-2xl">
+            <h2 className={compact ? "mb-0.5 text-center text-xl font-semibold text-[#0A0C0F]" : "mb-1 text-center text-xl font-semibold text-[#0A0C0F] sm:text-2xl"}>
               Welcome
             </h2>
-            <p className="mb-6 text-center text-sm text-[#3D495C]">
+            <p className={compact ? "mb-2 text-center text-sm text-[#3D495C]" : "mb-6 text-center text-sm text-[#3D495C]"}>
               Let's setup an account
             </p>
 
             {/* Toggle Buttons */}
-            <div className="flex justify-center mb-6">
+            <div className={compact ? "flex justify-center mb-2" : "flex justify-center mb-6"}>
               <div className="flex items-center rounded-xl ring-1 ring-[#C2CAD6] px-2 py-1">
                 <button
                   type="button"
@@ -498,7 +525,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
                     setUsePhone(false);
                     setTouched((prev) => ({ ...prev, email: false }));
                   }}
-                  className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
+                  className={`px-6 py-1.5 text-[13px] rounded-xl transition-colors ${
                     !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
                   }`}
                 >
@@ -510,7 +537,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
                     setUsePhone(true);
                     setTouched((prev) => ({ ...prev, email: false }));
                   }}
-                  className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
+                  className={`px-6 py-1.5 text-[13px] rounded-xl transition-colors ${
                     usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
                   }`}
                 >
@@ -519,7 +546,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className={compact ? "space-y-2.5" : "space-y-4"}>
               {/* <div>
                 <Input
                   type="text"
@@ -548,11 +575,11 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 <label className="text-sm text-xs font-normal text-[#3D495C] mb-1 block">
                   Full Name
                 </label>
-                <div className="flex gap-2">
+                <div className={compact ? "flex gap-1.5" : "flex gap-2"}>
                   <div className="relative flex items-center w-24">
                     <select
                       aria-label="Title"
-                      className="px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"
+                      className={compact ? "px-2.5 py-1.5 w-full h-9 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent" : "px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"}
                       value={formData.title}
                       onChange={(e) =>
                         setFormData((prev) => ({
@@ -678,7 +705,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] text-[#3D495C]">
+                <div className={compact ? "flex items-center justify-between text-[10px] text-[#3D495C]" : "flex items-center justify-between text-[11px] text-[#3D495C]"}>
                   <p>
                     I would like to receive important updates and exciting deals
                   </p>
@@ -786,14 +813,14 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 </div>
               )} */}
 
-              <div className="flex justify-center pt-1">
+              <div className={compact ? "flex justify-center pt-0.5" : "flex justify-center pt-1"}>
                 <button
                   type="submit"
                   disabled={!isFormValid || loading.signup || !isOnline}
                   // className="flex min-h-[47px] min-w-[142px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[142px]"
                   className={`
-                    flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5
-                    rounded-full px-10 py-3.5
+                    flex min-h-[42px] min-w-[140px] items-center justify-center gap-2
+                    rounded-full px-8 py-2.5
                     font-semibold text-white tracking-[0.5px]
                     transition-opacity hover:opacity-95
                     ${
@@ -944,7 +971,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
 
         {!showOtpInput && (
           <>
-            <div className="mt-6 text-center">
+            <div className={compact ? "mt-2 text-center" : "mt-6 text-center"}>
               <p className="text-sm text-[#3D495C]">
                 Already have an account?{" "}
                 <button
@@ -956,7 +983,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 </button>
               </p>
             </div>
-            <div className="mt-8 text-center">
+            <div className={compact ? "mt-2.5 text-center" : "mt-8 text-center"}>
               <p
                 className="text-[#3D495C]"
                 style={{
