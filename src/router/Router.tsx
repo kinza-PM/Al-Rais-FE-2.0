@@ -6,6 +6,9 @@ import SearchFlight from "../pages/SearchFlight";
 import SearchHotel from "../pages/SearchHotel";
 import HotellDetailListing from "../pages/HotellDetailListing";
 const LandingPage = lazy(() => import("../pages/LandingPage"));
+const SightseeingSearchPage = lazy(
+  () => import("../pages/SightseeingSearchPage"),
+);
 // const TravelPage = lazy(() => import("../pages/TravelPage"));
 const PackagesPage = lazy(() => import("../pages/PackagesPage"));
 const AboutPage = lazy(() => import("../pages/AboutPage"));
@@ -55,6 +58,10 @@ const router = createBrowserRouter([
       {
         path: "search-hotel",
         element: <SearchHotel />,
+      },
+      {
+        path: "search-sightseeing",
+        element: <SightseeingSearchPage />,
       },
       {
         path: "hotel-detail/:hotelKey",

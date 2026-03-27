@@ -1167,6 +1167,36 @@ input[type="number"] {
   .hotel-filter-grid-hero .hero-search { grid-column: auto; grid-row: auto; }
 }
 
+/* Sightseeing hero (Figma): 3 fields one row, Search centered below */
+.sightseeing-hero-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+  align-items: start;
+}
+@media (min-width: 768px) {
+  .sightseeing-hero-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    row-gap: 22px;
+  }
+}
+.sightseeing-hero-grid > * {
+  min-width: 0;
+}
+.sightseeing-hero-grid .sightseeing-search-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  padding-top: 8px;
+}
+@media (min-width: 768px) {
+  .sightseeing-hero-grid .sightseeing-search-row {
+    padding-top: 12px;
+  }
+}
+
 /* Legacy: hotel-filter-row-3 */
 .hotel-filter-row-3 {
   display: grid;
