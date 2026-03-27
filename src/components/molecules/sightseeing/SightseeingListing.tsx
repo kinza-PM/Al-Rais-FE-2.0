@@ -7,6 +7,8 @@ import type {
   SightseeingActivity,
   SightseeingQuickFilterId,
 } from "../../../features/sightseeing/types";
+import { useActivityAvailability } from "../../../hooks/sightseeing/useActivityAvailability";
+import { defaultActivityAvailabilityDateRange } from "../../../services/api/activitiesSearch";
 import SightseeingActivityCard from "./SightseeingActivityCard";
 import SightseeingFiltersSidebar, {
   type SightseeingListFiltersState,
@@ -28,6 +30,7 @@ const defaultToolbar = (
 ): SightseeingToolbarValues => ({
   country: state.country?.trim() || "",
   city: state.city?.trim() || "",
+  destinationCode: state.destinationCode?.trim() || "",
   category: state.category?.trim() || "all",
 });
 
@@ -135,6 +138,28 @@ const SightseeingListing: React.FC = () => {
     navState.category,
   ]);
 
+  const destCode = toolbar.destinationCode?.trim() ?? "";
+  const useLiveAvailability = destCode.length > 0;
+
+  const {
+    data: liveActivities,
+    isLoading: isLiveLoading,
+    isError: isLiveError,
+    error: liveError,
+  } = useActivityAvailability({
+    destinationCode: destCode,
+    enabled: useLiveAvailability,
+  });
+
+  useEffect(() => {
+    if (isLiveError && liveError) {
+      toast.error(
+        (liveError as Error).message ||
+          "Could not load activities for this destination",
+      );
+    }
+  }, [isLiveError, liveError]);
+
   const onToolbarSearch = useCallback(
     (values: SightseeingToolbarValues) => {
       setToolbar(values);
@@ -143,6 +168,7 @@ const SightseeingListing: React.FC = () => {
         state: {
           country: values.country,
           city: values.city,
+          destinationCode: values.destinationCode,
           category: values.category,
         },
       });
@@ -150,13 +176,20 @@ const SightseeingListing: React.FC = () => {
     [navigate],
   );
 
+  const catalogue = useMemo((): SightseeingActivity[] => {
+    if (useLiveAvailability) {
+      return liveActivities ?? [];
+    }
+    return DUMMY_SIGHTSEEING_ACTIVITIES;
+  }, [useLiveAvailability, liveActivities]);
+
   const filtered = useMemo(
     () =>
       sortActivities(
-        filterActivities(DUMMY_SIGHTSEEING_ACTIVITIES, quickFilter, listFilters),
+        filterActivities(catalogue, quickFilter, listFilters),
         listFilters.sort,
       ),
-    [quickFilter, listFilters],
+    [catalogue, quickFilter, listFilters],
   );
 
   const activeSidebarCount = useMemo(
@@ -164,11 +197,27 @@ const SightseeingListing: React.FC = () => {
     [listFilters],
   );
 
-  const handleBookNow = useCallback((activity: SightseeingActivity) => {
-    toast.success(
-      `Booking for “${activity.title}” will be available when the sightseeing API is connected.`,
-    );
-  }, []);
+  const handleBookNow = useCallback(
+    (activity: SightseeingActivity) => {
+      const range = defaultActivityAvailabilityDateRange(30);
+      navigate(
+        `/sightseeing-detail/${encodeURIComponent(activity.id)}`,
+        {
+          state: {
+            from: range.from,
+            to: range.to,
+            preview: activity,
+            context: {
+              country: toolbar.country,
+              city: toolbar.city,
+              destinationCode: destCode,
+            },
+          },
+        },
+      );
+    },
+    [navigate, toolbar.country, toolbar.city, destCode],
+  );
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-12">
@@ -259,25 +308,40 @@ const SightseeingListing: React.FC = () => {
                   </>
                 ) : null}
                 .
+                {useLiveAvailability ? (
+                  <span className="ml-2 text-[#98A4B3]">
+                    (live availability
+                    {destCode ? ` · ${destCode}` : ""})
+                  </span>
+                ) : null}
               </p>
             ) : null}
 
-            <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((activity) => (
-                <SightseeingActivityCard
-                  key={activity.id}
-                  activity={activity}
-                  onBookNow={handleBookNow}
-                />
-              ))}
-            </div>
-
-            {filtered.length === 0 ? (
-              <div className="mt-12 rounded-[16px] border border-dashed border-[#C2CAD6] bg-white py-14 text-center text-[14px] text-[#3D495C]">
-                No activities match your filters. Try adjusting filters or quick
-                categories.
+            {useLiveAvailability && isLiveLoading ? (
+              <div className="mt-10 rounded-[16px] border border-[#E4E4E7] bg-white py-16 text-center text-[15px] text-[#3D495C]">
+                Loading activities from supplier…
               </div>
-            ) : null}
+            ) : (
+              <>
+                <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {filtered.map((activity) => (
+                    <SightseeingActivityCard
+                      key={activity.id}
+                      activity={activity}
+                      onBookNow={handleBookNow}
+                    />
+                  ))}
+                </div>
+
+                {filtered.length === 0 ? (
+                  <div className="mt-12 rounded-[16px] border border-dashed border-[#C2CAD6] bg-white py-14 text-center text-[14px] text-[#3D495C]">
+                    {useLiveAvailability
+                      ? "No activities returned for this destination and date range, or filters hide all results. Try another destination or relax filters."
+                      : "No activities match your filters. Try adjusting filters or quick categories."}
+                  </div>
+                ) : null}
+              </>
+            )}
           </div>
         </div>
       </div>

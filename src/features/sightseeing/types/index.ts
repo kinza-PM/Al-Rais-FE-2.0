@@ -52,3 +52,22 @@ export type SightseeingActivity = {
   price: number;
   currency: string;
 };
+
+/** Normalised Hotel Beds `activitiesDetail` response (rateKey list for booking). */
+export type SightseeingActivityDetailRate = {
+  rateKey: string;
+  modalityCode: string;
+  modalityName: string;
+  amount: number;
+  currency: string;
+  label: string;
+};
+
+export type SightseeingActivityDetailView = {
+  code: string;
+  name: string;
+  currency: string;
+  type?: string;
+  rateOptions: SightseeingActivityDetailRate[];
+  raw: unknown;
+};

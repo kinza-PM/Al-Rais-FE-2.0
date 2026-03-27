@@ -9,6 +9,9 @@ const LandingPage = lazy(() => import("../pages/LandingPage"));
 const SightseeingSearchPage = lazy(
   () => import("../pages/SightseeingSearchPage"),
 );
+const SightseeingActivityDetailPage = lazy(
+  () => import("../pages/SightseeingActivityDetailPage"),
+);
 // const TravelPage = lazy(() => import("../pages/TravelPage"));
 const PackagesPage = lazy(() => import("../pages/PackagesPage"));
 const AboutPage = lazy(() => import("../pages/AboutPage"));
@@ -62,6 +65,10 @@ const router = createBrowserRouter([
       {
         path: "search-sightseeing",
         element: <SightseeingSearchPage />,
+      },
+      {
+        path: "sightseeing-detail/:activityCode",
+        element: <SightseeingActivityDetailPage />,
       },
       {
         path: "hotel-detail/:hotelKey",

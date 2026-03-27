@@ -1,6 +1,9 @@
 import React, { useMemo, useState, useEffect } from "react";
 import { useCountriesOptions } from "../../../hooks/masterListings/listing";
-import { useCitiesOptions } from "../../../hooks/masterListings/useQueryListing";
+import {
+  destinationOptionsToDropdown,
+  useActivityDestinations,
+} from "../../../hooks/sightseeing/useActivityDestinations";
 import SearchableDropdown from "../../common/SearchableDropdown";
 import type { SightseeingActivityCategory } from "../../../features/sightseeing/types";
 
@@ -19,7 +22,10 @@ const FIELD_BUTTON_CLASS =
 
 export type SightseeingToolbarValues = {
   country: string;
+  /** City / destination label for display */
   city: string;
+  /** Hotel Beds activities destination code (getAvailability filter). */
+  destinationCode: string;
   category: SightseeingActivityCategory | string;
 };
 
@@ -32,14 +38,23 @@ const labelClass = "mb-1 block text-[12px] font-normal text-[#3D495C]";
 
 const SightseeingListingToolbar: React.FC<Props> = ({ initial, onSearch }) => {
   const [country, setCountry] = useState(initial.country);
-  const [city, setCity] = useState(initial.city);
+  const [cityDisplay, setCityDisplay] = useState(initial.city);
+  const [destinationCode, setDestinationCode] = useState(
+    initial.destinationCode ?? "",
+  );
   const [category, setCategory] = useState<string>(initial.category || "all");
 
   useEffect(() => {
     setCountry(initial.country);
-    setCity(initial.city);
+    setCityDisplay(initial.city);
+    setDestinationCode(initial.destinationCode ?? "");
     setCategory(initial.category || "all");
-  }, [initial.country, initial.city, initial.category]);
+  }, [
+    initial.country,
+    initial.city,
+    initial.destinationCode,
+    initial.category,
+  ]);
 
   const { data: countriesOptions, isLoading: isCountriesLoading } =
     useCountriesOptions();
@@ -48,10 +63,16 @@ const SightseeingListingToolbar: React.FC<Props> = ({ initial, onSearch }) => {
     () => countriesOptions?.find((c) => c.label === country),
     [countriesOptions, country],
   );
+  const iso2 = selectedCountry?.iso2;
 
-  const { data: citiesData, isLoading: isCitiesLoading } = useCitiesOptions(
-    selectedCountry?.label || "",
-    !!selectedCountry?.label,
+  const {
+    data: destinationRows,
+    isLoading: isDestinationsLoading,
+  } = useActivityDestinations(iso2, !!iso2);
+
+  const destinationDropdownOptions = useMemo(
+    () => destinationOptionsToDropdown(destinationRows),
+    [destinationRows],
   );
 
   const countryOptions = useMemo(
@@ -64,32 +85,15 @@ const SightseeingListingToolbar: React.FC<Props> = ({ initial, onSearch }) => {
     [countriesOptions],
   );
 
-  const cityOptions = useMemo(() => {
-    const fromApi =
-      citiesData?.map((c, index) => ({
-        id: `${index}-${c.value}`,
-        value: c.label,
-        label: c.label,
-      })) ?? [];
-    const trimmed = city.trim();
-    if (trimmed && !fromApi.some((o) => o.value === trimmed)) {
-      return [
-        { id: "custom-city", value: trimmed, label: trimmed },
-        ...fromApi,
-      ];
-    }
-    return fromApi;
-  }, [citiesData, city]);
-
   const handleSubmit = () => {
     onSearch({
       country: country.trim(),
-      city: city.trim(),
+      city: (cityDisplay || destinationCode).trim(),
+      destinationCode: destinationCode.trim(),
       category: category || "all",
     });
   };
 
-  /** Toolbar fields: 360×50, single row */
   const fieldWrapStyle: React.CSSProperties = {
     width: 360,
     flexShrink: 0,
@@ -98,73 +102,79 @@ const SightseeingListingToolbar: React.FC<Props> = ({ initial, onSearch }) => {
   return (
     <div className="sightseeing-listing-toolbar w-full bg-transparent">
       <div className="flex flex-nowrap items-end justify-start gap-4">
-          <div className="shrink-0" style={fieldWrapStyle}>
-            <label className={labelClass}>Select a Country</label>
-            <SearchableDropdown
-              options={countryOptions}
-              value={country}
-              onChange={(v) => {
-                setCountry(v);
-                setCity("");
-              }}
-              placeholder="Select a country"
-              label={undefined}
-              widthClass="w-full"
-              searchPlaceholder="Search"
-              loading={isCountriesLoading}
-              className={FIELD_BUTTON_CLASS}
-            />
-          </div>
+        <div className="shrink-0" style={fieldWrapStyle}>
+          <label className={labelClass}>Select a Country</label>
+          <SearchableDropdown
+            options={countryOptions}
+            value={country}
+            onChange={(v) => {
+              setCountry(v);
+              setDestinationCode("");
+              setCityDisplay("");
+            }}
+            placeholder="Select a country"
+            label={undefined}
+            widthClass="w-full"
+            searchPlaceholder="Search"
+            loading={isCountriesLoading}
+            className={FIELD_BUTTON_CLASS}
+          />
+        </div>
 
-          <div className="shrink-0" style={fieldWrapStyle}>
-            <label className={labelClass}>Enter a City</label>
-            <SearchableDropdown
-              options={cityOptions}
-              value={city}
-              onChange={setCity}
-              placeholder="Enter a city"
-              label={undefined}
-              widthClass="w-full"
-              searchPlaceholder="Search city"
-              loading={isCitiesLoading}
-              disabled={!selectedCountry?.label}
-              className={FIELD_BUTTON_CLASS}
-            />
-          </div>
+        <div className="shrink-0" style={fieldWrapStyle}>
+          <label className={labelClass}>Select a destination</label>
+          <SearchableDropdown
+            options={destinationDropdownOptions}
+            value={destinationCode}
+            onChange={(code) => {
+              setDestinationCode(code);
+              const opt = destinationDropdownOptions.find((o) => o.value === code);
+              setCityDisplay(opt?.label ?? code);
+            }}
+            placeholder="Select a destination"
+            label={undefined}
+            widthClass="w-full"
+            searchPlaceholder="Search destination"
+            loading={isDestinationsLoading}
+            disabled={!iso2}
+            displayLabel={cityDisplay || null}
+            className={FIELD_BUTTON_CLASS}
+          />
+        </div>
 
-          <div className="shrink-0" style={fieldWrapStyle}>
-            <label className={labelClass}>Select category of activity</label>
-            <SearchableDropdown
-              options={ACTIVITY_CATEGORY_OPTIONS}
-              value={category}
-              onChange={(v) => setCategory(v || "all")}
-              placeholder="All Categories"
-              label={undefined}
-              widthClass="w-full"
-              searchPlaceholder="Search"
-              className={FIELD_BUTTON_CLASS}
-            />
-          </div>
+        <div className="shrink-0" style={fieldWrapStyle}>
+          <label className={labelClass}>Select category of activity</label>
+          <SearchableDropdown
+            options={ACTIVITY_CATEGORY_OPTIONS}
+            value={category}
+            onChange={(v) => setCategory(v || "all")}
+            placeholder="All Categories"
+            label={undefined}
+            widthClass="w-full"
+            searchPlaceholder="Search"
+            className={FIELD_BUTTON_CLASS}
+          />
+        </div>
 
-          <div className="flex shrink-0 items-end pb-[3px]">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              className="flex items-center justify-center text-[15px] font-semibold leading-none text-white transition-opacity hover:opacity-95"
-              style={{
-                width: 137,
-                height: 47,
-                maxWidth: "100%",
-                padding: "14px 40px",
-                gap: 10,
-                borderRadius: 100,
-                background:
-                  "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-              }}
-            >
-              Search
-            </button>
-          </div>
+        <div className="flex shrink-0 items-end pb-[3px]">
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="flex items-center justify-center text-[15px] font-semibold leading-none text-white transition-opacity hover:opacity-95"
+            style={{
+              width: 137,
+              height: 47,
+              maxWidth: "100%",
+              padding: "14px 40px",
+              gap: 10,
+              borderRadius: 100,
+              background:
+                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+            }}
+          >
+            Search
+          </button>
+        </div>
       </div>
     </div>
   );

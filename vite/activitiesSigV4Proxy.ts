@@ -94,6 +94,7 @@ function credentialDiagnostics() {
 
 let loggedApiKeyOnlyFallback = false;
 let loggedDevDestinationMock = false;
+let loggedDevListingMock = false;
 
 function devDestinationMockDisabled(): boolean {
   const v =
@@ -175,6 +176,323 @@ function sendJsonWithCors(
   res.statusCode = status;
   res.setHeader("Content-Type", "application/json");
   res.end(JSON.stringify(payload));
+}
+
+function activitiesProxyPathSuffix(url: string): string {
+  try {
+    const p = new URL(url, "http://localhost").pathname;
+    if (!p.startsWith(PROXY_PREFIX)) return "";
+    return p.slice(PROXY_PREFIX.length) || "/";
+  } catch {
+    return "";
+  }
+}
+
+function parseJsonBody(buf: Buffer): unknown {
+  if (!buf.length) return {};
+  try {
+    return JSON.parse(buf.toString("utf8")) as unknown;
+  } catch {
+    return null;
+  }
+}
+
+function destinationFromGetAvailabilityBody(data: unknown): string | null {
+  const o =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : null;
+  if (!o) return null;
+  const filters = o.filters;
+  if (!Array.isArray(filters)) return null;
+  for (const f of filters) {
+    if (!f || typeof f !== "object") continue;
+    const items = (f as Record<string, unknown>).searchFilterItems;
+    if (!Array.isArray(items)) continue;
+    for (const it of items) {
+      if (!it || typeof it !== "object") continue;
+      const io = it as Record<string, unknown>;
+      if (io.type === "destination" && typeof io.value === "string") {
+        return io.value.trim().toUpperCase();
+      }
+    }
+  }
+  return null;
+}
+
+/** Figma-style titles for dev mock (`getAvailability` / detail), keyed by destination code. */
+const MOCK_SIGHTSEEING_TITLES_BY_DEST: Record<string, readonly string[]> = {
+  DXB: [
+    "Dubai City Tour: Discover Iconic Landmarks",
+    "Desert Safari & BBQ Dinner Under the Stars",
+    "Dubai Marina Sunset Yacht Experience",
+  ],
+  AUH: [
+    "Abu Dhabi Highlights: Mosque & Corniche Drive",
+    "Heritage Village & Cultural Landmarks Tour",
+    "Full-Day City Icons & Waterfront Views",
+  ],
+  KBL: [
+    "Kabul Heritage Walk: Gardens & Historic Quarters",
+    "Mountain Views & Traditional Lunch Excursion",
+    "Cultural Highlights & Artisan Markets Tour",
+  ],
+  LHE: [
+    "Lahore Fort & Old City Heritage Trail",
+    "Food & Culture Evening Experience",
+    "Walled City Architecture & Bazaars",
+  ],
+  ISB: [
+    "Islamabad City Tour: Monuments & Viewpoints",
+    "Margalla Hills Scenic Nature Walk",
+    "Faisal Mosque & Museums Discovery Tour",
+  ],
+  KHI: [
+    "Karachi Coastal Drive & Historic Districts",
+    "City Icons & Local Flavors Half-Day Tour",
+    "Clifton & Cultural Waterfront Experience",
+  ],
+  IST: [
+    "Istanbul Old City: Icons Across Continents",
+    "Bosphorus Cruise & Skyline Highlights",
+    "Grand Bazaar & Hidden Gems Walking Tour",
+  ],
+  AYT: [
+    "Antalya Coast & Ancient Harbor Tour",
+    "Waterfalls & Old Town Scenic Day",
+    "Mediterranean Views & Local Markets",
+  ],
+};
+
+const MOCK_SIGHTSEEING_TITLES_DEFAULT: readonly string[] = [
+  "City Highlights: Icons & Local Stories",
+  "Half-Day Guided Sightseeing Adventure",
+  "Scenic Landmarks & Cultural Discoveries Tour",
+  "Sunset Views & Photo Stops",
+  "Heritage Walk & Local Markets",
+  "Food & Culture Trail",
+  "Nature & Scenic Viewpoints",
+  "Architecture & History Tour",
+];
+
+function pickMockSightseeingTitle(dest: string, index: number): string {
+  const d = dest.trim().toUpperCase();
+  const pool = MOCK_SIGHTSEEING_TITLES_BY_DEST[d] ?? MOCK_SIGHTSEEING_TITLES_DEFAULT;
+  const base = pool[index % pool.length] ?? pool[0];
+  const cycle = Math.floor(index / pool.length);
+  return cycle === 0 ? base : `${base} — option ${cycle + 1}`;
+}
+
+function mockListingHeroImage(dest: string, i: number): string {
+  const d = dest.trim().toUpperCase();
+  const seed = `ar-${d}-${i}`.replace(/[^a-zA-Z0-9-]/g, "");
+  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/900/600`;
+}
+
+/** Uses the same `pagination` shape the client sends on `getAvailability`. */
+function paginationFromGetAvailabilityBody(data: unknown): {
+  itemsPerPage: number;
+  page: number;
+} {
+  const o =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : null;
+  const p = o?.pagination;
+  const po =
+    p && typeof p === "object" && !Array.isArray(p)
+      ? (p as Record<string, unknown>)
+      : null;
+  let itemsPerPage = 100;
+  let page = 1;
+  if (po) {
+    const ipp = Number(po.itemsPerPage ?? po.pageSize ?? po.perPage);
+    if (Number.isFinite(ipp) && ipp > 0) {
+      itemsPerPage = Math.min(100, Math.max(1, Math.floor(ipp)));
+    }
+    const pg = Number(po.page);
+    if (Number.isFinite(pg) && pg >= 1) page = Math.floor(pg);
+  }
+  return { itemsPerPage, page };
+}
+
+function mockTitleFromActivityCode(code: string): string {
+  const m = /^([A-Z]{2,})-MOCK-(\d+)$/i.exec(code.trim());
+  if (m) {
+    return pickMockSightseeingTitle(m[1], parseInt(m[2], 10) - 1);
+  }
+  return `Discover & Explore: ${code.trim()}`;
+}
+
+function mockListingRow(
+  dest: string,
+  i: number,
+): Record<string, unknown> {
+  const code = `${dest}-MOCK-${i + 1}`;
+  const title = pickMockSightseeingTitle(dest, i);
+  const hours = [5, 6, 8, 7, 9, 4][i % 6];
+  const hero = mockListingHeroImage(dest, i);
+  return {
+    activityCode: code,
+    code,
+    name: title,
+    image: hero,
+    category: "Sightseeing Tour",
+    rating: Math.min(5, Math.round((4.1 + (i % 10) * 0.07) * 10) / 10),
+    reviewCount: 32 + i * 17,
+    country: { destinations: [{ name: dest }] },
+    modalities: [
+      {
+        name: i % 2 === 0 ? "Shared group" : "Private group",
+        duration: hours / 24,
+        rates: [
+          {
+            rateDetails: [
+              {
+                totalAmount: { amount: 45 + i * 11, currency: "USD" },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+    content: {
+      name: title,
+      image: hero,
+      media: [{ type: "IMAGE", url: hero }],
+    },
+  };
+}
+
+function mockGetAvailabilityResponse(dest: string, parsed: unknown): unknown {
+  const d = dest.trim().toUpperCase() || "MOCK";
+  const { itemsPerPage, page } = paginationFromGetAvailabilityBody(parsed);
+
+  if (page > 1) {
+    return {
+      activities: [],
+      pagination: {
+        page,
+        totalPages: 1,
+        total: itemsPerPage,
+        itemsPerPage: 0,
+      },
+    };
+  }
+
+  const activities = Array.from({ length: itemsPerPage }, (_, i) =>
+    mockListingRow(d, i),
+  );
+  return {
+    activities,
+    pagination: {
+      page: 1,
+      totalPages: 1,
+      total: activities.length,
+      itemsPerPage: activities.length,
+    },
+  };
+}
+
+function detailFieldsFromBody(data: unknown): {
+  code: string;
+  from: string;
+  to: string;
+} | null {
+  const o =
+    data && typeof data === "object" && !Array.isArray(data)
+      ? (data as Record<string, unknown>)
+      : null;
+  if (!o) return null;
+  const code = typeof o.code === "string" ? o.code.trim() : "";
+  if (!code) return null;
+  const from = typeof o.from === "string" ? o.from : "2026-01-01";
+  const to = typeof o.to === "string" ? o.to : "2026-01-02";
+  return { code, from, to };
+}
+
+function mockActivitiesDetailResponse(
+  code: string,
+  from: string,
+  to: string,
+): unknown {
+  const safeFrom = from || "2026-01-01";
+  const safeTo = to || "2026-01-02";
+  const keyTail = code.replace(/[^a-zA-Z0-9]/g, "").slice(0, 24) || "KEY";
+  return {
+    activity: {
+      code,
+      name: mockTitleFromActivityCode(code),
+      type: "TICKET",
+      currency: "USD",
+      modalities: [
+        {
+          code: "STD",
+          name: "Standard",
+          destinationCode: "MOCK",
+          rates: [
+            {
+              rateCode: "GENERIC",
+              rateDetails: [
+                {
+                  rateKey: `MOCK-RATE-${keyTail}`,
+                  operationDates: [
+                    {
+                      from: safeFrom,
+                      to: safeTo,
+                      cancellationPolicies: [],
+                    },
+                  ],
+                  sessions: [{ code: "MORNING", name: "Morning session" }],
+                  languages: [{ code: "en", name: "English" }],
+                  totalAmount: { amount: 89, currency: "USD" },
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+function isMockBookingPathSuffix(suffix: string): boolean {
+  return (
+    suffix.startsWith("/preConfirmBooking") ||
+    suffix.startsWith("/confirmBooking") ||
+    suffix.startsWith("/cancelBooking")
+  );
+}
+
+function bookingReferenceFromParsed(parsed: unknown): string {
+  const o =
+    parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as Record<string, unknown>)
+      : null;
+  if (!o) return `MOCK-${Date.now()}`;
+  const r = o.reference ?? o.bookingReference;
+  if (typeof r === "string" && r.trim()) return r.trim();
+  return `MOCK-${Date.now()}`;
+}
+
+function mockBookingResponse(url: string, parsed: unknown): unknown {
+  const ref = bookingReferenceFromParsed(parsed);
+  if (url.includes("cancelBooking")) {
+    return {
+      operationId: "mock-cancel",
+      booking: { reference: ref, status: "CANCELLED" },
+    };
+  }
+  if (url.includes("preConfirmBooking")) {
+    return {
+      operationId: "mock-preconfirm",
+      booking: { reference: `PRE-${ref}`, status: "PRECONFIRMED" },
+    };
+  }
+  return {
+    operationId: "mock-confirm",
+    booking: { reference: `CFM-${ref}`, status: "CONFIRMED" },
+  };
 }
 
 function headerOne(req: IncomingMessage, lcName: string): string | undefined {
@@ -274,10 +592,6 @@ async function getSigningCredentials(region: string): Promise<SigningCreds | nul
     return creds;
   } catch (e) {
     lastChainError = e instanceof Error ? e.message : String(e);
-    console.error(
-      "[activities-sigv4-proxy] fromNodeProviderChain failed:",
-      lastChainError,
-    );
     return null;
   }
 }
@@ -351,21 +665,85 @@ function attachActivitiesProxy(
         const apiKey = activitiesApiKeyFromRequestOrEnv(req);
 
         if (!signingCreds && !apiKey) {
-          if (
-            isDestinationByOurCountryPath(url) &&
-            !devDestinationMockDisabled()
-          ) {
+          if (devDestinationMockDisabled()) {
+            res.statusCode = 502;
+            res.setHeader("Content-Type", "application/json");
+            res.end(
+              JSON.stringify({
+                message: NO_CREDENTIALS_MESSAGE,
+                code: "ACTIVITIES_PROXY_NO_AWS_CREDENTIALS",
+                diagnostics: credentialDiagnostics(),
+              }),
+            );
+            return;
+          }
+
+          if (isDestinationByOurCountryPath(url)) {
             if (!loggedDevDestinationMock) {
               loggedDevDestinationMock = true;
               console.warn(
-                "[activities-sigv4-proxy] No AWS credentials or API key — returning mock " +
-                  "`destinationByOurCountry` data (dev only). Use real API: set keys in `.env.local` " +
-                  "or VITE_ACTIVITIES_DISABLE_DEV_MOCK=true to see this error instead.",
+                "[activities-sigv4-proxy] No AWS credentials or API key — dev mocks enabled " +
+                  "for activities (`destinationByOurCountry`, `getAvailability`, `activitiesDetail`, booking). " +
+                  "Set keys in `.env.local` or VITE_ACTIVITIES_DISABLE_DEV_MOCK=true to disable.",
               );
             }
             const cc = countryIsoFromDestinationUrl(url);
             sendJsonWithCors(req, res, 200, mockDestinationsPayload(cc), {
               "X-Activities-Proxy": "mock-destinationByOurCountry",
+            });
+            return;
+          }
+
+          const suffix = activitiesProxyPathSuffix(url);
+          const bodyBufEarly = await readRequestBody(req);
+          const parsedEarly = parseJsonBody(bodyBufEarly);
+
+          if (suffix.startsWith("/getAvailability") && req.method === "POST") {
+            const dest = destinationFromGetAvailabilityBody(parsedEarly);
+            if (dest) {
+              if (!loggedDevListingMock) {
+                loggedDevListingMock = true;
+                console.warn(
+                  "[activities-sigv4-proxy] Mock `getAvailability` (dev only).",
+                );
+              }
+              sendJsonWithCors(
+                req,
+                res,
+                200,
+                mockGetAvailabilityResponse(dest, parsedEarly),
+                {
+                  "X-Activities-Proxy": "mock-getAvailability",
+                },
+              );
+              return;
+            }
+          }
+
+          if (suffix.startsWith("/activitiesDetail") && req.method === "POST") {
+            const fields = detailFieldsFromBody(parsedEarly);
+            if (fields) {
+              sendJsonWithCors(
+                req,
+                res,
+                200,
+                mockActivitiesDetailResponse(
+                  fields.code,
+                  fields.from,
+                  fields.to,
+                ),
+                { "X-Activities-Proxy": "mock-activitiesDetail" },
+              );
+              return;
+            }
+          }
+
+          if (
+            isMockBookingPathSuffix(suffix) &&
+            req.method === "POST"
+          ) {
+            sendJsonWithCors(req, res, 200, mockBookingResponse(url, parsedEarly), {
+              "X-Activities-Proxy": "mock-booking",
             });
             return;
           }
