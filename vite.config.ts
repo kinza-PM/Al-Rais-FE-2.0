@@ -1,6 +1,11 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import {
+  activitiesSigV4ProxyPlugin,
+  parseActivitiesTargetFromEnv,
+} from "./vite/activitiesSigV4Proxy";
+import { mergeActivitiesProxyProcessEnv } from "./vite/mergeActivitiesProxyEnv";
 
 /**
  * Used only when `VITE_HOTEL_API_BASE` is unset (should not happen if `.env.development` exists).
@@ -31,10 +36,23 @@ function hotelProxyFromBase(raw: string | undefined): {
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
+  mergeActivitiesProxyProcessEnv(env);
+
   const { target, pathPrefix } = hotelProxyFromBase(env.VITE_HOTEL_API_BASE);
+  const activitiesTarget = parseActivitiesTargetFromEnv(
+    env.VITE_ACTIVITIES_API_BASE || "",
+  );
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      /**
+       * Activities execute-api is IAM-only; JWT Bearer breaks SigV4 parsing.
+       * In dev, this re-signs `/api/activities-proxy/*` with local AWS credentials.
+       */
+      activitiesSigV4ProxyPlugin(activitiesTarget),
+      react(),
+      tailwindcss(),
+    ],
     server: {
       allowedHosts: [
         "spectroheliographic-mariko-subterrestrial.ngrok-free.dev",

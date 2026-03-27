@@ -68,6 +68,30 @@ export const HOTEL_FAVOURITE_API_BASE = VITE_HOTEL_FAVOURITE_API_BASE;
 
 export const FLIGHT_CANCELLATION = VITE_FLIGHT_CANCELLATION_API_BASE;
 
+/** Hotel Beds activities (`hotel-beds-activities` in Postman) */
+export const ACTIVITIES_API_BASE =
+  import.meta.env.VITE_ACTIVITIES_API_BASE ||
+  "https://rd2dteyt9c.execute-api.eu-west-1.amazonaws.com/dev";
+
+const activitiesApis = [
+  "/destinationByOurCountry",
+  "/getAvailability",
+  "/activitiesDetail",
+  "/preConfirmBooking",
+  "/confirmBooking",
+  "/cancelBooking",
+];
+
+/**
+ * Hotel Beds activities API (`rd2dteyt9c`) is IAM (SigV4), unlike hotel search which accepts JWT.
+ * Sending `Authorization: Bearer` produces IncompleteSignatureException. In dev, `/api/activities-proxy`
+ * signs without this header; in prod you need IAM-capable access or a backend BFF.
+ */
+function pathIsActivities(url: string | undefined): boolean {
+  const path = url?.split("?")[0] ?? "";
+  return activitiesApis.some((prefix) => path.startsWith(prefix));
+}
+
 export const axiosClient = axios.create({
   baseURL: API_BASE,
   timeout: 120000,
@@ -93,8 +117,10 @@ async function refreshCognitoToken(): Promise<string | null> {
 }
 
 axiosClient.interceptors.request.use(async (config) => {
+  const isActivities = pathIsActivities(config.url);
+
   const token = await TokenService.getToken();
-  if (token) {
+  if (token && !isActivities) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
@@ -116,6 +142,22 @@ axiosClient.interceptors.request.use(async (config) => {
   }
   else if (hotelFavouriteApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = HOTEL_FAVOURITE_API_BASE;
+  } else if (
+    activitiesApis.some((prefix) =>
+      config.url?.split("?")[0]?.startsWith(prefix),
+    )
+  ) {
+    config.baseURL = import.meta.env.DEV
+      ? "/api/activities-proxy"
+      : ACTIVITIES_API_BASE;
+  }
+
+  if (isActivities) {
+    config.headers.delete("Authorization");
+    const ak = import.meta.env.VITE_ACTIVITIES_API_KEY;
+    if (typeof ak === "string" && ak.trim() !== "") {
+      config.headers.set("x-api-key", ak.trim());
+    }
   }
   else if (flightCancellation.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = FLIGHT_CANCELLATION;
@@ -128,6 +170,9 @@ axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
+    if (pathIsActivities(originalRequest?.url)) {
+      return Promise.reject(error);
+    }
     const serverMsg =
       error.response?.data?.message ||
       (typeof error.response?.data === "string" ? error.response.data : "") ||

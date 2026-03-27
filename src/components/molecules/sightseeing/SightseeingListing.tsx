@@ -18,6 +18,8 @@ import SightseeingListingToolbar, {
 type LocationState = {
   country?: string;
   city?: string;
+  /** Supplier destination code from `destinationByOurCountry` (for `getAvailability`). */
+  destinationCode?: string;
   category?: string;
 };
 
@@ -126,7 +128,12 @@ const SightseeingListing: React.FC = () => {
 
   useEffect(() => {
     setToolbar(defaultToolbar(navState));
-  }, [navState.country, navState.city, navState.category]);
+  }, [
+    navState.country,
+    navState.city,
+    navState.destinationCode,
+    navState.category,
+  ]);
 
   const onToolbarSearch = useCallback(
     (values: SightseeingToolbarValues) => {

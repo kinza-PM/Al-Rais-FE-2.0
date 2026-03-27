@@ -34,6 +34,16 @@ interface ImportMetaEnv {
   readonly VITE_S3_TICKET_PUBLIC_BASE?: string;
   readonly VITE_NOMINATIM_BASE_URL?: string;
   readonly VITE_NETWORK_PING_URL?: string;
+  /** Sightseeing / activities API (execute-api), optional in dev when using proxy */
+  readonly VITE_ACTIVITIES_API_BASE?: string;
+  readonly VITE_ACTIVITIES_API_KEY?: string;
+  /** Dev SigV4 proxy only: optional overrides (same semantics as AWS_*). */
+  readonly VITE_ACTIVITIES_AWS_ACCESS_KEY_ID?: string;
+  readonly VITE_ACTIVITIES_AWS_SECRET_ACCESS_KEY?: string;
+  readonly VITE_ACTIVITIES_AWS_SESSION_TOKEN?: string;
+  readonly VITE_ACTIVITIES_AWS_PROFILE?: string;
+  /** Dev: set to true to force 502 when credentials missing (default mocks destination list). */
+  readonly VITE_ACTIVITIES_DISABLE_DEV_MOCK?: string;
 }
 
 interface ImportMeta {
@@ -74,4 +84,4 @@ declare module '*.webp' {
 declare module '*.ico' {
   const value: string;
   export default value;
-} 
+}

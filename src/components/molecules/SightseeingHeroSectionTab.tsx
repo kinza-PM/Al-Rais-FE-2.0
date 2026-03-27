@@ -1,6 +1,11 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import { useCountriesOptions } from "../../hooks/masterListings/listing";
+import {
+  destinationOptionsToDropdown,
+  useActivityDestinations,
+} from "../../hooks/sightseeing/useActivityDestinations";
 import SearchableDropdown from "../common/SearchableDropdown";
 import type { SightseeingActivityCategory } from "../../features/sightseeing/types";
 
@@ -20,8 +25,8 @@ const ACTIVITY_CATEGORY_OPTIONS: {
 ];
 
 /**
- * Landing hero — Sightseeing (Figma: country, city text, category, centered Search).
- * Mirrors HotelHeroSectionTab patterns (countries hook, SearchableDropdown, tokens).
+ * Landing hero — Sightseeing. Country drives `destinationByOurCountry` (ISO-2);
+ * destination dropdown supplies supplier codes for a later `getAvailability` step.
  */
 const SightseeingHeroSectionTab: React.FC = () => {
   const navigate = useNavigate();
@@ -29,11 +34,34 @@ const SightseeingHeroSectionTab: React.FC = () => {
     useCountriesOptions();
 
   const [country, setCountry] = useState("");
-  const [city, setCity] = useState("");
+  const [destinationCode, setDestinationCode] = useState("");
+  const [cityDisplay, setCityDisplay] = useState("");
   const [category, setCategory] =
     useState<SightseeingActivityCategory | string>("all");
   const [countryError, setCountryError] = useState<string | null>(null);
-  const [cityError, setCityError] = useState<string | null>(null);
+  const [destinationError, setDestinationError] = useState<string | null>(null);
+
+  const selectedCountry = useMemo(
+    () => countriesOptions?.find((c) => c.label === country),
+    [countriesOptions, country],
+  );
+  const iso2 = selectedCountry?.iso2;
+
+  const {
+    data: destinationRows,
+    isLoading: isDestinationsLoading,
+    isError: isDestinationsError,
+    error: destinationsError,
+  } = useActivityDestinations(iso2, !!iso2);
+
+  useEffect(() => {
+    if (isDestinationsError && destinationsError) {
+      toast.error(
+        (destinationsError as Error).message ||
+          "Could not load destinations for this country",
+      );
+    }
+  }, [isDestinationsError, destinationsError]);
 
   const countryDropdownOptions = useMemo(
     () =>
@@ -43,6 +71,11 @@ const SightseeingHeroSectionTab: React.FC = () => {
         label: c.label,
       })) ?? [],
     [countriesOptions],
+  );
+
+  const destinationDropdownOptions = useMemo(
+    () => destinationOptionsToDropdown(destinationRows),
+    [destinationRows],
   );
 
   const labelClass =
@@ -56,22 +89,23 @@ const SightseeingHeroSectionTab: React.FC = () => {
     } else {
       setCountryError(null);
     }
-    if (!city?.trim()) {
-      setCityError("Please enter a city");
+    if (!destinationCode?.trim()) {
+      setDestinationError("Please select a destination");
       valid = false;
     } else {
-      setCityError(null);
+      setDestinationError(null);
     }
     if (!valid) return;
 
     navigate("/search-sightseeing", {
       state: {
         country: country.trim(),
-        city: city.trim(),
+        city: (cityDisplay || destinationCode).trim(),
+        destinationCode: destinationCode.trim(),
         category: category || "all",
       },
     });
-  }, [country, city, category, navigate]);
+  }, [country, cityDisplay, destinationCode, category, navigate]);
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 pt-5 pb-6">
@@ -87,6 +121,9 @@ const SightseeingHeroSectionTab: React.FC = () => {
               onChange={(v) => {
                 setCountry(v);
                 setCountryError(null);
+                setDestinationCode("");
+                setCityDisplay("");
+                setDestinationError(null);
               }}
               placeholder="Select a country"
               label={undefined}
@@ -99,29 +136,30 @@ const SightseeingHeroSectionTab: React.FC = () => {
           </div>
 
           <div className="sightseeing-city w-full min-w-0">
-            <label className={labelClass} htmlFor="sightseeing-city-input">
-              Enter a city
+            <label className={labelClass} htmlFor="sightseeing-destination">
+              Select a destination
             </label>
-            <input
-              id="sightseeing-city-input"
-              type="text"
-              autoComplete="off"
-              placeholder="Enter a city"
-              value={city}
-              onChange={(e) => {
-                setCity(e.target.value);
-                setCityError(null);
+            <SearchableDropdown
+              options={destinationDropdownOptions}
+              value={destinationCode}
+              onChange={(code) => {
+                setDestinationCode(code);
+                const opt = destinationDropdownOptions.find(
+                  (o) => o.value === code,
+                );
+                setCityDisplay(opt?.label ?? code);
+                setDestinationError(null);
               }}
-              className={[
-                "h-[50px] w-full min-w-0 rounded-[16px] border bg-white px-4",
-                "text-[14px] text-[#0F172A] outline-none placeholder:text-[#98A4B3]",
-                cityError ? "border-2 border-[#E65959]" : "border border-[#C2CAD6]",
-              ].join(" ")}
-              aria-invalid={!!cityError}
+              placeholder="Select a destination"
+              label={undefined}
+              widthClass="w-full"
+              searchPlaceholder="Search destination"
+              tooltip="Choose a destination (from Hotel Beds activities)"
+              error={destinationError}
+              loading={isDestinationsLoading}
+              disabled={!iso2}
+              displayLabel={cityDisplay || null}
             />
-            {cityError ? (
-              <p className="mt-1.5 text-[12px] text-[#E65959]">{cityError}</p>
-            ) : null}
           </div>
 
           <div className="sightseeing-category w-full min-w-0">
