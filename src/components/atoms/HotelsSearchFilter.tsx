@@ -2,7 +2,10 @@ import React, { useState, useCallback } from "react";
 import { Collapse, Checkbox, Input } from "antd";
 import CustomCollapse from "../common/CustomCollapse";
 import type { HotelFilters, SortOption } from "../../utils/hotelFilters";
-import { getActiveFilterCount, PROPERTY_TYPE_MAPPINGS } from "../../utils/hotelFilters";
+import {
+  getActiveFilterCount,
+  PROPERTY_TYPE_MAPPINGS,
+} from "../../utils/hotelFilters";
 
 const { Panel } = Collapse;
 
@@ -14,9 +17,6 @@ export type HotelsSearchFilterProps = {
   hotels?: any[];
 };
 
-
-
-/** Pill badge showing result count */
 const CountBadge: React.FC<{ count: number }> = ({ count }) => (
   <span
     style={{
@@ -40,7 +40,6 @@ const CountBadge: React.FC<{ count: number }> = ({ count }) => (
   </span>
 );
 
-/** Checkbox row with optional count badge */
 const FilterCheckboxRow: React.FC<{
   label: string;
   count?: number;
@@ -75,10 +74,10 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
   hotels = [],
 }) => {
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [pointOfInterest, setPointOfInterest] = useState("");
 
   const activeFilterCount = getActiveFilterCount(filters);
 
-  // ─── Extract all dynamic filter data from hotels ────────────────────────────
   const {
     propertyFacilities,
     roomFacilities,
@@ -97,18 +96,16 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     const cancellationCountMap: Record<string, number> = {};
 
     hotels.forEach((hotel) => {
-      // --- Property type ---
-      // const pType = (hotel?.propertyInfo?.propertyType || "").trim();
-      // if (pType) {
-      //   propertyTypeCountMap[pType] = (propertyTypeCountMap[pType] ?? 0) + 1;
-      // }
-      const rawCode = (hotel?.propertyInfo?.propertyType || "").trim().toUpperCase();
+      const rawCode = (hotel?.propertyInfo?.propertyType || "")
+        .trim()
+        .toUpperCase();
+
       if (rawCode) {
-        const readableLabel = PROPERTY_TYPE_MAPPINGS[rawCode] || rawCode; // fallback to raw if unknown
-        propertyTypeCountMap[readableLabel] = (propertyTypeCountMap[readableLabel] ?? 0) + 1;
+        const readableLabel = PROPERTY_TYPE_MAPPINGS[rawCode] || rawCode;
+        propertyTypeCountMap[readableLabel] =
+          (propertyTypeCountMap[readableLabel] ?? 0) + 1;
       }
 
-      // --- Property facilities ---
       if (hotel?.propertyInfo?.facilities) {
         hotel.propertyInfo.facilities.forEach((facility: any) => {
           const name = facility?.name || facility;
@@ -119,10 +116,8 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         });
       }
 
-      // --- Rooms ---
       if (hotel?.rooms) {
         hotel.rooms.forEach((room: any) => {
-          // Room facilities
           if (room?.roomFacilities) {
             room.roomFacilities.forEach((facility: any) => {
               const name = facility?.name || facility;
@@ -133,7 +128,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
             });
           }
 
-          // Meals
           if (room?.ratePlan?.meal) {
             const meal = room.ratePlan.meal.trim();
             if (meal) {
@@ -145,13 +139,13 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                     word.charAt(0).toUpperCase() + word.slice(1)
                 )
                 .join(" ");
+
               mealsSet.add(normalizedMeal);
               mealCountMap[normalizedMeal] =
                 (mealCountMap[normalizedMeal] ?? 0) + 1;
             }
           }
 
-          // Cancellation policy — check all possible field locations in priority order
           const rawPolicy = (
             room?.ratePlan?.cancellationPolicy ||
             room?.ratePlan?.cancelPolicyIndicator ||
@@ -185,7 +179,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       }
     });
 
-    // Remove room facilities that duplicate property facilities
     const roomFacilitiesArray = Array.from(roomFacSet).filter(
       (f) => !propertyFacSet.has(f)
     );
@@ -208,8 +201,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         .map(([name, count]) => ({ name, count })),
     };
   }, [hotels]);
-
-  // ─── Handlers ───────────────────────────────────────────────────────────────
 
   const handleFilterChange = useCallback(
     (
@@ -255,26 +246,29 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       meals: [],
       cancellationPolicy: [],
     });
+    setPointOfInterest("");
   }, [onFiltersChange]);
-
-  // ─── Sort options ────────────────────────────────────────────────────────────
 
   const sortOptions = [
     { label: "Please Select", value: "" as SortOption },
     { label: "Price (lowest first)", value: "price_low" as SortOption },
     { label: "Price (Highest first)", value: "price_high" as SortOption },
-    { label: "Property rating (high to low)", value: "rating_high" as SortOption },
-    { label: "Property rating (low to high)", value: "rating_low" as SortOption },
+    {
+      label: "Property rating (high to low)",
+      value: "rating_high" as SortOption,
+    },
+    {
+      label: "Property rating (low to high)",
+      value: "rating_low" as SortOption,
+    },
   ];
 
   const selectedLabel =
-    sortOptions.find((opt) => opt.value === sortOption)?.label || "Please Select";
-
-  // ─── Render ──────────────────────────────────────────────────────────────────
+    sortOptions.find((opt) => opt.value === sortOption)?.label ||
+    "Please Select";
 
   return (
     <div className="filterSectionStyle">
-      {/* Sort dropdown */}
       <div className="relative">
         <button
           onClick={() => setIsSortOpen(!isSortOpen)}
@@ -311,12 +305,19 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               {selectedLabel}
             </span>
             <svg
-              className={`w-5 h-5 transition-transform flex-shrink-0 ${isSortOpen ? "rotate-180" : ""}`}
+              className={`w-5 h-5 transition-transform flex-shrink-0 ${
+                isSortOpen ? "rotate-180" : ""
+              }`}
               fill="none"
               stroke="#3D495C"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </div>
         </button>
@@ -326,15 +327,29 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
             {sortOptions.map((option, index) => (
               <div
                 key={option.value}
-                onClick={() => { onSortChange(option.value); setIsSortOpen(false); }}
-                className={`px-4 py-3 cursor-pointer flex items-center justify-between ${index !== sortOptions.length - 1 ? "border-b border-[#E4E4E7]" : ""
-                  }`}
+                onClick={() => {
+                  onSortChange(option.value);
+                  setIsSortOpen(false);
+                }}
+                className={`px-4 py-3 cursor-pointer flex items-center justify-between ${
+                  index !== sortOptions.length - 1
+                    ? "border-b border-[#E4E4E7]"
+                    : ""
+                }`}
               >
-                <span style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 400 }}>
+                <span
+                  style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 400 }}
+                >
                   {option.label}
                 </span>
                 {sortOption === option.value && (
-                  <svg width="16" height="12" viewBox="0 0 16 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <svg
+                    width="16"
+                    height="12"
+                    viewBox="0 0 16 12"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
                     <path
                       d="M15.4425 1.06754L5.44254 11.0675C5.38449 11.1256 5.31556 11.1717 5.23969 11.2032C5.16381 11.2347 5.08248 11.2508 5.00035 11.2508C4.91821 11.2508 4.83688 11.2347 4.76101 11.2032C4.68514 11.1717 4.61621 11.1256 4.55816 11.0675L0.18316 6.69254C0.0658846 6.57526 0 6.4162 0 6.25035C0 6.0845 0.0658846 5.92544 0.18316 5.80816C0.300435 5.69088 0.459495 5.625 0.625347 5.625C0.7912 5.625 0.95026 5.69088 1.06753 5.80816L5.00035 9.74175L14.5582 0.18316C14.6754 0.0658843 14.8345 -1.2357e-09 15.0003 0C15.1662 1.2357e-09 15.3253 0.0658843 15.4425 0.18316C15.5598 0.300435 15.6257 0.459495 15.6257 0.625347C15.6257 0.7912 15.5598 0.95026 15.4425 1.06754Z"
                       fill="#2351A3"
@@ -348,7 +363,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       </div>
 
       <div className="filterStyle max-h-[calc(100vh-40vh)] overflow-y-auto overflow-x-hidden scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-        {/* Header */}
         <div className="filterHeading">
           <div>
             <h4>
@@ -358,68 +372,118 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
             </h4>
           </div>
           <div className="resetAllBtn">
-            <a href="#" onClick={(e) => { e.preventDefault(); handleResetAll(); }}>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                handleResetAll();
+              }}
+            >
               Reset all
             </a>
           </div>
         </div>
 
-        {/* Hotel name */}
         <CustomCollapse>
           <Panel header="Hotel name" key="hotel_name">
             <Input
-              placeholder="Search for a hotel"
-              value={filters.hotelName}
-              onChange={(e) => handleFilterChange("hotelName", e.target.value)}
-              style={{
-                height: "50px",
-                borderRadius: "16px",
-                border: "1px solid #C2CAD6",
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 500,
-                fontSize: "16px",
-                color: "#0A0C0F",
-                width: "100%",
-                paddingLeft: "16px",
-                boxShadow: "none",
-              }}
-            />
+  allowClear={{
+    clearIcon: (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          background: "#D9DEE7",
+          color: "#3D495C",
+          fontSize: 14,
+          fontWeight: 700,
+          cursor: "pointer",
+          lineHeight: 1,
+        }}
+      >
+        ×
+      </span>
+    ),
+  }}
+  placeholder="Search for a hotel"
+  value={filters.hotelName}
+  onChange={(e) => handleFilterChange("hotelName", e.target.value)}
+  style={{
+    height: "50px",
+    borderRadius: "16px",
+    border: "1px solid #C2CAD6",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 500,
+    fontSize: "16px",
+    color: "#0A0C0F",
+    width: "100%",
+    paddingLeft: "16px",
+    boxShadow: "none",
+  }}
+/>
           </Panel>
         </CustomCollapse>
 
-        {/* Point of interest */}
         <CustomCollapse>
           <Panel header="Point of interest" key="point_interest">
             <Input
-              placeholder="Enter a location"
-              style={{
-                height: "50px",
-                borderRadius: "16px",
-                border: "1px solid #C2CAD6",
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 500,
-                fontSize: "16px",
-                color: "#0A0C0F",
-                width: "100%",
-                paddingLeft: "16px",
-                boxShadow: "none",
-              }}
-            />
+  allowClear={{
+    clearIcon: (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          background: "#D9DEE7",
+          color: "#3D495C",
+          fontSize: 14,
+          fontWeight: 700,
+          cursor: "pointer",
+          lineHeight: 1,
+        }}
+      >
+        ×
+      </span>
+    ),
+  }}
+  placeholder="Enter a location"
+  value={pointOfInterest}
+  onChange={(e) => setPointOfInterest(e.target.value)}
+  style={{
+    height: "50px",
+    borderRadius: "16px",
+    border: "1px solid #C2CAD6",
+    fontFamily: "Inter, sans-serif",
+    fontWeight: 500,
+    fontSize: "16px",
+    color: "#0A0C0F",
+    width: "100%",
+    paddingLeft: "16px",
+    boxShadow: "none",
+  }}
+/>
           </Panel>
         </CustomCollapse>
 
-        {/* Previously used filters */}
         <CustomCollapse>
           <Panel header="Previously used filters" key="previously">
             <div className="flex flex-col gap-[10px]">
               <Checkbox className="baggageCheckbox">Top reviewed</Checkbox>
               <Checkbox className="baggageCheckbox">Discounts first</Checkbox>
-              <Checkbox className="baggageCheckbox">Closest from downtown</Checkbox>
+              <Checkbox className="baggageCheckbox">
+                Closest from downtown
+              </Checkbox>
             </div>
           </Panel>
         </CustomCollapse>
 
-        {/* Property type — dynamic, hidden when API returns no propertyType data */}
         {propertyTypes.length > 0 && (
           <CustomCollapse>
             <Panel header="Property type" key="property">
@@ -440,7 +504,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           </CustomCollapse>
         )}
 
-        {/* Property facilities — dynamic */}
         {propertyFacilities.length > 0 && (
           <CustomCollapse>
             <Panel header="Property facilities" key="facilities">
@@ -461,7 +524,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           </CustomCollapse>
         )}
 
-        {/* Room facilities — dynamic */}
         {roomFacilities.length > 0 && (
           <CustomCollapse>
             <Panel header="Room facilities" key="room_facilities">
@@ -482,7 +544,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           </CustomCollapse>
         )}
 
-        {/* Meals — dynamic */}
         {meals.length > 0 && (
           <CustomCollapse>
             <Panel header="Meals" key="meals">
@@ -503,7 +564,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           </CustomCollapse>
         )}
 
-        {/* Cancellation policy — dynamic, hidden when API returns no policy data */}
         {cancellationPolicies.length > 0 && (
           <CustomCollapse>
             <Panel header="Cancellation policy" key="cancellation">

@@ -20,11 +20,16 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
   }, [passSome]);
 
   const [selectedPlan, setSelectedPlan] = useState<string | null>(
-    headers[0] ?? null
+    headers[0] ?? null,
   );
   const [baggageModalOpen, setBaggageModalOpen] = useState(false);
   const [baggageModalSegments, setBaggageModalSegments] = useState<
-    { fromCode?: string; toCode?: string; baggageChecked?: string | null; baggageCarry?: string | null }[]
+    {
+      fromCode?: string;
+      toCode?: string;
+      baggageChecked?: string | null;
+      baggageCarry?: string | null;
+    }[]
   >([]);
 
   const openBaggageModal = (plan: any) => {
@@ -33,23 +38,31 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
       fromCode: s?.fromCode,
       toCode: s?.toCode,
       baggageChecked: s?.baggage && s.baggage !== "—" ? s.baggage : null,
-      baggageCarry: s?.personalItem && s.personalItem !== "—" ? s.personalItem : null,
+      baggageCarry:
+        s?.personalItem && s.personalItem !== "—" ? s.personalItem : null,
     }));
+
     if (mapped.length === 0 && (plan?.baggage || plan?.personalItem)) {
       mapped.push({
-        baggageChecked: plan.baggage && plan.baggage !== "—" ? plan.baggage : null,
-        baggageCarry: plan.personalItem && plan.personalItem !== "—" ? plan.personalItem : null,
+        baggageChecked:
+          plan.baggage && plan.baggage !== "—" ? plan.baggage : null,
+        baggageCarry:
+          plan.personalItem && plan.personalItem !== "—"
+            ? plan.personalItem
+            : null,
       });
     }
+
     setBaggageModalSegments(mapped);
     setBaggageModalOpen(true);
   };
 
   useEffect(() => {
     if (!selectedPlan && headers.length) setSelectedPlan(headers[0]);
-    if (headers.length && !headers.includes(selectedPlan ?? ""))
+    if (headers.length && !headers.includes(selectedPlan ?? "")) {
       setSelectedPlan(headers[0]);
-  }, [headers]);
+    }
+  }, [headers, selectedPlan]);
 
   if (!passSome || passSome.length === 0) return null;
 
@@ -75,7 +88,6 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
   };
 
   const rowHeightClass = getHeightClass(maxSegs);
-
   const fixedHeightClass = "min-h-[72.8px] flex items-center";
 
   const renderFeature = (plan: any, featureKey: string) => {
@@ -92,9 +104,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
         >
           {segs.map((s: any, i: number) => (
             <div
-              key={`${featureKey}-${i}-${
-                s?.flightNumber ?? s?.segmentKey ?? "seg"
-              }`}
+              key={`${featureKey}-${i}-${s?.flightNumber ?? s?.segmentKey ?? "seg"}`}
               className="pricingCardRouteSegments"
               onClick={isBaggage ? () => openBaggageModal(plan) : undefined}
               style={isBaggage ? { cursor: "pointer" } : undefined}
@@ -143,102 +153,113 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
         </div>
       );
     }
+
     return content;
   };
 
   return (
-    <div>
-      <div className="pricingCardsWrap">
-        <Row>
-          <Col span={3}>
-            <div className={`emptyLabel ${fixedHeightClass}`}>
-              <p>&nbsp;</p>
-            </div>
-            <div className={`priceCardLabel ${rowHeightClass}`}>
-              <p>Personal Items</p>
-            </div>
-            <div className={`priceCardLabel ${rowHeightClass}`}>
-              <p>Baggage</p>
-            </div>
-            <div className={`priceCardLabel ${rowHeightClass}`}>
-              <p>Seat Selection</p>
-            </div>
-            <div className={`priceCardLabel ${rowHeightClass}`}>
-              <p>Changes</p>
-            </div>
-            <div className={`priceCardLabel ${rowHeightClass}`}>
-              <p>Refundable</p>
-            </div>
-            <div className={`emptyLabel ${fixedHeightClass}`}>
-              <p>&nbsp;</p>
-            </div>
-          </Col>
+    <>
+      <div
+        style={{
+          width: "100%",
+          overflowX: "auto",
+          paddingBottom: "6px",
+        }}
+      >
+        <div className="pricingCardsWrap" style={{ minWidth: "860px" }}>
+          <Row gutter={0}>
+            <Col span={3}>
+              <div className={`emptyLabel ${fixedHeightClass}`}>
+                <p>&nbsp;</p>
+              </div>
 
-          <Col span={21}>
-            {passSome.map((item, idx) => (
-              <Row key={`${item?.id ?? item?.offerId ?? idx}`}>
-                {headers.map((hk) => {
-                  const plan = item.price?.[hk] ?? {};
-                  // const hasSegments = Array.isArray(plan?.segments) && plan.segments.length > 0;
+              <div className={`priceCardLabel ${rowHeightClass}`}>
+                <p>Personal Items</p>
+              </div>
 
-                  return (
-                    <Col
-                      key={`${idx}-${hk}`}
-                      span={colSpan}
-                      className={selectedPlan === hk ? "activeCard" : ""}
-                    >
-                      <div className="priceCardHeadings">
-                        <p>{plan.label ?? hk}</p>
-                      </div>
+              <div className={`priceCardLabel ${rowHeightClass}`}>
+                <p>Baggage</p>
+              </div>
 
-                      {/* Personal items */}
-                      {renderFeature(plan, "personalItem")}
+              <div className={`priceCardLabel ${rowHeightClass}`}>
+                <p>Seat Selection</p>
+              </div>
 
-                      {/* Baggage */}
-                      {renderFeature(plan, "baggage")}
+              <div className={`priceCardLabel ${rowHeightClass}`}>
+                <p>Changes</p>
+              </div>
 
-                      {/* Seat Selection */}
-                      {renderFeature(plan, "seatSelection")}
+              <div className={`priceCardLabel ${rowHeightClass}`}>
+                <p>Refundable</p>
+              </div>
 
-                      {/* Changes */}
-                      {renderFeature(plan, "Changes")}
+              <div className={`emptyLabel ${fixedHeightClass}`}>
+                <p>&nbsp;</p>
+              </div>
+            </Col>
 
-                      {/* Refundable */}
-                      {renderFeature(plan, "Refundable")}
+            <Col span={21}>
+              {passSome.map((item, idx) => (
+                <Row key={`${item?.id ?? item?.offerId ?? idx}`} gutter={0}>
+                  {headers.map((hk) => {
+                    const plan = item.price?.[hk] ?? {};
 
-                      {/* Price & Radio */}
-                      <div className="cardPrice">
-                        <p>
-                          {plan.price != null ? `$${plan.price}` : "—"}
-                          <span>/per person</span>
-                        </p>
+                    return (
+                      <Col
+                        key={`${idx}-${hk}`}
+                        span={colSpan}
+                        className={selectedPlan === hk ? "activeCard" : ""}
+                      >
+                        <div className="priceCardHeadings">
+                          <p>{plan.label ?? hk}</p>
+                        </div>
 
-                        <Radio
-                          className={`baggageRadio ${
-                            selectedPlan === hk ? "active" : ""
-                          }`}
-                          checked={selectedPlan === hk}
-                          onChange={() => setSelectedPlan(hk)}
+                        {renderFeature(plan, "personalItem")}
+                        {renderFeature(plan, "baggage")}
+                        {renderFeature(plan, "seatSelection")}
+                        {renderFeature(plan, "Changes")}
+                        {renderFeature(plan, "Refundable")}
+
+                        <div
+                          className="cardPrice"
+                          style={{
+                            paddingTop: "14px",
+                            paddingBottom: "14px",
+                          }}
                         >
-                          {selectedPlan === hk
-                            ? "This option is selected"
-                            : "Select this option"}
-                        </Radio>
-                      </div>
-                    </Col>
-                  );
-                })}
-              </Row>
-            ))}
-          </Col>
-        </Row>
+                          <p>
+                            {plan.price != null ? `$${plan.price}` : "—"}
+                            <span>/per person</span>
+                          </p>
+
+                          <Radio
+                            className={`baggageRadio ${
+                              selectedPlan === hk ? "active" : ""
+                            }`}
+                            checked={selectedPlan === hk}
+                            onChange={() => setSelectedPlan(hk)}
+                          >
+                            {selectedPlan === hk
+                              ? "This option is selected"
+                              : "Select this option"}
+                          </Radio>
+                        </div>
+                      </Col>
+                    );
+                  })}
+                </Row>
+              ))}
+            </Col>
+          </Row>
+        </div>
       </div>
+
       <BaggageInfoModal
         open={baggageModalOpen}
         onClose={() => setBaggageModalOpen(false)}
         segments={baggageModalSegments}
       />
-    </div>
+    </>
   );
 };
 

@@ -1,14 +1,12 @@
-import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Tooltip, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import FilledStar from "../assets/svgs/filled_star.svg";
+import HotelImage from "../assets/images/Hotel Image.png";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "../components";
 import HotelDetailOverviewSection from "../components/molecules/HotelDetailOverviewSection";
 import HotelDetailAmenetiesSection from "../components/molecules/HotelDetailAmenetiesSection";
-// import HotelDetailGuestReviewSection from "../components/molecules/HotelDetailGuestReviewSection";
-// import HotelDetailFaqSection from "../components/molecules/HotelDetailFaqSection";
-// import HotelDetailRulesSection from "../components/molecules/HotelDetailRulesSection";
 import HotelImages from "../components/molecules/HotelImages";
 import HotelDetailRoomSection from "../components/molecules/HotelDetailRoomSection";
 import ShareTicketModal from "../components/atoms/ShareTicketModal";
@@ -20,9 +18,7 @@ import {
   useGetHotelFavourites,
 } from "../hooks/useHotelSearch";
 import { useHotelStore } from "../store/UseHotelStore";
-import type {
-  HotelSearchRequest,
-} from "../services/api/hotelSearch";
+import type { HotelSearchRequest } from "../services/api/hotelSearch";
 import Loader from "../components/atoms/Loader";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import {
@@ -38,10 +34,7 @@ import { useLocation, useParams, useNavigate } from "react-router-dom";
 const tabItems = [
   { label: "Overview", value: "Overview" },
   { label: "Rooms", value: "Rooms" },
-  // { label: "Reviews", value: "Reviews" },
   { label: "Amenities", value: "Amenities" },
-  // { label: "FAQs", value: "FAQs" },
-  // { label: "Rules", value: "Rules" },
 ] as const;
 
 type HotelDetailTab = (typeof tabItems)[number]["value"];
@@ -73,11 +66,379 @@ const buildHotelShareUrl = (
   }`;
 };
 
+const defaultMarkerIconUrl =
+  "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png";
+
+const shadowUrl =
+  "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png";
+
+const escapeHtml = (value: string = "") =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+
+const createHotelMarkerIcon = (label: string) =>
+  L.divIcon({
+    className: "custom-hotel-marker-wrapper",
+    html: `
+      <div style="position: relative; display: inline-flex; align-items: center;">
+        <div style="position: relative; width: 25px; height: 41px; flex-shrink: 0;">
+          <img
+            src="${defaultMarkerIconUrl}"
+            alt="marker"
+            style="
+              width: 25px;
+              height: 41px;
+              display: block;
+            "
+          />
+        </div>
+
+        <div
+          style="
+            margin-left: 8px;
+            background: rgba(255,255,255,0.95);
+            color: #111827;
+            font-size: 12px;
+            font-weight: 700;
+            line-height: 1.2;
+            padding: 6px 10px;
+            border-radius: 999px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+            white-space: nowrap;
+            max-width: 180px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            border: 1px solid #E5E7EB;
+          "
+          title="${escapeHtml(label)}"
+        >
+          ${escapeHtml(label)}
+        </div>
+      </div>
+    `,
+    iconSize: [220, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [0, -34],
+    tooltipAnchor: [18, -28],
+    shadowUrl,
+    shadowSize: [41, 41],
+  });
+
+const renderMapStars = (rating: string | number | undefined) => {
+  const numRating = rating ? Math.floor(Number(rating)) : 0;
+  const totalStars = 5;
+
+  return (
+    <div className="flex items-center gap-[3px] mt-1 mb-0">
+      {Array.from({ length: numRating }).map((_, i) => (
+        <img
+          key={`filled-${i}`}
+          src={FilledStar}
+          alt="filled star"
+          className="w-[16px] h-[16px]"
+        />
+      ))}
+      {Array.from({ length: totalStars - numRating }).map((_, i) => (
+        <img
+          key={`empty-${i}`}
+          src={FilledStar}
+          alt="empty star"
+          className="w-[16px] h-[16px] opacity-25"
+        />
+      ))}
+    </div>
+  );
+};
+
+const getMarkerPriceLabel = (hotel: any) => {
+  const firstRoom = hotel?.rooms?.[0];
+  const currency = firstRoom?.roomRate?.currency || "AED";
+  const price = Number(hotel?.totalPrice || firstRoom?.roomRate?.netAmount || 0);
+
+  return `${currency} ${price.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
+const getPreviewData = (hotel: any) => {
+  const firstRoom = hotel?.rooms?.[0];
+  const price = hotel?.totalPrice || firstRoom?.roomRate?.netAmount || 0;
+  const currency = firstRoom?.roomRate?.currency || "AED";
+  const roomName = firstRoom?.roomTypeName || "Superior Single Room";
+  const meal = firstRoom?.ratePlan?.meal || "";
+  const cancellationPolicy = firstRoom?.ratePlan?.cancelPolicyIndicator || "";
+  const adults = firstRoom?.maxOccupancy || 2;
+  const nights = firstRoom?.roomRate?.rates?.length || 1;
+
+  const taxesAndFees = hotel?.taxesAndFees || 0;
+  const reviewScore =
+    hotel?.reviewScore || hotel?.propertyInfo?.reviewScore || 7.3;
+  const reviewText =
+    reviewScore >= 8 ? "Very good" : reviewScore >= 7 ? "Good" : "Average";
+  const reviewCount = hotel?.reviewCount || 131;
+  const locationScore = hotel?.locationScore || 8.4;
+  const beachDistance = hotel?.beachDistance || "600 m from beach";
+
+  return {
+    price,
+    currency,
+    roomName,
+    meal,
+    cancellationPolicy,
+    adults,
+    nights,
+    taxesAndFees,
+    reviewScore,
+    reviewText,
+    reviewCount,
+    locationScore,
+    beachDistance,
+  };
+};
+
+const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
+  const imageUrl = hotel?.propertyInfo?.imageUrl || HotelImage;
+  const hotelName = hotel?.propertyInfo?.hotelName || "Hotel";
+  const starRating = hotel?.propertyInfo?.starRating || 0;
+
+  const {
+    price,
+    currency,
+    roomName,
+    meal,
+    cancellationPolicy,
+    adults,
+    nights,
+    taxesAndFees,
+    reviewScore,
+    reviewText,
+    reviewCount,
+    locationScore,
+    beachDistance,
+  } = getPreviewData(hotel);
+
+  return (
+    <div
+      className="hotel-map-hover-card"
+      style={{
+        position: "relative",
+        background: "#FFFFFF",
+        border: "1px solid #D9DEE7",
+        borderRadius: "14px",
+        boxShadow: "0 8px 24px rgba(15, 23, 42, 0.12)",
+        width: "100%",
+        minWidth: "220px",
+        maxWidth: "260px",
+        overflow: "hidden",
+      }}
+    >
+      <button
+        type="button"
+        onClick={(e) => e.preventDefault()}
+        style={{
+          position: "absolute",
+          top: "6px",
+          left: "8px",
+          zIndex: 2,
+          fontSize: "14px",
+          color: "#6B7280",
+          background: "transparent",
+          border: "none",
+          cursor: "pointer",
+          lineHeight: 1,
+          padding: 0,
+        }}
+      >
+        ×
+      </button>
+
+      <div>
+        <img
+          src={imageUrl}
+          alt={hotelName}
+          onError={(e) => {
+            e.currentTarget.src = HotelImage;
+          }}
+          style={{
+            width: "100%",
+            height: "96px",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+      </div>
+
+      <div
+        style={{
+          padding: "10px 12px 12px",
+          minWidth: 0,
+        }}
+      >
+        <h3
+          style={{
+            fontSize: "12px",
+            fontWeight: 500,
+            color: "#0A0C0F",
+            margin: 0,
+            lineHeight: "16px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          {hotelName}
+        </h3>
+
+        <div
+          style={{
+            fontWeight: 700,
+            fontSize: "14px",
+            color: "#0A0C0F",
+            marginTop: "8px",
+            marginBottom: "6px",
+            lineHeight: "18px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+          }}
+        >
+          {currency} {Number(price).toLocaleString()}
+        </div>
+
+        <div className="mb-2">{renderMapStars(starRating)}</div>
+
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "3px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          {beachDistance}
+        </div>
+
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "3px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          {reviewScore}
+          {reviewText} · {reviewCount} reviews
+        </div>
+
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "6px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          {locationScore} Location
+        </div>
+
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#0A0C0F",
+            marginBottom: "3px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          <strong>{roomName}:</strong> {adults > 1 ? `${adults} beds` : "1 bed"}
+        </div>
+
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "3px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          {nights} night{nights > 1 ? "s" : ""}, {adults} adult
+          {adults > 1 ? "s" : ""}
+        </div>
+
+        <div
+          style={{
+            fontSize: "11px",
+            color: "#3D495C",
+            marginBottom: "6px",
+            lineHeight: "15px",
+            whiteSpace: "normal",
+            overflowWrap: "anywhere",
+            wordBreak: "break-word",
+          }}
+        >
+          +{currency} {Number(taxesAndFees).toLocaleString()} taxes and fees
+        </div>
+
+        {meal && (
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#3D495C",
+              marginBottom: cancellationPolicy ? "3px" : "0",
+              lineHeight: "15px",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
+            }}
+          >
+            {meal.toLowerCase().includes("breakfast")
+              ? "Breakfast included"
+              : meal}
+          </div>
+        )}
+
+        {cancellationPolicy && (
+          <div
+            style={{
+              fontSize: "11px",
+              color: "#3D495C",
+              lineHeight: "15px",
+              whiteSpace: "normal",
+              overflowWrap: "anywhere",
+              wordBreak: "break-word",
+            }}
+          >
+            {cancellationPolicy.toLowerCase().includes("free")
+              ? "Free cancellation"
+              : cancellationPolicy}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const redIcon = L.icon({
-  iconUrl:
-    "https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png",
-  shadowUrl:
-    "https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png",
+  iconUrl: defaultMarkerIconUrl,
+  shadowUrl,
   iconSize: [20, 30],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -213,14 +574,14 @@ const HotelDetailListing = () => {
         console.log("unexpected promised failed--------------", unexpected);
       }
     },
-    [params.hotelKey, mutateAsync, fetchMoreRoomsAsync],
+    [params.hotelKey, mutateAsync, fetchMoreRoomsAsync]
   );
 
   const init = useCallback(async () => {
     const searchParams = new URLSearchParams(location.search);
     const searchKeyFromUrl = searchParams.get("searchKey") ?? "";
     const bookingParamsFromUrl = safeParseHotelBookingParams(
-      searchParams.get("bookingParams"),
+      searchParams.get("bookingParams")
     );
     const bookingParamsFromState = normalizeHotelBookingParams(state.bookingParams);
 
@@ -292,6 +653,59 @@ const HotelDetailListing = () => {
     [hotelDetail?.starRating]
   );
 
+  
+  const totalPrice = useMemo(() => {
+    return selectedRooms.reduce((total, selectedRoom) => {
+      const roomPrice = selectedRoom.room?.roomRate?.netAmount || 0;
+      return total + roomPrice * selectedRoom.count;
+    }, 0);
+  }, [selectedRooms]);
+
+  const detailMapHotel = useMemo(() => {
+    const firstRoom = hotelMoreRooms?.rooms?.[0];
+    const taxesAndFees = (firstRoom?.roomRate?.taxes || []).reduce(
+      (sum: number, tax: any) => sum + (tax?.included ? 0 : Number(tax?.amount || 0)),
+      0
+    );
+
+    return {
+      hotelKey: params.hotelKey ?? "",
+      propertyInfo: {
+        hotelName: hotelDetail?.name || "Hotel",
+        imageUrl: primaryImages?.[0]?.path || HotelImage,
+        starRating: hotelDetail?.starRating || 0,
+        latitude: hotelDetail?.latitude || "",
+        longitude: hotelDetail?.longitude || "",
+      },
+      rooms: hotelMoreRooms?.rooms || [],
+      totalPrice:
+        firstRoom?.roomRate?.netAmount ||
+        selectedRooms?.[0]?.room?.roomRate?.netAmount ||
+        totalPrice ||
+        0,
+      taxesAndFees,
+      reviewScore: hotelDetail?.reviewScore,
+      reviewCount: hotelDetail?.reviewCount,
+      locationScore: hotelDetail?.locationScore,
+      beachDistance:
+        nearbyInfo?.nearbyDistanceKm && nearbyInfo?.firstNearbyArea?.name
+          ? `${nearbyInfo.nearbyDistanceKm} km from ${nearbyInfo.firstNearbyArea.name}`
+          : "600 m from beach",
+    };
+  }, [
+    hotelDetail,
+    hotelMoreRooms?.rooms,
+    nearbyInfo,
+    params.hotelKey,
+    primaryImages,
+    selectedRooms,
+    totalPrice,
+  ]);
+
+  const detailMarkerLabel = useMemo(() => {
+    return getMarkerPriceLabel(detailMapHotel);
+  }, [detailMapHotel]);
+
   const handleShowImages = useCallback(() => {
     setShowHotelDetailImages(true);
   }, []);
@@ -330,15 +744,15 @@ const HotelDetailListing = () => {
         normalizedBookingParams.starRatings.length > 0
           ? normalizedBookingParams.starRatings
           : hotelSearchState?.starRatings &&
-              hotelSearchState.starRatings.length > 0
-            ? hotelSearchState.starRatings
-            : (() => {
-                const m =
-                  normalizedBookingParams.minStarRating ??
-                  hotelSearchState?.minStarRating ??
-                  0;
-                return m > 0 ? [Math.floor(m)] : [];
-              })();
+            hotelSearchState.starRatings.length > 0
+          ? hotelSearchState.starRatings
+          : (() => {
+              const m =
+                normalizedBookingParams.minStarRating ??
+                hotelSearchState?.minStarRating ??
+                0;
+              return m > 0 ? [Math.floor(m)] : [];
+            })();
 
       const nextStoreHotel = {
         country:
@@ -392,7 +806,7 @@ const HotelDetailListing = () => {
           checkOut: nextStoreHotel.checkOut,
           rooms: convertPaxToRooms(
             nextStoreHotel.paxData,
-            nextStoreHotel.childAges,
+            nextStoreHotel.childAges
           ),
           travelerCountryOfResidence:
             nextStoreHotel.travelerCountryOfResidence,
@@ -429,7 +843,7 @@ const HotelDetailListing = () => {
               serializeHotelBookingParams({
                 ...normalizedBookingParams,
                 ...nextStoreHotel,
-              }),
+              })
             );
 
             navigate(`${location.pathname}?${queryParams.toString()}`, {
@@ -459,7 +873,7 @@ const HotelDetailListing = () => {
       setResolvedBookingParams(normalizedBookingParams);
       queryParams.set(
         "bookingParams",
-        serializeHotelBookingParams(normalizedBookingParams),
+        serializeHotelBookingParams(normalizedBookingParams)
       );
 
       navigate(`${location.pathname}?${queryParams.toString()}`, {
@@ -482,15 +896,9 @@ const HotelDetailListing = () => {
       location.state,
       navigate,
       resolvedSearchKey,
-    ],
+    ]
   );
 
-  const totalPrice = useMemo(() => {
-    return selectedRooms.reduce((total, selectedRoom) => {
-      const roomPrice = selectedRoom.room?.roomRate?.netAmount || 0;
-      return total + roomPrice * selectedRoom.count;
-    }, 0);
-  }, [selectedRooms]);
 
   const currency = useMemo(() => {
     if (selectedRooms.length > 0) {
@@ -516,14 +924,16 @@ const HotelDetailListing = () => {
     const maxRoomIndex = Math.max(
       ...hotelMoreRooms.rooms.map((room: any) => room.roomIndex || 1)
     );
-    return maxRoomIndex > 0 ? maxRoomIndex : resolvedBookingParams?.paxData?.rooms ?? 1;
+    return maxRoomIndex > 0
+      ? maxRoomIndex
+      : resolvedBookingParams?.paxData?.rooms ?? 1;
   }, [hotelMoreRooms?.rooms, resolvedBookingParams?.paxData?.rooms]);
 
   useEffect(() => {
     const requestedRooms = resolvedBookingParams?.paxData?.rooms ?? 1;
 
     setSelectedRooms((prev) =>
-      prev.filter((selected) => (selected?.room?.roomIndex ?? 1) <= requestedRooms),
+      prev.filter((selected) => (selected?.room?.roomIndex ?? 1) <= requestedRooms)
     );
   }, [resolvedBookingParams?.paxData?.rooms]);
 
@@ -716,7 +1126,6 @@ const HotelDetailListing = () => {
           }
         />
 
-        {/* Desktop gallery */}
         <div className="hidden lg:grid grid-cols-12 gap-2 h-[35vh]">
           <>
             {dynamicImages[0] && (
@@ -760,13 +1169,25 @@ const HotelDetailListing = () => {
                   attributionControl={false}
                 >
                   <TileLayer
-                    attribution="&copy; OpenStreetMap"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
                   />
                   <Marker
                     position={[coordinates.latitude, coordinates.longitude]}
-                    icon={redIcon}
-                  />
+                    icon={createHotelMarkerIcon(detailMarkerLabel)}
+                  >
+                    <Tooltip
+                      direction="right"
+                      offset={[20, -10]}
+                      opacity={1}
+                      permanent={false}
+                      sticky={true}
+                      interactive={true}
+                      className="hotel-map-custom-tooltip"
+                    >
+                      <HotelMapHoverCard hotel={detailMapHotel} />
+                    </Tooltip>
+                  </Marker>
                   <MapAutoFix
                     lat={coordinates.latitude}
                     lng={coordinates.longitude}
@@ -826,20 +1247,31 @@ const HotelDetailListing = () => {
                   attributionControl={false}
                 >
                   <TileLayer
-                    attribution="&copy; OpenStreetMap"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
                   />
                   <Marker
                     position={[coordinates.latitude, coordinates.longitude]}
-                    icon={redIcon}
-                  />
+                    icon={createHotelMarkerIcon(detailMarkerLabel)}
+                  >
+                    <Tooltip
+                      direction="right"
+                      offset={[20, -10]}
+                      opacity={1}
+                      permanent={false}
+                      sticky={true}
+                      interactive={true}
+                      className="hotel-map-custom-tooltip"
+                    >
+                      <HotelMapHoverCard hotel={detailMapHotel} />
+                    </Tooltip>
+                  </Marker>
                 </MapContainer>
               </div>
             )}
           </>
         </div>
 
-        {/* Mobile gallery */}
         <div className="lg:hidden space-y-2">
           {dynamicImages[0] && (
             <div className="w-full h-56 relative overflow-hidden rounded-2xl">
@@ -884,13 +1316,25 @@ const HotelDetailListing = () => {
               attributionControl={false}
             >
               <TileLayer
-                attribution="&copy; OpenStreetMap"
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
               />
               <Marker
                 position={[coordinates.latitude, coordinates.longitude]}
-                icon={redIcon}
-              />
+                icon={createHotelMarkerIcon(detailMarkerLabel)}
+              >
+                <Tooltip
+                  direction="right"
+                  offset={[20, -10]}
+                  opacity={1}
+                  permanent={false}
+                  sticky={true}
+                  interactive={true}
+                  className="hotel-map-custom-tooltip"
+                >
+                  <HotelMapHoverCard hotel={detailMapHotel} />
+                </Tooltip>
+              </Marker>
               <MapAutoFix lat={coordinates.latitude} lng={coordinates.longitude} />
             </MapContainer>
           </div>
@@ -949,13 +1393,25 @@ const HotelDetailListing = () => {
                 attributionControl={false}
               >
                 <TileLayer
-                  attribution="&copy; OpenStreetMap"
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
                 />
                 <Marker
                   position={[coordinates.latitude, coordinates.longitude]}
-                  icon={redIcon}
-                />
+                  icon={createHotelMarkerIcon(detailMarkerLabel)}
+                >
+                  <Tooltip
+                    direction="right"
+                    offset={[20, -10]}
+                    opacity={1}
+                    permanent={false}
+                    sticky={true}
+                    interactive={true}
+                    className="hotel-map-custom-tooltip"
+                  >
+                    <HotelMapHoverCard hotel={detailMapHotel} />
+                  </Tooltip>
+                </Marker>
               </MapContainer>
             </div>
           )}
@@ -1033,7 +1489,6 @@ const HotelDetailListing = () => {
             </div>
           </div>
 
-          {/* Desktop actions */}
           <div className="hidden lg:flex items-center gap-4">
             <button
               className="px-4 py-2 text-[#2351A3] text-sm font-medium hover:underline"
@@ -1066,7 +1521,6 @@ const HotelDetailListing = () => {
           </div>
         </div>
 
-        {/* Mobile actions */}
         <div className="mt-4 lg:hidden flex flex-col gap-3">
           <button
             className="w-full rounded-lg border border-[#E4E4E7] px-4 py-2 text-[#2351A3] text-sm font-medium"
@@ -1153,8 +1607,6 @@ const HotelDetailListing = () => {
           />
         )}
 
-        {/* {activeTab === "Reviews" && <HotelDetailGuestReviewSection />} */}
-
         {activeTab === "Amenities" && (
           <HotelDetailAmenetiesSection
             hotelDetail={hotelDetail}
@@ -1162,13 +1614,9 @@ const HotelDetailListing = () => {
           />
         )}
 
-        {/* {activeTab === "FAQs" && <HotelDetailFaqSection />} */}
-
-        {/* {activeTab === "Rules" && <HotelDetailRulesSection />} */}
-
         {showLocationMap && (
           <div className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/50 px-4">
-            <div className="relative w-full max-w-4xl rounded-2xl bg-white shadow-2xl overflow-hidden">
+            <div className="relative w-full max-w-5xl rounded-2xl bg-white shadow-2xl overflow-hidden">
               <button
                 type="button"
                 onClick={handleHideLocationMap}
@@ -1185,7 +1633,7 @@ const HotelDetailListing = () => {
                 <p className="mt-2 text-sm text-[#3D495C]">{addressText}</p>
               </div>
 
-              <div className="h-[60vh] lg:h-[500px] w-full">
+              <div className="h-[60vh] lg:h-[520px] w-full">
                 <MapContainer
                   center={[coordinates.latitude, coordinates.longitude]}
                   zoom={15}
@@ -1195,13 +1643,27 @@ const HotelDetailListing = () => {
                   attributionControl={false}
                 >
                   <TileLayer
-                    attribution="&copy; OpenStreetMap"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
+                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
                   />
+
                   <Marker
                     position={[coordinates.latitude, coordinates.longitude]}
-                    icon={redIcon}
-                  />
+                    icon={createHotelMarkerIcon(detailMarkerLabel)}
+                  >
+                    <Tooltip
+                      direction="right"
+                      offset={[20, -10]}
+                      opacity={1}
+                      permanent={false}
+                      sticky={true}
+                      interactive={true}
+                      className="hotel-map-custom-tooltip"
+                    >
+                      <HotelMapHoverCard hotel={detailMapHotel} />
+                    </Tooltip>
+                  </Marker>
+
                   <MapAutoFix
                     lat={coordinates.latitude}
                     lng={coordinates.longitude}
@@ -1212,7 +1674,6 @@ const HotelDetailListing = () => {
           </div>
         )}
 
-        {/* Desktop sticky bar */}
         <div className="hidden lg:block fixed bottom-4 left-0 right-0 z-50">
           <div
             className="absolute inset-0"
@@ -1291,7 +1752,6 @@ const HotelDetailListing = () => {
           </div>
         </div>
 
-        {/* Mobile sticky bar */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50">
           <div
             className="absolute inset-0"
@@ -1377,7 +1837,11 @@ const HotelDetailListing = () => {
           title="Share this Hotel"
           description="Send this hotel to family and friends. Share the property details and location instantly."
           cardTitle={hotelDetail?.name || "Hotel details"}
-          cardSubtitle={[hotelDetail?.address, hotelDetail?.city, hotelDetail?.country]
+          cardSubtitle={[
+            hotelDetail?.address,
+            hotelDetail?.city,
+            hotelDetail?.country,
+          ]
             .filter(Boolean)
             .join(", ")}
           passengerName={hotelDetail?.name || "Hotel details"}

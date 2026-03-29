@@ -59,8 +59,19 @@ const buildHotelShareUrl = (
   }`;
 };
 
+const getMarkerPriceLabel = (hotel: any) => {
+  const firstRoom = hotel?.rooms?.[0];
+  const currency = firstRoom?.roomRate?.currency || "PKR";
+  const price = Number(hotel?.totalPrice || firstRoom?.roomRate?.netAmount || 0);
+
+  return `${currency} ${price.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}`;
+};
+
 const createHotelMarkerIcon = (
-  hotelName: string,
+  label: string,
   isActive: boolean = false
 ) =>
   L.divIcon({
@@ -86,7 +97,7 @@ const createHotelMarkerIcon = (
             background: ${isActive ? "rgba(235,243,255,0.98)" : "rgba(255,255,255,0.95)"};
             color: #111827;
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
             line-height: 1.2;
             padding: 6px 10px;
             border-radius: 999px;
@@ -97,9 +108,9 @@ const createHotelMarkerIcon = (
             text-overflow: ellipsis;
             border: 1px solid ${isActive ? "#5383DA" : "#E5E7EB"};
           "
-          title="${escapeHtml(hotelName)}"
+          title="${escapeHtml(label)}"
         >
-          ${escapeHtml(hotelName)}
+          ${escapeHtml(label)}
         </div>
       </div>
     `,
@@ -172,6 +183,7 @@ const getPreviewData = (hotel: any) => {
     beachDistance,
   };
 };
+
 const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
   const imageUrl = hotel.propertyInfo?.imageUrl || HotelImage;
   const hotelName = hotel.propertyInfo?.hotelName || "Hotel";
@@ -411,6 +423,7 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
     </div>
   );
 };
+
 const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
   ({ hotels }) => {
     const [favorites, setFavorites] = useState<Record<string, boolean>>({});
@@ -672,14 +685,6 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-5">
               {!isMapExpanded && (
                 <div className="order-2 lg:order-1 col-span-1 flex flex-col gap-4 transition-all duration-300 ease-in-out lg:max-h-[calc(100vh-27vh)] lg:overflow-y-auto">
-                  {/* {activeHotelKey && (
-  <div className="mb-1 px-1">
-    <p className="text-sm font-semibold text-[#0A0C0F]">
-      Selected hotel
-    </p>
-  </div>
-)} */}
-
                   {displayedHotels.map((hotel, index) => (
                     <div key={hotel.hotelKey || index}>
                       <HotellGridCard
@@ -738,8 +743,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
                     {validHotels.map((hotel) => {
                       const lat = parseFloat(hotel.propertyInfo.latitude);
                       const lng = parseFloat(hotel.propertyInfo.longitude);
-                      const hotelName =
-                        hotel?.propertyInfo?.hotelName || "Hotel";
+                      const markerLabel = getMarkerPriceLabel(hotel);
                       const isActive = activeHotelKey === hotel.hotelKey;
 
                       if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
@@ -748,7 +752,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
                         <Marker
                           key={hotel.hotelKey}
                           position={[lat, lng]}
-                          icon={createHotelMarkerIcon(hotelName, isActive)}
+                          icon={createHotelMarkerIcon(markerLabel, isActive)}
                           eventHandlers={{
                             click: () => handleMarkerClick(hotel),
                           }}
