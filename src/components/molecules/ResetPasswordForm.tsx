@@ -58,7 +58,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   };
 
   // Friendly mapping for backend generic password errors
-  const mapBackendPasswordError = (msg: string | undefined, pwd: string): string => {
+  const mapBackendPasswordError = (msg: string | undefined): string => {
     if (!msg) return "Failed to reset password";
     const lc = msg.toLowerCase();
     if (lc.includes("security rules") || lc.includes("password does not conform")) {
@@ -89,7 +89,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       if (result.success) {
         onPasswordReset();
       } else {
-        setError(mapBackendPasswordError(result.message, formData.newPassword));
+        setError(mapBackendPasswordError(result.message));
       }
     } catch (error) {
       console.error("ResetPasswordForm error:", error);

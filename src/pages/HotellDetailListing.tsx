@@ -436,15 +436,6 @@ const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
   );
 };
 
-const redIcon = L.icon({
-  iconUrl: defaultMarkerIconUrl,
-  shadowUrl,
-  iconSize: [20, 30],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41],
-});
-
 const MapAutoFix = ({ lat, lng }: { lat: number; lng: number }) => {
   const map = useMap();
 

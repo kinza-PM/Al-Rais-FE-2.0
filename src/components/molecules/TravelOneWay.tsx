@@ -74,8 +74,8 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   const [activeTab, setActiveTab] = useState<"price" | "flight" | "compare">(
     "price",
   );
-  const [filterData, setFilterData] = useState<any[]>([]);
-  const [filterDetail, setFilterDetail] = useState<any[]>([]);
+  const [filterData] = useState<any[]>([]);
+  const [, setFilterDetail] = useState<any[]>([]);
 
   const navigate = useNavigate();
 
