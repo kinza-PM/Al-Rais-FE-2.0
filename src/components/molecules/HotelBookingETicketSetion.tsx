@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Button from "../atoms/Button";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { generateMultiPagePDF } from "../../utils/pdfGenerator";
@@ -8,38 +8,67 @@ import { useHotelProxyImages } from "../../hooks/useHotelProxyImages";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useHotelRetrieve } from "../../hooks/useHotelBooking";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import { buildMyBookingsUrl } from "../../utils/myBookingsUrl";
+
+export type HotelListDownloadParams = {
+  bookingReferenceId: string;
+  searchKey: string;
+  bookingKey: string;
+};
 
 type HotelBookingETicketSectionProps = {
   bookingResponse?: any;
   hotelDetail?: any;
+  /**
+   * When set (e.g. from My Bookings list), only loads data off-screen and generates the same PDF as the receipt screen — no route change.
+   */
+  listDownload?: HotelListDownloadParams | null;
+  onListDownloadComplete?: () => void;
 };
 
 export default function HotelBookingETicketSetion({
   bookingResponse,
   hotelDetail,
+  listDownload = null,
+  onListDownloadComplete,
 }: HotelBookingETicketSectionProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const myBookingsReturn =
+    (location.state as { myBookingsSearch?: string } | null)
+      ?.myBookingsSearch ?? null;
+
+  const navigateToMyBookings = () => {
+    if (myBookingsReturn) {
+      navigate(`/my-bookings${myBookingsReturn}`);
+      return;
+    }
+    navigate(buildMyBookingsUrl({ mode: "hotels", status: "all" }));
+  };
 
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [retrieveResponse, setRetrieveResponse] = useState<any>(null);
+  const listDownloadGenRef = useRef(0);
 
   const { mutateAsync: retrieveHotelBookingAsync, isPending: isRetrieving } =
     useHotelRetrieve();
 
   const stateBookingReferenceId =
+    listDownload?.bookingReferenceId ||
     location.state?.bookingReferenceId ||
     location.state?.bookingResponse?.data?.[0]?.bookingReferenceId ||
     "";
 
   const stateSearchKey =
+    listDownload?.searchKey ||
     location.state?.searchKey ||
     location.state?.bookingResponse?.searchKey ||
     location.state?.bookingResponse?.data?.[0]?.searchKey ||
     "";
 
-  const stateBookingKey = location.state?.bookingKey ?? "";
+  const stateBookingKey =
+    listDownload?.bookingKey ?? location.state?.bookingKey ?? "";
 
   const fallbackBookingReferenceId =
     bookingResponse?.data?.[0]?.bookingReferenceId || "";
@@ -54,7 +83,13 @@ export default function HotelBookingETicketSetion({
 
   useEffect(() => {
     const initRetrieve = async () => {
-      if (!bookingReferenceId || !searchKey) return;
+      if (!bookingReferenceId || !searchKey) {
+        if (listDownload) {
+          toast.error("Missing booking information for receipt download.");
+          onListDownloadComplete?.();
+        }
+        return;
+      }
 
       try {
         const resp = await retrieveHotelBookingAsync({
@@ -69,6 +104,9 @@ export default function HotelBookingETicketSetion({
       } catch (error) {
         const err = extractErrorFromAxiosApiError(error);
         toast.error(err || "Failed to retrieve booking details");
+        if (listDownload) {
+          onListDownloadComplete?.();
+        }
       }
     };
 
@@ -78,6 +116,8 @@ export default function HotelBookingETicketSetion({
     searchKey,
     stateBookingKey,
     retrieveHotelBookingAsync,
+    listDownload,
+    onListDownloadComplete,
   ]);
 
   const activeResponse = retrieveResponse || bookingResponse;
@@ -223,6 +263,45 @@ export default function HotelBookingETicketSetion({
       setIsGeneratingPDF(false);
     }
   };
+
+  useEffect(() => {
+    if (!listDownload) {
+      listDownloadGenRef.current += 1;
+      return;
+    }
+    if (isRetrieving || !imagesLoaded || !bookingData) return;
+
+    const gen = ++listDownloadGenRef.current;
+
+    (async () => {
+      try {
+        await generateMultiPagePDF(
+          ["#hotel-ticket-content-clone"],
+          "hotel-ticket-pdf",
+          `hotel-ticket-${bookingRef || "booking"}.pdf`,
+        );
+        if (listDownloadGenRef.current === gen) {
+          toast.success("PDF downloaded successfully!");
+        }
+      } catch (error) {
+        console.error("Error generating PDF:", error);
+        if (listDownloadGenRef.current === gen) {
+          toast.error("Failed to generate PDF. Please try again.");
+        }
+      } finally {
+        if (listDownloadGenRef.current === gen) {
+          onListDownloadComplete?.();
+        }
+      }
+    })();
+  }, [
+    listDownload,
+    isRetrieving,
+    imagesLoaded,
+    bookingData,
+    bookingRef,
+    onListDownloadComplete,
+  ]);
 
   const NotchDivider = () => (
     <div className="relative mt-7 mb-10">
@@ -478,6 +557,79 @@ export default function HotelBookingETicketSetion({
     );
   };
 
+  const pdfExportBlock = (
+    <div
+      id="hotel-ticket-pdf"
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        left: "-20000px",
+        top: 0,
+        width: "576px",
+        overflow: "visible",
+        pointerEvents: "none",
+        zIndex: -1,
+      }}
+    >
+      <div
+        id="hotel-ticket-content-clone"
+        className="rounded-[16px] border bg-[#FFFFFF] px-2 pt-6 pb-6"
+        style={{ borderWidth: 1, borderColor: "#C2CAD6" }}
+      >
+        <TicketContent />
+        <NotchDivider />
+        <div className="grid w-full grid-cols-3 gap-2 px-2 sm:gap-3 sm:px-4">
+          <span
+            className="flex min-h-[46px] items-center justify-center px-2 text-center text-[11px] font-semibold leading-tight text-[#F2F2F3] sm:text-[12px]"
+            style={{
+              borderRadius: 100,
+              background:
+                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+            }}
+          >
+            Download as PDF
+          </span>
+          <span
+            className="flex min-h-[46px] items-center justify-center border border-[#2351A3] bg-white px-2 text-center text-[11px] font-semibold text-[#2351A3] sm:text-[13px]"
+            style={{
+              borderRadius: 100,
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Share
+          </span>
+          <span
+            className="flex min-h-[46px] items-center justify-center border border-[#C2CAD6] bg-[#F8FAFC] px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] sm:text-[12px]"
+            style={{
+              borderRadius: 100,
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Manage bookings
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+
+  if (listDownload) {
+    return (
+      <>
+        <Loader
+          show={isRetrieving || !imagesLoaded}
+          label={
+            isRetrieving
+              ? "Please wait while we are retrieving the booking."
+              : "Please wait while we are loading images."
+          }
+        />
+        <div className="relative w-full max-w-[560px] min-h-0" aria-hidden>
+          {pdfExportBlock}
+        </div>
+      </>
+    );
+  }
+
   return (
     <section className="mt-8 flex items-center justify-center px-4">
       <Loader
@@ -532,7 +684,7 @@ export default function HotelBookingETicketSetion({
             <Button
               type="button"
               overrideClasses
-              onClick={() => navigate("/my-bookings")}
+              onClick={navigateToMyBookings}
               className="flex min-h-[44px] w-full min-w-0 items-center justify-center border border-[#C2CAD6] bg-[#F8FAFC] px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] hover:border-[#2351A3] hover:bg-[#EEF4FF] sm:min-h-[46px] sm:text-[12px] sm:leading-snug"
               style={{
                 borderRadius: 100,
@@ -560,58 +712,7 @@ export default function HotelBookingETicketSetion({
           />
         )}
 
-        <div
-          id="hotel-ticket-pdf"
-          aria-hidden="true"
-          style={{
-            position: "absolute",
-            left: "-20000px",
-            top: 0,
-            width: "576px",
-            overflow: "visible",
-            pointerEvents: "none",
-            zIndex: -1,
-          }}
-        >
-          <div
-            id="hotel-ticket-content-clone"
-            className="rounded-[16px] border bg-[#FFFFFF] px-2 pt-6 pb-6"
-            style={{ borderWidth: 1, borderColor: "#C2CAD6" }}
-          >
-            <TicketContent />
-            <NotchDivider />
-            <div className="grid w-full grid-cols-3 gap-2 px-2 sm:gap-3 sm:px-4">
-              <span
-                className="flex min-h-[46px] items-center justify-center px-2 text-center text-[11px] font-semibold leading-tight text-[#F2F2F3] sm:text-[12px]"
-                style={{
-                  borderRadius: 100,
-                  background:
-                    "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                }}
-              >
-                Download as PDF
-              </span>
-              <span
-                className="flex min-h-[46px] items-center justify-center border border-[#2351A3] bg-white px-2 text-center text-[11px] font-semibold text-[#2351A3] sm:text-[13px]"
-                style={{
-                  borderRadius: 100,
-                  fontFamily: "Inter, sans-serif",
-                }}
-              >
-                Share
-              </span>
-              <span
-                className="flex min-h-[46px] items-center justify-center border border-[#C2CAD6] bg-[#F8FAFC] px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] sm:text-[12px]"
-                style={{
-                  borderRadius: 100,
-                  fontFamily: "Inter, sans-serif",
-                }}
-              >
-                Manage bookings
-              </span>
-            </div>
-          </div>
-        </div>
+        {pdfExportBlock}
       </div>
     </section>
   );

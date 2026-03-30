@@ -661,6 +661,23 @@ input[type="number"] {
   gap: 16px;
 }
 
+/* Hotel search (desktop): sidebar margin + filters scroll independently */
+@media (min-width: 1024px) {
+  .hotel-search-listing-page .contentWrapFlex {
+    margin-left: 30px;
+  }
+
+  .hotel-search-listing-page .contentWrapFlex .flightDetailFilter {
+    max-height: calc(100dvh - 260px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    align-self: stretch;
+    min-height: 0;
+  }
+}
+
 .setHeroImage {
   background-image: url("../images/travel_main_img2.png");
   /* background-size: cover; */

@@ -1,10 +1,14 @@
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useCallback } from "react";
 import { Tooltip } from "antd";
 import Button from "../atoms/Button";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import type { HotelBookingCardItem } from "../../utils/transformBookingData";
+import { markExpectMyBookingsQueryRestore } from "../../utils/myBookingsUrl";
+import HotelBookingETicketSetion, {
+  type HotelListDownloadParams,
+} from "./HotelBookingETicketSetion";
 import type { BookingStatus } from "./UserBookingsListing";
 
 const actionLinkClass =
@@ -79,7 +83,7 @@ function StayTimeline({
 }) {
   return (
     <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-10 px-2">
-      <div className="text-left">
+      <div className="text-left ml-0 lg:ml-[347px]">
         <div className="text-[14px] font-semibold text-[#0A0C0F] mb-3">
           Check-in
         </div>
@@ -110,7 +114,16 @@ function StayTimeline({
   );
 }
 
-function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
+function HotelBookingCard({
+  booking,
+  myBookingsSearch,
+  onRequestReceiptPdf,
+}: {
+  booking: HotelBookingCardItem;
+  /** Query string including "?", e.g. "?mode=hotels&status=all" — restored on back / in-app navigation */
+  myBookingsSearch: string;
+  onRequestReceiptPdf: (params: HotelListDownloadParams) => void;
+}) {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const isPending = booking.status === "Pending";
   const isExpired = booking.status === "Expired";
@@ -281,26 +294,30 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
             <>
               <Link
                 to="/hotel-booking-detail"
+                onClick={markExpectMyBookingsQueryRestore}
                 state={{
                   bookingReferenceId: booking.bookingRef,
                   searchKey: booking.searchKey || booking.bookingRef,
                   bookingKey: booking.bookingKey || booking.id,
+                  myBookingsSearch,
                 }}
                 className={`${actionLinkClass} pr-4`}
               >
                 View details
               </Link>
-              <Link
-                to="/hotel-booking-detail"
-                state={{
-                  bookingReferenceId: booking.bookingRef,
-                  searchKey: booking.searchKey || booking.bookingRef,
-                  bookingKey: booking.bookingKey || booking.id,
-                }}
-                className={`${actionLinkClass} px-4`}
+              <button
+                type="button"
+                className={`${actionLinkClass} px-4 bg-transparent border-0 p-0 font-inherit text-left`}
+                onClick={() =>
+                  onRequestReceiptPdf({
+                    bookingReferenceId: booking.bookingRef,
+                    searchKey: booking.searchKey || booking.bookingRef,
+                    bookingKey: booking.bookingKey || booking.id,
+                  })
+                }
               >
                 Download receipt
-              </Link>
+              </button>
               <Link
                 to="/customer-support"
                 className={`${actionLinkClass} px-4`}
@@ -327,6 +344,7 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
                 return (
                   <Link
                     to="/hotel-cancellation"
+                    onClick={markExpectMyBookingsQueryRestore}
                     state={{
                       bookingReferenceId: booking.bookingRef,
                       hotelName: booking.hotelName,
@@ -335,6 +353,7 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
                       cancellationDeadlineDate: booking.cancellationDeadlineDate,
                       totalPaid: booking.totalPaid,
                       currency: booking.currency,
+                      myBookingsSearch,
                     }}
                     className={`${actionLinkClass} pl-4 text-[#EA0029]`}
                   >
@@ -348,10 +367,12 @@ function HotelBookingCard({ booking }: { booking: HotelBookingCardItem }) {
           {booking.status !== "Confirmed" && (
             <Link
               to="/hotel-booking-detail"
+              onClick={markExpectMyBookingsQueryRestore}
               state={{
                 bookingReferenceId: booking.bookingRef,
                 searchKey: booking.searchKey || booking.bookingRef,
                 bookingKey: booking.bookingKey || booking.id,
+                myBookingsSearch,
               }}
               className={actionLinkClass}
             >
@@ -390,6 +411,19 @@ export default function UserHotelBookingsListing({
   filterStatus: "All" | BookingStatus;
   bookings?: HotelBookingCardItem[];
 }) {
+  const [searchParams] = useSearchParams();
+  const [receiptDownload, setReceiptDownload] =
+    useState<HotelListDownloadParams | null>(null);
+
+  const handleReceiptDownloadComplete = useCallback(() => {
+    setReceiptDownload(null);
+  }, []);
+
+  const myBookingsSearch = useMemo(() => {
+    const qs = searchParams.toString();
+    return qs ? `?${qs}` : "?mode=hotels&status=all";
+  }, [searchParams]);
+
   const list = useMemo(() => {
     if (!bookings || !Array.isArray(bookings) || bookings.length === 0)
       return [];
@@ -406,12 +440,24 @@ export default function UserHotelBookingsListing({
   }
 
   return (
-    <div className="mt-6 space-y-4 flex flex-col items-center">
-      {list.map((b) => (
-        <div key={b.id} className="w-full max-w-[1168px]">
-          <HotelBookingCard booking={b} />
-        </div>
-      ))}
-    </div>
+    <>
+      <div className="mt-6 space-y-4 flex flex-col items-center">
+        {list.map((b) => (
+          <div key={b.id} className="w-full max-w-[1168px]">
+            <HotelBookingCard
+              booking={b}
+              myBookingsSearch={myBookingsSearch}
+              onRequestReceiptPdf={setReceiptDownload}
+            />
+          </div>
+        ))}
+      </div>
+      {receiptDownload ? (
+        <HotelBookingETicketSetion
+          listDownload={receiptDownload}
+          onListDownloadComplete={handleReceiptDownloadComplete}
+        />
+      ) : null}
+    </>
   );
 }
