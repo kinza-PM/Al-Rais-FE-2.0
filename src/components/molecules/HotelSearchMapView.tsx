@@ -680,13 +680,17 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
           }
         />
 
-        <div className="min-h-screen">
-          <div className="mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:gap-5">
+        <div className="w-full">
+          <div className="mx-auto w-full">
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:gap-5">
               {!isMapExpanded && (
-                <div className="order-2 lg:order-1 col-span-1 flex flex-col gap-4 transition-all duration-300 ease-in-out lg:max-h-[calc(100vh-27vh)] lg:overflow-y-auto">
+                <div
+                  className="order-2 col-span-1 flex flex-col gap-4 overflow-y-auto overscroll-y-contain transition-all duration-300 ease-in-out [-webkit-overflow-scrolling:touch] max-h-[65vh] lg:order-1 lg:max-h-[calc(100vh-27vh)] lg:pr-1"
+                  role="region"
+                  aria-label="Hotel results"
+                >
                   {displayedHotels.map((hotel, index) => (
-                    <div key={hotel.hotelKey || index}>
+                    <div key={hotel.hotelKey || index} className="shrink-0">
                       <HotellGridCard
                         hotel={hotel}
                         isFavourite={!!favorites[hotel.hotelKey]}
@@ -702,9 +706,9 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
               <div
                 className={`${
                   isMapExpanded ? "lg:col-span-4" : "lg:col-span-3"
-                } order-1 lg:order-2 col-span-1 lg:sticky lg:top-5 h-[55vh] sm:h-[60vh] lg:h-[calc(100vh-27vh)] mb-3 lg:mb-4 transition-all duration-300 ease-in-out`}
+                } order-1 col-span-1 h-[55vh] min-h-[280px] max-h-[65vh] transition-all duration-300 ease-in-out sm:h-[60vh] lg:order-2 lg:sticky lg:top-5 lg:h-[calc(100vh-27vh)] lg:max-h-[calc(100vh-27vh)]`}
               >
-                <div className="h-full rounded-xl overflow-hidden relative">
+                <div className="relative h-full overflow-hidden rounded-xl">
                   <button
                     className={`hidden lg:block absolute top-1/2 -translate-y-1/2 z-[1000] bg-[#F2F2F3] py-4 px-5 border border-[#FFFFFF] ${
                       isMapExpanded

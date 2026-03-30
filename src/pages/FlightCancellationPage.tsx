@@ -8,6 +8,7 @@ import {
 } from "../hooks/useFlightCancellation";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
+import { buildMyBookingsUrl } from "../utils/myBookingsUrl";
 
 const cancelReasonOptions = [
   { value: "change_of_plans", label: "Change of plans" },
@@ -167,7 +168,7 @@ const FlightCancellationPage: React.FC = () => {
 
       if (response?.meta?.success) {
         toast.success("Flight cancelled successfully");
-        navigate("/my-bookings");
+        navigate(buildMyBookingsUrl({ mode: "flights", status: "all" }));
       } else {
         toast.error(response?.meta?.statusMessage || "Cancellation failed");
       }

@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/atoms/Button";
 import HotelBookingETicketSetion from "../components/molecules/HotelBookingETicketSetion";
+import { buildMyBookingsUrl } from "../utils/myBookingsUrl";
 
 /**
  * Page to view hotel booking details (receipt) from My Bookings.
@@ -13,9 +14,19 @@ const HotelBookingDetailPage = () => {
     bookingReferenceId?: string;
     searchKey?: string;
     bookingKey?: string;
+    /** e.g. "?mode=hotels&status=pending" — matches URL when leaving My Bookings */
+    myBookingsSearch?: string;
   };
 
   const { bookingReferenceId, searchKey } = state;
+
+  const navigateBackToMyBookings = () => {
+    if (state.myBookingsSearch) {
+      navigate(`/my-bookings${state.myBookingsSearch}`);
+      return;
+    }
+    navigate(buildMyBookingsUrl({ mode: "hotels", status: "all" }));
+  };
 
   if (!bookingReferenceId || !searchKey) {
     return (
@@ -25,7 +36,7 @@ const HotelBookingDetailPage = () => {
         </p>
         <Button
           type="button"
-          onClick={() => navigate("/my-bookings")}
+          onClick={navigateBackToMyBookings}
           overrideClasses
         >
           Back to My Bookings
@@ -39,7 +50,7 @@ const HotelBookingDetailPage = () => {
       <div className="mb-6">
         <Button
           type="button"
-          onClick={() => navigate("/my-bookings")}
+          onClick={navigateBackToMyBookings}
           className="text-[#5383DA] hover:underline bg-transparent border-none"
           overrideClasses
         >

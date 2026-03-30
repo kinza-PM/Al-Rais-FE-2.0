@@ -418,7 +418,7 @@ const HotelSearchListing: React.FC = () => {
       />
       <div className="topHeaderSetting"></div>
 
-      <div className="flightDetailTemplateWrap">
+      <div className="flightDetailTemplateWrap hotel-search-listing-page">
         <div className="bottomHeaderSetting hotelSearchFilterCard">
           {/* Grid: Row 1 (View, Country, City, Dates) | Row 2 (Nationality, Travellers, Star Rating, Search) - widths aligned */}
           <div className="hotel-filter-grid">
@@ -634,10 +634,7 @@ const HotelSearchListing: React.FC = () => {
           </div>
         )}
 
-        <div
-          className="contentWrapFlex flex-col lg:flex-row"
-          style={{ marginLeft: screens.lg ? "30px" : "0px" }}
-        >
+        <div className="contentWrapFlex flex-col lg:flex-row">
           {screens.lg && (
             <div className="flightDetailFilter">
               <HotelsSearchFilter

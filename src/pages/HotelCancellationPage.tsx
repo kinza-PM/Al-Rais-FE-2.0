@@ -6,6 +6,7 @@ import { useHotelCancellationCharges } from "../hooks/useHotelSearch";
 import { useHotelCancellation } from "../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
+import { buildMyBookingsUrl } from "../utils/myBookingsUrl";
 
 const cancelReasonOptions = [
   { value: "change_of_plans", label: "Change of plans" },
@@ -22,6 +23,7 @@ type CancelLocationState = {
   cancellationDeadline?: string;
   totalPaid?: number;
   currency?: string;
+  myBookingsSearch?: string;
 };
 
 function CancelItemCard({
@@ -162,7 +164,11 @@ const HotelCancellationPage: React.FC = () => {
 
       if (response?.meta?.success) {
         toast.success("Booking cancelled successfully");
-        navigate("/my-bookings");
+        navigate(
+          state.myBookingsSearch
+            ? `/my-bookings${state.myBookingsSearch}`
+            : buildMyBookingsUrl({ mode: "hotels", status: "all" }),
+        );
       } else {
         toast.error(response?.meta?.statusMessage || "Cancellation failed");
       }
@@ -185,7 +191,7 @@ const HotelCancellationPage: React.FC = () => {
             Cancel booking so your reservation details are included.
           </p>
           <Link
-            to="/my-bookings"
+            to={buildMyBookingsUrl({ mode: "hotels", status: "all" })}
             className="mt-6 inline-flex text-[14px] font-semibold text-[#2351A3] hover:underline"
           >
             Go to My bookings

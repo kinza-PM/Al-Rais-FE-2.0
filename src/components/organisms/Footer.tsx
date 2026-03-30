@@ -1,6 +1,7 @@
 import React from "react";
 import footerLogo from "../../assets/images/footerLogo.png";
-import { Link } from "react-router-dom"; // Add this import
+import { Link } from "react-router-dom";
+import { buildMyBookingsUrl } from "../../utils/myBookingsUrl";
 
 const FOOTER_MAIN_HEIGHT = 242;
 
@@ -20,7 +21,7 @@ const SERVICES_LINKS = [
   { label: "Book Hotels", link: "/search-hotel" },
   { label: "Rent a car", link: null },
   { label: "Buy travel packages", link: "/packages" },
-  { label: "Manage your bookings", link: "/my-bookings" },
+  { label: "Manage your bookings", link: buildMyBookingsUrl() },
 ];
 
 const HELP_LINKS = [

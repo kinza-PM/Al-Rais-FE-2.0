@@ -23,6 +23,7 @@ import FlagUSCircle from "../../assets/images/flagofunitedstate.png";
 import BasketIcon from "../../assets/images/Basket.png";
 import CurrencyChevronIcon from "../../assets/images/Icon.png";
 import { useUserProfileStore } from "../../store/userProfileStore";
+import { buildMyBookingsUrl } from "../../utils/myBookingsUrl";
 
 const { Header } = Layout;
 
@@ -176,7 +177,9 @@ const AppHeader: React.FC<HeaderProps> = ({
       ? [
           {
             key: "my-bookings",
-            label: <Link to="/my-bookings">My bookings</Link>,
+            label: (
+              <Link to={buildMyBookingsUrl()}>My bookings</Link>
+            ),
           },
         ]
       : []),
