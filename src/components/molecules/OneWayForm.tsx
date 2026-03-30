@@ -145,7 +145,7 @@ const OneWayForm: React.FC<Props> = ({
   );
 
   return (
-    <div className="flex items-end gap-4">
+    <div className="flex flex-col md:flex-row items-stretch md:items-end gap-4">
       <TravelRoutePicker
         options={countries}
         loading={loadingCountries}
@@ -159,7 +159,7 @@ const OneWayForm: React.FC<Props> = ({
         labels={{ from: "From", to: "To" }}
         placeholders={{ from: "Please select", to: "Please select" }}
         disableSameSelection
-        widthClass="w-[190px]"
+        widthClass="w-full md:w-[190px]"
         fromError={fromError || undefined}
         toError={toError || undefined}
         onLoadMore={() => {
@@ -172,7 +172,7 @@ const OneWayForm: React.FC<Props> = ({
       />
 
       {/* Departure date */}
-      <div className="w-[220px]">
+      <div className="w-full md:w-[220px]">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
@@ -211,7 +211,7 @@ const OneWayForm: React.FC<Props> = ({
       </div>
 
       {/* Passengers */}
-      <div className="w-[210px] relative">
+      <div className="w-full md:w-[210px] relative">
         <label className="flex items-center gap-2 text-[12px] text-[#3D495C] mb-1">
           Passengers
           <span className="relative inline-flex group/info">
@@ -250,7 +250,7 @@ const OneWayForm: React.FC<Props> = ({
       </div>
 
       {/* Cabin class */}
-      <div className="w-[210px] relative">
+      <div className="w-full md:w-[210px] relative">
         <SearchableDropdown
           options={cabinClasses.map((cc) => ({
             id: cc.id,

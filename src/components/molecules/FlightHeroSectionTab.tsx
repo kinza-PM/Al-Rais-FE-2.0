@@ -415,7 +415,7 @@ const FlightHeroSection: React.FC = () => {
           </div>
 
           {/* ── Form fields + Search button ── */}
-          <div className="px-10 pt-5 pb-5">
+          <div className="px-4 sm:px-6 md:px-10 pt-5 pb-5">
             {trip === "oneway" && (
               <OneWayForm
                 countries={countries as AirportOption[]}
@@ -547,9 +547,10 @@ const FlightHeroSection: React.FC = () => {
             {/* ── Search button ── */}
             <div className="flex justify-center mt-4">
               <button
-                className="text-[16px] font-medium text-white"
+                className="text-[16px] font-medium text-white w-full sm:w-auto"
                 style={{
-                  width: 137,
+                  width: "auto",
+                  minWidth: 137,
                   height: 47,
                   borderRadius: 100,
                   padding: "14px 40px",

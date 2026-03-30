@@ -176,7 +176,7 @@ const MultiCityForm: React.FC<Props> = ({
     <div className="px-6 pb-6 pt-3">
       {/* ROW 1 — Passengers only (cabin is per flight row below) */}
       <div className="flex gap-3 mb-5 justify-center">
-        <div className="relative w-[200px]">
+        <div className="relative w-full sm:w-[200px]">
           <label className="flex items-center gap-2 text-[12px] text-[#3D495C] mb-1">
             Passengers
             <span className="relative inline-flex group/info">
@@ -222,7 +222,7 @@ const MultiCityForm: React.FC<Props> = ({
             Flight {String(idx + 1).padStart(2, "0")}
           </p>
           {/* grid: From | swap | To (flex) | Departure date | Cabin | Remove */}
-          <div className="grid items-center gap-3 md:gap-4 md:grid-cols-[230px_47px_minmax(230px,1fr)_230px_220px_40px]">
+          <div className="grid grid-cols-1 items-center gap-3 md:gap-4 md:grid-cols-[230px_47px_minmax(230px,1fr)_230px_220px_40px]">
             <TravelRoutePicker
               options={countries}
               loading={loadingCountries}
@@ -245,7 +245,7 @@ const MultiCityForm: React.FC<Props> = ({
               labels={{ from: "From", to: "To" }}
               placeholders={{ from: "Please select", to: "Please select" }}
               disableSameSelection
-              widthClass="w-[230px]"
+              widthClass="w-full md:w-[230px]"
               fromError={(!leg.fromCode?.trim() && fromError) || undefined}
               toError={(!leg.toCode?.trim() && toError) || undefined}
               onLoadMore={() => {
@@ -255,7 +255,7 @@ const MultiCityForm: React.FC<Props> = ({
               loadingMore={countriesLoadingMore}
             />
 
-            <div className="w-[230px]">
+            <div className="w-full md:w-[230px]">
               <label className="block text-[12px] text-[#3D495C] mb-1">
                 Departure date
               </label>
@@ -275,7 +275,7 @@ const MultiCityForm: React.FC<Props> = ({
               />
             </div>
 
-            <div className="w-[220px]">
+            <div className="w-full md:w-[220px]">
               <SearchableDropdown
                 options={cabinClasses.map((cc) => ({
                   id: cc.id,

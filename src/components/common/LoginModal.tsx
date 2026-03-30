@@ -74,10 +74,13 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
 
   return (
     <Modal
-      closable={false}
+      closable
       open={Boolean(showModal) && internalOpen}
       footer={null}
       centered
+      maskClosable
+      keyboard
+      onCancel={handleClose}
       className="compareModal"
       styles={{
         mask: modalOverlayStyles,
@@ -96,7 +99,7 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
     >
       <div className="relative flex w-full justify-center">
         {/* Close button (top-right) — anchored inside modal content */}
-        {/* <button
+        <button
           type="button"
           onClick={handleClose}
           className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#3D495C] shadow hover:bg-white"
@@ -110,7 +113,7 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
               strokeLinecap="round"
             />
           </svg>
-        </button> */}
+        </button>
 
         <div className="w-full max-w-[468px]">
           {showLoginFailed ? (

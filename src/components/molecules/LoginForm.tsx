@@ -42,8 +42,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "email" ? filterEmailInput(value) : value,
+      [name]:
+        name === "email"
+          ? filterEmailInput(value).slice(0, 254)
+          : value,
     }));
+    if (name === "email" && !touched.email) {
+      setTouched((prev) => ({ ...prev, email: true }));
+    }
     if (error) clearError();
   };
 
@@ -371,6 +377,19 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 error={emailHasError}
                 rounded="xl"
                 inputProps={{
+                  maxLength: 254,
+                  autoComplete: "email",
+                  inputMode: "email",
+                  spellCheck: false,
+                  onPaste: (e) => {
+                    const pasted = (e.clipboardData?.getData("text") || "").trim();
+                    const sanitized = filterEmailInput(pasted).slice(0, 254);
+                    e.preventDefault();
+                    setFormData((prev) => ({ ...prev, email: sanitized }));
+                    if (!touched.email) {
+                      setTouched((prev) => ({ ...prev, email: true }));
+                    }
+                  },
                   "aria-invalid":
                     touched.email && emailHasError ? "true" : "false",
                   "aria-describedby":

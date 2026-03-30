@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import LoginForm from '../molecules/LoginForm';
 import SignupForm from '../molecules/SignupForm';
 import ForgotPasswordForm from '../molecules/ForgotPasswordForm';
@@ -57,7 +58,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
   const handlePasswordReset = () => {
     // Show success message and redirect to login
-    alert('Password reset successfully! Please log in with your new password.');
+    toast.success('Password reset successfully! Please log in with your new password.');
     handleBackToLogin();
   };
 

@@ -168,8 +168,14 @@ const SignupForm: React.FC<SignupFormProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "email" ? filterEmailInput(value) : value,
+      [name]:
+        name === "email"
+          ? filterEmailInput(value).slice(0, 254)
+          : value,
     }));
+    if (name === "email" && !touched.email) {
+      setTouched((prev) => ({ ...prev, email: true }));
+    }
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -692,6 +698,21 @@ const SignupForm: React.FC<SignupFormProps> = ({
                       error={emailHasError}
                       rounded="xl"
                       required
+                      inputProps={{
+                        maxLength: 254,
+                        autoComplete: "email",
+                        inputMode: "email",
+                        spellCheck: false,
+                        onPaste: (e) => {
+                          const pasted = (e.clipboardData?.getData("text") || "").trim();
+                          const sanitized = filterEmailInput(pasted).slice(0, 254);
+                          e.preventDefault();
+                          setFormData((prev) => ({ ...prev, email: sanitized }));
+                          if (!touched.email) {
+                            setTouched((prev) => ({ ...prev, email: true }));
+                          }
+                        },
+                      }}
                     />
                   )}
                   {touched.email && emailHasError && (

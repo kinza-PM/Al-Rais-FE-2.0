@@ -8,11 +8,14 @@ type Props = {
   warningSeconds?: number; // default 120s
 };
 
+import { useAuth } from "../hooks/useAuth";
+
 export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
   const [open, setOpen] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
   const timersRef = useRef<number[]>([]);
   const expMsRef = useRef<number | null>(null);
+  const { isAuthenticated } = useAuth();
 
   const warningMs = useMemo(() => warningSeconds * 1000, [warningSeconds]);
 
@@ -27,6 +30,8 @@ export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
     expMsRef.current = null;
 
     try {
+      // Guard: Never show or schedule warnings for guests
+      if (!isAuthenticated) return;
       const session = await fetchAuthSession();
       const exp =
         (session.tokens?.idToken?.payload?.exp as number | undefined) ??
@@ -106,6 +111,9 @@ export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
     await authServiceSingleton.signOut();
     window.location.href = "/auth";
   };
+
+  // If user is not authenticated, never render the modal (prevents accidental flashes)
+  if (!isAuthenticated) return null;
 
   return (
     <Modal
