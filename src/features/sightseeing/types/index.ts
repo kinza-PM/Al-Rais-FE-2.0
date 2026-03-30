@@ -68,6 +68,15 @@ export type SightseeingActivityDetailView = {
   name: string;
   currency: string;
   type?: string;
+  /** Gallery + hero — deduped HTTP(S) URLs from supplier `content.media` / `image`, etc. */
+  imageUrls: string[];
+  rating: number;
+  reviewCount: number;
+  /** e.g. "6 Hours" for badge row */
+  durationLabel: string;
+  /** Ordered pills: e.g. Best Seller, Free Cancellation, duration */
+  badges: string[];
+  description?: string;
   rateOptions: SightseeingActivityDetailRate[];
   raw: unknown;
 };

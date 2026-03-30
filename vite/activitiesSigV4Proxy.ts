@@ -419,17 +419,41 @@ function mockActivitiesDetailResponse(
   const safeFrom = from || "2026-01-01";
   const safeTo = to || "2026-01-02";
   const keyTail = code.replace(/[^a-zA-Z0-9]/g, "").slice(0, 24) || "KEY";
+  const m = /^([A-Z]{2,})-MOCK-(\d+)$/i.exec(code.trim());
+  const dest = m ? m[1] : "MOCK";
+  const idx = m ? parseInt(m[2], 10) - 1 : 0;
+  const rating = Math.min(
+    5,
+    Math.round((4.1 + (idx % 10) * 0.07) * 10) / 10,
+  );
+  const reviewCount = 3500 + idx * 41;
+  const media = Array.from({ length: 10 }, (_, j) => ({
+    type: "IMAGE",
+    url: `https://picsum.photos/seed/${encodeURIComponent(
+      `ar-detail-${dest}-${idx}-g-${j}`,
+    )}/900/600`,
+  }));
+  const title = mockTitleFromActivityCode(code);
   return {
     activity: {
       code,
-      name: mockTitleFromActivityCode(code),
+      name: title,
       type: "TICKET",
       currency: "USD",
+      rating,
+      reviewCount,
+      content: {
+        name: title,
+        description:
+          "Experience golden-hour dunes, professional drivers, camel moments, and a BBQ dinner under the stars. Hotel pickup and drop-off included.",
+        media,
+      },
       modalities: [
         {
           code: "STD",
           name: "Standard",
           destinationCode: "MOCK",
+          duration: 6 / 24,
           rates: [
             {
               rateCode: "GENERIC",
@@ -440,7 +464,12 @@ function mockActivitiesDetailResponse(
                     {
                       from: safeFrom,
                       to: safeTo,
-                      cancellationPolicies: [],
+                      cancellationPolicies: [
+                        {
+                          amount: 0,
+                          description: "Free cancellation up to 24h before",
+                        },
+                      ],
                     },
                   ],
                   sessions: [{ code: "MORNING", name: "Morning session" }],
@@ -604,7 +633,7 @@ export type ActivitiesProxyTarget = {
 
 export function parseActivitiesTargetFromEnv(base: string): ActivitiesProxyTarget {
   const fallback =
-    "https://rd2dteyt9c.execute-api.eu-west-1.amazonaws.com/dev";
+    "https://vfp63x1v88.execute-api.eu-west-1.amazonaws.com/qa";
   const u = new URL((base || fallback).trim());
   const host = u.hostname;
   let stagePath = u.pathname.replace(/\/$/, "");

@@ -1,15 +1,125 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
-import { useMutation } from "@tanstack/react-query";
 import "../assets/css/travel.css";
 import { useActivityDetail } from "../hooks/sightseeing/useActivityDetail";
+import SightseeingDetailGallery from "../components/molecules/sightseeing/SightseeingDetailGallery";
+import { SightseeingInclusionsTable } from "../components/molecules/sightseeing/SightseeingInclusionsTable";
+import { SightseeingMeetingPickupSection } from "../components/molecules/sightseeing/SightseeingMeetingPickupSection";
+import { SightseeingGuestReviewsSection } from "../components/molecules/sightseeing/SightseeingGuestReviewsSection";
 import {
-  buildActivitiesPreConfirmBody,
-  defaultActivityAvailabilityDateRange,
-  postPreConfirmBooking,
-} from "../services/api/activitiesSearch";
+  SIGHTSEEING_CTA_GRADIENT,
+  SIGHTSEEING_DETAIL_TAB_LABELS,
+  SIGHTSEEING_DETAIL_TAB_ORDER,
+  SIGHTSEEING_FIGMA_ABOUT_PARAGRAPHS,
+  SIGHTSEEING_FIGMA_TOUR_HIGHLIGHTS,
+  type SightseeingDetailTabId,
+} from "../components/molecules/sightseeing/sightseeingDetailCopy";
+import { defaultActivityAvailabilityDateRange } from "../services/api/activitiesSearch";
 import type { SightseeingActivity } from "../features/sightseeing/types";
+
+const FAVORITES_STORAGE_KEY = "alrais-sight-favorites";
+
+function readFavoriteCodes(): Set<string> {
+  try {
+    const raw = localStorage.getItem(FAVORITES_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.map((x) => String(x)));
+  } catch {
+    return new Set();
+  }
+}
+
+function reviewCountDisplay(n: number): string {
+  if (!Number.isFinite(n)) return "0";
+  const i = Math.max(0, Math.floor(n));
+  if (i < 1000) return String(i);
+  return i.toLocaleString("en-US");
+}
+
+function formatSightseeingPrice(currency: string, amount: number): string {
+  const n = amount.toFixed(0);
+  switch (currency.trim().toUpperCase()) {
+    case "USD":
+      return `$${n}`;
+    case "EUR":
+      return `€${n}`;
+    case "GBP":
+      return `£${n}`;
+    default:
+      return `${currency.trim()} ${n}`;
+  }
+}
+
+function formatMoneyDecimals(currency: string, amount: number): string {
+  const n = amount.toFixed(2);
+  switch (currency.trim().toUpperCase()) {
+    case "USD":
+      return `$${n}`;
+    case "EUR":
+      return `€${n}`;
+    case "GBP":
+      return `£${n}`;
+    default:
+      return `${currency.trim()} ${n}`;
+  }
+}
+
+function ClockIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" stroke="#94A3B8" strokeWidth="1.5" />
+      <path
+        d="M12 8v4l3 2"
+        stroke="#94A3B8"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+const ADDON_FALCON_USD = 50;
+
+function StarRow({ rating }: { rating: number }) {
+  const r = Math.min(5, Math.max(0, rating));
+  const full = Math.floor(r + 1e-6);
+  const partial = r - full;
+  return (
+    <div className="flex items-center gap-0.5" aria-label={`Rated ${r} out of 5`}>
+      {Array.from({ length: 5 }, (_, i) => {
+        if (i < full) {
+          return (
+            <span key={i} className="text-[#F0B100]">
+              ★
+            </span>
+          );
+        }
+        if (i === full && partial > 0.15) {
+          return (
+            <span key={i} className="text-[#F0B100]/80">
+              ★
+            </span>
+          );
+        }
+        return (
+          <span key={i} className="text-[#E5E7EB]">
+            ★
+          </span>
+        );
+      })}
+    </div>
+  );
+}
 
 type DetailLocationState = {
   from?: string;
@@ -21,6 +131,66 @@ type DetailLocationState = {
     destinationCode?: string;
   };
 };
+
+type InfoCard = { label: string; value: string };
+
+/** Figma: two-line label + gray minus / count / solid blue plus */
+function TravellerStepRow({
+  label,
+  ageRange,
+  value,
+  min,
+  onDec,
+  onInc,
+}: {
+  label: string;
+  ageRange: string;
+  value: number;
+  min: number;
+  onDec: () => void;
+  onInc: () => void;
+}) {
+  const decDisabled = value <= min;
+  const countBlue = label === "Adults" ? value >= 1 : value > 0;
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl bg-[#F2F4F7] px-4 py-3">
+      <div>
+        <p className="text-[14px] font-bold text-[#0A0C0F]">{label}</p>
+        <p className="text-[12px] text-[#64748B]">{ageRange}</p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={onDec}
+          disabled={decDisabled}
+          className={
+            decDisabled
+              ? "flex h-8 w-8 shrink-0 cursor-not-allowed items-center justify-center rounded-full border border-[#E8ECF0] bg-[#F8FAFC] text-[18px] font-medium leading-none text-[#CBD5E1]"
+              : "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#C2CAD6] bg-white text-[18px] font-medium leading-none text-[#64748B] hover:bg-white"
+          }
+          aria-label="Decrease"
+        >
+          −
+        </button>
+        <span
+          className={`min-w-[2ch] text-center text-[15px] font-semibold tabular-nums ${
+            countBlue ? "text-[#2351A3]" : "text-[#64748B]"
+          }`}
+        >
+          {String(value).padStart(2, "0")}
+        </span>
+        <button
+          type="button"
+          onClick={onInc}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2351A3] text-[18px] font-medium leading-none text-white hover:bg-[#1B407F]"
+          aria-label="Increase"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
 
 const SightseeingActivityDetailPage: React.FC = () => {
   const { activityCode: activityCodeParam } = useParams<{
@@ -50,11 +220,49 @@ const SightseeingActivityDetailPage: React.FC = () => {
   const preview = state.preview;
 
   const [selectedRateKey, setSelectedRateKey] = useState<string>("");
-  const [surname, setSurname] = useState("");
-  const [givenName, setGivenName] = useState("");
-  const [email, setEmail] = useState("");
+  const [activeTab, setActiveTab] = useState<SightseeingDetailTabId>("overview");
+  const [adults, setAdults] = useState(1);
+  const [teens, setTeens] = useState(0);
+  const [children, setChildren] = useState(0);
+  const [pickupTime, setPickupTime] = useState("");
+  const [falconAddon, setFalconAddon] = useState(false);
+
+  const rangeStart = useMemo(() => new Date(range.from), [range.from]);
+  const [calendarMonth, setCalendarMonth] = useState(() =>
+    new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1),
+  );
+
+  useEffect(() => {
+    setCalendarMonth(
+      new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1),
+    );
+  }, [rangeStart]);
 
   const rateOptions = detail?.rateOptions ?? [];
+
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  useEffect(() => {
+    if (!activityCode) return;
+    setIsFavorite(readFavoriteCodes().has(activityCode));
+  }, [activityCode]);
+
+  const toggleFavorite = useCallback(() => {
+    if (!activityCode) return;
+    const next = readFavoriteCodes();
+    if (next.has(activityCode)) {
+      next.delete(activityCode);
+      toast.success("Removed from favorites");
+    } else {
+      next.add(activityCode);
+      toast.success("Saved to favorites");
+    }
+    localStorage.setItem(
+      FAVORITES_STORAGE_KEY,
+      JSON.stringify([...next]),
+    );
+    setIsFavorite(next.has(activityCode));
+  }, [activityCode]);
 
   useEffect(() => {
     if (rateOptions.length > 0 && !selectedRateKey) {
@@ -62,55 +270,247 @@ const SightseeingActivityDetailPage: React.FC = () => {
     }
   }, [rateOptions, selectedRateKey]);
 
-  const preConfirm = useMutation({
-    mutationFn: (body: Record<string, unknown>) => postPreConfirmBooking(body),
-    onSuccess: (raw) => {
-      const o =
-        raw && typeof raw === "object" && !Array.isArray(raw)
-          ? (raw as Record<string, unknown>)
-          : null;
-      const booking = o?.booking as Record<string, unknown> | undefined;
-      const ref =
-        booking && typeof booking.reference === "string"
-          ? booking.reference
-          : JSON.stringify(raw).slice(0, 120);
-      toast.success(`Preconfirm OK — reference: ${ref}`);
-    },
-    onError: (e: Error) => {
-      toast.error(e.message || "Preconfirm failed");
-    },
+  const displayTitle = detail?.name || preview?.title || activityCode;
+
+  const imageUrls = useMemo(() => {
+    const fromApi = detail?.imageUrls?.filter((u) => u?.trim()) ?? [];
+    if (fromApi.length > 0) return fromApi;
+    if (preview?.imageSrc?.trim()) return [preview.imageSrc.trim()];
+    return [];
+  }, [detail?.imageUrls, preview?.imageSrc]);
+
+  const displayRating =
+    detail != null ? detail.rating : preview?.rating ?? 0;
+  const displayReviewCount =
+    detail != null ? detail.reviewCount : preview?.reviewCount ?? 0;
+
+  const badgeRow = useMemo(() => {
+    const fromApi = detail?.badges?.filter(Boolean) ?? [];
+    if (fromApi.length > 0) return fromApi;
+    if (!preview) return [];
+    const out: string[] = [];
+    if (preview.reviewCount >= 500 && preview.rating >= 4.5) {
+      out.push("Best Seller");
+    }
+    if (preview.durationLabel) out.push(preview.durationLabel);
+    return out;
+  }, [detail?.badges, preview]);
+
+  const selectedRate = useMemo(
+    () =>
+      rateOptions.find((r) => r.rateKey === selectedRateKey) ?? rateOptions[0],
+    [rateOptions, selectedRateKey],
+  );
+
+  const displayPriceAmount = selectedRate?.amount ?? preview?.price ?? 0;
+  const displayCurrency =
+    selectedRate?.currency ??
+    preview?.currency ??
+    detail?.currency ??
+    "USD";
+
+  const infoCards = useMemo((): InfoCard[] => {
+    const duration =
+      detail?.durationLabel ||
+      detail?.badges?.find((b) => /hour|day|hrs/i.test(b)) ||
+      preview?.durationLabel ||
+      "6 Hours";
+    const cancel =
+      detail?.badges?.some((b) => /free.*cancel/i.test(b)) ||
+      badgeRow.some((b) => /free.*cancel/i.test(b))
+        ? "Free < 24 hrs"
+        : "See policy";
+    return [
+      { label: "Duration", value: duration },
+      {
+        label: "Group Size",
+        value:
+          preview?.groupSize === "private"
+            ? "Private"
+            : preview?.groupSize === "large"
+              ? "Up to 40"
+              : "Up to 16",
+      },
+      { label: "Languages", value: "EN, AR, RU" },
+      { label: "Pickup", value: "Hotel included" },
+      { label: "Min. Age", value: "4 years" },
+      { label: "Cancellation", value: cancel },
+    ];
+  }, [detail, preview, badgeRow]);
+
+  const monthLabel = calendarMonth.toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
   });
 
-  const onPreConfirm = () => {
-    const rk = selectedRateKey || rateOptions[0]?.rateKey;
-    if (!rk) {
-      toast.error("Select a rate (run detail call with real API if empty).");
-      return;
-    }
-    if (!surname.trim() || !givenName.trim() || !email.trim()) {
-      toast.error("Enter holder surname, given name, and email.");
-      return;
-    }
-    const body = buildActivitiesPreConfirmBody({
-      clientReference: `WEB-${Date.now()}`,
-      rateKey: rk,
-      from: range.from,
-      to: range.to,
-      holder: {
-        surname: surname.trim(),
-        name: givenName.trim(),
-        email: email.trim(),
-      },
-    });
-    preConfirm.mutate(body);
+  const minBookableMonth = useMemo(
+    () => new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1),
+    [rangeStart],
+  );
+  const maxBookableMonth = useMemo(() => {
+    const d = new Date(rangeStart);
+    d.setMonth(d.getMonth() + 18);
+    return new Date(d.getFullYear(), d.getMonth(), 1);
+  }, [rangeStart]);
+  const currentMonthStart = useMemo(
+    () => new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1),
+    [calendarMonth],
+  );
+  const canShiftMonthPrev =
+    currentMonthStart.getTime() > minBookableMonth.getTime();
+  const canShiftMonthNext =
+    currentMonthStart.getTime() < maxBookableMonth.getTime();
+
+  const shiftMonth = (delta: number) => {
+    if (delta < 0 && !canShiftMonthPrev) return;
+    if (delta > 0 && !canShiftMonthNext) return;
+    setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
   };
 
-  const displayTitle = detail?.name || preview?.title || activityCode;
-  const displayImage = preview?.imageSrc;
+  const travellerCount = adults + teens + children;
+  const bookingSubtotal = useMemo(() => {
+    const base = displayPriceAmount;
+    if (!Number.isFinite(base) || base <= 0) return 0;
+    return base * adults + base * 0.9 * teens + base * 0.75 * children;
+  }, [displayPriceAmount, adults, teens, children]);
+  const addonLineTotal = falconAddon ? ADDON_FALCON_USD * travellerCount : 0;
+  const bookingGrandTotal = bookingSubtotal + addonLineTotal;
+
+  const clampCount = (n: number) => Math.min(9, Math.max(0, n));
+
+  const onShare = useCallback(async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: displayTitle, url });
+        return;
+      } catch {
+        /* user cancel or unavailable */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard");
+    } catch {
+      toast.error("Could not copy link");
+    }
+  }, [displayTitle]);
+
+  const onReadAllReviews = useCallback(() => {
+    setActiveTab("reviews");
+    window.setTimeout(() => {
+      document
+        .getElementById("sightseeing-guest-reviews")
+        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+  }, []);
+
+  const onBookNow = useCallback(() => {
+    toast.success("Checkout will open here once booking is connected.");
+  }, []);
+
+  const tabPanel = () => {
+    if (activeTab === "overview") {
+      return (
+        <div className="w-full max-w-full min-w-0">
+          <h2 className="text-[20px] font-bold tracking-tight text-[#0A0C0F]">
+            About this activity
+          </h2>
+          <div className="mt-5 space-y-5 text-[16px] font-normal leading-6 tracking-normal text-[#0A0C0F]">
+            {SIGHTSEEING_FIGMA_ABOUT_PARAGRAPHS.map((p) => (
+              <p key={p.slice(0, 24)}>{p}</p>
+            ))}
+          </div>
+          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {infoCards.map((card) => (
+              <div
+                key={card.label}
+                className="flex h-[74px] max-w-[280px] flex-col justify-center gap-[5px] rounded-lg bg-[#F2F4F7] p-[15px]"
+              >
+                <p className="text-[12px] font-medium text-[#64748B]">
+                  {card.label}
+                </p>
+                <p className="text-[15px] font-bold text-[#0A0C0F]">
+                  {card.value}
+                </p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-10 flex max-w-[798px] flex-col gap-[10px]">
+            <h2 className="min-h-[37px] text-[20px] font-bold leading-tight text-[#0A0C0F]">
+              Tour highlights
+            </h2>
+            <ul className="m-0 flex list-none flex-col gap-[10px] p-0">
+              {SIGHTSEEING_FIGMA_TOUR_HIGHLIGHTS.map((line, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-[10px]"
+                >
+                  <span
+                    className="flex h-[37px] w-[37px] shrink-0 items-center justify-center rounded-full bg-[#A7C0EC] text-center text-[14px] font-semibold leading-none tracking-normal text-[#2351A3]"
+                    aria-hidden
+                  >
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0 pt-0.5 text-[16px] font-normal leading-6 text-[#0A0C0F]">
+                    {line}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="mt-10">
+            <SightseeingInclusionsTable />
+          </div>
+          <div className="mt-10 w-full max-w-full min-w-0">
+            <SightseeingMeetingPickupSection />
+          </div>
+          <div className="mt-10 w-full max-w-full min-w-0">
+            <SightseeingGuestReviewsSection
+              id="sightseeing-guest-reviews"
+              onReadAllReviews={onReadAllReviews}
+            />
+          </div>
+        </div>
+      );
+    }
+    if (activeTab === "highlights") {
+      return (
+        <div className="max-w-[791px] space-y-4 text-[16px] leading-6 text-[#3D495C]">
+          {detail?.description ? (
+            <p>{detail.description}</p>
+          ) : (
+            <p>
+              Supplier highlights for this activity will appear here when
+              available from the API.
+            </p>
+          )}
+        </div>
+      );
+    }
+    if (activeTab === "inclusion") {
+      return <SightseeingInclusionsTable />;
+    }
+    if (activeTab === "meeting") {
+      return (
+        <div className="w-full max-w-full min-w-0">
+          <SightseeingMeetingPickupSection />
+        </div>
+      );
+    }
+    return (
+      <div className="w-full max-w-full min-w-0">
+        <SightseeingGuestReviewsSection
+          id="sightseeing-guest-reviews"
+          onReadAllReviews={onReadAllReviews}
+        />
+      </div>
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] pb-16">
-      <div className="mx-auto w-full max-w-[960px] px-6 pt-8 sm:px-10">
+    <div className="min-h-screen bg-white pb-16 font-[Inter,sans-serif]">
+      <div className="mx-auto w-full max-w-[1341px] px-6 pt-8 sm:px-10">
         <button
           type="button"
           onClick={() => navigate(-1)}
@@ -119,137 +519,321 @@ const SightseeingActivityDetailPage: React.FC = () => {
           ← Back to results
         </button>
 
-        <div className="overflow-hidden rounded-[16px] border border-[#E4E4E7] bg-white shadow-sm">
-          {displayImage ? (
-            <div className="h-[220px] w-full overflow-hidden sm:h-[280px]">
-              <img
-                src={displayImage}
-                alt=""
-                className="h-full w-full object-cover"
+        <div className="space-y-8 sm:space-y-10">
+          <SightseeingDetailGallery
+            imageUrls={imageUrls}
+            alt={displayTitle}
+          />
+
+          <div className="space-y-8">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+              <div className="min-w-0 flex-1">
+                <p className="text-[12px] font-semibold uppercase tracking-wide text-[#98A4B3]">
+                  Sightseeing · Activity detail
+                </p>
+                <h1 className="mt-2 text-[22px] font-bold leading-tight tracking-tight text-[#0A0C0F] sm:text-[28px] lg:text-[32px]">
+                  {displayTitle}
+                </h1>
+                {badgeRow.length > 0 ? (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {badgeRow.map((b) => (
+                      <span
+                        key={b}
+                        className="rounded-full bg-[#F1F5F9] px-3 py-1 text-[13px] font-medium text-[#475569]"
+                      >
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <StarRow rating={displayRating} />
+                  <span className="text-[15px] font-semibold text-[#0A0C0F]">
+                    {displayRating.toFixed(1)}
+                  </span>
+                  <span className="text-[15px] text-[#64748B]">
+                    ({reviewCountDisplay(displayReviewCount)})
+                  </span>
+                </div>
+              </div>
+              <div className="flex shrink-0 flex-row flex-wrap items-center justify-start gap-[10px] lg:justify-end lg:pt-1">
+                <button
+                  type="button"
+                  onClick={onShare}
+                  className="text-[15px] font-semibold text-[#2563EB] hover:underline"
+                >
+                  Share
+                </button>
+                <button
+                  type="button"
+                  onClick={toggleFavorite}
+                  className="flex h-[47px] min-w-[211px] items-center justify-center gap-[10px] rounded-full px-10 py-[14px] text-[14px] font-bold leading-none text-white transition-opacity hover:opacity-95"
+                  style={{ background: SIGHTSEEING_CTA_GRADIENT }}
+                >
+                  {isFavorite ? "Saved" : "Add to favorites"}
+                </button>
+              </div>
+            </div>
+
+            <div className="mx-auto flex w-full max-w-[872px] flex-col items-stretch">
+              <div
+                className="rounded-t-[16px] border border-b-0 border-[#E3F4F8] bg-[#F8FBFC] px-3 pt-4 pb-1 shadow-[0_6px_28px_-12px_rgba(67,198,226,0.35)] sm:px-6"
+                role="tablist"
+                aria-label="Activity sections"
+              >
+                <div className="flex flex-wrap justify-center gap-[15px] py-2 sm:flex-nowrap">
+                  {SIGHTSEEING_DETAIL_TAB_ORDER.map((id) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="tab"
+                      aria-selected={activeTab === id}
+                      onClick={() => setActiveTab(id)}
+                      className={`h-[44px] w-[105px] shrink-0 rounded-t-2xl text-center text-[12px] font-medium leading-tight transition-colors sm:text-[13px] ${
+                        activeTab === id
+                          ? "bg-[#43C6E2] text-white"
+                          : "bg-[#F2F4F7] text-[#0A0C0F] hover:bg-[#E8EAEE]"
+                      }`}
+                    >
+                      {SIGHTSEEING_DETAIL_TAB_LABELS[id]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div
+                className="h-[10px] w-full shrink-0 rounded-t-[16px] backdrop-blur-[10px]"
+                style={{
+                  background:
+                    "linear-gradient(180deg, #C4CFE1 0%, #DEF7FE 100%)",
+                }}
+                aria-hidden
               />
             </div>
-          ) : null}
 
-          <div className="space-y-6 p-6 sm:p-8">
-            <div>
-              <p className="text-[12px] font-semibold uppercase tracking-wide text-[#98A4B3]">
-                Sightseeing · Activity detail
-              </p>
-              <h1 className="mt-2 text-[24px] font-bold tracking-tight text-[#0A0C0F] sm:text-[28px]">
-                {displayTitle}
-              </h1>
-              {detail?.code ? (
-                <p className="mt-2 text-[13px] text-[#3D495C]">
-                  Code <span className="font-mono">{detail.code}</span>
-                  {detail.currency ? (
-                    <>
-                      {" "}
-                      · currency{" "}
-                      <span className="font-medium">{detail.currency}</span>
-                    </>
+            <div className="grid grid-cols-1 gap-10 pt-10 lg:grid-cols-[minmax(0,791px)_minmax(300px,400px)] lg:gap-x-12 lg:gap-y-0 lg:items-start">
+              <div>
+                <div className="mt-0" role="tabpanel">
+                  {tabPanel()}
+                </div>
+
+                {isLoading ? (
+                  <p className="mt-6 text-[15px] text-[#3D495C]">
+                    Loading detail…
+                  </p>
+                ) : null}
+                {isError ? (
+                  <p className="mt-6 text-[15px] text-red-600">
+                    {(error as Error)?.message ||
+                      "Could not load activity detail."}
+                  </p>
+                ) : null}
+
+                <div className="mt-8 text-[13px] text-[#3D495C]">
+                  {detail?.code ? (
+                    <p>
+                      Code <span className="font-mono">{detail.code}</span>
+                      {detail.currency ? (
+                        <>
+                          {" "}
+                          · currency{" "}
+                          <span className="font-medium">{detail.currency}</span>
+                        </>
+                      ) : null}
+                    </p>
                   ) : null}
-                </p>
-              ) : null}
-              {state.context?.destinationCode ? (
-                <p className="mt-1 text-[13px] text-[#98A4B3]">
-                  Destination {state.context.destinationCode}
-                  {state.context.city ? ` · ${state.context.city}` : ""}
-                </p>
-              ) : null}
-            </div>
-
-            {isLoading ? (
-              <p className="text-[15px] text-[#3D495C]">Loading detail…</p>
-            ) : null}
-            {isError ? (
-              <p className="text-[15px] text-red-600">
-                {(error as Error)?.message || "Could not load activity detail."}
-              </p>
-            ) : null}
-
-            {!isLoading && !isError && rateOptions.length > 0 ? (
-              <section className="space-y-3">
-                <h2 className="text-[16px] font-semibold text-[#0A0C0F]">
-                  Rates (preconfirm uses one rateKey)
-                </h2>
-                <ul className="space-y-2">
-                  {rateOptions.map((r) => (
-                    <li key={r.rateKey}>
-                      <label className="flex cursor-pointer items-start gap-3 rounded-[12px] border border-[#E4E4E7] bg-[#F8FAFC] p-4">
-                        <input
-                          type="radio"
-                          name="rateKey"
-                          className="mt-1"
-                          checked={selectedRateKey === r.rateKey}
-                          onChange={() => setSelectedRateKey(r.rateKey)}
-                        />
-                        <div>
-                          <p className="text-[14px] font-medium text-[#0A0C0F]">
-                            {r.label}
-                          </p>
-                          <p className="mt-1 font-mono text-[12px] text-[#64748B]">
-                            {r.rateKey}
-                          </p>
-                        </div>
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            ) : !isLoading && !isError ? (
-              <p className="text-[14px] text-[#64748B]">
-                No rate keys in this response — detail payload may use a
-                different shape with your live API.
-              </p>
-            ) : null}
-
-            <section className="space-y-4 border-t border-[#E4E4E7] pt-6">
-              <h2 className="text-[16px] font-semibold text-[#0A0C0F]">
-                Lead guest (preconfirm)
-              </h2>
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="block text-[13px] font-medium text-[#3D495C]">
-                  Surname
-                  <input
-                    value={surname}
-                    onChange={(e) => setSurname(e.target.value)}
-                    className="mt-1 w-full rounded-[10px] border border-[#C2CAD6] px-3 py-2 text-[14px]"
-                    autoComplete="family-name"
-                  />
-                </label>
-                <label className="block text-[13px] font-medium text-[#3D495C]">
-                  Given name
-                  <input
-                    value={givenName}
-                    onChange={(e) => setGivenName(e.target.value)}
-                    className="mt-1 w-full rounded-[10px] border border-[#C2CAD6] px-3 py-2 text-[14px]"
-                    autoComplete="given-name"
-                  />
-                </label>
-                <label className="block text-[13px] font-medium text-[#3D495C] sm:col-span-2">
-                  Email
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="mt-1 w-full rounded-[10px] border border-[#C2CAD6] px-3 py-2 text-[14px]"
-                    autoComplete="email"
-                  />
-                </label>
+                  {state.context?.destinationCode ? (
+                    <p className="mt-1 text-[#98A4B3]">
+                      Destination {state.context.destinationCode}
+                      {state.context.city ? ` · ${state.context.city}` : ""}
+                    </p>
+                  ) : null}
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={onPreConfirm}
-                disabled={preConfirm.isPending}
-                className="rounded-full bg-[#2351A3] px-8 py-3 text-[14px] font-bold text-white disabled:opacity-50"
-              >
-                {preConfirm.isPending ? "Sending…" : "Preconfirm booking"}
-              </button>
-              <p className="text-[12px] leading-relaxed text-[#98A4B3]">
-                Flow: activitiesDetail → pick rateKey → preConfirmBooking (then
-                confirm / reconfirm per your backend and Hotel Beds docs).
-              </p>
-            </section>
+
+              <aside className="lg:sticky lg:top-24 lg:self-start">
+                <div className="rounded-2xl border border-[#E4E4E7] bg-white p-5 sm:p-6">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+                    <div className="min-w-0">
+                      <p className="text-[32px] font-bold leading-none text-[#2351A3]">
+                        {formatSightseeingPrice(
+                          displayCurrency,
+                          displayPriceAmount,
+                        )}
+                      </p>
+                      <p className="mt-2 text-[14px] text-[#64748B]">
+                        per person · taxes included
+                      </p>
+                    </div>
+                    <div className="w-full shrink-0 sm:w-[200px] sm:max-w-[240px]">
+                      <span className="text-[12px] font-normal text-[#64748B]">
+                        Your Package
+                      </span>
+                      {rateOptions.length > 0 ? (
+                        <select
+                          value={selectedRateKey}
+                          onChange={(e) => setSelectedRateKey(e.target.value)}
+                          className="mt-1 w-full appearance-none rounded-xl border border-[#C2CAD6] bg-white bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat py-2.5 pl-3 pr-10 text-[14px] text-[#0A0C0F] outline-none ring-[#43C6E2] focus:ring-2"
+                          style={{
+                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                          }}
+                        >
+                          {rateOptions.map((r) => (
+                            <option key={r.rateKey} value={r.rateKey}>
+                              {r.modalityName === "Standard"
+                                ? "Silver"
+                                : r.modalityName}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div className="mt-1 w-full rounded-xl border border-[#C2CAD6] bg-white px-3 py-2.5 text-[14px] text-[#0A0C0F]">
+                          Silver
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#E8ECF0] pt-6">
+                    <h3 className="text-[16px] font-bold text-[#0A0C0F]">
+                      Travellers
+                    </h3>
+                    <p className="mt-1 text-[13px] text-[#64748B]">
+                      Prices vary by age group
+                    </p>
+                    <div className="mt-4 space-y-3">
+                      <TravellerStepRow
+                        label="Adults"
+                        ageRange="Age 18+"
+                        value={adults}
+                        min={1}
+                        onDec={() =>
+                          setAdults((n) => Math.max(1, clampCount(n - 1)))
+                        }
+                        onInc={() => setAdults((n) => clampCount(n + 1))}
+                      />
+                      <TravellerStepRow
+                        label="Teens"
+                        ageRange="Age 13–17"
+                        value={teens}
+                        min={0}
+                        onDec={() => setTeens((n) => clampCount(n - 1))}
+                        onInc={() => setTeens((n) => clampCount(n + 1))}
+                      />
+                      <TravellerStepRow
+                        label="Children"
+                        ageRange="Age 6–12"
+                        value={children}
+                        min={0}
+                        onDec={() => setChildren((n) => clampCount(n - 1))}
+                        onInc={() => setChildren((n) => clampCount(n + 1))}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#E8ECF0] pt-6">
+                    <h3 className="text-[16px] font-bold text-[#0A0C0F]">
+                      Select date
+                    </h3>
+                    <div className="mt-4 flex items-center justify-between gap-3">
+                      <span className="text-[15px] font-semibold text-[#0A0C0F]">
+                        {monthLabel}
+                      </span>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => shiftMonth(-1)}
+                          disabled={!canShiftMonthPrev}
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-lg font-medium text-[#94A3B8] disabled:cursor-not-allowed disabled:opacity-60 enabled:border-[#C2CAD6] enabled:bg-white enabled:text-[#374151] enabled:hover:bg-[#F8FAFC]"
+                          aria-label="Previous month"
+                        >
+                          ‹
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => shiftMonth(1)}
+                          disabled={!canShiftMonthNext}
+                          className="flex h-9 w-9 items-center justify-center rounded-full border border-[#C2CAD6] bg-white text-lg font-medium text-[#374151] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
+                          aria-label="Next month"
+                        >
+                          ›
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-[#D1D5DB] bg-[#FAFBFC] px-4 text-center text-[14px] text-[#94A3B8]">
+                      Calendar Component here!
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#E8ECF0] pt-6">
+                    <h3 className="text-[16px] font-bold text-[#0A0C0F]">
+                      Pick-up time
+                    </h3>
+                    <div className="relative mt-3">
+                      <input
+                        type="text"
+                        value={pickupTime}
+                        onChange={(e) => setPickupTime(e.target.value)}
+                        placeholder="Select a Time"
+                        className="w-full rounded-xl border border-[#D1D5DB] bg-white py-3 pl-3 pr-11 text-[14px] text-[#0A0C0F] placeholder:text-[#94A3B8] outline-none focus:border-[#2351A3] focus:ring-1 focus:ring-[#2351A3]"
+                      />
+                      <ClockIcon className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[#E8ECF0] pt-6">
+                    <div className="flex flex-wrap items-baseline justify-between gap-2">
+                      <h3 className="text-[16px] font-bold text-[#0A0C0F]">
+                        Enhance your experience
+                      </h3>
+                      <span className="text-[13px] font-medium text-[#64748B]">
+                        Optional add-ons
+                      </span>
+                    </div>
+                    <label className="mt-4 flex w-full max-w-[546px] min-h-[88px] cursor-pointer gap-[11px] rounded-[16px] bg-[#F2F4F7] p-[15px] transition hover:bg-[#ECEFF4]">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#C2CAD6] text-[#2351A3] focus:ring-[#2351A3]"
+                        checked={falconAddon}
+                        onChange={(e) => setFalconAddon(e.target.checked)}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+                          <span className="text-[14px] font-bold text-[#0A0C0F]">
+                            Falcon Handling & Photography
+                          </span>
+                          <span className="shrink-0 text-[14px] font-semibold text-[#2351A3]">
+                            $50/per person
+                          </span>
+                        </div>
+                        <p className="mt-[11px] text-[13px] leading-relaxed text-[#64748B]">
+                          Hold a trained Peregrine falcon and get a professional photograph. A truly unique Arabian cultural experience.
+                        </p>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="border-t border-[#E8ECF0] pt-6">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="text-[15px] font-medium text-[#64748B]">
+                        Total
+                      </span>
+                      <span className="text-[24px] font-bold leading-none tracking-tight text-[#0A0C0F]">
+                        {formatMoneyDecimals(displayCurrency, bookingGrandTotal)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={onBookNow}
+                    className="mt-6 flex h-[47px] w-full items-center justify-center gap-2.5 rounded-full px-10 py-[14px] text-[14px] font-bold leading-none text-white shadow-[0_4px_14px_rgba(35,81,163,0.35)] transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5383DA] focus-visible:ring-offset-2"
+                    style={{ background: SIGHTSEEING_CTA_GRADIENT }}
+                  >
+                    Book now
+                  </button>
+                </div>
+              </aside>
+            </div>
           </div>
         </div>
       </div>

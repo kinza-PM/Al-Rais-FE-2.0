@@ -58,24 +58,27 @@ export function buildGetAvailabilityRequestBody(params: {
 
 /**
  * Hotel Beds activities — destinations for a country (ISO-2).
- * POST with `country` query param (per Postman).
+ * UAT: `GET …/destinationByOurCountry?country={ISO2}` (query on URL).
  */
-export async function postDestinationByOurCountry(
+export async function getDestinationByOurCountry(
   countryIso2: string,
   signal?: AbortSignal,
 ): Promise<unknown> {
-  const source = "postDestinationByOurCountry";
-  const q = encodeURIComponent(countryIso2.trim().toUpperCase());
+  const source = "getDestinationByOurCountry";
+  const country = countryIso2.trim().toUpperCase();
   try {
-    return await api.post<unknown>(
-      `/destinationByOurCountry?country=${q}`,
-      {},
-      { signal },
+    return await api.get<unknown>(
+      "/destinationByOurCountry",
+      { country },
+      signal,
     );
   } catch (err) {
     throw toApiError(source, err);
   }
 }
+
+/** @deprecated Use `getDestinationByOurCountry` (backend is GET). */
+export const postDestinationByOurCountry = getDestinationByOurCountry;
 
 /**
  * Hotel Beds activities — availability search for a destination code.

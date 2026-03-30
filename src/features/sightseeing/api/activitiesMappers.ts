@@ -126,6 +126,163 @@ function findFirstHttpUrl(obj: unknown, depth = 0): string | null {
   return null;
 }
 
+const HTTP_URL_RE = /^https?:\/\//i;
+
+function urlsFromMediaArray(media: unknown): string[] {
+  if (!Array.isArray(media)) return [];
+  const out: string[] = [];
+  for (const item of media) {
+    const r = asRecord(item);
+    if (!r) continue;
+    const u = r.url ?? r.uri ?? r.href ?? r.imageUrl ?? r.src;
+    if (typeof u === "string" && HTTP_URL_RE.test(u)) {
+      out.push(u.trim());
+    }
+  }
+  return out;
+}
+
+/** Collects HTTP(S) image URLs in deterministic order (media array first, then deep scan). */
+function extractActivityImageUrls(ar: Record<string, unknown>): string[] {
+  const content = asRecord(ar.content);
+  const ordered: string[] = [];
+  const seen = new Set<string>();
+  const push = (raw: string) => {
+    const t = raw.trim();
+    if (!HTTP_URL_RE.test(t) || seen.has(t)) return;
+    seen.add(t);
+    ordered.push(t);
+  };
+
+  if (content) {
+    for (const u of urlsFromMediaArray(content.media)) push(u);
+    for (const key of ["image", "thumbnail", "heroImage", "logo"]) {
+      const v = content[key];
+      if (typeof v === "string") push(v);
+    }
+  }
+  for (const key of ["image", "thumbnail", "heroImage"]) {
+    const v = ar[key];
+    if (typeof v === "string") push(v);
+  }
+
+  const deepCollect = (
+    obj: unknown,
+    depth: number,
+    acc: string[],
+    s: Set<string>,
+  ): void => {
+    if (depth > 10 || acc.length >= 50 || obj == null) return;
+    if (typeof obj === "string" && HTTP_URL_RE.test(obj)) {
+      const t = obj.trim();
+      if (!s.has(t)) {
+        s.add(t);
+        acc.push(t);
+      }
+      return;
+    }
+    if (Array.isArray(obj)) {
+      for (const x of obj) {
+        deepCollect(x, depth + 1, acc, s);
+        if (acc.length >= 50) break;
+      }
+      return;
+    }
+    if (typeof obj === "object") {
+      for (const v of Object.values(obj as Record<string, unknown>)) {
+        deepCollect(v, depth + 1, acc, s);
+        if (acc.length >= 50) break;
+      }
+    }
+  };
+  deepCollect(ar, 0, ordered, seen);
+
+  if (ordered.length === 0) {
+    const u = findFirstHttpUrl(ar);
+    if (u) push(u);
+  }
+  return ordered;
+}
+
+function durationLabelFromModalities(modalities: unknown): string {
+  const { durationDays } = modalityMeta(modalities);
+  if (durationDays == null || durationDays <= 0) return "";
+  if (durationDays >= 1) {
+    const d = durationDays;
+    const rounded = Math.abs(d - Math.round(d)) < 0.05 ? Math.round(d) : d;
+    return `${rounded} day${rounded === 1 ? "" : "s"}`;
+  }
+  const hours = durationDays * 24;
+  const rounded = Math.round(hours);
+  if (Math.abs(hours - rounded) < 0.05) {
+    return `${rounded} Hours`;
+  }
+  return `${Math.round(hours)}h`;
+}
+
+function hasFreeCancellationFromActivity(ar: Record<string, unknown>): boolean {
+  const modalities = ar.modalities;
+  if (!Array.isArray(modalities)) return false;
+  for (const m of modalities) {
+    const mo = asRecord(m);
+    const rates = mo?.rates;
+    if (!Array.isArray(rates)) continue;
+    for (const r of rates) {
+      const ro = asRecord(r);
+      const details = ro?.rateDetails;
+      if (!Array.isArray(details)) continue;
+      for (const d of details) {
+        const drec = asRecord(d);
+        const dates = drec?.operationDates;
+        if (!Array.isArray(dates)) continue;
+        for (const od of dates) {
+          const odr = asRecord(od);
+          const policies = odr?.cancellationPolicies;
+          if (!Array.isArray(policies)) continue;
+          if (policies.length === 0) continue;
+          for (const p of policies) {
+            const pr = asRecord(p);
+            const amt = Number(pr?.amount ?? pr?.penaltyAmount ?? NaN);
+            if (Number.isFinite(amt) && amt === 0) return true;
+            const blob = `${pr?.description ?? ""} ${pr?.text ?? ""} ${pr?.type ?? ""}`.toLowerCase();
+            if (blob.includes("free")) return true;
+          }
+        }
+      }
+    }
+  }
+  return false;
+}
+
+function buildDetailBadges(
+  ar: Record<string, unknown>,
+  content: Record<string, unknown> | null,
+  durationLabel: string,
+): string[] {
+  const badges: string[] = [];
+  const reviews = Number(ar.reviewCount ?? ar.reviews ?? content?.reviewCount ?? 0);
+  const rating = Number(ar.rating ?? ar.averageRating ?? content?.rating ?? NaN);
+  const featured =
+    ar.featured === true ||
+    ar.bestSeller === true ||
+    ar.segment === "BEST_SELLER" ||
+    String(ar.segmentName ?? "").toUpperCase().includes("BEST");
+
+  if (
+    featured ||
+    (Number.isFinite(reviews) && reviews >= 800 && Number.isFinite(rating) && rating >= 4.6)
+  ) {
+    badges.push("Best Seller");
+  }
+  if (hasFreeCancellationFromActivity(ar)) {
+    badges.push("Free Cancellation");
+  }
+  if (durationLabel) {
+    badges.push(durationLabel);
+  }
+  return badges;
+}
+
 function minPriceFromModalityLike(mod: Record<string, unknown>): {
   amount: number;
   currency: string;
@@ -425,6 +582,11 @@ export function mapActivitiesDetailResponse(
       code: "",
       name: "Activity",
       currency: "USD",
+      imageUrls: [],
+      rating: 4.5,
+      reviewCount: 0,
+      durationLabel: "",
+      badges: [],
       rateOptions: [],
       raw,
     };
@@ -434,8 +596,29 @@ export function mapActivitiesDetailResponse(
   const currency = String(ar.currency ?? "USD").trim() || "USD";
   const type = typeof ar.type === "string" ? ar.type : undefined;
   const rateOptions: SightseeingActivityDetailRate[] = [];
+  const content = asRecord(ar.content);
 
   const modalities = ar.modalities;
+  const durationLabel = durationLabelFromModalities(modalities);
+  const imageUrls = extractActivityImageUrls(ar);
+
+  const ratingRaw = Number(ar.rating ?? ar.averageRating ?? content?.rating ?? NaN);
+  const rating = Number.isFinite(ratingRaw)
+    ? Math.min(5, Math.max(0, ratingRaw))
+    : 4.5;
+  const reviewRaw = Number(ar.reviewCount ?? ar.reviews ?? content?.reviewCount ?? 0);
+  const reviewCount = Number.isFinite(reviewRaw)
+    ? Math.max(0, Math.floor(reviewRaw))
+    : 0;
+
+  const descriptionRaw =
+    (content?.description ?? content?.longDescription ?? ar.description) as unknown;
+  const description =
+    typeof descriptionRaw === "string" && descriptionRaw.trim()
+      ? descriptionRaw.trim()
+      : undefined;
+
+  const badges = buildDetailBadges(ar, content, durationLabel);
   if (Array.isArray(modalities)) {
     for (const m of modalities) {
       const mo = asRecord(m);
@@ -471,5 +654,18 @@ export function mapActivitiesDetailResponse(
     }
   }
 
-  return { code: code || name, name, currency, type, rateOptions, raw };
+  return {
+    code: code || name,
+    name,
+    currency,
+    type,
+    imageUrls,
+    rating,
+    reviewCount,
+    durationLabel,
+    badges,
+    description,
+    rateOptions,
+    raw,
+  };
 }

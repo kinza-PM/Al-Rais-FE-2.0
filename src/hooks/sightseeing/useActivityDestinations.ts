@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { parseActivityDestinations } from "../../features/sightseeing/api/activitiesMappers";
-import { postDestinationByOurCountry } from "../../services/api/activitiesSearch";
+import { getDestinationByOurCountry } from "../../services/api/activitiesSearch";
 import type { ActivityDestinationOption } from "../../services/api/activitiesSearch";
 
 export function useActivityDestinations(
@@ -11,7 +11,7 @@ export function useActivityDestinations(
   return useQuery({
     queryKey: ["activities", "destinations", iso],
     queryFn: async ({ signal }) => {
-      const raw = await postDestinationByOurCountry(iso, signal);
+      const raw = await getDestinationByOurCountry(iso, signal);
       return parseActivityDestinations(raw);
     },
     enabled: enabled && iso.length === 2,
