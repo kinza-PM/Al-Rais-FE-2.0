@@ -480,12 +480,14 @@ export const HOTEL_LISTING_REVIEW_FALLBACK = {
 export function resolveHotelListingReviewDisplay(
   reviewScore: number | undefined,
   reviewCount: number | undefined,
-): { score: number; count: number | null; label: string } {
+): { score: number | null; count: number | null; label: string | null } {
   const hasApiScore =
     reviewScore != null && Number.isFinite(Number(reviewScore));
   const hasApiCount =
     reviewCount != null && Number.isFinite(Number(reviewCount));
-
+  if (!hasApiScore) {
+    return { score: null, count: null, label: null };
+  }
   const score = hasApiScore
     ? Number(reviewScore)
     : HOTEL_LISTING_REVIEW_FALLBACK.score;

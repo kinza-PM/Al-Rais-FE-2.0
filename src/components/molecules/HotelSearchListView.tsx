@@ -44,9 +44,8 @@ const buildHotelShareUrl = (
 
   const queryString = params.toString();
 
-  return `${window.location.origin}/hotel-detail/${hotelKey}${
-    queryString ? `?${queryString}` : ""
-  }`;
+  return `${window.location.origin}/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""
+    }`;
 };
 
 const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
@@ -125,38 +124,38 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
       const rooms =
         Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
           ? hotel.rooms.map((room: any) => ({
-              roomIndex: room?.roomIndex ?? 1,
-              roomKey: room?.roomKey ?? "",
-              roomId: room?.roomId ?? "",
-              roomTypeName: room?.roomTypeName ?? "",
-              roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
-              maxOccupancy: room?.maxOccupancy ?? -1,
-              roomFacilities: room?.roomFacilities ?? [],
-              ratePlan: {
-                supplierCode: room?.ratePlan?.supplierCode ?? "",
-                meal: room?.ratePlan?.meal ?? "",
-                availableStatus: room?.ratePlan?.availableStatus ?? "",
-                cancelPolicyIndicator:
-                  room?.ratePlan?.cancelPolicyIndicator ?? "",
-                code: room?.ratePlan?.code ?? "",
-                isPackage: room?.ratePlan?.isPackage ?? false,
-                fixedCombo: room?.ratePlan?.fixedCombo ?? false,
-                gstAssured: room?.ratePlan?.gstAssured ?? false,
-                lastCancellationDate:
-                  room?.ratePlan?.lastCancellationDate ?? "",
-              },
-              roomRate: {
-                currency: room?.roomRate?.currency ?? "AED",
-                netAmount: room?.roomRate?.netAmount ?? 0,
-                rates: room?.roomRate?.rates ?? [],
-              },
-              rateNotes: room?.rateNotes ?? "",
-              financialInfo: {
-                tmc: room?.financialInfo?.tmc ?? "",
-                supplier: room?.financialInfo?.supplier ?? "",
-              },
-              isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
-            }))
+            roomIndex: room?.roomIndex ?? 1,
+            roomKey: room?.roomKey ?? "",
+            roomId: room?.roomId ?? "",
+            roomTypeName: room?.roomTypeName ?? "",
+            roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+            maxOccupancy: room?.maxOccupancy ?? -1,
+            roomFacilities: room?.roomFacilities ?? [],
+            ratePlan: {
+              supplierCode: room?.ratePlan?.supplierCode ?? "",
+              meal: room?.ratePlan?.meal ?? "",
+              availableStatus: room?.ratePlan?.availableStatus ?? "",
+              cancelPolicyIndicator:
+                room?.ratePlan?.cancelPolicyIndicator ?? "",
+              code: room?.ratePlan?.code ?? "",
+              isPackage: room?.ratePlan?.isPackage ?? false,
+              fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+              gstAssured: room?.ratePlan?.gstAssured ?? false,
+              lastCancellationDate:
+                room?.ratePlan?.lastCancellationDate ?? "",
+            },
+            roomRate: {
+              currency: room?.roomRate?.currency ?? "AED",
+              netAmount: room?.roomRate?.netAmount ?? 0,
+              rates: room?.roomRate?.rates ?? [],
+            },
+            rateNotes: room?.rateNotes ?? "",
+            financialInfo: {
+              tmc: room?.financialInfo?.tmc ?? "",
+              supplier: room?.financialInfo?.supplier ?? "",
+            },
+            isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+          }))
           : [];
 
       const rawFacilities = hotel?.propertyInfo?.facilities || [];
@@ -530,60 +529,61 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                       {/* Figma: guest score row + deal pill above price (right-aligned) */}
                       <div className="mb-[14px] flex w-full flex-col items-baseline gap-[10px]">
                         {/* Figma: score pill 71×49, #A7C0EC, gap 10px to copy */}
-                        <div className="flex items-start justify-end gap-[10px]">
-                          <div
-                            className="flex flex-shrink-0 items-center justify-center rounded-[100px] box-border"
-                            style={{
-                              background: "#A7C0EC",
-                              minWidth: "71px",
-                              minHeight: "49px",
-                              padding: "15px 25px",
-                              boxSizing: "border-box",
-                            }}
-                          >
-                            <span
+                        {reviewDisplay.score !== null && (
+                          <div className="flex items-start justify-end gap-[10px]">
+                            <div
+                              className="flex flex-shrink-0 items-center justify-center rounded-[100px] box-border"
                               style={{
-                                fontFamily: "Inter, sans-serif",
-                                fontWeight: 600,
-                                fontSize: "16px",
-                                lineHeight: "100%",
-                                color: "#2351A3",
-                                verticalAlign: "middle",
+                                background: "#A7C0EC",
+                                minWidth: "71px",
+                                minHeight: "49px",
+                                padding: "15px 25px",
+                                boxSizing: "border-box",
                               }}
                             >
-                              {reviewDisplay.score.toFixed(1)}
-                            </span>
-                          </div>
-                          <div className="flex flex-col gap-[6px] pt-[5px] text-justify">
-                            <span
-                              style={{
-                                fontFamily: "Inter, sans-serif",
-                                fontWeight: 600,
-                                fontSize: "14px",
-                                lineHeight: "100%",
-                                color: "#00B868",
-                                verticalAlign: "middle",
-                              }}
-                            >
-                              {reviewDisplay.label}
-                            </span>
-                            {reviewDisplay.count != null && (
                               <span
                                 style={{
                                   fontFamily: "Inter, sans-serif",
-                                  fontWeight: 400,
-                                  fontSize: "14px",
+                                  fontWeight: 600,
+                                  fontSize: "16px",
                                   lineHeight: "100%",
-                                  color: "#3D495C",
+                                  color: "#2351A3",
                                   verticalAlign: "middle",
                                 }}
                               >
-                                {reviewDisplay.count} guest reviews
+                                {reviewDisplay.score.toFixed(1)}
                               </span>
-                            )}
+                            </div>
+                            <div className="flex flex-col gap-[6px] pt-[5px] text-justify">
+                              <span
+                                style={{
+                                  fontFamily: "Inter, sans-serif",
+                                  fontWeight: 600,
+                                  fontSize: "14px",
+                                  lineHeight: "100%",
+                                  color: "#00B868",
+                                  verticalAlign: "middle",
+                                }}
+                              >
+                                {reviewDisplay.label}
+                              </span>
+                              {reviewDisplay.count != null && (
+                                <span
+                                  style={{
+                                    fontFamily: "Inter, sans-serif",
+                                    fontWeight: 400,
+                                    fontSize: "14px",
+                                    lineHeight: "100%",
+                                    color: "#3D495C",
+                                    verticalAlign: "middle",
+                                  }}
+                                >
+                                  {reviewDisplay.count} guest reviews
+                                </span>
+                              )}
+                            </div>
                           </div>
-                        </div>
-
+                        )}
                         <span
                           className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
                           style={{
@@ -631,6 +631,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               textDecoration: "line-through",
                               maxWidth: "100%",
                               wordBreak: "break-word",
+                              whiteSpace: "nowrap",
                             }}
                           >
                             {currency} {originalPrice.toFixed(2)}
@@ -646,6 +647,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               color: "#0A0C0F",
                               maxWidth: "100%",
                               wordBreak: "break-word",
+                              whiteSpace: "nowrap",
                             }}
                           >
                             {currency} {price.toFixed(2)}

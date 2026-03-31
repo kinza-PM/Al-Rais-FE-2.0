@@ -305,9 +305,8 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               {selectedLabel}
             </span>
             <svg
-              className={`w-5 h-5 transition-transform flex-shrink-0 ${
-                isSortOpen ? "rotate-180" : ""
-              }`}
+              className={`w-5 h-5 transition-transform flex-shrink-0 ${isSortOpen ? "rotate-180" : ""
+                }`}
               fill="none"
               stroke="#3D495C"
               viewBox="0 0 24 24"
@@ -331,11 +330,10 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                   onSortChange(option.value);
                   setIsSortOpen(false);
                 }}
-                className={`px-4 py-3 cursor-pointer flex items-center justify-between ${
-                  index !== sortOptions.length - 1
+                className={`px-4 py-3 cursor-pointer flex items-center justify-between ${index !== sortOptions.length - 1
                     ? "border-b border-[#E4E4E7]"
                     : ""
-                }`}
+                  }`}
               >
                 <span
                   style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 400 }}
@@ -387,88 +385,88 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         <CustomCollapse>
           <Panel header="Hotel name" key="hotel_name">
             <Input
-  allowClear={{
-    clearIcon: (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 20,
-          height: 20,
-          borderRadius: "50%",
-          background: "#D9DEE7",
-          color: "#3D495C",
-          fontSize: 14,
-          fontWeight: 700,
-          cursor: "pointer",
-          lineHeight: 1,
-        }}
-      >
-        ×
-      </span>
-    ),
-  }}
-  placeholder="Search for a hotel"
-  value={filters.hotelName}
-  onChange={(e) => handleFilterChange("hotelName", e.target.value)}
-  style={{
-    height: "50px",
-    borderRadius: "16px",
-    border: "1px solid #C2CAD6",
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 500,
-    fontSize: "16px",
-    color: "#0A0C0F",
-    width: "100%",
-    paddingLeft: "16px",
-    boxShadow: "none",
-  }}
-/>
+              allowClear={{
+                clearIcon: (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: "#D9DEE7",
+                      color: "#3D495C",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </span>
+                ),
+              }}
+              placeholder="Search for a hotel"
+              value={filters.hotelName}
+              onChange={(e) => handleFilterChange("hotelName", e.target.value)}
+              style={{
+                height: "50px",
+                borderRadius: "16px",
+                border: "1px solid #C2CAD6",
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 500,
+                fontSize: "16px",
+                color: "#0A0C0F",
+                width: "100%",
+                paddingLeft: "16px",
+                boxShadow: "none",
+              }}
+            />
           </Panel>
         </CustomCollapse>
 
         <CustomCollapse>
           <Panel header="Point of interest" key="point_interest">
             <Input
-  allowClear={{
-    clearIcon: (
-      <span
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: 20,
-          height: 20,
-          borderRadius: "50%",
-          background: "#D9DEE7",
-          color: "#3D495C",
-          fontSize: 14,
-          fontWeight: 700,
-          cursor: "pointer",
-          lineHeight: 1,
-        }}
-      >
-        ×
-      </span>
-    ),
-  }}
-  placeholder="Enter a location"
-  value={pointOfInterest}
-  onChange={(e) => setPointOfInterest(e.target.value)}
-  style={{
-    height: "50px",
-    borderRadius: "16px",
-    border: "1px solid #C2CAD6",
-    fontFamily: "Inter, sans-serif",
-    fontWeight: 500,
-    fontSize: "16px",
-    color: "#0A0C0F",
-    width: "100%",
-    paddingLeft: "16px",
-    boxShadow: "none",
-  }}
-/>
+              allowClear={{
+                clearIcon: (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: "#D9DEE7",
+                      color: "#3D495C",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </span>
+                ),
+              }}
+              placeholder="Enter a location"
+              value={pointOfInterest}
+              onChange={(e) => setPointOfInterest(e.target.value)}
+              style={{
+                height: "50px",
+                borderRadius: "16px",
+                border: "1px solid #C2CAD6",
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 500,
+                fontSize: "16px",
+                color: "#0A0C0F",
+                width: "100%",
+                paddingLeft: "16px",
+                boxShadow: "none",
+              }}
+            />
           </Panel>
         </CustomCollapse>
 

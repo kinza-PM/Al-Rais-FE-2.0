@@ -324,56 +324,58 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
 
           {/* Figma: same tokens as list (scaled for grid) */}
           <div className="mb-3 flex w-full flex-col items-baseline gap-[10px]">
-            <div className="flex items-start justify-end gap-[10px]">
-              <div
-                className="flex flex-shrink-0 items-center justify-center rounded-[100px] box-border"
-                style={{
-                  background: "#A7C0EC",
-                  minWidth: "71px",
-                  minHeight: "49px",
-                  padding: "15px 25px",
-                  boxSizing: "border-box",
-                }}
-              >
-                <span
+            {reviewDisplay.score !== null && (
+              <div className="flex items-start justify-end gap-[10px]">
+                <div
+                  className="flex flex-shrink-0 items-center justify-center rounded-[100px] box-border"
                   style={{
-                    fontFamily: "Inter, sans-serif",
-                    fontWeight: 600,
-                    fontSize: "16px",
-                    lineHeight: "100%",
-                    color: "#2351A3",
+                    background: "#A7C0EC",
+                    minWidth: "71px",
+                    minHeight: "49px",
+                    padding: "15px 25px",
+                    boxSizing: "border-box",
                   }}
                 >
-                  {reviewDisplay.score.toFixed(1)}
-                </span>
-              </div>
-              <div className="flex max-w-[160px] flex-col gap-[6px] pt-[5px] text-justify">
-                <span
-                  style={{
-                    fontFamily: "Inter, sans-serif",
-                    fontWeight: 600,
-                    fontSize: "14px",
-                    lineHeight: "100%",
-                    color: "#00B868",
-                  }}
-                >
-                  {reviewDisplay.label}
-                </span>
-                {reviewDisplay.count != null && (
                   <span
                     style={{
                       fontFamily: "Inter, sans-serif",
-                      fontWeight: 400,
-                      fontSize: "14px",
+                      fontWeight: 600,
+                      fontSize: "16px",
                       lineHeight: "100%",
-                      color: "#3D495C",
+                      color: "#2351A3",
                     }}
                   >
-                    {reviewDisplay.count} guest reviews
+                    {reviewDisplay.score.toFixed(1)}
                   </span>
-                )}
+                </div>
+                <div className="flex max-w-[160px] flex-col gap-[6px] pt-[5px] text-justify">
+                  <span
+                    style={{
+                      fontFamily: "Inter, sans-serif",
+                      fontWeight: 600,
+                      fontSize: "14px",
+                      lineHeight: "100%",
+                      color: "#00B868",
+                    }}
+                  >
+                    {reviewDisplay.label}
+                  </span>
+                  {reviewDisplay.count != null && (
+                    <span
+                      style={{
+                        fontFamily: "Inter, sans-serif",
+                        fontWeight: 400,
+                        fontSize: "14px",
+                        lineHeight: "100%",
+                        color: "#3D495C",
+                      }}
+                    >
+                      {reviewDisplay.count} guest reviews
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
+            )}
             <span
               className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
               style={{
@@ -416,6 +418,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                       lineHeight: "100%",
                       maxWidth: "100%",
                       overflowWrap: "anywhere",
+                      whiteSpace: "nowrap",
                       display: "block",
                     }}
                   >
@@ -431,6 +434,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                     lineHeight: "100%",
                     maxWidth: "100%",
                     overflowWrap: "anywhere",
+                    whiteSpace: "nowrap",
                     display: "block",
                   }}
                 >
