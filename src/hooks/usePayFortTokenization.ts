@@ -16,7 +16,10 @@ type InitiateOptions = {
 export function usePayFortTokenization() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const listenerRef = useRef<(e: MessageEvent) => void | null>(null);
-  const cleanupTimerRef = useRef<number | null>(null);
+  const removeFormTimerRef = useRef<number | null>(null);
+  const timeoutTimerRef = useRef<number | null>(null);
+  const loadGuardTimerRef = useRef<number | null>(null);
+  const popupRef = useRef<Window | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [tokenResponse, setTokenResponse] = useState<TokenPayload | null>(null);
@@ -31,15 +34,29 @@ export function usePayFortTokenization() {
       );
       listenerRef.current = null;
     }
+    try {
+      if (popupRef.current && !popupRef.current.closed) {
+        popupRef.current.close();
+      }
+    } catch (_) {}
+    popupRef.current = null;
     if (iframeRef.current) {
       try {
         document.body.removeChild(iframeRef.current);
       } catch (_) {}
       iframeRef.current = null;
     }
-    if (cleanupTimerRef.current) {
-      window.clearTimeout(cleanupTimerRef.current);
-      cleanupTimerRef.current = null;
+    if (removeFormTimerRef.current) {
+      window.clearTimeout(removeFormTimerRef.current);
+      removeFormTimerRef.current = null;
+    }
+    if (timeoutTimerRef.current) {
+      window.clearTimeout(timeoutTimerRef.current);
+      timeoutTimerRef.current = null;
+    }
+    if (loadGuardTimerRef.current) {
+      window.clearTimeout(loadGuardTimerRef.current);
+      loadGuardTimerRef.current = null;
     }
     setIsLoading(false);
   };
@@ -51,7 +68,32 @@ export function usePayFortTokenization() {
       setError(null);
       setTokenResponse(null);
 
-      return new Promise<TokenPayload>((resolve, reject) => {
+      const openCenteredPopup = (name: string, width = 500, height = 700) => {
+        const dualScreenLeft =
+          window.screenLeft !== undefined ? window.screenLeft : window.screenX;
+        const dualScreenTop =
+          window.screenTop !== undefined ? window.screenTop : window.screenY;
+        const screenWidth =
+          window.innerWidth ||
+          document.documentElement.clientWidth ||
+          screen.width;
+        const screenHeight =
+          window.innerHeight ||
+          document.documentElement.clientHeight ||
+          screen.height;
+        const systemZoom = screenWidth / window.screen.availWidth;
+        const left = (screenWidth - width) / 2 / systemZoom + dualScreenLeft;
+        const top = (screenHeight - height) / 2 / systemZoom + dualScreenTop;
+        const features = `scrollbars=yes, width=${width / systemZoom}, height=${
+          height / systemZoom
+        }, top=${top}, left=${left}`;
+        return window.open("about:blank", name, features);
+      };
+
+      type Mode = "iframe" | "popup";
+
+      const runOnce = (mode: Mode = "iframe") =>
+        new Promise<TokenPayload>((resolve, reject) => {
         try {
           const merchant_reference = PayFortUtils.generateMerchantReference();
           const expectedMerchantReference = merchant_reference;
@@ -80,26 +122,71 @@ export function usePayFortTokenization() {
             ...(opts.extra || {}),
           };
 
-          // Create hidden iframe instead of popup
-          const iframe = document.createElement("iframe");
-          iframe.name = "payfortHiddenFrame";
-          iframe.style.position = "fixed";
-          iframe.style.top = "-9999px";
-          iframe.style.left = "-9999px";
-          iframe.style.width = "1px";
-          iframe.style.height = "1px";
-          iframe.style.border = "none";
-          iframe.style.opacity = "0";
-          iframe.style.pointerEvents = "none";
+          let targetName = "payfortHiddenTarget";
+          if (mode === "iframe") {
+            // Create hidden iframe
+            const iframe = document.createElement("iframe");
+            iframe.name = targetName;
+            iframe.style.position = "fixed";
+            iframe.style.top = "-9999px";
+            iframe.style.left = "-9999px";
+            iframe.style.width = "1px";
+            iframe.style.height = "1px";
+            iframe.style.border = "none";
+            iframe.style.opacity = "0";
+            iframe.style.pointerEvents = "none";
+            document.body.appendChild(iframe);
+            iframeRef.current = iframe;
 
-          document.body.appendChild(iframe);
-          iframeRef.current = iframe;
+            // If the PayFort page can't even load (DNS/firewall), fail fast
+            let didIframeLoad = false;
+            const onIframeLoad = () => {
+              didIframeLoad = true;
+              if (loadGuardTimerRef.current) {
+                window.clearTimeout(loadGuardTimerRef.current);
+                loadGuardTimerRef.current = null;
+              }
+            };
+            const onIframeError = () => {
+              if (!resolved) {
+                const msg =
+                  "Unable to reach PayFort tokenization page (network/DNS blocked).";
+                setError(msg);
+                reject(new Error(msg));
+                cleanup();
+              }
+            };
+            iframe.addEventListener("load", onIframeLoad);
+            iframe.addEventListener("error", onIframeError as any);
+            loadGuardTimerRef.current = window.setTimeout(() => {
+              if (!didIframeLoad && !resolved) {
+                const msg =
+                  "PayFort page did not load. This is usually a DNS/firewall issue.";
+                setError(msg);
+                reject(new Error(msg));
+                cleanup();
+              }
+            }, 12000);
+          } else {
+            // Open popup path
+            const popup = openCenteredPopup("payfortTokenPopup");
+            if (!popup) {
+              const msg =
+                "Popup was blocked. Please allow popups for this site and try again.";
+              setError(msg);
+              reject(new Error(msg));
+              cleanup();
+              return;
+            }
+            popupRef.current = popup;
+            targetName = "payfortTokenPopup";
+          }
 
           // create form
           const form = document.createElement("form");
           form.method = "POST";
           form.action = "https://sbcheckout.payfort.com/FortAPI/paymentPage";
-          form.target = "payfortHiddenFrame";
+          form.target = targetName;
 
           Object.keys(fields).forEach((k) => {
             const input = document.createElement("input");
@@ -114,7 +201,17 @@ export function usePayFortTokenization() {
           // message handler
           const handler = (e: MessageEvent) => {
             try {
-              const payload = e.data;
+              const data = e.data;
+              if (!data) return;
+
+              // Support both shapes:
+              // - legacy: payload is directly the response object
+              // - new: { source: "payfort-token", payload: {...} }
+              const payload =
+                data && typeof data === "object" && "payload" in data
+                  ? (data as any).payload
+                  : data;
+
               if (!payload) return;
 
               if (
@@ -162,23 +259,22 @@ export function usePayFortTokenization() {
           form.submit();
 
           // remove form after short delay
-          cleanupTimerRef.current = window.setTimeout(() => {
+          removeFormTimerRef.current = window.setTimeout(() => {
             try {
               form.remove();
             } catch (_) {}
           }, 1500);
 
-          // timeout safety: if no response after 30 seconds
-          const timeoutId = window.setTimeout(() => {
+          // timeout safety: if no response after 60 seconds
+          timeoutTimerRef.current = window.setTimeout(() => {
             if (!resolved) {
-              const msg = "Tokenization timed out after 30 seconds.";
+              const msg =
+                "Tokenization timed out. Please check your internet connection and try again.";
               setError(msg);
               reject(new Error(msg));
               cleanup();
             }
-          }, 30000);
-
-          cleanupTimerRef.current = timeoutId;
+          }, 60000);
         } catch (err) {
           setIsLoading(false);
           setError((err as Error).message || String(err));
@@ -186,6 +282,17 @@ export function usePayFortTokenization() {
           cleanup();
         }
       });
+
+      // One retry for transient slowness.
+      try {
+        return await runOnce();
+      } catch (err: any) {
+        const msg = String(err?.message || "");
+        if (msg.toLowerCase().includes("timed out")) {
+          return await runOnce();
+        }
+        throw err;
+      }
     },
     []
   );

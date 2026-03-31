@@ -8,6 +8,7 @@ export type FlightInitialBooking = {
   reservationType: string;
   paymentDetails: {
     paymentMode: string;
+    cardInfo?: string;
   };
 };
 

@@ -127,11 +127,21 @@
             payload[key] = value;
           }
 
-          // console.log("🔄 Sending payload to parent:", payload);
+          const frontendOrigin = payload["frontend_origin"];
+
+          const message = {
+            source: "payfort-token",
+            payload,
+          };
 
           // Send to parent window
           if (window.parent && window.parent !== window) {
-            window.parent.postMessage(payload, "*");
+            // Prefer strict target origin if provided; otherwise fall back to "*"
+            const targetOrigin =
+              typeof frontendOrigin === "string" && frontendOrigin.length > 0
+                ? frontendOrigin
+                : "*";
+            window.parent.postMessage(message, targetOrigin);
           } else {
             console.error("No parent window found");
           }

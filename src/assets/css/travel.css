@@ -2355,3 +2355,41 @@ img:hover {
     box-sizing: border-box;
   }
 }
+
+/* -------------------------------------------------------- */
+/* Mobile typography & overflow guards for flight result cards */
+/* -------------------------------------------------------- */
+
+/* Prevent airline name/details from overflowing the row */
+.flightDetailCards .nameAndDetails h5,
+.flightDetailCards .nameAndDetails p {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: min(64vw, 220px);
+}
+
+/* Make big price text scale down on small screens */
+@media (max-width: 640px) {
+  .flightDetailCards .StartingPrice h5 {
+    font-size: 22px !important;
+  }
+}
+@media (max-width: 420px) {
+  .flightDetailCards .StartingPrice h5 {
+    font-size: 20px !important;
+  }
+  .flightDetailCards .nameAndDetails h5 {
+    font-size: 12px !important;
+    max-width: min(70vw, 200px);
+  }
+  .flightDetailCards .nameAndDetails p {
+    font-size: 9px !important;
+    max-width: min(70vw, 200px);
+  }
+  .flightDetailCards .featureIcons img,
+  .flightDetailCards .featureIconText img {
+    width: 14px !important;
+    height: 14px !important;
+  }
+}

@@ -202,7 +202,7 @@ const FlightBooking = () => {
     //   paymentDetails: {
     //     paymentMode: "CR",
     //     transactionAmount: null,
-    //     // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
+    //     // cardInfocardInfocardInfocardInfocardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
     //     cardInfo: "",
     //     address: {
     //       label: "Billing",

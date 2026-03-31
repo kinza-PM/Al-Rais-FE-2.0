@@ -297,7 +297,8 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                         display: "flex",
                         alignItems: "center",
                         gap: "1px",
-                        minWidth: "201px",
+                        minWidth: 0, // allow shrink on small screens
+                        flex: "1 1 auto",
                       }}
                     >
                       <div className="flightIcon" style={{ flexShrink: 0 }}>
@@ -403,7 +404,8 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                         flexDirection: "column",
                         alignItems: "flex-end",
                         gap: "8px",
-                        minWidth: "320px",
+                        minWidth: 0, // allow container to shrink
+                        flex: "0 1 320px",
                       }}
                     >
                       <p
@@ -423,6 +425,8 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                           display: "flex",
                           alignItems: "center",
                           gap: "12px",
+                          flexWrap: "wrap",
+                          justifyContent: "flex-end",
                         }}
                       >
                         <h5
@@ -442,7 +446,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                         <button
                           onClick={() => openDetailsModal(item, "price")}
                           style={{
-                            width: "150px",
+                            width: "140px",
                             height: "47px",
                             borderRadius: "100px",
                             padding: "14px 25px",

@@ -1201,16 +1201,16 @@ const FlightDetailTemplate: React.FC = () => {
   };
 
   const headerContent = (
-    <div style={{ position: 'relative', width: '280px' }}>
+    <div style={{ position: 'relative', width: '100%', maxWidth: '280px' }}>
       <div 
         onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
         style={{ 
-          width: '280px',
-          height: '70px',
+          width: '100%',
+          height: '64px',
           borderRadius: '16px',
           border: '1.5px solid #3D495C',
           background: '#F2F2F3',
-          padding: '12px 16px',
+          padding: '10px 14px',
           boxSizing: 'border-box',
           display: 'flex',
           flexDirection: 'column',
@@ -1222,7 +1222,7 @@ const FlightDetailTemplate: React.FC = () => {
         <span style={{ fontSize: 12, fontWeight: 400, color: '#64748B', display: 'block', marginBottom: '4px' }}>
         Sort by
         </span>
-        <span style={{ fontSize: 16, fontWeight: 500, color: '#0F172A', display: 'block' }}>
+        <span style={{ fontSize: 15, fontWeight: 500, color: '#0F172A', display: 'block' }}>
           {getSortLabel(sortBy)}
         </span>
         <svg 
@@ -1247,9 +1247,9 @@ const FlightDetailTemplate: React.FC = () => {
       {isSortDropdownOpen && (
         <div style={{
           position: 'absolute',
-          top: '75px',
+          top: '70px',
           left: 0,
-          width: '280px',
+          width: '100%',
           background: '#FFFFFF',
           borderRadius: '16px',
           border: '1.5px solid #C2CAD6',
@@ -2089,7 +2089,7 @@ const FlightDetailTemplate: React.FC = () => {
           <div className="flightDetailMainContent" style={{ width: "100%" }}>
             {(!hasSearched || (responseData && responseData.length > 0)) && (
               <>
-                <div className="relative w-full max-w-[1040px] m-auto">
+                <div className="relative w-full max-w-[1040px] m-auto hidden md:block">
                   <img
                     src={planeImg}
                     alt=""
