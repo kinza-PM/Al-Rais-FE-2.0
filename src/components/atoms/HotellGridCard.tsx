@@ -154,7 +154,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
 
     return (
       <div
-        className="w-full min-w-0 bg-transparent overflow-hidden flex flex-col rounded-2xl"
+        className="w-full min-w-0 bg-transparent flex flex-col rounded-2xl relative"
         style={{
           border: "1px solid var(--white-300, #E4E4E7)",
         }}

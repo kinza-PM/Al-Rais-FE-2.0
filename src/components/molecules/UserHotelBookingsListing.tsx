@@ -1,15 +1,16 @@
 import { useMemo, useEffect, useState, useCallback } from "react";
-import { Tooltip } from "antd";
+// import { Tooltip } from "antd";
 import Button from "../atoms/Button";
 import { Link, useSearchParams } from "react-router-dom";
 import ShareTicketModal from "../atoms/ShareTicketModal";
-import { InfoCircleOutlined } from "@ant-design/icons";
+// import { InfoCircleOutlined } from "@ant-design/icons";
 import type { HotelBookingCardItem } from "../../utils/transformBookingData";
 import { markExpectMyBookingsQueryRestore } from "../../utils/myBookingsUrl";
 import HotelBookingETicketSetion, {
   type HotelListDownloadParams,
 } from "./HotelBookingETicketSetion";
 import type { BookingStatus } from "./UserBookingsListing";
+import FilledStar from "../../assets/svgs/filled_star.svg";
 
 const actionLinkClass =
   "text-[13px] font-medium text-[#5383DA] hover:underline cursor-pointer whitespace-nowrap";
@@ -87,9 +88,11 @@ function StayTimeline({
         <div className="text-[14px] font-semibold text-[#0A0C0F] mb-3">
           Check-in
         </div>
-        <div className="text-[13px] font-medium text-[#0A0C0F] leading-none">
-          {checkInTime}
-        </div>
+        {checkInTime && (
+          <div className="text-[13px] font-medium text-[#0A0C0F] leading-none">
+            {checkInTime}
+          </div>
+        )}
         <div className="text-[10px] text-[#3D495C] mt-2">{checkInDate}</div>
       </div>
 
@@ -105,9 +108,11 @@ function StayTimeline({
         <div className="text-[14px] font-semibold text-[#0A0C0F] mb-3">
           Check-out
         </div>
-        <div className="text-[13px] font-medium text-[#0A0C0F] leading-none">
-          {checkOutTime}
-        </div>
+        {checkOutTime && (
+          <div className="text-[13px] font-medium text-[#0A0C0F] leading-none">
+            {checkOutTime}
+          </div>
+        )}
         <div className="text-[10px] text-[#3D495C] mt-2">{checkOutDate}</div>
       </div>
     </div>
@@ -192,8 +197,15 @@ function HotelBookingCard({
 
       <div className="px-4 py-3 grid grid-cols-[1.5fr_.6fr_.45fr] gap-6 items-start">
         <div>
-          <div className="text-[14px] font-medium text-[#0A0C0F] leading-none">
-            {booking.hotelName}
+          <div className="flex items-center gap-1 mb-1">
+            <span className="text-[14px] font-medium text-[#0A0C0F] leading-none">
+              {booking.hotelName}
+            </span>
+            {booking.starRating
+              ? Array.from({ length: booking.starRating }).map((_, i) => (
+                <img key={i} src={FilledStar} alt="star" className="w-3 h-3" />
+              ))
+              : null}
           </div>
           <div className="text-[10px] text-[#3D495C] mt-2 leading-[14px]">
             {booking.address}
@@ -325,22 +337,22 @@ function HotelBookingCard({
                 Request changes
               </Link>
               {(() => {
-                const isPastCancellationDeadline =
-                  booking.cancellationDeadlineDate &&
-                  new Date() > new Date(booking.cancellationDeadlineDate);
-                if (isPastCancellationDeadline) {
-                  return (
-                    <Tooltip title="This booking can't be cancelled">
-                      <span className="inline-flex items-center pl-4 cursor-not-allowed text-[#98A4B3]">
-                        <span className="font-medium">Cancel booking</span>
-                        <InfoCircleOutlined
-                          className="ml-1 text-[#98A4B3]"
-                          style={{ fontSize: 14 }}
-                        />
-                      </span>
-                    </Tooltip>
-                  );
-                }
+                // const isPastCancellationDeadline =
+                //   booking.cancellationDeadlineDate &&
+                //   new Date() > new Date(booking.cancellationDeadlineDate);
+                // if (isPastCancellationDeadline) {
+                //   return (
+                //     <Tooltip title="This booking can't be cancelled">
+                //       <span className="inline-flex items-center pl-4 cursor-not-allowed text-[#98A4B3]">
+                //         <span className="font-medium">Cancel booking</span>
+                //         <InfoCircleOutlined
+                //           className="ml-1 text-[#98A4B3]"
+                //           style={{ fontSize: 14 }}
+                //         />
+                //       </span>
+                //     </Tooltip>
+                //   );
+                // }
                 return (
                   <Link
                     to="/hotel-cancellation"

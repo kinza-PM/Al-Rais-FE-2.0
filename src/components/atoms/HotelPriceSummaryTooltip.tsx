@@ -30,8 +30,11 @@ export default function HotelPriceSummaryTooltip({
       <button>
         <img src={InfoPrimary} alt="icon" />
       </button>
-      <div className="absolute right-0 mb-2 hidden group-hover:block z-10 w-64">
-        <div className="bg-[#F2F2F3] rounded-lg px-5 py-4 shadow-lg">
+      <div className="absolute right-0 pb-2 hidden group-hover:block z-[9999] w-64">
+        <div className="bg-[#F2F2F3] rounded-lg px-5 py-4 shadow-[0_4px_20px_rgba(0,0,0,0.15)] relative">
+          {/* Triangle arrow at bottom */}
+          <div className="absolute -bottom-2 right-2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[8px] border-l-transparent border-r-transparent border-t-[#F2F2F3]"></div>
+
           <p className="text-[#000000] text-sm font-semibold mb-3 text-left">
             Price summary
           </p>

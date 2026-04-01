@@ -99,7 +99,6 @@ export default function HotelBookingETicketSetion({
           bookingKey: stateBookingKey || "",
           searchKey,
         });
-
         setRetrieveResponse(resp);
       } catch (error) {
         const err = extractErrorFromAxiosApiError(error);
@@ -166,9 +165,8 @@ export default function HotelBookingETicketSetion({
         "November",
         "December",
       ];
-      return `${days[date.getDay()]}, ${date.getDate()} ${
-        months[date.getMonth()]
-      } ${date.getFullYear()}`;
+      return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]
+        } ${date.getFullYear()}`;
     } catch {
       return dateString ?? "—";
     }
@@ -189,9 +187,8 @@ export default function HotelBookingETicketSetion({
 
   const guestNames = passengers
     .map((p: any) =>
-      `${p.passengerInfo?.givenName ?? ""} ${
-        p.passengerInfo?.surname ?? ""
-      }`.trim(),
+      `${p.passengerInfo?.givenName ?? ""} ${p.passengerInfo?.surname ?? ""
+        }`.trim(),
     )
     .filter(Boolean)
     .join(", ");
@@ -210,9 +207,8 @@ export default function HotelBookingETicketSetion({
         ? `${String(adults).padStart(2, "0")} Adult${adults > 1 ? "s" : ""}`
         : "",
       children > 0
-        ? `${String(children).padStart(2, "0")} Child${
-            children > 1 ? "ren" : ""
-          }`
+        ? `${String(children).padStart(2, "0")} Child${children > 1 ? "ren" : ""
+        }`
         : "",
     ]
       .filter(Boolean)
@@ -408,9 +404,8 @@ export default function HotelBookingETicketSetion({
           </h3>
           <p className="text-xs text-[#3D495C]">
             {hotelDetail?.address
-              ? `${hotelDetail.address}${
-                  hotelDetail.city ? `, ${hotelDetail.city}` : ""
-                }${hotelDetail.country ? `, ${hotelDetail.country}` : ""}`
+              ? `${hotelDetail.address}${hotelDetail.city ? `, ${hotelDetail.city}` : ""
+              }${hotelDetail.country ? `, ${hotelDetail.country}` : ""}`
               : ""}
           </p>
         </div>
@@ -421,9 +416,8 @@ export default function HotelBookingETicketSetion({
           <div className="col-span-4">
             <p className="text-lg font-semibold text-[#0A0C0F]">Check-in</p>
             <p
-              className={`text-base font-medium text-[#0A0C0F] ${
-                hotelDetail?.checkInTime ? "mt-4" : ""
-              }`}
+              className={`text-base font-medium text-[#0A0C0F] ${hotelDetail?.checkInTime ? "mt-4" : ""
+                }`}
             >
               {hotelDetail?.checkInTime || ""}
             </p>
@@ -431,11 +425,10 @@ export default function HotelBookingETicketSetion({
           </div>
 
           <div
-            className={`col-span-4 flex justify-center ${
-              hotelDetail?.checkInTime && hotelDetail?.checkOutTime
-                ? "mt-16"
-                : "mt-8"
-            }`}
+            className={`col-span-4 flex justify-center ${hotelDetail?.checkInTime && hotelDetail?.checkOutTime
+              ? "mt-16"
+              : "mt-8"
+              }`}
           >
             <div className="FlightDirection">
               <div className="hotelVisualGuid">
@@ -456,9 +449,8 @@ export default function HotelBookingETicketSetion({
           <div className="col-span-4 text-right">
             <p className="text-base font-semibold text-[#0A0C0F]">Check-out</p>
             <p
-              className={`text-base font-medium text-[#0A0C0F] ${
-                hotelDetail?.checkOutTime ? "mt-4" : ""
-              }`}
+              className={`text-base font-medium text-[#0A0C0F] ${hotelDetail?.checkOutTime ? "mt-4" : ""
+                }`}
             >
               {hotelDetail?.checkOutTime || ""}
             </p>
@@ -577,37 +569,6 @@ export default function HotelBookingETicketSetion({
         style={{ borderWidth: 1, borderColor: "#C2CAD6" }}
       >
         <TicketContent />
-        <NotchDivider />
-        <div className="grid w-full grid-cols-3 gap-2 px-2 sm:gap-3 sm:px-4">
-          <span
-            className="flex min-h-[46px] items-center justify-center px-2 text-center text-[11px] font-semibold leading-tight text-[#F2F2F3] sm:text-[12px]"
-            style={{
-              borderRadius: 100,
-              background:
-                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-            }}
-          >
-            Download as PDF
-          </span>
-          <span
-            className="flex min-h-[46px] items-center justify-center border border-[#2351A3] bg-white px-2 text-center text-[11px] font-semibold text-[#2351A3] sm:text-[13px]"
-            style={{
-              borderRadius: 100,
-              fontFamily: "Inter, sans-serif",
-            }}
-          >
-            Share
-          </span>
-          <span
-            className="flex min-h-[46px] items-center justify-center border border-[#C2CAD6] bg-[#F8FAFC] px-2 text-center text-[11px] font-semibold leading-tight text-[#2351A3] sm:text-[12px]"
-            style={{
-              borderRadius: 100,
-              fontFamily: "Inter, sans-serif",
-            }}
-          >
-            Manage bookings
-          </span>
-        </div>
       </div>
     </div>
   );

@@ -861,7 +861,7 @@ export default function HotelBookingBookSection({
             currency={currency}
             hotelDetail={hotelDetail}
           />
-          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} />
+          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
 
           <div className="mt-6 flex justify-center">
             <Button

@@ -961,6 +961,7 @@ const HotelDetailListing = () => {
                 currency: selected?.room?.roomRate?.currency ?? "AED",
                 netAmount: selected?.room?.roomRate?.netAmount ?? 0,
                 rates: selected?.room?.roomRate?.rates ?? [],
+                taxes: selected?.room?.roomRate?.taxes ?? [],
               },
               rateNotes: selected?.room?.rateNotes ?? "",
               financialInfo: {
@@ -995,6 +996,7 @@ const HotelDetailListing = () => {
                 currency: room?.roomRate?.currency ?? "AED",
                 netAmount: room?.roomRate?.netAmount ?? 0,
                 rates: room?.roomRate?.rates ?? [],
+                taxes: room?.roomRate?.taxes ?? [],
               },
               rateNotes: room?.rateNotes ?? "",
               financialInfo: {

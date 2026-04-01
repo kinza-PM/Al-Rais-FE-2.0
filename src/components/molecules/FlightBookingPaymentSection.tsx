@@ -62,8 +62,8 @@ type FlightBookingPaymentSectionProps = {
   onReservationChange: (
     eOrPath:
       | React.ChangeEvent<
-          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-        >
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
       | string,
     maybeValue?: any,
   ) => void;
@@ -355,7 +355,7 @@ export default function FlightBookingPaymentSection({
       // always cleanup/close popup if still open
       try {
         if (popup && !popup.closed) popup.close();
-      } catch (_) {}
+      } catch (_) { }
       setIsProcessing(false);
     }
   };
@@ -774,7 +774,7 @@ export default function FlightBookingPaymentSection({
 
                       <CardCollapseToggle
                         open={openAddress}
-                        onClick={() => {}}
+                        onClick={() => { }}
                         className="pointer-events-none"
                       />
                     </div>

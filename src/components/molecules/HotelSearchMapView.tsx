@@ -517,6 +517,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
                 currency: room?.roomRate?.currency ?? "AED",
                 netAmount: room?.roomRate?.netAmount ?? 0,
                 rates: room?.roomRate?.rates ?? [],
+                taxes: room?.roomRate?.taxes ?? [],
               },
               rateNotes: room?.rateNotes ?? "",
               financialInfo: {

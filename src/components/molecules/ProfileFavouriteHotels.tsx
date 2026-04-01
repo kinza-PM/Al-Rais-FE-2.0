@@ -118,9 +118,8 @@ const buildHotelShareUrl = (
 
   const queryString = params.toString();
 
-  return `${window.location.origin}/hotel-detail/${hotelKey}${
-    queryString ? `?${queryString}` : ""
-  }`;
+  return `${window.location.origin}/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""
+    }`;
 };
 
 const ProfileFavouriteHotels: React.FC = () => {
@@ -149,8 +148,8 @@ const ProfileFavouriteHotels: React.FC = () => {
     const raw = Array.isArray(data)
       ? data
       : Array.isArray((data as any)?.data)
-      ? (data as any).data
-      : [];
+        ? (data as any).data
+        : [];
 
     return raw.map((item: FavouriteApiItem) => {
       const propertyInfo = safeJsonParse<ParsedPropertyInfo>(
@@ -277,6 +276,11 @@ const ProfileFavouriteHotels: React.FC = () => {
           from: rate?.from ?? "",
           rateIndex: rate?.rateIndex ?? "",
           to: rate?.to ?? "",
+        })),
+        taxes: (room?.roomRate?.taxes ?? []).map((tax: any) => ({
+          name: tax?.name ?? "",
+          amount: tax?.amount ?? 0,
+          included: tax?.included ?? false,
         })),
       },
       rateNotes: room?.rateNotes ?? "",
@@ -414,7 +418,7 @@ const ProfileFavouriteHotels: React.FC = () => {
 
           return (
             <div
-              className="bg-[#FFFFFF] rounded-2xl overflow-hidden mb-5"
+              className="bg-[#FFFFFF] rounded-2xl overflow-visible mb-5"
               key={`${hotel.hotelKey}-${index}`}
             >
               <div className="flex px-3 py-3">
@@ -508,32 +512,29 @@ const ProfileFavouriteHotels: React.FC = () => {
                           previewRates.map((rate: any, idx: number) => (
                             <React.Fragment key={idx}>
                               <div
-                                className={`min-w-[74px] px-3 text-center ${
-                                  idx === 0 ? "relative" : ""
-                                }`}
+                                className={`min-w-[74px] px-3 text-center ${idx === 0 ? "relative" : ""
+                                  }`}
                               >
                                 <div
-                                  className={`text-[11px] mb-1 ${
-                                    idx === 0
-                                      ? "text-[#2351A3]"
-                                      : "text-[#3D495C]"
-                                  }`}
+                                  className={`text-[11px] mb-1 ${idx === 0
+                                    ? "text-[#2351A3]"
+                                    : "text-[#3D495C]"
+                                    }`}
                                 >
                                   {formatDateShort(rate?.from)}
                                 </div>
 
                                 <div
-                                  className={`text-[11px] font-semibold ${
-                                    idx === 0 && availabilityMessage
-                                      ? "text-[#EA0029]"
-                                      : "text-[#0A0C0F]"
-                                  }`}
+                                  className={`text-[11px] font-semibold ${idx === 0 && availabilityMessage
+                                    ? "text-[#EA0029]"
+                                    : "text-[#0A0C0F]"
+                                    }`}
                                 >
                                   {idx === 0 && availabilityMessage
                                     ? "No rooms"
                                     : `${currency} ${Number(
-                                        rate?.amount || 0
-                                      ).toFixed(2)}`}
+                                      rate?.amount || 0
+                                    ).toFixed(2)}`}
                                 </div>
 
                                 {idx === 0 && (
@@ -571,7 +572,7 @@ const ProfileFavouriteHotels: React.FC = () => {
 
                 <div className="w-[235px] flex-shrink-0 pl-4 border-l border-[#E4E4E7]">
                   <div className="flex items-start gap-3 mb-3">
-                    <div className="bg-[#A7C0EC] rounded-full min-w-[58px] h-[38px] flex items-center justify-center">
+                    {/* <div className="bg-[#A7C0EC] rounded-full min-w-[58px] h-[38px] flex items-center justify-center">
                       <span className="text-[#2351A3] text-[15px] font-semibold">
                         {propertyInfo?.starRating || "0"}
                       </span>
@@ -582,15 +583,15 @@ const ProfileFavouriteHotels: React.FC = () => {
                         {Number(propertyInfo?.starRating || 0) >= 4
                           ? "Excellent"
                           : Number(propertyInfo?.starRating || 0) >= 3
-                          ? "Very good"
-                          : "Good"}
+                            ? "Very good"
+                            : "Good"}
                       </p>
                       <p className="text-[12px] text-[#3D495C] mt-1">
                         {bestRoom?.maxOccupancy && bestRoom.maxOccupancy > 0
                           ? `Up to ${bestRoom.maxOccupancy} guests`
                           : "Saved favourite"}
                       </p>
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="mb-3">

@@ -215,7 +215,7 @@ const MyBookingsPage = () => {
         </div>
 
         <div className="mt-4">
-          <div className="flex justify-center gap-10 text-[16px]">
+          <div className="flex justify-center gap-2 text-[16px]">
             {modeTabs.map((m) => {
               const selected = mode === m;
               return (
@@ -224,8 +224,10 @@ const MyBookingsPage = () => {
                   type="button"
                   onClick={() => setModeTab(m)}
                   className={[
-                    "relative font-medium",
-                    selected ? "text-[#2351A3]" : "text-[#3D495C]",
+                    "flex items-center justify-center w-[108px] h-[39px] rounded-tl-[16px] rounded-tr-[16px] px-[20px] py-[10px] text-[14px] font-medium transition-colors",
+                    selected
+                      ? "bg-[#2351A3] text-white shadow-sm"
+                      : "bg-[#E4E4E7] text-[#3D495C]",
                   ].join(" ")}
                   overrideClasses
                 >

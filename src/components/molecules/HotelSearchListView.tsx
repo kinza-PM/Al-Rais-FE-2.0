@@ -148,6 +148,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
               currency: room?.roomRate?.currency ?? "AED",
               netAmount: room?.roomRate?.netAmount ?? 0,
               rates: room?.roomRate?.rates ?? [],
+              taxes: room?.roomRate?.taxes ?? [],
             },
             rateNotes: room?.rateNotes ?? "",
             financialInfo: {
@@ -371,7 +372,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
               return (
                 <div
-                  className="mb-4 overflow-hidden bg-transparent"
+                  className="mb-4 bg-transparent relative"
                   style={{ borderBottom: "2px solid var(--black-100, #C2CAD6)" }}
                   key={hotel.hotelKey || index}
                 >

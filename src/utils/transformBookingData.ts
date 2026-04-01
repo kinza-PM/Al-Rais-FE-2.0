@@ -76,10 +76,10 @@ export function transformBookingItem(apiItem: any): any {
   const bookingRef =
     status === "Confirmed"
       ? apiItem.bookingReferenceId ||
-        apiItem.detail?.supplierLocator ||
-        apiItem.detail?.airlineLocators?.[0]?.airlineLocator ||
-        apiItem.offerId?.split("-")[0] ||
-        "N/A"
+      apiItem.detail?.supplierLocator ||
+      apiItem.detail?.airlineLocators?.[0]?.airlineLocator ||
+      apiItem.offerId?.split("-")[0] ||
+      "N/A"
       : null;
 
   // Calculate countdown for pending bookings
@@ -235,6 +235,8 @@ export type HotelBookingCardItem = {
   /** Paid total for refund estimate on cancellation page (if API provides it) */
   totalPaid?: number;
   currency?: string;
+  imageUrl?: string;
+  starRating?: number;
 };
 
 function formatDateForHotel(dateStr: string): string {
@@ -252,8 +254,14 @@ function formatDateForHotel(dateStr: string): string {
   }
 }
 
-function formatTimeForHotel(dateStr: string): string {
-  if (!dateStr) return "";
+function formatTimeForHotel(dateStr: string, defaultTime: string): string {
+  if (!dateStr) return defaultTime;
+  if (!dateStr.includes("T") && !dateStr.includes(" ") && !dateStr.includes(":")) {
+    return defaultTime;
+  }
+  if (dateStr.endsWith("T00:00:00Z") || dateStr.endsWith("T00:00:00.000Z") || dateStr.endsWith("T00:00:00+00:00")) {
+    return defaultTime;
+  }
   try {
     return new Date(dateStr).toLocaleTimeString("en-US", {
       hour: "2-digit",
@@ -261,7 +269,7 @@ function formatTimeForHotel(dateStr: string): string {
       hour12: true,
     });
   } catch {
-    return dateStr;
+    return defaultTime;
   }
 }
 
@@ -276,7 +284,9 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
   const rawStatus = (apiItem.status || apiItem.bookingStatus || "").toLowerCase();
   const status = statusMap[rawStatus] || "Pending";
 
-  const hotel = apiItem.hotel || apiItem.propertyInfo || apiItem.property || {};
+  const hotel = apiItem || {};
+  // const hotel = apiItem.hotel || apiItem.propertyInfo || apiItem.property || {};
+  // console.log('hotel--------------------', apiItem);
   const hotelName =
     hotel.name ||
     hotel.hotelName ||
@@ -284,11 +294,16 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     hotel.propertyName ||
     "Hotel";
 
-  const address =
-    hotel.address ||
-    apiItem.address ||
-    [hotel.city, hotel.country].filter(Boolean).join(", ") ||
-    "";
+  const address = apiItem?.verifiedPropertyInfo?.address
+    ? `${apiItem.verifiedPropertyInfo.address}${apiItem.verifiedPropertyInfo.city ? `, ${apiItem.verifiedPropertyInfo.city}` : ""
+    }${apiItem.verifiedPropertyInfo.country ? `, ${apiItem.verifiedPropertyInfo.country}` : ""}`
+    : ""
+
+  let imageUrl = hotel.imageUrl || hotel.image || hotel.thumbnail || apiItem.heroImage || "";
+  if (!imageUrl && hotel.images && hotel.images.length > 0) {
+    imageUrl = typeof hotel.images[0] === "string" ? hotel.images[0] : hotel.images[0]?.url || hotel.images[0]?.path || "";
+  }
+  const starRating = Number(hotel.starRating || hotel.rating || apiItem.starRating) || 0;
 
   const checkIn =
     apiItem.checkInDate ||
@@ -308,9 +323,9 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     apiItem.nights ??
     (checkIn && checkOut
       ? Math.ceil(
-          (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
-            (1000 * 60 * 60 * 24)
-        )
+        (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
+        (1000 * 60 * 60 * 24)
+      )
       : 1);
   const totalStay = `Total stay: ${totalNights} ${totalNights === 1 ? "night" : "nights"}`;
 
@@ -378,18 +393,18 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
   const countdown =
     status === "Pending" && createdAt
       ? (() => {
-          const createdTime = new Date(createdAt).getTime();
-          const currentTime = Date.now();
-          const totalMs = 15 * 60 * 1000;
-          const remainingMs = Math.max(0, totalMs - (currentTime - createdTime));
-          const mins = Math.floor(remainingMs / 60000);
-          const secs = Math.floor((remainingMs % 60000) / 1000);
-          return {
-            hours: String(Math.floor(mins / 60)).padStart(2, "0"),
-            mins: String(mins % 60).padStart(2, "0"),
-            secs: String(secs).padStart(2, "0"),
-          };
-        })()
+        const createdTime = new Date(createdAt).getTime();
+        const currentTime = Date.now();
+        const totalMs = 15 * 60 * 1000;
+        const remainingMs = Math.max(0, totalMs - (currentTime - createdTime));
+        const mins = Math.floor(remainingMs / 60000);
+        const secs = Math.floor((remainingMs % 60000) / 1000);
+        return {
+          hours: String(Math.floor(mins / 60)).padStart(2, "0"),
+          mins: String(mins % 60).padStart(2, "0"),
+          secs: String(secs).padStart(2, "0"),
+        };
+      })()
       : undefined;
 
   return {
@@ -397,9 +412,9 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     status,
     hotelName,
     address,
-    checkInTime: formatTimeForHotel(checkIn) || "2:00 PM",
+    checkInTime: formatTimeForHotel(checkIn, ""),
     checkInDate: formatDateForHotel(checkIn) || "—",
-    checkOutTime: formatTimeForHotel(checkOut) || "12:00 PM",
+    checkOutTime: formatTimeForHotel(checkOut, ""),
     checkOutDate: formatDateForHotel(checkOut) || "—",
     totalStay,
     roomLabel,
@@ -411,6 +426,8 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     bookingKey: bookingKey || undefined,
     totalPaid,
     currency: currency || "AED",
+    imageUrl,
+    starRating,
   };
 }
 

@@ -6,6 +6,7 @@ import React from "react";
 import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
 import { formatDate } from "../../utils/helpers";
 import { Checkbox } from "antd";
+import { useState } from "react";
 
 const CardShell = ({
   title,
@@ -63,6 +64,9 @@ export default function HotelBookingReviewSection({
   currency = "AED",
   hotelBookingPayload,
 }: HotelBookingReviewSectionProps) {
+  const [isTermsChecked, setIsTermsChecked] = useState(false);
+  const [showTermsError, setShowTermsError] = useState(false);
+
   const roomsFromPayload = hotelBookingPayload?.rooms ?? [];
   const flatPassengers = roomsFromPayload.flatMap((room, roomIdx) =>
     (room.passengers ?? []).map((passenger, pIdx) => ({
@@ -333,14 +337,28 @@ export default function HotelBookingReviewSection({
             currency={currency}
             hotelDetail={hotelDetail}
           />
-          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} />
-          <Checkbox
-            className="mt-2 items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
-          >
-            <span className="font-medium text-sm leading-none tracking-normal align-middle">
-              I agree to the Terms & Conditions and Payment Rules and Regulations.
-            </span>
-          </Checkbox>
+          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
+          <div className="mt-2">
+            <Checkbox
+              checked={isTermsChecked}
+              onChange={(e) => {
+                setIsTermsChecked(e.target.checked);
+                if (e.target.checked) {
+                  setShowTermsError(false);
+                }
+              }}
+              className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
+            >
+              <span className="font-medium text-sm leading-none tracking-normal align-middle">
+                I agree to the Terms & Conditions and Payment Rules and Regulations.
+              </span>
+            </Checkbox>
+            {showTermsError && (
+              <p className="text-red-500 text-xs mt-1">
+                You must agree to the Terms & Conditions to proceed.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -353,6 +371,10 @@ export default function HotelBookingReviewSection({
             background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
           }}
           onClick={() => {
+            if (!isTermsChecked) {
+              setShowTermsError(true);
+              return;
+            }
             if (typeof onNext === "function") {
               onNext();
             }
