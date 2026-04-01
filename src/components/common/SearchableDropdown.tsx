@@ -48,6 +48,20 @@ interface SearchableDropdownProps {
   onOptionSelect?: (value: string, option: DropdownOption) => void;
   /** Optional namespace for global label cache to prevent cross-field collisions. */
   cacheKey?: string;
+  /**
+   * When true, the options list is not limited in height and does not scroll inside the panel;
+   * the page/body scroll handles long lists instead.
+   */
+  noInnerOptionsScroll?: boolean;
+  /** Custom trigger content (e.g. flag + dial code). Chevron and behavior unchanged. */
+  renderSelectedContent?: (args: {
+    selectedOption: DropdownOption | undefined;
+    displayValue: string;
+    placeholder: string;
+    value: string;
+  }) => React.ReactNode;
+  /** Custom row in the options list. Add `sr-only` text if the visual omits searchable words. */
+  renderOption?: (option: DropdownOption, isSelected: boolean) => React.ReactNode;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -72,6 +86,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   onOptionSelect,
   labelClass = null,
   cacheKey,
+  noInnerOptionsScroll = false,
+  renderSelectedContent,
+  renderOption,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -320,14 +337,25 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           aria-invalid={!!error}
           aria-describedby={error && showError ? "dropdown-error" : undefined}
         >
-          <span
-            className={`block min-w-0 flex-1 truncate whitespace-nowrap text-left ${
-              !selectedOption && !value ? "text-[#98A4B3]" : ""
-            }`}
-            title={typeof displayValue === "string" ? displayValue : undefined}
-          >
-            {displayValue}
-          </span>
+          {renderSelectedContent ? (
+            <span className="min-w-0 flex-1 text-left leading-normal">
+              {renderSelectedContent({
+                selectedOption,
+                displayValue,
+                placeholder,
+                value,
+              })}
+            </span>
+          ) : (
+            <span
+              className={`block min-w-0 flex-1 truncate whitespace-nowrap text-left ${
+                !selectedOption && !value ? "text-[#98A4B3]" : ""
+              }`}
+              title={typeof displayValue === "string" ? displayValue : undefined}
+            >
+              {displayValue}
+            </span>
+          )}
 
           <span
             className="pointer-events-none absolute right-[20px] top-[65%] flex h-[12px] w-[14px] -translate-y-1/2 items-center justify-center"
@@ -362,7 +390,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
         )}
 
         {isOpen && (
-          <div className="absolute z-[9999] mt-2 w-full rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] overflow-hidden">
+          <div
+            className={`absolute z-[9999] mt-2 w-full rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] ${
+              noInnerOptionsScroll ? "overflow-visible" : "overflow-hidden"
+            }`}
+          >
             {/* Search Input */}
             <div className="p-3 border-b border-[#EDEFF6]">
               <input
@@ -381,15 +413,22 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             </div>
 
             {/* Options List */}
-            <div className="max-h-60 overflow-y-auto" onScroll={handleScroll}>
+            <div
+              className={
+                noInnerOptionsScroll ? "" : "max-h-60 overflow-y-auto"
+              }
+              onScroll={handleScroll}
+            >
               {filteredOptions.length > 0 ? (
-                filteredOptions.map((option) => (
-                  <button
-                    key={`${option.value}-${option.id}`}
-                    type="button"
-                    onClick={() => handleOptionSelect(option.value)}
-                    disabled={option.disabled}
-                    className={`
+                filteredOptions.map((option) => {
+                  const isSelected = option.value === value;
+                  return (
+                    <button
+                      key={`${option.value}-${option.id}`}
+                      type="button"
+                      onClick={() => handleOptionSelect(option.value)}
+                      disabled={option.disabled}
+                      className={`
                       w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
                       ${
                         option.disabled
@@ -397,15 +436,23 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                           : "cursor-pointer"
                       }
                       ${
-                        option.value === value
+                        isSelected
                           ? "bg-[#2351A3]/10 text-[#2351A3]"
                           : "text-[#0F172A]"
                       }
                     `}
-                  >
-                    {option.label}
-                  </button>
-                ))
+                    >
+                      {renderOption ? (
+                        <>
+                          {renderOption(option, isSelected)}
+                          <span className="sr-only">{option.label}</span>
+                        </>
+                      ) : (
+                        option.label
+                      )}
+                    </button>
+                  );
+                })
               ) : (
                 <div className="px-4 py-3 text-sm text-[#98A4B3] text-center">
                   {loading || searchPending ? "Loading..." : noResultsText}

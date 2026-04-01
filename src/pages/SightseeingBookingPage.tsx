@@ -1,0 +1,292 @@
+import React, { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
+import { SightseeingFreeCancellationBanner } from "../components/molecules/sightseeing/SightseeingFreeCancellationBanner";
+import { SightseeingBookingAdultTravelersSection } from "../components/molecules/sightseeing/SightseeingBookingAdultTravelersSection";
+import {
+  SightseeingGetProtectionSection,
+  type SightseeingProtectionChoice,
+} from "../components/molecules/sightseeing/SightseeingGetProtectionSection";
+import {
+  createEmptyAdultTravelerForm,
+  type SightseeingAdultTravelerForm,
+  type SightseeingBookingPageState,
+  type SightseeingBookingSummary,
+} from "../features/sightseeing/sightseeingBooking";
+
+function ClockMetaIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <circle cx="12" cy="12" r="9" stroke="#64748B" strokeWidth="1.5" />
+      <path
+        d="M12 7v6l4 2"
+        stroke="#64748B"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+function PeopleMetaIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden
+    >
+      <path
+        d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"
+        stroke="#64748B"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="9" cy="7" r="4" stroke="#64748B" strokeWidth="1.5" />
+      <path
+        d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"
+        stroke="#64748B"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function SummaryRow({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: () => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-[#E4E4E7] py-4 last:border-b-0">
+      <div className="min-w-0">
+        <p className="text-[12px] font-medium text-[#64748B]">{label}</p>
+        <p className="mt-1 text-[15px] font-bold text-[#0A0C0F]">{value}</p>
+      </div>
+      <button
+        type="button"
+        onClick={onChange}
+        className="shrink-0 text-[15px] font-semibold text-[#2563EB] hover:underline"
+      >
+        Change
+      </button>
+    </div>
+  );
+}
+
+const SightseeingBookingPage: React.FC = () => {
+  const { activityCode: rawCode } = useParams<{ activityCode: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const pageState = location.state as SightseeingBookingPageState | null;
+
+  const activityCode = rawCode ? decodeURIComponent(rawCode) : "";
+
+  const summary: SightseeingBookingSummary | undefined = pageState?.summary;
+  const returnState = pageState?.returnState;
+
+  const adultCount = summary?.draft?.adults ?? 0;
+
+  const [travelers, setTravelers] = useState<SightseeingAdultTravelerForm[]>(
+    () =>
+      adultCount > 0
+        ? Array.from({ length: adultCount }, () =>
+            createEmptyAdultTravelerForm(),
+          )
+        : [],
+  );
+
+  useEffect(() => {
+    if (adultCount < 1) return;
+    setTravelers((prev) => {
+      if (prev.length === adultCount) return prev;
+      if (prev.length < adultCount) {
+        return [
+          ...prev,
+          ...Array.from(
+            { length: adultCount - prev.length },
+            () => createEmptyAdultTravelerForm(),
+          ),
+        ];
+      }
+      return prev.slice(0, adultCount);
+    });
+  }, [adultCount]);
+
+  const handleChange = useCallback(() => {
+    if (!activityCode) return;
+    navigate(`/sightseeing-detail/${encodeURIComponent(activityCode)}`, {
+      state: {
+        ...returnState,
+        draft: summary?.draft,
+      },
+    });
+  }, [activityCode, navigate, returnState, summary?.draft]);
+
+  const patchTraveler = useCallback(
+    (i: number, patch: Partial<SightseeingAdultTravelerForm>) => {
+      setTravelers((prev) =>
+        prev.map((t, j) => (j === i ? { ...t, ...patch } : t)),
+      );
+    },
+    [],
+  );
+
+  const onContinue = useCallback(() => {
+    toast.success(
+      "Traveler details saved. Payment will connect here next.",
+    );
+  }, []);
+
+  const onReserveProtection = useCallback(
+    (protection: SightseeingProtectionChoice) => {
+      toast.success(
+        protection === "damage"
+          ? "Rental Car Damage Protection selected. Payment will connect here next."
+          : "Continuing without protection. Payment will connect here next.",
+      );
+    },
+    [],
+  );
+
+  if (!summary || summary.activityCode !== activityCode) {
+    return (
+      <div className="min-h-screen bg-white px-6 py-16 font-[Inter,sans-serif]">
+        <div className="mx-auto max-w-lg text-center">
+          <h1 className="text-[20px] font-bold text-[#0A0C0F]">
+            Booking summary unavailable
+          </h1>
+          <p className="mt-3 text-[15px] text-[#64748B]">
+            Start again from an activity to see your booking details.
+          </p>
+          <Link
+            to="/search-sightseeing"
+            className="mt-6 inline-block text-[15px] font-semibold text-[#2563EB] hover:underline"
+          >
+            Browse sightseeing
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const pickupLine = [summary.pickupDateDisplay, summary.pickupTimeDisplay]
+    .filter(Boolean)
+    .join(" • ");
+
+  return (
+    <div className="min-h-screen bg-white pb-16 font-[Inter,sans-serif]">
+      <div className="mx-auto w-full max-w-[640px] px-6 pt-10 sm:px-8">
+        <button
+          type="button"
+          onClick={handleChange}
+          className="mb-8 text-left text-[14px] font-medium text-[#2351A3] hover:underline"
+        >
+          ← Back to activity
+        </button>
+
+        <h1 className="text-[22px] font-bold tracking-tight text-[#0A0C0F] sm:text-[26px]">
+          Booking summary
+        </h1>
+        <p className="mt-2 text-[14px] text-[#64748B]">
+          Review your selections before checkout.
+        </p>
+
+        <div
+          className="mt-8 w-full max-w-[576px] rounded-[16px] border border-[#E4E4E7] bg-[#F2F2F3] p-[10px]"
+          style={{ minHeight: 445 }}
+        >
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+            <div
+              className="h-[143px] w-full shrink-0 overflow-hidden rounded-[16px] bg-[#D9D9D9] sm:w-[190px]"
+            >
+              {summary.imageSrc ? (
+                <img
+                  src={summary.imageSrc}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : null}
+            </div>
+            <div className="min-w-0 flex-1 pt-1 sm:pt-0">
+              <h2 className="text-[15px] font-bold leading-snug text-[#0A0C0F] sm:text-[16px]">
+                {summary.title}
+              </h2>
+              <span className="mt-2 inline-block max-w-full truncate rounded-full bg-[#B9D1F9] px-3 py-1.5 text-[12px] font-semibold leading-tight text-[#345995] sm:text-[13px]">
+                {summary.categoryLabel}
+              </span>
+              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-medium text-[#64748B] sm:text-[14px]">
+                <span className="inline-flex items-center gap-2">
+                  <ClockMetaIcon className="shrink-0" />
+                  {summary.durationLabel}
+                </span>
+                <span className="inline-flex items-center gap-2">
+                  <PeopleMetaIcon className="shrink-0" />
+                  {summary.groupLabel}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-2 px-1 sm:px-2">
+            <SummaryRow
+              label="Package"
+              value={summary.packageSummary}
+              onChange={handleChange}
+            />
+            <SummaryRow
+              label="Travelers"
+              value={summary.travellersSummary}
+              onChange={handleChange}
+            />
+            <SummaryRow
+              label="Pickup date & time"
+              value={pickupLine || "—"}
+              onChange={handleChange}
+            />
+            <SummaryRow
+              label="Enhancements"
+              value={summary.enhancementsSummary}
+              onChange={handleChange}
+            />
+          </div>
+        </div>
+
+        <SightseeingFreeCancellationBanner className="mt-4 max-w-[576px]" />
+
+        {adultCount >= 1 && travelers.length > 0 ? (
+          <>
+            <SightseeingBookingAdultTravelersSection
+              adultCount={adultCount}
+              travelers={travelers}
+              onPatchTraveler={patchTraveler}
+              onSubmit={onContinue}
+              submitLabel="Continue"
+            />
+            <SightseeingGetProtectionSection onReserve={onReserveProtection} />
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+};
+
+export default SightseeingBookingPage;

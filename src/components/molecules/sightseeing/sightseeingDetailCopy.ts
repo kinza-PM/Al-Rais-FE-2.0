@@ -207,6 +207,10 @@ export const SIGHTSEEING_FIGMA_GUEST_REVIEWS_TITLE = "Guest reviews";
 
 export const SIGHTSEEING_READ_ALL_REVIEWS_LABEL = "Read all reviews";
 
+/** Related activities rail — after “Read all reviews”, matches search result cards. */
+export const SIGHTSEEING_YOU_MAY_ALSO_LIKE_TITLE = "You may also like";
+export const SIGHTSEEING_VIEW_ALL_ACTIVITIES_LABEL = "View All";
+
 export const SIGHTSEEING_FIGMA_GUEST_REVIEWS_SUMMARY = {
   /** Display score (string preserves Figma “4.8”). */
   scoreDisplay: "4.8",

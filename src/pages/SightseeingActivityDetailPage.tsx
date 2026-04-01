@@ -7,6 +7,7 @@ import SightseeingDetailGallery from "../components/molecules/sightseeing/Sights
 import { SightseeingInclusionsTable } from "../components/molecules/sightseeing/SightseeingInclusionsTable";
 import { SightseeingMeetingPickupSection } from "../components/molecules/sightseeing/SightseeingMeetingPickupSection";
 import { SightseeingGuestReviewsSection } from "../components/molecules/sightseeing/SightseeingGuestReviewsSection";
+import { SightseeingYouMayAlsoLikeSection } from "../components/molecules/sightseeing/SightseeingYouMayAlsoLikeSection";
 import {
   SIGHTSEEING_CTA_GRADIENT,
   SIGHTSEEING_DETAIL_TAB_LABELS,
@@ -16,7 +17,19 @@ import {
   type SightseeingDetailTabId,
 } from "../components/molecules/sightseeing/sightseeingDetailCopy";
 import { defaultActivityAvailabilityDateRange } from "../services/api/activitiesSearch";
-import type { SightseeingActivity } from "../features/sightseeing/types";
+import type {
+  SightseeingActivity,
+  SightseeingActivityDetailRate,
+} from "../features/sightseeing/types";
+import {
+  buildTravellersSummary,
+  formatDateDMY,
+  formatTime12Hour,
+  isoDateOnly,
+  type SightseeingBookingSummary,
+  type SightseeingDetailNavState,
+} from "../features/sightseeing/sightseeingBooking";
+import SearchableDropdown from "../components/common/SearchableDropdown";
 
 const FAVORITES_STORAGE_KEY = "alrais-sight-favorites";
 
@@ -52,6 +65,19 @@ function formatSightseeingPrice(currency: string, amount: number): string {
   }
 }
 
+/** Match listing toolbar / city dropdowns (50px, 16px radius, 1.5px border). */
+const PACKAGE_DROPDOWN_BUTTON_CLASS =
+  "appearance-none h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white pl-4 pr-11 text-[14px] text-[#0F172A] outline-none flex items-center cursor-pointer disabled:cursor-not-allowed disabled:bg-[#F8FAFC] disabled:opacity-70";
+
+function packageModalityDisplayName(modalityName: string): string {
+  const t = modalityName.trim();
+  return t.toLowerCase() === "standard" ? "Silver" : t;
+}
+
+function packageRateDropdownLabel(rate: SightseeingActivityDetailRate): string {
+  return `${packageModalityDisplayName(rate.modalityName)} · ${formatSightseeingPrice(rate.currency, rate.amount)}`;
+}
+
 function formatMoneyDecimals(currency: string, amount: number): string {
   const n = amount.toFixed(2);
   switch (currency.trim().toUpperCase()) {
@@ -70,19 +96,20 @@ function ClockIcon({ className }: { className?: string }) {
   return (
     <svg
       className={className}
-      width="20"
-      height="20"
+      width="24"
+      height="24"
       viewBox="0 0 24 24"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden
     >
-      <circle cx="12" cy="12" r="9" stroke="#94A3B8" strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="9" stroke="#64748B" strokeWidth="1.5" />
       <path
-        d="M12 8v4l3 2"
-        stroke="#94A3B8"
+        d="M12 7v6l4 2"
+        stroke="#64748B"
         strokeWidth="1.5"
         strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </svg>
   );
@@ -120,17 +147,6 @@ function StarRow({ rating }: { rating: number }) {
     </div>
   );
 }
-
-type DetailLocationState = {
-  from?: string;
-  to?: string;
-  preview?: SightseeingActivity;
-  context?: {
-    country?: string;
-    city?: string;
-    destinationCode?: string;
-  };
-};
 
 type InfoCard = { label: string; value: string };
 
@@ -198,7 +214,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
   }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state || {}) as DetailLocationState;
+  const state = (location.state || {}) as SightseeingDetailNavState;
 
   const activityCode = activityCodeParam
     ? decodeURIComponent(activityCodeParam)
@@ -219,24 +235,42 @@ const SightseeingActivityDetailPage: React.FC = () => {
 
   const preview = state.preview;
 
-  const [selectedRateKey, setSelectedRateKey] = useState<string>("");
+  const [selectedRateKey, setSelectedRateKey] = useState<string>(
+    () => state.draft?.selectedRateKey ?? "",
+  );
   const [activeTab, setActiveTab] = useState<SightseeingDetailTabId>("overview");
-  const [adults, setAdults] = useState(1);
-  const [teens, setTeens] = useState(0);
-  const [children, setChildren] = useState(0);
-  const [pickupTime, setPickupTime] = useState("");
-  const [falconAddon, setFalconAddon] = useState(false);
+  const [adults, setAdults] = useState(() => state.draft?.adults ?? 1);
+  const [teens, setTeens] = useState(() => state.draft?.teens ?? 0);
+  const [children, setChildren] = useState(() => state.draft?.children ?? 0);
+  const [pickupTime24, setPickupTime24] = useState(
+    () => state.draft?.pickupTime24 ?? "",
+  );
+  const [falconAddon, setFalconAddon] = useState(
+    () => state.draft?.falconAddon ?? false,
+  );
+  const [selectedTourDate, setSelectedTourDate] = useState(() =>
+    isoDateOnly(state.draft?.selectedTourDate ?? range.from),
+  );
 
   const rangeStart = useMemo(() => new Date(range.from), [range.from]);
-  const [calendarMonth, setCalendarMonth] = useState(() =>
-    new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1),
-  );
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const iso = isoDateOnly(state.draft?.selectedTourDate ?? range.from);
+    const [y, m] = iso.split("-").map((x) => parseInt(x, 10));
+    if (!y || !m) return new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
+    return new Date(y, m - 1, 1);
+  });
 
   useEffect(() => {
     setCalendarMonth(
       new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1),
     );
   }, [rangeStart]);
+
+  useEffect(() => {
+    const [y, m] = selectedTourDate.split("-").map((x) => parseInt(x, 10));
+    if (!y || !m) return;
+    setCalendarMonth(new Date(y, m - 1, 1));
+  }, [selectedTourDate]);
 
   const rateOptions = detail?.rateOptions ?? [];
 
@@ -265,10 +299,25 @@ const SightseeingActivityDetailPage: React.FC = () => {
   }, [activityCode]);
 
   useEffect(() => {
-    if (rateOptions.length > 0 && !selectedRateKey) {
+    if (rateOptions.length === 0) {
+      if (selectedRateKey !== "") setSelectedRateKey("");
+      return;
+    }
+    const valid = rateOptions.some((r) => r.rateKey === selectedRateKey);
+    if (!valid) {
       setSelectedRateKey(rateOptions[0].rateKey);
     }
   }, [rateOptions, selectedRateKey]);
+
+  const packageDropdownOptions = useMemo(
+    () =>
+      rateOptions.map((r) => ({
+        id: r.rateKey,
+        value: r.rateKey,
+        label: packageRateDropdownLabel(r),
+      })),
+    [rateOptions],
+  );
 
   const displayTitle = detail?.name || preview?.title || activityCode;
 
@@ -406,8 +455,85 @@ const SightseeingActivityDetailPage: React.FC = () => {
   }, []);
 
   const onBookNow = useCallback(() => {
-    toast.success("Checkout will open here once booking is connected.");
-  }, []);
+    if (!pickupTime24.trim()) {
+      toast.error("Please select a pick-up time");
+      return;
+    }
+    if (!activityCode) return;
+
+    const modalityLabel = selectedRate
+      ? packageModalityDisplayName(selectedRate.modalityName)
+      : "Silver";
+    const pkgCurrency = selectedRate?.currency ?? displayCurrency;
+    const pkgAmount = selectedRate?.amount ?? displayPriceAmount;
+    const packageSummary = `${modalityLabel} (${formatSightseeingPrice(
+      pkgCurrency,
+      pkgAmount,
+    )} per person)`;
+
+    const draftPayload = {
+      selectedRateKey: selectedRateKey || selectedRate?.rateKey || "",
+      adults,
+      teens,
+      children,
+      selectedTourDate,
+      pickupTime24,
+      falconAddon,
+    };
+
+    const summary: SightseeingBookingSummary = {
+      activityCode,
+      title: displayTitle,
+      imageSrc: imageUrls[0] || preview?.imageSrc || "",
+      categoryLabel: preview?.categoryLabel ?? "Sightseeing Tour",
+      durationLabel:
+        detail?.durationLabel ?? preview?.durationLabel ?? "—",
+      groupLabel: preview?.groupLabel ?? "—",
+      packageSummary,
+      travellersSummary: buildTravellersSummary(adults, teens, children),
+      pickupDateDisplay: formatDateDMY(selectedTourDate),
+      pickupTimeDisplay: formatTime12Hour(pickupTime24),
+      enhancementsSummary: falconAddon
+        ? "Falcon Handling & Photography"
+        : "Not Added",
+      grandTotal: bookingGrandTotal,
+      currency: displayCurrency,
+      draft: draftPayload,
+    };
+
+    navigate(`/sightseeing-booking/${encodeURIComponent(activityCode)}`, {
+      state: {
+        summary,
+        returnState: {
+          from: range.from,
+          to: range.to,
+          preview: preview ?? undefined,
+          context: state.context,
+        },
+      },
+    });
+  }, [
+    pickupTime24,
+    activityCode,
+    selectedRate,
+    selectedRateKey,
+    displayCurrency,
+    displayPriceAmount,
+    adults,
+    teens,
+    children,
+    selectedTourDate,
+    falconAddon,
+    bookingGrandTotal,
+    displayTitle,
+    imageUrls,
+    preview,
+    detail?.durationLabel,
+    navigate,
+    range.from,
+    range.to,
+    state.context,
+  ]);
 
   const tabPanel = () => {
     if (activeTab === "overview") {
@@ -469,6 +595,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
             <SightseeingGuestReviewsSection
               id="sightseeing-guest-reviews"
               onReadAllReviews={onReadAllReviews}
+              excludeActivityId={activityCode}
             />
           </div>
         </div>
@@ -503,6 +630,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
         <SightseeingGuestReviewsSection
           id="sightseeing-guest-reviews"
           onReadAllReviews={onReadAllReviews}
+          excludeActivityId={activityCode}
         />
       </div>
     );
@@ -577,11 +705,11 @@ const SightseeingActivityDetailPage: React.FC = () => {
 
             <div className="mx-auto flex w-full max-w-[872px] flex-col items-stretch">
               <div
-                className="rounded-t-[16px] border border-b-0 border-[#E3F4F8] bg-[#F8FBFC] px-3 pt-4 pb-1 shadow-[0_6px_28px_-12px_rgba(67,198,226,0.35)] sm:px-6"
+                className="px-3 pt-4 pb-1 sm:px-6"
                 role="tablist"
                 aria-label="Activity sections"
               >
-                <div className="flex flex-wrap justify-center gap-[15px] py-2 sm:flex-nowrap">
+                <div className="flex flex-wrap justify-center gap-[15px] pt-2 sm:flex-nowrap">
                   {SIGHTSEEING_DETAIL_TAB_ORDER.map((id) => (
                     <button
                       key={id}
@@ -627,27 +755,6 @@ const SightseeingActivityDetailPage: React.FC = () => {
                       "Could not load activity detail."}
                   </p>
                 ) : null}
-
-                <div className="mt-8 text-[13px] text-[#3D495C]">
-                  {detail?.code ? (
-                    <p>
-                      Code <span className="font-mono">{detail.code}</span>
-                      {detail.currency ? (
-                        <>
-                          {" "}
-                          · currency{" "}
-                          <span className="font-medium">{detail.currency}</span>
-                        </>
-                      ) : null}
-                    </p>
-                  ) : null}
-                  {state.context?.destinationCode ? (
-                    <p className="mt-1 text-[#98A4B3]">
-                      Destination {state.context.destinationCode}
-                      {state.context.city ? ` · ${state.context.city}` : ""}
-                    </p>
-                  ) : null}
-                </div>
               </div>
 
               <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -668,32 +775,34 @@ const SightseeingActivityDetailPage: React.FC = () => {
                       <span className="text-[12px] font-normal text-[#64748B]">
                         Your Package
                       </span>
-                      {rateOptions.length > 0 ? (
-                        <select
-                          value={selectedRateKey}
-                          onChange={(e) => setSelectedRateKey(e.target.value)}
-                          className="mt-1 w-full appearance-none rounded-xl border border-[#C2CAD6] bg-white bg-[length:1rem] bg-[right_0.75rem_center] bg-no-repeat py-2.5 pl-3 pr-10 text-[14px] text-[#0A0C0F] outline-none ring-[#43C6E2] focus:ring-2"
-                          style={{
-                            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748B'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                          }}
-                        >
-                          {rateOptions.map((r) => (
-                            <option key={r.rateKey} value={r.rateKey}>
-                              {r.modalityName === "Standard"
-                                ? "Silver"
-                                : r.modalityName}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div className="mt-1 w-full rounded-xl border border-[#C2CAD6] bg-white px-3 py-2.5 text-[14px] text-[#0A0C0F]">
-                          Silver
-                        </div>
-                      )}
+                      <div className="mt-1">
+                        {packageDropdownOptions.length > 0 ? (
+                          <SearchableDropdown
+                            options={packageDropdownOptions}
+                            value={selectedRateKey}
+                            onChange={setSelectedRateKey}
+                            placeholder="Select a package"
+                            label={undefined}
+                            widthClass="w-full"
+                            searchPlaceholder="Search"
+                            className={PACKAGE_DROPDOWN_BUTTON_CLASS}
+                            disabled={isLoading}
+                            noInnerOptionsScroll
+                          />
+                        ) : (
+                          <div
+                            className={`${PACKAGE_DROPDOWN_BUTTON_CLASS} cursor-default opacity-80`}
+                          >
+                            <span className="truncate">
+                              {isLoading ? "Loading packages…" : "Silver"}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="border-t border-[#E8ECF0] pt-6">
+                  <div className="border-t border-[#E8ECF0] py-6">
                     <h3 className="text-[16px] font-bold text-[#0A0C0F]">
                       Travellers
                     </h3>
@@ -730,7 +839,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="border-t border-[#E8ECF0] pt-6">
+                  <div className="border-t border-[#E8ECF0] py-6">
                     <h3 className="text-[16px] font-bold text-[#0A0C0F]">
                       Select date
                     </h3>
@@ -759,28 +868,59 @@ const SightseeingActivityDetailPage: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                    <div className="mt-4 flex min-h-[120px] items-center justify-center rounded-xl border border-dashed border-[#D1D5DB] bg-[#FAFBFC] px-4 text-center text-[14px] text-[#94A3B8]">
-                      Calendar Component here!
+                    <div className="mt-4 rounded-xl border border-dashed border-[#D1D5DB] bg-[#FAFBFC] px-4 py-4">
+                      <label
+                        htmlFor="sightseeing-tour-date"
+                        className="text-[13px] font-medium text-[#64748B]"
+                      >
+                        Tour date
+                      </label>
+                      <input
+                        id="sightseeing-tour-date"
+                        type="date"
+                        value={selectedTourDate}
+                        min={isoDateOnly(range.from)}
+                        max={isoDateOnly(range.to)}
+                        onChange={(e) => setSelectedTourDate(e.target.value)}
+                        className="mt-2 h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white px-4 text-[14px] text-[#0F172A] outline-none focus:border-[#2351A3] focus:ring-1 focus:ring-[#2351A3]"
+                      />
                     </div>
                   </div>
 
-                  <div className="border-t border-[#E8ECF0] pt-6">
+                  <div className="border-t border-[#E8ECF0] py-6">
                     <h3 className="text-[16px] font-bold text-[#0A0C0F]">
                       Pick-up time
                     </h3>
-                    <div className="relative mt-3">
+                    <div className="relative mt-3 h-[50px] w-full">
+                      <div className="pointer-events-none absolute inset-y-0 left-0 right-[52px] flex items-center pl-4 text-[14px]">
+                        {pickupTime24 ? (
+                          <span className="text-[#0F172A]">
+                            {formatTime12Hour(pickupTime24)}
+                          </span>
+                        ) : (
+                          <span className="text-[#94A3B8]">
+                            Select a Time
+                          </span>
+                        )}
+                      </div>
                       <input
-                        type="text"
-                        value={pickupTime}
-                        onChange={(e) => setPickupTime(e.target.value)}
-                        placeholder="Select a Time"
-                        className="w-full rounded-xl border border-[#D1D5DB] bg-white py-3 pl-3 pr-11 text-[14px] text-[#0A0C0F] placeholder:text-[#94A3B8] outline-none focus:border-[#2351A3] focus:ring-1 focus:ring-[#2351A3]"
+                        type="time"
+                        step={60}
+                        value={pickupTime24}
+                        onChange={(e) => setPickupTime24(e.target.value)}
+                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+                        aria-label="Pick-up time"
                       />
-                      <ClockIcon className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2" />
+                      <span
+                        className="pointer-events-none absolute inset-y-0 right-0 flex w-[52px] items-center justify-center"
+                        aria-hidden
+                      >
+                        <ClockIcon />
+                      </span>
                     </div>
                   </div>
 
-                  <div className="border-t border-[#E8ECF0] pt-6">
+                  <div className="border-t border-[#E8ECF0] py-6">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
                       <h3 className="text-[16px] font-bold text-[#0A0C0F]">
                         Enhance your experience
@@ -789,30 +929,43 @@ const SightseeingActivityDetailPage: React.FC = () => {
                         Optional add-ons
                       </span>
                     </div>
-                    <label className="mt-4 flex w-full max-w-[546px] min-h-[88px] cursor-pointer gap-[11px] rounded-[16px] bg-[#F2F4F7] p-[15px] transition hover:bg-[#ECEFF4]">
+                    <label className="mt-4 flex w-full max-w-[546px] min-h-[88px] cursor-pointer items-center gap-[11px] rounded-[16px] bg-[#F2F2F3] p-[15px] transition-colors hover:bg-[#E8E9EB]">
                       <input
                         type="checkbox"
-                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-[#C2CAD6] text-[#2351A3] focus:ring-[#2351A3]"
+                        className="h-6 w-6 shrink-0 cursor-pointer appearance-none rounded-[8px] border-[1.5px] border-[#C2CAD6] bg-white text-[#2351A3] transition-colors checked:border-[#2351A3] checked:bg-[#2351A3] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2351A3] focus-visible:ring-offset-2"
                         checked={falconAddon}
                         onChange={(e) => setFalconAddon(e.target.checked)}
+                        style={{
+                          backgroundImage: falconAddon
+                            ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5l2.5 2.5 6-6' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`
+                            : undefined,
+                          backgroundSize: "12px 12px",
+                          backgroundPosition: "center",
+                          backgroundRepeat: "no-repeat",
+                        }}
                       />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
-                          <span className="text-[14px] font-bold text-[#0A0C0F]">
+                      <div className="flex min-w-0 flex-1 flex-col gap-[11px]">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-[14px] font-bold leading-tight text-[#0A0C0F]">
                             Falcon Handling & Photography
                           </span>
-                          <span className="shrink-0 text-[14px] font-semibold text-[#2351A3]">
-                            $50/per person
+                          <span className="shrink-0 text-right leading-tight">
+                            <span className="text-[14px] font-bold text-[#2351A3]">
+                              $50
+                            </span>
+                            <span className="text-[13px] font-normal text-[#64748B]">
+                              /per person
+                            </span>
                           </span>
                         </div>
-                        <p className="mt-[11px] text-[13px] leading-relaxed text-[#64748B]">
+                        <p className="text-[13px] font-normal leading-relaxed text-[#64748B]">
                           Hold a trained Peregrine falcon and get a professional photograph. A truly unique Arabian cultural experience.
                         </p>
                       </div>
                     </label>
                   </div>
 
-                  <div className="border-t border-[#E8ECF0] pt-6">
+                  <div className="border-t border-[#E8ECF0] py-6">
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="text-[15px] font-medium text-[#64748B]">
                         Total
@@ -834,6 +987,13 @@ const SightseeingActivityDetailPage: React.FC = () => {
                 </div>
               </aside>
             </div>
+
+            <SightseeingYouMayAlsoLikeSection
+              className="mt-12 w-full min-w-0 pt-2 sm:mt-14"
+              excludeActivityId={activityCode}
+              bookNowContext={state.context}
+              layout="grid"
+            />
           </div>
         </div>
       </div>

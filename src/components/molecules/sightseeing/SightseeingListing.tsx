@@ -9,6 +9,7 @@ import type {
 } from "../../../features/sightseeing/types";
 import { useActivityAvailability } from "../../../hooks/sightseeing/useActivityAvailability";
 import { defaultActivityAvailabilityDateRange } from "../../../services/api/activitiesSearch";
+import Loader from "../../atoms/Loader";
 import SightseeingActivityCard from "./SightseeingActivityCard";
 import SightseeingFiltersSidebar, {
   type SightseeingListFiltersState,
@@ -219,8 +220,15 @@ const SightseeingListing: React.FC = () => {
     [navigate, toolbar.country, toolbar.city, destCode],
   );
 
+  const showLiveAvailabilityLoader =
+    useLiveAvailability && isLiveLoading;
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-12">
+      <Loader
+        show={showLiveAvailabilityLoader}
+        label="Loading activities from supplier…"
+      />
       <div className="mx-auto w-full max-w-[1560px] px-6 pt-6 sm:px-10 md:px-12 lg:px-14 xl:px-[8rem]">
         <SightseeingListingToolbar
           initial={toolbar}
@@ -317,11 +325,7 @@ const SightseeingListing: React.FC = () => {
               </p>
             ) : null}
 
-            {useLiveAvailability && isLiveLoading ? (
-              <div className="mt-10 rounded-[16px] border border-[#E4E4E7] bg-white py-16 text-center text-[15px] text-[#3D495C]">
-                Loading activities from supplier…
-              </div>
-            ) : (
+            {!showLiveAvailabilityLoader ? (
               <>
                 <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                   {filtered.map((activity) => (
@@ -341,7 +345,7 @@ const SightseeingListing: React.FC = () => {
                   </div>
                 ) : null}
               </>
-            )}
+            ) : null}
           </div>
         </div>
       </div>

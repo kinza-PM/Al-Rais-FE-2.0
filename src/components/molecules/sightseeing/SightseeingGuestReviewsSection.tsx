@@ -181,16 +181,19 @@ function ReviewCard({ card }: { card: SightseeingGuestReviewCard }) {
 export type SightseeingGuestReviewsSectionProps = {
   id?: string;
   onReadAllReviews?: () => void;
+  excludeActivityId?: string;
 };
 
 export function SightseeingGuestReviewsSection({
   id,
   onReadAllReviews,
+  excludeActivityId,
 }: SightseeingGuestReviewsSectionProps) {
   const { scoreDisplay, reviewCount } = SIGHTSEEING_FIGMA_GUEST_REVIEWS_SUMMARY;
 
   return (
-    <div id={id} className="w-full max-w-[872px]">
+    <div className="w-full min-w-0">
+      <div id={id} className="w-full max-w-[872px]">
       <h2 className="mb-6 text-[20px] font-bold leading-tight tracking-tight text-[#0A0C0F]">
         {SIGHTSEEING_FIGMA_GUEST_REVIEWS_TITLE}
       </h2>
@@ -244,6 +247,7 @@ export function SightseeingGuestReviewsSection({
             <path d="M5 12h14M13 6l6 6-6 6" />
           </svg>
         </button>
+      </div>
       </div>
     </div>
   );

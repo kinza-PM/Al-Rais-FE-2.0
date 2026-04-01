@@ -12,6 +12,12 @@ const SightseeingSearchPage = lazy(
 const SightseeingActivityDetailPage = lazy(
   () => import("../pages/SightseeingActivityDetailPage"),
 );
+const SightseeingBookingPage = lazy(
+  () => import("../pages/SightseeingBookingPage"),
+);
+const SightseeingTravelersDetailsPage = lazy(
+  () => import("../pages/SightseeingTravelersDetailsPage"),
+);
 // const TravelPage = lazy(() => import("../pages/TravelPage"));
 const PackagesPage = lazy(() => import("../pages/PackagesPage"));
 const AboutPage = lazy(() => import("../pages/AboutPage"));
@@ -69,6 +75,14 @@ const router = createBrowserRouter([
       {
         path: "sightseeing-detail/:activityCode",
         element: <SightseeingActivityDetailPage />,
+      },
+      {
+        path: "sightseeing-booking/:activityCode",
+        element: <SightseeingBookingPage />,
+      },
+      {
+        path: "sightseeing-travelers/:activityCode",
+        element: <SightseeingTravelersDetailsPage />,
       },
       {
         path: "hotel-detail/:hotelKey",

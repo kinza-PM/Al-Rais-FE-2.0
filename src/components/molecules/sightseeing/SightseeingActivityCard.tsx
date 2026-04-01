@@ -4,6 +4,8 @@ import type { SightseeingActivity } from "../../../features/sightseeing/types";
 type Props = {
   activity: SightseeingActivity;
   onBookNow?: (activity: SightseeingActivity) => void;
+  /** When true, card spans the full width of its grid/flex parent (detail “You may also like” row). */
+  fullWidth?: boolean;
 };
 
 /** Figma-style: USD → $120 (symbol touching amount); other codes keep “CODE 120”. */
@@ -101,12 +103,20 @@ function StarOutlineIcon({ className }: { className?: string }) {
 }
 
 /** Figma: ~378.67 × 573, radius 16, border 1.5px #C2CAD6, gap/pb 15; badge row 40px × ~348.67 */
-const SightseeingActivityCard: React.FC<Props> = ({ activity, onBookNow }) => {
+const SightseeingActivityCard: React.FC<Props> = ({
+  activity,
+  onBookNow,
+  fullWidth = false,
+}) => {
   const reviewsLabel = activity.reviewCount.toLocaleString();
 
   return (
     <article
-      className="mx-auto box-border flex h-[573px] w-full max-w-[378.67px] flex-col gap-[15px] overflow-hidden rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white pb-[15px] shadow-[0_2px_12px_rgba(15,23,42,0.04)]"
+      className={`box-border flex h-[573px] w-full flex-col gap-[15px] overflow-hidden rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white pb-[15px] shadow-[0_2px_12px_rgba(15,23,42,0.04)] ${
+        fullWidth
+          ? "mx-0 max-w-none"
+          : "mx-auto max-w-[378.67px]"
+      }`}
     >
       <div className="min-h-0 w-full flex-[1.4] basis-0 overflow-hidden">
         <img
