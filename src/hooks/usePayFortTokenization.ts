@@ -15,7 +15,7 @@ type InitiateOptions = {
 
 export function usePayFortTokenization() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const listenerRef = useRef<(e: MessageEvent) => void | null>(null);
+  const listenerRef = useRef<((e: MessageEvent) => void) | null>(null);
   const removeFormTimerRef = useRef<number | null>(null);
   const timeoutTimerRef = useRef<number | null>(null);
   const loadGuardTimerRef = useRef<number | null>(null);
@@ -24,6 +24,20 @@ export function usePayFortTokenization() {
   const [isLoading, setIsLoading] = useState(false);
   const [tokenResponse, setTokenResponse] = useState<TokenPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const redactForLog = (fields: Record<string, string>) => {
+    const redacted: Record<string, string> = { ...fields };
+    const mask = (v: string, keepStart = 6, keepEnd = 4) => {
+      const s = String(v || "");
+      if (s.length <= keepStart + keepEnd) return "***";
+      return `${s.slice(0, keepStart)}***${s.slice(-keepEnd)}`;
+    };
+
+    if ("card_number" in redacted) redacted.card_number = mask(redacted.card_number, 6, 4);
+    if ("card_security_code" in redacted) redacted.card_security_code = "***";
+    if ("signature" in redacted) redacted.signature = "***";
+    return redacted;
+  };
 
   // cleanup helper - remove iframe and listener
   const cleanup = () => {
@@ -185,8 +199,39 @@ export function usePayFortTokenization() {
           // create form
           const form = document.createElement("form");
           form.method = "POST";
-          form.action = "https://sbcheckout.payfort.com/FortAPI/paymentPage";
+          form.action =
+            (payfortConfig as any).payfort_url ||
+            "https://sbcheckout.payfort.com/FortAPI/paymentPage";
           form.target = targetName;
+
+          const shouldLogPayfortPayload =
+            import.meta.env.DEV || (payfortConfig as any).debug;
+          if (shouldLogPayfortPayload) {
+            const logPayload = redactForLog(fields);
+            // Redacted: full PAN, CVV, signature hash — safe for local debugging.
+            console.log("[PayFort] Outbound tokenization (POST paymentPage)", {
+              url: form.action,
+              target: form.target,
+              payload: logPayload,
+            });
+            if ((payfortConfig as any).debug) {
+              try {
+                localStorage.setItem(
+                  "payfort_last_tokenization_request",
+                  JSON.stringify(
+                    {
+                      at: new Date().toISOString(),
+                      url: form.action,
+                      target: form.target,
+                      payload: logPayload,
+                    },
+                    null,
+                    2
+                  )
+                );
+              } catch (_) {}
+            }
+          }
 
           Object.keys(fields).forEach((k) => {
             const input = document.createElement("input");
@@ -271,6 +316,15 @@ export function usePayFortTokenization() {
               const msg =
                 "Tokenization timed out. Please check your internet connection and try again.";
               setError(msg);
+              if (
+                import.meta.env.DEV ||
+                (payfortConfig as any).debug
+              ) {
+                console.warn("[PayFort] Tokenization timed out", {
+                  url: form.action,
+                  expectedMerchantReference,
+                });
+              }
               reject(new Error(msg));
               cleanup();
             }

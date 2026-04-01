@@ -260,6 +260,31 @@ export default function FlightBookingPaymentSection({
       const cardHolder =
         cardDetails.holderName || reservation?.customerInfo?.name || "Customer";
 
+      if (import.meta.env.DEV) {
+        const maskPan = (digits: string) => {
+          const d = digits.replace(/\D/g, "");
+          if (d.length <= 10) return "***";
+          return `${d.slice(0, 6)}***${d.slice(-4)}`;
+        };
+        console.log(
+          "[Flight booking] PayFort tokenization input + billing (card/CVV redacted)",
+          {
+            payfortTokenizationFields: {
+              card_number: maskPan(cleanCardNumber),
+              expiry_date: expiry,
+              card_security_code: "***",
+              card_holder_name: cardHolder,
+            },
+            billingFromReservation: {
+              email: reservation?.customerInfo?.emailAddress,
+              name: reservation?.customerInfo?.name,
+              transactionAmount: reservation?.paymentDetails?.transactionAmount,
+              address: reservation?.paymentDetails?.address,
+            },
+          },
+        );
+      }
+
       const payload = await initiateTokenization({
         cardNumber: cleanCardNumber,
         expiry,

@@ -186,7 +186,7 @@ const FlightBooking = () => {
       passengers,
       reservationType: "TICKET",
       paymentDetails: {
-        paymentMode: "CC",
+        paymentMode: "CR",
       },
     };
   });
@@ -223,7 +223,7 @@ const FlightBooking = () => {
         },
         passengers: flightBookingPayload?.passengers,
         paymentDetails: {
-          paymentMode: "CC",
+          paymentMode: "CR",
           transactionAmount: null,
           // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
           cardInfo: "",

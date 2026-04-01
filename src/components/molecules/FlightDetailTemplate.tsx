@@ -205,7 +205,7 @@ const buildPassengersArrayForFlightSearch = (
 const FlightDetailTemplate: React.FC = () => {
   const { mutateAsync, isPending } = useFlightSearch();
   const { loadMoreAsync, isLoadingMore } = useLoadMoreFlights();
-  const { flight, clearFlight } = useFlightStore();
+  const { flight, setFlight } = useFlightStore();
 
   const [responseData, setResponseData] = useState<any[]>([]);
   const [roundResponseData, setRoundResponseData] = useState<any[]>([]);
@@ -221,6 +221,11 @@ const FlightDetailTemplate: React.FC = () => {
   const [returnDate, setReturnDate] = useState<string>("");
   const [multicityLegs, setMulticityLegs] = useState<FlightLeg[]>([]);
   const [highDemandIndicators, setHighDemandIndicators] = useState<any[]>([]);
+
+  /** Must live before `handleSearch` so we can sync store after search without re-firing hydration. */
+  const isHydratingFromStore = useRef(false);
+  const hydratedFlightSnapshotRef = useRef<string | null>(null);
+  const shouldAutoSearchRef = useRef(false);
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [ioReady, setIoReady] = useState(false);
@@ -645,8 +650,45 @@ const FlightDetailTemplate: React.FC = () => {
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);
       setIoReady(true);
-      // Clear flight store after first successful search to prevent auto-trigger on tab changes
-      clearFlight();
+      // Keep last search criteria in the store so returning from booking (or revisiting /search_flight)
+      // can re-hydrate the form. Sync snapshot first so the hydration effect doesn't clear results
+      // or force a duplicate auto-search.
+      const nextFlight = {
+        fromCode,
+        toCode,
+        fromOption: fromOption ?? null,
+        toOption: toOption ?? null,
+        selectedCabinClassId,
+        trip,
+        order: passengerRequestOrder.current.slice(),
+        next: { ...paxCounts },
+        departure: departDate || null,
+        arrival: trip === "roundtrip" ? returnDate || null : null,
+        legs:
+          trip === "multicity"
+            ? multicityLegs.map((l) => ({
+                fromCode: l.fromCode,
+                toCode: l.toCode,
+                date: l.date ?? null,
+                cabinClassId: l.cabinClassId ?? selectedCabinClassId,
+                fromOption: l.fromOption ?? null,
+                toOption: l.toOption ?? null,
+              }))
+            : undefined,
+      };
+      // Keep keys/shape in sync with the hydration effect below (for snapshot equality).
+      const persistSnapshot = JSON.stringify({
+        trip: nextFlight.trip,
+        fromCode: nextFlight.fromCode ?? "",
+        toCode: nextFlight.toCode ?? "",
+        cabin: nextFlight.selectedCabinClassId ?? "",
+        departure: nextFlight.departure ?? "",
+        arrival: nextFlight.arrival ?? "",
+        pax: nextFlight.next ?? {},
+        order: nextFlight.order ?? [],
+      });
+      hydratedFlightSnapshotRef.current = persistSnapshot;
+      setFlight(nextFlight);
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       console.error("Flight search failed:", err);
@@ -735,7 +777,7 @@ const FlightDetailTemplate: React.FC = () => {
     (!countries || countries.length === 0);
   const countriesLoading = loadingMap?.countries ?? isInitialLoading;
 
-  // Preserve full airport options (with labels) for display after clearFlight()
+  // Preserve full airport options (with labels) for display when the zustand flight snapshot has no full labels
   const [preservedFromOption, setPreservedFromOption] =
     useState<AirportOption | null>(null);
   const [preservedToOption, setPreservedToOption] =
@@ -797,9 +839,6 @@ const FlightDetailTemplate: React.FC = () => {
   // }, [countries, fromCode, toCode]);
 
   // initialize from store once after listings load
-  const isHydratingFromStore = useRef(false);
-  const hydratedFlightSnapshotRef = useRef<string | null>(null);
-  const shouldAutoSearchRef = useRef(false);
   useEffect(() => {
     if (!flight) return;
     if (isInitialLoading) return;

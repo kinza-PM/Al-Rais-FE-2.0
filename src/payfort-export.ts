@@ -9,10 +9,18 @@ const payfortConfig = {
     url.searchParams.set("frontend_origin", window.location.origin);
     return url.toString();
   })(),
+  // Tokenization endpoint (paymentPage). Default is PayFort sandbox.
+  // Examples:
+  // - Sandbox: https://sbcheckout.payfort.com/FortAPI/paymentPage
+  // - Production: https://checkout.payfort.com/FortAPI/paymentPage
+  payfort_url:
+    import.meta.env.VITE_PAYFORT_URL ||
+    "https://sbcheckout.payfort.com/FortAPI/paymentPage",
   access_code: import.meta.env.VITE_PAYFORT_ACCESS_CODE,
   merchant_identifier: import.meta.env.VITE_PAYFORT_MERCHANT_IDENTIFIER,
   sha_request_phrase: import.meta.env.VITE_PAYFORT_SHA_REQUEST_PHRASE,
   sha_response_phrase: import.meta.env.VITE_PAYFORT_SHA_RESPONSE_PHRASE,
+  debug: String(import.meta.env.VITE_PAYFORT_DEBUG || "").toLowerCase() === "true",
 };
 
 export default payfortConfig;
