@@ -4,6 +4,7 @@ interface ImportMetaEnv {
   /** Cognito user pool id (set in `.env.development` / `.env.dev` for dev). */
   readonly VITE_AWS_USER_POOLS_ID?: string;
   readonly VITE_AWS_USER_POOLS_WEB_CLIENT_ID?: string;
+  /** Main app API base (Execute API URL including stage). Used by Vite proxy target in dev. */
   readonly VITE_API_BASE?: string;
   readonly VITE_FLIGHT_API_BASE?: string;
   readonly VITE_PAYMENT_API_BASE?: string;
@@ -34,6 +35,10 @@ interface ImportMetaEnv {
   readonly VITE_S3_TICKET_PUBLIC_BASE?: string;
   readonly VITE_NOMINATIM_BASE_URL?: string;
   readonly VITE_NETWORK_PING_URL?: string;
+  /** Set to `"false"` to call `VITE_API_BASE` directly from the browser in dev (needs CORS on the API). */
+  readonly VITE_MAIN_API_PROXY?: string;
+  /** Where `POST /myActivityBooking` is deployed: `flight` (default), `hotel`, or `main`. */
+  readonly VITE_MY_ACTIVITY_BOOKING_API?: string;
   /** Sightseeing / activities API (execute-api), optional in dev when using proxy */
   readonly VITE_ACTIVITIES_API_BASE?: string;
   readonly VITE_ACTIVITIES_API_KEY?: string;

@@ -10,6 +10,7 @@ import {
   useActivitiesPreConfirmBooking,
 } from "../hooks/sightseeing/useActivitiesBooking";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
+import { appendLocalSightseeingBooking } from "../utils/sightseeingLocalBookings";
 import { SightseeingFreeCancellationBanner } from "../components/molecules/sightseeing/SightseeingFreeCancellationBanner";
 import { SightseeingBookingAdultTravelersSection } from "../components/molecules/sightseeing/SightseeingBookingAdultTravelersSection";
 import {
@@ -219,15 +220,26 @@ const SightseeingBookingPage: React.FC = () => {
         const ref =
           extractActivityBookingReference(confirmed) ??
           extractActivityBookingReference(pre);
+        const bookingRefForList = (ref ?? clientReference).trim();
+        appendLocalSightseeingBooking({
+          id: `local-${clientReference}`,
+          status: "Confirmed",
+          activityTitle: summary.title,
+          activityCode: summary.activityCode,
+          tourDateIso: tourDate,
+          pickupTimeDisplay: summary.pickupTimeDisplay,
+          travellersSummary: summary.travellersSummary,
+          packageSummary: summary.packageSummary,
+          bookingRef: bookingRefForList,
+          clientReference,
+          currency: summary.currency,
+          grandTotal: summary.grandTotal,
+        });
         const prot =
           protection === "damage"
             ? "Rental Car Damage Protection selected."
             : "Continuing without protection.";
-        toast.success(
-          ref
-            ? `Booking confirmed. Reference: ${ref}. ${prot}`
-            : `Booking confirmed. ${prot}`,
-        );
+        toast.success(`Booking confirmed. ${prot}`);
       } catch (err) {
         const msg = extractErrorFromAxiosApiError(err);
         toast.error(msg || "Booking could not be completed. Please try again.");

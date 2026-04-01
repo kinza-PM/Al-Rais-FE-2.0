@@ -43,7 +43,7 @@ const hotelApis = [
   "/getHotelCancellationCharges",
   "/hotelCancellation",
   "/myHotelBooking",
-  "/hotelRetrieve"
+  "/hotelRetrieve",
 ];
 const locationApis = ["/countries/cities", "/countries"];
 // const resonApis = ["/countries/cities", "/countries"];
@@ -51,6 +51,12 @@ const ticketApis = ["/ticket"];
 const hotelFavouriteApis = ["/addHotelFavourites","/getHotelFavourites"];
 
 export const API_BASE = VITE_API_BASE;
+
+/** Axios base for the main app gateway: in dev, same-origin proxy (see vite `server.proxy./api/app-proxy`). */
+const AXIOS_MAIN_API_CLIENT_BASE =
+  import.meta.env.DEV && import.meta.env.VITE_MAIN_API_PROXY !== "false"
+    ? "/api/app-proxy"
+    : API_BASE;
 
 export const FLIGHT_API_BASE = VITE_FLIGHT_API_BASE;
 
@@ -83,17 +89,37 @@ const activitiesApis = [
 ];
 
 /**
+ * Stable path for prefix matching. Fixes missed routes when `url` is missing a leading `/` or is absolute.
+ */
+function requestUrlPath(url: string | undefined): string {
+  if (!url) return "";
+  const noQuery = url.split("?")[0] ?? "";
+  if (
+    noQuery.startsWith("http://") ||
+    noQuery.startsWith("https://")
+  ) {
+    try {
+      const p = new URL(noQuery).pathname;
+      return p && p !== "" ? p : "/";
+    } catch {
+      return noQuery;
+    }
+  }
+  return noQuery.startsWith("/") ? noQuery : `/${noQuery}`;
+}
+
+/**
  * Hotel Beds activities API (execute-api, IAM SigV4 where enabled), unlike hotel search which accepts JWT.
  * Sending `Authorization: Bearer` produces IncompleteSignatureException. In dev, `/api/activities-proxy`
  * signs without this header; in prod you need IAM-capable access or a backend BFF.
  */
 function pathIsActivities(url: string | undefined): boolean {
-  const path = url?.split("?")[0] ?? "";
+  const path = requestUrlPath(url);
   return activitiesApis.some((prefix) => path.startsWith(prefix));
 }
 
 export const axiosClient = axios.create({
-  baseURL: API_BASE,
+  baseURL: AXIOS_MAIN_API_CLIENT_BASE,
   timeout: 120000,
   headers: { "Content-Type": "application/json" },
 });
@@ -117,36 +143,53 @@ async function refreshCognitoToken(): Promise<string | null> {
 }
 
 axiosClient.interceptors.request.use(async (config) => {
-  const isActivities = pathIsActivities(config.url);
+  const path = requestUrlPath(config.url);
+  const isActivities = activitiesApis.some((prefix) => path.startsWith(prefix));
 
   const token = await TokenService.getToken();
   if (token && !isActivities) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  if (flightApis.some((prefix) => config.url?.startsWith(prefix))) {
+  /**
+   * `POST /myActivityBooking` must hit an API that accepts Cognito `Bearer` (not IAM SigV4).
+   * Main `API_BASE` / app-proxy often returns IncompleteSignatureException for JWT.
+   * Override: `VITE_MY_ACTIVITY_BOOKING_API` = `flight` | `hotel` | `main` (default `flight`, same stack as `/myBooking`).
+   */
+  if (
+    path === "/myActivityBooking" ||
+    path.startsWith("/myActivityBooking/")
+  ) {
+    const target = (
+      import.meta.env.VITE_MY_ACTIVITY_BOOKING_API ?? "flight"
+    ).toLowerCase();
+    if (target === "hotel") {
+      config.baseURL =
+        import.meta.env.DEV ? "/api/hotel-proxy" : HOTEL_API_BASE;
+    } else if (target === "main") {
+      config.baseURL = AXIOS_MAIN_API_CLIENT_BASE;
+    } else {
+      config.baseURL =
+        import.meta.env.DEV ? "/api/flight-proxy" : FLIGHT_API_BASE;
+    }
+  } else if (flightApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL = FLIGHT_API_BASE;
   } else if (
-    flightAncillaryApis.some((prefix) => config.url?.startsWith(prefix))
+    flightAncillaryApis.some((prefix) => path.startsWith(prefix))
   ) {
     config.baseURL = FLIGHT_ANCILLARY_API_BASE;
-  } else if (paymentApis.some((prefix) => config.url?.startsWith(prefix))) {
+  } else if (paymentApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL = PAYMENT_API_BASE;
-  } else if (hotelApis.some((prefix) => config.url?.startsWith(prefix))) {
+  } else if (hotelApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL =
       import.meta.env.DEV ? "/api/hotel-proxy" : HOTEL_API_BASE;
-  } else if (locationApis.some((prefix) => config.url?.startsWith(prefix))) {
+  } else if (locationApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL = LOCATION_API_BASE;
-  } else if (ticketApis.some((prefix) => config.url?.startsWith(prefix))) {
+  } else if (ticketApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL = TICKET_API_BASE;
-  }
-  else if (hotelFavouriteApis.some((prefix) => config.url?.startsWith(prefix))) {
+  } else if (hotelFavouriteApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL = HOTEL_FAVOURITE_API_BASE;
-  } else if (
-    activitiesApis.some((prefix) =>
-      config.url?.split("?")[0]?.startsWith(prefix),
-    )
-  ) {
+  } else if (activitiesApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL = import.meta.env.DEV
       ? "/api/activities-proxy"
       : ACTIVITIES_API_BASE;

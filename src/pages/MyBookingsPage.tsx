@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   useLocation,
   useNavigationType,
@@ -12,20 +19,25 @@ import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useMyBooking } from "../hooks/useUserProfileBooking";
 import { useMyHotelBooking } from "../hooks/useMyHotelBooking";
+import { useMyActivityBookingsQuery } from "../hooks/useMyActivityBooking";
 import Loader from "../components/atoms/Loader";
 import {
+  mergeSightseeingBookingLists,
   transformBookingsResponse,
   transformHotelBookingsResponse,
+  transformSightseeingBookingsResponse,
+  type SightseeingBookingCardItem,
 } from "../utils/transformBookingData";
 import UserHotelBookingsListing from "../components/molecules/UserHotelBookingsListing";
+import UserSightseeingBookingsListing from "../components/molecules/UserSightseeingBookingsListing";
+import { getLocalSightseeingBookings } from "../utils/sightseeingLocalBookings";
 import {
   MY_BOOKINGS_LAST_QS_SESSION_KEY,
   MY_BOOKINGS_RESTORE_FLAG_SESSION_KEY,
   type MyBookingsStatusParam,
 } from "../utils/myBookingsUrl";
-
 const tabs = ["All", "Pending", "Confirmed", "Expired"] as const;
-const modeTabs = ["Flights", "Hotels"] as const;
+const modeTabs = ["Flights", "Hotels", "Sightseeing"] as const;
 
 type StatusTab = (typeof tabs)[number];
 
@@ -48,15 +60,21 @@ const MyBookingsPage = () => {
   const navigationType = useNavigationType();
   const [userMyFlightBooking, setUserMyFlightBookings] = useState<any>([]);
   const [userMyHotelBookings, setUserMyHotelBookings] = useState<any[]>([]);
+  const [userSightseeingBookings, setUserSightseeingBookings] = useState<
+    SightseeingBookingCardItem[]
+  >([]);
+  const sightseeingErrorToastKey = useRef<string | null>(null);
 
   const active = useMemo(
     () => parseStatusParam(searchParams.get("status")),
     [searchParams],
   );
-  const mode = useMemo<(typeof modeTabs)[number]>(
-    () => (searchParams.get("mode") === "hotels" ? "Hotels" : "Flights"),
-    [searchParams],
-  );
+  const mode = useMemo<(typeof modeTabs)[number]>(() => {
+    const m = searchParams.get("mode");
+    if (m === "hotels") return "Hotels";
+    if (m === "sightseeing") return "Sightseeing";
+    return "Flights";
+  }, [searchParams]);
 
   const setActiveTab = useCallback(
     (t: StatusTab) => {
@@ -78,7 +96,13 @@ const MyBookingsPage = () => {
       setSearchParams(
         (prev) => {
           const p = new URLSearchParams(prev);
-          p.set("mode", m === "Hotels" ? "hotels" : "flights");
+          const modeVal =
+            m === "Hotels"
+              ? "hotels"
+              : m === "Sightseeing"
+                ? "sightseeing"
+                : "flights";
+          p.set("mode", modeVal);
           if (!p.get("status")) p.set("status", "all");
           return p;
         },
@@ -91,6 +115,28 @@ const MyBookingsPage = () => {
   const { mutateAsync, isPending } = useMyBooking();
   const { mutateAsync: fetchHotelBookings, isPending: isHotelPending } =
     useMyHotelBooking();
+  const sightFilters =
+    mode === "Sightseeing"
+      ? {
+          status:
+            active === "Confirmed" ? "confirmed" : active.toLowerCase(),
+        }
+      : null;
+  const {
+    data: activityBookingsData,
+    isLoading: isSightLoading,
+    isError: isSightError,
+    error: sightQueryError,
+  } = useMyActivityBookingsQuery(sightFilters);
+
+  /**
+   * Per-mode loading. Sightseeing: only first fetch (isLoading), not background refetches;
+   * hide spinner once the query has errored so local bookings stay visible (see RQ `retry`/`refetchOnWindowFocus` on the query).
+   */
+  const showBookingsLoader =
+    (mode === "Flights" && isPending) ||
+    (mode === "Hotels" && isHotelPending) ||
+    (mode === "Sightseeing" && isSightLoading && !isSightError);
 
   const init = async () => {
     try {
@@ -166,10 +212,47 @@ const MyBookingsPage = () => {
     setSearchParams(new URLSearchParams(saved), { replace: true });
   }, [navigationType, location.search, setSearchParams]);
 
+  useEffect(() => {
+    if (!isSightError) sightseeingErrorToastKey.current = null;
+  }, [isSightError]);
+
+  useEffect(() => {
+    if (mode !== "Sightseeing") return;
+    const local = getLocalSightseeingBookings();
+    const transformed = transformSightseeingBookingsResponse(
+      activityBookingsData ?? {},
+    );
+    const merged = mergeSightseeingBookingLists(
+      Array.isArray(transformed) ? transformed : [],
+      local,
+    );
+    setUserSightseeingBookings(merged);
+  }, [mode, activityBookingsData, active]);
+
+  useEffect(() => {
+    if (!isSightError || mode !== "Sightseeing") {
+      if (mode !== "Sightseeing") sightseeingErrorToastKey.current = null;
+      return;
+    }
+    const local = getLocalSightseeingBookings();
+    setUserSightseeingBookings(mergeSightseeingBookingLists([], local));
+    const err = extractErrorFromAxiosApiError(sightQueryError);
+    if (local.length === 0) {
+      const dedupe = `${sightFilters?.status ?? ""}:${err}`;
+      if (sightseeingErrorToastKey.current !== dedupe) {
+        sightseeingErrorToastKey.current = dedupe;
+        toast.error(
+          err ||
+            "Unable to load sightseeing bookings from the server. Confirm the /myActivityBooking route exists.",
+        );
+      }
+    }
+  }, [isSightError, mode, sightQueryError, sightFilters?.status]);
+
   return (
     <div className="py-6">
       <Loader
-        show={isPending || isHotelPending}
+        show={showBookingsLoader}
         label="Please wait while we are fetching your bookings"
       />
       <div className="flex flex-col items-center px-6">
@@ -214,8 +297,9 @@ const MyBookingsPage = () => {
           />
         </div>
 
+        {/* Mode tabs - kept centered under main tabs */}
         <div className="mt-4">
-          <div className="flex justify-center gap-2 text-[16px]">
+          <div className="flex justify-center gap-6 sm:gap-10 text-[16px] flex-wrap">
             {modeTabs.map((m) => {
               const selected = mode === m;
               return (
@@ -248,10 +332,15 @@ const MyBookingsPage = () => {
             filterStatus={active}
             mode={mode as TripMode}
           />
-        ) : (
+        ) : mode === "Hotels" ? (
           <UserHotelBookingsListing
             filterStatus={active}
             bookings={userMyHotelBookings}
+          />
+        ) : (
+          <UserSightseeingBookingsListing
+            filterStatus={active}
+            bookings={userSightseeingBookings}
           />
         )}
       </div>

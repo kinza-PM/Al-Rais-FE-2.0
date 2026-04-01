@@ -1,5 +1,6 @@
 import { formatTime, formatDate } from "./helpers";
 import type { BookingStatus } from "../components/molecules/UserBookingsListing";
+import type { StoredSightseeingBooking } from "./sightseeingLocalBookings";
 
 // Helper to format duration
 function formatDuration(duration: string): string {
@@ -447,4 +448,223 @@ export function transformHotelBookingsResponse(apiResponse: any): HotelBookingCa
   } catch {
     return [];
   }
+}
+
+// --- Sightseeing / activities bookings (My Bookings tab) ---
+
+export type SightseeingBookingCardItem = {
+  id: string;
+  status: BookingStatus;
+  activityTitle: string;
+  activityCode: string;
+  tourDateDisplay: string;
+  pickupTimeDisplay: string;
+  travellersSummary: string;
+  packageSummary: string;
+  bookingRef: string;
+  clientReference?: string;
+  countdown?: { hours: string; mins: string; secs: string };
+  totalPaid?: number;
+  currency: string;
+  /** Newest-first ordering when merging API + local lists */
+  sortTimestamp?: number;
+};
+
+export function transformSightseeingBookingItem(
+  apiItem: any,
+): SightseeingBookingCardItem {
+  const statusMap: Record<string, BookingStatus> = {
+    expired: "Expired",
+    pending: "Pending",
+    active: "Confirmed",
+    completed: "Confirmed",
+    confirmed: "Confirmed",
+  };
+  const rawStatus = (apiItem.status || apiItem.bookingStatus || "").toLowerCase();
+  const status = statusMap[rawStatus] || "Pending";
+
+  const activity =
+    apiItem.activity ||
+    apiItem.activityInfo ||
+    apiItem.product ||
+    apiItem.detail?.activity ||
+    {};
+  const activityTitle =
+    activity.name ||
+    activity.title ||
+    apiItem.activityName ||
+    apiItem.title ||
+    apiItem.productName ||
+    "Sightseeing activity";
+
+  const activityCode =
+    activity.code ||
+    apiItem.activityCode ||
+    apiItem.productCode ||
+    apiItem.code ||
+    "";
+
+  const tourDateRaw =
+    apiItem.tourDate ||
+    apiItem.activityDate ||
+    apiItem.from ||
+    apiItem.date ||
+    apiItem.serviceDate ||
+    "";
+  const tourDateDisplay = tourDateRaw
+    ? formatDateForHotel(tourDateRaw)
+    : "—";
+
+  const pickupTimeDisplay =
+    apiItem.pickupTime ||
+    apiItem.pickupTimeDisplay ||
+    activity.pickupTime ||
+    "";
+
+  const travellersSummary =
+    apiItem.travellersSummary ||
+    apiItem.paxSummary ||
+    apiItem.travelersLabel ||
+    (typeof apiItem.paxCount === "number" ? `${apiItem.paxCount} travellers` : "—");
+
+  const packageSummary =
+    apiItem.packageSummary ||
+    apiItem.modalityName ||
+    apiItem.rateName ||
+    "";
+
+  const bookingRef =
+    apiItem.bookingReferenceId ||
+    apiItem.bookingRef ||
+    apiItem.bookingReference ||
+    apiItem.reference ||
+    apiItem.supplierLocator ||
+    apiItem.detail?.bookingReference ||
+    apiItem.id ||
+    "N/A";
+
+  const clientReference =
+    apiItem.clientReference ||
+    apiItem.client_reference ||
+    apiItem.detail?.clientReference;
+
+  const id =
+    apiItem.id ||
+    apiItem.bookingKey ||
+    `${bookingRef}-${activityCode}` ||
+    `sight-${Date.now()}`;
+
+  const rawTotal =
+    apiItem.totalPaid ??
+    apiItem.grandTotal ??
+    apiItem.totalAmount ??
+    apiItem.amount ??
+    apiItem.financialInfo?.total;
+  const totalNum =
+    rawTotal != null && rawTotal !== "" ? Number(rawTotal) : Number.NaN;
+  const totalPaid =
+    Number.isFinite(totalNum) && totalNum > 0 ? totalNum : undefined;
+  const currency =
+    apiItem.currency || apiItem.currencyCode || activity.currency || "AED";
+
+  const createdAt = apiItem.createdAt || apiItem.created_at;
+  const sortTimestamp =
+    createdAt != null && createdAt !== ""
+      ? new Date(createdAt).getTime()
+      : tourDateRaw
+        ? new Date(tourDateRaw).getTime()
+        : 0;
+  const countdown =
+    status === "Pending" && createdAt
+      ? (() => {
+          const createdTime = new Date(createdAt).getTime();
+          const currentTime = Date.now();
+          const totalMs = 15 * 60 * 1000;
+          const remainingMs = Math.max(0, totalMs - (currentTime - createdTime));
+          const mins = Math.floor(remainingMs / 60000);
+          const secs = Math.floor((remainingMs % 60000) / 1000);
+          return {
+            hours: String(Math.floor(mins / 60)).padStart(2, "0"),
+            mins: String(mins % 60).padStart(2, "0"),
+            secs: String(secs).padStart(2, "0"),
+          };
+        })()
+      : undefined;
+
+  return {
+    id,
+    status,
+    activityTitle,
+    activityCode: String(activityCode),
+    tourDateDisplay,
+    pickupTimeDisplay: pickupTimeDisplay || "—",
+    travellersSummary,
+    packageSummary: packageSummary || "—",
+    bookingRef,
+    clientReference:
+      typeof clientReference === "string" ? clientReference : undefined,
+    countdown,
+    totalPaid,
+    currency: currency || "AED",
+    sortTimestamp,
+  };
+}
+
+export function transformSightseeingBookingsResponse(
+  apiResponse: any,
+): SightseeingBookingCardItem[] {
+  if (apiResponse == null) return [];
+  const raw =
+    apiResponse?.data?.items ??
+    apiResponse?.data?.data ??
+    apiResponse?.data ??
+    apiResponse?.items ??
+    apiResponse?.bookings ??
+    apiResponse?.body ??
+    apiResponse;
+  const items = Array.isArray(raw) ? raw : [];
+  try {
+    return items.map((item: any) => transformSightseeingBookingItem(item));
+  } catch {
+    return [];
+  }
+}
+
+function storedToCard(s: StoredSightseeingBooking): SightseeingBookingCardItem {
+  const tourDateDisplay = s.tourDateIso
+    ? formatDateForHotel(s.tourDateIso)
+    : "—";
+  return {
+    id: s.id,
+    status: s.status,
+    activityTitle: s.activityTitle,
+    activityCode: s.activityCode,
+    tourDateDisplay,
+    pickupTimeDisplay: s.pickupTimeDisplay ?? "—",
+    travellersSummary: s.travellersSummary,
+    packageSummary: s.packageSummary ?? "—",
+    bookingRef: s.bookingRef,
+    clientReference: s.clientReference,
+    totalPaid: s.grandTotal,
+    currency: s.currency || "AED",
+    sortTimestamp: new Date(s.confirmedAtIso).getTime(),
+  };
+}
+
+/** Merge server list with locally stored confirmations; server rows win on same bookingRef. */
+export function mergeSightseeingBookingLists(
+  apiItems: SightseeingBookingCardItem[],
+  localItems: StoredSightseeingBooking[],
+): SightseeingBookingCardItem[] {
+  const fromLocal = localItems.map(storedToCard);
+  const seenRefs = new Set(
+    apiItems.map((b) => b.bookingRef).filter((r) => r && r !== "N/A"),
+  );
+  const extra = fromLocal.filter(
+    (b) => b.bookingRef && !seenRefs.has(b.bookingRef),
+  );
+  const merged = [...apiItems, ...extra];
+  return merged.sort(
+    (a, b) => (b.sortTimestamp ?? 0) - (a.sortTimestamp ?? 0),
+  );
 }
