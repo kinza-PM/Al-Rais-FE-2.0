@@ -1,13 +1,21 @@
 import HotelPriceSummaryTooltip from "./HotelPriceSummaryTooltip";
 
+type TaxItem = {
+  name?: string;
+  amount?: number;
+  included?: boolean;
+};
+
 type Props = {
   totalPrice?: number;
   currency?: string;
+  taxes?: TaxItem[];
 };
 
 export default function HotelPriceBreakdown({
   totalPrice = 0,
   currency = "AED",
+  taxes = [],
 }: Props) {
   return (
     <div className="mt-4 rounded-2xl border border-[#E4E4E7] bg-white">
@@ -18,6 +26,7 @@ export default function HotelPriceBreakdown({
         <HotelPriceSummaryTooltip
           totalPrice={totalPrice}
           currency={currency}
+          taxes={taxes}
         />
       </div>
 

@@ -40,6 +40,11 @@ type ParsedRoomRate = {
     rateIndex?: string;
     to?: string;
   }>;
+  taxes?: Array<{
+    name?: string;
+    amount?: number;
+    included?: boolean;
+  }>;
 };
 
 type ParsedRatePlan = {
@@ -611,6 +616,7 @@ const ProfileFavouriteHotels: React.FC = () => {
                     <HotelPriceSummaryTooltip
                       totalPrice={Number(totalPrice)}
                       currency={currency}
+                      taxes={bestRoom?.roomRate?.taxes || []}
                     />
                   </div>
 

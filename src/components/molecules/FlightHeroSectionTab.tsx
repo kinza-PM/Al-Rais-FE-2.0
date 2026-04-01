@@ -545,7 +545,9 @@ const FlightHeroSection: React.FC = () => {
             )}
 
             {/* ── Search button ── */}
-            <div className="flex justify-center mt-4">
+            <div
+              className={`flex justify-center ${!hasAttemptedValidation ? "mt-4" : "mt-8"}`}
+            >
               <button
                 className="text-[16px] font-medium text-white w-full sm:w-auto"
                 style={{

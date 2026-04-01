@@ -486,7 +486,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
           aria-label="Close"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
           </svg>
         </button>
       )}
@@ -531,9 +531,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
                     setUsePhone(false);
                     setTouched((prev) => ({ ...prev, email: false }));
                   }}
-                  className={`px-6 py-1.5 text-[13px] rounded-xl transition-colors ${
-                    !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                  }`}
+                  className={`px-6 py-1.5 text-[13px] rounded-xl transition-colors ${!usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                    }`}
                 >
                   Email
                 </button>
@@ -543,9 +542,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
                     setUsePhone(true);
                     setTouched((prev) => ({ ...prev, email: false }));
                   }}
-                  className={`px-6 py-1.5 text-[13px] rounded-xl transition-colors ${
-                    usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                  }`}
+                  className={`px-6 py-1.5 text-[13px] rounded-xl transition-colors ${usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                    }`}
                 >
                   Phone
                 </button>
@@ -587,12 +585,14 @@ const SignupForm: React.FC<SignupFormProps> = ({
                       aria-label="Title"
                       className={compact ? "px-2.5 py-1.5 w-full h-9 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent" : "px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"}
                       value={formData.title}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const newTitle = e.target.value;
                         setFormData((prev) => ({
                           ...prev,
-                          title: e.target.value,
-                        }))
-                      }
+                          title: newTitle,
+                          gender: newTitle === "MR" ? "M" : "F",
+                        }));
+                      }}
                     >
                       <option value="MR">Mr.</option>
                       <option value="MS">Ms.</option>
@@ -844,10 +844,9 @@ const SignupForm: React.FC<SignupFormProps> = ({
                     rounded-full px-8 py-2.5
                     font-semibold text-white tracking-[0.5px]
                     transition-opacity hover:opacity-95
-                    ${
-                      !isFormValid || loading.signup || !isOnline
-                        ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
-                        : "auth-bg-btn"
+                    ${!isFormValid || loading.signup || !isOnline
+                      ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                      : "auth-bg-btn"
                     }
                   `}
                   style={{
@@ -947,10 +946,9 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   rounded-full px-10 py-3.5
                   font-semibold text-white tracking-[0.5px]
                   transition-opacity hover:opacity-95
-                  ${
-                    !otpCode || otpCode.length !== 6 || otpLoading || !isOnline
-                      ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
-                      : "auth-bg-btn"
+                  ${!otpCode || otpCode.length !== 6 || otpLoading || !isOnline
+                    ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                    : "auth-bg-btn"
                   }
                 `}
                 style={{ background: "var(--black-100, #C2CAD6)", opacity: 1 }}

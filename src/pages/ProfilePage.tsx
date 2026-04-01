@@ -27,8 +27,8 @@ const ProfilePage: React.FC = () => {
     initials, displayName
   } = useUserProfileStore();
 
-  const displayEmail = remoteUser?.email || user?.email || "-";
-  const displayPhone = remoteUser?.phoneNumber || user?.phone || "-";
+  const displayEmail = remoteUser?.email || user?.email || "";
+  const displayPhone = remoteUser?.phoneNumber || user?.phone || "";
 
   const openEdit = () => {
     editForm.setFieldsValue({

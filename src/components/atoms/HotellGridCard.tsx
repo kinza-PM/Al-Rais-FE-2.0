@@ -444,6 +444,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               <HotelPriceSummaryTooltip
                 totalPrice={price}
                 currency={currency}
+                taxes={bestRoom?.roomRate?.taxes || []}
               />
             </div>
           </div>

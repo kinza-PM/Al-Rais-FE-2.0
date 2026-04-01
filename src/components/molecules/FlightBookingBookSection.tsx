@@ -241,7 +241,7 @@ export default function FlightBookingBookSection({
       if (
         err == "Unable to perform air booking step" ||
         err ==
-          "PNR has not been created successfully, see remaining messages for details"
+        "PNR has not been created successfully, see remaining messages for details"
       ) {
         navigate("/search_flight");
       }
@@ -288,7 +288,13 @@ export default function FlightBookingBookSection({
                             "passengerInfo.nameTitle",
                             value,
                           );
+                          onPassengerFieldChange(
+                            idx,
+                            "passengerInfo.gender",
+                            value === "MR" ? "M" : "F",
+                          );
                           clearFieldError(idx, "passengerInfo.nameTitle");
+                          clearFieldError(idx, "passengerInfo.gender");
                         }}
                         placeholder="Select title"
                         label="Title *"
@@ -439,8 +445,8 @@ export default function FlightBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[idx]?.[
-                                  "identityDocuments.0.idType"
-                                ]
+                              "identityDocuments.0.idType"
+                              ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -454,20 +460,18 @@ export default function FlightBookingBookSection({
                     >
                       <TailwindCustomInput
                         type="text"
-                        placeholder={`Enter ${
-                          p.identityDocuments?.[0]?.idType === "PT"
-                            ? "Passport number"
-                            : p.identityDocuments?.[0]?.idType === "DL"
-                              ? "Driving licence"
-                              : "National ID"
-                        }`}
-                        label={`${
-                          p.identityDocuments?.[0]?.idType === "PT"
-                            ? "Passport number"
-                            : p.identityDocuments?.[0]?.idType === "DL"
-                              ? "Driving licence"
-                              : "National ID"
-                        } *`}
+                        placeholder={`Enter ${p.identityDocuments?.[0]?.idType === "PT"
+                          ? "Passport number"
+                          : p.identityDocuments?.[0]?.idType === "DL"
+                            ? "Driving licence"
+                            : "National ID"
+                          }`}
+                        label={`${p.identityDocuments?.[0]?.idType === "PT"
+                          ? "Passport number"
+                          : p.identityDocuments?.[0]?.idType === "DL"
+                            ? "Driving licence"
+                            : "National ID"
+                          } *`}
                         value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
                         onChange={(evOrVal) => {
                           const v =
@@ -487,8 +491,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                                "identityDocuments.0.idDocumentNumber"
-                              ]
+                            "identityDocuments.0.idDocumentNumber"
+                            ]
                             : null
                         }
                       />
@@ -535,8 +539,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                                "identityDocuments.0.issuingCountryCode"
-                              ]
+                            "identityDocuments.0.issuingCountryCode"
+                            ]
                             : null
                         }
                         className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -555,8 +559,8 @@ export default function FlightBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.dateOfIssue
                               ? parseLocalDateString(
-                                  p.identityDocuments?.[0]?.dateOfIssue,
-                                )
+                                p.identityDocuments?.[0]?.dateOfIssue,
+                              )
                               : null
                           }
                           onChange={(date) => {
@@ -575,8 +579,8 @@ export default function FlightBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[idx]?.[
-                                  "identityDocuments.0.dateOfIssue"
-                                ]
+                              "identityDocuments.0.dateOfIssue"
+                              ]
                               : null
                           }
                           overridesClass
@@ -596,8 +600,8 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.expiryDate
                             ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.expiryDate,
-                              )
+                              p.identityDocuments?.[0]?.expiryDate,
+                            )
                             : null
                         }
                         onChange={(date) => {
@@ -616,8 +620,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                                "identityDocuments.0.expiryDate"
-                              ]
+                            "identityDocuments.0.expiryDate"
+                            ]
                             : null
                         }
                         overridesClass
@@ -666,8 +670,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                                "identityDocuments.0.residenceCountryCode"
-                              ]
+                            "identityDocuments.0.residenceCountryCode"
+                            ]
                             : null
                         }
                         className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -705,8 +709,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                                "contact.contactsProvided.0.emailAddress.0"
-                              ]
+                            "contact.contactsProvided.0.emailAddress.0"
+                            ]
                             : null
                         }
                       />
@@ -739,8 +743,8 @@ export default function FlightBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[idx]?.[
-                                  "passengerInfo.birthDate"
-                                ]
+                              "passengerInfo.birthDate"
+                              ]
                               : null
                           }
                           overridesClass
@@ -981,9 +985,9 @@ export default function FlightBookingBookSection({
                       <div
                         className={
                           hasAttemptedValidation &&
-                          validationErrors[idx]?.[
+                            validationErrors[idx]?.[
                             "contact.contactsProvided.0.phone.0"
-                          ]
+                            ]
                             ? "phone-input-error"
                             : ""
                         }
@@ -1050,12 +1054,12 @@ export default function FlightBookingBookSection({
                       </div>
                       {hasAttemptedValidation &&
                         validationErrors[idx]?.[
-                          "contact.contactsProvided.0.phone.0"
+                        "contact.contactsProvided.0.phone.0"
                         ] && (
                           <p className="absolute left-0 text-[12px] mt-1 text-[#E65959] whitespace-nowrap">
                             {
                               validationErrors[idx][
-                                "contact.contactsProvided.0.phone.0"
+                              "contact.contactsProvided.0.phone.0"
                               ]
                             }
                           </p>

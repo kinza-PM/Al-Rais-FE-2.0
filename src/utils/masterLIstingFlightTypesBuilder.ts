@@ -100,8 +100,8 @@ export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
         country: i.country,
         countryCode: i.countryCode,
       }))
-      // optional: stable sort by city
-      // .sort((a, b) => a.city.localeCompare(b.city))
+    // optional: stable sort by city
+    // .sort((a, b) => a.city.localeCompare(b.city))
   );
 }
 
@@ -151,8 +151,8 @@ export function buildCabinClassOptions(
     (items || [])
       .filter((i) => i.status === 1 && i.category?.trim())
       .map((i) => ({ id: String(i.id), label: i.category.trim() }))
-      // optional stable sort by label
-      // .sort((a, b) => a.label.localeCompare(b.label))
+    // optional stable sort by label
+    // .sort((a, b) => a.label.localeCompare(b.label))
   );
 }
 

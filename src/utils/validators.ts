@@ -1,7 +1,13 @@
 export const getEmailError = (raw: string, usePhone: boolean): string | null => {
   const email = raw.trim();
   if (email === '') return 'Email is required.';
-  if (!usePhone && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid email address.';
+  // if (!usePhone && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid email address.';
+  if (!usePhone) {
+    if (/\.\./.test(email)) return 'Enter a valid email address.';
+    const [local] = email.split('@');
+    if (local?.startsWith('.') || local?.endsWith('.')) return 'Enter a valid email address.';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Enter a valid email address.';
+  }
   return null;
 };
 

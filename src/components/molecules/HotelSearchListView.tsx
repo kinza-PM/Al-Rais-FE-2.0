@@ -616,6 +616,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         <HotelPriceSummaryTooltip
                           totalPrice={price}
                           currency={currency}
+                          taxes={bestRoom?.roomRate?.taxes || []}
                         />
                       </div>
 

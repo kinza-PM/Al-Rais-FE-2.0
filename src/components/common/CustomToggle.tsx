@@ -40,7 +40,7 @@ const CustomToggle: React.FC<CustomToggleProps> = ({
           after:content-[''] after:absolute after:top-0.5 after:left-0.5
           after:h-4 after:w-4 after:rounded-full after:bg-white after:shadow-sm
           after:transition-transform after:duration-300
-          peer-checked:after:translate-x-4
+          peer-checked:after:translate-x-2
         "
             />
         </label>

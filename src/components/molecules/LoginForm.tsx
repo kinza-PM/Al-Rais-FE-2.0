@@ -246,7 +246,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
             aria-label="Close"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-              <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           </button>
         )}
@@ -280,9 +280,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 setUsePhone(false);
                 setTouched((prev) => ({ ...prev, email: false }));
               }}
-              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-              }`}
+              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${!usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                }`}
             >
               Email
             </button>
@@ -292,9 +291,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 setUsePhone(true);
                 setTouched((prev) => ({ ...prev, email: false }));
               }}
-              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-              }`}
+              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                }`}
             >
               Phone
             </button>
@@ -463,10 +461,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
               flex w-full min-h-[47px] items-center justify-center gap-2.5
               rounded-full px-10 py-3.5
               font-medium text-white transition-opacity hover:opacity-95
-              ${
-                !isFormValid || !!loading.login || !isOnline
-                  ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
-                  : "auth-bg-btn"
+              ${!isFormValid || !!loading.login || !isOnline
+                ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                : "auth-bg-btn"
               }
             `}
           >
