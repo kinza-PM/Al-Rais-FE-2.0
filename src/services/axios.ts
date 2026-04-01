@@ -5,6 +5,17 @@ import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
 import { TokenService } from "./tokenService";
 import { StorageService } from "../utils/storage";
 import { fetchAuthSession } from "aws-amplify/auth";
+import {
+  VITE_API_BASE,
+  VITE_FLIGHT_ANCILLARY_API_BASE,
+  VITE_FLIGHT_API_BASE,
+  VITE_FLIGHT_CANCELLATION_API_BASE,
+  VITE_HOTEL_API_BASE,
+  VITE_HOTEL_FAVOURITE_API_BASE,
+  VITE_LOCATION_API_BASE,
+  VITE_PAYMENT_API_BASE,
+  VITE_TICKET_API_BASE,
+} from "../config/publicEnv";
 
 const flightApis = [
   "/flightSearch",
@@ -38,32 +49,23 @@ const locationApis = ["/countries/cities", "/countries"];
 const ticketApis = ["/ticket"];
 const hotelFavouriteApis = ["/addHotelFavourites","/getHotelFavourites"];
 
-export const API_BASE =
-  import.meta.env.VITE_API_BASE ||
-  "https://ie7eaxnxpg.execute-api.eu-west-1.amazonaws.com/dev";
+export const API_BASE = VITE_API_BASE;
 
-export const FLIGHT_API_BASE =
-  "https://y0v4qcjjo5.execute-api.eu-west-1.amazonaws.com/dev2";
+export const FLIGHT_API_BASE = VITE_FLIGHT_API_BASE;
 
-export const PAYMENT_API_BASE =
-  "https://3cbnpbnuii.execute-api.eu-west-1.amazonaws.com/dev";
+export const PAYMENT_API_BASE = VITE_PAYMENT_API_BASE;
 
-export const FLIGHT_ANCILLARY_API_BASE =
-  "https://4wt7s595a8.execute-api.eu-west-1.amazonaws.com/dev";
+export const FLIGHT_ANCILLARY_API_BASE = VITE_FLIGHT_ANCILLARY_API_BASE;
 
-export const HOTEL_API_BASE =
-  "https://hfus5c7uw2.execute-api.eu-west-1.amazonaws.com/dev";
+export const HOTEL_API_BASE = VITE_HOTEL_API_BASE;
 
-export const LOCATION_API_BASE = "https://countriesnow.space/api/v0.1";
+export const LOCATION_API_BASE = VITE_LOCATION_API_BASE;
 
-export const TICKET_API_BASE =
-  "https://roj8jj0e3h.execute-api.eu-west-1.amazonaws.com/dev";
+export const TICKET_API_BASE = VITE_TICKET_API_BASE;
 
-export const HOTEL_FAVOURITE_API_BASE =
-  "https://iqgovf9bf7.execute-api.eu-west-1.amazonaws.com/dev";
+export const HOTEL_FAVOURITE_API_BASE = VITE_HOTEL_FAVOURITE_API_BASE;
 
-  export const FLIGHT_CANCELLATION =
-  "https://orvmy7zbb5.execute-api.eu-west-1.amazonaws.com/dev";
+export const FLIGHT_CANCELLATION = VITE_FLIGHT_CANCELLATION_API_BASE;
 
 export const axiosClient = axios.create({
   baseURL: API_BASE,

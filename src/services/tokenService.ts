@@ -2,8 +2,9 @@ import { fetchAuthSession } from 'aws-amplify/auth';
 import { LocalStorageService } from './storage/localStorageService';
 import { STORAGE_KEYS } from '../types/StorageKeysTypes';
 import axios from 'axios';
+import { VITE_GUEST_TOKEN_API_URL } from '../config/publicEnv';
 
-const GUEST_TOKEN_API_URL = 'https://gw8h2qdmwh.execute-api.eu-west-1.amazonaws.com/dev/guest-token';
+const GUEST_TOKEN_API_URL = VITE_GUEST_TOKEN_API_URL;
 
 // Create a separate axios instance for guest token API (without interceptors)
 const guestTokenClient = axios.create({

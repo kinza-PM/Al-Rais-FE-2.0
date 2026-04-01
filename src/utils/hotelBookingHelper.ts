@@ -182,7 +182,7 @@ export function buildInitialHotelBookingPayload(
     culture: "en",
     stayDateRange: { checkIn, checkOut },
     rooms,
-    paymentDetails: { paymentMode: "CC" },
+    paymentDetails: { paymentMode: "CR" },
   };
 }
 

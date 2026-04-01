@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PayFortUtils } from "../utils/payfort";
 import payfortConfig from "../payfort-export";
+import { VITE_PAYFORT_PAYMENT_PAGE_URL } from "../config/publicEnv";
 
 type TokenPayload = any;
 
@@ -15,7 +16,7 @@ type InitiateOptions = {
 
 export function usePayFortTokenization() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const listenerRef = useRef<(e: MessageEvent) => void | null>(null);
+  const listenerRef = useRef<((e: MessageEvent) => void) | null>(null);
   const cleanupTimerRef = useRef<number | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -98,7 +99,7 @@ export function usePayFortTokenization() {
           // create form
           const form = document.createElement("form");
           form.method = "POST";
-          form.action = "https://sbcheckout.payfort.com/FortAPI/paymentPage";
+          form.action = VITE_PAYFORT_PAYMENT_PAGE_URL;
           form.target = "payfortHiddenFrame";
 
           Object.keys(fields).forEach((k) => {

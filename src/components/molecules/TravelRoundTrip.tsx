@@ -38,7 +38,7 @@ type TravelRoundTripProps = {
     isLoadingMore?: boolean;
     hasMore?: boolean;
   }) => React.ReactNode;
-  loadMoreRef?: React.RefObject<HTMLDivElement | null>;
+  loadMoreRef?: React.RefObject<HTMLDivElement>;
   emptyState?: (() => React.ReactNode) | React.ReactNode;
   highDemandIndicators?: any[];
 };

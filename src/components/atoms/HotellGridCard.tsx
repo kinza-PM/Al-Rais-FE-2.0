@@ -7,6 +7,7 @@ import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "./HotelPriceSummaryTooltip";
+import { HotelProxiedImage } from "./HotelProxiedImage";
 import {
   processHotelSearchListingData,
   getHotelGuestReviewMeta,
@@ -178,36 +179,30 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             aria-label={`View ${hotelName} details`}
           >
             <div className="flex-1 min-w-0 overflow-hidden rounded-2xl">
-              <img
+              <HotelProxiedImage
                 src={imageUrl}
                 alt={hotelName}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = HotelImage;
-                }}
+                fallback={HotelImage}
               />
             </div>
 
             <div className="flex flex-col flex-[0_0_42%] min-w-0 gap-1.5">
               <div className="overflow-hidden flex-1 min-h-0 rounded-2xl">
-                <img
+                <HotelProxiedImage
                   src={imageUrl2}
                   alt={hotelName}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = HotelImage2;
-                  }}
+                  fallback={HotelImage2}
                 />
               </div>
 
               <div className="overflow-hidden flex-1 min-h-0 rounded-2xl">
-                <img
+                <HotelProxiedImage
                   src={imageUrl3}
                   alt={hotelName}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = HotelImage3;
-                  }}
+                  fallback={HotelImage3}
                 />
               </div>
             </div>

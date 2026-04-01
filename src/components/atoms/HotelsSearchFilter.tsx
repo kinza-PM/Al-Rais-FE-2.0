@@ -5,6 +5,7 @@ import type { HotelFilters, SortOption } from "../../utils/hotelFilters";
 import {
   getActiveFilterCount,
   PROPERTY_TYPE_MAPPINGS,
+  canonicalRoomTypeLabel,
 } from "../../utils/hotelFilters";
 
 const { Panel } = Collapse;
@@ -81,6 +82,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
   const {
     propertyFacilities,
     roomFacilities,
+    roomTypes,
     meals,
     propertyTypes,
     cancellationPolicies,
@@ -92,6 +94,9 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     const propertyFacCountMap: Record<string, number> = {};
     const roomFacCountMap: Record<string, number> = {};
     const mealCountMap: Record<string, number> = {};
+    const roomTypeCountMap: Record<string, number> = {};
+    /** Lowercase key → display label (first seen spelling from API). */
+    const roomTypeLabelByKey: Record<string, string> = {};
     const propertyTypeCountMap: Record<string, number> = {};
     const cancellationCountMap: Record<string, number> = {};
 
@@ -117,7 +122,15 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       }
 
       if (hotel?.rooms) {
+        const roomTypesSeenThisHotel = new Set<string>();
         hotel.rooms.forEach((room: any) => {
+          const rType = canonicalRoomTypeLabel(room?.roomTypeName || "");
+          if (rType) {
+            const k = rType.toLowerCase();
+            if (!roomTypeLabelByKey[k]) roomTypeLabelByKey[k] = rType;
+            roomTypesSeenThisHotel.add(k);
+          }
+
           if (room?.roomFacilities) {
             room.roomFacilities.forEach((facility: any) => {
               const name = facility?.name || facility;
@@ -176,6 +189,11 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
             }
           }
         });
+
+        roomTypesSeenThisHotel.forEach((k) => {
+          const label = roomTypeLabelByKey[k];
+          roomTypeCountMap[label] = (roomTypeCountMap[label] ?? 0) + 1;
+        });
       }
     });
 
@@ -190,6 +208,9 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       roomFacilities: roomFacilitiesArray
         .sort()
         .map((name) => ({ name, count: roomFacCountMap[name] ?? 0 })),
+      roomTypes: Object.entries(roomTypeCountMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([name, count]) => ({ name, count })),
       meals: Array.from(mealsSet)
         .sort()
         .map((name) => ({ name, count: mealCountMap[name] ?? 0 })),
@@ -242,6 +263,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       ratings: [],
       propertyFacilities: [],
       roomFacilities: [],
+      roomTypes: [],
       bedPreferences: [],
       meals: [],
       cancellationPolicy: [],
@@ -426,7 +448,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           </Panel>
         </CustomCollapse>
 
-        <CustomCollapse>
+        {/* <CustomCollapse>
           <Panel header="Point of interest" key="point_interest">
             <Input
               allowClear={{
@@ -468,8 +490,8 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               }}
             />
           </Panel>
-        </CustomCollapse>
-
+        </CustomCollapse> */}
+{/* 
         <CustomCollapse>
           <Panel header="Previously used filters" key="previously">
             <div className="flex flex-col gap-[10px]">
@@ -480,7 +502,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               </Checkbox>
             </div>
           </Panel>
-        </CustomCollapse>
+        </CustomCollapse> */}
 
         {propertyTypes.length > 0 && (
           <CustomCollapse>
@@ -534,6 +556,26 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                     checked={filters.roomFacilities.includes(name)}
                     onChange={(checked) =>
                       handleFilterChange("roomFacilities", name, checked)
+                    }
+                  />
+                ))}
+              </div>
+            </Panel>
+          </CustomCollapse>
+        )}
+
+        {roomTypes.length > 0 && (
+          <CustomCollapse>
+            <Panel header="Room type" key="room_type">
+              <div className="flex flex-col gap-2">
+                {roomTypes.map(({ name, count }) => (
+                  <FilterCheckboxRow
+                    key={name}
+                    label={name}
+                    count={count}
+                    checked={filters.roomTypes.includes(name)}
+                    onChange={(checked) =>
+                      handleFilterChange("roomTypes", name, checked)
                     }
                   />
                 ))}

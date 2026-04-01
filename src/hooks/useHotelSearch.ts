@@ -1,4 +1,4 @@
-import { useMutation,useQuery  } from "@tanstack/react-query";
+import { useMutation, useQuery, keepPreviousData } from "@tanstack/react-query";
 import {
   postHotelDetailData,
   postHotelGetMoreRoomsData,
@@ -50,6 +50,8 @@ export function useGetHotelFavourites(enabled: boolean = true) {
     queryKey: ["hotel-favourites"],
     queryFn: () => getHotelFavouritesData(),
     enabled,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: keepPreviousData,
   });
 }
 export function useHotelCancellationCharges() {

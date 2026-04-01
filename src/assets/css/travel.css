@@ -418,6 +418,31 @@ input[type="number"] {
   flex-shrink: 0;
 }
 
+/* Flight search (desktop): sticky filter column with internal scroll */
+@media (min-width: 1024px) {
+  .flight-search-page .contentWrapFlex {
+    align-items: flex-start;
+  }
+
+  .flight-search-page .contentWrapFlex .flightDetailFilter {
+    position: sticky;
+    top: 16px;
+    align-self: flex-start;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    min-height: 0;
+  }
+}
+
+/* Prevent flex overflow inside flight filter (e.g. price min/max row) */
+.flight-search-filter-root .ant-collapse-content-box {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 .filterSectionStyle {
   width: 100%;
   display: flex;
@@ -661,19 +686,22 @@ input[type="number"] {
   gap: 16px;
 }
 
-/* Hotel search (desktop): sidebar margin + filters scroll independently */
+/* Hotel search (desktop): sidebar margin + sticky filters + internal scroll */
 @media (min-width: 1024px) {
   .hotel-search-listing-page .contentWrapFlex {
     margin-left: 30px;
+    align-items: flex-start;
   }
 
   .hotel-search-listing-page .contentWrapFlex .flightDetailFilter {
-    max-height: calc(100dvh - 260px);
+    position: sticky;
+    top: 16px;
+    align-self: flex-start;
+    max-height: calc(100dvh - 24px);
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    align-self: stretch;
     min-height: 0;
   }
 }

@@ -118,6 +118,7 @@ const HotelSearchListing: React.FC = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [hotelSearchResults, setHotelSearchResults] = useState<any[]>([]);
+  const [hotelResultsSerial, setHotelResultsSerial] = useState(0);
   const [apiError, setApiError] = useState<string | null>(null);
 
   // Filter and sort state
@@ -127,6 +128,7 @@ const HotelSearchListing: React.FC = () => {
     ratings: [],
     propertyFacilities: [],
     roomFacilities: [],
+    roomTypes: [],
     bedPreferences: [],
     meals: [],
     cancellationPolicy: [],
@@ -325,6 +327,7 @@ const HotelSearchListing: React.FC = () => {
         }));
 
         setHotelSearchResults(formattedHotels);
+        setHotelResultsSerial((s) => s + 1);
 
         // Sync store with current search params so ListView passes correct pax when navigating
         setHotel({
@@ -341,12 +344,14 @@ const HotelSearchListing: React.FC = () => {
         });
       } else {
         setHotelSearchResults([]);
+        setHotelResultsSerial((s) => s + 1);
       }
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       // console.log("hotel search api error------------", err);
       setApiError(err);
       setHotelSearchResults([]);
+      setHotelResultsSerial((s) => s + 1);
     }
   }, [searchState, validateForm, mutateAsync, paxData, childAges, setHotel]);
 
@@ -692,12 +697,14 @@ const HotelSearchListing: React.FC = () => {
                     <HotelSearchListView
                       key="listview"
                       hotels={filteredAndSortedHotels}
+                      listResetKey={hotelResultsSerial}
                     />
                   )}
                   {hotelView === "gridview" && (
                     <HotelSearchGridView
                       key="gridview"
                       hotels={filteredAndSortedHotels}
+                      listResetKey={hotelResultsSerial}
                     />
                   )}
                   {hotelView === "mapview" && (

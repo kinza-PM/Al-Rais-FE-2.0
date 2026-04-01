@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Radio, Checkbox, Slider, Collapse } from "antd";
 import type { CheckboxProps } from "antd";
 import CustomCollapse from "../common/CustomCollapse";
@@ -72,6 +72,94 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     onAirlineToggle,
     onReset,
 }) => {
+    const [minStr, setMinStr] = useState(() => String(selectedPriceRange[0]));
+    const [maxStr, setMaxStr] = useState(() => String(selectedPriceRange[1]));
+
+    useEffect(() => {
+        setMinStr(String(selectedPriceRange[0]));
+        setMaxStr(String(selectedPriceRange[1]));
+    }, [selectedPriceRange[0], selectedPriceRange[1]]);
+
+    const clamp = useCallback((n: number, lo: number, hi: number) => {
+        if (Number.isNaN(n) || !Number.isFinite(n)) return lo;
+        return Math.min(hi, Math.max(lo, n));
+    }, []);
+
+    const parseAmount = (s: string): number | null => {
+        const t = s.trim().replace(/,/g, "");
+        if (t === "" || t === ".") return null;
+        const n = Number(t);
+        return Number.isFinite(n) ? n : null;
+    };
+
+    const commitMinMax = useCallback(
+        (nextMinStr: string, nextMaxStr: string) => {
+            const [boundLo, boundHi] = priceRangeBounds;
+            let nMin = parseAmount(nextMinStr);
+            let nMax = parseAmount(nextMaxStr);
+            if (nMin === null) nMin = selectedPriceRange[0];
+            if (nMax === null) nMax = selectedPriceRange[1];
+            nMin = clamp(nMin, boundLo, boundHi);
+            nMax = clamp(nMax, boundLo, boundHi);
+            if (nMin > nMax) [nMin, nMax] = [nMax, nMin];
+            setMinStr(String(nMin));
+            setMaxStr(String(nMax));
+            onPriceRangeChange([nMin, nMax]);
+        },
+        [priceRangeBounds, selectedPriceRange, clamp, onPriceRangeChange],
+    );
+
+    const sanitizeDecimal = (raw: string) => {
+        let v = raw.replace(/[^0-9.]/g, "");
+        const firstDot = v.indexOf(".");
+        if (firstDot !== -1) {
+            v =
+                v.slice(0, firstDot + 1) +
+                v.slice(firstDot + 1).replace(/\./g, "");
+        }
+        return v;
+    };
+
+    const fullWidth: React.CSSProperties = {
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
+    };
+
+    const priceFieldStyle: React.CSSProperties = {
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        border: "1.5px solid #C2CAD6",
+        borderRadius: "8px",
+        padding: "6px 6px",
+        background: "#FFFFFF",
+        minWidth: 0,
+        maxWidth: "100%",
+        boxSizing: "border-box",
+    };
+
+    const aedLabelStyle: React.CSSProperties = {
+        fontSize: "10px",
+        fontWeight: 700,
+        color: "#2351A3",
+        flexShrink: 0,
+        letterSpacing: "0.04em",
+        lineHeight: 1,
+    };
+
+    const priceInputStyle: React.CSSProperties = {
+        flex: 1,
+        minWidth: 0,
+        border: "none",
+        outline: "none",
+        fontSize: "14px",
+        fontWeight: 500,
+        color: "#0F172A",
+        background: "transparent",
+    };
+
     const timeToSliderValue = (time: string | undefined, roundUp = false): number => {
         if (!time) return roundUp ? 1440 : 0;
         const [h, m] = time.split(':').map(Number);
@@ -94,11 +182,17 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     })();
 
     return (
-        <div className="filterSectionStyle" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '280px' }}>
+        <div
+            className="filterSectionStyle flight-search-filter-root"
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
+                ...fullWidth,
+            }}
+        >
             {/* Sort by - Direct render without extra wrapper */}
-            <div style={{ width: '280px' }}>
-                {headerContent}
-            </div>
+            <div style={fullWidth}>{headerContent}</div>
 
             {/* Filters Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
@@ -124,13 +218,16 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Number of stops - Collapsible */}
-            <div className="stopsCollapse" style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                background: '#F2F2F3',
-                overflow: 'hidden',
-                border: '1.5px solid #E4E4E7'
-            }}>
+            <div
+                className="stopsCollapse"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    background: "#F2F2F3",
+                    overflow: "hidden",
+                    border: "1.5px solid #E4E4E7",
+                }}
+            >
                 <CustomCollapse>
                     <Panel 
                         header="Number of stops" 
@@ -153,62 +250,92 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Price per person - Collapsible */}
-            <div style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                overflow: 'hidden'
-            }}>
+            <div style={{ ...fullWidth, borderRadius: "16px" }}>
                 <CustomCollapse>
                     <Panel 
                         header="Price per person" 
                         key="price"
                         style={{ border: 'none' }}
                     >
-                        <div style={{ padding: '0 16px 16px 16px' }}>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-                                <div style={{ flex: 1 }}>
+                        <div
+                            style={{
+                                padding: "0 10px 12px",
+                                ...fullWidth,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: "8px",
+                                    alignItems: "flex-end",
+                                    marginBottom: "10px",
+                                    ...fullWidth,
+                                }}
+                            >
+                                <div style={{ flex: "1 1 0%", minWidth: 0 }}>
                                     <label style={{ fontSize: '12px', color: '#64748B', display: 'block', marginBottom: '6px' }}>Min</label>
-                                    <div style={{ 
-                                        border: '1.5px solid #C2CAD6',
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        background: '#FFFFFF',
-                                        fontSize: '14px',
-                                        fontWeight: 500,
-                                        color: '#0F172A'
-                                    }}>
-                                        ${selectedPriceRange[0]}
+                                    <div style={priceFieldStyle}>
+                                        <span style={aedLabelStyle} aria-hidden>AED</span>
+                                        <input
+                                            type="text"
+                                            inputMode="decimal"
+                                            autoComplete="off"
+                                            aria-label="Minimum price per person"
+                                            style={priceInputStyle}
+                                            value={minStr}
+                                            onChange={(e) =>
+                                                setMinStr(sanitizeDecimal(e.target.value))
+                                            }
+                                            onBlur={() => commitMinMax(minStr, maxStr)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    (e.target as HTMLInputElement).blur();
+                                                }
+                                            }}
+                                        />
                                     </div>
                                 </div>
-                                <div style={{ flex: 1 }}>
+                                <div style={{ flex: "1 1 0%", minWidth: 0 }}>
                                     <label style={{ fontSize: '12px', color: '#64748B', display: 'block', marginBottom: '6px' }}>Max</label>
-                                    <div style={{ 
-                                        border: '1.5px solid #C2CAD6',
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        background: '#FFFFFF',
-                                        fontSize: '14px',
-                                        fontWeight: 500,
-                                        color: '#0F172A'
-                                    }}>
-                                        ${selectedPriceRange[1]}
+                                    <div style={priceFieldStyle}>
+                                        <span style={aedLabelStyle} aria-hidden>AED</span>
+                                        <input
+                                            type="text"
+                                            inputMode="decimal"
+                                            autoComplete="off"
+                                            aria-label="Maximum price per person"
+                                            style={priceInputStyle}
+                                            value={maxStr}
+                                            onChange={(e) =>
+                                                setMaxStr(sanitizeDecimal(e.target.value))
+                                            }
+                                            onBlur={() => commitMinMax(minStr, maxStr)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    (e.target as HTMLInputElement).blur();
+                                                }
+                                            }}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                            <Slider
-                                range
-                                defaultValue={[priceRangeBounds[0], priceRangeBounds[1]]}
-                                aria-label="price-range-slider"
-                                min={priceRangeBounds[0]}
-                                max={priceRangeBounds[1]}
-                                step={priceStep}
-                                value={selectedPriceRange}
-                                onChange={(val) => onPriceRangeChange(val as [number, number])}
-                                styles={{
-                                    track: { background: '#2351A3' },
-                                    tracks: { background: '#2351A3' }
-                                }}
-                            />
+                            <div style={{ ...fullWidth, padding: "0 2px" }}>
+                                <Slider
+                                    range
+                                    aria-label="price-range-slider"
+                                    min={priceRangeBounds[0]}
+                                    max={priceRangeBounds[1]}
+                                    step={priceStep}
+                                    value={selectedPriceRange}
+                                    onChange={(val) =>
+                                        onPriceRangeChange(val as [number, number])
+                                    }
+                                    styles={{
+                                        track: { background: "#2351A3" },
+                                        tracks: { background: "#2351A3" },
+                                    }}
+                                />
+                            </div>
                         </div>
                     </Panel>
                 </CustomCollapse>
@@ -216,11 +343,14 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
 
             {/* Transit hours - Collapsible (conditional) */}
             {Number(selectedMaxConnections || 0) > 0 && (
-                <div className="timeCollapse" style={{ 
-                    width: '280px',
-                    borderRadius: '16px',
-                    overflow: 'hidden'
-                }}>
+                <div
+                    className="timeCollapse"
+                    style={{
+                        ...fullWidth,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                    }}
+                >
                     <CustomCollapse>
                         <Panel 
                             header="Transit hours" 
@@ -245,13 +375,16 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             )}
 
             {/* Flight time - Collapsible (FL201: Slider + time inputs for preferred departure/arrival) */}
-            <div className="flightTimeFilter" style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                background: '#F2F2F3',
-                border: '1.5px solid #E4E4E7'
-            }}>
+            <div
+                className="flightTimeFilter"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                    background: "#F2F2F3",
+                    border: "1.5px solid #E4E4E7",
+                }}
+            >
                 <CustomCollapse>
                     <Panel 
                         header="Preferred departure & arrival time" 
@@ -316,11 +449,14 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Airlines - Collapsible */}
-            <div className="timeCollapse" style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                overflow: 'hidden'
-            }}>
+            <div
+                className="timeCollapse"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
                 <CustomCollapse>
                     <Panel 
                         header="Airlines" 
@@ -347,11 +483,13 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Baggage - Collapsible */}
-            <div style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                overflow: 'hidden'
-            }}>
+            <div
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
                 <CustomCollapse>
                     <Panel 
                         header="Baggage" 

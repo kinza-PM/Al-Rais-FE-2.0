@@ -186,7 +186,7 @@ const FlightBooking = () => {
       passengers,
       reservationType: "TICKET",
       paymentDetails: {
-        paymentMode: "CC",
+        paymentMode: "CR",
       },
     };
   });

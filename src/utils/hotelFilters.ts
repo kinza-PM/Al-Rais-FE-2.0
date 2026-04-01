@@ -4,6 +4,8 @@ export interface HotelFilters {
   ratings: number[];
   propertyFacilities: string[];
   roomFacilities: string[];
+  /** Values from `rooms[].roomTypeName` in search results (labels as shown in filter UI). */
+  roomTypes: string[];
   bedPreferences: string[];
   meals: string[];
   cancellationPolicy: string[];
@@ -157,6 +159,39 @@ const hasMealOption = (rooms: any[], mealType: string): boolean => {
   });
 };
 
+/**
+ * Strips refundable / rate-plan fragments often appended to `roomTypeName`
+ * (e.g. "- Non Refundable rate", "- Normal rate") so room type filtering
+ * stays separate from the cancellation policy filter.
+ */
+export function canonicalRoomTypeLabel(raw: string): string {
+  const trimmed = (raw || "").trim();
+  if (!trimmed) return "";
+  // e.g. "Twin - Non Refundable rate", "Studio – Normal rate"
+  const rateSuffix =
+    /\s*[-–—]\s*(non[-\s]?refundable(\s+rate)?|normal\s+rate)\s*$/i;
+  let s = trimmed;
+  let prev = "";
+  while (s !== prev) {
+    prev = s;
+    s = s.replace(rateSuffix, "").trim();
+  }
+  return s.length > 0 ? s : trimmed;
+}
+
+const matchesRoomTypes = (rooms: any[], selectedLabels: string[]): boolean => {
+  if (selectedLabels.length === 0) return true;
+  const selectedLc = new Set(
+    selectedLabels
+      .map((s) => canonicalRoomTypeLabel(s).toLowerCase())
+      .filter(Boolean),
+  );
+  return rooms.some((room: any) => {
+    const canon = canonicalRoomTypeLabel(room?.roomTypeName || "");
+    return canon.length > 0 && selectedLc.has(canon.toLowerCase());
+  });
+};
+
 // Filter hotels based on criteria
 export const filterHotels = (hotels: any[], filters: HotelFilters): any[] => {
   return hotels.filter((hotel) => {
@@ -204,6 +239,13 @@ export const filterHotels = (hotels: any[], filters: HotelFilters): any[] => {
         );
       });
       if (!allMatch) {
+        return false;
+      }
+    }
+
+    if (filters.roomTypes.length > 0) {
+      const allRooms = hotel?.rooms || [];
+      if (!matchesRoomTypes(allRooms, filters.roomTypes)) {
         return false;
       }
     }
@@ -321,6 +363,7 @@ export const getActiveFilterCount = (filters: HotelFilters): number => {
   if (filters.ratings.length > 0) count++;
   if (filters.propertyFacilities.length > 0) count++;
   if (filters.roomFacilities.length > 0) count++;
+  if (filters.roomTypes.length > 0) count++;
   if (filters.bedPreferences.length > 0) count++;
   if (filters.meals.length > 0) count++;
   if (filters.cancellationPolicy.length > 0) count++;

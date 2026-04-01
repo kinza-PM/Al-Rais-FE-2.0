@@ -22,9 +22,12 @@ import {
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import ShareTicketModal from "../atoms/ShareTicketModal";
+import { HotelProxiedImage } from "../atoms/HotelProxiedImage";
+import { useProgressiveList } from "../../hooks/useProgressiveList";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
+  listResetKey?: number;
 };
 
 const buildHotelShareUrl = (
@@ -49,7 +52,7 @@ const buildHotelShareUrl = (
 };
 
 const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
-  ({ hotels }) => {
+  ({ hotels, listResetKey = 0 }) => {
     const navigate = useNavigate();
     const { hotel: bookingParams } = useHotelStore();
 
@@ -65,7 +68,13 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
       data: favouriteHotelsResponse,
       isLoading: isGetFavouritesLoading,
       refetch: refetchFavourites,
-    } = useGetHotelFavourites();
+    } = useGetHotelFavourites(hotels.length > 0);
+
+    const { visible, sentinelRef, hasMore } = useProgressiveList(
+      hotels,
+      24,
+      listResetKey,
+    );
 
     const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
@@ -271,7 +280,10 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
       return (
         <>
           <Loader
-            show={isAddFavouritePending || isGetFavouritesLoading}
+            show={
+              isAddFavouritePending ||
+              (isGetFavouritesLoading && favouriteHotelsResponse == null)
+            }
             label={
               isGetFavouritesLoading
                 ? "Loading favourites..."
@@ -288,7 +300,10 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
     return (
       <>
         <Loader
-          show={isAddFavouritePending || isGetFavouritesLoading}
+          show={
+            isAddFavouritePending ||
+            (isGetFavouritesLoading && favouriteHotelsResponse == null)
+          }
           label={
             isGetFavouritesLoading
               ? "Loading favourites..."
@@ -298,7 +313,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
         <div className="min-h-screen">
           <div className="w-full">
-            {hotels.map((hotel, index) => {
+            {visible.map((hotel, index) => {
               const {
                 hasRooms,
                 isAvailable,
@@ -312,7 +327,14 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 availableRooms,
               } = processHotelSearchListingData(hotel);
 
-              const imageUrl = hotel.propertyInfo?.imageUrl || HotelImage;
+              const apiImages: string[] =
+                hotel?.propertyInfo?.images
+                  ?.map((img: any) => img?.url || img?.imageUrl || img)
+                  ?.filter(
+                    (u: any) => typeof u === "string" && u.length > 0,
+                  ) || [];
+              const imageUrl =
+                apiImages[0] || hotel.propertyInfo?.imageUrl || HotelImage;
               const hotelName = hotel.propertyInfo?.hotelName || "Hotel";
               const address = hotel.propertyInfo?.address || "";
               const locationText = hotel.propertyInfo?.location || "";
@@ -380,14 +402,12 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                     <div
                       className="relative h-[220px] w-full lg:w-[244px] lg:flex-shrink-0"
                     >
-                      <img
+                      <HotelProxiedImage
                         src={imageUrl}
                         alt="Hotel"
                         className="w-full h-full object-cover"
                         style={{ borderRadius: "16px" }}
-                        onError={(e) => {
-                          e.currentTarget.src = HotelImage;
-                        }}
+                        fallback={HotelImage}
                       />
 
                       <button
@@ -691,6 +711,13 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 </div>
               );
             })}
+            {hasMore ? (
+              <div
+                ref={sentinelRef}
+                className="h-10 w-full shrink-0"
+                aria-hidden
+              />
+            ) : null}
           </div>
         </div>
 

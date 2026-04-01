@@ -53,6 +53,7 @@ import {
   callWithRetries,
   filterFlightsByTimeAndAirlines,
 } from "../../utils/flightFilters";
+import { sortFlightOffers } from "../../utils/flightSortUtils";
 // import dayjs from "dayjs";
 import SearchableDropdown from "../common/SearchableDropdown";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
@@ -609,12 +610,11 @@ const FlightDetailTemplate: React.FC = () => {
       originalResponseRef.current = oneWayFormatted;
       originalRoundResponseRef.current = roundFormatted;
       originalMulticityResponseRef.current = multiCityFormatted;
-      // SR208: Sort by lowest price by default
-      const sortByPriceLow = (arr: any[]) =>
-        [...arr].sort((a, b) => (a.price?.totalPrice || a.rawTotalStartingFare || a.raw?.fare?.totalFare || 0) - (b.price?.totalPrice || b.rawTotalStartingFare || b.raw?.fare?.totalFare || 0));
-      setResponseData(sortByPriceLow(oneWayFormatted));
-      setRoundResponseData(sortByPriceLow(roundFormatted));
-      setMulticityResponseData(trip === "multicity" ? sortByPriceLow(multiCityFormatted) : []);
+      setResponseData(sortFlightOffers(oneWayFormatted, sortBy));
+      setRoundResponseData(sortFlightOffers(roundFormatted, sortBy));
+      setMulticityResponseData(
+        trip === "multicity" ? sortFlightOffers(multiCityFormatted, sortBy) : [],
+      );
       setHighDemandIndicators(highDemand);
       // start inactivity timers only based on API results
       startResultInactivityTimers();
@@ -674,15 +674,24 @@ const FlightDetailTemplate: React.FC = () => {
       const { oneWayFormatted, roundFormatted, multiCityFormatted } =
         processFLightSearchResults(raw);
 
-      // append only unique items
+      // append only unique items, then re-apply current sort
       setResponseData((prev) =>
-        appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted),
+        sortFlightOffers(
+          appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted),
+          sortBy,
+        ),
       );
       setRoundResponseData((prev) =>
-        appendUniqueItemsForLoadMoreFlights(prev, roundFormatted),
+        sortFlightOffers(
+          appendUniqueItemsForLoadMoreFlights(prev, roundFormatted),
+          sortBy,
+        ),
       );
       setMulticityResponseData((prev) =>
-        appendUniqueItemsForLoadMoreFlights(prev, multiCityFormatted),
+        sortFlightOffers(
+          appendUniqueItemsForLoadMoreFlights(prev, multiCityFormatted),
+          sortBy,
+        ),
       );
 
       const anyHasMore = (raw || []).some(
@@ -1113,11 +1122,8 @@ const FlightDetailTemplate: React.FC = () => {
     const finalOneWay = applyPrice(filteredOneWay);
     const finalRound = applyPrice(filteredRound);
 
-    // SR208: Maintain sort by lowest price when filters apply
-    const sortByPriceLow = (arr: any[]) =>
-      [...arr].sort((a, b) => (a.price?.totalPrice || a.rawTotalStartingFare || a.raw?.fare?.totalFare || 0) - (b.price?.totalPrice || b.rawTotalStartingFare || b.raw?.fare?.totalFare || 0));
-    setResponseData(sortByPriceLow(finalOneWay));
-    setRoundResponseData(sortByPriceLow(finalRound));
+    setResponseData(sortFlightOffers(finalOneWay, sortBy));
+    setRoundResponseData(sortFlightOffers(finalRound, sortBy));
   }
 
   useEffect(() => {
@@ -1172,40 +1178,32 @@ const FlightDetailTemplate: React.FC = () => {
   const handleSortChange = (value: string) => {
     setSortBy(value);
     setIsSortDropdownOpen(false);
-    
-    // Sort the response data based on selection
-    const sortData = (data: any[]) => {
-      const sorted = [...data];
-      switch (value) {
-        case "lowest_price":
-          return sorted.sort((a, b) => (a.price?.totalPrice || 0) - (b.price?.totalPrice || 0));
-        case "shortest_duration":
-          return sorted.sort((a, b) => (a.totalDuration || 0) - (b.totalDuration || 0));
-        case "earliest_departure":
-          return sorted.sort((a, b) => {
-            const timeA = a.segments?.[0]?.departureTime || "";
-            const timeB = b.segments?.[0]?.departureTime || "";
-            return timeA.localeCompare(timeB);
-          });
-        default:
-          return sorted;
-      }
-    };
 
-    if (responseData.length > 0) {
-      setResponseData(sortData(responseData));
-    }
-    if (roundResponseData.length > 0) {
-      setRoundResponseData(sortData(roundResponseData));
-    }
+    setResponseData((prev) =>
+      prev.length ? sortFlightOffers(prev, value) : prev,
+    );
+    setRoundResponseData((prev) =>
+      prev.length ? sortFlightOffers(prev, value) : prev,
+    );
+    setMulticityResponseData((prev) =>
+      prev.length ? sortFlightOffers(prev, value) : prev,
+    );
   };
 
   const headerContent = (
-    <div style={{ position: 'relative', width: '280px' }}>
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
+      }}
+    >
       <div 
         onClick={() => setIsSortDropdownOpen(!isSortDropdownOpen)}
         style={{ 
-          width: '280px',
+          width: "100%",
           height: '70px',
           borderRadius: '16px',
           border: '1.5px solid #3D495C',
@@ -1249,7 +1247,7 @@ const FlightDetailTemplate: React.FC = () => {
           position: 'absolute',
           top: '75px',
           left: 0,
-          width: '280px',
+          width: '100%',
           background: '#FFFFFF',
           borderRadius: '16px',
           border: '1.5px solid #C2CAD6',
@@ -1522,7 +1520,7 @@ const FlightDetailTemplate: React.FC = () => {
         </div>
       </div>
 
-      <div className="flightDetailTemplateWrap">
+      <div className="flightDetailTemplateWrap flight-search-page">
         <div className="bottomHeaderSetting">
           {trip === "multicity" ? (
             <>
