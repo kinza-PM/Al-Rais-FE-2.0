@@ -1,10 +1,15 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import "../../../assets/css/travel.css";
 import SearchableDropdown, {
   type DropdownOption,
 } from "../../common/SearchableDropdown";
+import TailiwindCustomDatePicker from "../../common/TailiwindCustomDatePicker";
+import {
+  formatDateToLocalISO,
+  parseLocalDateString,
+} from "../../../utils/helpers";
 import type { SightseeingAdultTravelerForm } from "../../../features/sightseeing/sightseeingBooking";
 
 /** Stored dial prefix → `defaultCountry` for {@link PhoneInput} (same hook as hotel booking). */
@@ -93,35 +98,6 @@ const FIELD_LIGHT_BORDER_CLASS =
 const NATIONALITY_DROPDOWN_CLASS =
   "appearance-none h-[50px] w-full rounded-[16px] border border-[#E4E4E7] bg-white pl-4 pr-11 text-[14px] text-[#0F172A] outline-none flex items-center cursor-pointer";
 
-function CalendarEndIcon() {
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      className="pointer-events-none text-[#64748B]"
-      aria-hidden
-    >
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="16"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M3 10h18M8 5V3M16 5V3"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
 /** Figma: track 35×21 · #2351A3 · knob 17×17 */
 function SamePhoneToggle({
   checked,
@@ -161,6 +137,13 @@ function TravelerFieldsBlock({
   traveler: SightseeingAdultTravelerForm;
   onPatch: (patch: Partial<SightseeingAdultTravelerForm>) => void;
 }) {
+  const maxDobDate = useMemo(() => new Date(), []);
+  const minDobDate = useMemo(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 120);
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
   const nLabel = String(index + 1).padStart(2, "0");
   const whatsappLocked = traveler.whatsappSameAsPhone;
 
@@ -222,20 +205,22 @@ function TravelerFieldsBlock({
           <label className="mb-1.5 block text-[12px] font-medium text-[#64748B]">
             Date of Birth
           </label>
-          <div className="relative">
-            <input
-              type="date"
-              value={traveler.dateOfBirth}
-              onChange={(e) => onPatch({ dateOfBirth: e.target.value })}
-              className={`${FIELD_LIGHT_BORDER_CLASS} pr-11 [color-scheme:light]`}
-            />
-            <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center">
-              <CalendarEndIcon />
-            </span>
-          </div>
-          {!traveler.dateOfBirth ? (
-            <p className="mt-1 text-[12px] text-[#94A3B8]"></p>
-          ) : null}
+          <TailiwindCustomDatePicker
+            value={
+              traveler.dateOfBirth
+                ? parseLocalDateString(traveler.dateOfBirth)
+                : null
+            }
+            onChange={(date) => {
+              const iso = formatDateToLocalISO(date);
+              onPatch({ dateOfBirth: iso ?? "" });
+            }}
+            placeholder="Please select"
+            minDate={minDobDate}
+            maxDate={maxDobDate}
+            overridesClass
+            inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+          />
         </div>
         <div className="min-w-0 sm:max-w-[265px]">
           <label className="mb-1.5 block text-[12px] font-medium text-[#64748B]">

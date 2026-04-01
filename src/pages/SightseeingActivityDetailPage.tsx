@@ -23,13 +23,19 @@ import type {
 } from "../features/sightseeing/types";
 import {
   buildTravellersSummary,
-  formatDateDMY,
+  formatPickupDateLong,
   formatTime12Hour,
   isoDateOnly,
   type SightseeingBookingSummary,
   type SightseeingDetailNavState,
 } from "../features/sightseeing/sightseeingBooking";
 import SearchableDropdown from "../components/common/SearchableDropdown";
+import TailiwindCustomDatePicker from "../components/common/TailiwindCustomDatePicker";
+import TailiwindCustomTimePicker from "../components/common/TailiwindCustomTimePicker";
+import {
+  formatDateToLocalISO,
+  parseLocalDateString,
+} from "../utils/helpers";
 
 const FAVORITES_STORAGE_KEY = "alrais-sight-favorites";
 
@@ -90,29 +96,6 @@ function formatMoneyDecimals(currency: string, amount: number): string {
     default:
       return `${currency.trim()} ${n}`;
   }
-}
-
-function ClockIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-hidden
-    >
-      <circle cx="12" cy="12" r="9" stroke="#64748B" strokeWidth="1.5" />
-      <path
-        d="M12 7v6l4 2"
-        stroke="#64748B"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
 }
 
 const ADDON_FALCON_USD = 50;
@@ -252,25 +235,14 @@ const SightseeingActivityDetailPage: React.FC = () => {
     isoDateOnly(state.draft?.selectedTourDate ?? range.from),
   );
 
-  const rangeStart = useMemo(() => new Date(range.from), [range.from]);
-  const [calendarMonth, setCalendarMonth] = useState(() => {
-    const iso = isoDateOnly(state.draft?.selectedTourDate ?? range.from);
-    const [y, m] = iso.split("-").map((x) => parseInt(x, 10));
-    if (!y || !m) return new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1);
-    return new Date(y, m - 1, 1);
-  });
-
-  useEffect(() => {
-    setCalendarMonth(
-      new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1),
-    );
-  }, [rangeStart]);
-
-  useEffect(() => {
-    const [y, m] = selectedTourDate.split("-").map((x) => parseInt(x, 10));
-    if (!y || !m) return;
-    setCalendarMonth(new Date(y, m - 1, 1));
-  }, [selectedTourDate]);
+  const minTourDate = useMemo(
+    () => parseLocalDateString(isoDateOnly(range.from)) ?? new Date(),
+    [range.from],
+  );
+  const maxTourDate = useMemo(
+    () => parseLocalDateString(isoDateOnly(range.to)) ?? new Date(),
+    [range.to],
+  );
 
   const rateOptions = detail?.rateOptions ?? [];
 
@@ -387,35 +359,6 @@ const SightseeingActivityDetailPage: React.FC = () => {
     ];
   }, [detail, preview, badgeRow]);
 
-  const monthLabel = calendarMonth.toLocaleString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-
-  const minBookableMonth = useMemo(
-    () => new Date(rangeStart.getFullYear(), rangeStart.getMonth(), 1),
-    [rangeStart],
-  );
-  const maxBookableMonth = useMemo(() => {
-    const d = new Date(rangeStart);
-    d.setMonth(d.getMonth() + 18);
-    return new Date(d.getFullYear(), d.getMonth(), 1);
-  }, [rangeStart]);
-  const currentMonthStart = useMemo(
-    () => new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1),
-    [calendarMonth],
-  );
-  const canShiftMonthPrev =
-    currentMonthStart.getTime() > minBookableMonth.getTime();
-  const canShiftMonthNext =
-    currentMonthStart.getTime() < maxBookableMonth.getTime();
-
-  const shiftMonth = (delta: number) => {
-    if (delta < 0 && !canShiftMonthPrev) return;
-    if (delta > 0 && !canShiftMonthNext) return;
-    setCalendarMonth((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
-  };
-
   const travellerCount = adults + teens + children;
   const bookingSubtotal = useMemo(() => {
     const base = displayPriceAmount;
@@ -491,7 +434,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
       groupLabel: preview?.groupLabel ?? "—",
       packageSummary,
       travellersSummary: buildTravellersSummary(adults, teens, children),
-      pickupDateDisplay: formatDateDMY(selectedTourDate),
+      pickupDateDisplay: formatPickupDateLong(selectedTourDate),
       pickupTimeDisplay: formatTime12Hour(pickupTime24),
       enhancementsSummary: falconAddon
         ? "Falcon Handling & Photography"
@@ -841,82 +784,47 @@ const SightseeingActivityDetailPage: React.FC = () => {
 
                   <div className="border-t border-[#E8ECF0] py-6">
                     <h3 className="text-[16px] font-bold text-[#0A0C0F]">
-                      Select date
+                      Pickup date &amp; time
                     </h3>
-                    <div className="mt-4 flex items-center justify-between gap-3">
-                      <span className="text-[15px] font-semibold text-[#0A0C0F]">
-                        {monthLabel}
-                      </span>
-                      <div className="flex shrink-0 items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => shiftMonth(-1)}
-                          disabled={!canShiftMonthPrev}
-                          className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E2E8F0] bg-[#F8FAFC] text-lg font-medium text-[#94A3B8] disabled:cursor-not-allowed disabled:opacity-60 enabled:border-[#C2CAD6] enabled:bg-white enabled:text-[#374151] enabled:hover:bg-[#F8FAFC]"
-                          aria-label="Previous month"
-                        >
-                          ‹
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => shiftMonth(1)}
-                          disabled={!canShiftMonthNext}
-                          className="flex h-9 w-9 items-center justify-center rounded-full border border-[#C2CAD6] bg-white text-lg font-medium text-[#374151] hover:bg-[#F8FAFC] disabled:cursor-not-allowed disabled:opacity-50"
-                          aria-label="Next month"
-                        >
-                          ›
-                        </button>
+                    <p className="mt-1 text-[13px] text-[#64748B]">
+                      Tour date within your search window and preferred pick-up
+                      time
+                    </p>
+                    <label className="mb-1.5 mt-4 block text-[12px] font-medium text-[#64748B]">
+                      Date &amp; time
+                    </label>
+                    <div className="flex w-full min-w-0 flex-col overflow-hidden rounded-[16px] border border-[#C2CAD6] bg-[#F9FAFB] sm:h-[50px] sm:flex-row sm:items-stretch sm:px-2">
+                      <div className="min-h-[50px] min-w-0 flex-1 border-b border-[#E4E4E7] sm:min-h-0 sm:border-b-0">
+                        <TailiwindCustomDatePicker
+                          value={parseLocalDateString(selectedTourDate)}
+                          onChange={(date) => {
+                            const iso = formatDateToLocalISO(date);
+                            if (iso) setSelectedTourDate(iso);
+                          }}
+                          placeholder="Tour date"
+                          minDate={minTourDate}
+                          maxDate={maxTourDate}
+                          buttonIconSrc
+                          overridesClass
+                          showCalendarIconRight={false}
+                          inputClass="h-[50px] w-full min-w-0 cursor-pointer rounded-none border-none bg-transparent pl-10 pr-3 text-[14px] text-[#0A0C0F] outline-none placeholder:text-[#98A4B3] sm:rounded-[16px] sm:pr-1"
+                        />
                       </div>
-                    </div>
-                    <div className="mt-4 rounded-xl border border-dashed border-[#D1D5DB] bg-[#FAFBFC] px-4 py-4">
-                      <label
-                        htmlFor="sightseeing-tour-date"
-                        className="text-[13px] font-medium text-[#64748B]"
-                      >
-                        Tour date
-                      </label>
-                      <input
-                        id="sightseeing-tour-date"
-                        type="date"
-                        value={selectedTourDate}
-                        min={isoDateOnly(range.from)}
-                        max={isoDateOnly(range.to)}
-                        onChange={(e) => setSelectedTourDate(e.target.value)}
-                        className="mt-2 h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white px-4 text-[14px] text-[#0F172A] outline-none focus:border-[#2351A3] focus:ring-1 focus:ring-[#2351A3]"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-[#E8ECF0] py-6">
-                    <h3 className="text-[16px] font-bold text-[#0A0C0F]">
-                      Pick-up time
-                    </h3>
-                    <div className="relative mt-3 h-[50px] w-full">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 right-[52px] flex items-center pl-4 text-[14px]">
-                        {pickupTime24 ? (
-                          <span className="text-[#0F172A]">
-                            {formatTime12Hour(pickupTime24)}
-                          </span>
-                        ) : (
-                          <span className="text-[#94A3B8]">
-                            Select a Time
-                          </span>
-                        )}
-                      </div>
-                      <input
-                        type="time"
-                        step={60}
-                        value={pickupTime24}
-                        onChange={(e) => setPickupTime24(e.target.value)}
-                        className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-                        aria-label="Pick-up time"
-                      />
                       <span
-                        className="pointer-events-none absolute inset-y-0 right-0 flex w-[52px] items-center justify-center"
+                        className="hidden shrink-0 select-none self-center px-1 text-[#94A3B8] sm:inline"
                         aria-hidden
                       >
-                        <ClockIcon />
+                        —
                       </span>
+                      <div className="min-h-[50px] min-w-0 flex-1 sm:min-h-0">
+                        <TailiwindCustomTimePicker
+                          value={pickupTime24}
+                          onChange={(hhmm) => setPickupTime24(hhmm)}
+                          placeholder="Pick-up time"
+                          overridesClass
+                          inputClass="h-[50px] w-full min-w-0 cursor-pointer rounded-none border-none bg-transparent pl-3 pr-10 text-[14px] text-[#0A0C0F] outline-none placeholder:text-[#98A4B3] sm:rounded-[16px]"
+                        />
+                      </div>
                     </div>
                   </div>
 

@@ -4,7 +4,9 @@ export type SightseeingProtectionChoice = "damage" | "none";
 
 type Props = {
   className?: string;
-  onReserve?: (choice: SightseeingProtectionChoice) => void;
+  onReserve?: (choice: SightseeingProtectionChoice) => void | Promise<void>;
+  reserveDisabled?: boolean;
+  reserveLabel?: string;
 };
 
 const PROTECTION_FEATURES = [
@@ -123,6 +125,8 @@ function RadioIndicator({ selected }: { selected: boolean }) {
 export function SightseeingGetProtectionSection({
   className = "",
   onReserve,
+  reserveDisabled = false,
+  reserveLabel,
 }: Props) {
   const id = useId();
   const [choice, setChoice] = useState<SightseeingProtectionChoice>("damage");
@@ -291,10 +295,11 @@ export function SightseeingGetProtectionSection({
       <button
         type="button"
         onClick={onReserveClick}
-        className="mt-8 flex h-[52px] w-full items-center justify-center rounded-full text-[15px] font-bold leading-none text-white shadow-[0_4px_14px_rgba(35,81,163,0.35)] transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5383DA] focus-visible:ring-offset-2"
+        disabled={reserveDisabled}
+        className="mt-8 flex h-[52px] w-full items-center justify-center rounded-full text-[15px] font-bold leading-none text-white shadow-[0_4px_14px_rgba(35,81,163,0.35)] transition hover:opacity-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#5383DA] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
         style={{ background: SECTION_GRADIENT_RESERVE }}
       >
-        Reserve Now
+        {reserveLabel ?? "Reserve Now"}
       </button>
     </section>
   );

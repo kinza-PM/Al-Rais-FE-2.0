@@ -1,6 +1,15 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
+import {
+  buildActivitiesPreConfirmBody,
+  mergeActivitiesConfirmBodyFromPreConfirm,
+} from "../services/api/activitiesSearch";
+import {
+  useActivitiesConfirmBooking,
+  useActivitiesPreConfirmBooking,
+} from "../hooks/sightseeing/useActivitiesBooking";
+import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import { SightseeingFreeCancellationBanner } from "../components/molecules/sightseeing/SightseeingFreeCancellationBanner";
 import { SightseeingBookingAdultTravelersSection } from "../components/molecules/sightseeing/SightseeingBookingAdultTravelersSection";
 import {
@@ -8,7 +17,12 @@ import {
   type SightseeingProtectionChoice,
 } from "../components/molecules/sightseeing/SightseeingGetProtectionSection";
 import {
+  buildActivityBookingHolderFromLeadTraveler,
   createEmptyAdultTravelerForm,
+  extractActivityBookingReference,
+  isoDateOnly,
+  newSightseeingClientReference,
+  validateLeadTravelerForActivityBooking,
   type SightseeingAdultTravelerForm,
   type SightseeingBookingPageState,
   type SightseeingBookingSummary,
@@ -114,6 +128,11 @@ const SightseeingBookingPage: React.FC = () => {
         : [],
   );
 
+  const preConfirmMutation = useActivitiesPreConfirmBooking();
+  const confirmMutation = useActivitiesConfirmBooking();
+  const bookingInFlight =
+    preConfirmMutation.isPending || confirmMutation.isPending;
+
   useEffect(() => {
     if (adultCount < 1) return;
     setTravelers((prev) => {
@@ -157,14 +176,69 @@ const SightseeingBookingPage: React.FC = () => {
   }, []);
 
   const onReserveProtection = useCallback(
-    (protection: SightseeingProtectionChoice) => {
-      toast.success(
-        protection === "damage"
-          ? "Rental Car Damage Protection selected. Payment will connect here next."
-          : "Continuing without protection. Payment will connect here next.",
-      );
+    async (protection: SightseeingProtectionChoice) => {
+      if (!summary) return;
+
+      const leadErr = validateLeadTravelerForActivityBooking(travelers[0]);
+      if (leadErr) {
+        toast.error(leadErr);
+        return;
+      }
+
+      const rateKey = summary.draft.selectedRateKey?.trim() ?? "";
+      if (!rateKey) {
+        toast.error(
+          "No activity rate selected. Go back and choose a package, then try again.",
+        );
+        return;
+      }
+
+      const tourDate = isoDateOnly(summary.draft.selectedTourDate);
+      if (!tourDate) {
+        toast.error("Pickup date is missing. Go back and select a date.");
+        return;
+      }
+
+      const holder = buildActivityBookingHolderFromLeadTraveler(travelers[0]!);
+      const clientReference = newSightseeingClientReference();
+      const baseBody = buildActivitiesPreConfirmBody({
+        clientReference,
+        rateKey,
+        from: tourDate,
+        to: tourDate,
+        holder,
+      });
+
+      try {
+        const pre = await preConfirmMutation.mutateAsync(baseBody);
+        const confirmBody = mergeActivitiesConfirmBodyFromPreConfirm(
+          baseBody,
+          pre,
+        );
+        const confirmed = await confirmMutation.mutateAsync(confirmBody);
+        const ref =
+          extractActivityBookingReference(confirmed) ??
+          extractActivityBookingReference(pre);
+        const prot =
+          protection === "damage"
+            ? "Rental Car Damage Protection selected."
+            : "Continuing without protection.";
+        toast.success(
+          ref
+            ? `Booking confirmed. Reference: ${ref}. ${prot}`
+            : `Booking confirmed. ${prot}`,
+        );
+      } catch (err) {
+        const msg = extractErrorFromAxiosApiError(err);
+        toast.error(msg || "Booking could not be completed. Please try again.");
+      }
     },
-    [],
+    [
+      summary,
+      travelers,
+      preConfirmMutation,
+      confirmMutation,
+    ],
   );
 
   if (!summary || summary.activityCode !== activityCode) {
@@ -281,7 +355,11 @@ const SightseeingBookingPage: React.FC = () => {
               onSubmit={onContinue}
               submitLabel="Continue"
             />
-            <SightseeingGetProtectionSection onReserve={onReserveProtection} />
+            <SightseeingGetProtectionSection
+              onReserve={onReserveProtection}
+              reserveDisabled={bookingInFlight}
+              reserveLabel={bookingInFlight ? "Reserving…" : undefined}
+            />
           </>
         ) : null}
       </div>

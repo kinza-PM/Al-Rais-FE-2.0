@@ -181,6 +181,25 @@ export function buildActivitiesConfirmBody(
   return buildActivitiesPreConfirmBody(params);
 }
 
+/**
+ * After a successful preConfirm, merge any fields the supplier returns (e.g. operationId)
+ * into the confirm payload. Unknown shapes are ignored; caller always starts from the same base as preConfirm.
+ */
+export function mergeActivitiesConfirmBodyFromPreConfirm(
+  baseBody: Record<string, unknown>,
+  preConfirmResult: unknown,
+): Record<string, unknown> {
+  if (!preConfirmResult || typeof preConfirmResult !== "object") {
+    return { ...baseBody };
+  }
+  const o = preConfirmResult as Record<string, unknown>;
+  const merged: Record<string, unknown> = { ...baseBody };
+  if (typeof o.operationId === "string" && o.operationId.trim() !== "") {
+    merged.operationId = o.operationId.trim();
+  }
+  return merged;
+}
+
 export async function postPreConfirmBooking(
   body: Record<string, unknown>,
   signal?: AbortSignal,
