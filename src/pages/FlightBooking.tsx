@@ -86,6 +86,8 @@ const FlightBooking = () => {
   const { user } = useAuth();
   const { setFlight } = useFlightStore();
   const hasPrefilledRef = useRef(false);
+  const didInitRef = useRef(false);
+  const ingestedOfferRef = useRef<string | number | null>(null);
   const initialOfferData =
     (location.state && (location.state as any)) ||
     (window.history.state && (window.history.state as any)) ||
@@ -511,6 +513,9 @@ const FlightBooking = () => {
     ancillarySearchData?.otherAncillaries;
 
   useEffect(() => {
+    // React 18/19 StrictMode can mount effects twice in dev; guard to avoid duplicate API calls.
+    if (didInitRef.current) return;
+    didInitRef.current = true;
     init();
   }, []);
 
@@ -584,8 +589,13 @@ const FlightBooking = () => {
   }, [user]);
 
   useEffect(() => {
+    // `user` object identity may change often; run at most once per offerId.
+    const offerId = offerData?.offerId;
+    if (isPendingBooking || !user || !offerId) return;
+    if (ingestedOfferRef.current === offerId) return;
+    ingestedOfferRef.current = offerId;
     ingestViewUserCountOnFlightOffer();
-  }, [user]);
+  }, [isPendingBooking, offerData?.offerId, user?.email, user?.phone]);
 
   return (
     <>

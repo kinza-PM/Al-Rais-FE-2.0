@@ -34,6 +34,7 @@ input[type="number"]::-webkit-inner-spin-button {
 /* For Firefox */
 input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* General property for other browsers, if needed */
@@ -297,6 +298,214 @@ input[type="number"] {
   box-shadow: none;
 }
 
+/* Flight Search Detail: input alignment only (NOT home page) */
+.flight-search-page .flight-search-detail-inputs {
+  width: 100%;
+  /* Match results row width (do not hard-cap to 1464) */
+  max-width: 100%;
+  display: grid;
+  column-gap: 16px;
+  row-gap: 12px;
+  align-items: end;
+  box-sizing: border-box;
+}
+
+.flight-search-page .flight-search-detail-inputs .flight-search-field {
+  min-width: 0;
+}
+
+/* IMPORTANT: TravelRoutePicker renders multiple siblings (From div, swap button, To div).
+   On detail page, we want those siblings to become grid items (so they don't stack). */
+.flight-search-page .flight-search-field--route {
+  display: contents;
+}
+
+@media (min-width: 1024px) {
+  /* Desktop grid (responsive). Prevent overflow/clipping on mid-width screens. */
+  .flight-search-page .flight-search-detail-inputs {
+    grid-template-columns:
+      220px
+      220px
+      minmax(280px, 1fr)
+      56px
+      minmax(280px, 1fr);
+    grid-template-areas:
+      "trip cabin from swap to"
+      "travellers departure . . search";
+  }
+
+  .flight-search-page .flight-search-field--trip { grid-area: trip; }
+  .flight-search-page .flight-search-field--cabin { grid-area: cabin; }
+  .flight-search-page .flight-search-field--travellers { grid-area: travellers; }
+  .flight-search-page .flight-search-field--depart { grid-area: departure; }
+  .flight-search-page .flight-search-field--submit {
+    grid-area: search;
+    justify-self: end;
+    align-self: center;
+  }
+
+  /* Map TravelRoutePicker internal nodes into grid areas */
+  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth:first-of-type {
+    grid-area: from;
+  }
+  .flight-search-page .flight-search-detail-inputs > .fromToBtn {
+    grid-area: swap;
+    justify-self: center;
+    align-self: center;
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    margin: 0 !important;
+  }
+  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth:last-of-type {
+    grid-area: to;
+  }
+
+  /* Keep From/To stable but allow shrink on smaller desktops */
+  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
+    width: 100%;
+    max-width: 396px;
+    min-width: 0;
+  }
+
+  /* Divider aligns with inputs block */
+  .flight-search-page .flight-search-divider {
+    max-width: 100%;
+  }
+}
+
+/* Ultra-wide / Figma-perfect desktop sizing */
+@media (min-width: 1600px) {
+  .flight-search-page .flight-search-detail-inputs {
+    grid-template-columns: 280px 280px 396px 48px 396px;
+  }
+  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
+    max-width: 396px;
+  }
+}
+
+/* Flight search cards: prevent "in-between" width layout break (e.g. DevTools open) */
+@media (max-width: 1400px) {
+  .flight-search-page .flightDetailCards .topHalfCard,
+  .flight-search-page .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .flight-search-page .flightDetailCards .fightTitle {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .flight-search-page .flightDetailCards .stopsOnLarge {
+    width: 100%;
+    justify-content: flex-start !important;
+  }
+
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice,
+  .flight-search-page .flightDetailCards.flightDetailRoundTripCards .StartingPrice {
+    min-width: 0 !important;
+    width: 100%;
+    align-items: flex-start !important;
+  }
+}
+
+@media (max-width: 1023.98px) {
+  /* Mobile/tablet: stack cleanly in logical order */
+  .flight-search-page .flight-search-detail-inputs {
+    grid-template-columns: 1fr;
+    row-gap: 12px;
+    column-gap: 12px;
+  }
+
+  /* Route picker: keep its default stacking rules, but avoid weird margins */
+  .flight-search-page .flight-search-detail-inputs > .fromToBtn {
+    margin: 8px auto 0 !important;
+  }
+
+  .flight-search-page .flight-search-field--submit {
+    justify-self: end;
+  }
+}
+
+/* Detail page: slightly tighter divider spacing under the search form */
+.flight-search-page .flight-search-divider {
+  margin-top: 16px;
+  margin-bottom: 20px;
+}
+
+/* Flight Search Detail: Multi-city alignment (NOT home) */
+.flight-search-page .flight-search-multicity-toprow {
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: 280px 280px;
+  gap: 16px;
+  align-items: end;
+}
+
+.flight-search-page .flight-search-multicity-legrow {
+  width: 100%;
+  max-width: 100%;
+  display: grid;
+  grid-template-columns: 280px 48px 280px 220px 220px;
+  gap: 16px;
+  align-items: end;
+  margin-top: 12px;
+}
+
+/* Let TravelRoutePicker's three siblings become the first 3 grid columns */
+.flight-search-page .flight-search-multicity-route {
+  display: contents;
+}
+
+.flight-search-page .multicityFromTo {
+  width: 100%;
+  max-width: 280px;
+  min-width: 0;
+}
+
+.flight-search-page .flight-search-multicity-legrow .fromToBtn {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  margin: 0 !important;
+  justify-self: center;
+  align-self: center;
+}
+
+.flight-search-page .flight-search-multicity-side {
+  min-width: 0;
+  max-width: 220px;
+}
+
+@media (max-width: 1023.98px) {
+  .flight-search-page .flight-search-multicity-toprow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .flight-search-page .flight-search-multicity-legrow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .flight-search-page .multicityFromTo {
+    max-width: 100%;
+  }
+
+  .flight-search-page .flight-search-multicity-legrow .fromToBtn {
+    margin: 8px auto 0 !important;
+  }
+
+  .flight-search-page .flight-search-multicity-side {
+    max-width: 100%;
+  }
+}
+
 /* Divider line — sits inside the form's padding so it aligns with the input edges */
 .flight-search-divider {
   width: 100%;
@@ -334,6 +543,22 @@ input[type="number"] {
   padding: 20px 24px;
   gap: 16px;
   margin-bottom: 24px;
+}
+
+/* Hotel search listing: sticky search inputs + underline divider (NOT home) */
+.hotel-search-listing-page .hotel-search-form-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  background: #ffffff;
+}
+
+.hotel-search-listing-page .hotel-search-divider {
+  width: 100%;
+  height: 1px;
+  background: #e4e4e7;
+  margin-top: 18px;
+  margin-bottom: 0;
 }
 @media (max-width: 767px) {
   .hotelSearchFilterCard {
@@ -613,6 +838,31 @@ input[type="number"] {
   font-family: Inter, sans-serif;
   font-size: 14px;
   font-weight: 500;
+}
+
+/* Flight search filters: use normal font weight (not bold) */
+.flight-search-filter-root .collapseStyle .ant-collapse-header-text,
+.flight-search-filter-root .filterHeading h4,
+.flight-search-filter-root .filterHeading,
+.flight-search-filter-root .baggageCheckbox,
+.flight-search-filter-root .timeBox,
+.flight-search-filter-root .stopsRadioStyle .ant-radio-button-label,
+.flight-search-filter-root .transitHours .ant-radio-button-label,
+.flight-search-filter-root .transitHours .ant-radio-button-wrapper .ant-radio-button-label,
+.flight-search-filter-root .stopsRadioStyle .ant-radio-button-wrapper .ant-radio-button-label {
+  font-weight: 400 !important;
+}
+
+/* Hotel search filters: medium font weight */
+.hotel-search-filter-root .collapseStyle .ant-collapse-header-text,
+.hotel-search-filter-root .filterHeading h4,
+.hotel-search-filter-root .filterHeading,
+.hotel-search-filter-root .baggageCheckbox,
+.hotel-search-filter-root .stopsRadioStyle .ant-radio-button-label,
+.hotel-search-filter-root .transitHours .ant-radio-button-label,
+.hotel-search-filter-root .transitHours .ant-radio-button-wrapper .ant-radio-button-label,
+.hotel-search-filter-root .stopsRadioStyle .ant-radio-button-wrapper .ant-radio-button-label {
+  font-weight: 500 !important;
 }
 
 .collapseStyle .ant-collapse-header {
@@ -1075,9 +1325,7 @@ input[type="number"] {
 .hotel-view-select .ant-select-selector .ant-select-selection-placeholder {
   padding: 0 !important;
 }
-.hotel-view-select-popup .rc-virtual-list-holder {
-  /* leave default */
-}
+/* (removed empty ruleset) */
 
 /* Ensure all Ant Design select selectors use 16px radius to match Figma */
 .ant-select-selector {

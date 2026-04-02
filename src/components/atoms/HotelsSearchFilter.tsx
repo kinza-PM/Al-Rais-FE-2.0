@@ -288,7 +288,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     "Please Select";
 
   return (
-    <div className="filterSectionStyle">
+    <div className="filterSectionStyle hotel-search-filter-root">
       <div className="relative">
         <button
           onClick={() => setIsSortOpen(!isSortOpen)}

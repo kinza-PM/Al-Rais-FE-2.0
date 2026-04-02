@@ -1094,7 +1094,7 @@ export default function FlightBookingBookSection({
           <Button
             type="button"
             overrideClasses
-            className="mt-6 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-gradient-to-r from-[#5383DA] via-[#2351A3] to-[#081326] flex items-center justify-center gap-[10px]"
+            className="mt-6 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-[#2351A3] flex items-center justify-center gap-[10px]"
             onClick={() => handleFlightProvInitialBooking()}
             disabled={isPending}
           >

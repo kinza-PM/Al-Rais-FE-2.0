@@ -39,7 +39,11 @@ import type {
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import Loader from "../atoms/Loader";
-import { useFlightStore, type FlightLeg } from "../../store/UseFlightStore";
+import {
+  useFlightStore,
+  type FlightLeg,
+  type FlightSearchState,
+} from "../../store/UseFlightStore";
 // import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 
 import { useFlightSearch } from "../../hooks/useFlightSearch";
@@ -210,7 +214,7 @@ const buildPassengersArrayForFlightSearch = (
 const FlightDetailTemplate: React.FC = () => {
   const { mutateAsync, isPending } = useFlightSearch();
   const { loadMoreAsync, isLoadingMore } = useLoadMoreFlights();
-  const { flight, clearFlight } = useFlightStore();
+  const { flight, searchState, setSearchState } = useFlightStore();
 
   const [responseData, setResponseData] = useState<any[]>([]);
   const [roundResponseData, setRoundResponseData] = useState<any[]>([]);
@@ -264,6 +268,7 @@ const FlightDetailTemplate: React.FC = () => {
   // Sort dropdown state
   const [sortBy, setSortBy] = useState<string>("lowest_price");
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  const latestSearchStateRef = useRef<FlightSearchState | null>(null);
 
   const handleDate = (date: any, which: "depart" | "return" = "depart") => {
     if (!date) {
@@ -301,6 +306,11 @@ const FlightDetailTemplate: React.FC = () => {
       new Set([...Object.keys(prev), ...Object.keys(next), ...schemaKeys]),
     );
 
+    // Guard: avoid infinite loops when dropdown emits identical values
+    // (new object identity but same counts).
+    const isSameCounts = keys.every((k) => (prev[k] ?? 0) === (next[k] ?? 0));
+    if (isSameCounts) return;
+
     const order = passengerRequestOrder.current.slice(); // clone
 
     for (const k of keys) {
@@ -330,6 +340,7 @@ const FlightDetailTemplate: React.FC = () => {
     const diffMins = Math.floor(diffMs / 60000);
     const hours = Math.floor(diffMins / 60);
     const minutes = diffMins % 60;
+    
 
     return `${hours}h ${minutes}min`;
   }
@@ -680,8 +691,7 @@ const FlightDetailTemplate: React.FC = () => {
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);
       setIoReady(true);
-      // Clear flight store after first successful search to prevent auto-trigger on tab changes
-      clearFlight();
+      // Keep store so back navigation can restore inputs/results.
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       console.error("Flight search failed:", err);
@@ -904,9 +914,97 @@ const FlightDetailTemplate: React.FC = () => {
   const isHydratingFromStore = useRef(false);
   const hydratedFlightSnapshotRef = useRef<string | null>(null);
   const shouldAutoSearchRef = useRef(false);
+
+  // hydrate full search state (inputs + results) when coming back from booking
+  const hydratedSearchStateSnapshotRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!searchState) return;
+    if (isInitialLoading) return;
+
+    const snapshot = JSON.stringify({
+      trip: searchState.trip,
+      fromCode: searchState.fromCode,
+      toCode: searchState.toCode,
+      departDate: searchState.departDate,
+      returnDate: searchState.returnDate,
+      cabin: searchState.selectedCabinClassId,
+      pax: searchState.paxCounts,
+      sortBy: searchState.sortBy,
+      hasSearched: searchState.hasSearched,
+      hasResults:
+        (searchState.responseData?.length ?? 0) +
+          (searchState.roundResponseData?.length ?? 0) +
+          (searchState.multicityResponseData?.length ?? 0) >
+        0,
+    });
+
+    if (hydratedSearchStateSnapshotRef.current === snapshot) return;
+    hydratedSearchStateSnapshotRef.current = snapshot;
+
+    isHydratingFromStore.current = true;
+
+    if (
+      searchState.trip === "roundtrip" ||
+      searchState.trip === "oneway" ||
+      searchState.trip === "multicity"
+    ) {
+      setTrip(searchState.trip as TripType);
+    }
+
+    setFromCode(searchState.fromCode ?? "");
+    setToCode(searchState.toCode ?? "");
+    setFromOption((searchState.fromOption as AirportOption) ?? null);
+    setToOption((searchState.toOption as AirportOption) ?? null);
+    setSelectedCabinClassId(String(searchState.selectedCabinClassId ?? "5"));
+    setDepartDate(searchState.departDate ?? "");
+    setReturnDate(searchState.returnDate ?? "");
+    setMulticityLegs(Array.isArray(searchState.multicityLegs) ? searchState.multicityLegs : []);
+    setPaxCounts(searchState.paxCounts ?? {});
+    passengerRequestOrder.current = Array.isArray(searchState.passengerOrder)
+      ? searchState.passengerOrder.slice()
+      : [];
+
+    setPreservedFromOption((searchState.preservedFromOption as AirportOption) ?? null);
+    setPreservedToOption((searchState.preservedToOption as AirportOption) ?? null);
+
+    setResponseData(searchState.responseData ?? []);
+    setRoundResponseData(searchState.roundResponseData ?? []);
+    setMulticityResponseData(searchState.multicityResponseData ?? []);
+    originalResponseRef.current = searchState.originalResponse ?? [];
+    originalRoundResponseRef.current = searchState.originalRoundResponse ?? [];
+    originalMulticityResponseRef.current = searchState.originalMulticityResponse ?? [];
+    setHasMore(Boolean(searchState.hasMore));
+    setIoReady(Boolean(searchState.ioReady));
+    setHasSearched(Boolean(searchState.hasSearched));
+    setIsSearching(Boolean(searchState.isSearching));
+    setSearchError(searchState.searchError ?? null);
+    lastRequestRef.current = (searchState.lastRequest as any) ?? null;
+    setHighDemandIndicators(searchState.highDemandIndicators ?? []);
+
+    setSelectedMaxConnections(Number(searchState.selectedMaxConnections ?? 0));
+    setDepartureFlightRange(searchState.departureFlightRange ?? { start: "", end: "" });
+    setArrivalFlightRange(searchState.arrivalFlightRange ?? { start: "", end: "" });
+    setSelectedAirlineIds(searchState.selectedAirlineIds ?? []);
+    setSelectedTransitRange(searchState.selectedTransitRange ?? null);
+    setBaggageIncludedOnly(Boolean(searchState.baggageIncludedOnly));
+    setAncillaryAddOnsOnly(Boolean(searchState.ancillaryAddOnsOnly));
+    setPriceRangeBounds(searchState.priceRangeBounds ?? [0, 1000]);
+    setSelectedPriceRange(searchState.selectedPriceRange ?? [0, 1000]);
+    setSortBy(searchState.sortBy ?? "lowest_price");
+
+    // Important: do NOT auto-search; we already restored results.
+    shouldAutoSearchRef.current = false;
+
+    const timeoutId = window.setTimeout(() => {
+      isHydratingFromStore.current = false;
+    }, 0);
+    return () => window.clearTimeout(timeoutId);
+  }, [searchState, isInitialLoading]);
   useEffect(() => {
     if (!flight) return;
     if (isInitialLoading) return;
+    // If we already restored full state, don't override it with bare `flight` hydration.
+    if (searchState) return;
 
     const snapshot = JSON.stringify({
       trip: flight.trip,
@@ -973,6 +1071,59 @@ const FlightDetailTemplate: React.FC = () => {
 
     return () => window.clearTimeout(timeoutId);
   }, [flight, isInitialLoading]);
+
+  // Keep a live snapshot and save it on unmount so back navigation preserves results/inputs.
+  useEffect(() => {
+    latestSearchStateRef.current = {
+      trip,
+      fromCode,
+      toCode,
+      fromOption,
+      toOption,
+      selectedCabinClassId,
+      departDate,
+      returnDate,
+      multicityLegs,
+      paxCounts,
+      passengerOrder: passengerRequestOrder.current.slice(),
+      preservedFromOption,
+      preservedToOption,
+
+      responseData,
+      roundResponseData,
+      multicityResponseData,
+      originalResponse: originalResponseRef.current,
+      originalRoundResponse: originalRoundResponseRef.current,
+      originalMulticityResponse: originalMulticityResponseRef.current,
+      hasMore,
+      ioReady,
+      hasSearched,
+      isSearching,
+      searchError,
+      lastRequest: lastRequestRef.current,
+      highDemandIndicators,
+
+      selectedMaxConnections,
+      departureFlightRange,
+      arrivalFlightRange,
+      selectedAirlineIds,
+      selectedTransitRange,
+      baggageIncludedOnly,
+      ancillaryAddOnsOnly,
+      priceRangeBounds,
+      selectedPriceRange,
+      sortBy,
+    };
+  });
+
+  useEffect(() => {
+    return () => {
+      // Only persist once we have either a search or user-modified inputs.
+      const snap = latestSearchStateRef.current;
+      if (!snap) return;
+      setSearchState(snap);
+    };
+  }, [setSearchState]);
 
   const hasBasicFilters = useCallback(() => {
     const totalPassengers = Object.values(paxCounts || {}).reduce<number>(
@@ -1661,7 +1812,7 @@ const FlightDetailTemplate: React.FC = () => {
           {trip === "multicity" ? (
             <>
               {/* First Row: Trip and Passengers */}
-          <Flex className="bottomHeaderFlex">
+              <div className="flight-search-multicity-toprow">
                 <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
                   <label className="header-labels-common">Trip</label>
                   <SearchableDropdown
@@ -1707,26 +1858,13 @@ const FlightDetailTemplate: React.FC = () => {
                     />
                   </div>
                 </Flex>
-              </Flex>
+              </div>
 
               {/* ===== SECTION 2: FLIGHT LEGS (CENTERED) — each row: From/To, Cabin, Date ===== */}
               {multicityLegs.map((leg, idx) => (
                 <div key={idx} className="relative">
-                  <Flex
-                    align="center"
-                    justify="center"
-                    gap="middle"
-                    wrap="wrap"
-                  >
-                    <Flex
-                      align="flex-end"
-                      gap="small"
-                      style={{
-                        flex: 1,
-                        minWidth: 280,
-                        maxWidth: 620,
-                      }}
-                    >
+                  <div className="flight-search-multicity-legrow">
+                    <div className="flight-search-multicity-route">
                       <TravelRoutePicker
                         options={countriesForPicker as AirportOption[]}
                         loading={countriesLoading}
@@ -1764,43 +1902,39 @@ const FlightDetailTemplate: React.FC = () => {
                           to: "Please select",
                         }}
                         disableSameSelection
-                        widthClass="w-[280px]"
+                        widthClass="multicityFromTo"
                       />
-                    </Flex>
+                    </div>
 
-                    <Flex align="flex-end" gap="small">
-                      <Flex vertical style={{ width: "100%", maxWidth: 220 }}>
-                        <label className="header-labels-common">
-                          Departure Date
-                        </label>
-                        <TailiwindCustomDatePicker
-                          value={leg.date ? new Date(leg.date) : null}
-                          onChange={(d) => {
-                            setMulticityLegs((prev) =>
-                              prev.map((l, i) =>
-                                i === idx
-                                  ? {
-                                      ...l,
-                                      date: d ? formatDateToLocalISO(d) : null,
-                                    }
-                                  : l,
-                              ),
-                            );
-                          }}
-                          placeholder="Select departure date"
-                          tooltip="Select departure date"
-                          buttonIconSrc={true}
-                          disablePastDates={true}
-                          minDate={
-                            idx > 0 && multicityLegs[idx - 1]?.date
-                              ? new Date(multicityLegs[idx - 1].date!)
-                              : undefined
-                          }
-                        />
-                      </Flex>
-                    </Flex>
+                    <div className="flight-search-multicity-side">
+                      <label className="header-labels-common">Departure Date</label>
+                      <TailiwindCustomDatePicker
+                        value={leg.date ? new Date(leg.date) : null}
+                        onChange={(d) => {
+                          setMulticityLegs((prev) =>
+                            prev.map((l, i) =>
+                              i === idx
+                                ? {
+                                    ...l,
+                                    date: d ? formatDateToLocalISO(d) : null,
+                                  }
+                                : l,
+                            ),
+                          );
+                        }}
+                        placeholder="Select departure date"
+                        tooltip="Select departure date"
+                        buttonIconSrc={true}
+                        disablePastDates={true}
+                        minDate={
+                          idx > 0 && multicityLegs[idx - 1]?.date
+                            ? new Date(multicityLegs[idx - 1].date!)
+                            : undefined
+                        }
+                      />
+                    </div>
 
-                    <Flex vertical style={{ width: "100%", maxWidth: 220 }}>
+                    <div className="flight-search-multicity-side">
                       <label className="header-labels-common">
                         Cabin Class
                       </label>
@@ -1828,8 +1962,8 @@ const FlightDetailTemplate: React.FC = () => {
                         searchPlaceholder="Search cabin classes..."
                         tooltip="Select cabin class"
                       />
-                    </Flex>
-                  </Flex>
+                    </div>
+                  </div>
                   {idx >= 2 && (
                     <button
                       type="button"
@@ -1906,9 +2040,8 @@ const FlightDetailTemplate: React.FC = () => {
               </Flex>
             </>
           ) : (
-            <Flex className="bottomHeaderFlex flight-search-row-primary">
-              {/* Trip Type Dropdown — Figma: 280px column */}
-              <Flex vertical style={{ width: "100%", maxWidth: 280 }}>
+            <div className="flight-search-detail-inputs">
+              <div className="flight-search-field flight-search-field--trip">
                 <label className="header-labels-common">Trip</label>
                 <SearchableDropdown
                   options={segOptions.map((option) => ({
@@ -1923,10 +2056,9 @@ const FlightDetailTemplate: React.FC = () => {
                   widthClass="w-full"
                   searchPlaceholder="Search trip type..."
                 />
-              </Flex>
+              </div>
 
-              {/* Cabin Class Dropdown — Figma: 280px column */}
-              <Flex vertical style={{ width: "100%", maxWidth: 280 }}>
+              <div className="flight-search-field flight-search-field--cabin">
                 <label className="header-labels-common">Cabin Class</label>
                 <SearchableDropdown
                   options={cabinSelectOptions.map((option) => ({
@@ -1945,58 +2077,56 @@ const FlightDetailTemplate: React.FC = () => {
                   searchPlaceholder="Search cabin classes..."
                   tooltip="Select cabin class"
                 />
-              </Flex>
+              </div>
 
-              {/* From/To Picker */}
-            <TravelRoutePicker
-              options={countriesForPicker as AirportOption[]}
-              loading={countriesLoading}
-              onSearchChange={setCountriesSearchTerm}
-              value={{
-                fromCode,
-                toCode,
-                fromOption: fromOption ?? preservedFromOption,
-                toOption: toOption ?? preservedToOption,
-              }}
-                onChange={({
-                  fromCode: f,
-                  toCode: t,
-                  fromOption: fOpt,
-                  toOption: tOpt,
-                }) => {
-                setFromCode(f);
-                setToCode(t);
-                if (fOpt !== undefined) setFromOption(fOpt);
-                if (tOpt !== undefined) setToOption(tOpt);
-              }}
-              showSwap
-              labels={{ from: "From", to: "To" }}
-              placeholders={{ from: "Please select", to: "Please select" }}
-              disableSameSelection
-              widthClass="fromToSelectWidth"
-              fromError={
-                !loading && countries.length === 0
-                  ? "Please try a different search."
-                  : undefined
-              }
-              toError={
-                !loading && countries.length === 0
-                  ? "Please try a different search."
-                  : undefined
-              }
-              onLoadMore={() => {
-                if (countriesHasMore) {
-                  countriesFetchNext?.();
-                }
-              }}
-              hasMore={countriesHasMore}
-              loadingMore={countriesIsFetchingNext}
-            />
-          </Flex>
-          )}
-          <Flex className="bottomHeaderFlex flight-search-row-secondary">
-            {trip !== "multicity" && (
-            <Flex vertical style={{ width: "100%", maxWidth: 280 }}>
+              <div className="flight-search-field flight-search-field--route">
+                <TravelRoutePicker
+                  options={countriesForPicker as AirportOption[]}
+                  loading={countriesLoading}
+                  onSearchChange={setCountriesSearchTerm}
+                  value={{
+                    fromCode,
+                    toCode,
+                    fromOption: fromOption ?? preservedFromOption,
+                    toOption: toOption ?? preservedToOption,
+                  }}
+                  onChange={({
+                    fromCode: f,
+                    toCode: t,
+                    fromOption: fOpt,
+                    toOption: tOpt,
+                  }) => {
+                    setFromCode(f);
+                    setToCode(t);
+                    if (fOpt !== undefined) setFromOption(fOpt);
+                    if (tOpt !== undefined) setToOption(tOpt);
+                  }}
+                  showSwap
+                  labels={{ from: "From", to: "To" }}
+                  placeholders={{ from: "Please select", to: "Please select" }}
+                  disableSameSelection
+                  widthClass="fromToSelectWidth"
+                  fromError={
+                    !loading && countries.length === 0
+                      ? "Please try a different search."
+                      : undefined
+                  }
+                  toError={
+                    !loading && countries.length === 0
+                      ? "Please try a different search."
+                      : undefined
+                  }
+                  onLoadMore={() => {
+                    if (countriesHasMore) {
+                      countriesFetchNext?.();
+                    }
+                  }}
+                  hasMore={countriesHasMore}
+                  loadingMore={countriesIsFetchingNext}
+                />
+              </div>
+
+              <div className="flight-search-field flight-search-field--travellers">
                 <label className="header-labels-common flex items-center gap-2">
                   Travellers
                   <span className="relative inline-flex group/info">
@@ -2015,58 +2145,59 @@ const FlightDetailTemplate: React.FC = () => {
                     </span>
                   </span>
                 </label>
-              <div style={{ minWidth: "100%", height: 44 }}>
-                <PassengerCounterDropdown
-                  value={paxCounts}
-                  schema={passengers as PassengerSchema}
-                  maxTotal={100}
-                  onChange={(value) => {
-                    handlePassenger(value);
-                  }}
-                />
+                <div style={{ minWidth: "100%", height: 44 }}>
+                  <PassengerCounterDropdown
+                    value={paxCounts}
+                    schema={passengers as PassengerSchema}
+                    maxTotal={100}
+                    onChange={(value) => {
+                      handlePassenger(value);
+                    }}
+                  />
+                </div>
               </div>
-            </Flex>
-            )}
-            {trip !== "multicity" && (
-            <Flex vertical style={{ width: "100%", maxWidth: 280 }}>
-              <label className="header-labels-common ">Departure Date</label>
-              <TailiwindCustomDatePicker
-                value={departDate ? new Date(departDate) : null}
-                onChange={(value) => {
-                  handleDate(value, "depart");
-                }}
-                placeholder="Select departure date"
-                tooltip="Select departure date"
-                buttonIconSrc={true}
-                disablePastDates={true}
-              />
-            </Flex>
-            )}
-            {trip === "roundtrip" && (
-              <Flex vertical style={{ width: "100%", maxWidth: 280 }}>
-                <label className="header-labels-common ">Return Date</label>
+
+              <div className="flight-search-field flight-search-field--depart">
+                <label className="header-labels-common ">Departure Date</label>
                 <TailiwindCustomDatePicker
-                  value={returnDate ? new Date(returnDate) : null}
+                  value={departDate ? new Date(departDate) : null}
                   onChange={(value) => {
-                    handleDate(value, "return");
+                    handleDate(value, "depart");
                   }}
-                  placeholder="Select return date"
-                  tooltip="Select return date"
+                  placeholder="Select departure date"
+                  tooltip="Select departure date"
                   buttonIconSrc={true}
                   disablePastDates={true}
-                  minDate={departDate ? new Date(departDate) : null}
                 />
-              </Flex>
-            )}
-            {trip !== "multicity" && (
-          <CustomButton
-            className="searchFilterBtn flight-search-submit-align"
-            onClick={() => handleSearch()}
-          >
-                {isPending ? "Searching..." : "Search"}
-          </CustomButton>
-            )}
-          </Flex>
+              </div>
+
+              {trip === "roundtrip" && (
+                <div className="flight-search-field flight-search-field--return">
+                  <label className="header-labels-common ">Return Date</label>
+                  <TailiwindCustomDatePicker
+                    value={returnDate ? new Date(returnDate) : null}
+                    onChange={(value) => {
+                      handleDate(value, "return");
+                    }}
+                    placeholder="Select return date"
+                    tooltip="Select return date"
+                    buttonIconSrc={true}
+                    disablePastDates={true}
+                    minDate={departDate ? new Date(departDate) : null}
+                  />
+                </div>
+              )}
+
+              <div className="flight-search-field flight-search-field--submit">
+                <CustomButton
+                  className="searchFilterBtn"
+                  onClick={() => handleSearch()}
+                >
+                  {isPending ? "Searching..." : "Search"}
+                </CustomButton>
+              </div>
+            </div>
+          )}
           {/* Divider — spans inputs width only (inside the form's horizontal padding) */}
           <div className="flight-search-divider" />
         </div>

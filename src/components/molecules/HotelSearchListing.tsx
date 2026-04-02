@@ -424,7 +424,7 @@ const HotelSearchListing: React.FC = () => {
       <div className="topHeaderSetting"></div>
 
       <div className="flightDetailTemplateWrap hotel-search-listing-page">
-        <div className="bottomHeaderSetting hotelSearchFilterCard">
+        <div className="bottomHeaderSetting hotelSearchFilterCard hotel-search-form-sticky">
           {/* Grid: Row 1 (View, Country, City, Dates) | Row 2 (Nationality, Travellers, Star Rating, Search) - widths aligned */}
           <div className="hotel-filter-grid">
             <div className="hotel-filter-view w-full min-w-0">
@@ -616,6 +616,7 @@ const HotelSearchListing: React.FC = () => {
               </CustomButton>
             </div>
           </div>
+          <div className="hotel-search-divider" />
         </div>
 
         {!screens.lg && (
