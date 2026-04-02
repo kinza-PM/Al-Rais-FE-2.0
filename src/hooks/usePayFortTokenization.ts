@@ -54,13 +54,32 @@ export function usePayFortTokenization() {
 
       return new Promise<TokenPayload>((resolve, reject) => {
         try {
+          const access_code = payfortConfig.access_code ?? "";
+          const merchant_identifier = payfortConfig.merchant_identifier ?? "";
+          const sha_request_phrase = payfortConfig.sha_request_phrase ?? "";
+          const sha_response_phrase = payfortConfig.sha_response_phrase ?? "";
+
+          if (
+            !access_code ||
+            !merchant_identifier ||
+            !sha_request_phrase ||
+            !sha_response_phrase
+          ) {
+            const msg =
+              "PayFort is not configured (missing VITE_PAYFORT_* env vars).";
+            setError(msg);
+            setIsLoading(false);
+            reject(new Error(msg));
+            return;
+          }
+
           const merchant_reference = PayFortUtils.generateMerchantReference();
           const expectedMerchantReference = merchant_reference;
           let resolved = false;
           const params: Record<string, string> = {
             service_command: "TOKENIZATION",
-            access_code: payfortConfig.access_code,
-            merchant_identifier: payfortConfig.merchant_identifier,
+            access_code,
+            merchant_identifier,
             merchant_reference,
             language: "en",
             return_url: opts.returnUrl ?? (payfortConfig.RETURN_URL as string),
@@ -68,7 +87,7 @@ export function usePayFortTokenization() {
 
           const signature = PayFortUtils.generateSignature(
             params,
-            payfortConfig.sha_request_phrase
+            sha_request_phrase,
           );
 
           const fields: Record<string, string> = {
@@ -129,7 +148,7 @@ export function usePayFortTokenization() {
               if (payload && payload.signature) {
                 const ok = PayFortUtils.verifyResponseSignature(
                   payload,
-                  payfortConfig.sha_response_phrase
+                  sha_response_phrase,
                 );
                 if (!ok) {
                   const msg = "PayFort response signature verification failed.";

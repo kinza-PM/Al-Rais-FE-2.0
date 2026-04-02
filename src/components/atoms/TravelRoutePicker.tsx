@@ -100,8 +100,17 @@ const TravelRoutePicker: React.FC<Props> = ({
   }));
 
   return (
-    <>
-      <div className={widthClass}>
+    <div
+      className="travel-route-picker-row"
+      style={{
+        display: "flex",
+        alignItems: "flex-end",
+        gap: 16,
+        width: "100%",
+        minWidth: 0,
+      }}
+    >
+      <div className={widthClass} style={{ flex: "1 1 0%", minWidth: 0 }}>
         <SearchableDropdown
           options={fromOptions}
           value={fromCode}
@@ -135,14 +144,14 @@ const TravelRoutePicker: React.FC<Props> = ({
         <button
           type="button"
           onClick={swap}
-          className="mx-2 flex items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn"
-          style={{ width: 47, height: 47, minWidth: 47, minHeight: 47, marginTop: 23, marginLeft: 0 }}
+          className="flex shrink-0 items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn"
+          style={{ width: 48, height: 48, minWidth: 48, minHeight: 48, marginTop: 23, marginLeft: 0 }}
         >
           <img src={DoubledArrow} alt="swap-routes" />
         </button>
       )}
 
-      <div className={widthClass}>
+      <div className={widthClass} style={{ flex: "1 1 0%", minWidth: 0 }}>
         <SearchableDropdown
           options={toOptions}
           value={toCode}
@@ -171,7 +180,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           tooltip="Select where you're flying to"
         />
       </div>
-    </>
+    </div>
   );
 };
 

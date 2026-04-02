@@ -1,4 +1,9 @@
-import { useEffect, useRef, useState, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 
 const DEFAULT_PAGE = 24;
 

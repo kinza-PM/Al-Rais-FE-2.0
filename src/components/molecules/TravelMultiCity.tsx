@@ -410,6 +410,7 @@ import {
   pickRandomFlightsForCompare,
   extractFlightFeatures,
 } from "../../utils/searchFlightListingHelpers";
+import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
 
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
 const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
@@ -424,7 +425,7 @@ type TravelMultiCityProps = {
     isLoadingMore?: boolean;
     hasMore?: boolean;
   }) => React.ReactNode;
-  loadMoreRef?: React.RefObject<HTMLDivElement>;
+  loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   emptyState?: (() => React.ReactNode) | React.ReactNode;
   highDemandIndicators?: any[];
 };
@@ -891,6 +892,11 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                       {item.offerViewCount} People viewing this
                     </div>
                   )}
+                  {offerHasAncillaryDetailsAvailable(item) ? (
+                    <div className="inline-flex items-center justify-center text-xs text-[#0F5132] border border-[#A3CFBB] rounded-full px-3 py-2 bg-[#D1E7DD] whitespace-nowrap font-medium">
+                      Add-ons available
+                    </div>
+                  ) : null}
                   {(() => {
                     // Extract marketing airline from each segment
                     const segments = item?.segments ?? [];

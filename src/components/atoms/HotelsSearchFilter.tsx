@@ -75,7 +75,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
   hotels = [],
 }) => {
   const [isSortOpen, setIsSortOpen] = useState(false);
-  const [pointOfInterest, setPointOfInterest] = useState("");
 
   const activeFilterCount = getActiveFilterCount(filters);
 
@@ -268,7 +267,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       meals: [],
       cancellationPolicy: [],
     });
-    setPointOfInterest("");
   }, [onFiltersChange]);
 
   const sortOptions = [

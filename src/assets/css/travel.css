@@ -242,6 +242,90 @@ input[type="number"] {
   min-width: 0;
 }
 
+/* Flight search: shared horizontal inset = Trip row & sidebar (Figma alignment) */
+.flightDetailTemplateWrap.flight-search-page {
+  --flight-wrap-pad-x: 16px;
+  --flight-search-inner-pad-x: 32px;
+}
+
+@media (min-width: 576px) {
+  .flightDetailTemplateWrap.flight-search-page {
+    --flight-wrap-pad-x: 24px;
+  }
+}
+
+@media (min-width: 768px) {
+  .flightDetailTemplateWrap.flight-search-page {
+    --flight-wrap-pad-x: 48px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .flightDetailTemplateWrap.flight-search-page {
+    --flight-wrap-pad-x: 64px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .flightDetailTemplateWrap.flight-search-page {
+    --flight-wrap-pad-x: 50px;
+  }
+}
+
+.flight-search-page {
+  --flight-search-sticky-h: 180px;
+}
+
+/* Full-bleed sticky bar (white bg stretches edge-to-edge) */
+.flight-search-page .flight-search-form-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 25;
+  margin-bottom: 24px;
+  margin-left: calc(-1 * var(--flight-wrap-pad-x));
+  margin-right: calc(-1 * var(--flight-wrap-pad-x));
+  width: calc(100% + 2 * var(--flight-wrap-pad-x));
+  max-width: none;
+  box-sizing: border-box;
+  padding-left: calc(var(--flight-wrap-pad-x) + var(--flight-search-inner-pad-x));
+  padding-right: calc(var(--flight-wrap-pad-x) + var(--flight-search-inner-pad-x));
+  padding-top: 24px;
+  /* padding-bottom removed — the flight-search-divider provides bottom spacing */
+  padding-bottom: 0;
+  background: #ffffff;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* Divider line — sits inside the form's padding so it aligns with the input edges */
+.flight-search-divider {
+  width: 100%;
+  height: 1px;
+  background: #e4e4e7;
+  flex-shrink: 0;
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 993px) {
+  .flight-search-page {
+    --flight-search-inner-pad-x: 16px;
+  }
+
+  .flight-search-page .flight-search-form-sticky {
+    padding-top: 16px;
+  }
+}
+
+/* Results row: same inner horizontal inset as search fields (sidebar aligns with Trip) */
+.flight-search-page .contentWrapFlex.flight-search-content-row {
+  padding-left: var(--flight-search-inner-pad-x);
+  padding-right: var(--flight-search-inner-pad-x);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
 /* Hotel search filters - match design image: white card, no border */
 .hotelSearchFilterCard {
   background: #FFFFFF;
@@ -418,23 +502,85 @@ input[type="number"] {
   flex-shrink: 0;
 }
 
-/* Flight search (desktop): sticky filter column with internal scroll */
+/* Flight search (desktop): ~25% sidebar + sticky column below search bar */
 @media (min-width: 1024px) {
   .flight-search-page .contentWrapFlex {
     align-items: flex-start;
   }
 
+  .flight-search-page .contentWrapFlex .flightDetailMainContent {
+    flex: 1;
+    min-width: 0;
+  }
+
   .flight-search-page .contentWrapFlex .flightDetailFilter {
     position: sticky;
-    top: 16px;
+    flex: 0 0 25%;
+    width: 25%;
+    min-width: 260px;
+    max-width: 320px;
+    top: calc(var(--flight-search-sticky-h, 180px) + 12px);
     align-self: flex-start;
-    max-height: calc(100dvh - 24px);
+    max-height: calc(100dvh - var(--flight-search-sticky-h, 180px) - 36px);
     overflow-y: auto;
     overflow-x: hidden;
-    overscroll-behavior: contain;
+    overscroll-behavior: auto;
     -webkit-overflow-scrolling: touch;
     min-height: 0;
   }
+}
+
+/* Number of stops — equal-width pill buttons (Figma: 0 / 01 / 02) */
+.flight-stops-pills {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
+.flight-stops-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 44px;
+  margin: 0;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1.5px solid #c2cad6;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: Inter, sans-serif;
+  color: #0a0c0f;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.flight-stops-pill:hover:not(:disabled) {
+  border-color: #2351a3;
+}
+
+.flight-stops-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.flight-stops-pill--active {
+  border-color: #2351a3;
+  background: linear-gradient(
+    90.59deg,
+    #5383da 0%,
+    #2351a3 50%,
+    #081326 100%
+  );
+  color: #ffffff;
+  box-shadow: 0 1px 3px rgba(35, 81, 163, 0.25);
 }
 
 /* Prevent flex overflow inside flight filter (e.g. price min/max row) */
@@ -511,7 +657,33 @@ input[type="number"] {
 .transitHours {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 10px;
+}
+
+.transitHours .ant-radio-button-wrapper {
+  border-radius: 999px !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: 92px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 18px !important;
+  border: 1.5px solid #C2CAD6 !important;
+  background: #FFFFFF !important;
+  text-align: center !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.transitHours .ant-radio-button-wrapper .ant-radio-button-label {
+  white-space: nowrap !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #0A0C0F !important;
+  line-height: 1 !important;
 }
 
 .stopsRadioStyle .ant-radio-button-wrapper {
@@ -540,14 +712,6 @@ input[type="number"] {
   line-height: 1 !important;
 }
 
-.transitHours label {
-  border-radius: 100px !important;
-  width: 100%;
-  max-width: 68px !important;
-  padding: 0px;
-  border: 1px solid var(--black-100);
-}
-
 .stopsRadioStyle .ant-radio-button-wrapper-checked {
   background: linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%) !important;
   border-color: #2351A3 !important;
@@ -558,8 +722,13 @@ input[type="number"] {
 }
 
 .transitHours .ant-radio-button-wrapper-checked {
-  width: 100%;
-  max-width: 68px !important;
+  border-color: #2351A3 !important;
+  background: linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%) !important;
+  box-shadow: 0 1px 3px rgba(35, 81, 163, 0.25) !important;
+}
+
+.transitHours .ant-radio-button-wrapper-checked .ant-radio-button-label {
+  color: #FFFFFF !important;
 }
 
 .stopsRadioStyle
@@ -581,7 +750,7 @@ input[type="number"] {
 
 .transitHours
   :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper-block {
-  flex: auto;
+  flex: 0 0 auto;
 }
 
 .baggageCheckbox {
@@ -1178,6 +1347,126 @@ input[type="number"] {
   border-radius: 12px;
 }
 
+/* Flight result cards responsive layout */
+@media (min-width: 993px) and (max-width: 1280px) {
+  .flightDetailCards .topHalfCard,
+  .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .flightDetailCards .fightTitle {
+    min-width: 180px !important;
+    flex: 0 1 220px;
+  }
+
+  .flightDetailCards .stopsOnLarge {
+    flex: 1 1 320px !important;
+    min-width: 280px;
+    justify-content: flex-start !important;
+  }
+
+  /* Round-trip wrapper has an extra left block; keep it full width */
+  .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap > div:first-child {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice {
+    order: 3;
+    width: 100%;
+    min-width: 0 !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice > div,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice h5,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice h5 {
+    font-size: 24px !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice button,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice button {
+    width: auto !important;
+    min-width: 118px;
+    height: 43px !important;
+    font-size: 13px !important;
+    padding: 10px 16px !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .flightDetailCards .topHalfCard,
+  .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
+    flex-wrap: wrap !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .flightDetailCards .fightTitle {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice {
+    min-width: 0 !important;
+    width: 100%;
+    align-items: flex-start !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice p,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice p {
+    align-self: flex-start !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice > div,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice button,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice button {
+    width: auto !important;
+    min-width: 112px;
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+  }
+
+  .flightDetailCards .selectPriceBtn {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 768px) {
+  .flightDetailCards .topHalfCard .StartingPrice h5,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice h5 {
+    font-size: 22px !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice button,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice button {
+    min-width: 112px;
+    height: 42px !important;
+    font-size: 13px !important;
+  }
+}
+
 .reminderCard {
   background: linear-gradient(90.59deg, #5383da 0%, #2351a3 50%, #081326 100%);
   display: flex;
@@ -1755,15 +2044,29 @@ img:hover {
 
 /* Tooltips */
 
+/* Figma: From/To inputs 396px each; row with swap = 396 + 16 + 48 + 16 + 396 = 872 */
 .fromToSelectWidth {
   width: 100%;
-  max-width: 318px;
+  max-width: 396px;
+}
+
+.flight-search-page .travel-route-picker-row {
+  max-width: 872px;
+  gap: 16px;
 }
 
 .bottomHeaderFlex .fromToBtn {
   width: 100% !important;
   height: 47px !important;
   max-width: 47px;
+}
+
+/* Flight search listing: Figma swap control 48×48 (5099:14398) */
+.flight-search-page .bottomHeaderFlex .fromToBtn {
+  width: 48px !important;
+  height: 48px !important;
+  max-width: 48px !important;
+  min-width: 48px !important;
 }
 
 .bottomHeaderFlex {
@@ -1773,6 +2076,30 @@ img:hover {
   justify-content: flex-start;
   gap: 14px;
   flex-wrap: wrap;
+}
+
+/* Match Figma alignment for desktop search rows (node 5099:14338): 280 / 280 / route+swap, 16px gutters */
+@media (min-width: 1200px) {
+  .flight-search-page .flight-search-row-primary {
+    display: grid !important;
+    grid-template-columns: 280px 280px minmax(0, 1fr);
+    align-items: end;
+    gap: 16px;
+  }
+
+  .flight-search-page .flight-search-row-secondary {
+    display: grid !important;
+    /* Col 4 matches To field width (396) so Search aligns with listing (Figma 5099:14388) */
+    grid-template-columns: 280px 280px 1fr 396px;
+    align-items: end;
+    gap: 16px;
+  }
+
+  .flight-search-page .flight-search-row-secondary .flight-search-submit-align {
+    grid-column: 4;
+    justify-self: end;
+    margin-left: 0 !important;
+  }
 }
 
 @media (min-width: 768px) {
@@ -1785,21 +2112,40 @@ img:hover {
   }
 }
 
-/* Ensure filter collapse header/content use requested background */
-.stopsCollapse .ant-collapse .ant-collapse-header {
-  background: #F2F2F3 !important;
-}
-.stopsCollapse .ant-collapse .ant-collapse-content,
-.stopsCollapse .ant-collapse .ant-collapse-content-box {
-  background: #F2F2F3 !important;
+/* Flight filter cards: single border look (no double-line) */
+.stopsCollapse,
+.pricePerSeatCollapse,
+.flightTimeFilter,
+.timeCollapse {
+  background: transparent !important;
+  border: none !important;
 }
 
-.timeCollapse .ant-collapse .ant-collapse-header {
-  background: #e1e1e1 !important;
+.stopsCollapse .collapseStyle,
+.pricePerSeatCollapse .collapseStyle,
+.flightTimeFilter .collapseStyle,
+.timeCollapse .collapseStyle {
+  border: 1px solid #e4e4e7 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
 }
+
+.stopsCollapse .ant-collapse .ant-collapse-header,
+.pricePerSeatCollapse .ant-collapse .ant-collapse-header,
+.flightTimeFilter .ant-collapse .ant-collapse-header,
+.timeCollapse .ant-collapse .ant-collapse-header {
+  background: #ffffff !important;
+}
+
+.stopsCollapse .ant-collapse .ant-collapse-content,
+.stopsCollapse .ant-collapse .ant-collapse-content-box,
+.pricePerSeatCollapse .ant-collapse .ant-collapse-content,
+.pricePerSeatCollapse .ant-collapse .ant-collapse-content-box,
+.flightTimeFilter .ant-collapse .ant-collapse-content,
+.flightTimeFilter .ant-collapse .ant-collapse-content-box,
 .timeCollapse .ant-collapse .ant-collapse-content,
 .timeCollapse .ant-collapse .ant-collapse-content-box {
-  background: #e1e1e1 !important;
+  background: #ffffff !important;
 }
 
 .searchFilterBtn {

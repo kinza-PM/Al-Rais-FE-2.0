@@ -28,6 +28,7 @@ import {
   pickRandomFlightsForCompare,
   extractFlightFeatures,
 } from "../../utils/searchFlightListingHelpers";
+import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
 
 type TravelRoundTripProps = {
   passData: any[];
@@ -38,7 +39,7 @@ type TravelRoundTripProps = {
     isLoadingMore?: boolean;
     hasMore?: boolean;
   }) => React.ReactNode;
-  loadMoreRef?: React.RefObject<HTMLDivElement>;
+  loadMoreRef?: React.RefObject<HTMLDivElement | null>;
   emptyState?: (() => React.ReactNode) | React.ReactNode;
   highDemandIndicators?: any[];
 };
@@ -519,6 +520,12 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   {item.offerViewCount} People viewing this
                 </div>
               )}
+
+              {offerHasAncillaryDetailsAvailable(item) ? (
+                <div className="inline-flex items-center justify-center text-xs text-[#0F5132] border border-[#A3CFBB] rounded-full px-3 py-2 bg-[#D1E7DD] whitespace-nowrap font-medium">
+                  Add-ons available
+                </div>
+              ) : null}
 
               {(() => {
                 const outboundSegs =
