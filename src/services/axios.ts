@@ -190,9 +190,14 @@ axiosClient.interceptors.request.use(async (config) => {
   } else if (hotelFavouriteApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL = HOTEL_FAVOURITE_API_BASE;
   } else if (activitiesApis.some((prefix) => path.startsWith(prefix))) {
-    config.baseURL = import.meta.env.DEV
+    /**
+     * Must end with `/` and use relative paths like `activitiesDetail` (no leading `/`).
+     * Otherwise `new URL('/activitiesDetail', 'https://host/qa')` drops the stage → wrong API path.
+     */
+    const activitiesBase = import.meta.env.DEV
       ? "/api/activities-proxy"
       : ACTIVITIES_API_BASE;
+    config.baseURL = `${activitiesBase.replace(/\/+$/, "")}/`;
   }
 
   if (isActivities) {

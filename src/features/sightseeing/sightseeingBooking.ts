@@ -1,4 +1,7 @@
-import type { SightseeingActivity } from "./types";
+import type {
+  SightseeingActivity,
+  SightseeingActivityDetailRate,
+} from "./types";
 
 export type SightseeingBookingDraft = {
   selectedRateKey: string;
@@ -269,6 +272,145 @@ export function newSightseeingClientReference(prefix = "ALR-ACT"): string {
   } catch {
     return `${prefix}-${Date.now()}`;
   }
+}
+
+/**
+ * Pick the `activitiesDetail` rate that matches the listing card the user clicked.
+ * Listing uses the first modality’s label/min price; detail often returns many modalities
+ * and previously defaulted to index 0, showing the wrong package/price.
+ */
+export function pickRateKeyFromPreview(
+  rates: SightseeingActivityDetailRate[],
+  preview: SightseeingActivity | undefined,
+): string | null {
+  if (!preview || rates.length === 0) return null;
+
+  const pPrice = Number(preview.price);
+  const pCurrency = (preview.currency ?? "USD").trim().toUpperCase();
+  const pLabel = (preview.groupLabel ?? "").trim().toLowerCase();
+
+  const currencyOk = (c: string) => c.trim().toUpperCase() === pCurrency;
+
+  const priceClose = (amount: number) => {
+    const a = Number(amount);
+    return (
+      Number.isFinite(pPrice) &&
+      pPrice > 0 &&
+      Number.isFinite(a) &&
+      Math.abs(a - pPrice) < 0.505
+    );
+  };
+
+  const nameLooselyMatches = (modName: string) => {
+    const m = modName.trim().toLowerCase();
+    if (!pLabel || !m) return false;
+    return m === pLabel || m.includes(pLabel) || pLabel.includes(m);
+  };
+
+  const byPrice = rates.filter(
+    (r) => currencyOk(r.currency) && priceClose(Number(r.amount)),
+  );
+  if (byPrice.length === 1) return byPrice[0].rateKey;
+  if (byPrice.length > 1 && pLabel) {
+    const named = byPrice.find((r) => nameLooselyMatches(r.modalityName));
+    if (named) return named.rateKey;
+    return byPrice[0].rateKey;
+  }
+
+  if (pLabel) {
+    const byName = rates.filter((r) => nameLooselyMatches(r.modalityName));
+    if (byName.length === 1) return byName[0].rateKey;
+    if (byName.length > 1 && Number.isFinite(pPrice) && pPrice > 0) {
+      const namedPrice = byName.find(
+        (r) => currencyOk(r.currency) && priceClose(Number(r.amount)),
+      );
+      if (namedPrice) return namedPrice.rateKey;
+    }
+  }
+
+  /** Supplier may use a different currency code in detail vs listing — match amount only. */
+  if (Number.isFinite(pPrice) && pPrice > 0) {
+    const byAmount = rates.filter((r) => priceClose(Number(r.amount)));
+    if (byAmount.length === 1) return byAmount[0].rateKey;
+    if (byAmount.length > 1 && pLabel) {
+      const named = byAmount.find((r) => nameLooselyMatches(r.modalityName));
+      if (named) return named.rateKey;
+      return byAmount[0].rateKey;
+    }
+  }
+
+  /** Rounding differences between availability and detail (e.g. 111 vs 110.5). */
+  if (Number.isFinite(pPrice) && pPrice > 0) {
+    const tol = Math.max(2, Math.round(pPrice * 0.06));
+    let best: SightseeingActivityDetailRate | null = null;
+    let bestDist = Infinity;
+    for (const r of rates) {
+      const amt = Number(r.amount);
+      if (!Number.isFinite(amt)) continue;
+      const d = Math.abs(amt - pPrice);
+      if (d < bestDist) {
+        bestDist = d;
+        best = r;
+      }
+    }
+    if (best != null && bestDist <= tol) {
+      if (pLabel) {
+        const named = rates.find(
+          (r) =>
+            Math.abs(Number(r.amount) - pPrice) <= tol &&
+            nameLooselyMatches(r.modalityName),
+        );
+        if (named) return named.rateKey;
+      }
+      return best.rateKey;
+    }
+  }
+
+  return null;
+}
+
+const SIGHTSEEING_CARD_PREVIEW_STORAGE_PREFIX = "alrais-sightseeing-card-preview:";
+
+/** Persist listing row when opening detail so prices still match after refresh / full navigation. */
+export function saveSightseeingCardPreview(
+  activityCode: string,
+  activity: SightseeingActivity,
+): void {
+  const code = activityCode.trim();
+  if (!code) return;
+  try {
+    sessionStorage.setItem(
+      `${SIGHTSEEING_CARD_PREVIEW_STORAGE_PREFIX}${encodeURIComponent(code)}`,
+      JSON.stringify(activity),
+    );
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+export function readSightseeingCardPreview(
+  activityCode: string,
+): SightseeingActivity | undefined {
+  const code = activityCode.trim();
+  if (!code) return undefined;
+  try {
+    const raw = sessionStorage.getItem(
+      `${SIGHTSEEING_CARD_PREVIEW_STORAGE_PREFIX}${encodeURIComponent(code)}`,
+    );
+    if (!raw) return undefined;
+    const p = JSON.parse(raw) as SightseeingActivity;
+    if (
+      p &&
+      typeof p === "object" &&
+      typeof p.id === "string" &&
+      Number.isFinite(Number(p.price))
+    ) {
+      return p;
+    }
+  } catch {
+    /* ignore */
+  }
+  return undefined;
 }
 
 export function buildTravellersSummary(

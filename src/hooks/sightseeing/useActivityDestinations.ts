@@ -17,6 +17,7 @@ export function useActivityDestinations(
     enabled: enabled && iso.length === 2,
     staleTime: 30 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 }
 

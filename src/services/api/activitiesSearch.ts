@@ -68,7 +68,7 @@ export async function getDestinationByOurCountry(
   const country = countryIso2.trim().toUpperCase();
   try {
     return await api.get<unknown>(
-      "/destinationByOurCountry",
+      "destinationByOurCountry",
       { country },
       signal,
     );
@@ -89,7 +89,7 @@ export async function postGetAvailability(
 ): Promise<unknown> {
   const source = "postGetAvailability";
   try {
-    return await api.post<unknown>("/getAvailability", body as Record<string, any>, {
+    return await api.post<unknown>("getAvailability", body as Record<string, any>, {
       signal,
     });
   } catch (err) {
@@ -109,8 +109,11 @@ export function buildActivitiesDetailBody(params: {
   paxes?: { age: number }[];
   modalityCode?: string;
 }): Record<string, unknown> {
+  const c = params.code.trim();
   const body: Record<string, unknown> = {
-    code: params.code.trim(),
+    code: c,
+    /** Some gateways mirror Hotel Beds `activityCode` from the availability row. */
+    activityCode: c,
     from: params.from,
     to: params.to,
     language: params.language ?? "en",
@@ -128,7 +131,7 @@ export async function postActivitiesDetail(
 ): Promise<unknown> {
   const source = "postActivitiesDetail";
   try {
-    return await api.post<unknown>("/activitiesDetail", body as Record<string, any>, {
+    return await api.post<unknown>("activitiesDetail", body as Record<string, any>, {
       signal,
     });
   } catch (err) {
@@ -207,7 +210,7 @@ export async function postPreConfirmBooking(
   const source = "postPreConfirmBooking";
   try {
     return await api.post<unknown>(
-      "/preConfirmBooking",
+      "preConfirmBooking",
       body as Record<string, any>,
       { signal },
     );
@@ -222,7 +225,7 @@ export async function postConfirmBooking(
 ): Promise<unknown> {
   const source = "postConfirmBooking";
   try {
-    return await api.post<unknown>("/confirmBooking", body as Record<string, any>, {
+    return await api.post<unknown>("confirmBooking", body as Record<string, any>, {
       signal,
     });
   } catch (err) {
@@ -236,7 +239,7 @@ export async function postCancelBooking(
 ): Promise<unknown> {
   const source = "postCancelBooking";
   try {
-    return await api.post<unknown>("/cancelBooking", body as Record<string, any>, {
+    return await api.post<unknown>("cancelBooking", body as Record<string, any>, {
       signal,
     });
   } catch (err) {

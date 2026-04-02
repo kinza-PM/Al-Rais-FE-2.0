@@ -3611,3 +3611,42 @@ img:hover {
     box-sizing: border-box;
   }
 }
+
+/* Search sightseeing listing — image-only motion (card body stays static) */
+@keyframes sightseeing-card-image-in {
+  from {
+    opacity: 0;
+    transform: scale(1.06);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.sightseeing-card-image {
+  transform-origin: center center;
+  animation: sightseeing-card-image-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition:
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.45s ease;
+}
+
+.sightseeing-card-image-wrap:hover .sightseeing-card-image {
+  transform: scale(1.055);
+  filter: brightness(1.04) saturate(1.03);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sightseeing-card-image {
+    animation: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .sightseeing-card-image-wrap:hover .sightseeing-card-image {
+    transform: none;
+    filter: none;
+  }
+}

@@ -404,7 +404,11 @@ function detailFieldsFromBody(data: unknown): {
       ? (data as Record<string, unknown>)
       : null;
   if (!o) return null;
-  const code = typeof o.code === "string" ? o.code.trim() : "";
+  const codeRaw =
+    (typeof o.code === "string" ? o.code : null) ??
+    (typeof o.activityCode === "string" ? o.activityCode : null) ??
+    "";
+  const code = String(codeRaw).trim();
   if (!code) return null;
   const from = typeof o.from === "string" ? o.from : "2026-01-01";
   const to = typeof o.to === "string" ? o.to : "2026-01-02";

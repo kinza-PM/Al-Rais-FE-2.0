@@ -480,6 +480,11 @@ function mapOneAvailabilityActivity(
 
   const modalities = act.modalities;
   const { durationDays, groupSize, groupLabel } = modalityMeta(modalities);
+  /** Same modality as `groupLabel` / duration on the card — avoids “Shared group” with a cheaper other modality’s price. */
+  const firstModalityRec =
+    Array.isArray(modalities) && modalities.length > 0
+      ? asRecord(modalities[0])
+      : null;
   const durationLabel =
     durationDays != null && durationDays > 0
       ? durationDays >= 1
@@ -494,7 +499,10 @@ function mapOneAvailabilityActivity(
           })()
       : "Duration on request";
 
-  const priceInfo = bestPriceFromActivity(act);
+  const priceInfo =
+    firstModalityRec != null
+      ? minPriceFromModalityLike(firstModalityRec) ?? bestPriceFromActivity(act)
+      : bestPriceFromActivity(act);
   const amount = priceInfo?.amount ?? 0;
   const currency = priceInfo?.currency ?? "USD";
 

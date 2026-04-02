@@ -31,6 +31,18 @@ function availabilityTotalPages(raw: unknown): number {
 
 const MAX_ACTIVITY_PAGES = 30;
 
+/** Stable key for `getAvailability` cache (listing, detail “related”, etc.). */
+export function getActivityAvailabilityQueryKey(
+  destinationCode: string | undefined,
+): readonly [string, string, string, string, string, string] {
+  const dest =
+    (typeof destinationCode === "string" ? destinationCode : "")
+      .trim()
+      .toUpperCase();
+  const { from, to } = defaultActivityAvailabilityDateRange(30);
+  return ["activities", "availability", dest, from, to, "full"] as const;
+}
+
 export function useActivityAvailability(opts: {
   destinationCode: string | undefined;
   enabled?: boolean;
@@ -39,7 +51,7 @@ export function useActivityAvailability(opts: {
   const { from, to } = defaultActivityAvailabilityDateRange(30);
 
   return useQuery({
-    queryKey: ["activities", "availability", dest, from, to, "full"],
+    queryKey: getActivityAvailabilityQueryKey(opts.destinationCode),
     queryFn: async ({ signal }) => {
       const out: SightseeingActivity[] = [];
       const seen = new Set<string>();
@@ -73,5 +85,7 @@ export function useActivityAvailability(opts: {
     enabled: (opts.enabled ?? true) && dest.length > 0,
     staleTime: 2 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

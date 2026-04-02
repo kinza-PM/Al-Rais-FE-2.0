@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import toast from "react-hot-toast";
 import "../assets/css/travel.css";
+import { useActivityAvailability } from "../hooks/sightseeing/useActivityAvailability";
 import { useActivityDetail } from "../hooks/sightseeing/useActivityDetail";
 import SightseeingDetailGallery from "../components/molecules/sightseeing/SightseeingDetailGallery";
 import { SightseeingInclusionsTable } from "../components/molecules/sightseeing/SightseeingInclusionsTable";
@@ -26,6 +27,9 @@ import {
   formatPickupDateLong,
   formatTime12Hour,
   isoDateOnly,
+  pickRateKeyFromPreview,
+  readSightseeingCardPreview,
+  saveSightseeingCardPreview,
   type SightseeingBookingSummary,
   type SightseeingDetailNavState,
 } from "../features/sightseeing/sightseeingBooking";
@@ -216,7 +220,30 @@ const SightseeingActivityDetailPage: React.FC = () => {
     to: range.to,
   });
 
-  const preview = state.preview;
+  const relatedDestinationCode = state.context?.destinationCode?.trim();
+  const { data: sameDestinationActivities } = useActivityAvailability({
+    destinationCode: relatedDestinationCode,
+    enabled: Boolean(relatedDestinationCode),
+  });
+  const youMayAlsoLikeCatalogue = useMemo(
+    () => sameDestinationActivities ?? [],
+    [sameDestinationActivities],
+  );
+
+  const effectivePreview = useMemo((): SightseeingActivity | undefined => {
+    return state.preview ?? readSightseeingCardPreview(activityCode);
+  }, [state.preview, activityCode]);
+
+  useEffect(() => {
+    if (state.preview && activityCode) {
+      saveSightseeingCardPreview(activityCode, state.preview);
+    }
+  }, [activityCode, state.preview]);
+
+  const previewRateSyncedRef = useRef(false);
+  useEffect(() => {
+    previewRateSyncedRef.current = false;
+  }, [activityCode]);
 
   const [selectedRateKey, setSelectedRateKey] = useState<string>(
     () => state.draft?.selectedRateKey ?? "",
@@ -275,11 +302,34 @@ const SightseeingActivityDetailPage: React.FC = () => {
       if (selectedRateKey !== "") setSelectedRateKey("");
       return;
     }
+
     const valid = rateOptions.some((r) => r.rateKey === selectedRateKey);
+
+    if (
+      state.draft?.selectedRateKey &&
+      valid &&
+      selectedRateKey === state.draft.selectedRateKey
+    ) {
+      previewRateSyncedRef.current = true;
+      return;
+    }
+
+    if (valid && previewRateSyncedRef.current) return;
+
+    if (!previewRateSyncedRef.current && effectivePreview) {
+      const want = pickRateKeyFromPreview(rateOptions, effectivePreview);
+      if (want) {
+        setSelectedRateKey(want);
+        previewRateSyncedRef.current = true;
+        return;
+      }
+    }
+
     if (!valid) {
       setSelectedRateKey(rateOptions[0].rateKey);
+      previewRateSyncedRef.current = true;
     }
-  }, [rateOptions, selectedRateKey]);
+  }, [rateOptions, selectedRateKey, effectivePreview, state.draft, activityCode]);
 
   const packageDropdownOptions = useMemo(
     () =>
@@ -291,31 +341,36 @@ const SightseeingActivityDetailPage: React.FC = () => {
     [rateOptions],
   );
 
-  const displayTitle = detail?.name || preview?.title || activityCode;
+  const displayTitle = detail?.name || effectivePreview?.title || activityCode;
 
   const imageUrls = useMemo(() => {
     const fromApi = detail?.imageUrls?.filter((u) => u?.trim()) ?? [];
     if (fromApi.length > 0) return fromApi;
-    if (preview?.imageSrc?.trim()) return [preview.imageSrc.trim()];
+    if (effectivePreview?.imageSrc?.trim())
+      return [effectivePreview.imageSrc.trim()];
     return [];
-  }, [detail?.imageUrls, preview?.imageSrc]);
+  }, [detail?.imageUrls, effectivePreview?.imageSrc]);
 
   const displayRating =
-    detail != null ? detail.rating : preview?.rating ?? 0;
+    detail != null ? detail.rating : effectivePreview?.rating ?? 0;
   const displayReviewCount =
-    detail != null ? detail.reviewCount : preview?.reviewCount ?? 0;
+    detail != null ? detail.reviewCount : effectivePreview?.reviewCount ?? 0;
 
   const badgeRow = useMemo(() => {
     const fromApi = detail?.badges?.filter(Boolean) ?? [];
     if (fromApi.length > 0) return fromApi;
-    if (!preview) return [];
+    if (!effectivePreview) return [];
     const out: string[] = [];
-    if (preview.reviewCount >= 500 && preview.rating >= 4.5) {
+    if (
+      effectivePreview.reviewCount >= 500 &&
+      effectivePreview.rating >= 4.5
+    ) {
       out.push("Best Seller");
     }
-    if (preview.durationLabel) out.push(preview.durationLabel);
+    if (effectivePreview.durationLabel)
+      out.push(effectivePreview.durationLabel);
     return out;
-  }, [detail?.badges, preview]);
+  }, [detail?.badges, effectivePreview]);
 
   const selectedRate = useMemo(
     () =>
@@ -323,10 +378,11 @@ const SightseeingActivityDetailPage: React.FC = () => {
     [rateOptions, selectedRateKey],
   );
 
-  const displayPriceAmount = selectedRate?.amount ?? preview?.price ?? 0;
+  const displayPriceAmount =
+    selectedRate?.amount ?? effectivePreview?.price ?? 0;
   const displayCurrency =
     selectedRate?.currency ??
-    preview?.currency ??
+    effectivePreview?.currency ??
     detail?.currency ??
     "USD";
 
@@ -334,7 +390,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
     const duration =
       detail?.durationLabel ||
       detail?.badges?.find((b) => /hour|day|hrs/i.test(b)) ||
-      preview?.durationLabel ||
+      effectivePreview?.durationLabel ||
       "6 Hours";
     const cancel =
       detail?.badges?.some((b) => /free.*cancel/i.test(b)) ||
@@ -346,9 +402,9 @@ const SightseeingActivityDetailPage: React.FC = () => {
       {
         label: "Group Size",
         value:
-          preview?.groupSize === "private"
+          effectivePreview?.groupSize === "private"
             ? "Private"
-            : preview?.groupSize === "large"
+            : effectivePreview?.groupSize === "large"
               ? "Up to 40"
               : "Up to 16",
       },
@@ -357,7 +413,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
       { label: "Min. Age", value: "4 years" },
       { label: "Cancellation", value: cancel },
     ];
-  }, [detail, preview, badgeRow]);
+  }, [detail, effectivePreview, badgeRow]);
 
   const travellerCount = adults + teens + children;
   const bookingSubtotal = useMemo(() => {
@@ -406,7 +462,8 @@ const SightseeingActivityDetailPage: React.FC = () => {
 
     const modalityLabel = selectedRate
       ? packageModalityDisplayName(selectedRate.modalityName)
-      : "Silver";
+      : packageModalityDisplayName(effectivePreview?.groupLabel ?? "") ||
+        "Tour";
     const pkgCurrency = selectedRate?.currency ?? displayCurrency;
     const pkgAmount = selectedRate?.amount ?? displayPriceAmount;
     const packageSummary = `${modalityLabel} (${formatSightseeingPrice(
@@ -427,11 +484,11 @@ const SightseeingActivityDetailPage: React.FC = () => {
     const summary: SightseeingBookingSummary = {
       activityCode,
       title: displayTitle,
-      imageSrc: imageUrls[0] || preview?.imageSrc || "",
-      categoryLabel: preview?.categoryLabel ?? "Sightseeing Tour",
+      imageSrc: imageUrls[0] || effectivePreview?.imageSrc || "",
+      categoryLabel: effectivePreview?.categoryLabel ?? "Sightseeing Tour",
       durationLabel:
-        detail?.durationLabel ?? preview?.durationLabel ?? "—",
-      groupLabel: preview?.groupLabel ?? "—",
+        detail?.durationLabel ?? effectivePreview?.durationLabel ?? "—",
+      groupLabel: effectivePreview?.groupLabel ?? "—",
       packageSummary,
       travellersSummary: buildTravellersSummary(adults, teens, children),
       pickupDateDisplay: formatPickupDateLong(selectedTourDate),
@@ -450,7 +507,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
         returnState: {
           from: range.from,
           to: range.to,
-          preview: preview ?? undefined,
+          preview: effectivePreview ?? undefined,
           context: state.context,
         },
       },
@@ -470,13 +527,27 @@ const SightseeingActivityDetailPage: React.FC = () => {
     bookingGrandTotal,
     displayTitle,
     imageUrls,
-    preview,
+    effectivePreview,
     detail?.durationLabel,
     navigate,
     range.from,
     range.to,
     state.context,
+    effectivePreview,
   ]);
+
+  const aboutParagraphs = useMemo(() => {
+    const d = detail?.description?.trim();
+    if (d) {
+      const parts = d
+        .split(/\n\s*\n/)
+        .map((p) => p.trim())
+        .filter(Boolean);
+      if (parts.length > 0) return parts;
+      return [d];
+    }
+    return SIGHTSEEING_FIGMA_ABOUT_PARAGRAPHS;
+  }, [detail?.description]);
 
   const tabPanel = () => {
     if (activeTab === "overview") {
@@ -486,8 +557,8 @@ const SightseeingActivityDetailPage: React.FC = () => {
             About this activity
           </h2>
           <div className="mt-5 space-y-5 text-[16px] font-normal leading-6 tracking-normal text-[#0A0C0F]">
-            {SIGHTSEEING_FIGMA_ABOUT_PARAGRAPHS.map((p) => (
-              <p key={p.slice(0, 24)}>{p}</p>
+            {aboutParagraphs.map((p, idx) => (
+              <p key={`${idx}-${p.slice(0, 24)}`}>{p}</p>
             ))}
           </div>
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -737,7 +808,14 @@ const SightseeingActivityDetailPage: React.FC = () => {
                             className={`${PACKAGE_DROPDOWN_BUTTON_CLASS} cursor-default opacity-80`}
                           >
                             <span className="truncate">
-                              {isLoading ? "Loading packages…" : "Silver"}
+                              {isLoading
+                                ? "Loading packages…"
+                                : effectivePreview
+                                  ? `${packageModalityDisplayName(effectivePreview.groupLabel) || "Tour"} · ${formatSightseeingPrice(
+                                      effectivePreview.currency,
+                                      effectivePreview.price,
+                                    )}`
+                                  : "Package"}
                             </span>
                           </div>
                         )}
@@ -898,6 +976,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
 
             <SightseeingYouMayAlsoLikeSection
               className="mt-12 w-full min-w-0 pt-2 sm:mt-14"
+              relatedActivities={youMayAlsoLikeCatalogue}
               excludeActivityId={activityCode}
               bookNowContext={state.context}
               layout="grid"

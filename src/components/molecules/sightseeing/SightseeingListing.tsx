@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "../../../assets/css/travel.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { DUMMY_SIGHTSEEING_ACTIVITIES, SIGHTSEEING_QUICK_FILTERS } from "../../../features/sightseeing/data/dummyActivities";
+import { SIGHTSEEING_QUICK_FILTERS } from "../../../features/sightseeing/data/sightseeingQuickFilters";
 import type {
   SightseeingActivity,
   SightseeingQuickFilterId,
 } from "../../../features/sightseeing/types";
+import { saveSightseeingCardPreview } from "../../../features/sightseeing/sightseeingBooking";
 import { useActivityAvailability } from "../../../hooks/sightseeing/useActivityAvailability";
 import { defaultActivityAvailabilityDateRange } from "../../../services/api/activitiesSearch";
 import Loader from "../../atoms/Loader";
@@ -116,6 +117,9 @@ function sortActivities(
   }
 }
 
+/** Initial grid size for long availability responses (avoids rendering 100+ cards at once). */
+const LIST_PAGE_SIZE = 24;
+
 const SightseeingListing: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -129,6 +133,7 @@ const SightseeingListing: React.FC = () => {
   );
   const [quickFilter, setQuickFilter] =
     useState<SightseeingQuickFilterId>("all");
+  const [visibleCount, setVisibleCount] = useState(LIST_PAGE_SIZE);
 
   useEffect(() => {
     setToolbar(defaultToolbar(navState));
@@ -178,10 +183,8 @@ const SightseeingListing: React.FC = () => {
   );
 
   const catalogue = useMemo((): SightseeingActivity[] => {
-    if (useLiveAvailability) {
-      return liveActivities ?? [];
-    }
-    return DUMMY_SIGHTSEEING_ACTIVITIES;
+    if (!useLiveAvailability) return [];
+    return liveActivities ?? [];
   }, [useLiveAvailability, liveActivities]);
 
   const filtered = useMemo(
@@ -193,6 +196,21 @@ const SightseeingListing: React.FC = () => {
     [catalogue, quickFilter, listFilters],
   );
 
+  useEffect(() => {
+    setVisibleCount(LIST_PAGE_SIZE);
+  }, [catalogue, quickFilter, listFilters, destCode]);
+
+  const visibleActivities = useMemo(
+    () => filtered.slice(0, visibleCount),
+    [filtered, visibleCount],
+  );
+
+  const hasMoreToShow = visibleCount < filtered.length;
+  const likelySupplierMockDemo =
+    useLiveAvailability &&
+    filtered.length > 0 &&
+    filtered.every((a) => /mock/i.test(String(a.id)));
+
   const activeSidebarCount = useMemo(
     () => countActiveSidebarFilters(listFilters),
     [listFilters],
@@ -201,6 +219,7 @@ const SightseeingListing: React.FC = () => {
   const handleBookNow = useCallback(
     (activity: SightseeingActivity) => {
       const range = defaultActivityAvailabilityDateRange(30);
+      saveSightseeingCardPreview(activity.id, activity);
       navigate(
         `/sightseeing-detail/${encodeURIComponent(activity.id)}`,
         {
@@ -325,10 +344,32 @@ const SightseeingListing: React.FC = () => {
               </p>
             ) : null}
 
+            {likelySupplierMockDemo ? (
+              <p className="mt-2 max-w-[820px] text-[12px] leading-relaxed text-[#64748B]">
+                These rows use supplier <strong>demo / mock</strong> activity codes
+                (e.g. <code className="rounded bg-[#E8ECF0] px-1 py-0.5 text-[11px]">…MOCK…</code>
+                ). The payload shape is valid; production responses list real tours without
+                repeated “option” placeholders.
+              </p>
+            ) : null}
+
             {!showLiveAvailabilityLoader ? (
               <>
+                {filtered.length > visibleActivities.length ? (
+                  <p className="mt-3 text-[13px] text-[#64748B]">
+                    Showing{" "}
+                    <span className="font-semibold text-[#0A0C0F]">
+                      {visibleActivities.length}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-semibold text-[#0A0C0F]">
+                      {filtered.length}
+                    </span>{" "}
+                    activities
+                  </p>
+                ) : null}
                 <div className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                  {filtered.map((activity) => (
+                  {visibleActivities.map((activity) => (
                     <SightseeingActivityCard
                       key={activity.id}
                       activity={activity}
@@ -337,11 +378,27 @@ const SightseeingListing: React.FC = () => {
                   ))}
                 </div>
 
+                {hasMoreToShow ? (
+                  <div className="mt-8 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVisibleCount((n) =>
+                          Math.min(n + LIST_PAGE_SIZE, filtered.length),
+                        )
+                      }
+                      className="rounded-full border border-[#C2CAD6] bg-white px-8 py-3 text-[14px] font-semibold text-[#2351A3] transition-colors hover:border-[#2351A3]/50 hover:bg-[#F8FAFC]"
+                    >
+                      Load more activities
+                    </button>
+                  </div>
+                ) : null}
+
                 {filtered.length === 0 ? (
                   <div className="mt-12 rounded-[16px] border border-dashed border-[#C2CAD6] bg-white py-14 text-center text-[14px] text-[#3D495C]">
                     {useLiveAvailability
                       ? "No activities returned for this destination and date range, or filters hide all results. Try another destination or relax filters."
-                      : "No activities match your filters. Try adjusting filters or quick categories."}
+                      : "Select a country and destination with a supplier location code to load activities. Results come from live availability only."}
                   </div>
                 ) : null}
               </>

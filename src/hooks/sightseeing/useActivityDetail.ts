@@ -27,5 +27,7 @@ export function useActivityDetail(opts: {
     enabled: (opts.enabled ?? true) && code.length > 0,
     staleTime: 60 * 1000,
     gcTime: 15 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 }

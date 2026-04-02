@@ -1,7 +1,7 @@
 import React, { useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import type { SightseeingActivity } from "../../../features/sightseeing/types";
-import { DUMMY_SIGHTSEEING_ACTIVITIES } from "../../../features/sightseeing/data/dummyActivities";
+import { saveSightseeingCardPreview } from "../../../features/sightseeing/sightseeingBooking";
 import { defaultActivityAvailabilityDateRange } from "../../../services/api/activitiesSearch";
 import SightseeingActivityCard from "./SightseeingActivityCard";
 import {
@@ -19,7 +19,9 @@ export type SightseeingRelatedBookContext = {
 
 export type SightseeingYouMayAlsoLikeSectionProps = {
   className?: string;
-  /** Hide the activity the user is already viewing (dummy `id` or URL `activityCode`). */
+  /** Supplier listing rows for the same destination (e.g. from `getAvailability` cache). */
+  relatedActivities: SightseeingActivity[];
+  /** Hide the activity the user is already viewing (`activityCode` from URL). */
   excludeActivityId?: string;
   /** Passed through `navigate` state as `context` for the detail page. */
   bookNowContext?: SightseeingRelatedBookContext;
@@ -30,35 +32,40 @@ export type SightseeingYouMayAlsoLikeSectionProps = {
   layout?: "grid" | "carousel";
 };
 
-function pickRelatedActivities(
+function filterRelated(
+  source: SightseeingActivity[],
   excludeId: string | undefined,
 ): SightseeingActivity[] {
   const ex = excludeId?.trim();
-  const filtered = ex
-    ? DUMMY_SIGHTSEEING_ACTIVITIES.filter((a) => a.id !== ex && a.id !== decodeURIComponent(ex))
-    : [...DUMMY_SIGHTSEEING_ACTIVITIES];
-
-  if (filtered.length >= RELATED_COUNT) {
-    return filtered.slice(0, RELATED_COUNT);
+  if (!ex) return source.slice(0, RELATED_COUNT);
+  let decoded = ex;
+  try {
+    decoded = decodeURIComponent(ex);
+  } catch {
+    /* keep ex */
   }
-  return DUMMY_SIGHTSEEING_ACTIVITIES.slice(0, RELATED_COUNT);
+  return source
+    .filter((a) => a.id !== ex && a.id !== decoded)
+    .slice(0, RELATED_COUNT);
 }
 
 export function SightseeingYouMayAlsoLikeSection({
   className = "",
+  relatedActivities,
   excludeActivityId,
   bookNowContext,
   layout = "carousel",
 }: SightseeingYouMayAlsoLikeSectionProps) {
   const navigate = useNavigate();
   const items = useMemo(
-    () => pickRelatedActivities(excludeActivityId),
-    [excludeActivityId],
+    () => filterRelated(relatedActivities, excludeActivityId),
+    [relatedActivities, excludeActivityId],
   );
 
   const onBookNow = React.useCallback(
     (activity: SightseeingActivity) => {
       const range = defaultActivityAvailabilityDateRange(30);
+      saveSightseeingCardPreview(activity.id, activity);
       navigate(`/sightseeing-detail/${encodeURIComponent(activity.id)}`, {
         state: {
           from: range.from,
@@ -70,6 +77,8 @@ export function SightseeingYouMayAlsoLikeSection({
     },
     [navigate, bookNowContext],
   );
+
+  if (items.length === 0) return null;
 
   return (
     <section

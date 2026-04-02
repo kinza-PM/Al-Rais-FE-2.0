@@ -5,6 +5,7 @@ import {
   useActivityDestinations,
 } from "../../../hooks/sightseeing/useActivityDestinations";
 import SearchableDropdown from "../../common/SearchableDropdown";
+import Loader from "../../atoms/Loader";
 import type { SightseeingActivityCategory } from "../../../features/sightseeing/types";
 
 const ACTIVITY_CATEGORY_OPTIONS = [
@@ -68,7 +69,10 @@ const SightseeingListingToolbar: React.FC<Props> = ({ initial, onSearch }) => {
   const {
     data: destinationRows,
     isLoading: isDestinationsLoading,
+    isFetching: isDestinationsFetching,
   } = useActivityDestinations(iso2, !!iso2);
+
+  const showDestinationsLoader = !!iso2 && isDestinationsFetching;
 
   const destinationDropdownOptions = useMemo(
     () => destinationOptionsToDropdown(destinationRows),
@@ -101,6 +105,10 @@ const SightseeingListingToolbar: React.FC<Props> = ({ initial, onSearch }) => {
 
   return (
     <div className="sightseeing-listing-toolbar w-full bg-transparent">
+      <Loader
+        show={showDestinationsLoader}
+        label="Loading destinations, please wait…"
+      />
       <div className="flex flex-nowrap items-end justify-start gap-4">
         <div className="shrink-0" style={fieldWrapStyle}>
           <label className={labelClass}>Select a Country</label>

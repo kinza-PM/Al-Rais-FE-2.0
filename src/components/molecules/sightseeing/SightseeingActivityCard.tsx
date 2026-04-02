@@ -118,11 +118,12 @@ const SightseeingActivityCard: React.FC<Props> = ({
           : "mx-auto max-w-[378.67px]"
       }`}
     >
-      <div className="min-h-0 w-full flex-[1.4] basis-0 overflow-hidden">
+      <div className="sightseeing-card-image-wrap relative min-h-0 w-full flex-[1.4] basis-0 overflow-hidden bg-[#E8ECF0]">
         <img
           src={activity.imageSrc}
           alt=""
-          className="h-full w-full object-cover"
+          className="sightseeing-card-image h-full w-full object-cover"
+          loading="lazy"
         />
       </div>
 

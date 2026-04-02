@@ -170,12 +170,6 @@ const SightseeingBookingPage: React.FC = () => {
     [],
   );
 
-  const onContinue = useCallback(() => {
-    toast.success(
-      "Traveler details saved. Payment will connect here next.",
-    );
-  }, []);
-
   const onReserveProtection = useCallback(
     async (protection: SightseeingProtectionChoice) => {
       if (!summary) return;
@@ -364,8 +358,6 @@ const SightseeingBookingPage: React.FC = () => {
               adultCount={adultCount}
               travelers={travelers}
               onPatchTraveler={patchTraveler}
-              onSubmit={onContinue}
-              submitLabel="Continue"
             />
             <SightseeingGetProtectionSection
               onReserve={onReserveProtection}
