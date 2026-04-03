@@ -7,6 +7,7 @@ import HotelSummaryCard from "../atoms/HotelSummaryCard";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelFareRule from "../atoms/HotelFareRule";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
+import SavedTravelersSection from "./SavedTravelersSection";
 import {
   formatDateToLocalISO,
   parseLocalDateString,
@@ -19,6 +20,7 @@ import {
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import type { CountryOption } from "../../features/flights/types";
+import CustomToggle from "../common/CustomToggle";
 // import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 // import toast from "react-hot-toast";
 // import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
@@ -155,6 +157,7 @@ export default function HotelBookingBookSection({
     <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
+          <SavedTravelersSection />
           {flatPassengers.map(
             ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
               <React.Fragment key={p.passengerKey || flatIdx}>
@@ -327,8 +330,13 @@ export default function HotelBookingBookSection({
                 <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm mt-4">
                   <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7] rounded-t-2xl">
                     <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                      Passenger {String(flatIdx + 1).padStart(2, "0")} details
+                      Traveler {String(flatIdx + 1).padStart(2, "0")} details
                     </h3>
+                    <CustomToggle
+                      label="Save Traveler information in my profile"
+                      checked={true}
+                      onChange={() => { }}
+                    />
                   </div>
                   <div className="px-4 py-4 rounded-b-2xl">
                     <div className="grid grid-cols-1 gap-x-4 gap-y-4 min-w-0 md:grid-cols-2">
