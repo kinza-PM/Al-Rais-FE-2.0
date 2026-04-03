@@ -430,3 +430,51 @@ export function buildTravellersSummary(
   }
   return parts.length > 0 ? parts.join(" • ") : "0 travellers";
 }
+
+/** After login from the listing/detail “Book now” flow, resume navigation to activity detail. */
+const PENDING_SS_DETAIL_KEY = "alrais-sightseeing-pending-detail";
+
+export type PendingSightseeingDetailNav = {
+  activityId: string;
+  navState: SightseeingDetailNavState;
+};
+
+export function savePendingSightseeingDetailNav(
+  payload: PendingSightseeingDetailNav,
+): void {
+  try {
+    sessionStorage.setItem(PENDING_SS_DETAIL_KEY, JSON.stringify(payload));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function clearPendingSightseeingDetailNav(): void {
+  try {
+    sessionStorage.removeItem(PENDING_SS_DETAIL_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function consumePendingSightseeingDetailNav(): PendingSightseeingDetailNav | null {
+  try {
+    const raw = sessionStorage.getItem(PENDING_SS_DETAIL_KEY);
+    if (!raw) return null;
+    sessionStorage.removeItem(PENDING_SS_DETAIL_KEY);
+    const p = JSON.parse(raw) as PendingSightseeingDetailNav;
+    if (
+      p &&
+      typeof p === "object" &&
+      typeof p.activityId === "string" &&
+      p.activityId.trim() &&
+      p.navState &&
+      typeof p.navState === "object"
+    ) {
+      return p;
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}

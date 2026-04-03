@@ -77,6 +77,8 @@ export type SightseeingActivityDetailView = {
   /** Ordered pills: e.g. Best Seller, Free Cancellation, duration */
   badges: string[];
   description?: string;
+  /** Supplier `content.descriptions` / bullet lists when present */
+  highlights?: string[];
   rateOptions: SightseeingActivityDetailRate[];
   raw: unknown;
 };

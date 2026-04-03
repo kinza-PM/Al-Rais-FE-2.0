@@ -26,6 +26,10 @@ export type SightseeingYouMayAlsoLikeSectionProps = {
   /** Passed through `navigate` state as `context` for the detail page. */
   bookNowContext?: SightseeingRelatedBookContext;
   /**
+   * When set (e.g. login gate), invoked instead of the default navigate-to-detail behaviour.
+   */
+  onBookNowOverride?: (activity: SightseeingActivity) => void;
+  /**
    * `grid` — responsive row matching detail Figma (full content width).
    * `carousel` — horizontal scroll (e.g. narrow columns).
    */
@@ -54,6 +58,7 @@ export function SightseeingYouMayAlsoLikeSection({
   relatedActivities,
   excludeActivityId,
   bookNowContext,
+  onBookNowOverride,
   layout = "carousel",
 }: SightseeingYouMayAlsoLikeSectionProps) {
   const navigate = useNavigate();
@@ -64,6 +69,10 @@ export function SightseeingYouMayAlsoLikeSection({
 
   const onBookNow = React.useCallback(
     (activity: SightseeingActivity) => {
+      if (onBookNowOverride) {
+        onBookNowOverride(activity);
+        return;
+      }
       const range = defaultActivityAvailabilityDateRange(30);
       saveSightseeingCardPreview(activity.id, activity);
       navigate(`/sightseeing-detail/${encodeURIComponent(activity.id)}`, {
@@ -75,7 +84,7 @@ export function SightseeingYouMayAlsoLikeSection({
         },
       });
     },
-    [navigate, bookNowContext],
+    [navigate, bookNowContext, onBookNowOverride],
   );
 
   if (items.length === 0) return null;

@@ -1,4 +1,3 @@
-import React from "react";
 import {
   SIGHTSEEING_FIGMA_INCLUSION_ROWS,
   type SightseeingInclusionCell,

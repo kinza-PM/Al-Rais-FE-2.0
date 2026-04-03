@@ -1,5 +1,3 @@
-import React from "react";
-
 function InfoCircleIcon({ className }: { className?: string }) {
   return (
     <svg

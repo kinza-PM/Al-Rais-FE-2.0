@@ -17,22 +17,29 @@ import {
   SIGHTSEEING_FIGMA_TOUR_HIGHLIGHTS,
   type SightseeingDetailTabId,
 } from "../components/molecules/sightseeing/sightseeingDetailCopy";
-import { defaultActivityAvailabilityDateRange } from "../services/api/activitiesSearch";
+import {
+  defaultActivityAvailabilityDateRange,
+} from "../services/api/activitiesSearch";
 import type {
   SightseeingActivity,
   SightseeingActivityDetailRate,
 } from "../features/sightseeing/types";
 import {
   buildTravellersSummary,
+  clearPendingSightseeingDetailNav,
+  consumePendingSightseeingDetailNav,
   formatPickupDateLong,
   formatTime12Hour,
   isoDateOnly,
   pickRateKeyFromPreview,
   readSightseeingCardPreview,
+  savePendingSightseeingDetailNav,
   saveSightseeingCardPreview,
   type SightseeingBookingSummary,
   type SightseeingDetailNavState,
 } from "../features/sightseeing/sightseeingBooking";
+import { useAuth } from "../features/auth/hooks/useAuth";
+import LoginModal from "../components/common/LoginModal";
 import SearchableDropdown from "../components/common/SearchableDropdown";
 import TailiwindCustomDatePicker from "../components/common/TailiwindCustomDatePicker";
 import TailiwindCustomTimePicker from "../components/common/TailiwindCustomTimePicker";
@@ -201,7 +208,9 @@ const SightseeingActivityDetailPage: React.FC = () => {
   }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const state = (location.state || {}) as SightseeingDetailNavState;
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const activityCode = activityCodeParam
     ? decodeURIComponent(activityCodeParam)
@@ -239,6 +248,27 @@ const SightseeingActivityDetailPage: React.FC = () => {
       saveSightseeingCardPreview(activityCode, state.preview);
     }
   }, [activityCode, state.preview]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !activityCode) return;
+    const pending = consumePendingSightseeingDetailNav();
+    if (!pending?.activityId?.trim()) return;
+    const pid = pending.activityId.trim();
+    const norm = (s: string) => {
+      try {
+        return decodeURIComponent(s);
+      } catch {
+        return s;
+      }
+    };
+    if (norm(pid) === norm(activityCode)) return;
+    const preview = pending.navState?.preview;
+    if (preview) saveSightseeingCardPreview(pid, preview);
+    navigate(`/sightseeing-detail/${encodeURIComponent(pid)}`, {
+      replace: true,
+      state: pending.navState,
+    });
+  }, [isAuthenticated, activityCode, navigate]);
 
   const previewRateSyncedRef = useRef(false);
   useEffect(() => {
@@ -454,6 +484,10 @@ const SightseeingActivityDetailPage: React.FC = () => {
   }, []);
 
   const onBookNow = useCallback(() => {
+    if (!isAuthenticated) {
+      setLoginModalOpen(true);
+      return;
+    }
     if (!pickupTime24.trim()) {
       toast.error("Please select a pick-up time");
       return;
@@ -534,6 +568,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
     range.to,
     state.context,
     effectivePreview,
+    isAuthenticated,
   ]);
 
   const aboutParagraphs = useMemo(() => {
@@ -548,6 +583,37 @@ const SightseeingActivityDetailPage: React.FC = () => {
     }
     return SIGHTSEEING_FIGMA_ABOUT_PARAGRAPHS;
   }, [detail?.description]);
+
+  const tourHighlights = useMemo(() => {
+    const h = detail?.highlights;
+    if (h && h.length > 0) return h;
+    return SIGHTSEEING_FIGMA_TOUR_HIGHLIGHTS;
+  }, [detail?.highlights]);
+
+  const handleRelatedBookNow = useCallback(
+    (activity: SightseeingActivity) => {
+      const range = defaultActivityAvailabilityDateRange(30);
+      const navPayload: SightseeingDetailNavState = {
+        from: range.from,
+        to: range.to,
+        preview: activity,
+        context: state.context,
+      };
+      if (!isAuthenticated) {
+        savePendingSightseeingDetailNav({
+          activityId: activity.id,
+          navState: navPayload,
+        });
+        setLoginModalOpen(true);
+        return;
+      }
+      saveSightseeingCardPreview(activity.id, activity);
+      navigate(`/sightseeing-detail/${encodeURIComponent(activity.id)}`, {
+        state: navPayload,
+      });
+    },
+    [isAuthenticated, navigate, state.context],
+  );
 
   const tabPanel = () => {
     if (activeTab === "overview") {
@@ -581,9 +647,9 @@ const SightseeingActivityDetailPage: React.FC = () => {
               Tour highlights
             </h2>
             <ul className="m-0 flex list-none flex-col gap-[10px] p-0">
-              {SIGHTSEEING_FIGMA_TOUR_HIGHLIGHTS.map((line, i) => (
+              {tourHighlights.map((line, i) => (
                 <li
-                  key={i}
+                  key={`${i}-${line.slice(0, 24)}`}
                   className="flex items-start gap-[10px]"
                 >
                   <span
@@ -979,11 +1045,19 @@ const SightseeingActivityDetailPage: React.FC = () => {
               relatedActivities={youMayAlsoLikeCatalogue}
               excludeActivityId={activityCode}
               bookNowContext={state.context}
+              onBookNowOverride={handleRelatedBookNow}
               layout="grid"
             />
           </div>
         </div>
       </div>
+      <LoginModal
+        showModal={loginModalOpen}
+        onClose={() => {
+          setLoginModalOpen(false);
+          clearPendingSightseeingDetailNav();
+        }}
+      />
     </div>
   );
 };

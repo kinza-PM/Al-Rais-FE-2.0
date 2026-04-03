@@ -7,7 +7,14 @@ import type {
   SightseeingActivity,
   SightseeingQuickFilterId,
 } from "../../../features/sightseeing/types";
-import { saveSightseeingCardPreview } from "../../../features/sightseeing/sightseeingBooking";
+import {
+  clearPendingSightseeingDetailNav,
+  consumePendingSightseeingDetailNav,
+  savePendingSightseeingDetailNav,
+  saveSightseeingCardPreview,
+} from "../../../features/sightseeing/sightseeingBooking";
+import { useAuth } from "../../../features/auth/hooks/useAuth";
+import LoginModal from "../../common/LoginModal";
 import { useActivityAvailability } from "../../../hooks/sightseeing/useActivityAvailability";
 import { defaultActivityAvailabilityDateRange } from "../../../services/api/activitiesSearch";
 import Loader from "../../atoms/Loader";
@@ -123,7 +130,9 @@ const LIST_PAGE_SIZE = 24;
 const SightseeingListing: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const navState = (location.state || {}) as LocationState;
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
 
   const [toolbar, setToolbar] = useState<SightseeingToolbarValues>(() =>
     defaultToolbar(navState),
@@ -143,6 +152,19 @@ const SightseeingListing: React.FC = () => {
     navState.destinationCode,
     navState.category,
   ]);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const pending = consumePendingSightseeingDetailNav();
+    if (!pending?.activityId?.trim()) return;
+    const preview = pending.navState?.preview;
+    if (preview) {
+      saveSightseeingCardPreview(pending.activityId.trim(), preview);
+    }
+    navigate(`/sightseeing-detail/${encodeURIComponent(pending.activityId.trim())}`, {
+      state: pending.navState,
+    });
+  }, [isAuthenticated, navigate]);
 
   const destCode = toolbar.destinationCode?.trim() ?? "";
   const useLiveAvailability = destCode.length > 0;
@@ -219,24 +241,30 @@ const SightseeingListing: React.FC = () => {
   const handleBookNow = useCallback(
     (activity: SightseeingActivity) => {
       const range = defaultActivityAvailabilityDateRange(30);
-      saveSightseeingCardPreview(activity.id, activity);
-      navigate(
-        `/sightseeing-detail/${encodeURIComponent(activity.id)}`,
-        {
-          state: {
-            from: range.from,
-            to: range.to,
-            preview: activity,
-            context: {
-              country: toolbar.country,
-              city: toolbar.city,
-              destinationCode: destCode,
-            },
-          },
+      const navState = {
+        from: range.from,
+        to: range.to,
+        preview: activity,
+        context: {
+          country: toolbar.country,
+          city: toolbar.city,
+          destinationCode: destCode,
         },
-      );
+      };
+      if (!isAuthenticated) {
+        savePendingSightseeingDetailNav({
+          activityId: activity.id,
+          navState,
+        });
+        setLoginModalOpen(true);
+        return;
+      }
+      saveSightseeingCardPreview(activity.id, activity);
+      navigate(`/sightseeing-detail/${encodeURIComponent(activity.id)}`, {
+        state: navState,
+      });
     },
-    [navigate, toolbar.country, toolbar.city, destCode],
+    [navigate, toolbar.country, toolbar.city, destCode, isAuthenticated],
   );
 
   const showLiveAvailabilityLoader =
@@ -244,6 +272,13 @@ const SightseeingListing: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] pb-12">
+      <LoginModal
+        showModal={loginModalOpen}
+        onClose={() => {
+          setLoginModalOpen(false);
+          clearPendingSightseeingDetailNav();
+        }}
+      />
       <Loader
         show={showLiveAvailabilityLoader}
         label="Loading activities from supplier…"

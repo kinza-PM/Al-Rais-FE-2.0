@@ -187,7 +187,7 @@ export type SightseeingGuestReviewsSectionProps = {
 export function SightseeingGuestReviewsSection({
   id,
   onReadAllReviews,
-  excludeActivityId,
+  excludeActivityId: _excludeActivityId,
 }: SightseeingGuestReviewsSectionProps) {
   const { scoreDisplay, reviewCount } = SIGHTSEEING_FIGMA_GUEST_REVIEWS_SUMMARY;
 

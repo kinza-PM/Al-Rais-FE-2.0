@@ -9,7 +9,6 @@ import {
   useActivitiesConfirmBooking,
   useActivitiesPreConfirmBooking,
 } from "../hooks/sightseeing/useActivitiesBooking";
-import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import { appendLocalSightseeingBooking } from "../utils/sightseeingLocalBookings";
 import { SightseeingFreeCancellationBanner } from "../components/molecules/sightseeing/SightseeingFreeCancellationBanner";
 import { SightseeingBookingAdultTravelersSection } from "../components/molecules/sightseeing/SightseeingBookingAdultTravelersSection";
@@ -17,6 +16,10 @@ import {
   SightseeingGetProtectionSection,
   type SightseeingProtectionChoice,
 } from "../components/molecules/sightseeing/SightseeingGetProtectionSection";
+import SightseeingBookingPaymentSection from "../components/molecules/sightseeing/SightseeingBookingPaymentSection";
+import SightseeingBookingETicketSection from "../components/molecules/sightseeing/SightseeingBookingETicketSection";
+import LoginModal from "../components/common/LoginModal";
+import { useAuth } from "../features/auth/hooks/useAuth";
 import {
   buildActivityBookingHolderFromLeadTraveler,
   createEmptyAdultTravelerForm,
@@ -107,10 +110,13 @@ function SummaryRow({
   );
 }
 
+const STEPS = ["Travellers", "Payment", "Ticket"] as const;
+
 const SightseeingBookingPage: React.FC = () => {
   const { activityCode: rawCode } = useParams<{ activityCode: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const pageState = location.state as SightseeingBookingPageState | null;
 
   const activityCode = rawCode ? decodeURIComponent(rawCode) : "";
@@ -129,10 +135,16 @@ const SightseeingBookingPage: React.FC = () => {
         : [],
   );
 
+  const [currentStep, setCurrentStep] = useState(0);
+  const [checkoutProtection, setCheckoutProtection] =
+    useState<SightseeingProtectionChoice | null>(null);
+  const [ticketSnapshot, setTicketSnapshot] = useState<{
+    bookingRef: string;
+    clientReference: string;
+  } | null>(null);
+
   const preConfirmMutation = useActivitiesPreConfirmBooking();
   const confirmMutation = useActivitiesConfirmBooking();
-  const bookingInFlight =
-    preConfirmMutation.isPending || confirmMutation.isPending;
 
   useEffect(() => {
     if (adultCount < 1) return;
@@ -170,8 +182,8 @@ const SightseeingBookingPage: React.FC = () => {
     [],
   );
 
-  const onReserveProtection = useCallback(
-    async (protection: SightseeingProtectionChoice) => {
+  const onContinueToPayment = useCallback(
+    (protection: SightseeingProtectionChoice) => {
       if (!summary) return;
 
       const leadErr = validateLeadTravelerForActivityBooking(travelers[0]);
@@ -194,58 +206,86 @@ const SightseeingBookingPage: React.FC = () => {
         return;
       }
 
-      const holder = buildActivityBookingHolderFromLeadTraveler(travelers[0]!);
-      const clientReference = newSightseeingClientReference();
-      const baseBody = buildActivitiesPreConfirmBody({
-        clientReference,
-        rateKey,
-        from: tourDate,
-        to: tourDate,
-        holder,
-      });
-
-      try {
-        const pre = await preConfirmMutation.mutateAsync(baseBody);
-        const confirmBody = mergeActivitiesConfirmBodyFromPreConfirm(
-          baseBody,
-          pre,
-        );
-        const confirmed = await confirmMutation.mutateAsync(confirmBody);
-        const ref =
-          extractActivityBookingReference(confirmed) ??
-          extractActivityBookingReference(pre);
-        const bookingRefForList = (ref ?? clientReference).trim();
-        appendLocalSightseeingBooking({
-          id: `local-${clientReference}`,
-          status: "Confirmed",
-          activityTitle: summary.title,
-          activityCode: summary.activityCode,
-          tourDateIso: tourDate,
-          pickupTimeDisplay: summary.pickupTimeDisplay,
-          travellersSummary: summary.travellersSummary,
-          packageSummary: summary.packageSummary,
-          bookingRef: bookingRefForList,
-          clientReference,
-          currency: summary.currency,
-          grandTotal: summary.grandTotal,
-        });
-        const prot =
-          protection === "damage"
-            ? "Rental Car Damage Protection selected."
-            : "Continuing without protection.";
-        toast.success(`Booking confirmed. ${prot}`);
-      } catch (err) {
-        const msg = extractErrorFromAxiosApiError(err);
-        toast.error(msg || "Booking could not be completed. Please try again.");
-      }
+      setCheckoutProtection(protection);
+      setCurrentStep(1);
     },
-    [
-      summary,
-      travelers,
-      preConfirmMutation,
-      confirmMutation,
-    ],
+    [summary, travelers],
   );
+
+  const completeSupplierBookingAfterPayment = useCallback(async () => {
+    if (!summary || !checkoutProtection) {
+      throw new Error("Booking summary is incomplete. Please start again.");
+    }
+
+    const leadErr = validateLeadTravelerForActivityBooking(travelers[0]);
+    if (leadErr) {
+      throw new Error(leadErr);
+    }
+
+    const rateKey = summary.draft.selectedRateKey?.trim() ?? "";
+    if (!rateKey) {
+      throw new Error("No activity rate selected.");
+    }
+
+    const tourDate = isoDateOnly(summary.draft.selectedTourDate);
+    if (!tourDate) {
+      throw new Error("Pickup date is missing.");
+    }
+
+    const holder = buildActivityBookingHolderFromLeadTraveler(travelers[0]!);
+    const clientReference = newSightseeingClientReference();
+    const baseBody = buildActivitiesPreConfirmBody({
+      clientReference,
+      rateKey,
+      from: tourDate,
+      to: tourDate,
+      holder,
+    });
+
+    const pre = await preConfirmMutation.mutateAsync(baseBody);
+    const confirmBody = mergeActivitiesConfirmBodyFromPreConfirm(
+      baseBody,
+      pre,
+    );
+    const confirmed = await confirmMutation.mutateAsync(confirmBody);
+    const ref =
+      extractActivityBookingReference(confirmed) ??
+      extractActivityBookingReference(pre);
+    const bookingRefForList = (ref ?? clientReference).trim();
+
+    appendLocalSightseeingBooking({
+      id: `local-${clientReference}`,
+      status: "Confirmed",
+      activityTitle: summary.title,
+      activityCode: summary.activityCode,
+      tourDateIso: tourDate,
+      pickupTimeDisplay: summary.pickupTimeDisplay,
+      travellersSummary: summary.travellersSummary,
+      packageSummary: summary.packageSummary,
+      bookingRef: bookingRefForList,
+      clientReference,
+      currency: summary.currency,
+      grandTotal: summary.grandTotal,
+    });
+
+    const prot =
+      checkoutProtection === "damage"
+        ? "Rental Car Damage Protection selected."
+        : "Continuing without protection.";
+    toast.success(`Booking confirmed. ${prot}`);
+
+    setTicketSnapshot({
+      bookingRef: bookingRefForList,
+      clientReference,
+    });
+    setCurrentStep(2);
+  }, [
+    summary,
+    checkoutProtection,
+    travelers,
+    preConfirmMutation,
+    confirmMutation,
+  ]);
 
   if (!summary || summary.activityCode !== activityCode) {
     return (
@@ -272,99 +312,156 @@ const SightseeingBookingPage: React.FC = () => {
     .filter(Boolean)
     .join(" • ");
 
+  const lead = travelers[0];
+  const leadTravelerDisplayName = lead?.fullName?.trim() || "—";
+
+  const stepProgress =
+    STEPS.length > 1 ? (currentStep / (STEPS.length - 1)) * 100 : 0;
+
   return (
     <div className="min-h-screen bg-white pb-16 font-[Inter,sans-serif]">
+      {!isAuthenticated ? <LoginModal showModal /> : null}
+
       <div className="mx-auto w-full max-w-[640px] px-6 pt-10 sm:px-8">
-        <button
-          type="button"
-          onClick={handleChange}
-          className="mb-8 text-left text-[14px] font-medium text-[#2351A3] hover:underline"
-        >
-          ← Back to activity
-        </button>
+        {currentStep < 2 ? (
+          <button
+            type="button"
+            onClick={() => {
+              if (currentStep === 1) {
+                setCurrentStep(0);
+                return;
+              }
+              handleChange();
+            }}
+            className="mb-8 text-left text-[14px] font-medium text-[#2351A3] hover:underline"
+          >
+            {currentStep === 1 ? "← Back to travellers" : "← Back to activity"}
+          </button>
+        ) : null}
 
-        <h1 className="text-[22px] font-bold tracking-tight text-[#0A0C0F] sm:text-[26px]">
-          Booking summary
-        </h1>
-        <p className="mt-2 text-[14px] text-[#64748B]">
-          Review your selections before checkout.
-        </p>
-
-        <div
-          className="mt-8 w-full max-w-[576px] rounded-[16px] border border-[#E4E4E7] bg-[#F2F2F3] p-[10px]"
-          style={{ minHeight: 445 }}
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="mb-8">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[#E8ECF0]">
             <div
-              className="h-[143px] w-full shrink-0 overflow-hidden rounded-[16px] bg-[#D9D9D9] sm:w-[190px]"
-            >
-              {summary.imageSrc ? (
-                <img
-                  src={summary.imageSrc}
-                  alt=""
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
-            </div>
-            <div className="min-w-0 flex-1 pt-1 sm:pt-0">
-              <h2 className="text-[15px] font-bold leading-snug text-[#0A0C0F] sm:text-[16px]">
-                {summary.title}
-              </h2>
-              <span className="mt-2 inline-block max-w-full truncate rounded-full bg-[#B9D1F9] px-3 py-1.5 text-[12px] font-semibold leading-tight text-[#345995] sm:text-[13px]">
-                {summary.categoryLabel}
-              </span>
-              <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-medium text-[#64748B] sm:text-[14px]">
-                <span className="inline-flex items-center gap-2">
-                  <ClockMetaIcon className="shrink-0" />
-                  {summary.durationLabel}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <PeopleMetaIcon className="shrink-0" />
-                  {summary.groupLabel}
-                </span>
-              </div>
-            </div>
+              className="h-full rounded-full bg-[#2351A3] transition-[width] duration-300"
+              style={{ width: `${stepProgress}%` }}
+            />
           </div>
-
-          <div className="mt-2 px-1 sm:px-2">
-            <SummaryRow
-              label="Package"
-              value={summary.packageSummary}
-              onChange={handleChange}
-            />
-            <SummaryRow
-              label="Travelers"
-              value={summary.travellersSummary}
-              onChange={handleChange}
-            />
-            <SummaryRow
-              label="Pickup date & time"
-              value={pickupLine || "—"}
-              onChange={handleChange}
-            />
-            <SummaryRow
-              label="Enhancements"
-              value={summary.enhancementsSummary}
-              onChange={handleChange}
-            />
+          <div className="mt-3 flex justify-between text-[11px] font-medium text-[#64748B]">
+            {STEPS.map((label, i) => (
+              <span
+                key={label}
+                className={
+                  i === currentStep ? "font-bold text-[#2351A3]" : undefined
+                }
+              >
+                {i + 1}. {label}
+              </span>
+            ))}
           </div>
         </div>
 
-        <SightseeingFreeCancellationBanner className="mt-4 max-w-[576px]" />
-
-        {adultCount >= 1 && travelers.length > 0 ? (
+        {currentStep === 0 ? (
           <>
-            <SightseeingBookingAdultTravelersSection
-              adultCount={adultCount}
-              travelers={travelers}
-              onPatchTraveler={patchTraveler}
-            />
-            <SightseeingGetProtectionSection
-              onReserve={onReserveProtection}
-              reserveDisabled={bookingInFlight}
-              reserveLabel={bookingInFlight ? "Reserving…" : undefined}
-            />
+            <h1 className="text-[22px] font-bold tracking-tight text-[#0A0C0F] sm:text-[26px]">
+              Booking summary
+            </h1>
+            <p className="mt-2 text-[14px] text-[#64748B]">
+              Add traveller details, then continue to secure payment.
+            </p>
+
+            <div
+              className="mt-8 w-full max-w-[576px] rounded-[16px] border border-[#E4E4E7] bg-[#F2F2F3] p-[10px]"
+              style={{ minHeight: 445 }}
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div className="h-[143px] w-full shrink-0 overflow-hidden rounded-[16px] bg-[#D9D9D9] sm:w-[190px]">
+                  {summary.imageSrc ? (
+                    <img
+                      src={summary.imageSrc}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : null}
+                </div>
+                <div className="min-w-0 flex-1 pt-1 sm:pt-0">
+                  <h2 className="text-[15px] font-bold leading-snug text-[#0A0C0F] sm:text-[16px]">
+                    {summary.title}
+                  </h2>
+                  <span className="mt-2 inline-block max-w-full truncate rounded-full bg-[#B9D1F9] px-3 py-1.5 text-[12px] font-semibold leading-tight text-[#345995] sm:text-[13px]">
+                    {summary.categoryLabel}
+                  </span>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[13px] font-medium text-[#64748B] sm:text-[14px]">
+                    <span className="inline-flex items-center gap-2">
+                      <ClockMetaIcon className="shrink-0" />
+                      {summary.durationLabel}
+                    </span>
+                    <span className="inline-flex items-center gap-2">
+                      <PeopleMetaIcon className="shrink-0" />
+                      {summary.groupLabel}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-2 px-1 sm:px-2">
+                <SummaryRow
+                  label="Package"
+                  value={summary.packageSummary}
+                  onChange={handleChange}
+                />
+                <SummaryRow
+                  label="Travelers"
+                  value={summary.travellersSummary}
+                  onChange={handleChange}
+                />
+                <SummaryRow
+                  label="Pickup date & time"
+                  value={pickupLine || "—"}
+                  onChange={handleChange}
+                />
+                <SummaryRow
+                  label="Enhancements"
+                  value={summary.enhancementsSummary}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            <SightseeingFreeCancellationBanner className="mt-4 max-w-[576px]" />
+
+            {adultCount >= 1 && travelers.length > 0 ? (
+              <>
+                <SightseeingBookingAdultTravelersSection
+                  adultCount={adultCount}
+                  travelers={travelers}
+                  onPatchTraveler={patchTraveler}
+                />
+                <SightseeingGetProtectionSection
+                  onReserve={onContinueToPayment}
+                  reserveDisabled={false}
+                  reserveLabel="Continue to payment"
+                />
+              </>
+            ) : null}
           </>
+        ) : null}
+
+        {currentStep === 1 && checkoutProtection ? (
+          <SightseeingBookingPaymentSection
+            summary={summary}
+            onPaid={completeSupplierBookingAfterPayment}
+            onBack={() => setCurrentStep(0)}
+          />
+        ) : null}
+
+        {currentStep === 2 && ticketSnapshot && checkoutProtection ? (
+          <SightseeingBookingETicketSection
+            summary={summary}
+            bookingReference={ticketSnapshot.bookingRef}
+            clientReference={ticketSnapshot.clientReference}
+            leadTravelerDisplayName={leadTravelerDisplayName}
+            protectionChoice={checkoutProtection}
+          />
         ) : null}
       </div>
     </div>

@@ -575,6 +575,70 @@ function unwrapDetailPayload(raw: unknown): unknown {
   return raw;
 }
 
+function extractActivityHighlights(
+  content: Record<string, unknown> | null,
+): string[] {
+  if (!content) return [];
+  const descriptions = content.descriptions;
+  if (Array.isArray(descriptions)) {
+    const out: string[] = [];
+    for (const d of descriptions) {
+      const dr = asRecord(d);
+      if (!dr) continue;
+      const typ = String(dr.type ?? "").toLowerCase();
+      const text = String(
+        dr.text ?? dr.description ?? dr.content ?? dr.body ?? "",
+      ).trim();
+      if (!text) continue;
+      if (
+        typ.includes("highlight") ||
+        typ.includes("bullet") ||
+        typ.includes("feature") ||
+        typ.includes("selling")
+      ) {
+        out.push(text);
+      }
+    }
+    if (out.length) return out;
+  }
+  for (const key of ["bulletPoints", "highlights", "features", "sellingPoints"]) {
+    const bullet = content[key];
+    if (Array.isArray(bullet)) {
+      const lines = bullet
+        .map((x) => {
+          if (typeof x === "string") return x.trim();
+          const o = asRecord(x);
+          return String(o?.text ?? o?.description ?? o?.title ?? "").trim();
+        })
+        .filter(Boolean);
+      if (lines.length) return lines;
+    }
+  }
+  const segGroups = content.segmentationGroups;
+  if (Array.isArray(segGroups)) {
+    const out: string[] = [];
+    for (const g of segGroups) {
+      const gr = asRecord(g);
+      if (!gr) continue;
+      const name = String(gr.name ?? gr.title ?? "").trim();
+      const items = gr.items ?? gr.segments;
+      if (Array.isArray(items)) {
+        for (const it of items) {
+          const ir = asRecord(it);
+          const t = String(
+            ir?.name ?? ir?.title ?? ir?.description ?? ir?.text ?? "",
+          ).trim();
+          if (t) out.push(name ? `${name}: ${t}` : t);
+        }
+      } else if (name) {
+        out.push(name);
+      }
+    }
+    if (out.length) return out;
+  }
+  return [];
+}
+
 /**
  * Maps Hotel Beds `activitiesDetail` JSON to a small UI model (rateKey pickers for preconfirm/confirm).
  */
@@ -595,6 +659,7 @@ export function mapActivitiesDetailResponse(
       reviewCount: 0,
       durationLabel: "",
       badges: [],
+      highlights: [],
       rateOptions: [],
       raw,
     };
@@ -627,6 +692,7 @@ export function mapActivitiesDetailResponse(
       : undefined;
 
   const badges = buildDetailBadges(ar, content, durationLabel);
+  const highlights = extractActivityHighlights(content);
   if (Array.isArray(modalities)) {
     for (const m of modalities) {
       const mo = asRecord(m);
@@ -673,6 +739,7 @@ export function mapActivitiesDetailResponse(
     durationLabel,
     badges,
     description,
+    highlights: highlights.length > 0 ? highlights : undefined,
     rateOptions,
     raw,
   };
