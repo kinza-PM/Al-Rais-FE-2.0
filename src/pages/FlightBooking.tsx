@@ -58,8 +58,9 @@ function buildFlightFromOffer(offerData: any) {
   const cabinMap: Record<string, string> = {
     Economy: "1",
     PremiumEconomy: "2",
-    Business: "3",
     First: "4",
+    Business: "3",
+ 
   };
   const selectedCabinClassId = cabinMap[cabinClass] ?? "1";
   const fromOption = fromCode

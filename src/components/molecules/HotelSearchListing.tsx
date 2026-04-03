@@ -1,11 +1,16 @@
-import React, { useMemo, useEffect, useRef } from "react";
+import React, {
+  useMemo,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+  useState,
+  useCallback,
+} from "react";
 
 import "../../assets/css/travel.css";
 import Info from "../../assets/svgs/info-black.svg";
 import { Grid, Drawer, Button } from "antd";
 import CustomButton from "../common/CustomButton";
-
-import { useState, useCallback } from "react";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 
 import type { PassengerSchema } from "../../features/flights/types";
@@ -74,6 +79,24 @@ const HotelSearchListing: React.FC = () => {
   const onClose = () => setOpen(false);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
+
+  const hotelPageWrapRef = useRef<HTMLDivElement>(null);
+  const hotelSearchFormStickyRef = useRef<HTMLDivElement>(null);
+
+  /** Keeps sidebar `position: sticky` below the sticky search card (same idea as flight search). */
+  useLayoutEffect(() => {
+    const form = hotelSearchFormStickyRef.current;
+    const wrap = hotelPageWrapRef.current;
+    if (!form || !wrap) return;
+    const syncHeight = () => {
+      const h = Math.ceil(form.getBoundingClientRect().height);
+      wrap.style.setProperty("--hotel-search-sticky-h", `${h}px`);
+    };
+    syncHeight();
+    const ro = new ResizeObserver(syncHeight);
+    ro.observe(form);
+    return () => ro.disconnect();
+  }, []);
 
   const { hotel, setHotel, hotelView, setHotelView } = useHotelStore();
 
@@ -423,8 +446,14 @@ const HotelSearchListing: React.FC = () => {
       />
       <div className="topHeaderSetting"></div>
 
-      <div className="flightDetailTemplateWrap hotel-search-listing-page">
-        <div className="bottomHeaderSetting hotelSearchFilterCard hotel-search-form-sticky">
+      <div
+        ref={hotelPageWrapRef}
+        className="flightDetailTemplateWrap hotel-search-listing-page"
+      >
+        <div
+          ref={hotelSearchFormStickyRef}
+          className="bottomHeaderSetting hotelSearchFilterCard hotel-search-form-sticky"
+        >
           {/* Grid: Row 1 (View, Country, City, Dates) | Row 2 (Nationality, Travellers, Star Rating, Search) - widths aligned */}
           <div className="hotel-filter-grid">
             <div className="hotel-filter-view w-full min-w-0">

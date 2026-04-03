@@ -545,6 +545,11 @@ input[type="number"] {
   margin-bottom: 24px;
 }
 
+/* Fallback until JS sets --hotel-search-sticky-h (search card height) */
+.hotel-search-listing-page {
+  --hotel-search-sticky-h: 220px;
+}
+
 /* Hotel search listing: sticky search inputs + underline divider (NOT home) */
 .hotel-search-listing-page .hotel-search-form-sticky {
   position: sticky;
@@ -1105,18 +1110,24 @@ input[type="number"] {
   gap: 16px;
 }
 
-/* Hotel search (desktop): sidebar margin + sticky filters + internal scroll */
-@media (min-width: 1024px) {
+/* Hotel search (desktop): sidebar margin + sticky filters below sticky search card */
+/* 992px matches Ant Design Grid `lg` (sidebar visible same breakpoint as screens.lg) */
+@media (min-width: 992px) {
   .hotel-search-listing-page .contentWrapFlex {
     margin-left: 30px;
     align-items: flex-start;
   }
 
+  .hotel-search-listing-page .contentWrapFlex .flightDetailMainContent {
+    flex: 1;
+    min-width: 0;
+  }
+
   .hotel-search-listing-page .contentWrapFlex .flightDetailFilter {
     position: sticky;
-    top: 16px;
+    top: calc(var(--hotel-search-sticky-h, 220px) + 12px);
     align-self: flex-start;
-    max-height: calc(100dvh - 24px);
+    max-height: calc(100dvh - var(--hotel-search-sticky-h, 220px) - 36px);
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
