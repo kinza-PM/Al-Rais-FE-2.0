@@ -7,7 +7,7 @@ import HotelSummaryCard from "../atoms/HotelSummaryCard";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelFareRule from "../atoms/HotelFareRule";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
-import SavedTravelersSection from "./SavedTravelersSection";
+// import SavedTravelersSection from "./SavedTravelersSection";
 import {
   formatDateToLocalISO,
   parseLocalDateString,
@@ -157,7 +157,7 @@ export default function HotelBookingBookSection({
     <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
-          <SavedTravelersSection />
+          {/* <SavedTravelersSection /> */}
           {flatPassengers.map(
             ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
               <React.Fragment key={p.passengerKey || flatIdx}>

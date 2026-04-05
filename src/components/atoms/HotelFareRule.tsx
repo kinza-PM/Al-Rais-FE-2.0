@@ -69,7 +69,7 @@ export default function HotelFareRule({
               hotelDetail={hotelDetail}
               selectedRooms={selectedRooms}
               currency={currency}
-              // totalPrice={totalPrice}
+            // totalPrice={totalPrice}
             />
           </div>
         </div>
