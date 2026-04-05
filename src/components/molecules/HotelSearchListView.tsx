@@ -5,6 +5,7 @@ import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
+import { aggregateHotelTaxesFromRoomArray } from "../../utils/hotelBookingHelper";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
 import {
@@ -617,7 +618,13 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         <HotelPriceSummaryTooltip
                           totalPrice={price}
                           currency={currency}
-                          taxes={bestRoom?.roomRate?.taxes || []}
+                          taxes={aggregateHotelTaxesFromRoomArray(
+                            Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
+                              ? hotel.rooms
+                              : bestRoom
+                                ? [bestRoom]
+                                : [],
+                          )}
                         />
                       </div>
 

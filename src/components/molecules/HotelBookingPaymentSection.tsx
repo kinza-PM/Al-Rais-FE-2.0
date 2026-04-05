@@ -89,6 +89,7 @@ export default function HotelBookingPaymentSection({
     isOpen: boolean;
     type: "terms" | "privacy";
   }>({ isOpen: false, type: "terms" });
+  const [openPrice, setOpenPrice] = useState(false);
 
   const { mutateAsync, isPending } = useHotelReservationBooking();
   const { mutateAsync: paymentMutateAsync, isPending: paymentPending } =
@@ -783,7 +784,13 @@ export default function HotelBookingPaymentSection({
           </div>
         )}
 
-        <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
+        <HotelPriceBreakdown
+          open={openPrice}
+          onToggleOpen={() => setOpenPrice((v) => !v)}
+          totalPrice={totalPrice}
+          currency={currency}
+          selectedRooms={selectedRooms}
+        />
 
         <div className="mt-16 flex flex-col items-center">
           <Button

@@ -73,6 +73,7 @@ export default function HotelBookingReviewSection({
     isOpen: boolean;
     type: "terms" | "privacy" | "cancellation";
   }>({ isOpen: false, type: "terms" });
+  const [openPrice, setOpenPrice] = useState(false);
 
   const roomsFromPayload = hotelBookingPayload?.rooms ?? [];
   const flatPassengers = roomsFromPayload.flatMap((room, roomIdx) =>
@@ -362,7 +363,13 @@ export default function HotelBookingReviewSection({
             currency={currency}
             hotelDetail={hotelDetail}
           />
-          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
+          <HotelPriceBreakdown
+            open={openPrice}
+            onToggleOpen={() => setOpenPrice((v) => !v)}
+            totalPrice={totalPrice}
+            currency={currency}
+            selectedRooms={selectedRooms}
+          />
           <div className="mt-2">
             <Checkbox
               checked={isTermsChecked}

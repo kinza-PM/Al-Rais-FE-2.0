@@ -67,6 +67,7 @@ export default function HotelBookingBookSection({
   const [validationErrors, setValidationErrors] =
     useState<HotelPassengerFieldErrors>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+  const [openPrice, setOpenPrice] = useState(false);
 
   // const { mutateAsync, isPending } = useHotelReservationBooking();
   const rooms = hotelBookingPayload?.rooms ?? [];
@@ -869,7 +870,13 @@ export default function HotelBookingBookSection({
             currency={currency}
             hotelDetail={hotelDetail}
           />
-          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
+          <HotelPriceBreakdown
+            open={openPrice}
+            onToggleOpen={() => setOpenPrice((v) => !v)}
+            totalPrice={totalPrice}
+            currency={currency}
+            selectedRooms={selectedRooms}
+          />
 
           <div className="mt-6 flex justify-center">
             <Button
