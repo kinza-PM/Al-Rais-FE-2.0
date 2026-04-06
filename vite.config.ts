@@ -6,7 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    allowedHosts: ["pyritic-juliane-introductory.ngrok-free.dev"],
+    allowedHosts: ["spectroheliographic-mariko-subterrestrial.ngrok-free.dev"],
     host: true,
     proxy: {
       "/api/hotel-proxy": {
