@@ -123,7 +123,7 @@ export function usePayFortTokenization() {
               ) {
                 return;
               }
-
+              // console.log("payload", payload);
               // Verify signature if provided in payload
               if (payload && payload.signature) {
                 const ok = PayFortUtils.verifyResponseSignature(

@@ -49,7 +49,7 @@ const HotelBooking = () => {
   const { data: countriesOptions } = useCountriesOptions();
   const progressPct =
     steps.length > 1 ? (currentStep / (steps.length - 1)) * 100 : 0;
-  console.log("state", state);
+  // console.log("state", state);
   const { mutateAsync, isPending } = useHotelPreBooking();
   const bookingParams = state.bookingParams ?? hotelFromStore ?? null;
   const { user } = useAuth(); // isAuthenticated already use ho raha hai, user bhi lo

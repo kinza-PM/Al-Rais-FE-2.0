@@ -65,6 +65,11 @@ export default function HotelBookingReviewSection({
   currency = "AED",
   hotelBookingPayload,
 }: HotelBookingReviewSectionProps) {
+  const formatGuests = (count?: number) => {
+    if (!count || count <= 0) return "—";
+    return `${String(count).padStart(2, "0")} guest${count > 1 ? "s" : ""}`;
+  };
+
   const [isTermsChecked, setIsTermsChecked] = useState(false);
   const [showTermsError, setShowTermsError] = useState(false);
   const [isCancellationChecked, setIsCancellationChecked] = useState(false);
@@ -236,8 +241,9 @@ export default function HotelBookingReviewSection({
                       ).toFixed(2)}`
                       : "Free cancellation";
 
-                  const totalGuests =
-                    (bookingInfo?.adults ?? 0) + (bookingInfo?.children ?? 0);
+                  const adults = Number(bookingInfo?.adults ?? 0) || 0;
+                  const children = Number(bookingInfo?.children ?? 0) || 0;
+                  const totalGuests = adults + children;
 
                   return (
                     <div
@@ -268,12 +274,7 @@ export default function HotelBookingReviewSection({
                             Max no. of guests/room
                           </div>
                           <div className="text-[#0A0C0F] text-sm font-medium">
-                            {totalGuests > 0
-                              ? `${totalGuests
-                                .toString()
-                                .padStart(2, "0")} guest${totalGuests > 1 ? "s" : ""
-                              }`
-                              : "—"}
+                            {formatGuests(totalGuests)}
                           </div>
                         </div>
 

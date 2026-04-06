@@ -226,14 +226,14 @@ export default function HotelBookingPaymentSection({
       const expiry = cardDetails.expiry || ""; // YYMM
       const cvv = cardDetails.cvv || "";
       const cardHolder = cardDetails.holderName || "Customer";
-
+      // console.log("cleanCardNumber", cleanCardNumber);
       const payload = await initiateTokenization({
         cardNumber: cleanCardNumber,
         expiry,
         cvv,
         cardHolder,
       });
-
+      // console.log("payload", payload);
       if (payload?.response_message === "Success") {
         const token = payload?.token_name;
         await handlePayfortHotelPayment(token, reservation);
@@ -436,6 +436,7 @@ export default function HotelBookingPaymentSection({
           paymentPage={true}
           hotelDetail={hotelDetail}
           bookingInfo={bookingInfo}
+          selectedRooms={selectedRooms}
         />
 
         <div className="mt-6">
