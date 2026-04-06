@@ -1,6 +1,9 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
+  /** Cognito user pool id (set in `.env.development` / `.env.dev` for dev). */
+  readonly VITE_AWS_USER_POOLS_ID?: string;
+  readonly VITE_AWS_USER_POOLS_WEB_CLIENT_ID?: string;
   readonly VITE_API_BASE?: string;
   readonly VITE_FLIGHT_API_BASE?: string;
   readonly VITE_PAYMENT_API_BASE?: string;
