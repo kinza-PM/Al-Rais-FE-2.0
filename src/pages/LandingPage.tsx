@@ -34,7 +34,9 @@ const LandingPage: React.FC = () => {
 
   const [currentIndex, setCurrentIndex] = useState(0);
   // Lifted hero tab state so top buttons can control Flights/Hotels search tab
-  const [heroSearchTab, setHeroSearchTab] = useState<"flights" | "hotels">("flights");
+  const [heroSearchTab, setHeroSearchTab] = useState<"flights" | "hotels">(
+    "flights",
+  );
 
   const handleHeroTopTabClick = (tab: "flights" | "hotels") => {
     setHeroSearchTab(tab);
@@ -105,7 +107,7 @@ const LandingPage: React.FC = () => {
                 className="rounded-[25px] object-cover"
                 style={{
                   width: 1177,
-                  height: 475,
+                  height: 390,
                   borderRadius: 25,
                   opacity: 1,
                   marginLeft: 68,
@@ -126,10 +128,10 @@ const LandingPage: React.FC = () => {
                     alt="Polygon background"
                     className="w-full h-full absolute inset-0 rounded-l-[20px]"
                     style={{
-                      marginLeft: '-40px',
+                      marginLeft: "-40px",
                     }}
                   />
-                  
+
                   {/* Text overlay on polygon */}
                   <div className="relative flex items-center h-full px-6 sm:px-8 z-10">
                     <p className="text-white font-semibold text-xl sm:text-2xl md:text-[28px] lg:text-[32px] leading-snug sm:leading-snug md:leading-9 lg:leading-[40px] max-w-xs sm:max-w-sm whitespace-pre-line">
@@ -145,7 +147,7 @@ const LandingPage: React.FC = () => {
                   className="bg-white shadow-[0_10px_30px_rgba(0,0,0,0.15)] flex items-center justify-center"
                   style={{
                     width: 131,
-                    height: 57,
+                    height: 45,
                     borderBottomRightRadius: 30,
                     borderBottomLeftRadius: 30,
                     opacity: 1,
@@ -242,8 +244,11 @@ const LandingPage: React.FC = () => {
         </div>
 
         {/* Spacing below hero form so calendar can fully show */}
-        <div className="mt-12 sm:mt-16 mb-24">
-          <HeroSection activeTab={heroSearchTab} onTabChange={setHeroSearchTab} />
+        <div className="mt-8 sm:mt-12 mb-24">
+          <HeroSection
+            activeTab={heroSearchTab}
+            onTabChange={setHeroSearchTab}
+          />
         </div>
       </div>
 
