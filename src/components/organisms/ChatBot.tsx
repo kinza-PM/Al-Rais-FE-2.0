@@ -1,10 +1,25 @@
 import React, { useState, useRef, useEffect } from "react";
+import { getCategories, sendSupportMessage } from "../../services/api/supportChatService";
+import type { Category } from "../../services/api/supportChatService";
 
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: string;
+}
+
+interface SupportTicketState {
+  mode: "ai" | "support";
+  step: "greeting" | "contact_info" | "category" | "subcategory" | "description" | "conversation";
+  email?: string;
+  name?: string;
+  phone?: string;
+  category?: string;
+  subcategory?: string;
+  conversationId?: string;
+  ticketId?: string;
+  isLoggedIn: boolean;
 }
 
 const STATIC_MESSAGES: Message[] = [
@@ -53,13 +68,186 @@ const QUICK_ACTIONS = [
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
+  const [mode, setMode] = useState<"ai" | "support">("ai");
+  const [supportState, setSupportState] = useState<SupportTicketState>({
+    mode: "support",
+    step: "greeting",
+    isLoggedIn: false
+  });
+  const [messages, setMessages] = useState<Message[]>(STATIC_MESSAGES);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [isOpen]);
+  }, [isOpen, messages]);
+
+  useEffect(() => {
+    // Load categories when component mounts
+    loadCategories();
+    // Check if user is logged in
+    checkAuthStatus();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const cats = await getCategories();
+      setCategories(cats);
+    } catch (error) {
+      console.error("Failed to load categories:", error);
+    }
+  };
+
+  const checkAuthStatus = () => {
+    // Check localStorage for user session
+    const userSession = localStorage.getItem("userSession");
+    const isLoggedIn = !!userSession;
+    setSupportState(prev => ({ ...prev, isLoggedIn }));
+  };
+
+  const handleSwitchToSupport = () => {
+    setMode("support");
+    setMessages([]);
+    setSupportState({
+      mode: "support",
+      step: supportState.isLoggedIn ? "category" : "contact_info",
+      isLoggedIn: supportState.isLoggedIn
+    });
+
+    if (supportState.isLoggedIn) {
+      setMessages([{
+        id: "1",
+        role: "assistant",
+        content: "Hello! 👋 I'm here to help you with your support request. What category does your issue fall under?",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }]);
+    } else {
+      setMessages([{
+        id: "1",
+        role: "assistant",
+        content: "Hello! 👋 Welcome to Al-Rais Support. Let's help you with your issue. First, could you please provide your contact information?\n\nName:",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      }]);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim()) return;
+
+    if (mode === "ai") {
+      // AI chat mode - just add to messages (static for now)
+      const newMessage: Message = {
+        id: String(messages.length + 1),
+        role: "user",
+        content: inputValue,
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      };
+      setMessages([...messages, newMessage]);
+      setInputValue("");
+    } else {
+      // Support ticket mode
+      await handleSupportMessage();
+    }
+  };
+
+  const handleSupportMessage = async () => {
+    const userMessage: Message = {
+      id: `msg-${Date.now()}`,
+      role: "user",
+      content: inputValue,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+    };
+
+    setMessages([...messages, userMessage]);
+    setInputValue("");
+    setLoading(true);
+
+    try {
+      const step = supportState.step;
+
+      if (step === "contact_info") {
+        // Collect name, email, phone
+        const parts = inputValue.split("\n").map(p => p.trim());
+        if (parts.length >= 1) {
+          setSupportState(prev => ({
+            ...prev,
+            name: parts[0],
+            email: parts[1] || "",
+            phone: parts[2] || "",
+            step: "category"
+          }));
+
+          const assistantMessage: Message = {
+            id: `msg-${Date.now()}-1`,
+            role: "assistant",
+            content: "Great! Now, what category does your issue fall under?",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+        }
+      } else if (step === "category") {
+        const selectedCategory = categories.find(c => c.categoryName.toLowerCase() === inputValue.toLowerCase());
+        if (selectedCategory) {
+          setSupportState(prev => ({
+            ...prev,
+            category: selectedCategory.categoryName,
+            step: "subcategory"
+          }));
+
+          const assistantMessage: Message = {
+            id: `msg-${Date.now()}-1`,
+            role: "assistant",
+            content: `Good! You selected "${selectedCategory.categoryName}". Now, please describe your issue in detail.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+        }
+      } else if (step === "subcategory" || step === "description") {
+        // Create ticket
+        try {
+          const response = await sendSupportMessage({
+            message: inputValue,
+            conversationId: supportState.conversationId,
+            email: supportState.email,
+            name: supportState.name,
+            phone: supportState.phone,
+            category: supportState.category,
+            subcategory: supportState.subcategory,
+            createTicket: true
+          });
+
+          setSupportState(prev => ({
+            ...prev,
+            conversationId: response.conversationId,
+            ticketId: response.ticketId,
+            step: "conversation"
+          }));
+
+          const assistantMessage: Message = {
+            id: `msg-${Date.now()}-1`,
+            role: "assistant",
+            content: `✅ Your support ticket has been created successfully! Ticket ID: ${response.ticketId}\n\nYou can continue chatting with our support team here.`,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          };
+          setMessages(prev => [...prev, assistantMessage]);
+        } catch (error) {
+          console.error("Error creating ticket:", error);
+          const errorMessage: Message = {
+            id: `msg-${Date.now()}-1`,
+            role: "assistant",
+            content: "Sorry, there was an error creating your ticket. Please try again.",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          };
+          setMessages(prev => [...prev, errorMessage]);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -115,7 +303,7 @@ const ChatBot: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-[15px] font-semibold text-white leading-tight">
-                  Al-Rais Travel Assistant
+                  {mode === "ai" ? "Al-Rais Travel Assistant" : "Al-Rais Support"}
                 </h3>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <span className="h-2 w-2 rounded-full bg-[#4ADE80]" />
@@ -184,17 +372,51 @@ const ChatBot: React.FC = () => {
           </div>
 
           {/* Quick Actions */}
-          <div className="shrink-0 flex flex-wrap gap-2 px-3 py-2 border-t border-[#f0f0f0] bg-white sm:px-4 sm:py-2.5">
-            {QUICK_ACTIONS.map((action) => (
+          {mode === "ai" && (
+            <div className="shrink-0 flex flex-wrap gap-2 px-3 py-2 border-t border-[#f0f0f0] bg-white sm:px-4 sm:py-2.5">
+              {QUICK_ACTIONS.map((action) => (
+                <button
+                  key={action.value}
+                  onClick={() => setInputValue(action.value)}
+                  className="rounded-full border border-[#d1d9e6] bg-white px-3 py-1.5 text-[11px] font-medium text-[#2351A3] transition-all hover:bg-[#f0f5ff] hover:border-[#2351A3] cursor-pointer sm:text-[12px]"
+                >
+                  {action.label}
+                </button>
+              ))}
               <button
-                key={action.value}
-                onClick={() => setInputValue(action.value)}
-                className="rounded-full border border-[#d1d9e6] bg-white px-3 py-1.5 text-[11px] font-medium text-[#2351A3] transition-all hover:bg-[#f0f5ff] hover:border-[#2351A3] cursor-pointer sm:text-[12px]"
+                onClick={handleSwitchToSupport}
+                className="rounded-full border border-[#d1d9e6] bg-white px-3 py-1.5 text-[11px] font-medium text-[#e74c3c] transition-all hover:bg-[#ffe8e8] hover:border-[#e74c3c] cursor-pointer sm:text-[12px]"
               >
-                {action.label}
+                📞 Contact Support
               </button>
-            ))}
-          </div>
+            </div>
+          )}
+          {mode === "support" && (
+            <div className="shrink-0 flex flex-wrap gap-2 px-3 py-2 border-t border-[#f0f0f0] bg-white sm:px-4 sm:py-2.5">
+              {supportState.step === "category" && categories.length > 0 && (
+                <>
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.categoryId}
+                      onClick={() => setInputValue(cat.categoryName)}
+                      className="rounded-full border border-[#d1d9e6] bg-white px-3 py-1.5 text-[11px] font-medium text-[#2351A3] transition-all hover:bg-[#f0f5ff] hover:border-[#2351A3] cursor-pointer sm:text-[12px]"
+                    >
+                      {cat.categoryName}
+                    </button>
+                  ))}
+                </>
+              )}
+              <button
+                onClick={() => {
+                  setMode("ai");
+                  setMessages(STATIC_MESSAGES);
+                }}
+                className="rounded-full border border-[#d1d9e6] bg-white px-3 py-1.5 text-[11px] font-medium text-[#6b7280] transition-all hover:bg-[#f3f4f6] hover:border-[#6b7280] cursor-pointer sm:text-[12px]"
+              >
+                ← Back to AI
+              </button>
+            </div>
+          )}
 
           {/* Input Area */}
           <div className="shrink-0 flex items-center gap-2 border-t border-[#e8ecf1] bg-white px-3 py-2.5 sm:px-4 sm:py-3">
@@ -202,33 +424,42 @@ const ChatBot: React.FC = () => {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Type your message..."
+              placeholder={mode === "support" ? "Type your response..." : "Type your message..."}
               className="flex-1 min-w-0 rounded-xl border border-[#d1d9e6] bg-[#f8fafc] px-3 py-2.5 text-[13px] text-[#1f2a37] outline-none transition-colors placeholder:text-[#9ca3af] focus:border-[#2351A3] focus:bg-white sm:px-4"
               onKeyDown={(e) => {
-                if (e.key === "Enter") {
+                if (e.key === "Enter" && !loading) {
                   e.preventDefault();
-                  // Static — no send logic yet
+                  handleSendMessage();
                 }
               }}
+              disabled={loading}
             />
             <button
+              onClick={handleSendMessage}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#2351A3] text-white transition-all hover:bg-[#1b4181] active:scale-95 disabled:opacity-50 cursor-pointer"
-              disabled={!inputValue.trim()}
+              disabled={!inputValue.trim() || loading}
               aria-label="Send message"
             >
-              <svg
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="22" y1="2" x2="11" y2="13" />
-                <polygon points="22 2 15 22 11 13 2 9 22 2" />
-              </svg>
+              {loading ? (
+                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 2a10 10 0 0 1 10 10" />
+                </svg>
+              ) : (
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="22" y1="2" x2="11" y2="13" />
+                  <polygon points="22 2 15 22 11 13 2 9 22 2" />
+                </svg>
+              )}
             </button>
           </div>
         </div>
