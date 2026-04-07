@@ -11,7 +11,7 @@ interface Message {
 
 interface SupportTicketState {
   mode: "ai" | "support";
-  step: "greeting" | "contact_info" | "category" | "subcategory" | "description" | "conversation";
+  step: "greeting" | "name" | "email" | "phone" | "category" | "description" | "conversation";
   email?: string;
   name?: string;
   phone?: string;
@@ -113,7 +113,7 @@ const ChatBot: React.FC = () => {
     setMessages([]);
     setSupportState({
       mode: "support",
-      step: supportState.isLoggedIn ? "category" : "contact_info",
+      step: supportState.isLoggedIn ? "category" : "name",
       isLoggedIn: supportState.isLoggedIn
     });
 
@@ -128,7 +128,7 @@ const ChatBot: React.FC = () => {
       setMessages([{
         id: "1",
         role: "assistant",
-        content: "Hello! 👋 Welcome to Al-Rais Support. Let's help you with your issue. First, could you please provide your contact information?\n\nName:",
+        content: "Hello! 👋 Welcome to Al-Rais Support. Let's help you with your issue. First, could you please provide your contact information?\n\nWhat is your name?",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       }]);
     }
@@ -168,33 +168,58 @@ const ChatBot: React.FC = () => {
     try {
       const step = supportState.step;
 
-      if (step === "contact_info") {
-        // Collect name, email, phone
-        const parts = inputValue.split("\n").map(p => p.trim());
-        if (parts.length >= 1) {
-          setSupportState(prev => ({
-            ...prev,
-            name: parts[0],
-            email: parts[1] || "",
-            phone: parts[2] || "",
-            step: "category"
-          }));
+      if (step === "name") {
+        // Collect name
+        setSupportState(prev => ({
+          ...prev,
+          name: inputValue,
+          step: "email"
+        }));
 
-          const assistantMessage: Message = {
-            id: `msg-${Date.now()}-1`,
-            role: "assistant",
-            content: "Great! Now, what category does your issue fall under?",
-            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-          };
-          setMessages(prev => [...prev, assistantMessage]);
-        }
+        const assistantMessage: Message = {
+          id: `msg-${Date.now()}-1`,
+          role: "assistant",
+          content: `Nice to meet you, ${inputValue}! 👋\n\nNow, what is your email address?`,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else if (step === "email") {
+        // Collect email
+        setSupportState(prev => ({
+          ...prev,
+          email: inputValue,
+          step: "phone"
+        }));
+
+        const assistantMessage: Message = {
+          id: `msg-${Date.now()}-1`,
+          role: "assistant",
+          content: `Great! And what is your phone number?`,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else if (step === "phone") {
+        // Collect phone and move to category
+        setSupportState(prev => ({
+          ...prev,
+          phone: inputValue,
+          step: "category"
+        }));
+
+        const assistantMessage: Message = {
+          id: `msg-${Date.now()}-1`,
+          role: "assistant",
+          content: `Perfect! Thank you for your information. Now, what category does your issue fall under?`,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        };
+        setMessages(prev => [...prev, assistantMessage]);
       } else if (step === "category") {
         const selectedCategory = categories.find(c => c.categoryName.toLowerCase() === inputValue.toLowerCase());
         if (selectedCategory) {
           setSupportState(prev => ({
             ...prev,
             category: selectedCategory.categoryName,
-            step: "subcategory"
+            step: "description"
           }));
 
           const assistantMessage: Message = {
@@ -204,8 +229,16 @@ const ChatBot: React.FC = () => {
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           };
           setMessages(prev => [...prev, assistantMessage]);
+        } else {
+          const errorMessage: Message = {
+            id: `msg-${Date.now()}-1`,
+            role: "assistant",
+            content: "Sorry, that category wasn't recognized. Please select from the available categories.",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          };
+          setMessages(prev => [...prev, errorMessage]);
         }
-      } else if (step === "subcategory" || step === "description") {
+      } else if (step === "description") {
         // Create ticket
         try {
           const response = await sendSupportMessage({
@@ -345,7 +378,7 @@ const ChatBot: React.FC = () => {
 
           {/* Messages Area */}
           <div className="min-h-0 flex-1 overflow-y-auto px-3 py-4 space-y-4 bg-[#f8fafc] sm:px-4">
-            {STATIC_MESSAGES.map((msg) => (
+            {messages.map((msg) => (
               <div
                 key={msg.id}
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}

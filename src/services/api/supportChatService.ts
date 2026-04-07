@@ -1,4 +1,4 @@
-import { api, toApiError } from "../axios";
+import { chatbotApi } from "./chatbotAxios";
 
 export type SupportMessage = {
   id: string;
@@ -84,7 +84,6 @@ const DEFAULT_CATEGORIES: Category[] = [
 export async function sendSupportMessage<TResp = SupportConversation>(
   data: SendSupportMessageRequest
 ): Promise<TResp> {
-  const source = "sendSupportMessage";
   try {
     const payload: any = {
       message: data.message,
@@ -101,15 +100,16 @@ export async function sendSupportMessage<TResp = SupportConversation>(
       payload.subcategory = data.subcategory;
     }
 
-    return await api.post<TResp>("/support/ticket", payload);
+    return await chatbotApi.post<TResp>("/support/ticket", payload);
   } catch (err) {
-    throw toApiError(source, err);
+    console.error("Error sending support message:", err);
+    throw err;
   }
 }
 
 export async function getCategories<TResp = Category[]>(): Promise<TResp> {
   try {
-    return await api.get<TResp>("/categories");
+    return await chatbotApi.get<TResp>("/categories");
   } catch (err) {
     console.error("Error fetching categories, using defaults:", err);
     return DEFAULT_CATEGORIES as unknown as TResp;
@@ -119,10 +119,10 @@ export async function getCategories<TResp = Category[]>(): Promise<TResp> {
 export async function getSubcategories<TResp = Subcategory[]>(
   categoryId: string
 ): Promise<TResp> {
-  const source = "getSubcategories";
   try {
-    return await api.get<TResp>(`/subcategories/${categoryId}`);
+    return await chatbotApi.get<TResp>(`/subcategories/${categoryId}`);
   } catch (err) {
-    throw toApiError(source, err);
+    console.error("Error fetching subcategories:", err);
+    throw err;
   }
 }
