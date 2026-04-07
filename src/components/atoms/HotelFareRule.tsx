@@ -65,9 +65,7 @@ export default function HotelFareRule({
             {/* <span className="text-[#0A0C0F] text-sm font-medium">
               {cancellationText}
             </span> */}
-            <span
-              className={`text-sm font-medium text-[#0A0C0F]`}
-            >
+            <span className={`text-sm font-medium text-[#0A0C0F]`}>
               {hasNonRefundable ? cancellationText : "Free cancellation"}
             </span>
           </li>
@@ -136,6 +134,7 @@ export default function HotelFareRule({
               currency={currency}
               leadWithSeparator={false}
               hideHeading
+              // totalPrice={totalPrice}
             />
           </div>
         </div>

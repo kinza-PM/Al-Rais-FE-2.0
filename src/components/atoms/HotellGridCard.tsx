@@ -8,6 +8,7 @@ import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "./HotelPriceSummaryTooltip";
 import { HotelProxiedImage } from "./HotelProxiedImage";
+import { aggregateHotelTaxesFromRoomArray } from "../../utils/hotelBookingHelper";
 import {
   processHotelSearchListingData,
   getHotelGuestReviewMeta,
@@ -439,7 +440,13 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               <HotelPriceSummaryTooltip
                 totalPrice={price}
                 currency={currency}
-                taxes={bestRoom?.roomRate?.taxes || []}
+                taxes={aggregateHotelTaxesFromRoomArray(
+                  Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
+                    ? hotel.rooms
+                    : bestRoom
+                      ? [bestRoom]
+                      : [],
+                )}
               />
             </div>
           </div>

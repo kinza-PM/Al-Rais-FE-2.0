@@ -8,6 +8,7 @@ import EmptyStar from "../../assets/svgs/empty_star.svg";
 import Share from "../../assets/svgs/share-icon.svg";
 
 import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
+import { aggregateHotelTaxesFromRoomArray } from "../../utils/hotelBookingHelper";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import {
   useAddHotelFavourite,
@@ -617,7 +618,13 @@ const ProfileFavouriteHotels: React.FC = () => {
                     <HotelPriceSummaryTooltip
                       totalPrice={Number(totalPrice)}
                       currency={currency}
-                      taxes={bestRoom?.roomRate?.taxes || []}
+                      taxes={aggregateHotelTaxesFromRoomArray(
+                        roomDetails.length > 0
+                          ? roomDetails
+                          : bestRoom
+                            ? [bestRoom]
+                            : [],
+                      )}
                     />
                   </div>
 

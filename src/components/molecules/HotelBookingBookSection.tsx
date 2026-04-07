@@ -7,6 +7,7 @@ import HotelSummaryCard from "../atoms/HotelSummaryCard";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelFareRule from "../atoms/HotelFareRule";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
+// import SavedTravelersSection from "./SavedTravelersSection";
 import {
   formatDateToLocalISO,
   parseLocalDateString,
@@ -19,6 +20,7 @@ import {
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import type { CountryOption } from "../../features/flights/types";
+import CustomToggle from "../common/CustomToggle";
 // import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 // import toast from "react-hot-toast";
 // import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
@@ -65,6 +67,7 @@ export default function HotelBookingBookSection({
   const [validationErrors, setValidationErrors] =
     useState<HotelPassengerFieldErrors>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+  const [openPrice, setOpenPrice] = useState(false);
 
   // const { mutateAsync, isPending } = useHotelReservationBooking();
   const rooms = hotelBookingPayload?.rooms ?? [];
@@ -155,6 +158,7 @@ export default function HotelBookingBookSection({
     <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
+          {/* <SavedTravelersSection /> */}
           {flatPassengers.map(
             ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
               <React.Fragment key={p.passengerKey || flatIdx}>
@@ -207,8 +211,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.nameTitle"
-                              ]
+                                  "passengerInfo.nameTitle"
+                                ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
@@ -242,8 +246,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.givenName"
-                              ]
+                                  "passengerInfo.givenName"
+                                ]
                               : null
                           }
                           className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
@@ -277,8 +281,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.surname"
-                              ]
+                                  "passengerInfo.surname"
+                                ]
                               : null
                           }
                           className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
@@ -312,8 +316,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.gender"
-                              ]
+                                  "passengerInfo.gender"
+                                ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -327,8 +331,13 @@ export default function HotelBookingBookSection({
                 <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm mt-4">
                   <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7] rounded-t-2xl">
                     <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                      Passenger {String(flatIdx + 1).padStart(2, "0")} details
+                      Traveler {String(flatIdx + 1).padStart(2, "0")} details
                     </h3>
+                    <CustomToggle
+                      label="Save Traveler information in my profile"
+                      checked={true}
+                      onChange={() => {}}
+                    />
                   </div>
                   <div className="px-4 py-4 rounded-b-2xl">
                     <div className="grid grid-cols-1 gap-x-4 gap-y-4 min-w-0 md:grid-cols-2">
@@ -347,7 +356,7 @@ export default function HotelBookingBookSection({
                           <SearchableDropdown
                             options={roomOptions}
                             value={String(roomIndex)}
-                            onChange={() => { }}
+                            onChange={() => {}}
                             placeholder="Room"
                             label="Room"
                             widthClass="w-full"
@@ -387,8 +396,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.birthDate"
-                              ]
+                                  "passengerInfo.birthDate"
+                                ]
                               : null
                           }
                           overridesClass
@@ -426,8 +435,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "identityDocuments.0.idDocumentNumber"
-                              ]
+                                  "identityDocuments.0.idDocumentNumber"
+                                ]
                               : null
                           }
                         />
@@ -467,8 +476,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "identityDocuments.0.issuingCountryCode"
-                              ]
+                                  "identityDocuments.0.issuingCountryCode"
+                                ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -485,8 +494,8 @@ export default function HotelBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.dateOfIssue
                               ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.dateOfIssue,
-                              )
+                                  p.identityDocuments?.[0]?.dateOfIssue,
+                                )
                               : null
                           }
                           onChange={(date) => {
@@ -507,8 +516,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "identityDocuments.0.dateOfIssue"
-                              ]
+                                  "identityDocuments.0.dateOfIssue"
+                                ]
                               : null
                           }
                           overridesClass
@@ -526,8 +535,8 @@ export default function HotelBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.expiryDate
                               ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.expiryDate,
-                              )
+                                  p.identityDocuments?.[0]?.expiryDate,
+                                )
                               : null
                           }
                           onChange={(date) => {
@@ -548,8 +557,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "identityDocuments.0.expiryDate"
-                              ]
+                                  "identityDocuments.0.expiryDate"
+                                ]
                               : null
                           }
                           overridesClass
@@ -588,21 +597,22 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "contact.contactsProvided.0.emailAddress.0"
-                              ]
+                                  "contact.contactsProvided.0.emailAddress.0"
+                                ]
                               : null
                           }
                         />
                       </div>
 
                       <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation &&
+                        className={`relative w-full min-w-0 ${
+                          hasAttemptedValidation &&
                           validationErrors[roomIndex]?.[passengerIndex]?.[
-                          "contact.contactsProvided.0.phone.0"
+                            "contact.contactsProvided.0.phone.0"
                           ]
-                          ? "pb-4"
-                          : ""
-                          }`}
+                            ? "pb-4"
+                            : ""
+                        }`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Phone
@@ -610,9 +620,9 @@ export default function HotelBookingBookSection({
                         <div
                           className={
                             hasAttemptedValidation &&
-                              validationErrors[roomIndex]?.[passengerIndex]?.[
+                            validationErrors[roomIndex]?.[passengerIndex]?.[
                               "contact.contactsProvided.0.phone.0"
-                              ]
+                            ]
                               ? "phone-input-error"
                               : ""
                           }
@@ -666,12 +676,12 @@ export default function HotelBookingBookSection({
                         </div>
                         {hasAttemptedValidation &&
                           validationErrors[roomIndex]?.[passengerIndex]?.[
-                          "contact.contactsProvided.0.phone.0"
+                            "contact.contactsProvided.0.phone.0"
                           ] && (
                             <p className="text-red-500 text-xs mt-1">
                               {
                                 validationErrors[roomIndex]?.[passengerIndex]?.[
-                                "contact.contactsProvided.0.phone.0"
+                                  "contact.contactsProvided.0.phone.0"
                                 ]
                               }
                             </p>
@@ -706,8 +716,8 @@ export default function HotelBookingBookSection({
                   const cancellationCost =
                     roomRate?.netAmount && isNonRefundable
                       ? `${roomRate.currency || currency} ${(
-                        roomRate.netAmount * (selectedRoom.count || 1)
-                      ).toFixed(2)} (full cost of your selection)`
+                          roomRate.netAmount * (selectedRoom.count || 1)
+                        ).toFixed(2)} (full cost of your selection)`
                       : "Free cancellation";
                   const roomPassengers = rooms[index]?.passengers ?? [];
 
@@ -716,32 +726,50 @@ export default function HotelBookingBookSection({
                   const roomFacilities = room?.roomFacilities ?? [];
                   const allFacilities = [...hotelFacilities, ...roomFacilities];
                   const facilityNames = allFacilities.map((f: any) =>
-                    (typeof f === "string" ? f : f?.name ?? "").toLowerCase()
+                    (typeof f === "string" ? f : (f?.name ?? "")).toLowerCase(),
                   );
                   const hasNonSmoking = facilityNames.some(
-                    (n: string) => n.includes("non-smoking") || n.includes("no smoking") || n.includes("smoke free")
+                    (n: string) =>
+                      n.includes("non-smoking") ||
+                      n.includes("no smoking") ||
+                      n.includes("smoke free"),
                   );
                   const hasPetsAllowed = facilityNames.some(
-                    (n: string) => n.includes("pets allowed") || n.includes("pet friendly")
+                    (n: string) =>
+                      n.includes("pets allowed") || n.includes("pet friendly"),
                   );
                   const hasPetsNotAllowed = facilityNames.some(
-                    (n: string) => n.includes("pets not") || n.includes("no pets")
+                    (n: string) =>
+                      n.includes("pets not") || n.includes("no pets"),
                   );
                   const hasCleanliness = facilityNames.some(
                     (n: string) =>
                       n.includes("housekeeping") ||
                       n.includes("clean") ||
-                      n.includes("cleaning")
+                      n.includes("cleaning"),
                   );
-                  const smokingText = hasNonSmoking ? "Not allowed" : "Not allowed";
-                  const petsText = hasPetsAllowed ? "Allowed" : hasPetsNotAllowed ? "Not allowed" : "Not allowed";
-                  const cleanlinessText = hasCleanliness ? "Exceptionally clean" : "Exceptionally clean";
+                  const smokingText = hasNonSmoking
+                    ? "Not allowed"
+                    : "Not allowed";
+                  const petsText = hasPetsAllowed
+                    ? "Allowed"
+                    : hasPetsNotAllowed
+                      ? "Not allowed"
+                      : "Not allowed";
+                  const cleanlinessText = hasCleanliness
+                    ? "Exceptionally clean"
+                    : "Exceptionally clean";
 
                   // Max guests: from room.maxOccupancy, or passengers count, or bookingInfo
                   const adultsInRoom = roomPassengers.length;
-                  const maxGuests = room?.maxOccupancy ?? (adultsInRoom > 0 ? adultsInRoom : 2);
+                  const maxGuests =
+                    room?.maxOccupancy && room?.maxOccupancy > 0
+                      ? room?.maxOccupancy
+                      : adultsInRoom > 0
+                        ? adultsInRoom
+                        : 2;
                   const maxGuestsText = `${String(maxGuests).padStart(2, "0")} Adults`;
-
+                  // console.log("room?.maxOccupancy", room?.maxOccupancy);
                   // Room title with Non-Refundable suffix when applicable
                   const roomTitle = [
                     room?.roomTypeName || "Room",
@@ -806,13 +834,17 @@ export default function HotelBookingBookSection({
                         {/* Key-value pairs */}
                         <div className="space-y-4 text-xs leading-relaxed">
                           <div className="flex justify-between gap-2 py-1">
-                            <span className="text-[#3D495C]">Max no. of guests/room</span>
+                            <span className="text-[#3D495C]">
+                              Max no. of guests/room
+                            </span>
                             <span className="text-[#0A0C0F] font-medium text-right">
                               {maxGuestsText}
                             </span>
                           </div>
                           <div className="flex justify-between gap-2 py-1">
-                            <span className="text-[#3D495C]">Rooms cleanliness</span>
+                            <span className="text-[#3D495C]">
+                              Rooms cleanliness
+                            </span>
                             <span className="text-[#0A0C0F] font-medium text-right">
                               {cleanlinessText}
                             </span>
@@ -830,12 +862,15 @@ export default function HotelBookingBookSection({
                             </span>
                           </div>
                           <div className="flex justify-between gap-2 py-1">
-                            <span className="text-[#3D495C]">Cancellation cost</span>
+                            <span className="text-[#3D495C]">
+                              Cancellation cost
+                            </span>
                             <p
-                              className={`font-medium text-right break-words ${isNonRefundable
-                                ? "text-[#0A0C0F]"
-                                : "text-[#1A7F4B]"
-                                }`}
+                              className={`font-medium text-right break-words ${
+                                isNonRefundable
+                                  ? "text-[#0A0C0F]"
+                                  : "text-[#1A7F4B]"
+                              }`}
                             >
                               {cancellationCost}
                             </p>
@@ -861,7 +896,13 @@ export default function HotelBookingBookSection({
             currency={currency}
             hotelDetail={hotelDetail}
           />
-          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
+          <HotelPriceBreakdown
+            open={openPrice}
+            onToggleOpen={() => setOpenPrice((v) => !v)}
+            totalPrice={totalPrice}
+            currency={currency}
+            selectedRooms={selectedRooms}
+          />
 
           <div className="mt-6 flex justify-center">
             <Button
@@ -869,7 +910,8 @@ export default function HotelBookingBookSection({
               overrideClasses
               className="h-[47px] w-full sm:w-[155px] rounded-[100px] px-6 sm:px-10 py-[14px] text-[16px] font-semibold text-white hover:opacity-95 active:opacity-90 transition-opacity flex items-center justify-center gap-2.5"
               style={{
-                background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                background:
+                  "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               }}
               onClick={handleContinue}
             >
