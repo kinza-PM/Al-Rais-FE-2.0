@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { Form, Input, Modal } from "antd";
 import * as RemoteUserService from "../services/api/remoteUserService";
 import { useUserProfileStore } from "../store/userProfileStore";
+import ProfileBasicsTab from "../components/molecules/ProfileBasicsTab";
 
 const tabs = ["Basics", "Favorites", "Air miles", "Payments", "Account"] as const;
 
@@ -178,7 +179,7 @@ const ProfilePage: React.FC = () => {
 
       <div className="mt-8 w-full">
         {active === "Basics" && (
-          <div className="text-sm text-[#3D495C]">Basics content…</div>
+          <ProfileBasicsTab />
         )}
 
         {active === "Favorites" && <ProfileFavouriteHotels />}

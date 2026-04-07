@@ -28,6 +28,7 @@ const flightApis = [
   "/myBooking",
   "/uploadImagePreSignedUrl",
   "/uploadTicket",
+  "/fetchAddPassengerCache",
 ];
 const paymentApis = ["/pay"];
 const flightAncillaryApis = ["/ancillarySearch", "/bookAncillary"];

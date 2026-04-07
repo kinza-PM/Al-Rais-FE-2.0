@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import SearchableDropdown from "../common/SearchableDropdown";
 import Button from "../atoms/Button";
@@ -7,7 +7,9 @@ import HotelSummaryCard from "../atoms/HotelSummaryCard";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelFareRule from "../atoms/HotelFareRule";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
-// import SavedTravelersSection from "./SavedTravelersSection";
+import SavedTravelersSection, {
+  type SavedTraveler,
+} from "./SavedTravelersSection";
 import {
   formatDateToLocalISO,
   parseLocalDateString,
@@ -21,6 +23,8 @@ import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import type { CountryOption } from "../../features/flights/types";
 import CustomToggle from "../common/CustomToggle";
+import { usePassengerCacheAdd } from "../../hooks/usePassengerCache";
+import { buildPassengerCacheAddPayload } from "../../utils/passengerCacheHelper";
 // import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 // import toast from "react-hot-toast";
 // import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
@@ -34,6 +38,7 @@ type HotelBookingBookSectionProps = {
     value: any,
   ) => void;
   onNext?: () => void;
+  onPassengerCacheSavingChange?: (saving: boolean) => void;
   countries?: CountryOption[];
   hotelDetail?: any;
   bookingInfo?: any;
@@ -55,6 +60,7 @@ export default function HotelBookingBookSection({
   hotelBookingPayload,
   onPassengerFieldChange,
   onNext,
+  onPassengerCacheSavingChange,
   countries = [],
   hotelDetail = {},
   bookingInfo = {},
@@ -68,6 +74,11 @@ export default function HotelBookingBookSection({
     useState<HotelPassengerFieldErrors>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
   const [openPrice, setOpenPrice] = useState(false);
+  const [saveTravelerByPassengerKey, setSaveTravelerByPassengerKey] = useState<
+    Record<string, boolean>
+  >({});
+
+  const { mutateAsync: addPassengerCache } = usePassengerCacheAdd();
 
   // const { mutateAsync, isPending } = useHotelReservationBooking();
   const rooms = hotelBookingPayload?.rooms ?? [];
@@ -89,6 +100,97 @@ export default function HotelBookingBookSection({
       label,
     };
   });
+
+  const fillFromSavedTravelers = (selectedSlots: Array<SavedTraveler | undefined>) => {
+    const titleToUi = (t?: string) => {
+      const v = String(t ?? "").trim().toUpperCase();
+      if (v === "MR") return "mr";
+      if (v === "MS") return "ms";
+      if (v === "MRS") return "mrs";
+      return "";
+    };
+    const genderToUi = (g?: string) => {
+      const v = String(g ?? "").trim().toUpperCase();
+      if (v === "M" || v === "MALE") return "male";
+      if (v === "F" || v === "FEMALE") return "female";
+      return "";
+    };
+
+    const apply = (idx: number, t?: SavedTraveler) => {
+      const target = flatPassengers[idx];
+      if (!target) return;
+      const { roomIndex, passengerIndex } = target;
+
+      const clear = !t;
+      const givenName = clear ? "" : t.firstName ?? "";
+      const surname = clear ? "" : t.lastName ?? "";
+      const nameTitle = clear ? "" : titleToUi(t.nameTitle);
+      const gender = clear ? "" : genderToUi(t.gender);
+      const birthDate = clear ? null : (t.birthDate ?? null);
+      const passport = clear ? "" : (t.passport ?? "");
+      const issuingCountryCode = clear ? "" : (t.issuingCountryCode ?? "");
+      const dateOfIssue = clear ? null : (t.dateOfIssueIso ?? null);
+      const expiryIso = clear ? null : (t.expiryIso ?? null);
+      const email = clear ? "" : (t.email ?? "");
+      const areaCode = clear
+        ? ""
+        : t.phoneAreaCode !== undefined && t.phoneAreaCode !== null && String(t.phoneAreaCode).trim() !== ""
+          ? `+${String(t.phoneAreaCode).replace(/^\+/, "")}`
+          : "";
+      const phoneNumber = clear ? "" : String(t.phoneNumber ?? "");
+
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.nameTitle", nameTitle);
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.gender", gender);
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.givenName", givenName);
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.surname", surname);
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.birthDate", birthDate);
+
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.idDocumentNumber", passport);
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.issuingCountryCode", issuingCountryCode);
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.dateOfIssue", dateOfIssue);
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.expiryDate", expiryIso);
+
+      onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.emailAddress.0", email);
+      onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.phone.0.areaCode", areaCode);
+      onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.phone.0.phoneNumber", phoneNumber);
+    };
+
+    // Fill/clear sequentially based on current passenger slots.
+    for (let i = 0; i < flatPassengers.length; i++) {
+      apply(i, selectedSlots[i]);
+    }
+  };
+
+  const saveToggleKey = (
+    roomIndex: number,
+    passengerIndex: number,
+    passengerKey: string | undefined,
+  ) => `${roomIndex}:${passengerIndex}:${passengerKey ?? ""}`;
+
+  const saveToggleChecked = (key: string) => {
+    const v = saveTravelerByPassengerKey[key];
+    // default ON (unless explicitly set to false)
+    return v !== false;
+  };
+
+  const toggleSaveTraveler = (key: string) => {
+    setSaveTravelerByPassengerKey((prev) => ({
+      ...prev,
+      [key]: !saveToggleChecked(key),
+    }));
+  };
+
+  const addPassengerCachePayload = useMemo(() => {
+    const selectedPassengers = flatPassengers
+      .filter(({ roomIndex, passengerIndex, passenger }) =>
+        saveToggleChecked(
+          saveToggleKey(roomIndex, passengerIndex, passenger?.passengerKey),
+        ),
+      )
+      .map(({ passenger }) => passenger);
+
+    return buildPassengerCacheAddPayload(selectedPassengers);
+  }, [flatPassengers, saveTravelerByPassengerKey]);
 
   const clearFieldError = (
     roomIdx: number,
@@ -132,6 +234,18 @@ export default function HotelBookingBookSection({
       return;
     }
 
+    if (addPassengerCachePayload) {
+      try {
+        onPassengerCacheSavingChange?.(true);
+        await addPassengerCache(addPassengerCachePayload);
+      } catch (e) {
+        // Don't block the booking flow if cache save fails
+        console.error("fetchAddPassengerCache(add) failed", e);
+      } finally {
+        onPassengerCacheSavingChange?.(false);
+      }
+    }
+
     if (typeof onNext === "function") {
       onNext();
     }
@@ -158,7 +272,10 @@ export default function HotelBookingBookSection({
     <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
-          {/* <SavedTravelersSection /> */}
+          <SavedTravelersSection
+            onProceedSelection={fillFromSavedTravelers}
+            maxSelectable={flatPassengers.length}
+          />
           {flatPassengers.map(
             ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
               <React.Fragment key={p.passengerKey || flatIdx}>
@@ -335,8 +452,18 @@ export default function HotelBookingBookSection({
                     </h3>
                     <CustomToggle
                       label="Save Traveler information in my profile"
-                      checked={true}
-                      onChange={() => {}}
+                      checked={saveToggleChecked(
+                        saveToggleKey(roomIndex, passengerIndex, p.passengerKey),
+                      )}
+                      onChange={() =>
+                        toggleSaveTraveler(
+                          saveToggleKey(
+                            roomIndex,
+                            passengerIndex,
+                            p.passengerKey,
+                          ),
+                        )
+                      }
                     />
                   </div>
                   <div className="px-4 py-4 rounded-b-2xl">

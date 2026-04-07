@@ -1,18 +1,30 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Modal } from "antd";
+import { usePassengerCacheFetch } from "../../hooks/usePassengerCache";
 
-type SavedTraveler = {
+export type SavedTraveler = {
   id: string;
   firstName: string;
   lastName: string;
   isYou: boolean;
   passport: string;
+  /** Display expiry (e.g. 10-May-2026) */
   expiry: string;
+  /** ISO expiry from API (e.g. 2026-05-10) */
+  expiryIso?: string;
   initials: string;
   bgColor: string;
+  birthDate?: string | null;
+  gender?: string;
+  nameTitle?: string;
+  issuingCountryCode?: string;
+  dateOfIssueIso?: string | null;
+  email?: string;
+  phoneAreaCode?: string | number;
+  phoneNumber?: string | number;
 };
 
-const mockTravelers: SavedTraveler[] = [
+export const mockTravelers: SavedTraveler[] = [
   {
     id: "1",
     firstName: "Zeeshan",
@@ -55,18 +67,194 @@ const mockTravelers: SavedTraveler[] = [
   },
 ];
 
-export default function SavedTravelersSection() {
-  const [selectedIds, setSelectedIds] = useState<string[]>(["1", "2"]);
+type SavedTravelersSectionProps = {
+  onProceedSelection?: (selectedSlots: Array<SavedTraveler | undefined>) => void;
+  maxSelectable?: number;
+};
+
+export default function SavedTravelersSection({
+  onProceedSelection,
+  maxSelectable,
+}: SavedTravelersSectionProps) {
+  const { data: passengerCacheResp } = usePassengerCacheFetch();
+  // Slot-based selection (keeps positions stable in the form):
+  // selectedSlotIds[0] fills Traveler-01, [1] fills Traveler-02, etc.
+  const [selection, setSelection] = useState<{
+    slots: Array<string | null>;
+    order: string[];
+  }>({ slots: [], order: [] });
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const MAX_SELECTABLE =
+    typeof maxSelectable === "number" && Number.isFinite(maxSelectable)
+      ? Math.max(0, Math.floor(maxSelectable))
+      : 3;
+
+  const travelers: SavedTraveler[] = useMemo(() => {
+    const extractPassengers = (resp: any): any[] => {
+      if (!resp) return [];
+      if (Array.isArray(resp)) return resp;
+      const candidates = [
+        resp?.data?.passengers,
+        resp?.passengers,
+        resp?.data,
+        resp?.data?.data,
+      ];
+      for (const c of candidates) {
+        if (Array.isArray(c)) return c;
+      }
+      return [];
+    };
+
+    const formatExpiry = (iso: string) => {
+      const raw = String(iso || "").trim();
+      if (!raw) return "";
+      const d = new Date(`${raw}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return raw;
+      const months = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mmm = months[d.getMonth()];
+      const yyyy = d.getFullYear();
+      return `${dd}-${mmm}-${yyyy}`;
+    };
+
+    const bgPalette = [
+      "bg-[#A7C0EC] text-[#1A3C7A]",
+      "bg-[#85FFCA] text-[#00522E]",
+      "bg-[#DEDEFF] text-[#140052]",
+      "bg-[#FFE5B4] text-[#7A3C00]",
+      "bg-[#FFD6E7] text-[#7A0031]",
+    ];
+
+    const passengers = extractPassengers(passengerCacheResp);
+    if (passengers.length === 0) return [];
+    const mapped = passengers
+      .map((p: any, idx: number): SavedTraveler | null => {
+        const pi = p?.passengerInfo ?? {};
+        const doc0 = p?.identityDocuments?.[0] ?? {};
+        const contact0 = p?.contact?.contactsProvided?.[0] ?? {};
+        const phone0 = contact0?.phone?.[0] ?? {};
+        const givenName = String(pi?.givenName ?? "").trim();
+        const surname = String(pi?.surname ?? "").trim();
+        const firstName = givenName || "Traveler";
+        const lastName = surname || "";
+        const passport = String(doc0?.idDocumentNumber ?? "").trim();
+        const expiryIso = String(doc0?.expiryDate ?? "").trim();
+        const expiry = formatExpiry(expiryIso);
+        // NOTE: passengerKey can repeat, and list order can change.
+        // Use a stable composite id so selection doesn't "jump" to another row.
+        const rawKey = String(p?.passengerKey ?? p?.id ?? idx).trim();
+        const key = `${rawKey}|${passport}|${expiryIso}|${String(
+          pi?.birthDate ?? "",
+        ).trim()}`;
+        const initials = `${firstName?.[0] ?? "T"}${lastName?.[0] ?? ""}`.toUpperCase();
+        return {
+          id: key,
+          firstName,
+          lastName,
+          isYou: false,
+          passport,
+          expiry,
+          expiryIso: expiryIso || undefined,
+          initials,
+          bgColor: bgPalette[idx % bgPalette.length],
+          birthDate: pi?.birthDate ?? null,
+          gender: pi?.gender ?? "",
+          nameTitle: pi?.nameTitle ?? "",
+          issuingCountryCode: doc0?.issuingCountryCode ?? "",
+          dateOfIssueIso: doc0?.dateOfIssue ?? null,
+          email: contact0?.emailAddress?.[0] ?? "",
+          phoneAreaCode: phone0?.areaCode ?? "",
+          phoneNumber: phone0?.phoneNumber ?? "",
+        };
+      })
+      .filter(Boolean) as SavedTraveler[];
+
+    return mapped;
+  }, [passengerCacheResp]);
+
+  // Ensure nothing is pre-selected when fresh fetch data arrives.
+  useEffect(() => {
+    setSelection({ slots: [], order: [] });
+  }, [passengerCacheResp]);
+
+  // Keep selected slots array same length as MAX_SELECTABLE.
+  useEffect(() => {
+    setSelection((prev) => {
+      const slots = [...(prev.slots ?? [])];
+      const order = [...(prev.order ?? [])];
+      if (slots.length > MAX_SELECTABLE) slots.splice(MAX_SELECTABLE);
+      while (slots.length < MAX_SELECTABLE) slots.push(null);
+      // Drop any ids from order that are no longer present in slots
+      const inSlots = new Set(slots.filter(Boolean) as string[]);
+      const nextOrder = order.filter((id) => inSlots.has(id));
+      return { slots, order: nextOrder };
+    });
+  }, [MAX_SELECTABLE]);
+
+  const selectedSlots = useMemo(() => {
+    const byId = new Map(travelers.map((t) => [t.id, t]));
+    return selection.slots.map((id) => (id ? byId.get(id) : undefined));
+  }, [selection.slots, travelers]);
+
+  const selectedCount = useMemo(
+    () => selection.slots.filter(Boolean).length,
+    [selection.slots],
+  );
+
+  useEffect(() => {
+    if (typeof onProceedSelection === "function") {
+      onProceedSelection(selectedSlots);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSlots]);
+
   const displayTravelers =
-    mockTravelers.length > 3 ? mockTravelers.slice(0, 3) : mockTravelers;
-  const showViewAll = mockTravelers.length > 3;
+    travelers.length > 3 ? travelers.slice(0, 3) : travelers;
+  const showViewAll = travelers.length > 3;
 
   const toggleSelection = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    if (MAX_SELECTABLE <= 0) return;
+
+    setSelection((prev) => {
+      const slots = prev.slots.length
+        ? [...prev.slots]
+        : Array.from({ length: MAX_SELECTABLE }, () => null);
+      const order = [...(prev.order ?? [])];
+
+      const alreadyIdx = slots.findIndex((x) => x === id);
+      if (alreadyIdx >= 0) {
+        slots[alreadyIdx] = null;
+        return { slots, order: order.filter((x) => x !== id) };
+      }
+
+      const emptyIdx = slots.findIndex((x) => !x);
+      if (emptyIdx >= 0) {
+        slots[emptyIdx] = id;
+        return { slots, order: [...order, id] };
+      }
+
+      // No empty slots: replace the oldest-selected traveler (FIFO) in its slot.
+      const evictId = order[0];
+      const nextOrder = [...order.slice(1), id];
+      const evictIdx = evictId ? slots.findIndex((x) => x === evictId) : -1;
+      if (evictIdx >= 0) slots[evictIdx] = id;
+      else slots[0] = id;
+      return { slots, order: nextOrder };
+    });
   };
 
   const modalOverlayStyles = {
@@ -139,6 +327,10 @@ export default function SavedTravelersSection() {
     </div>
   );
 
+  if (travelers.length === 0) {
+    return null;
+  }
+
   return (
     <>
       <div className="mb-4 rounded-[16px] border border-[#E4E4E7] bg-white p-5 shadow-sm">
@@ -166,7 +358,7 @@ export default function SavedTravelersSection() {
             <TravelerCard
               key={traveler.id}
               traveler={traveler}
-              isSelected={selectedIds.includes(traveler.id)}
+              isSelected={selection.slots.includes(traveler.id)}
               onToggle={() => toggleSelection(traveler.id)}
             />
           ))}
@@ -230,17 +422,17 @@ export default function SavedTravelersSection() {
               Saved Travelers:
             </h3>
             <span className="text-base text-[#3D495C]">
-              {selectedIds.length}/{mockTravelers.length} Selected
+              {selectedCount}/{travelers.length} Selected
             </span>
           </div>
 
           {/* Scrollable list */}
           <div className="flex max-h-[300px] flex-col gap-3 overflow-y-auto pr-1">
-            {mockTravelers.map((traveler) => (
+            {travelers.map((traveler) => (
               <TravelerCard
                 key={traveler.id}
                 traveler={traveler}
-                isSelected={selectedIds.includes(traveler.id)}
+                isSelected={selection.slots.includes(traveler.id)}
                 onToggle={() => toggleSelection(traveler.id)}
               />
             ))}
@@ -249,7 +441,10 @@ export default function SavedTravelersSection() {
           {/* Actions */}
           <div className="mt-8 flex flex-col items-center gap-3">
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                onProceedSelection?.(selectedSlots);
+                setIsModalOpen(false);
+              }}
               className="w-full max-w-[320px] rounded-full auth-bg-btn py-3 text-base font-semibold text-[#F2F2F3] transition-all hover:opacity-90"
             >
               Proceed with selection

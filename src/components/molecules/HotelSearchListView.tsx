@@ -547,7 +547,8 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                       style={{ width: "1px" }}
                     />
 
-                    <div className="flex w-[272px] flex-shrink-0 flex-col items-end text-right">
+                    <div className="flex w-[300px] flex-shrink-0 flex-col items-end text-right">
+                    {/* <div className="flex w-[272px] flex-shrink-0 flex-col items-end text-right"> */}
                       {/* Figma: guest score row + deal pill above price (right-aligned) */}
                       <div className="mb-[14px] flex w-full flex-col items-baseline gap-[10px]">
                         {/* Figma: score pill 71×49, #A7C0EC, gap 10px to copy */}
@@ -648,7 +649,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         />
                       </div>
 
-                      <div className="mb-[22px] flex w-full flex-col items-end gap-[2px]">
+                      <div className="mb-[22px] flex w-full flex-col items-start gap-[2px]">
                         {hasOffer && originalPrice > price && (
                           <span
                             style={{
@@ -666,7 +667,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                             {currency} {originalPrice.toFixed(2)}
                           </span>
                         )}
-                        <div className="flex max-w-full flex-wrap items-end gap-x-[2px] gap-y-[6px]">
+                        <div className="flex max-w-full flex-wrap items-end gap-y-[6px]">
                           <span
                             style={{
                               fontFamily: "Inter, sans-serif",
@@ -681,7 +682,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                           >
                             {currency} {price.toFixed(2)}
                           </span>
-                          <span className="text-[12px] font-normal leading-none text-[#3D495C]">
+                          <span className="text-[12px] font-bold leading-none text-[#3D495C]">
                             /Night
                           </span>
                         </div>

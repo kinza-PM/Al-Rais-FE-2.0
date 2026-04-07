@@ -60,7 +60,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             searchKey: hotel.searchKey,
             bookingParams: bookingParams ?? undefined,
           },
-        }
+        },
       );
     };
 
@@ -388,7 +388,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             </span>
           </div>
 
-          <div className="mb-2 text-right">
+          <div className="mb-2 text-left">
             <div
               style={{
                 fontFamily: "Inter, sans-serif",
@@ -402,7 +402,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               Starting from (including VAT)
             </div>
             <div className="flex items-start justify-end gap-1.5">
-              <div className="min-w-0 text-right">
+              <div className="min-w-0 text-left mt-1">
                 {hasOffer && originalPrice > price && (
                   <span
                     style={{
@@ -421,7 +421,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                     {currency} {originalPrice.toFixed(2)}
                   </span>
                 )}
-                <span
+                {/* <span
                   style={{
                     fontFamily: "Inter, sans-serif",
                     fontWeight: 700,
@@ -436,6 +436,28 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                 >
                   {currency} {price.toFixed(2)}
                 </span>
+                <span className="text-[12px] font-bold leading-none text-[#3D495C]">
+                  /Night
+                </span> */}
+                <div className="flex max-w-full flex-wrap items-end gap-y-[6px]">
+                  <span
+                    style={{
+                      fontFamily: "Inter, sans-serif",
+                      fontWeight: 700,
+                      fontSize: "32px",
+                      lineHeight: "100%",
+                      color: "#0A0C0F",
+                      maxWidth: "100%",
+                      wordBreak: "break-word",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {currency} {price.toFixed(2)}
+                  </span>
+                  <span className="text-[12px] font-bold leading-none text-[#3D495C]">
+                    /Night
+                  </span>
+                </div>
               </div>
               <HotelPriceSummaryTooltip
                 totalPrice={price}
