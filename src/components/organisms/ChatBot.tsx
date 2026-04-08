@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { getCategories, sendSupportMessage } from "../../services/api/supportChatService";
-import type { Category } from "../../services/api/supportChatService";
+import { getCategories, sendSupportMessage, getSubcategories } from "../../services/api/supportChatService";
+import type { Category, Subcategory } from "../../services/api/supportChatService";
 
 interface Message {
   id: string;
@@ -11,7 +11,7 @@ interface Message {
 
 interface SupportTicketState {
   mode: "ai" | "support";
-  step: "greeting" | "name" | "email" | "phone" | "category" | "description" | "conversation";
+  step: "greeting" | "name" | "email" | "phone" | "category" | "subcategory" | "description" | "conversation";
   email?: string;
   name?: string;
   phone?: string;
@@ -76,6 +76,7 @@ const ChatBot: React.FC = () => {
   });
   const [messages, setMessages] = useState<Message[]>(STATIC_MESSAGES);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -95,7 +96,7 @@ const ChatBot: React.FC = () => {
   const loadCategories = async () => {
     try {
       const cats = await getCategories();
-      setCategories(cats);
+      setCategories(cats?.data || []);
     } catch (error) {
       console.error("Failed to load categories:", error);
     }
@@ -216,16 +217,30 @@ const ChatBot: React.FC = () => {
       } else if (step === "category") {
         const selectedCategory = categories.find(c => c.categoryName.toLowerCase() === inputValue.toLowerCase());
         if (selectedCategory) {
+          // Load subcategories for the selected category
+          try {
+            const subs = await getSubcategories(selectedCategory.categoryId);
+            setSubcategories(subs);
+          } catch (error) {
+            console.error("Failed to load subcategories:", error);
+            setSubcategories([]);
+          }
+
           setSupportState(prev => ({
             ...prev,
             category: selectedCategory.categoryName,
-            step: "description"
+            step: "subcategory"
           }));
+
+          // Show subcategories if available
+          const subcategoryList = subcategories.length > 0
+            ? `\n\nAvailable subcategories:\n${subcategories.map((sub: Subcategory) => `• ${sub.subcategoryName}`).join('\n')}`
+            : '';
 
           const assistantMessage: Message = {
             id: `msg-${Date.now()}-1`,
             role: "assistant",
-            content: `Good! You selected "${selectedCategory.categoryName}". Now, please describe your issue in detail.`,
+            content: `Good! You selected "${selectedCategory.categoryName}".${subcategoryList}\n\nPlease select or type a subcategory (or type "skip" if not applicable).`,
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           };
           setMessages(prev => [...prev, assistantMessage]);
@@ -238,6 +253,23 @@ const ChatBot: React.FC = () => {
           };
           setMessages(prev => [...prev, errorMessage]);
         }
+      } else if (step === "subcategory") {
+        // Collect subcategory
+        const subcategoryValue = inputValue.toLowerCase() === "skip" ? undefined : inputValue;
+
+        setSupportState(prev => ({
+          ...prev,
+          subcategory: subcategoryValue,
+          step: "description"
+        }));
+
+        const assistantMessage: Message = {
+          id: `msg-${Date.now()}-1`,
+          role: "assistant",
+          content: `Perfect! Now, please describe your issue in detail.`,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+        };
+        setMessages(prev => [...prev, assistantMessage]);
       } else if (step === "description") {
         // Create ticket
         try {
@@ -384,17 +416,15 @@ const ChatBot: React.FC = () => {
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-3 py-2.5 text-[13px] leading-relaxed sm:px-4 sm:py-3 ${
-                    msg.role === "user"
+                  className={`max-w-[85%] rounded-2xl px-3 py-2.5 text-[13px] leading-relaxed sm:px-4 sm:py-3 ${msg.role === "user"
                       ? "bg-[#2351A3] text-white rounded-br-md"
                       : "bg-white text-[#1f2a37] border border-[#e8ecf1] rounded-bl-md shadow-sm"
-                  }`}
+                    }`}
                 >
                   <p className="whitespace-pre-line">{msg.content}</p>
                   <p
-                    className={`mt-1.5 text-[10px] text-right ${
-                      msg.role === "user" ? "text-white/60" : "text-[#9ca3af]"
-                    }`}
+                    className={`mt-1.5 text-[10px] text-right ${msg.role === "user" ? "text-white/60" : "text-[#9ca3af]"
+                      }`}
                   >
                     {msg.timestamp}
                   </p>

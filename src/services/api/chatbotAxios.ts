@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const CHATBOT_API_BASE = import.meta.env.VITE_CHATBOT_API_BASE || 
-  "https://iwscxyyvs1.execute-api.eu-west-1.amazonaws.com/dev";
+  "https://czetk4q7hi.execute-api.eu-west-1.amazonaws.com/dev";
 
 export const chatbotClient = axios.create({
   baseURL: CHATBOT_API_BASE,
