@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import SearchableDropdown from "../common/SearchableDropdown";
 import Button from "../atoms/Button";
@@ -23,8 +23,11 @@ import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import type { CountryOption } from "../../features/flights/types";
 import CustomToggle from "../common/CustomToggle";
-import { usePassengerCacheAdd } from "../../hooks/usePassengerCache";
-import { buildPassengerCacheAddPayload } from "../../utils/passengerCacheHelper";
+import { usePassengerCacheAdd, usePassengerCacheFetch } from "../../hooks/usePassengerCache";
+import {
+  buildPassengerCacheAddPayload,
+  extractPassengersFromCacheResponse,
+} from "../../utils/passengerCacheHelper";
 // import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 // import toast from "react-hot-toast";
 // import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
@@ -39,6 +42,7 @@ type HotelBookingBookSectionProps = {
   ) => void;
   onNext?: () => void;
   onPassengerCacheSavingChange?: (saving: boolean) => void;
+  onPassengerCacheFetchLoadingChange?: (loading: boolean) => void;
   countries?: CountryOption[];
   hotelDetail?: any;
   bookingInfo?: any;
@@ -61,6 +65,7 @@ export default function HotelBookingBookSection({
   onPassengerFieldChange,
   onNext,
   onPassengerCacheSavingChange,
+  onPassengerCacheFetchLoadingChange,
   countries = [],
   hotelDetail = {},
   bookingInfo = {},
@@ -77,8 +82,11 @@ export default function HotelBookingBookSection({
   const [saveTravelerByPassengerKey, setSaveTravelerByPassengerKey] = useState<
     Record<string, boolean>
   >({});
+  /** Keys forced OFF by saved-traveler selection only — clear when that selection is removed to restore default ON. */
+  const savedTravelerOffKeysRef = useRef<Set<string>>(new Set());
 
   const { mutateAsync: addPassengerCache } = usePassengerCacheAdd();
+  const { data: passengerCacheResp } = usePassengerCacheFetch();
 
   // const { mutateAsync, isPending } = useHotelReservationBooking();
   const rooms = hotelBookingPayload?.rooms ?? [];
@@ -89,6 +97,7 @@ export default function HotelBookingBookSection({
       passenger,
     })),
   );
+
   const roomOptions = rooms.map((_, i) => {
     const sel = selectedRooms[i];
     const roomName = sel?.room?.roomTypeName || `Room ${i + 1}`;
@@ -109,6 +118,13 @@ export default function HotelBookingBookSection({
       if (v === "MRS") return "mrs";
       return "";
     };
+    const normalizeIdType = (v?: string) => {
+      const x = String(v ?? "").trim().toUpperCase();
+      if (x === "PT" || x === "PASSPORT") return "PASSPORT";
+      if (x === "NI" || x === "NATIONAL_ID") return "NATIONAL_ID";
+      if (x === "DL" || x === "DRIVING_LICENSE") return "DRIVING_LICENSE";
+      return "PASSPORT";
+    };
     const genderToUi = (g?: string) => {
       const v = String(g ?? "").trim().toUpperCase();
       if (v === "M" || v === "MALE") return "male";
@@ -128,7 +144,9 @@ export default function HotelBookingBookSection({
       const gender = clear ? "" : genderToUi(t.gender);
       const birthDate = clear ? null : (t.birthDate ?? null);
       const passport = clear ? "" : (t.passport ?? "");
+      const idType = clear ? "PASSPORT" : normalizeIdType(t.idType);
       const issuingCountryCode = clear ? "" : (t.issuingCountryCode ?? "");
+      const residenceCountryCode = clear ? "" : (t.residenceCountryCode ?? "");
       const dateOfIssue = clear ? null : (t.dateOfIssueIso ?? null);
       const expiryIso = clear ? null : (t.expiryIso ?? null);
       const email = clear ? "" : (t.email ?? "");
@@ -146,19 +164,49 @@ export default function HotelBookingBookSection({
       onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.birthDate", birthDate);
 
       onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.idDocumentNumber", passport);
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.idType", idType);
       onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.issuingCountryCode", issuingCountryCode);
+      onPassengerFieldChange(
+        roomIndex,
+        passengerIndex,
+        "identityDocuments.0.residenceCountryCode",
+        residenceCountryCode,
+      );
       onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.dateOfIssue", dateOfIssue);
       onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.expiryDate", expiryIso);
 
       onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.emailAddress.0", email);
       onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.phone.0.areaCode", areaCode);
       onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.phone.0.phoneNumber", phoneNumber);
+      // Lead guest is always the first passenger in each room (matches buildInitialHotelBookingPayload).
+      onPassengerFieldChange(roomIndex, passengerIndex, "isLead", passengerIndex === 0);
     };
 
     // Fill/clear sequentially based on current passenger slots.
     for (let i = 0; i < flatPassengers.length; i++) {
       apply(i, selectedSlots[i]);
     }
+
+    // Default save toggle is ON; saved-traveler fill sets OFF. Deselecting saved traveler restores default ON.
+    setSaveTravelerByPassengerKey((prev) => {
+      const next = { ...prev };
+      const currentOffFromSaved = new Set<string>();
+      for (let i = 0; i < flatPassengers.length; i++) {
+        const fp = flatPassengers[i];
+        const key = `${fp.roomIndex}:${fp.passengerIndex}:${fp.passenger?.passengerKey ?? ""}`;
+        if (selectedSlots[i]) {
+          next[key] = false;
+          currentOffFromSaved.add(key);
+        }
+      }
+      for (const key of savedTravelerOffKeysRef.current) {
+        if (!currentOffFromSaved.has(key)) {
+          delete next[key];
+        }
+      }
+      savedTravelerOffKeysRef.current = currentOffFromSaved;
+      return next;
+    });
   };
 
   const saveToggleKey = (
@@ -189,8 +237,11 @@ export default function HotelBookingBookSection({
       )
       .map(({ passenger }) => passenger);
 
-    return buildPassengerCacheAddPayload(selectedPassengers);
-  }, [flatPassengers, saveTravelerByPassengerKey]);
+    if (selectedPassengers.length === 0) return null;
+
+    const existingSavedPassengers = extractPassengersFromCacheResponse(passengerCacheResp);
+    return buildPassengerCacheAddPayload(selectedPassengers, existingSavedPassengers);
+  }, [flatPassengers, saveTravelerByPassengerKey, passengerCacheResp]);
 
   const clearFieldError = (
     roomIdx: number,
@@ -275,6 +326,7 @@ export default function HotelBookingBookSection({
           <SavedTravelersSection
             onProceedSelection={fillFromSavedTravelers}
             maxSelectable={flatPassengers.length}
+            onInitialFetchLoadingChange={onPassengerCacheFetchLoadingChange}
           />
           {flatPassengers.map(
             ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (

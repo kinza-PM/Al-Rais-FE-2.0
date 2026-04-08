@@ -366,6 +366,43 @@ export function validateHotelBookingPassengersFields(
 
   return errors;
 }
+// export function validateHotelBookingPassengersFields(
+//   payload: HotelBookingPayload,
+//   _options?: {
+//     childAgesPerRoom?: number[][];
+//     checkInDate?: string;
+//   },
+// ): HotelPassengerFieldErrors {
+//   const errors: HotelPassengerFieldErrors = {};
+
+//   const isEmpty = (v: any) =>
+//     v === undefined || v === null || String(v).trim() === "";
+
+//   // Only passengerKey, isLead, and ptc are required here (rest set by flow / optional for now).
+
+//   payload.rooms.forEach((room, roomIdx) => {
+//     room.passengers.forEach((p, pIdx) => {
+//       const passengerErrors: Record<string, string> = {};
+
+//       if (isEmpty(p.passengerKey)) {
+//         passengerErrors["passengerKey"] = "Passenger key is required.";
+//       }
+//       if (typeof p.isLead !== "boolean") {
+//         passengerErrors["isLead"] = "Lead status is required.";
+//       }
+//       if (isEmpty(p.ptc)) {
+//         passengerErrors["ptc"] = "Passenger type is required.";
+//       }
+
+//       if (Object.keys(passengerErrors).length > 0) {
+//         if (!errors[roomIdx]) errors[roomIdx] = {};
+//         errors[roomIdx][pIdx] = passengerErrors;
+//       }
+//     });
+//   });
+
+//   return errors;
+// }
 
 export const validateHotelReservationBookingDataFields = (
   reservation:
@@ -482,11 +519,13 @@ export function aggregateHotelTaxesFromSelectedRooms(
     }
   }
 
-  return Array.from(byName.values()).map(({ displayName, amount, included }) => ({
-    name: displayName,
-    amount,
-    included,
-  }));
+  return Array.from(byName.values()).map(
+    ({ displayName, amount, included }) => ({
+      name: displayName,
+      amount,
+      included,
+    }),
+  );
 }
 
 /**
@@ -494,7 +533,10 @@ export function aggregateHotelTaxesFromSelectedRooms(
  * Each row is treated as one priced unit (same as `selectedRooms` with `count: 1` each).
  */
 export function aggregateHotelTaxesFromRoomArray(
-  rooms: Array<{ roomRate?: { taxes?: HotelRoomTaxItem[] } }> | undefined | null,
+  rooms:
+    | Array<{ roomRate?: { taxes?: HotelRoomTaxItem[] } }>
+    | undefined
+    | null,
 ): HotelRoomTaxItem[] {
   return aggregateHotelTaxesFromSelectedRooms(
     (rooms ?? []).map((room) => ({ count: 1, room })),

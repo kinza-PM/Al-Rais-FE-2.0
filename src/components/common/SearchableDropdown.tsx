@@ -37,6 +37,7 @@ interface SearchableDropdownProps {
   hasMore?: boolean;
   loadingMore?: boolean;
   tooltip?: string | null;
+  labelClass?: string;
   /**
    * Optional label to display when value is set.
    * When provided, overrides derived label from options/cache.
@@ -45,6 +46,8 @@ interface SearchableDropdownProps {
   displayLabel?: string | null;
   /** Called with full option when user selects; use to persist label for display. */
   onOptionSelect?: (value: string, option: DropdownOption) => void;
+  /** Optional namespace for global label cache to prevent cross-field collisions. */
+  cacheKey?: string;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -67,6 +70,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   tooltip = null,
   displayLabel = null,
   onOptionSelect,
+  labelClass = null,
+  cacheKey,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -81,6 +86,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
   const hasGoodLabel = (o: DropdownOption) =>
     o.label && o.label.trim().length > (o.value?.length ?? 0);
+  const cacheNamespace = cacheKey || label || placeholder || "default";
+  const scopedCacheKey = (v: string) => `${cacheNamespace}::${v}`;
 
   // Cache options by value so selected label doesn't disappear
   // when remote search results don't contain the selected option.
@@ -91,11 +98,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       if (!existing || !hasGoodLabel(existing) || hasGoodLabel(opt)) {
         optionCacheRef.current.set(opt.value, opt);
         if (hasGoodLabel(opt)) {
-          globalLabelCache.set(opt.value, opt.label);
+          globalLabelCache.set(scopedCacheKey(opt.value), opt.label);
         }
       }
     }
-  }, [options]);
+  }, [options, cacheNamespace]);
 
   // Filter options based on search term
   const filteredOptions = useMemo(() => {
@@ -122,7 +129,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     optionCacheRef.current.get(value);
   const displayValue =
     (value && displayLabel) ||
-    (value && globalLabelCache.get(value)) ||
+    (value && globalLabelCache.get(scopedCacheKey(value))) ||
     selectedOption?.label ||
     (value ? value : placeholder);
 
@@ -206,7 +213,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     if (selectedOpt) {
       optionCacheRef.current.set(optionValue, selectedOpt);
       if (hasGoodLabel(selectedOpt)) {
-        globalLabelCache.set(optionValue, selectedOpt.label);
+        globalLabelCache.set(scopedCacheKey(optionValue), selectedOpt.label);
       }
       onOptionSelect?.(optionValue, selectedOpt);
     }
@@ -290,7 +297,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   return (
     <div className={`relative ${widthClass}`} ref={dropdownRef}>
       {label && (
-        <label className="block text-[12px] text-[#0A0C0F] mb-1">{label}</label>
+        <label
+          className={
+            labelClass ? labelClass : "mb-1 block text-xs text-[#3D495C]"
+          }
+        >
+          {label}
+        </label>
       )}
 
       <div className="group relative">

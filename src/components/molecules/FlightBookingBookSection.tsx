@@ -6,10 +6,10 @@ import baggageIcon from "../../assets/svgs/baggage.svg";
 // import wifiIcon from "../../assets/svgs/wifi.svg";
 // import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
-// import CustomToggle from "../common/CustomToggle";
+import CustomToggle from "../common/CustomToggle";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import TailwindCustomInput from "../common/TailwindCustomInput";
@@ -40,6 +40,12 @@ import durationIcon from "../../assets/svgs/duration.svg";
 import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
+import SavedTravelersSection, { type SavedTraveler } from "./SavedTravelersSection";
+import { usePassengerCacheAdd, usePassengerCacheFetch } from "../../hooks/usePassengerCache";
+import {
+  buildPassengerCacheAddPayload,
+  extractPassengersFromCacheResponse,
+} from "../../utils/passengerCacheHelper";
 
 type FlightBookingBookSectionProps = {
   trip: any;
@@ -86,9 +92,15 @@ export default function FlightBookingBookSection({
     Record<number, Record<string, string>>
   >({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+  const [saveTravelerByPassengerKey, setSaveTravelerByPassengerKey] = useState<
+    Record<string, boolean>
+  >({});
+  const savedTravelerOffKeysRef = useRef<Set<string>>(new Set());
 
   const pRules = fareBookingSearchRules?.passengerRules?.[0] ?? {};
   const { mutateAsync, isPending } = useFlightInitialBooking();
+  const { mutateAsync: addPassengerCache } = usePassengerCacheAdd();
+  const { data: passengerCacheResp } = usePassengerCacheFetch();
 
   // First ADT's phone for CHD/INF fallback
   const firstAdtPhone = useMemo(() => {
@@ -210,7 +222,27 @@ export default function FlightBookingBookSection({
       }
       return;
     }
+
+    const selectedPassengersForCache = passengers.filter((p, idx) =>
+      saveToggleChecked(saveToggleKey(idx, p?.passengerKey)),
+    );
+    const addPassengerCachePayload =
+      selectedPassengersForCache.length > 0
+        ? buildPassengerCacheAddPayload(
+            selectedPassengersForCache,
+            extractPassengersFromCacheResponse(passengerCacheResp),
+          )
+        : null;
+
     try {
+      if (addPassengerCachePayload) {
+        try {
+          await addPassengerCache(addPassengerCachePayload);
+        } catch (e) {
+          // Do not block flight flow if cache save fails.
+          console.error("fetchAddPassengerCache(add) failed", e);
+        }
+      }
       const response = await mutateAsync(flightBookingPayload);
       if (
         response?.meta?.success &&
@@ -248,6 +280,121 @@ export default function FlightBookingBookSection({
     }
   };
 
+  const fillFromSavedTravelers = (selectedSlots: Array<SavedTraveler | undefined>) => {
+    const titleToUi = (t?: string) => {
+      const v = String(t ?? "").trim().toUpperCase();
+      if (v === "MR") return "MR";
+      if (v === "MS") return "MS";
+      if (v === "MRS") return "MRS";
+      return "";
+    };
+    const normalizeIdType = (v?: string) => {
+      const x = String(v ?? "").trim().toUpperCase();
+      if (x === "PT" || x === "PASSPORT") return "PT";
+      if (x === "NI" || x === "NATIONAL_ID") return "NI";
+      if (x === "DL" || x === "DRIVING_LICENSE") return "DL";
+      return "PT";
+    };
+    const genderToUi = (g?: string) => {
+      const v = String(g ?? "").trim().toUpperCase();
+      if (v === "M" || v === "MALE") return "M";
+      if (v === "F" || v === "FEMALE") return "F";
+      return "";
+    };
+
+    const apply = (idx: number, t?: SavedTraveler) => {
+      if (!passengers[idx]) return;
+
+      const clear = !t;
+      const givenName = clear ? "" : t.firstName ?? "";
+      const surname = clear ? "" : t.lastName ?? "";
+      const nameTitle = clear ? "" : titleToUi(t.nameTitle);
+      const gender = clear ? "" : genderToUi(t.gender);
+      const birthDate = clear ? null : (t.birthDate ?? null);
+      const passport = clear ? "" : (t.passport ?? "");
+      const idType = clear ? "PT" : normalizeIdType(t.idType);
+      const issuingCountryCode = clear ? "" : (t.issuingCountryCode ?? "");
+      const residenceCountryCode = clear ? "" : (t.residenceCountryCode ?? "");
+      const dateOfIssue = clear ? null : (t.dateOfIssueIso ?? null);
+      const expiryIso = clear ? null : (t.expiryIso ?? null);
+      const email = clear ? "" : (t.email ?? "");
+      const areaCode = clear
+        ? ""
+        : t.phoneAreaCode !== undefined &&
+            t.phoneAreaCode !== null &&
+            String(t.phoneAreaCode).trim() !== ""
+          ? `+${String(t.phoneAreaCode).replace(/^\+/, "")}`
+          : "";
+      const phoneNumber = clear ? "" : String(t.phoneNumber ?? "");
+
+      onPassengerFieldChange(idx, "passengerInfo.nameTitle", nameTitle);
+      onPassengerFieldChange(idx, "passengerInfo.gender", gender);
+      onPassengerFieldChange(idx, "passengerInfo.givenName", givenName);
+      onPassengerFieldChange(idx, "passengerInfo.surname", surname);
+      onPassengerFieldChange(idx, "passengerInfo.birthDate", birthDate);
+
+      onPassengerFieldChange(idx, "identityDocuments.0.idDocumentNumber", passport);
+      onPassengerFieldChange(idx, "identityDocuments.0.idType", idType);
+      onPassengerFieldChange(idx, "identityDocuments.0.issuingCountryCode", issuingCountryCode);
+      onPassengerFieldChange(
+        idx,
+        "identityDocuments.0.residenceCountryCode",
+        residenceCountryCode,
+      );
+      onPassengerFieldChange(idx, "identityDocuments.0.dateOfIssue", dateOfIssue);
+      onPassengerFieldChange(idx, "identityDocuments.0.expiryDate", expiryIso);
+
+      onPassengerFieldChange(idx, "contact.contactsProvided.0.emailAddress.0", email);
+      onPassengerFieldChange(idx, "contact.contactsProvided.0.phone.0.areaCode", areaCode);
+      onPassengerFieldChange(idx, "contact.contactsProvided.0.phone.0.phoneNumber", phoneNumber);
+      onPassengerFieldChange(idx, "isLead", idx === 0);
+    };
+
+    for (let i = 0; i < passengers.length; i++) {
+      apply(i, selectedSlots[i]);
+    }
+
+    setSaveTravelerByPassengerKey((prev) => {
+      const next = { ...prev };
+      const currentOffFromSaved = new Set<string>();
+      for (let i = 0; i < passengers.length; i++) {
+        const p = passengers[i];
+        const key = `${i}:${p?.passengerKey ?? ""}`;
+        if (selectedSlots[i]) {
+          next[key] = false;
+          currentOffFromSaved.add(key);
+        }
+      }
+      for (const key of savedTravelerOffKeysRef.current) {
+        if (!currentOffFromSaved.has(key)) {
+          delete next[key];
+        }
+      }
+      savedTravelerOffKeysRef.current = currentOffFromSaved;
+      return next;
+    });
+  };
+
+  const saveToggleKey = (index: number, passengerKey?: string) =>
+    `${index}:${passengerKey ?? ""}`;
+  const saveToggleChecked = (key: string) => {
+    const v = saveTravelerByPassengerKey[key];
+    return v !== false;
+  };
+  const toggleSaveTraveler = (key: string) => {
+    setSaveTravelerByPassengerKey((prev) => ({
+      ...prev,
+      [key]: !saveToggleChecked(key),
+    }));
+  };
+  const normalizeIdType = (v?: string) => {
+    const x = String(v ?? "").trim().toUpperCase();
+    if (x === "PT" || x === "PASSPORT") return "PT";
+    if (x === "NI" || x === "NATIONAL_ID") return "NI";
+    if (x === "DL" || x === "DRIVING_LICENSE") return "DL";
+    return "PT";
+  };
+
   // const countryOptions = useMemo(() => {
   //   return getUniqueCountries(cities);
   // }, [cities]);
@@ -256,6 +403,10 @@ export default function FlightBookingBookSection({
     <section className="mx-auto max-w-full px-10 flight-booking-section">
       <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
+          <SavedTravelersSection
+            onProceedSelection={fillFromSavedTravelers}
+            maxSelectable={passengers.length}
+          />
           {passengers.map((p, idx) => (
             <React.Fragment key={p.passengerKey || idx}>
               <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
@@ -263,11 +414,6 @@ export default function FlightBookingBookSection({
                   <h3 className="text-[15px] font-medium text-[#0A0C0F]">
                     Contact person {String(idx + 1).padStart(2, "0")} details
                   </h3>
-                  {/* <CustomToggle
-                                        label="I’m booking for someone else"
-                                        checked={bookingForOther}
-                                        onChange={() => setBookingForOther((v) => !v)}
-                                    /> */}
                 </div>
 
                 <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
@@ -402,8 +548,13 @@ export default function FlightBookingBookSection({
               <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
                 <div className="flex items-center justify-between px-4 py-2 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px]">
                   <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                    Passenger {String(idx + 1).padStart(2, "0")} details
+                    Traveler {String(idx + 1).padStart(2, "0")} details
                   </h3>
+                  <CustomToggle
+                    label="Save Traveler information in my profile"
+                    checked={saveToggleChecked(saveToggleKey(idx, p?.passengerKey))}
+                    onChange={() => toggleSaveTraveler(saveToggleKey(idx, p?.passengerKey))}
+                  />
                 </div>
 
                 <div className="px-4 py-4 rounded-b-[16px]">
@@ -430,7 +581,7 @@ export default function FlightBookingBookSection({
                               label: "Passport (PT)",
                             },
                           ]}
-                          value={p.identityDocuments?.[0]?.idType ?? "PT"}
+                          value={normalizeIdType(p.identityDocuments?.[0]?.idType)}
                           onChange={(value) => {
                             onPassengerFieldChange(
                               idx,
@@ -514,7 +665,7 @@ export default function FlightBookingBookSection({
                         options={
                           countries?.map((c) => ({
                             id: c.iso2,
-                            value: c.iso3,
+                            value: c.iso2,
                             label: c.label,
                           })) || []
                         }
@@ -645,7 +796,7 @@ export default function FlightBookingBookSection({
                         options={
                           countries?.map((c) => ({
                             id: c.iso2,
-                            value: c.iso3,
+                            value: c.iso2,
                             label: c.label,
                           })) || []
                         }

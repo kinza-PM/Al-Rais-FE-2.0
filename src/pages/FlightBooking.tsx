@@ -281,10 +281,26 @@ const FlightBooking = () => {
     }
   };
 
+  const getPassengerFieldValue = (obj: any, path: string) => {
+    const parts = path.split(".");
+    let cur = obj;
+    for (const key of parts) {
+      if (cur === undefined || cur === null) return undefined;
+      if (/^\d+$/.test(key)) {
+        cur = cur[Number(key)];
+      } else {
+        cur = cur[key];
+      }
+    }
+    return cur;
+  };
+
   const updatePassengerField = (index: number, path: string, value: any) => {
     setFlightBookingPayload((prev) => {
+      if (!prev?.passengers?.[index]) return prev;
+      const currentValue = getPassengerFieldValue(prev.passengers[index], path);
+      if (currentValue === value) return prev;
       const next = JSON.parse(JSON.stringify(prev)); // quick deep clone
-      if (!next.passengers[index]) return prev;
       setPassengerFlightInitialPayload(next.passengers[index], path, value);
       return next;
     });

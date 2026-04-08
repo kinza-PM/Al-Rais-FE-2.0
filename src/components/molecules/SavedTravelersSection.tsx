@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "antd";
 import { usePassengerCacheFetch } from "../../hooks/usePassengerCache";
 
@@ -18,10 +18,14 @@ export type SavedTraveler = {
   gender?: string;
   nameTitle?: string;
   issuingCountryCode?: string;
+  residenceCountryCode?: string;
+  idType?: string;
   dateOfIssueIso?: string | null;
   email?: string;
   phoneAreaCode?: string | number;
   phoneNumber?: string | number;
+  /** From passenger cache / API; hotel payload uses lead per room (first passenger). */
+  isLead?: boolean;
 };
 
 export const mockTravelers: SavedTraveler[] = [
@@ -70,19 +74,23 @@ export const mockTravelers: SavedTraveler[] = [
 type SavedTravelersSectionProps = {
   onProceedSelection?: (selectedSlots: Array<SavedTraveler | undefined>) => void;
   maxSelectable?: number;
+  onInitialFetchLoadingChange?: (loading: boolean) => void;
 };
 
 export default function SavedTravelersSection({
   onProceedSelection,
   maxSelectable,
+  onInitialFetchLoadingChange,
 }: SavedTravelersSectionProps) {
-  const { data: passengerCacheResp } = usePassengerCacheFetch();
+  const { data: passengerCacheResp, isLoading: isPassengerCacheInitialLoading } =
+    usePassengerCacheFetch();
   // Slot-based selection (keeps positions stable in the form):
   // selectedSlotIds[0] fills Traveler-01, [1] fills Traveler-02, etc.
   const [selection, setSelection] = useState<{
     slots: Array<string | null>;
     order: string[];
   }>({ slots: [], order: [] });
+  const lastEmittedSelectionKeyRef = useRef("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const MAX_SELECTABLE =
@@ -159,8 +167,12 @@ export default function SavedTravelersSection({
         const rawKey = String(p?.passengerKey ?? p?.id ?? idx).trim();
         const key = `${rawKey}|${passport}|${expiryIso}|${String(
           pi?.birthDate ?? "",
-        ).trim()}`;
+        ).trim()}|${idx}`;
         const initials = `${firstName?.[0] ?? "T"}${lastName?.[0] ?? ""}`.toUpperCase();
+        const isLead =
+          typeof p?.isLead === "boolean"
+            ? p.isLead
+            : String(p?.isLead ?? "").toLowerCase() === "true";
         return {
           id: key,
           firstName,
@@ -175,10 +187,13 @@ export default function SavedTravelersSection({
           gender: pi?.gender ?? "",
           nameTitle: pi?.nameTitle ?? "",
           issuingCountryCode: doc0?.issuingCountryCode ?? "",
+          residenceCountryCode: doc0?.residenceCountryCode ?? "",
+          idType: doc0?.idType ?? "",
           dateOfIssueIso: doc0?.dateOfIssue ?? null,
           email: contact0?.emailAddress?.[0] ?? "",
           phoneAreaCode: phone0?.areaCode ?? "",
           phoneNumber: phone0?.phoneNumber ?? "",
+          isLead,
         };
       })
       .filter(Boolean) as SavedTraveler[];
@@ -186,10 +201,20 @@ export default function SavedTravelersSection({
     return mapped;
   }, [passengerCacheResp]);
 
-  // Ensure nothing is pre-selected when fresh fetch data arrives.
+  // Reset selection only when the actual fetched traveler rows change,
+  // not on every query response object reference update.
+  const travelersSignature = useMemo(
+    () => travelers.map((t) => t.id).join("||"),
+    [travelers],
+  );
   useEffect(() => {
-    setSelection({ slots: [], order: [] });
-  }, [passengerCacheResp]);
+    setSelection((prev) => {
+      const alreadyEmpty =
+        prev.order.length === 0 && prev.slots.every((x) => !x);
+      if (alreadyEmpty) return prev;
+      return { slots: [], order: [] };
+    });
+  }, [travelersSignature]);
 
   // Keep selected slots array same length as MAX_SELECTABLE.
   useEffect(() => {
@@ -201,6 +226,13 @@ export default function SavedTravelersSection({
       // Drop any ids from order that are no longer present in slots
       const inSlots = new Set(slots.filter(Boolean) as string[]);
       const nextOrder = order.filter((id) => inSlots.has(id));
+      const sameSlots =
+        slots.length === prev.slots.length &&
+        slots.every((v, i) => v === prev.slots[i]);
+      const sameOrder =
+        nextOrder.length === prev.order.length &&
+        nextOrder.every((v, i) => v === prev.order[i]);
+      if (sameSlots && sameOrder) return prev;
       return { slots, order: nextOrder };
     });
   }, [MAX_SELECTABLE]);
@@ -216,11 +248,18 @@ export default function SavedTravelersSection({
   );
 
   useEffect(() => {
+    const key = selection.slots.map((x) => x ?? "").join("|");
+    if (key === lastEmittedSelectionKeyRef.current) return;
+    lastEmittedSelectionKeyRef.current = key;
     if (typeof onProceedSelection === "function") {
       onProceedSelection(selectedSlots);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedSlots]);
+  }, [selectedSlots, selection.slots]);
+
+  useEffect(() => {
+    onInitialFetchLoadingChange?.(isPassengerCacheInitialLoading);
+  }, [isPassengerCacheInitialLoading, onInitialFetchLoadingChange]);
 
   const displayTravelers =
     travelers.length > 3 ? travelers.slice(0, 3) : travelers;
@@ -254,6 +293,12 @@ export default function SavedTravelersSection({
       if (evictIdx >= 0) slots[evictIdx] = id;
       else slots[0] = id;
       return { slots, order: nextOrder };
+    });
+  };
+  const clearAllSelection = () => {
+    setSelection({
+      slots: Array.from({ length: MAX_SELECTABLE }, () => null),
+      order: [],
     });
   };
 
@@ -384,7 +429,10 @@ export default function SavedTravelersSection({
         footer={null}
         centered
         maskClosable
-        onCancel={() => setIsModalOpen(false)}
+        onCancel={() => {
+          clearAllSelection();
+          setIsModalOpen(false);
+        }}
         closeIcon={<></>}
         styles={{
           mask: modalOverlayStyles,
@@ -422,7 +470,7 @@ export default function SavedTravelersSection({
               Saved Travelers:
             </h3>
             <span className="text-base text-[#3D495C]">
-              {selectedCount}/{travelers.length} Selected
+              {selectedCount}/{MAX_SELECTABLE} Selected
             </span>
           </div>
 
@@ -450,7 +498,10 @@ export default function SavedTravelersSection({
               Proceed with selection
             </button>
             <button
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                clearAllSelection();
+                setIsModalOpen(false);
+              }}
               className="w-full max-w-[320px] rounded-full border-2 border-[#2351A3] py-3 text-base font-semibold text-[#2351A3] transition-all hover:bg-gray-50"
             >
               Close
