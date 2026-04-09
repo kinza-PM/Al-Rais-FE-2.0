@@ -11,7 +11,6 @@ import durationIcon from "../../assets/svgs/duration.svg";
 import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
-import shareIcon from "../../assets/svgs/share.svg";
 import { Switch, Modal } from "antd";
 
 import { useNavigate } from "react-router-dom";
@@ -195,20 +194,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     [navigate, passengersForRequest],
   );
 
-  const handleShareOffer = useCallback((item: any, seg?: any) => {
-    const name = getAirlineDisplayName(item, seg);
-    const price = item?.rawTotalStartingFare ?? "";
-    const cur = item?.raw?.fare?.currencyCode ?? "";
-    const title = `${name} — ${cur}${price}`.trim();
-    const url = window.location.href;
-    if (typeof navigator !== "undefined" && navigator.share) {
-      navigator.share({ title, url }).catch(() => {
-        void navigator.clipboard?.writeText(url);
-      });
-    } else {
-      void navigator.clipboard?.writeText(url);
-    }
-  }, []);
+  // Share UI temporarily removed.
 
   if (!passData || passData.length === 0) {
     return (
@@ -445,7 +431,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                         style={{
                           display: "flex",
                           flexDirection: "column",
-                          alignItems: "flex-end",
+                          alignItems: "flex-start",
                           gap: "2px",
                           flex: "0 1 auto",
                           minWidth: 0,
@@ -460,7 +446,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                             fontWeight: 400,
                             lineHeight: 1,
                             width: "100%",
-                            textAlign: "right",
+                            textAlign: "left",
                           }}
                         >
                           Starting from
@@ -474,7 +460,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                             lineHeight: 1,
                             letterSpacing: 0,
                             width: "100%",
-                            textAlign: "right",
+                            textAlign: "left",
                             wordBreak: "break-word",
                           }}
                         >
@@ -593,29 +579,6 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                       ) : null;
                     })()}
                   </div>
-
-                  <button
-                    type="button"
-                    aria-label="Share flight"
-                    onClick={() => handleShareOffer(item, currentSeg)}
-                    style={{
-                      position: "absolute",
-                      right: "10px",
-                      bottom: "12px",
-                      width: "38px",
-                      height: "38px",
-                      borderRadius: "50%",
-                      border: "1px solid #C2CAD6",
-                      background: "#FFFFFF",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      cursor: "pointer",
-                      padding: 0,
-                    }}
-                  >
-                    <img src={shareIcon} alt="" width={22} height={22} />
-                  </button>
                 </div>
               );
             })()}
