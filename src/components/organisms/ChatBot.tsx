@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { getCategories, sendSupportMessage, getSubcategories } from "../../services/api/supportChatService";
 import type { Category, Subcategory } from "../../services/api/supportChatService";
+import { subscribeToMessageReceived, sendMessage as sendAppSyncMessage } from "../../services/api/appSyncService";
+import type { Message as AppSyncMessage } from "../../services/api/appSyncService";
 
 interface Message {
   id: string;
@@ -92,6 +94,37 @@ const ChatBot: React.FC = () => {
     // Check if user is logged in
     checkAuthStatus();
   }, []);
+
+  // Subscribe to real-time messages when in conversation mode
+  useEffect(() => {
+    if (mode === "support" && supportState.step === "conversation" && supportState.conversationId) {
+      const subscription = subscribeToMessageReceived(
+        supportState.conversationId,
+        (newMessage: AppSyncMessage) => {
+          // Only add messages from admin (not our own messages)
+          if (newMessage.sender === "admin") {
+            const formattedMessage: Message = {
+              id: newMessage.id,
+              role: "assistant",
+              content: newMessage.text,
+              timestamp: new Date(newMessage.timestamp).toLocaleTimeString([], { 
+                hour: "2-digit", 
+                minute: "2-digit" 
+              })
+            };
+            setMessages(prev => [...prev, formattedMessage]);
+          }
+        },
+        (error) => {
+          console.error("Subscription error:", error);
+        }
+      );
+
+      return () => {
+        subscription.unsubscribe();
+      };
+    }
+  }, [mode, supportState.step, supportState.conversationId]);
 
   const loadCategories = async () => {
     try {
@@ -284,17 +317,19 @@ const ChatBot: React.FC = () => {
             createTicket: true
           });
 
+          console.log("response", response);
+
           setSupportState(prev => ({
             ...prev,
-            conversationId: response.conversationId,
-            ticketId: response.ticketId,
+            conversationId: response?.data?.conversationId,
+            ticketId: response?.data?.ticketId,
             step: "conversation"
           }));
 
           const assistantMessage: Message = {
             id: `msg-${Date.now()}-1`,
             role: "assistant",
-            content: `✅ Your support ticket has been created successfully! Ticket ID: ${response.ticketId}\n\nYou can continue chatting with our support team here.`,
+            content: `✅ Your support ticket has been created successfully! Ticket ID: ${response?.data?.ticketId}\n\nYou can continue chatting with our support team here.`,
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           };
           setMessages(prev => [...prev, assistantMessage]);
@@ -304,6 +339,26 @@ const ChatBot: React.FC = () => {
             id: `msg-${Date.now()}-1`,
             role: "assistant",
             content: "Sorry, there was an error creating your ticket. Please try again.",
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          };
+          setMessages(prev => [...prev, errorMessage]);
+        }
+      } else if (step === "conversation") {
+        // Send message via AppSync in conversation mode
+        try {
+          if (supportState.conversationId) {
+            await sendAppSyncMessage({
+              conversationId: supportState.conversationId,
+              message: inputValue,
+              sender: "user"
+            });
+          }
+        } catch (error) {
+          console.error("Error sending message via AppSync:", error);
+          const errorMessage: Message = {
+            id: `msg-${Date.now()}-1`,
+            role: "assistant",
+            content: "Sorry, there was an error sending your message. Please try again.",
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           };
           setMessages(prev => [...prev, errorMessage]);
@@ -417,8 +472,8 @@ const ChatBot: React.FC = () => {
               >
                 <div
                   className={`max-w-[85%] rounded-2xl px-3 py-2.5 text-[13px] leading-relaxed sm:px-4 sm:py-3 ${msg.role === "user"
-                      ? "bg-[#2351A3] text-white rounded-br-md"
-                      : "bg-white text-[#1f2a37] border border-[#e8ecf1] rounded-bl-md shadow-sm"
+                    ? "bg-[#2351A3] text-white rounded-br-md"
+                    : "bg-white text-[#1f2a37] border border-[#e8ecf1] rounded-bl-md shadow-sm"
                     }`}
                 >
                   <p className="whitespace-pre-line">{msg.content}</p>

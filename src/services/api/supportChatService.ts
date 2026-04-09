@@ -100,6 +100,7 @@ export async function sendSupportMessage<TResp = SupportConversation>(
       payload.subcategory = data.subcategory;
     }
 
+    // console.log("payload", payload);
     return await chatbotApi.post<TResp>("/support/ticket", payload);
   } catch (err) {
     console.error("Error sending support message:", err);

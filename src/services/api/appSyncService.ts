@@ -1,13 +1,31 @@
 import { GraphQLClient, gql } from 'graphql-request';
+import { Amplify } from 'aws-amplify';
+import { generateClient } from 'aws-amplify/api';
 
 const APPSYNC_ENDPOINT = import.meta.env.VITE_APPSYNC_ENDPOINT || '';
 const APPSYNC_API_KEY = import.meta.env.VITE_APPSYNC_API_KEY || '';
+
+// Configure Amplify for AppSync
+if (APPSYNC_ENDPOINT && APPSYNC_API_KEY) {
+  Amplify.configure({
+    API: {
+      GraphQL: {
+        endpoint: APPSYNC_ENDPOINT,
+        region: 'eu-west-1',
+        defaultAuthMode: 'apiKey',
+        apiKey: APPSYNC_API_KEY
+      }
+    }
+  });
+}
 
 const client = new GraphQLClient(APPSYNC_ENDPOINT, {
   headers: {
     'x-api-key': APPSYNC_API_KEY,
   },
 });
+
+const amplifyClient = generateClient();
 
 // Queries
 const GET_CONVERSATION = gql`
@@ -222,14 +240,34 @@ export function subscribeToMessageReceived(
   onMessage: (message: Message) => void,
   onError?: (error: any) => void
 ) {
-  // Note: For WebSocket subscriptions, you'll need to use AWS Amplify or a WebSocket client
-  // This is a placeholder for the subscription setup
-  console.log('Subscribing to messages for conversation:', conversationId);
-  return {
-    unsubscribe: () => {
-      console.log('Unsubscribed from messages');
-    },
-  };
+  try {
+    const subscription = amplifyClient.graphql({
+      query: ON_MESSAGE_RECEIVED,
+      variables: { conversationId }
+    }).subscribe({
+      next: ({ data }: any) => {
+        if (data?.onMessageReceived) {
+          onMessage(data.onMessageReceived);
+        }
+      },
+      error: (error: any) => {
+        console.error('Subscription error:', error);
+        onError?.(error);
+      }
+    });
+
+    return {
+      unsubscribe: () => {
+        subscription.unsubscribe();
+      }
+    };
+  } catch (error) {
+    console.error('Failed to subscribe to messages:', error);
+    onError?.(error);
+    return {
+      unsubscribe: () => {}
+    };
+  }
 }
 
 export function subscribeToConversationUpdated(
@@ -237,12 +275,32 @@ export function subscribeToConversationUpdated(
   onUpdate: (conversation: Conversation) => void,
   onError?: (error: any) => void
 ) {
-  // Note: For WebSocket subscriptions, you'll need to use AWS Amplify or a WebSocket client
-  // This is a placeholder for the subscription setup
-  console.log('Subscribing to conversation updates:', conversationId);
-  return {
-    unsubscribe: () => {
-      console.log('Unsubscribed from conversation updates');
-    },
-  };
+  try {
+    const subscription = amplifyClient.graphql({
+      query: ON_CONVERSATION_UPDATED,
+      variables: { conversationId }
+    }).subscribe({
+      next: ({ data }: any) => {
+        if (data?.onConversationUpdated) {
+          onUpdate(data.onConversationUpdated);
+        }
+      },
+      error: (error: any) => {
+        console.error('Subscription error:', error);
+        onError?.(error);
+      }
+    });
+
+    return {
+      unsubscribe: () => {
+        subscription.unsubscribe();
+      }
+    };
+  } catch (error) {
+    console.error('Failed to subscribe to conversation updates:', error);
+    onError?.(error);
+    return {
+      unsubscribe: () => {}
+    };
+  }
 }
