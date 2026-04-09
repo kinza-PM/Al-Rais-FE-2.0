@@ -385,8 +385,42 @@ input[type="number"] {
   }
 }
 
-/* Flight search cards: prevent "in-between" width layout break (e.g. DevTools open) */
-@media (max-width: 1400px) {
+/* Flight search one-way cards — Figma “Listings - One Way” timeline type */
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .startTime h5,
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .EndTime h5 {
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  color: #0a0c0f !important;
+}
+
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .startTime p,
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .EndTime p {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: #3d495c !important;
+}
+
+.flight-search-page .flightDetailCards.flight-ow-card .stopsDetail span {
+  font-size: 12px !important;
+  font-weight: 400 !important;
+  color: #3d495c !important;
+}
+
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-price-label {
+  font-size: 12px !important;
+  color: #3d495c !important;
+}
+
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .startTime p {
+  text-align: right !important;
+}
+
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .EndTime p {
+  text-align: left !important;
+}
+
+/* Flight search cards: narrow main column (sidebar + ~1480px viewport) */
+@media (max-width: 1560px) {
   .flight-search-page .flightDetailCards .topHalfCard,
   .flight-search-page .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
     flex-wrap: wrap !important;
@@ -404,11 +438,29 @@ input[type="number"] {
     justify-content: flex-start !important;
   }
 
-  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice,
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block,
   .flight-search-page .flightDetailCards.flightDetailRoundTripCards .StartingPrice {
-    min-width: 0 !important;
-    width: 100%;
+    flex-direction: column !important;
     align-items: flex-start !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 12px !important;
+  }
+
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block > div:first-child {
+    align-items: flex-start !important;
+  }
+
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block > div:first-child h5,
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block > div:first-child p {
+    text-align: left !important;
+    width: 100% !important;
+  }
+
+  .flight-search-page .flightDetailCards .ow-card-cta-group {
+    width: 100%;
+    justify-content: flex-start !important;
   }
 }
 
@@ -845,29 +897,63 @@ input[type="number"] {
   font-weight: 500;
 }
 
-/* Flight search filters: use normal font weight (not bold) */
+/* Flight / hotel search: collapse panel titles only (e.g. Stops, Airlines) */
 .flight-search-filter-root .collapseStyle .ant-collapse-header-text,
-.flight-search-filter-root .filterHeading h4,
-.flight-search-filter-root .filterHeading,
+.hotel-search-filter-root .collapseStyle .ant-collapse-header-text {
+  color: #3D495C !important;
+  font-weight: 300 !important;
+}
+
+/* Flight search filters: body copy (not panel titles — styled above) */
 .flight-search-filter-root .baggageCheckbox,
 .flight-search-filter-root .timeBox,
 .flight-search-filter-root .stopsRadioStyle .ant-radio-button-label,
 .flight-search-filter-root .transitHours .ant-radio-button-label,
 .flight-search-filter-root .transitHours .ant-radio-button-wrapper .ant-radio-button-label,
 .flight-search-filter-root .stopsRadioStyle .ant-radio-button-wrapper .ant-radio-button-label {
-  font-weight: 400 !important;
+  font-weight: 300 !important;
 }
 
-/* Hotel search filters: medium font weight */
-.hotel-search-filter-root .collapseStyle .ant-collapse-header-text,
-.hotel-search-filter-root .filterHeading h4,
-.hotel-search-filter-root .filterHeading,
+/* Hotel search filters: body copy */
 .hotel-search-filter-root .baggageCheckbox,
 .hotel-search-filter-root .stopsRadioStyle .ant-radio-button-label,
 .hotel-search-filter-root .transitHours .ant-radio-button-label,
 .hotel-search-filter-root .transitHours .ant-radio-button-wrapper .ant-radio-button-label,
 .hotel-search-filter-root .stopsRadioStyle .ant-radio-button-wrapper .ant-radio-button-label {
-  font-weight: 500 !important;
+  font-weight: 300 !important;
+}
+
+/* Flight: override global pill label weights inside sidebar */
+.flight-search-filter-root
+  .transitHours
+  .ant-radio-button-wrapper
+  .ant-radio-button-label,
+.flight-search-filter-root
+  .stopsRadioStyle
+  .ant-radio-button-wrapper
+  .ant-radio-button-label {
+  font-weight: 300 !important;
+}
+
+.flight-search-filter-root .flight-stops-pill {
+  font-weight: 300 !important;
+}
+
+/* Hotel search: toolbar + search field */
+.hotel-search-filter-root .filterHeading h4 {
+  font-weight: 300 !important;
+}
+
+.hotel-search-filter-root .lightActiveText {
+  font-weight: 300 !important;
+}
+
+.hotel-search-filter-root .resetAllBtn a {
+  font-weight: 300 !important;
+}
+
+.hotel-search-filter-root .ant-input {
+  font-weight: 300 !important;
 }
 
 .collapseStyle .ant-collapse-header {
@@ -1012,7 +1098,7 @@ input[type="number"] {
   color: #0a0c0f;
   font-family: Inter, sans-serif;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 300;
   line-height: 100%;
 }
 
@@ -1020,6 +1106,41 @@ input[type="number"] {
   border-radius: 4px !important;
   width: 16px !important;
   height: 16px !important;
+}
+
+/* Flight & hotel search filters: light blue checkbox border (Figma) */
+.flight-search-filter-root .baggageCheckbox .ant-checkbox-inner,
+.hotel-search-filter-root .baggageCheckbox .ant-checkbox-inner {
+  border-color: #a8c4f0 !important;
+}
+
+.flight-search-filter-root
+  .baggageCheckbox:not(.ant-checkbox-wrapper-disabled):hover
+  .ant-checkbox-inner,
+.hotel-search-filter-root
+  .baggageCheckbox:not(.ant-checkbox-wrapper-disabled):hover
+  .ant-checkbox-inner {
+  border-color: #7ea3e8 !important;
+}
+
+.flight-search-filter-root
+  .baggageCheckbox
+  .ant-checkbox-checked
+  .ant-checkbox-inner,
+.hotel-search-filter-root
+  .baggageCheckbox
+  .ant-checkbox-checked
+  .ant-checkbox-inner,
+.flight-search-filter-root
+  .baggageCheckbox
+  .ant-checkbox-indeterminate
+  .ant-checkbox-inner,
+.hotel-search-filter-root
+  .baggageCheckbox
+  .ant-checkbox-indeterminate
+  .ant-checkbox-inner {
+  background-color: #2351a3 !important;
+  border-color: #2351a3 !important;
 }
 
 .departureArrival {
@@ -1309,6 +1430,8 @@ input[type="number"] {
   color: #0a0c0f;
   font-size: 14px;
   font-weight: 500;
+}
+
 .hotel-view-select .ant-select-selector {
   height: 50px !important;
   border-radius: 16px !important;
@@ -1382,7 +1505,6 @@ input[type="number"] {
 /* Tune padding for visually centered text */
 .hotel-view-select .ant-select-selection-item {
   padding-left: 16px !important;
-}
   letter-spacing: 0px;
 }
 
@@ -1641,8 +1763,22 @@ input[type="number"] {
     gap: 8px !important;
   }
 
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block > div:first-child h5,
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block > div:first-child .ow-card-price-label {
+    text-align: left !important;
+    align-self: flex-start !important;
+  }
+
   .flightDetailCards .topHalfCard .StartingPrice > div,
-  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div {
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div,
+  .flightDetailCards .topHalfCard .StartingPrice .ow-card-cta-group,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice .ow-card-cta-group {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
@@ -1652,7 +1788,7 @@ input[type="number"] {
 
   .flightDetailCards .topHalfCard .StartingPrice h5,
   .flightDetailCards.flightDetailRoundTripCards .StartingPrice h5 {
-    font-size: 24px !important;
+    font-size: 28px !important;
   }
 
   .flightDetailCards .topHalfCard .StartingPrice button,
@@ -1685,13 +1821,27 @@ input[type="number"] {
     align-items: flex-start !important;
   }
 
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block > div:first-child h5,
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block > div:first-child .ow-card-price-label {
+    text-align: left !important;
+    width: 100% !important;
+  }
+
   .flightDetailCards .topHalfCard .StartingPrice p,
   .flightDetailCards.flightDetailRoundTripCards .StartingPrice p {
     align-self: flex-start !important;
   }
 
   .flightDetailCards .topHalfCard .StartingPrice > div,
-  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div {
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div,
+  .flightDetailCards .topHalfCard .StartingPrice .ow-card-cta-group,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice .ow-card-cta-group {
     width: 100%;
     display: flex;
     flex-wrap: wrap;

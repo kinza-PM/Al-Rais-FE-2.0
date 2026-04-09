@@ -13,6 +13,7 @@ import ArrowLeft from "../assets/images/arrow-left-s-line 1.png";
 import ArrowRight from "../assets/images/arrow-right-s-line 2.png";
 import PopularDestinationSection from "../components/molecules/PopularDestinationSection";
 import RecentSearchesSection from "../components/molecules/RecentSearchesSection";
+import { useLandingHeroStore } from "../store/useLandingHeroStore";
 import BestDealsSection from "../components/molecules/BestDealsSection";
 import CustomersFeedbackSection from "../components/molecules/CustomersFeedbackSection";
 
@@ -33,10 +34,8 @@ const LandingPage: React.FC = () => {
     useOutletContext<LandingPageContext>();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Lifted hero tab state so top buttons can control Flights/Hotels search tab
-  const [heroSearchTab, setHeroSearchTab] = useState<"flights" | "hotels">(
-    "flights",
-  );
+  const heroSearchTab = useLandingHeroStore((s) => s.heroTab);
+  const setHeroSearchTab = useLandingHeroStore((s) => s.setHeroTab);
 
   const handleHeroTopTabClick = (tab: "flights" | "hotels") => {
     setHeroSearchTab(tab);
@@ -245,10 +244,7 @@ const LandingPage: React.FC = () => {
 
         {/* Spacing below hero form so calendar can fully show */}
         <div className="mt-8 sm:mt-12 mb-24">
-          <HeroSection
-            activeTab={heroSearchTab}
-            onTabChange={setHeroSearchTab}
-          />
+          <HeroSection activeTab={heroSearchTab} />
         </div>
       </div>
 

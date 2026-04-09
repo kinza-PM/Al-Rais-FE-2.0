@@ -1498,10 +1498,10 @@ const FlightDetailTemplate: React.FC = () => {
           cursor: 'pointer'
         }}
       >
-        <span style={{ fontSize: 12, fontWeight: 400, color: '#64748B', display: 'block', marginBottom: '4px' }}>
+        <span style={{ fontSize: 12, fontWeight: 300, color: '#64748B', display: 'block', marginBottom: '4px' }}>
         Sort by
         </span>
-        <span style={{ fontSize: 16, fontWeight: 500, color: '#0F172A', display: 'block' }}>
+        <span style={{ fontSize: 16, fontWeight: 300, color: '#0F172A', display: 'block' }}>
           {getSortLabel(sortBy)}
         </span>
         <svg 
@@ -1544,7 +1544,7 @@ const FlightDetailTemplate: React.FC = () => {
                 padding: '12px 16px',
                 cursor: 'pointer',
                 fontSize: '14px',
-                fontWeight: sortBy === option.value ? 600 : 400,
+                fontWeight: 300,
                 color: sortBy === option.value ? '#2351A3' : '#0F172A',
                 background: sortBy === option.value ? '#F2F2F3' : '#FFFFFF',
                 transition: 'all 0.2s ease',

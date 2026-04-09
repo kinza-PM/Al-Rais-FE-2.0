@@ -423,6 +423,20 @@ export function parseLocalDateString(
   return new Date(Number(y), Number(m) - 1, Number(d)); // local midnight
 }
 
+/** Compare calendar day only (ignores time); for syncing controlled date pickers. */
+export function sameCalendarDate(
+  a: Date | null,
+  b: Date | null,
+): boolean {
+  if (a == null && b == null) return true;
+  if (a == null || b == null) return false;
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
 export const formatMoney = (
   value: number | undefined | null,
   currency = "USD",

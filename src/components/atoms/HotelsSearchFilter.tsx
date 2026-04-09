@@ -31,7 +31,7 @@ const CountBadge: React.FC<{ count: number }> = ({ count }) => (
       color: "#3D495C",
       fontFamily: "Inter, sans-serif",
       fontSize: "12px",
-      fontWeight: 500,
+      fontWeight: 300,
       lineHeight: "100%",
       padding: "0 8px",
       flexShrink: 0,
@@ -40,6 +40,10 @@ const CountBadge: React.FC<{ count: number }> = ({ count }) => (
     {count.toLocaleString()}
   </span>
 );
+
+/** Long checkbox lists: cap height and show a vertical scrollbar when needed. */
+const FILTER_CHECKLIST_SCROLL =
+  "flex max-h-[min(280px,45vh)] flex-col gap-2 overflow-y-auto overscroll-y-contain pr-1 [-webkit-overflow-scrolling:touch]";
 
 const FilterCheckboxRow: React.FC<{
   label: string;
@@ -304,7 +308,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
             style={{
               fontFamily: "Inter, sans-serif",
               fontSize: "12px",
-              fontWeight: 400,
+              fontWeight: 300,
               color: "#3D495C",
               lineHeight: "100%",
               marginBottom: "6px",
@@ -317,7 +321,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               style={{
                 fontFamily: "Inter, sans-serif",
                 fontSize: "14px",
-                fontWeight: 500,
+                fontWeight: 300,
                 color: "#0A0C0F",
                 lineHeight: "100%",
               }}
@@ -356,7 +360,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                   }`}
               >
                 <span
-                  style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 400 }}
+                  style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 300 }}
                 >
                   {option.label}
                 </span>
@@ -380,7 +384,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         )}
       </div>
 
-      <div className="filterStyle max-h-[calc(100vh-40vh)] overflow-y-auto overflow-x-hidden scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="filterStyle max-h-[calc(100vh-40vh)] overflow-y-auto overflow-x-hidden overscroll-y-contain pr-1 pb-14 [scrollbar-gutter:stable]">
         <div className="filterHeading">
           <div>
             <h4>
@@ -435,7 +439,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                 borderRadius: "16px",
                 border: "1px solid #C2CAD6",
                 fontFamily: "Inter, sans-serif",
-                fontWeight: 500,
+                fontWeight: 300,
                 fontSize: "16px",
                 color: "#0A0C0F",
                 width: "100%",
@@ -505,7 +509,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {propertyTypes.length > 0 && (
           <CustomCollapse>
             <Panel header="Property type" key="property">
-              <div className="flex flex-col gap-2">
+              <div className={FILTER_CHECKLIST_SCROLL}>
                 {propertyTypes.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -525,7 +529,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {propertyFacilities.length > 0 && (
           <CustomCollapse>
             <Panel header="Property facilities" key="facilities">
-              <div className="flex flex-col gap-2">
+              <div className={FILTER_CHECKLIST_SCROLL}>
                 {propertyFacilities.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -545,7 +549,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {roomFacilities.length > 0 && (
           <CustomCollapse>
             <Panel header="Room facilities" key="room_facilities">
-              <div className="flex flex-col gap-2">
+              <div className={FILTER_CHECKLIST_SCROLL}>
                 {roomFacilities.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -565,7 +569,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {roomTypes.length > 0 && (
           <CustomCollapse>
             <Panel header="Room type" key="room_type">
-              <div className="flex flex-col gap-2">
+              <div className={FILTER_CHECKLIST_SCROLL}>
                 {roomTypes.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -585,7 +589,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {meals.length > 0 && (
           <CustomCollapse>
             <Panel header="Meals" key="meals">
-              <div className="flex flex-col gap-2">
+              <div className={FILTER_CHECKLIST_SCROLL}>
                 {meals.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -605,7 +609,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {cancellationPolicies.length > 0 && (
           <CustomCollapse>
             <Panel header="Cancellation policy" key="cancellation">
-              <div className="flex flex-col gap-2">
+              <div className={FILTER_CHECKLIST_SCROLL}>
                 {cancellationPolicies.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}

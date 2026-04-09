@@ -9,6 +9,7 @@ import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import SearchableDropdown from "../common/SearchableDropdown";
 import Info from "../../assets/svgs/info-black.svg";
+import { sameCalendarDate } from "../../utils/helpers";
 
 type Props = {
   countries?: AirportOption[];
@@ -73,6 +74,14 @@ const OneWayForm: React.FC<Props> = ({
   const [departDate, setDepartDate] = React.useState<Date | null>(
     departDateValue,
   );
+
+  // Keep local picker state in sync when parent restores from store (e.g. navigate back to home).
+  React.useEffect(() => {
+    const next = departDateValue ?? null;
+    setDepartDate((prev) =>
+      sameCalendarDate(prev, next) ? prev : next,
+    );
+  }, [departDateValue]);
 
   // track pax counts to compute order diffs like FlightDetailTemplate
   const [paxCounts, setPaxCounts] = React.useState<{ [k: string]: number }>({});

@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import OneWayForm from "./OneWayForm";
 import RoundTripForm from "./RoundTripForm";
 import MultiCityForm, { type MultiCityLeg } from "./MultiCityForm";
@@ -13,7 +20,7 @@ import { useMasterListings } from "../../hooks/masterListings/useMasterListings"
 import { useFlightStore } from "../../store/UseFlightStore";
 import { useNavigate } from "react-router-dom";
 import Loader from "../atoms/Loader";
-import { formatDateToLocalISO } from "../../utils/helpers";
+import { formatDateToLocalISO, parseLocalDateString } from "../../utils/helpers";
 import noInternet from "../../assets/svgs/no-internet.svg";
 
 const FlightHeroSection: React.FC = () => {
@@ -73,7 +80,8 @@ const FlightHeroSection: React.FC = () => {
   } = useMasterListings({ countriesSearchTerm });
 
   const navigate = useNavigate();
-  const { setFlight } = useFlightStore();
+  const { flight, setFlight } = useFlightStore();
+  const lastFlightSnapshotRef = useRef<string | null>(null);
 
   const tabs = useMemo<FlightTypeOption[]>(() => flightTypes, [flightTypes]);
 
@@ -108,12 +116,79 @@ const FlightHeroSection: React.FC = () => {
     }
   }, [tabs, trip]);
 
+  /** Re-apply last search from the global store when returning from /search_flight (runs before trip-reset effect). */
+  useLayoutEffect(() => {
+    if (!flight) return;
+    const snap = JSON.stringify({
+      t: flight.trip,
+      fc: flight.fromCode,
+      tc: flight.toCode,
+      dep: flight.departure,
+      arr: flight.arrival,
+      cc: flight.selectedCabinClassId,
+      legs: flight.legs,
+      next: flight.next,
+      order: flight.order,
+    });
+    if (lastFlightSnapshotRef.current === snap) return;
+    lastFlightSnapshotRef.current = snap;
+
+    setTrip((flight.trip as TripType) || "oneway");
+    setFromCode(flight.fromCode || "");
+    setToCode(flight.toCode || "");
+    setSelectedCabinClassId(String(flight.selectedCabinClassId ?? "5"));
+    setPaxCounts(flight.next ? { ...flight.next } : {});
+    setPaxOrder(flight.order?.slice() ?? []);
+    setDepartDate(parseLocalDateString(flight.departure ?? undefined));
+    setArrivalDate(parseLocalDateString(flight.arrival ?? undefined));
+    if (
+      flight.trip === "multicity" &&
+      Array.isArray(flight.legs) &&
+      flight.legs.length > 0
+    ) {
+      setMulticityLegs(
+        flight.legs.map((l) => ({
+          fromCode: l.fromCode,
+          toCode: l.toCode,
+          date: parseLocalDateString(l.date ?? undefined),
+          cabinClassId: l.cabinClassId ?? "5",
+          fromOption: l.fromOption ?? null,
+          toOption: l.toOption ?? null,
+        })),
+      );
+    } else {
+      setMulticityLegs([
+        { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
+        { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
+      ]);
+    }
+    setCountriesSearchTerm("");
+    setHasAttemptedValidation(false);
+    setValidationErrors({
+      fromCode: "",
+      toCode: "",
+      departDate: "",
+      arrivalDate: "",
+      passengers: "",
+      cabinClass: "",
+    });
+  }, [flight]);
+
+  const isFirstTripEffect = useRef(true);
+  const prevTripRef = useRef<TripType | null>(null);
+
   useEffect(() => {
+    if (isFirstTripEffect.current) {
+      isFirstTripEffect.current = false;
+      prevTripRef.current = trip;
+      return;
+    }
+    if (prevTripRef.current === trip) return;
+    prevTripRef.current = trip;
+
     setPaxCounts({});
     setPaxOrder([]);
     setSelectedCabinClassId("5");
-    // setDepartDate(null);
-    // setArrivalDate(null);
     setCountriesSearchTerm("");
     setMulticityLegs([
       { fromCode: "", toCode: "", date: null, cabinClassId: "5" },

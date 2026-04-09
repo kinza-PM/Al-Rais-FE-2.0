@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "../../assets/css/travel.css";
 
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
-import highDemandIcon from "../../assets/svgs/high-demand.svg";
 import offerViewIcon from "../../assets/svgs/offer-view-icon.svg";
 import defaultAirlineLogo from "../../assets/images/emirates.png";
 
@@ -12,6 +11,7 @@ import durationIcon from "../../assets/svgs/duration.svg";
 import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
+import shareIcon from "../../assets/svgs/share.svg";
 import { Switch, Modal } from "antd";
 
 import { useNavigate } from "react-router-dom";
@@ -195,7 +195,20 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     [navigate, passengersForRequest],
   );
 
-  
+  const handleShareOffer = useCallback((item: any, seg?: any) => {
+    const name = getAirlineDisplayName(item, seg);
+    const price = item?.rawTotalStartingFare ?? "";
+    const cur = item?.raw?.fare?.currencyCode ?? "";
+    const title = `${name} — ${cur}${price}`.trim();
+    const url = window.location.href;
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({ title, url }).catch(() => {
+        void navigator.clipboard?.writeText(url);
+      });
+    } else {
+      void navigator.clipboard?.writeText(url);
+    }
+  }, []);
 
   if (!passData || passData.length === 0) {
     return (
@@ -208,27 +221,28 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
   return (
     <div
+      className="flex flex-col gap-3"
       style={{
-        background: "#FFFFFF",
-        borderRadius: "16px",
-        padding: "20px",
-        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
+        background: "transparent",
       }}
     >
-      {passData?.map((item, index) => (
-        
+      {passData?.map((item, index) => {
+        return (
         <div
-          className="flightDetailCards"
-          key={index}
+          className="flightDetailCards flight-ow-card"
+          key={item?.id ?? index}
           style={{
-            border: "none",
+            position: "relative",
+            border: "1px solid #C2CAD6",
+            borderRadius: "16px",
+            background: "#FFFFFF",
+            padding: "15px 15px 12px",
             marginBottom: "0",
-            paddingBottom: "0",
-            borderBottom:
-              index < passData.length - 1 ? "2px solid #E4E4E7" : "none",
+            minHeight: 148,
+            boxSizing: "border-box",
           }}
         >
-          <div className="topHalfCardWrap">
+          <div className="topHalfCardWrap" style={{ padding: 0 }}>
             {(() => {
               const segs: any[] = item?.raw?.journey?.[0]?.flightSegments ?? [];
               const currentSeg = Array.isArray(segs)
@@ -274,22 +288,35 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 },
               );
 
+              const flightNo = itemForTiming?.flight_detail?.flight_number;
+              const flightClass = itemForTiming?.flight_detail?.flight_class;
+              const subtitle =
+                flightNo && flightClass
+                  ? `${flightNo} - ${flightClass}`
+                  : [flightNo, flightClass].filter(Boolean).join(" • ") ||
+                    airlineDisplayName;
+
+              const btnMinH = 40;
+              const grad =
+                "linear-gradient(91.66deg, #5383DA 0%, #2351A3 50%, #081326 100%)";
+
               return (
                 <div key={`seg-0-${currentSeg?.segmentKey || "0"}`}>
                   <div
                     className="topHalfCard"
                     style={{
                       width: "100%",
-                      minHeight: "101px",
+                      minHeight: 110,
                       display: "flex",
                       alignItems: "center",
-                      padding: "20px 0",
-                      gap: "24px",
+                      padding: 0,
+                      gap: "16px",
                       background: "transparent",
                       borderRadius: "0",
                       border: "none",
                       boxSizing: "border-box",
                       marginBottom: "0",
+                      flexWrap: "wrap",
                     }}
                   >
                     <div
@@ -297,8 +324,9 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                       style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: "1px",
-                        minWidth: "201px",
+                        gap: "10px",
+                        minWidth: "180px",
+                        flex: "0 1 auto",
                       }}
                     >
                       <div className="flightIcon" style={{ flexShrink: 0 }}>
@@ -306,8 +334,8 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                           src={item?.logo || defaultAirlineLogo}
                           alt={item?.name || "Airline"}
                           style={{
-                            width: "48px",
-                            height: "48px",
+                            width: "52px",
+                            height: "52px",
                             borderRadius: "50%",
                             objectFit: "cover",
                           }}
@@ -323,34 +351,34 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                         style={{
                           display: "flex",
                           flexDirection: "column",
-                          gap: "8px",
+                          gap: "5px",
                           flex: 1,
+                          minWidth: 0,
                         }}
                       >
                         <div className="nameAndDetails">
                           <h5
-  style={{
-    margin: 0,
-    fontSize: "14px",
-    fontWeight: 600,
-    color: "#0F172A",
-    lineHeight: 1.3,
-  }}
->
-  {airlineDisplayName}
-</h5>
-<p
-  style={{
-    margin: 0,
-    fontSize: "11px",
-    color: "#64748B",
-    lineHeight: 1.3,
-    marginTop: "2px",
-  }}
->
-  {airlineDisplayName} • {itemForTiming?.flight_detail?.flight_number} •{" "}
-  {itemForTiming?.flight_detail?.flight_class}
-</p>
+                            style={{
+                              margin: 0,
+                              fontSize: "16px",
+                              fontWeight: 500,
+                              color: "#0A0C0F",
+                              lineHeight: 1,
+                            }}
+                          >
+                            {airlineDisplayName}
+                          </h5>
+                          <p
+                            style={{
+                              margin: 0,
+                              fontSize: "12px",
+                              color: "#3D495C",
+                              lineHeight: 1,
+                              fontWeight: 400,
+                            }}
+                          >
+                            {subtitle}
+                          </p>
                         </div>
 
                         {visible.length ? (
@@ -358,7 +386,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                             className="featureIcons"
                             style={{
                               display: "flex",
-                              gap: "8px",
+                              gap: "10px",
                               flexWrap: "wrap",
                             }}
                           >
@@ -372,9 +400,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                                   src={f.icon}
                                   alt={f.key}
                                   style={{
-                                    width: "18px",
-                                    height: "18px",
+                                    width: "20px",
+                                    height: "20px",
                                     cursor: "pointer",
+                                    opacity: 0.85,
                                   }}
                                 />
                                 <span className="tooltip">{f.label}</span>
@@ -388,103 +417,134 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                     <div
                       className="stopsOnLarge"
                       style={{
-                        flex: 1,
+                        flex: "1 1 220px",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
+                        minWidth: 0,
                       }}
                     >
                       <FlightTimingAndStops passSome={itemForTiming} />
                     </div>
 
                     <div
-                      className="StartingPrice"
+                      className="StartingPrice ow-card-price-block"
                       style={{
                         display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-end",
-                        gap: "8px",
-                        minWidth: "320px",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "flex-end",
+                        flexWrap: "wrap",
+                        gap: "24px",
+                        minWidth: 0,
+                        maxWidth: "100%",
+                        flex: "0 1 auto",
                       }}
                     >
-                      <p
-                        style={{
-                          margin: 0,
-                          fontSize: "12px",
-                          color: "#64748B",
-                          fontWeight: 400,
-                          alignSelf: "flex-start",
-                        }}
-                      >
-                        Starting from
-                      </p>
-
                       <div
                         style={{
                           display: "flex",
-                          alignItems: "center",
-                          gap: "12px",
+                          flexDirection: "column",
+                          alignItems: "flex-end",
+                          gap: "2px",
+                          flex: "0 1 auto",
+                          minWidth: 0,
                         }}
                       >
+                        <p
+                          className="ow-card-price-label"
+                          style={{
+                            margin: 0,
+                            fontSize: "12px",
+                            color: "#3D495C",
+                            fontWeight: 400,
+                            lineHeight: 1,
+                            width: "100%",
+                            textAlign: "right",
+                          }}
+                        >
+                          Starting from
+                        </p>
                         <h5
                           style={{
                             margin: 0,
-                            fontSize: "27px",
-                            fontWeight: 700,
+                            fontSize: "28px",
+                            fontWeight: 600,
                             color: "#2351A3",
                             lineHeight: 1,
-                            letterSpacing: "-0.5px",
+                            letterSpacing: 0,
+                            width: "100%",
+                            textAlign: "right",
+                            wordBreak: "break-word",
                           }}
                         >
                           {item?.raw?.fare?.currencyCode ?? "$"}
                           {item.rawTotalStartingFare}
                         </h5>
+                      </div>
 
-                        <button
-                          onClick={() => openDetailsModal(item, "price")}
-                          style={{
-                            width: "150px",
-                            height: "47px",
-                            borderRadius: "100px",
-                            padding: "14px 25px",
-                            background:
-                              "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                            color: "#FFFFFF",
-                            fontSize: "15px",
-                            fontWeight: 600,
-                            border: "none",
-                            cursor: "pointer",
-                            boxShadow: "0 4px 12px rgba(35, 81, 163, 0.3)",
-                            transition: "all 0.2s ease",
-                            flexShrink: 0,
-                          }}
-                        >
-                          View details
-                        </button>
-
-                        <button
-                          onClick={() => handleOfferSelection(item?.offerId, item)}
-                          style={{
-                            width: "130px",
-                            height: "47px",
-                            background:
-                              "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                            borderRadius: "100px",
-                            padding: "14px 25px",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            border: "none",
-                            cursor: "pointer",
-                            color: "#FFFFFF",
-                            fontSize: "14px",
-                            fontWeight: 600,
-                            boxShadow: "0 2px 8px rgba(35, 81, 163, 0.3)",
-                            flexShrink: 0,
-                          }}
-                        >
-                          Book Now
-                        </button>
+                      <div
+                        className="ow-card-cta-group"
+                        style={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "flex-end",
+                          flexWrap: "wrap",
+                          gap: "16px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => openDetailsModal(item, "price")}
+                            style={{
+                              minWidth: "128px",
+                              minHeight: btnMinH,
+                              borderRadius: "100px",
+                              padding: "10px 18px",
+                              boxSizing: "border-box",
+                              background: "#FFFFFF",
+                              color: "#2351A3",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              letterSpacing: "0.5px",
+                              border: "1.5px solid #2351A3",
+                              cursor: "pointer",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            View Details
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleOfferSelection(item?.offerId, item)
+                            }
+                            style={{
+                              minWidth: "118px",
+                              minHeight: btnMinH,
+                              background: grad,
+                              borderRadius: "100px",
+                              padding: "10px 18px",
+                              boxSizing: "border-box",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              border: "none",
+                              cursor: "pointer",
+                              color: "#F2F2F3",
+                              fontSize: "14px",
+                              fontWeight: 600,
+                              letterSpacing: "0.5px",
+                            }}
+                          >
+                            Book Now
+                          </button>
+                        </>
                       </div>
                     </div>
                   </div>
@@ -492,48 +552,77 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                   <div className="stopsOnSmall">
                     <FlightTimingAndStops passSome={itemForTiming} />
                   </div>
+
+                  <div
+                    className="selectPriceBtn ow-card-badge-row flex flex-wrap items-center"
+                    style={{
+                      marginTop: "10px",
+                      gap: "10px",
+                      paddingRight: "52px",
+                    }}
+                  >
+                    {item.offerViewCount > 0 ? (
+                      <div
+                        className="inline-flex items-center justify-center whitespace-nowrap bg-[#A7C0EC] px-3 py-1.5 text-[12px] font-medium uppercase text-[#1A3C7A]"
+                        style={{ borderRadius: "6px" }}
+                      >
+                        {item.offerViewCount} PEOPLE VIEWING
+                      </div>
+                    ) : null}
+
+                    {offerHasAncillaryDetailsAvailable(item) ? (
+                      <div
+                        className="inline-flex items-center justify-center whitespace-nowrap bg-[#D1E7DD] px-3 py-1.5 text-[12px] font-medium uppercase text-[#0F5132]"
+                        style={{ borderRadius: "6px" }}
+                      >
+                        Add-ons available
+                      </div>
+                    ) : null}
+
+                    {(() => {
+                      const marketingAirline = currentSeg?.marketingAirline;
+                      const highDemandInfo = getHighDemandInfo(marketingAirline);
+
+                      return highDemandInfo ? (
+                        <div
+                          className="inline-flex items-center justify-center whitespace-nowrap bg-[#FFB8C4] px-3 py-1.5 text-[12px] font-medium uppercase text-[#B80020]"
+                          style={{ borderRadius: "6px" }}
+                        >
+                          HIGH DEMAND
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label="Share flight"
+                    onClick={() => handleShareOffer(item, currentSeg)}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      bottom: "12px",
+                      width: "38px",
+                      height: "38px",
+                      borderRadius: "50%",
+                      border: "1px solid #C2CAD6",
+                      background: "#FFFFFF",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      cursor: "pointer",
+                      padding: 0,
+                    }}
+                  >
+                    <img src={shareIcon} alt="" width={22} height={22} />
+                  </button>
                 </div>
               );
             })()}
           </div>
-
-          <div className="selectPriceBtn flex items-center gap-2 mt-2 mb-4">
-            {item.offerViewCount > 0 && (
-              <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
-                <img src={offerViewIcon} alt="icon" className="mr-1" />
-                {item.offerViewCount} People viewing this
-              </div>
-            )}
-
-            {offerHasAncillaryDetailsAvailable(item) ? (
-              <div className="inline-flex items-center justify-center text-xs text-[#0F5132] border border-[#A3CFBB] rounded-full px-3 py-2 bg-[#D1E7DD] whitespace-nowrap font-medium">
-                Add-ons available
-              </div>
-            ) : null}
-
-            {(() => {
-              const segs: any[] = item?.raw?.journey?.[0]?.flightSegments ?? [];
-              const currentSeg = Array.isArray(segs)
-                ? segs[0]
-                : (segs?.[0] ?? segs ?? null);
-                
-              const marketingAirline = currentSeg?.marketingAirline;
-              const highDemandInfo = getHighDemandInfo(marketingAirline);
-
-              return highDemandInfo ? (
-                <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
-                  <img
-                    src={highDemandIcon}
-                    alt="icon"
-                    className="w-3 h-3 mr-1"
-                  />
-                  High-demand
-                </div>
-              ) : null;
-            })()}
-          </div>
         </div>
-      ))}
+        );
+      })}
 
       <div ref={loadMoreRef} className="min-h-[1px]">
         {renderLoader?.({ isLoadingMore, hasMore })}

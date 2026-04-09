@@ -1,4 +1,11 @@
-import React, { useState, useCallback, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { useCountriesOptions } from "../../hooks/masterListings/listing";
@@ -11,6 +18,7 @@ import type { PassengerSchema } from "../../features/flights/types";
 import { useHotelStore } from "../../store/UseHotelStore";
 import Info from "../../assets/svgs/info-black.svg";
 import Loader from "../atoms/Loader";
+import { parseLocalDateString } from "../../utils/helpers";
 
 const starRatingOptions = [
   { id: "0", value: "", label: "Clear rating", hideSelectionIcon: true },
@@ -60,7 +68,53 @@ const HotelHeroSectionTab: React.FC = () => {
     include: ["passengers"],
   });
   const navigate = useNavigate();
-  const { setHotel } = useHotelStore();
+  const { hotel, setHotel } = useHotelStore();
+  const lastHotelSnapshotRef = useRef<string | null>(null);
+
+  useLayoutEffect(() => {
+    if (!hotel) return;
+    const snap = JSON.stringify({
+      country: hotel.country,
+      city: hotel.city,
+      checkIn: hotel.checkIn,
+      checkOut: hotel.checkOut,
+      nat: hotel.travelerNationality,
+      pax: hotel.paxData,
+      ages: hotel.childAges,
+      stars: hotel.starRatings,
+      minStar: hotel.minStarRating,
+    });
+    if (lastHotelSnapshotRef.current === snap) return;
+    lastHotelSnapshotRef.current = snap;
+
+    setCountry(hotel.country || "");
+    setCity(hotel.city || "");
+    setCheckInDate(parseLocalDateString(hotel.checkIn));
+    setCheckOutDate(parseLocalDateString(hotel.checkOut));
+    setNationality(hotel.travelerNationality || hotel.travelerCountryOfResidence || "");
+    setPaxData(
+      hotel.paxData && Object.keys(hotel.paxData).length
+        ? { ...hotel.paxData }
+        : { adults: 1, rooms: 1 },
+    );
+    setChildAges(
+      Array.isArray(hotel.childAges) ? [...hotel.childAges] : [],
+    );
+    setStarRatings(
+      hotel.starRatings?.length
+        ? hotel.starRatings.map(String)
+        : [],
+    );
+    setHasAttemptedValidation(false);
+    setValidationErrors({
+      country: "",
+      city: "",
+      checkIn: "",
+      checkOut: "",
+      nationality: "",
+      travellers: "",
+    });
+  }, [hotel]);
 
   const { data: countriesOptions } = useCountriesOptions();
   const selectedCountry = useMemo(
