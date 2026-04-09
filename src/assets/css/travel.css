@@ -415,6 +415,13 @@ input[type="number"] {
   text-align: right !important;
 }
 
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .startTime {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
 .flight-search-page .flightDetailCards.flight-ow-card .flightTiming .EndTime p {
   text-align: left !important;
 }
