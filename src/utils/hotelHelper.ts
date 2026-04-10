@@ -474,7 +474,6 @@ export function getHotelListingDescription(
 export const HOTEL_LISTING_REVIEW_FALLBACK = {
   score: 9.1,
   reviewCount: 283,
-  dealLabel: "Smashing deal",
 } as const;
 
 export function resolveHotelListingReviewDisplay(

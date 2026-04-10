@@ -29,6 +29,7 @@ import Loader from "../atoms/Loader";
 import {
   filterHotels,
   sortHotels,
+  cloneHotelListingFilters,
   type HotelFilters,
   type SortOption,
 } from "../../utils/hotelFilters";
@@ -75,7 +76,14 @@ const HotelSearchListing: React.FC = () => {
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
 
-  const { hotel, setHotel, hotelView, setHotelView } = useHotelStore();
+  const {
+    hotel,
+    setHotel,
+    hotelView,
+    setHotelView,
+    setHotelListingFilters,
+    setHotelListingSortOption,
+  } = useHotelStore();
 
   const { passengers } = useMasterListings({
     include: ["passengers"],
@@ -120,18 +128,21 @@ const HotelSearchListing: React.FC = () => {
   const [hotelSearchResults, setHotelSearchResults] = useState<any[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Filter and sort state
-  const [filters, setFilters] = useState<HotelFilters>({
-    hotelName: "",
-    propertyTypes: [],
-    ratings: [],
-    propertyFacilities: [],
-    roomFacilities: [],
-    bedPreferences: [],
-    meals: [],
-    cancellationPolicy: [],
-  });
-  const [sortOption, setSortOption] = useState<SortOption>("");
+  // Filter and sort state (persist across home ↔ listing via store)
+  const [filters, setFilters] = useState<HotelFilters>(() =>
+    cloneHotelListingFilters(useHotelStore.getState().hotelListingFilters),
+  );
+  const [sortOption, setSortOption] = useState<SortOption>(
+    () => useHotelStore.getState().hotelListingSortOption,
+  );
+
+  useEffect(() => {
+    setHotelListingFilters(cloneHotelListingFilters(filters));
+  }, [filters, setHotelListingFilters]);
+
+  useEffect(() => {
+    setHotelListingSortOption(sortOption);
+  }, [sortOption, setHotelListingSortOption]);
 
   const { data: countriesOptions, isLoading: isCountriesLoading } =
     useCountriesOptions();
@@ -607,7 +618,7 @@ const HotelSearchListing: React.FC = () => {
                 className="searchFilterBtn hotel-search-btn-responsive"
                 onClick={handleSearchHotels}
               >
-                {isPending ? "Searching..." : "Search Hotels"}
+                {isPending ? "Searching..." : "Search"}
               </CustomButton>
             </div>
           </div>

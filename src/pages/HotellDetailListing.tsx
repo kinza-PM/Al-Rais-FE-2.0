@@ -30,6 +30,10 @@ import {
 } from "../utils/hotelBookingParams";
 import toast from "react-hot-toast";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
+import {
+  HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI,
+  HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET,
+} from "../constants/hotelMapTiles";
 
 const tabItems = [
   { label: "Overview", value: "Overview" },
@@ -1162,8 +1166,8 @@ const HotelDetailListing = () => {
                   attributionControl={false}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                    attribution={HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI}
+                    url={HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET}
                   />
                   <Marker
                     position={[coordinates.latitude, coordinates.longitude]}
@@ -1240,8 +1244,8 @@ const HotelDetailListing = () => {
                   attributionControl={false}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                    attribution={HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI}
+                    url={HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET}
                   />
                   <Marker
                     position={[coordinates.latitude, coordinates.longitude]}
@@ -1309,8 +1313,8 @@ const HotelDetailListing = () => {
               attributionControl={false}
             >
               <TileLayer
-                attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                attribution={HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI}
+                url={HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET}
               />
               <Marker
                 position={[coordinates.latitude, coordinates.longitude]}
@@ -1386,8 +1390,8 @@ const HotelDetailListing = () => {
                 attributionControl={false}
               >
                 <TileLayer
-                  attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                  url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                  attribution={HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI}
+                  url={HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET}
                 />
                 <Marker
                   position={[coordinates.latitude, coordinates.longitude]}
@@ -1636,8 +1640,8 @@ const HotelDetailListing = () => {
                   attributionControl={false}
                 >
                   <TileLayer
-                    attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                    url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                    attribution={HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI}
+                    url={HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET}
                   />
 
                   <Marker

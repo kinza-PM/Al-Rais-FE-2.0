@@ -4,7 +4,6 @@ import GreenTick from "../../../src/assets/images/tik.png";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
-import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
 import {
@@ -12,7 +11,6 @@ import {
   getHotelGuestReviewMeta,
   getHotelListingDescription,
   resolveHotelListingReviewDisplay,
-  HOTEL_LISTING_REVIEW_FALLBACK,
 } from "../../utils/hotelHelper";
 import Loader from "../atoms/Loader";
 import toast from "react-hot-toast";
@@ -22,6 +20,7 @@ import {
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import ShareTicketModal from "../atoms/ShareTicketModal";
+import HotelSearchSignInUpdatesBanner from "./HotelSearchSignInUpdatesBanner";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
@@ -307,7 +306,6 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 price,
                 hasFreeCancellation,
                 totalOriginalPrice: originalPrice,
-                uniqueOfferNames,
                 hasOffer,
                 availableRooms,
               } = processHotelSearchListingData(hotel);
@@ -365,16 +363,12 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 reviewScore,
                 reviewCount,
               );
-              const dealBadgeLabel =
-                uniqueOfferNames.length > 0
-                  ? uniqueOfferNames[0]
-                  : HOTEL_LISTING_REVIEW_FALLBACK.dealLabel;
 
               return (
+                <React.Fragment key={hotel.hotelKey || index}>
                 <div
                   className="mb-4 bg-transparent relative"
                   style={{ borderBottom: "2px solid var(--black-100, #C2CAD6)" }}
-                  key={hotel.hotelKey || index}
                 >
                   <div className="flex flex-col lg:flex-row gap-4 p-[10px]">
                     <div
@@ -585,76 +579,41 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                             </div>
                           </div>
                         )}
-                        <span
-                          className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
-                          style={{
-                            padding: "8px 15px",
-                            minHeight: "31px",
-                            fontFamily: "Inter, sans-serif",
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            lineHeight: "100%",
-                            color: "#FFFFFF",
-                            verticalAlign: "middle",
-                          }}
-                        >
-                          {dealBadgeLabel}
-                        </span>
                       </div>
 
-                      <div className="mb-[2px] flex w-full items-center justify-end gap-[8px]">
-                        <span
-                          style={{
-                            fontFamily: "Inter, sans-serif",
-                            fontWeight: 400,
-                            fontSize: "12px",
-                            color: "#3D495C",
-                            lineHeight: "100%",
-                          }}
-                        >
-                          Starting from (including VAT)
-                        </span>
-                        <HotelPriceSummaryTooltip
-                          totalPrice={price}
-                          currency={currency}
-                          taxes={bestRoom?.roomRate?.taxes || []}
-                        />
-                      </div>
-
-                      <div className="mb-[22px] flex w-full flex-col items-end gap-[2px]">
+                      <div className="mb-[22px] flex w-full flex-wrap items-baseline justify-end gap-x-3 gap-y-1 text-right">
                         {hasOffer && originalPrice > price && (
                           <span
                             style={{
                               fontFamily: "Inter, sans-serif",
                               fontWeight: 700,
                               fontSize: "32px",
-                              lineHeight: "100%",
+                              lineHeight: "1",
                               color: "#EA0029",
                               textDecoration: "line-through",
-                              maxWidth: "100%",
-                              wordBreak: "break-word",
                               whiteSpace: "nowrap",
                             }}
                           >
                             {currency} {originalPrice.toFixed(2)}
                           </span>
                         )}
-                        <div className="flex max-w-full flex-wrap items-end gap-x-[2px] gap-y-[6px]">
+                        <div className="flex items-baseline gap-1">
                           <span
                             style={{
                               fontFamily: "Inter, sans-serif",
                               fontWeight: 700,
                               fontSize: "32px",
-                              lineHeight: "100%",
+                              lineHeight: "1",
                               color: "#0A0C0F",
-                              maxWidth: "100%",
-                              wordBreak: "break-word",
                               whiteSpace: "nowrap",
                             }}
                           >
                             {currency} {price.toFixed(2)}
                           </span>
-                          <span className="text-[12px] font-normal leading-none text-[#3D495C]">
+                          <span
+                            className="text-[12px] font-normal leading-none text-[#3D495C]"
+                            style={{ fontFamily: "Inter, sans-serif" }}
+                          >
                             /Night
                           </span>
                         </div>
@@ -689,6 +648,8 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                     </div>
                   </div>
                 </div>
+                {index === 1 && <HotelSearchSignInUpdatesBanner />}
+              </React.Fragment>
               );
             })}
           </div>

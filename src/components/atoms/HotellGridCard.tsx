@@ -6,13 +6,11 @@ import GreenTick from "../../../src/assets/images/tik.png";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
-import HotelPriceSummaryTooltip from "./HotelPriceSummaryTooltip";
 import {
   processHotelSearchListingData,
   getHotelGuestReviewMeta,
   getHotelListingDescription,
   resolveHotelListingReviewDisplay,
-  HOTEL_LISTING_REVIEW_FALLBACK,
 } from "../../utils/hotelHelper";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
@@ -68,7 +66,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       currency,
       price,
       totalOriginalPrice: originalPrice,
-      uniqueOfferNames,
       hasOffer,
       hasFreeCancellation,
       availableRooms,
@@ -97,11 +94,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       reviewScore,
       reviewCount,
     );
-    const dealBadgeLabel =
-      uniqueOfferNames.length > 0
-        ? uniqueOfferNames[0]
-        : HOTEL_LISTING_REVIEW_FALLBACK.dealLabel;
-
     const roomTypeName = bestRoom?.roomTypeName || "";
     const bedType = bestRoom?.bedType || "";
 
@@ -376,76 +368,45 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                 </div>
               </div>
             )}
-            <span
-              className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
-              style={{
-                padding: "8px 15px",
-                minHeight: "31px",
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 600,
-                fontSize: "12px",
-                lineHeight: "100%",
-                color: "#FFFFFF",
-              }}
-            >
-              {dealBadgeLabel}
-            </span>
           </div>
 
           <div className="mb-2 text-right">
-            <div
-              style={{
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 400,
-                fontSize: "11px",
-                color: "#3D495C",
-                lineHeight: "100%",
-                marginBottom: "4px",
-              }}
-            >
-              Starting from (including VAT)
-            </div>
-            <div className="flex items-start justify-end gap-1.5">
-              <div className="min-w-0 text-right">
-                {hasOffer && originalPrice > price && (
-                  <span
-                    style={{
-                      fontFamily: "Inter, sans-serif",
-                      fontWeight: 700,
-                      fontSize: "22px",
-                      color: "#EA0029",
-                      textDecoration: "line-through",
-                      lineHeight: "100%",
-                      maxWidth: "100%",
-                      overflowWrap: "anywhere",
-                      whiteSpace: "nowrap",
-                      display: "block",
-                    }}
-                  >
-                    {currency} {originalPrice.toFixed(2)}
-                  </span>
-                )}
+            <div className="flex flex-wrap items-baseline justify-end gap-x-3 gap-y-1">
+              {hasOffer && originalPrice > price && (
+                <span
+                  style={{
+                    fontFamily: "Inter, sans-serif",
+                    fontWeight: 700,
+                    fontSize: "22px",
+                    color: "#EA0029",
+                    textDecoration: "line-through",
+                    lineHeight: "1",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {currency} {originalPrice.toFixed(2)}
+                </span>
+              )}
+              <div className="flex items-baseline gap-1">
                 <span
                   style={{
                     fontFamily: "Inter, sans-serif",
                     fontWeight: 700,
                     fontSize: "22px",
                     color: "#0A0C0F",
-                    lineHeight: "100%",
-                    maxWidth: "100%",
-                    overflowWrap: "anywhere",
+                    lineHeight: "1",
                     whiteSpace: "nowrap",
-                    display: "block",
                   }}
                 >
                   {currency} {price.toFixed(2)}
                 </span>
+                <span
+                  className="text-[12px] font-normal leading-none text-[#3D495C]"
+                  style={{ fontFamily: "Inter, sans-serif" }}
+                >
+                  /Night
+                </span>
               </div>
-              <HotelPriceSummaryTooltip
-                totalPrice={price}
-                currency={currency}
-                taxes={bestRoom?.roomRate?.taxes || []}
-              />
             </div>
           </div>
 

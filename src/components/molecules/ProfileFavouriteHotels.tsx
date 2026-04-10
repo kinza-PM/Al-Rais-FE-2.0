@@ -7,7 +7,6 @@ import FilledStar from "../../assets/svgs/filled_star.svg";
 import EmptyStar from "../../assets/svgs/empty_star.svg";
 import Share from "../../assets/svgs/share-icon.svg";
 
-import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import {
   useAddHotelFavourite,
@@ -228,16 +227,6 @@ const ProfileFavouriteHotels: React.FC = () => {
     return totalPrice;
   };
 
-  const getDealLabel = (room: ParsedRoomDetails | null) => {
-    const meal = room?.ratePlan?.meal?.toLowerCase() || "";
-    const cancel = room?.ratePlan?.cancelPolicyIndicator?.toLowerCase() || "";
-
-    if (meal.includes("breakfast")) return "Breakfast included";
-    if (cancel.includes("refundable")) return "Flexible deal";
-    if (cancel.includes("non-refundable")) return "Best value";
-    return "Saved deal";
-  };
-
   const getAvailabilityMessage = (room: ParsedRoomDetails | null) => {
     const status = room?.ratePlan?.availableStatus?.toLowerCase() || "";
     if (status === "available") return null;
@@ -413,7 +402,6 @@ const ProfileFavouriteHotels: React.FC = () => {
           const nightPrice = getNightPrice(bestRoom, totalPrice);
           const rates = bestRoom?.roomRate?.rates || [];
           const previewRates = rates.slice(0, 3);
-          const dealLabel = getDealLabel(bestRoom);
           const availabilityMessage = getAvailabilityMessage(bestRoom);
 
           return (
@@ -594,31 +582,19 @@ const ProfileFavouriteHotels: React.FC = () => {
                     </div> */}
                   </div>
 
-                  <div className="mb-3">
-                    <span className="bg-[#00B868] text-[#FFFFFF] text-[11px] font-semibold px-3 py-1 rounded-full inline-block">
-                      {dealLabel}
+                  <div className="mb-4 flex w-full items-baseline justify-end gap-1 text-right">
+                    <span
+                      className="text-[14px] font-bold text-[#0A0C0F] whitespace-nowrap [overflow-wrap:anywhere]"
+                      style={{ fontFamily: "Inter, sans-serif" }}
+                    >
+                      {currency} {nightPrice.toFixed(2)}
                     </span>
-                  </div>
-
-                  <div className="text-[12px] text-[#3D495C] mb-1">
-                    Starting from (including VAT)
-                  </div>
-
-                  <div className="mb-4 flex items-start gap-2">
-                    <div className="min-w-0">
-                      <span className="block text-[14px] font-bold text-[#0A0C0F] [overflow-wrap:anywhere]">
-                        {currency} {nightPrice.toFixed(2)}
-                      </span>
-                      <span className="mt-1 block text-[12px] font-semibold text-[#0A0C0F]">
-                        /Night
-                      </span>
-                    </div>
-
-                    <HotelPriceSummaryTooltip
-                      totalPrice={Number(totalPrice)}
-                      currency={currency}
-                      taxes={bestRoom?.roomRate?.taxes || []}
-                    />
+                    <span
+                      className="text-[12px] font-normal text-[#3D495C] leading-none"
+                      style={{ fontFamily: "Inter, sans-serif" }}
+                    >
+                      /Night
+                    </span>
                   </div>
 
                   <div className="flex items-center gap-3">

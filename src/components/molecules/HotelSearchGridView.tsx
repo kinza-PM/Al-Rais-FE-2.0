@@ -9,6 +9,7 @@ import {
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import { useHotelStore } from "../../store/UseHotelStore";
+import HotelSearchSignInUpdatesBanner from "./HotelSearchSignInUpdatesBanner";
 
 type HotelSearchGridViewProps = {
   hotels: Array<any>;
@@ -236,14 +237,20 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
           <div className="mx-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 lg:gap-x-8 lg:gap-y-8">
               {hotels.map((hotel, index) => (
-                <HotellGridCard
-                  key={hotel.hotelKey || index}
-                  hotel={hotel}
-                  isFavourite={!!favorites[hotel.hotelKey]}
-                  isFavouriteLoading={isAddFavouritePending}
-                  onToggleFavourite={() => handleToggleFavourite(hotel)}
-                  onShare={() => handleShareClick(hotel)}
-                />
+                <React.Fragment key={hotel.hotelKey || index}>
+                  <HotellGridCard
+                    hotel={hotel}
+                    isFavourite={!!favorites[hotel.hotelKey]}
+                    isFavouriteLoading={isAddFavouritePending}
+                    onToggleFavourite={() => handleToggleFavourite(hotel)}
+                    onShare={() => handleShareClick(hotel)}
+                  />
+                  {index === 1 && (
+                    <div className="col-span-full w-full">
+                      <HotelSearchSignInUpdatesBanner />
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useLayoutEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { MainLayout } from "../components";
 import HeroSection from "../components/molecules/HeroSection";
@@ -6,6 +6,7 @@ import HeroSection from "../components/molecules/HeroSection";
 // import PartnersSection from "../components/molecules/PartnersSection";
 import WhyChooseUs from "../components/molecules/WhyChooseUsSection";
 import ReadyToFlySection from "../components/molecules/ReadyToFlySection";
+import { useHotelStore } from "../store/UseHotelStore";
 import SliderMainPic from "../assets/images/Slider-main-Pic.jpg";
 import SliderTopRight from "../assets/images/Slider-top-right.png";
 import PolygonShape from "../assets/images/Polygon 1.png";
@@ -33,11 +34,18 @@ const LandingPage: React.FC = () => {
     useOutletContext<LandingPageContext>();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Lifted hero tab state so top buttons can control Flights/Hotels search tab
-  const [heroSearchTab, setHeroSearchTab] = useState<"flights" | "hotels">("flights");
+  const landingHeroSearchTab = useHotelStore((s) => s.landingHeroSearchTab);
+  const setLandingHeroSearchTab = useHotelStore((s) => s.setLandingHeroSearchTab);
+
+  /* Returning from hotel results (or footer → search): open Hotels tab if we still have search state */
+  useLayoutEffect(() => {
+    if (useHotelStore.getState().hotel) {
+      setLandingHeroSearchTab("hotels");
+    }
+  }, [setLandingHeroSearchTab]);
 
   const handleHeroTopTabClick = (tab: "flights" | "hotels") => {
-    setHeroSearchTab(tab);
+    setLandingHeroSearchTab(tab);
     // scroll the hero search form into view
     const el = document.getElementById("hero-search-form");
     if (el) {
@@ -194,7 +202,7 @@ const LandingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleHeroTopTabClick("flights")}
-                className={`flex items-center justify-center text-[16px] font-medium leading-[1] ${heroSearchTab === "flights" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
+                className={`flex items-center justify-center text-[16px] font-medium leading-[1] ${landingHeroSearchTab === "flights" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
                 style={{
                   width: 108,
                   height: 39,
@@ -210,7 +218,7 @@ const LandingPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleHeroTopTabClick("hotels")}
-                className={`flex items-center justify-center text-[16px] font-medium leading-[1] ${heroSearchTab === "hotels" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
+                className={`flex items-center justify-center text-[16px] font-medium leading-[1] ${landingHeroSearchTab === "hotels" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
                 style={{
                   width: 108,
                   height: 39,
@@ -243,7 +251,10 @@ const LandingPage: React.FC = () => {
 
         {/* Spacing below hero form so calendar can fully show */}
         <div className="mt-12 sm:mt-16 mb-24">
-          <HeroSection activeTab={heroSearchTab} onTabChange={setHeroSearchTab} />
+          <HeroSection
+            activeTab={landingHeroSearchTab}
+            onTabChange={setLandingHeroSearchTab}
+          />
         </div>
       </div>
 
