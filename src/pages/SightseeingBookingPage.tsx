@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -26,6 +26,7 @@ import {
   extractActivityBookingReference,
   isoDateOnly,
   newSightseeingClientReference,
+  readSightseeingCardPreview,
   validateLeadTravelerForActivityBooking,
   type SightseeingAdultTravelerForm,
   type SightseeingBookingPageState,
@@ -121,7 +122,15 @@ const SightseeingBookingPage: React.FC = () => {
 
   const activityCode = rawCode ? decodeURIComponent(rawCode) : "";
 
-  const summary: SightseeingBookingSummary | undefined = pageState?.summary;
+  const summary: SightseeingBookingSummary | undefined = useMemo(() => {
+    const s = pageState?.summary;
+    if (!s) return undefined;
+    if (s.countryLabel?.trim()) return s;
+    const preview = activityCode ? readSightseeingCardPreview(activityCode) : undefined;
+    const fromPreview = preview?.countryName?.trim();
+    if (fromPreview) return { ...s, countryLabel: fromPreview };
+    return s;
+  }, [pageState?.summary, activityCode]);
   const returnState = pageState?.returnState;
 
   const adultCount = summary?.draft?.adults ?? 0;
@@ -262,6 +271,11 @@ const SightseeingBookingPage: React.FC = () => {
       pickupTimeDisplay: summary.pickupTimeDisplay,
       travellersSummary: summary.travellersSummary,
       packageSummary: summary.packageSummary,
+      countryLabel: summary.countryLabel?.trim() || undefined,
+      activityDurationDisplay:
+        summary.durationLabel?.trim() && summary.durationLabel.trim() !== "—"
+          ? summary.durationLabel.trim()
+          : undefined,
       bookingRef: bookingRefForList,
       clientReference,
       currency: summary.currency,

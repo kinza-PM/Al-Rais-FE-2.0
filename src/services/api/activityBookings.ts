@@ -17,7 +17,7 @@ export async function postMyActivityBookings<TResp = unknown>(
 ): Promise<TResp> {
   const source = "postMyActivityBookings";
   try {
-    return await api.post<TResp>("/myActivityBooking", body, {
+    return await api.post<TResp>("myActivityBooking", body, {
       signal: options?.signal,
     });
   } catch (err) {

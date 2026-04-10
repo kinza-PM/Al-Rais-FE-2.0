@@ -132,6 +132,14 @@ const MyBookingsPage = () => {
     [setSearchParams],
   );
 
+  /** e.g. navigate from sightseeing confirmation with `state: { mode: "Sightseeing" }` */
+  useEffect(() => {
+    const m = (location.state as { mode?: string } | null)?.mode;
+    if (m === "Sightseeing" || m === "Hotels" || m === "Flights") {
+      setModeTab(m);
+    }
+  }, [location.state, setModeTab]);
+
   const { mutateAsync, isPending } = useMyBooking();
   const { mutateAsync: fetchHotelBookings, isPending: isHotelPending } =
     useMyHotelBooking();

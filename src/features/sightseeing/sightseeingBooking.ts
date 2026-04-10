@@ -33,6 +33,8 @@ export type SightseeingBookingSummary = {
   title: string;
   imageSrc: string;
   categoryLabel: string;
+  /** Country under the activity title on ticket / Figma. */
+  countryLabel: string;
   durationLabel: string;
   groupLabel: string;
   packageSummary: string;

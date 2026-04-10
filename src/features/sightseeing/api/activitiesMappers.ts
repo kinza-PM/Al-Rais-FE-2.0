@@ -461,6 +461,9 @@ function mapOneAvailabilityActivity(
   if (!title) return null;
 
   const countryBlock = asRecord(act.country);
+  const countryName = String(
+    countryBlock?.name ?? countryBlock?.description ?? "",
+  ).trim();
   let destinationHint = "";
   const destRaw = countryBlock?.destinations;
   if (Array.isArray(destRaw) && destRaw[0]) {
@@ -523,6 +526,7 @@ function mapOneAvailabilityActivity(
     id: activityCode || `ss-api-${index}`,
     title,
     categoryLabel,
+    ...(countryName ? { countryName } : {}),
     quickFilter: inferQuickFilter(title, categoryLabel),
     imageSrc,
     rating: safeRating,
@@ -673,6 +677,10 @@ export function mapActivitiesDetailResponse(
 
   const modalities = ar.modalities;
   const durationLabel = durationLabelFromModalities(modalities);
+  const countryBlockDetail = asRecord(ar.country);
+  const detailCountryName = String(
+    countryBlockDetail?.name ?? countryBlockDetail?.description ?? "",
+  ).trim();
   const imageUrls = extractActivityImageUrls(ar);
 
   const ratingRaw = Number(ar.rating ?? ar.averageRating ?? content?.rating ?? NaN);
@@ -737,6 +745,7 @@ export function mapActivitiesDetailResponse(
     rating,
     reviewCount,
     durationLabel,
+    ...(detailCountryName ? { countryName: detailCountryName } : {}),
     badges,
     description,
     highlights: highlights.length > 0 ? highlights : undefined,

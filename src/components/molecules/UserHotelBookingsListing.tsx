@@ -18,6 +18,22 @@ const actionLinkClass =
 export type { BookingStatus };
 
 function StatusPill({ status }: { status: BookingStatus }) {
+  if (status === "Cancelled") {
+    return (
+      <span
+        className="inline-flex items-center justify-center text-[11px] font-medium text-[#9A3412]"
+        style={{
+          background: "#FFEDD5",
+          minWidth: "86px",
+          height: "26px",
+          borderRadius: "100px",
+        }}
+      >
+        Cancelled
+      </span>
+    );
+  }
+
   if (status === "Confirmed") {
     return (
       <span
@@ -132,6 +148,7 @@ function HotelBookingCard({
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const isPending = booking.status === "Pending";
   const isExpired = booking.status === "Expired";
+  const isCancelled = booking.status === "Cancelled";
   const [countdown, setCountdown] = useState(
     booking.countdown || { hours: "00", mins: "35", secs: "49" },
   );
@@ -172,7 +189,7 @@ function HotelBookingCard({
     <div
       className={[
         "relative rounded-[16px] border border-[#E4E4E7] bg-white overflow-hidden transition",
-        isExpired ? "opacity-50 [filter:grayscale(100%)]" : "",
+        isExpired || isCancelled ? "opacity-60 [filter:grayscale(80%)]" : "",
       ].join(" ")}
       style={{
         maxWidth: "1168px",
@@ -229,7 +246,9 @@ function HotelBookingCard({
         </div>
       </div>
 
-      {booking.cancellationDeadline && booking.status === "Confirmed" && (
+      {booking.cancellationDeadline &&
+        booking.status === "Confirmed" &&
+        !isCancelled && (
         <>
           <CardDivider />
           <div className="px-4 py-3">
@@ -302,7 +321,20 @@ function HotelBookingCard({
 
       <div className="px-4 py-3 flex items-center justify-between text-[13px] font-medium">
         <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7] gap-0">
-          {booking.status === "Confirmed" && (
+          {isCancelled && (
+            <>
+              <span className="pr-4 text-[12px] text-[#64748B]">
+                This reservation was cancelled.
+              </span>
+              <Link
+                to="/customer-support"
+                className={`${actionLinkClass} px-4`}
+              >
+                Contact support
+              </Link>
+            </>
+          )}
+          {booking.status === "Confirmed" && !isCancelled && (
             <>
               <Link
                 to="/hotel-booking-detail"
@@ -376,7 +408,7 @@ function HotelBookingCard({
             </>
           )}
 
-          {booking.status !== "Confirmed" && (
+          {booking.status !== "Confirmed" && !isCancelled && (
             <Link
               to="/hotel-booking-detail"
               onClick={markExpectMyBookingsQueryRestore}

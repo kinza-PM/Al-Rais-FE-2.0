@@ -520,6 +520,11 @@ const SightseeingActivityDetailPage: React.FC = () => {
       title: displayTitle,
       imageSrc: imageUrls[0] || effectivePreview?.imageSrc || "",
       categoryLabel: effectivePreview?.categoryLabel ?? "Sightseeing Tour",
+      countryLabel:
+        state.context?.country?.trim() ||
+        effectivePreview?.countryName?.trim() ||
+        detail?.countryName?.trim() ||
+        "",
       durationLabel:
         detail?.durationLabel ?? effectivePreview?.durationLabel ?? "—",
       groupLabel: effectivePreview?.groupLabel ?? "—",
@@ -563,11 +568,11 @@ const SightseeingActivityDetailPage: React.FC = () => {
     imageUrls,
     effectivePreview,
     detail?.durationLabel,
+    detail?.countryName,
     navigate,
     range.from,
     range.to,
     state.context,
-    effectivePreview,
     isAuthenticated,
   ]);
 

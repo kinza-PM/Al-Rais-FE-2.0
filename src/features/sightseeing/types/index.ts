@@ -37,6 +37,8 @@ export type SightseeingActivity = {
   id: string;
   title: string;
   categoryLabel: string;
+  /** Supplier `country` block name — used on bookings & ticket (Figma country line). */
+  countryName?: string;
   quickFilter: SightseeingQuickFilterId;
   imageSrc: string;
   rating: number;
@@ -74,6 +76,8 @@ export type SightseeingActivityDetailView = {
   reviewCount: number;
   /** e.g. "6 Hours" for badge row */
   durationLabel: string;
+  /** Supplier `country` name when present */
+  countryName?: string;
   /** Ordered pills: e.g. Best Seller, Free Cancellation, duration */
   badges: string[];
   description?: string;

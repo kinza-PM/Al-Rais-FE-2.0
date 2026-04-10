@@ -118,6 +118,23 @@ function pathIsActivities(url: string | undefined): boolean {
   return activitiesApis.some((prefix) => path.startsWith(prefix));
 }
 
+/** Requests that must not trigger JWT refresh / guest-token retry (IAM / SigV4 routes). */
+function pathSkipsJwtGuestRetry(url: string | undefined): boolean {
+  if (pathIsActivities(url)) return true;
+  const p = requestUrlPath(url);
+  if (p !== "/myActivityBooking" && !p.startsWith("/myActivityBooking/")) {
+    return false;
+  }
+  const target = (
+    import.meta.env.VITE_MY_ACTIVITY_BOOKING_API ??
+    (import.meta.env.DEV ? "activities" : "flight")
+  )
+    .toString()
+    .toLowerCase()
+    .trim();
+  return target === "activities";
+}
+
 export const axiosClient = axios.create({
   baseURL: AXIOS_MAIN_API_CLIENT_BASE,
   timeout: 120000,
@@ -146,27 +163,44 @@ axiosClient.interceptors.request.use(async (config) => {
   const path = requestUrlPath(config.url);
   const isActivities = activitiesApis.some((prefix) => path.startsWith(prefix));
 
+  const myActivityPath =
+    path === "/myActivityBooking" || path.startsWith("/myActivityBooking/");
+  /**
+   * Sightseeing list: deployed on IAM-only activities API (`…/qa`) alongside `cancelBooking`.
+   * Sending `Authorization: Bearer` there causes IncompleteSignatureException.
+   * - `activities` — same host as `VITE_ACTIVITIES_API_BASE`; dev uses `/api/activities-proxy` (SigV4).
+   * - `flight` | `hotel` | `main` — stacks that accept Cognito JWT (legacy).
+   * Default: `activities` in dev, `flight` in production builds (JWT-capable flight API).
+   */
+  const myActivityTarget = (
+    import.meta.env.VITE_MY_ACTIVITY_BOOKING_API ??
+    (import.meta.env.DEV ? "activities" : "flight")
+  )
+    .toString()
+    .toLowerCase()
+    .trim();
+  const myActivityUsesActivitiesGateway = myActivityPath && myActivityTarget === "activities";
+
   const token = await TokenService.getToken();
-  if (token && !isActivities) {
+  if (token && !isActivities && !myActivityUsesActivitiesGateway) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  /**
-   * `POST /myActivityBooking` must hit an API that accepts Cognito `Bearer` (not IAM SigV4).
-   * Main `API_BASE` / app-proxy often returns IncompleteSignatureException for JWT.
-   * Override: `VITE_MY_ACTIVITY_BOOKING_API` = `flight` | `hotel` | `main` (default `flight`, same stack as `/myBooking`).
-   */
-  if (
-    path === "/myActivityBooking" ||
-    path.startsWith("/myActivityBooking/")
-  ) {
-    const target = (
-      import.meta.env.VITE_MY_ACTIVITY_BOOKING_API ?? "flight"
-    ).toLowerCase();
-    if (target === "hotel") {
+  if (myActivityPath) {
+    if (myActivityTarget === "activities") {
+      const activitiesBase = import.meta.env.DEV
+        ? "/api/activities-proxy"
+        : ACTIVITIES_API_BASE;
+      config.baseURL = `${activitiesBase.replace(/\/+$/, "")}/`;
+      config.headers.delete("Authorization");
+      const ak = import.meta.env.VITE_ACTIVITIES_API_KEY;
+      if (typeof ak === "string" && ak.trim() !== "") {
+        config.headers.set("x-api-key", ak.trim());
+      }
+    } else if (myActivityTarget === "hotel") {
       config.baseURL =
         import.meta.env.DEV ? "/api/hotel-proxy" : HOTEL_API_BASE;
-    } else if (target === "main") {
+    } else if (myActivityTarget === "main") {
       config.baseURL = AXIOS_MAIN_API_CLIENT_BASE;
     } else {
       config.baseURL =
@@ -218,7 +252,7 @@ axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (pathIsActivities(originalRequest?.url)) {
+    if (pathSkipsJwtGuestRetry(originalRequest?.url)) {
       return Promise.reject(error);
     }
     const serverMsg =

@@ -233,6 +233,49 @@ export async function postConfirmBooking(
   }
 }
 
+/** Body for `POST …/cancelBooking` (activities / sightseeing gateway). */
+export function buildActivitiesCancelBookingBody(params: {
+  bookingReferenceId: string;
+  clientReference?: string;
+  bookingKey?: string;
+  cancellationReason?: string;
+}): Record<string, unknown> {
+  const ref = params.bookingReferenceId.trim();
+  const body: Record<string, unknown> = {
+    bookingReferenceId: ref,
+    bookingReference: ref,
+  };
+  const cr = params.clientReference?.trim();
+  if (cr) body.clientReference = cr;
+  const bk = params.bookingKey?.trim();
+  if (bk) body.bookingKey = bk;
+  const reason = params.cancellationReason?.trim();
+  if (reason) body.cancellationReason = reason;
+  return body;
+}
+
+/** Normalizes supplier responses after a cancel call. */
+export function isActivitiesCancelSuccessful(data: unknown): boolean {
+  if (data == null) return true;
+  if (typeof data !== "object") return false;
+  const o = data as Record<string, unknown>;
+  const meta = o.meta as Record<string, unknown> | undefined;
+  if (meta && meta.success === true) return true;
+  const sm = String(meta?.statusMessage ?? "").toUpperCase();
+  if (sm === "SUCCESS") return true;
+  if (o.success === true) return true;
+  const st = String(o.status ?? "").toLowerCase();
+  if (st === "cancelled" || st === "canceled") return true;
+  const booking = o.booking;
+  if (booking && typeof booking === "object") {
+    const bs = String(
+      (booking as Record<string, unknown>).status ?? "",
+    ).toUpperCase();
+    if (bs === "CANCELLED" || bs === "CANCELED") return true;
+  }
+  return false;
+}
+
 export async function postCancelBooking(
   body: Record<string, unknown>,
   signal?: AbortSignal,

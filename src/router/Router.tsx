@@ -39,6 +39,9 @@ const FAQPage = lazy(() => import("../pages/FAQPage"));
 const PaymentsHelpPage = lazy(() => import("../pages/PaymentsHelpPage"));
 const RefundCancellationPolicyPage = lazy(() => import("../pages/RefundCancellationPolicyPage")); // New import
 const HotelCancellationPage = lazy(() => import("../pages/HotelCancellationPage"));
+const SightseeingCancellationPage = lazy(
+  () => import("../pages/SightseeingCancellationPage"),
+);
 const HotelBookingDetailPage = lazy(() => import("../pages/HotelBookingDetailPage"));
 const FlightCancellationPage = lazy(() => import("../pages/FlightCancellationPage"));
 
@@ -171,6 +174,14 @@ const router = createBrowserRouter([
       {
         path: "hotel-cancellation", // New route added
         element: <HotelCancellationPage />,
+      },
+      {
+        path: "sightseeing-cancellation",
+        element: (
+          <ProtectedRoute>
+            <SightseeingCancellationPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "hotel-booking-detail",
