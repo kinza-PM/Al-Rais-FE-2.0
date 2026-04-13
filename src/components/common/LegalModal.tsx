@@ -19,7 +19,7 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-10 w-full max-w-4xl rounded-2xl bg-white shadow-xl max-h-[90vh] flex flex-col">
+      <div className="relative z-10 w-full max-w-4xl rounded-2xl bg-white shadow-xl max-h-[90vh] flex flex-col overflow-hidden">
         <Button
           onClick={onClose}
           className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors z-20"
@@ -40,8 +40,10 @@ const LegalModal: React.FC<LegalModalProps> = ({ isOpen, onClose, type }) => {
             />
           </svg>
         </Button>
-        <div className="overflow-y-auto p-10 scrollbar-hide">
-          {type === "terms" ? <TermsOfServiceContent /> : type === "privacy" ? <PrivacyPolicyContent /> : <CancellationPolicyContent />}
+        <div className="overflow-y-auto flex-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#C2CAD6] [&::-webkit-scrollbar-thumb]:rounded-full">
+          <div className="p-6 md:p-10">
+            {type === "terms" ? <TermsOfServiceContent /> : type === "privacy" ? <PrivacyPolicyContent /> : <CancellationPolicyContent />}
+          </div>
         </div>
       </div>
     </div>

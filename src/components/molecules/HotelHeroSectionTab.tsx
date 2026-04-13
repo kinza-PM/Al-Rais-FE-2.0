@@ -459,7 +459,7 @@ const HotelHeroSectionTab: React.FC = () => {
               }}
               onClick={handleSearch}
             >
-              Search Hotels
+              Search
             </button>
           </div>
         </div>

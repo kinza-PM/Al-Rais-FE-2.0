@@ -271,41 +271,41 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     );
   };
 
-  const getAvailabilityCount = (room: any) => {
-    const matchingAvailableRooms = (hotelMoreRooms?.rooms || []).filter(
-      (candidate: any) => {
-        const candidateRatePlan = candidate?.ratePlan || {};
-        const roomRatePlan = room?.ratePlan || {};
+  // const getAvailabilityCount = (room: any) => {
+  //   const matchingAvailableRooms = (hotelMoreRooms?.rooms || []).filter(
+  //     (candidate: any) => {
+  //       const candidateRatePlan = candidate?.ratePlan || {};
+  //       const roomRatePlan = room?.ratePlan || {};
 
-        return (
-          candidate?.roomTypeName === room?.roomTypeName &&
-          (candidateRatePlan?.meal || "") === (roomRatePlan?.meal || "") &&
-          (candidateRatePlan?.code || "") === (roomRatePlan?.code || "") &&
-          (candidateRatePlan?.cancelPolicyIndicator || "") ===
-          (roomRatePlan?.cancelPolicyIndicator || "") &&
-          candidateRatePlan?.availableStatus === "Available"
-        );
-      },
-    ).length;
+  //       return (
+  //         candidate?.roomTypeName === room?.roomTypeName &&
+  //         (candidateRatePlan?.meal || "") === (roomRatePlan?.meal || "") &&
+  //         (candidateRatePlan?.code || "") === (roomRatePlan?.code || "") &&
+  //         (candidateRatePlan?.cancelPolicyIndicator || "") ===
+  //         (roomRatePlan?.cancelPolicyIndicator || "") &&
+  //         candidateRatePlan?.availableStatus === "Available"
+  //       );
+  //     },
+  //   ).length;
 
-    if (matchingAvailableRooms > 0) {
-      return matchingAvailableRooms;
-    }
+  //   if (matchingAvailableRooms > 0) {
+  //     return matchingAvailableRooms;
+  //   }
 
-    const candidates = [
-      room?.availableRooms?.length,
-      room?.availableRoomsCount,
-      room?.availableRoomCount,
-      room?.roomRate?.availableRoomsCount,
-      room?.roomRate?.remainingRooms,
-      room?.roomRate?.allotment,
-      room?.allotment,
-    ];
+  //   const candidates = [
+  //     room?.availableRooms?.length,
+  //     room?.availableRoomsCount,
+  //     room?.availableRoomCount,
+  //     room?.roomRate?.availableRoomsCount,
+  //     room?.roomRate?.remainingRooms,
+  //     room?.roomRate?.allotment,
+  //     room?.allotment,
+  //   ];
 
-    return (
-      candidates.find((value) => typeof value === "number" && value > 0) ?? null
-    );
-  };
+  //   return (
+  //     candidates.find((value) => typeof value === "number" && value > 0) ?? null
+  //   );
+  // };
 
   const getRoomDescription = (room: any) =>
     room?.roomTypeDesc ||
@@ -560,7 +560,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                 </span>
               </span>
             </label>
-            <div style={{ pointerEvents: "none"}}>
+            <div style={{ pointerEvents: "none" }}>
               <TravellersAndRoomDropdown
                 maxTotal={100}
                 schema={passengers as PassengerSchema}
@@ -961,7 +961,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                   0,
                                 )
                                 : price;
-                              const availabilityCount = getAvailabilityCount(room);
+                              // const availabilityCount = getAvailabilityCount(room);
 
                               const roomKey =
                                 room.roomKey ||
@@ -1043,12 +1043,12 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                           </div>
                                         )}
 
-                                        {availabilityCount && availabilityCount <= 5 ? (
+                                        {/* {availabilityCount && availabilityCount <= 5 ? (
                                           <div className="mt-[3px] text-[12px] text-[#EA0029]">
                                             Only {availabilityCount} room
                                             {availabilityCount > 1 ? "s" : ""} left on Al Rais
                                           </div>
-                                        ) : null}
+                                        ) : null} */}
                                       </div>
                                     ) : (
                                       <div className="text-[14px] text-[#EA0029]">

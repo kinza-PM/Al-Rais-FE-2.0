@@ -641,7 +641,7 @@ const HotelSearchListing: React.FC = () => {
                 className="searchFilterBtn hotel-search-btn-responsive"
                 onClick={handleSearchHotels}
               >
-                {isPending ? "Searching..." : "Search Hotels"}
+                {isPending ? "Searching..." : "Search"}
               </CustomButton>
             </div>
           </div>

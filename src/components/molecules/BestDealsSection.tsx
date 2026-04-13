@@ -58,6 +58,13 @@ const DEALS: Deal[] = [
 
 const FILTER_TABS = ["Below $199", "Below $399", "Below $699", "Below $999"] as const;
 
+const CATEGORY_OPTIONS = [
+  "Umrah packages",
+  "Hajj packages",
+  "Flight deals",
+  "Hotel deals",
+];
+
 const MAIN_MAX_WIDTH = 1464;
 // Reduced card width so five cards can fit within the main max width with gaps
 const DEAL_CARD_WIDTH = 280;
@@ -193,6 +200,7 @@ const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
 const BestDealsSection: React.FC = () => {
   const [active, setActive] = useState(0); // UI-only
   const [category, setCategory] = useState("Umrah packages");
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
   const [splide, setSplide] = useState<{ go: (dir: string) => void } | null>(
     null
@@ -232,73 +240,103 @@ const BestDealsSection: React.FC = () => {
         </h2>
       </div>
 
-      {/* Single line: price buttons + dropdown — same left as cards (67px) */}
-      <div className="mt-4 ml-[67px] sm:ml-[67px]">
-        <div className="flex flex-row flex-nowrap items-center justify-between gap-3 sm:gap-4 best-deals-filters-row overflow-x-auto overflow-y-hidden">
-        {/* Price list container: 428×50, 16px radius, Figma colors — no vertical scrollbar */}
-        <div
-          className="flex shrink-0 items-center justify-center p-[5px] overflow-x-auto overflow-y-hidden"
-          style={{
-            width: "min(428px, 100%)",
-            height: 50,
-            borderRadius: 16,
-            background: "var(--white-100, #F2F2F3)",
-            border: "1.5px solid var(--black-200, #3D495C)",
-          }}
-        >
-          <div className="flex items-center gap-1 flex-nowrap">
-            {FILTER_TABS.map((label, i) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setActive(i)}
-                className="text-[12px] font-medium whitespace-nowrap transition-colors rounded-[12px]"
-                style={{
-                  width: 97,
-                  height: 40,
-                  background: active === i ? "var(--primary-300, #2351A3)" : "transparent",
-                  color: active === i ? "#FFFFFF" : "#3D495C",
-                }}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Umrah packages dropdown — right-aligned, 178×50, single chevron */}
-        <div
-          className="relative shrink-0 mr-6 sm:mr-8"
-          style={{ width: 178, height: 50 }}
-        >
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full h-full appearance-none rounded-[16px] border bg-white pl-4 pr-10 text-[13px] font-medium text-[#3D495C] outline-none cursor-pointer hover:bg-[#FAFAFA] transition-colors"
-            style={{ border: "1.5px solid var(--black-200, #3D495C)" }}
+      {/* Single line: price buttons + dropdown */}
+      <div className="relative z-50 mt-4 ml-[67px] sm:ml-[67px]">
+        <div className="flex flex-row flex-nowrap items-center justify-between gap-3 sm:gap-4">
+          {/* Price list container: 428×50, 16px radius, Figma colors — no vertical scrollbar */}
+          <div
+            className="flex shrink-0 items-center justify-center p-[5px] overflow-x-auto overflow-y-hidden"
+            style={{
+              width: "min(428px, 100%)",
+              height: 50,
+              borderRadius: 16,
+              background: "var(--white-100, #F2F2F3)",
+              border: "1.5px solid var(--black-200, #3D495C)",
+            }}
           >
-            <option>Umrah packages</option>
-            <option>Hajj packages</option>
-            <option>Flight deals</option>
-            <option>Hotel deals</option>
-          </select>
-          {/* Single chevron icon */}
-          <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[#3D495C]">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+            <div className="flex items-center gap-1 flex-nowrap">
+              {FILTER_TABS.map((label, i) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => setActive(i)}
+                  className="text-[12px] font-medium whitespace-nowrap transition-colors rounded-[12px]"
+                  style={{
+                    width: 97,
+                    height: 40,
+                    background: active === i ? "var(--primary-300, #2351A3)" : "transparent",
+                    color: active === i ? "#FFFFFF" : "#3D495C",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Umrah packages dropdown — right-aligned, 178×50, custom UI */}
+          <div
+            className="relative shrink-0 mr-6 sm:mr-8"
+            style={{ width: 178, height: 50 }}
+          >
+            <button
+              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+              className="w-full h-full bg-white rounded-[16px] flex items-center justify-between pl-4 pr-3 text-[13px] font-medium text-[#3D495C] outline-none cursor-pointer hover:bg-[#FAFAFA] transition-colors"
+              style={{ border: "1.5px solid var(--black-200, #3D495C)" }}
             >
-              <path d="M7 10l5 5 5-5" />
-            </svg>
+              <span>{category}</span>
+              <svg
+                className={`w-4 h-4 transition-transform flex-shrink-0 ${isCategoryOpen ? "rotate-180" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                viewBox="0 0 24 24"
+              >
+                <path d="M7 10l5 5 5-5" />
+              </svg>
+            </button>
+
+            {isCategoryOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#F2F2F3] rounded-2xl border border-[#F2F2F3] shadow-lg z-10 overflow-hidden">
+                {CATEGORY_OPTIONS.map((option, index) => (
+                  <div
+                    key={option}
+                    onClick={() => {
+                      setCategory(option);
+                      setIsCategoryOpen(false);
+                    }}
+                    className={`px-4 py-2.5 cursor-pointer flex items-center justify-between ${index !== CATEGORY_OPTIONS.length - 1
+                      ? "border-b border-[#E4E4E7]"
+                      : ""
+                      }`}
+                  >
+                    <span
+                      style={{ color: "#0A0C0F", fontSize: 13, fontWeight: 400 }}
+                    >
+                      {option}
+                    </span>
+                    {category === option && (
+                      <svg
+                        width="16"
+                        height="12"
+                        viewBox="0 0 16 12"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M15.4425 1.06754L5.44254 11.0675C5.38449 11.1256 5.31556 11.1717 5.23969 11.2032C5.16381 11.2347 5.08248 11.2508 5.00035 11.2508C4.91821 11.2508 4.83688 11.2347 4.76101 11.2032C4.68514 11.1717 4.61621 11.1256 4.55816 11.0675L0.18316 6.69254C0.0658846 6.57526 0 6.4162 0 6.25035C0 6.0845 0.0658846 5.92544 0.18316 5.80816C0.300435 5.69088 0.459495 5.625 0.625347 5.625C0.7912 5.625 0.95026 5.69088 1.06753 5.80816L5.00035 9.74175L14.5582 0.18316C14.6754 0.0658843 14.8345 -1.2357e-09 15.0003 0C15.1662 1.2357e-09 15.3253 0.0658843 15.4425 0.18316C15.5598 0.300435 15.6257 0.459495 15.6257 0.625347C15.6257 0.7912 15.5598 0.95026 15.4425 1.06754Z"
+                          fill="#2351A3"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
       </div>
 
       {/* Slider (opacity + peek) */}

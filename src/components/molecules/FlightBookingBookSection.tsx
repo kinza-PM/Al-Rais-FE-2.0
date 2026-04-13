@@ -46,6 +46,7 @@ import {
   buildPassengerCacheAddPayload,
   extractPassengersFromCacheResponse,
 } from "../../utils/passengerCacheHelper";
+import ConfirmationModal from "../common/ConfirmationModal";
 
 type FlightBookingBookSectionProps = {
   trip: any;
@@ -91,10 +92,12 @@ export default function FlightBookingBookSection({
   const [validationErrors, setValidationErrors] = useState<
     Record<number, Record<string, string>>
   >({});
+  const originalCacheKeyBySlotRef = useRef<Record<number, string>>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
   const [saveTravelerByPassengerKey, setSaveTravelerByPassengerKey] = useState<
     Record<string, boolean>
   >({});
+  const [showBookingConfirm, setShowBookingConfirm] = useState(false);
   const savedTravelerOffKeysRef = useRef<Set<string>>(new Set());
 
   const pRules = fareBookingSearchRules?.passengerRules?.[0] ?? {};
@@ -226,14 +229,21 @@ export default function FlightBookingBookSection({
     const selectedPassengersForCache = passengers.filter((p, idx) =>
       saveToggleChecked(saveToggleKey(idx, p?.passengerKey)),
     );
+
     const addPassengerCachePayload =
       selectedPassengersForCache.length > 0
         ? buildPassengerCacheAddPayload(
-            selectedPassengersForCache,
-            extractPassengersFromCacheResponse(passengerCacheResp),
-          )
+          selectedPassengersForCache,
+          extractPassengersFromCacheResponse(passengerCacheResp),
+          passengers.map((_, i) =>
+            saveToggleChecked(saveToggleKey(i, passengers[i]?.passengerKey))
+              ? (originalCacheKeyBySlotRef.current[i] ?? null)
+              : null
+          ),
+        )
         : null;
-
+    // console.log('addPassengerCachePayload----', addPassengerCachePayload)
+    // console.log('selectedPassengersForCache----', selectedPassengersForCache)
     try {
       if (addPassengerCachePayload) {
         try {
@@ -321,8 +331,8 @@ export default function FlightBookingBookSection({
       const areaCode = clear
         ? ""
         : t.phoneAreaCode !== undefined &&
-            t.phoneAreaCode !== null &&
-            String(t.phoneAreaCode).trim() !== ""
+          t.phoneAreaCode !== null &&
+          String(t.phoneAreaCode).trim() !== ""
           ? `+${String(t.phoneAreaCode).replace(/^\+/, "")}`
           : "";
       const phoneNumber = clear ? "" : String(t.phoneNumber ?? "");
@@ -373,6 +383,19 @@ export default function FlightBookingBookSection({
       savedTravelerOffKeysRef.current = currentOffFromSaved;
       return next;
     });
+
+    for (let i = 0; i < passengers.length; i++) {
+      const t = selectedSlots[i];
+      if (t) {
+        const given = String(t.firstName ?? "").trim().toUpperCase();
+        const surname = String(t.lastName ?? "").trim().toUpperCase();
+        const dob = String(t.birthDate ?? "").trim();
+        const passport = String(t.passport ?? "").trim().toUpperCase();
+        originalCacheKeyBySlotRef.current[i] = `${passport}|${given}|${surname}|${dob}`;
+      } else {
+        delete originalCacheKeyBySlotRef.current[i];
+      }
+    }
   };
 
   const saveToggleKey = (index: number, passengerKey?: string) =>
@@ -1246,7 +1269,8 @@ export default function FlightBookingBookSection({
             type="button"
             overrideClasses
             className="mt-6 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-[#2351A3] flex items-center justify-center gap-[10px]"
-            onClick={() => handleFlightProvInitialBooking()}
+            // onClick={() => handleFlightProvInitialBooking()}
+            onClick={() => setShowBookingConfirm(true)}
             disabled={isPending}
           >
             {isPending ? "Loading..." : "Continue"}
@@ -1255,6 +1279,21 @@ export default function FlightBookingBookSection({
 
         {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />}
       </div>
+
+      <ConfirmationModal
+        open={showBookingConfirm}
+        title="Confirm your booking"
+        description="You're about to submit your passenger details and proceed with the booking. Please make sure all information is correct before continuing."
+        note="This will reserve your flight. You can still view summary details before final payment."
+        confirmText="Proceed"
+        cancelText="Cancel"
+        loading={isPending}
+        onCancel={() => setShowBookingConfirm(false)}
+        onConfirm={() => {
+          setShowBookingConfirm(false);
+          handleFlightProvInitialBooking();
+        }}
+      />
     </section>
   );
 }

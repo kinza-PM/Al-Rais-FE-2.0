@@ -325,7 +325,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 totalOriginalPrice: originalPrice,
                 uniqueOfferNames,
                 hasOffer,
-                availableRooms,
+                // availableRooms,
               } = processHotelSearchListingData(hotel);
 
               const apiImages: string[] =
@@ -481,14 +481,14 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                             <h4 className="text-[16px] font-semibold leading-none text-[#0A0C0F]">
                               {bestRoom.roomTypeName || ""}
                             </h4>
-                            {availableRooms.length > 0 &&
+                            {/* {availableRooms.length > 0 &&
                               availableRooms.length <= 5 && (
                                 <span className="text-[12px] font-normal leading-none text-[#EA0029]">
                                   Only {availableRooms.length} room
                                   {availableRooms.length > 1 ? "s" : ""} left on
                                   {" "}Al Rais
                                 </span>
-                              )}
+                              )} */}
                           </div>
 
                           <p
@@ -548,7 +548,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                     />
 
                     <div className="flex w-[300px] flex-shrink-0 flex-col items-end text-right">
-                    {/* <div className="flex w-[272px] flex-shrink-0 flex-col items-end text-right"> */}
+                      {/* <div className="flex w-[272px] flex-shrink-0 flex-col items-end text-right"> */}
                       {/* Figma: guest score row + deal pill above price (right-aligned) */}
                       <div className="mb-[14px] flex w-full flex-col items-baseline gap-[10px]">
                         {/* Figma: score pill 71×49, #A7C0EC, gap 10px to copy */}
@@ -711,7 +711,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                           disabled={!isAvailable}
                           onClick={() => handleCheckAvailability(hotel)}
                         >
-                          Check availability
+                          Select Room
                         </button>
                       </div>
                     </div>

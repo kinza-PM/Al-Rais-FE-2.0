@@ -142,30 +142,101 @@ export function extractPassengersFromCacheResponse(resp: any): AnyPassengerLike[
   return [];
 }
 
+// export function buildPassengerCacheAddPayload(
+//   passengersInput: AnyPassengerLike[],
+//   existingPassengersInput: AnyPassengerLike[] = [],
+// ): PassengerCacheAddPayload | null {
+//   const mappedExisting = (existingPassengersInput ?? []).map(toCachePassenger);
+//   const mappedNew = (passengersInput ?? []).map(toCachePassenger);
+//   const merged = [...mappedExisting];
+//   const byFingerprint = new Map<string, number>();
+
+//   merged.forEach((p, idx) => {
+//     byFingerprint.set(passengerFingerprint(p), idx);
+//   });
+//   for (const p of mappedNew) {
+//     const fp = passengerFingerprint(p);
+//     const existingIdx = byFingerprint.get(fp);
+//     if (existingIdx === undefined) {
+//       byFingerprint.set(fp, merged.length);
+//       merged.push(p);
+//     } else {
+//       merged[existingIdx] = p;
+//     }
+//   }
+
+//   if (merged.length === 0) return null;
+//   return { type: "add", passengers: merged };
+// }
+
 export function buildPassengerCacheAddPayload(
   passengersInput: AnyPassengerLike[],
   existingPassengersInput: AnyPassengerLike[] = [],
+  originalCacheKeys: (string | null)[] = [], // index-aligned with passengersInput
 ): PassengerCacheAddPayload | null {
   const mappedExisting = (existingPassengersInput ?? []).map(toCachePassenger);
   const mappedNew = (passengersInput ?? []).map(toCachePassenger);
   const merged = [...mappedExisting];
+
   const byFingerprint = new Map<string, number>();
+  const byPassengerKey = new Map<string, number>();
+  const byIdentityKey = new Map<string, number>();
 
   merged.forEach((p, idx) => {
     byFingerprint.set(passengerFingerprint(p), idx);
+
+    const pKey = String(p?.passengerKey ?? "").trim();
+    if (pKey) byPassengerKey.set(pKey, idx);
+
+    const passport = String(p?.identityDocuments?.[0]?.idDocumentNumber ?? "").trim().toUpperCase();
+    const given = String(p?.passengerInfo?.givenName ?? "").trim().toUpperCase();
+    const surname = String(p?.passengerInfo?.surname ?? "").trim().toUpperCase();
+    const dob = String(p?.passengerInfo?.birthDate ?? "").trim();
+    const identityKey = `${passport}|${given}|${surname}|${dob}`;
+    if (passport) byIdentityKey.set(identityKey, idx);
   });
-  for (const p of mappedNew) {
+
+  mappedNew.forEach((p, i) => {
+    // 1. Original cache key at selection time (survives any field edits)
+    const originalKey = originalCacheKeys[i] ?? null;
+    const originalIdx = originalKey ? byIdentityKey.get(originalKey) : undefined;
+
+    if (originalIdx !== undefined) {
+      merged[originalIdx] = p;
+      return;
+    }
+
+    // 2. passengerKey match
+    const pKey = String(p?.passengerKey ?? "").trim();
+    const keyIdx = pKey ? byPassengerKey.get(pKey) : undefined;
+    if (keyIdx !== undefined) {
+      merged[keyIdx] = p;
+      return;
+    }
+
+    // 3. Current identity match (no selection, manual entry matches existing)
+    const passport = String(p?.identityDocuments?.[0]?.idDocumentNumber ?? "").trim().toUpperCase();
+    const given = String(p?.passengerInfo?.givenName ?? "").trim().toUpperCase();
+    const surname = String(p?.passengerInfo?.surname ?? "").trim().toUpperCase();
+    const dob = String(p?.passengerInfo?.birthDate ?? "").trim();
+    const identityKey = `${passport}|${given}|${surname}|${dob}`;
+    const identityIdx = passport ? byIdentityKey.get(identityKey) : undefined;
+    if (identityIdx !== undefined) {
+      merged[identityIdx] = p;
+      return;
+    }
+
+    // 4. Full fingerprint match
     const fp = passengerFingerprint(p);
     const existingIdx = byFingerprint.get(fp);
-    if (existingIdx === undefined) {
+    if (existingIdx !== undefined) {
+      merged[existingIdx] = p;
+    } else {
       byFingerprint.set(fp, merged.length);
       merged.push(p);
-    } else {
-      merged[existingIdx] = p;
     }
-  }
+  });
 
   if (merged.length === 0) return null;
   return { type: "add", passengers: merged };
 }
-

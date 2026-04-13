@@ -649,7 +649,7 @@ const ProfileFavouriteHotels: React.FC = () => {
                       }}
                       onClick={() => handleCheckAvailability(hotel)}
                     >
-                      Check availability
+                      Select Room
                     </button>
                   </div>
                 </div>

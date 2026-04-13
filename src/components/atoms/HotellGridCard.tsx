@@ -65,7 +65,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
     };
 
     const {
-      isAvailable,
+      // isAvailable,
       bestRoom,
       currency,
       price,
@@ -73,7 +73,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       uniqueOfferNames,
       hasOffer,
       hasFreeCancellation,
-      availableRooms,
+      // availableRooms,
     } = processHotelSearchListingData(hotel);
 
     const apiImages: string[] =
@@ -487,7 +487,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             >
               {roomTypeName}
             </span>
-            {isAvailable &&
+            {/* {isAvailable &&
               availableRooms.length > 0 &&
               availableRooms.length <= 5 && (
                 <span
@@ -502,7 +502,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                   Only {availableRooms.length} room
                   {availableRooms.length > 1 ? "s" : ""} left on Al Rais
                 </span>
-              )}
+              )} */}
           </div>
 
           <p

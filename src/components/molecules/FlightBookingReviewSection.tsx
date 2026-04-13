@@ -38,21 +38,21 @@ const CardShell = ({
     </div>
 );
 
-const HeaderActions = ({
-    onEdit,
-    editLabel = "Edit",
-}: {
-    onEdit: () => void;
-    editLabel?: string;
-}) =>
-    <Button
-        type="button"
-        onClick={onEdit}
-        className="text-[14px] font-medium text-[#5383DA] hover:underline"
-        overrideClasses
-    >
-        {editLabel}
-    </Button>
+// const HeaderActions = ({
+//     onEdit,
+//     editLabel = "Edit",
+// }: {
+//     onEdit: () => void;
+//     editLabel?: string;
+// }) =>
+//     <Button
+//         type="button"
+//         onClick={onEdit}
+//         className="text-[14px] font-medium text-[#5383DA] hover:underline"
+//         overrideClasses
+//     >
+//         {editLabel}
+//     </Button>
 
 type FlightBookingReviewSectionProps = {
     trip: any;
@@ -69,17 +69,17 @@ export default function FlightBookingReviewSection({
     flightBookingPayload,
     countries = [],
     onNext,
-    onEditDetails,
+    // onEditDetails,
     onChangeFlight,
 }: FlightBookingReviewSectionProps) {
     const [openPrice, setOpenPrice] = useState(false);
     const passengers = flightBookingPayload?.passengers || [];
 
-    const startEdit = () => {
-        if (typeof onEditDetails === "function") {
-            onEditDetails();
-        }
-    };
+    // const startEdit = () => {
+    //     if (typeof onEditDetails === "function") {
+    //         onEditDetails();
+    //     }
+    // };
 
     const assets = {
         EmirateLogo,
@@ -123,12 +123,12 @@ export default function FlightBookingReviewSection({
                                     2,
                                     "0"
                                 )} details`}
-                                right={
-                                    <HeaderActions
-                                        onEdit={() => startEdit()}
-                                        editLabel="Edit"
-                                    />
-                                }
+                            // right={
+                            //     <HeaderActions
+                            //         onEdit={() => startEdit()}
+                            //         editLabel="Edit"
+                            //     />
+                            // }
                             >
                                 <div className="px-5 py-4">
                                     <dl className="grid grid-cols-2 gap-y-2">
@@ -180,13 +180,13 @@ export default function FlightBookingReviewSection({
                             </CardShell>
                             <CardShell
                                 key={`passenger-${p.passengerKey || idx}`}
-                                title={`Passenger ${String(idx + 1).padStart(2, "0")} details`}
-                                right={
-                                    <HeaderActions
-                                        onEdit={() => startEdit()}
-                                        editLabel="Edit"
-                                    />
-                                }
+                                title={`Traveler ${String(idx + 1).padStart(2, "0")} details`}
+                            // right={
+                            //     <HeaderActions
+                            //         onEdit={() => startEdit()}
+                            //         editLabel="Edit"
+                            //     />
+                            // }
                             >
                                 <div className="px-5 py-4">
                                     <dl className="grid grid-cols-2 gap-y-2">
@@ -426,11 +426,11 @@ export default function FlightBookingReviewSection({
             </div>
 
             <div className="mt-5 flex justify-center w-full">
-  <Button
-    type="button"
-    overrideClasses
-    onClick={() => continueToPayment()}
-    className="
+                <Button
+                    type="button"
+                    overrideClasses
+                    onClick={() => continueToPayment()}
+                    className="
       h-[47px]
       w-[252px]
       px-[40px]
@@ -441,10 +441,10 @@ export default function FlightBookingReviewSection({
       flex items-center justify-center gap-[10px]
       bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)]
     "
-  >
-    Continue to payment
-  </Button>
-</div>
+                >
+                    Continue to payment
+                </Button>
+            </div>
 
         </section>
     );

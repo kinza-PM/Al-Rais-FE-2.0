@@ -50,14 +50,14 @@ const OneWayForm: React.FC<Props> = ({
   fromCode = "",
   toCode = "",
   departDateValue = null,
-  onChangeFrom = () => {},
-  onChangeTo = () => {},
+  onChangeFrom = () => { },
+  onChangeTo = () => { },
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => {},
+  onChangeCabinClassId = () => { },
   onChangePassengers,
   onChangeDepartDate,
   fromError = "",
@@ -66,7 +66,7 @@ const OneWayForm: React.FC<Props> = ({
   passengersError = "",
   cabinClassError = "",
   countriesHasMore = false,
-  countriesFetchNext = () => {},
+  countriesFetchNext = () => { },
   countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
@@ -237,7 +237,7 @@ const OneWayForm: React.FC<Props> = ({
           errorMessage={
             passengersError ||
             (!loadingPassengers &&
-            (!passengerSchema || passengerSchema.length === 0)
+              (!passengerSchema || passengerSchema.length === 0)
               ? "Passenger types are not available right now. Please try again later."
               : null)
           }

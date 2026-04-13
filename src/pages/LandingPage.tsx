@@ -133,8 +133,8 @@ const LandingPage: React.FC = () => {
                   />
 
                   {/* Text overlay on polygon */}
-                  <div className="relative flex items-center h-full px-6 sm:px-8 z-10">
-                    <p className="text-white font-semibold text-xl sm:text-2xl md:text-[28px] lg:text-[32px] leading-snug sm:leading-snug md:leading-9 lg:leading-[40px] max-w-xs sm:max-w-sm whitespace-pre-line">
+                  <div className="relative flex items-end h-full z-10 pb-20">
+                    <p className="text-white text-[42px] leading-[110%] font-normal whitespace-pre-line" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0%" }}>
                       {currentSlide.text}
                     </p>
                   </div>
@@ -168,7 +168,7 @@ const LandingPage: React.FC = () => {
             <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-2">
               <button
                 type="button"
-                className="pointer-events-auto -translate-x-8 sm:-translate-x-10 md:-translate-x-12 lg:-translate-x-14 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors duration-150"
+                className="pointer-events-auto -translate-x-8 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors duration-150"
                 onClick={prevSlide}
                 aria-label="Previous slide"
                 style={{ background: "transparent" }}
@@ -178,7 +178,7 @@ const LandingPage: React.FC = () => {
 
               <button
                 type="button"
-                className="pointer-events-auto translate-x-8 sm:translate-x-10 md:translate-x-12 lg:translate-x-14 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors duration-150"
+                className="pointer-events-auto translate-x-7 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors duration-150"
                 onClick={nextSlide}
                 aria-label="Next slide"
                 style={{ background: "transparent" }}

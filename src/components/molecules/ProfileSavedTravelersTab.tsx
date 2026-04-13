@@ -664,11 +664,11 @@ export default function ProfileSavedTravelersTab() {
             </div>
           </div>
 
-          <div className="my-3 -mx-8 border-t border-[#E4E4E7]" />
+          <div className="my-3 -mx-3 border-t border-[#E4E4E7]" />
           <h4 className="text-base font-medium text-[#0A0C0F]">
             Passport and Travel Documents
           </h4>
-          <div className="my-3 -mx-8 border-b border-[#E4E4E7]" />
+          <div className="my-3 -mx-3 border-b border-[#E4E4E7]" />
 
           <div className="grid grid-cols-1 gap-3 md:grid-cols-3 mt-6">
             <TailwindCustomInput

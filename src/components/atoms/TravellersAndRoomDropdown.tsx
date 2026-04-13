@@ -288,9 +288,11 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
           aria-invalid={showError}
           aria-describedby={showError ? "pax-error" : undefined}
         >
-          <span className="tabular-nums">
-            {pad2(total)} Passenger{total !== 1 ? "s" : ""} and{" "}
-            {pad2(pax.rooms ?? 1)} Room{(pax.rooms ?? 1) !== 1 ? "s" : ""}
+          <span className="tabular-nums truncate">
+            {pad2(pax.adults ?? 0)} {(pax.adults ?? 0) === 1 ? "Adult" : "Adults"},{" "}
+            {(childRowKey ? (pax as any)[childRowKey] : 0) ?? 0}{" "}
+            {((childRowKey ? (pax as any)[childRowKey] : 0) ?? 0) === 1 ? "Child" : "Children"},{" "}
+            {pad2(pax.rooms ?? 1)} {(pax.rooms ?? 1) === 1 ? "Room" : "Rooms"}
           </span>
           <svg
             className="shrink-0"
@@ -324,9 +326,16 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
                 `}
           >
             <div className="text-center">
-              {total > 0
-                ? `${pad2(total)} Passenger${total !== 1 ? "s" : ""} and ${pad2(pax.rooms ?? 1)} Room${(pax.rooms ?? 1) !== 1 ? "s" : ""}`
-                : tooltip}
+              {total > 0 ? (
+                <>
+                  {pad2(pax.adults ?? 0)} {(pax.adults ?? 0) === 1 ? "Adult" : "Adults"},{" "}
+                  {(childRowKey ? (pax as any)[childRowKey] : 0) ?? 0}{" "}
+                  {((childRowKey ? (pax as any)[childRowKey] : 0) ?? 0) === 1 ? "Child" : "Children"},{" "}
+                  {pad2(pax.rooms ?? 1)} {(pax.rooms ?? 1) === 1 ? "Room" : "Rooms"}
+                </>
+              ) : (
+                tooltip
+              )}
             </div>
           </div>
         )}

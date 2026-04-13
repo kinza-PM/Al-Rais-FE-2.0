@@ -190,11 +190,11 @@ const AppHeader: React.FC<HeaderProps> = ({
     { key: "about", label: <Link to="/about">About</Link> },
     ...(isAuthenticated
       ? [
-          {
-            key: "my-bookings",
-            label: <Link to={buildMyBookingsUrl()}>My bookings</Link>,
-          },
-        ]
+        {
+          key: "my-bookings",
+          label: <Link to={buildMyBookingsUrl()}>My bookings</Link>,
+        },
+      ]
       : []),
   ];
 
@@ -203,7 +203,7 @@ const AppHeader: React.FC<HeaderProps> = ({
       className="bg-white"
       style={{
         background: "#FFFFFF",
-        padding: isMobile ? "12px 16px" : isTablet ? "14px 24px" : "16px 134px",
+        padding: isMobile ? "12px 16px" : isTablet ? "14px 24px" : "16px 180px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -366,12 +366,12 @@ const AppHeader: React.FC<HeaderProps> = ({
                     cursor: "not-allowed",
                     transition: "all 0.2s",
                   }}
-                  // onMouseEnter={(e) => {
-                  //   e.currentTarget.style.backgroundColor = "#F0F7FF";
-                  // }}
-                  // onMouseLeave={(e) => {
-                  //   e.currentTarget.style.backgroundColor = "#FFFFFF";
-                  // }}
+                // onMouseEnter={(e) => {
+                //   e.currentTarget.style.backgroundColor = "#F0F7FF";
+                // }}
+                // onMouseLeave={(e) => {
+                //   e.currentTarget.style.backgroundColor = "#FFFFFF";
+                // }}
                 >
                   <FlagIcon src={FlagUSCircle} size={isTablet ? 20 : 24} />
                   <span
@@ -416,12 +416,12 @@ const AppHeader: React.FC<HeaderProps> = ({
                   cursor: "not-allowed",
                   transition: "all 0.2s",
                 }}
-                // onMouseEnter={(e) => {
-                //   e.currentTarget.style.backgroundColor = "#F0F7FF";
-                // }}
-                // onMouseLeave={(e) => {
-                //   e.currentTarget.style.backgroundColor = "#FFFFFF";
-                // }}
+              // onMouseEnter={(e) => {
+              //   e.currentTarget.style.backgroundColor = "#F0F7FF";
+              // }}
+              // onMouseLeave={(e) => {
+              //   e.currentTarget.style.backgroundColor = "#FFFFFF";
+              // }}
               >
                 <img
                   src={BasketIcon}

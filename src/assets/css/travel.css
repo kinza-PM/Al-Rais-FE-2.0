@@ -19,6 +19,7 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -152,36 +153,24 @@ input[type="number"] {
   margin-right: 0;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-tab.ant-tabs-tab-active
-  .ant-tabs-tab-btn {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
   color: #2351a3 !important;
   text-shadow: 0 0 0.25px #2351a3;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar {
   color: #2351a3 !important;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar:hover {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar:hover {
   color: #2351a3 !important;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar {
   background: #2351a3;
 }
 
-.ant-tabs-ink-bar
-  .topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs-top
-  > .ant-tabs-nav {
+.ant-tabs-ink-bar .topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs-top>.ant-tabs-nav {
   margin-bottom: 0px;
 }
 
@@ -321,23 +310,32 @@ input[type="number"] {
 }
 
 @media (min-width: 1024px) {
+
   /* Desktop grid (responsive). Prevent overflow/clipping on mid-width screens. */
   .flight-search-page .flight-search-detail-inputs {
     grid-template-columns:
-      220px
-      220px
-      minmax(280px, 1fr)
-      56px
-      minmax(280px, 1fr);
+      220px 220px minmax(280px, 1fr) 56px minmax(280px, 1fr);
     grid-template-areas:
       "trip cabin from swap to"
       "travellers departure . . search";
   }
 
-  .flight-search-page .flight-search-field--trip { grid-area: trip; }
-  .flight-search-page .flight-search-field--cabin { grid-area: cabin; }
-  .flight-search-page .flight-search-field--travellers { grid-area: travellers; }
-  .flight-search-page .flight-search-field--depart { grid-area: departure; }
+  .flight-search-page .flight-search-field--trip {
+    grid-area: trip;
+  }
+
+  .flight-search-page .flight-search-field--cabin {
+    grid-area: cabin;
+  }
+
+  .flight-search-page .flight-search-field--travellers {
+    grid-area: travellers;
+  }
+
+  .flight-search-page .flight-search-field--depart {
+    grid-area: departure;
+  }
+
   .flight-search-page .flight-search-field--submit {
     grid-area: search;
     justify-self: end;
@@ -345,10 +343,11 @@ input[type="number"] {
   }
 
   /* Map TravelRoutePicker internal nodes into grid areas */
-  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth:first-of-type {
+  .flight-search-page .flight-search-detail-inputs>.fromToSelectWidth:first-of-type {
     grid-area: from;
   }
-  .flight-search-page .flight-search-detail-inputs > .fromToBtn {
+
+  .flight-search-page .flight-search-detail-inputs>.fromToBtn {
     grid-area: swap;
     justify-self: center;
     align-self: center;
@@ -358,12 +357,13 @@ input[type="number"] {
     max-width: 48px !important;
     margin: 0 !important;
   }
-  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth:last-of-type {
+
+  .flight-search-page .flight-search-detail-inputs>.fromToSelectWidth:last-of-type {
     grid-area: to;
   }
 
   /* Keep From/To stable but allow shrink on smaller desktops */
-  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
+  .flight-search-page .flight-search-detail-inputs>.fromToSelectWidth {
     width: 100%;
     max-width: 396px;
     min-width: 0;
@@ -380,13 +380,15 @@ input[type="number"] {
   .flight-search-page .flight-search-detail-inputs {
     grid-template-columns: 280px 280px 396px 48px 396px;
   }
-  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
+
+  .flight-search-page .flight-search-detail-inputs>.fromToSelectWidth {
     max-width: 396px;
   }
 }
 
 /* Flight search cards: prevent "in-between" width layout break (e.g. DevTools open) */
 @media (max-width: 1400px) {
+
   .flight-search-page .flightDetailCards .topHalfCard,
   .flight-search-page .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
     flex-wrap: wrap !important;
@@ -413,6 +415,7 @@ input[type="number"] {
 }
 
 @media (max-width: 1023.98px) {
+
   /* Mobile/tablet: stack cleanly in logical order */
   .flight-search-page .flight-search-detail-inputs {
     grid-template-columns: 1fr;
@@ -421,7 +424,7 @@ input[type="number"] {
   }
 
   /* Route picker: keep its default stacking rules, but avoid weird margins */
-  .flight-search-page .flight-search-detail-inputs > .fromToBtn {
+  .flight-search-page .flight-search-detail-inputs>.fromToBtn {
     margin: 8px auto 0 !important;
   }
 
@@ -565,6 +568,7 @@ input[type="number"] {
   margin-top: 18px;
   margin-bottom: 0;
 }
+
 @media (max-width: 767px) {
   .hotelSearchFilterCard {
     padding: 16px;
@@ -580,40 +584,76 @@ input[type="number"] {
   width: 100%;
   align-items: end;
 }
+
 @media (min-width: 640px) {
   .hotel-filter-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 @media (min-width: 1280px) {
   .hotel-filter-grid {
+    /* grid-template-columns: 1fr 1fr 1fr 1.3fr; */
     grid-template-columns: repeat(4, 1fr);
     grid-template-rows: auto auto;
   }
 }
-.hotel-filter-grid > * {
+
+.hotel-filter-grid>* {
   min-width: 0;
 }
+
 /* Row 1: View(1) Country(2) City(3) Dates(4) */
-.hotel-filter-grid .hotel-filter-view { grid-column: 1; grid-row: 1; }
-.hotel-filter-grid .hotel-filter-country { grid-column: 2; grid-row: 1; }
-.hotel-filter-grid .hotel-filter-city { grid-column: 3; grid-row: 1; }
-.hotel-filter-grid .hotel-filter-dates { grid-column: 4; grid-row: 1; }
+.hotel-filter-grid .hotel-filter-view {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.hotel-filter-grid .hotel-filter-country {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.hotel-filter-grid .hotel-filter-city {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.hotel-filter-grid .hotel-filter-dates {
+  grid-column: 4;
+  grid-row: 1;
+}
+
 /* Row 2: Nationality(1)=View, Travellers(2)=Country, Star(3)=City, Search(4)=Dates */
-.hotel-filter-grid .hotel-filter-nationality { grid-column: 1; grid-row: 2; }
-.hotel-filter-grid .hotel-filter-travellers { grid-column: 2; grid-row: 2; }
-.hotel-filter-grid .hotel-filter-star { grid-column: 3; grid-row: 2; }
+.hotel-filter-grid .hotel-filter-nationality {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.hotel-filter-grid .hotel-filter-travellers {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.hotel-filter-grid .hotel-filter-star {
+  grid-column: 3;
+  grid-row: 2;
+}
+
 .hotel-filter-grid .hotel-filter-search {
   grid-column: 4;
   grid-row: 2;
   display: flex;
   align-items: stretch;
 }
+
 .hotel-filter-grid .hotel-filter-search .searchFilterBtn,
 .hotel-filter-grid .hotel-filter-search button {
   width: 100%;
 }
+
 @media (max-width: 1279px) {
+
   .hotel-filter-grid .hotel-filter-view,
   .hotel-filter-grid .hotel-filter-country,
   .hotel-filter-grid .hotel-filter-city,
@@ -635,15 +675,18 @@ input[type="number"] {
   gap: 14px;
   width: 100%;
 }
-.hotel-filter-row > *:not(.hotel-search-btn-cell) {
+
+.hotel-filter-row>*:not(.hotel-search-btn-cell) {
   flex: 1 1 180px;
   min-width: 0;
 }
+
 .hotel-filter-row .hotel-search-btn-cell {
   flex: 0 0 auto;
   margin-left: auto;
   min-width: 0;
 }
+
 /* Hero section: 4 cols - Country, City, Dates | Nationality, Travellers, Star Rating, Search - all same widths */
 .hotel-filter-grid-hero {
   display: grid;
@@ -652,45 +695,79 @@ input[type="number"] {
   width: 100%;
   align-items: end;
 }
+
 @media (min-width: 640px) {
   .hotel-filter-grid-hero {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 @media (min-width: 1280px) {
   .hotel-filter-grid-hero {
-    grid-template-columns: 1fr 1fr 1.5fr 1fr;
+    grid-template-columns: 1.2fr 1.3fr 1.2fr 1.3fr;
     grid-template-rows: auto auto;
   }
 }
+
 /* Hero row 1: Country, City, Dates (wider for check-in/check-out) */
-.hotel-filter-grid-hero .hero-country { grid-column: 1; grid-row: 1; }
-.hotel-filter-grid-hero .hero-city { grid-column: 2; grid-row: 1; }
-.hotel-filter-grid-hero .hero-dates { grid-column: 3 / span 2; grid-row: 1; }
+.hotel-filter-grid-hero .hero-country {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.hotel-filter-grid-hero .hero-city {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.hotel-filter-grid-hero .hero-dates {
+  grid-column: 3 / span 2;
+  grid-row: 1;
+}
+
 /* Hero row 2: Nationality=Country, Travellers=City, Star=Dates width, Search in col 4 */
-.hotel-filter-grid-hero .hero-nationality { grid-column: 1; grid-row: 2; }
-.hotel-filter-grid-hero .hero-travellers { grid-column: 2; grid-row: 2; }
-.hotel-filter-grid-hero .hero-star { grid-column: 3; grid-row: 2; }
+.hotel-filter-grid-hero .hero-nationality {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.hotel-filter-grid-hero .hero-travellers {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.hotel-filter-grid-hero .hero-star {
+  grid-column: 3;
+  grid-row: 2;
+}
+
 .hotel-filter-grid-hero .hero-search {
   grid-column: 4;
   grid-row: 2;
   display: flex;
   align-items: stretch;
 }
+
 .hotel-filter-grid-hero .hero-search button {
   width: 100%;
 }
-.hotel-filter-grid-hero > * {
+
+.hotel-filter-grid-hero>* {
   min-width: 0;
 }
+
 @media (max-width: 1279px) {
+
   .hotel-filter-grid-hero .hero-country,
   .hotel-filter-grid-hero .hero-city,
   .hotel-filter-grid-hero .hero-dates,
   .hotel-filter-grid-hero .hero-nationality,
   .hotel-filter-grid-hero .hero-travellers,
   .hotel-filter-grid-hero .hero-star,
-  .hotel-filter-grid-hero .hero-search { grid-column: auto; grid-row: auto; }
+  .hotel-filter-grid-hero .hero-search {
+    grid-column: auto;
+    grid-row: auto;
+  }
 }
 
 /* Legacy: hotel-filter-row-3 */
@@ -701,18 +778,21 @@ input[type="number"] {
   width: 100%;
   align-items: end;
 }
+
 @media (min-width: 640px) {
   .hotel-filter-row-3 {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
 @media (min-width: 1280px) {
   .hotel-filter-row-3 {
     grid-template-columns: repeat(3, 1fr);
   }
 }
-.hotel-filter-row > *,
-.hotel-filter-row-3 > * {
+
+.hotel-filter-row>*,
+.hotel-filter-row-3>* {
   min-width: 0;
 }
 
@@ -803,12 +883,10 @@ input[type="number"] {
 
 .flight-stops-pill--active {
   border-color: #2351a3;
-  background: linear-gradient(
-    90.59deg,
-    #5383da 0%,
-    #2351a3 50%,
-    #081326 100%
-  );
+  background: linear-gradient(90.59deg,
+      #5383da 0%,
+      #2351a3 50%,
+      #081326 100%);
   color: #ffffff;
   box-shadow: 0 1px 3px rgba(35, 81, 163, 0.25);
 }
@@ -972,6 +1050,7 @@ input[type="number"] {
   border-color: #2351A3 !important;
   box-shadow: 0 1px 3px rgba(35, 81, 163, 0.25) !important;
 }
+
 .stopsRadioStyle .ant-radio-button-wrapper-checked .ant-radio-button-label {
   color: #FFFFFF !important;
 }
@@ -986,14 +1065,8 @@ input[type="number"] {
   color: #FFFFFF !important;
 }
 
-.stopsRadioStyle
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
-    :first-child
-  )::before,
-.transitHours
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
-    :first-child
-  )::before {
+.stopsRadioStyle :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not( :first-child)::before,
+.transitHours :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not( :first-child)::before {
   content: none !important;
 }
 
@@ -1003,8 +1076,7 @@ input[type="number"] {
   font-weight: 500;
 }
 
-.transitHours
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper-block {
+.transitHours :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper-block {
   flex: 0 0 auto;
 }
 
@@ -1309,80 +1381,87 @@ input[type="number"] {
   color: #0a0c0f;
   font-size: 14px;
   font-weight: 500;
-.hotel-view-select .ant-select-selector {
-  height: 50px !important;
-  border-radius: 16px !important;
-  background: var(--white-200, #FFFFFF) !important;
-  border: 1px solid var(--black-100, #C2CAD6) !important;
-  box-shadow: none !important;
-  display: flex !important;
-  align-items: center !important;
-  padding: 0 12px !important;
-}
-.hotel-view-select .ant-select-selection-item {
-  color: #0F172A !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-  line-height: 50px !important;
-}
-.hotel-view-select .ant-select-arrow {
-  right: 12px !important;
-}
-.hotel-view-select .ant-select-selection-search-input {
-  opacity: 0 !important;
-  height: 50px !important;
-}
-.hotel-view-select .ant-select-selector .ant-select-selection-item,
-.hotel-view-select .ant-select-selector .ant-select-selection-placeholder {
-  padding: 0 !important;
-}
-/* (removed empty ruleset) */
 
-/* Ensure all Ant Design select selectors use 16px radius to match Figma */
-.ant-select-selector {
-  border-radius: 16px !important;
-}
+  .hotel-view-select .ant-select-selector {
+    height: 50px !important;
+    border-radius: 16px !important;
+    background: var(--white-200, #FFFFFF) !important;
+    border: 1px solid var(--black-100, #C2CAD6) !important;
+    box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    padding: 0 12px !important;
+  }
 
-/* Ensure only the internal selector shows a single border for hotel view select */
-.hotel-view-select.ant-select {
-  /* remove outer border/outline from the host element */
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-  padding: 0 !important;
-}
+  .hotel-view-select .ant-select-selection-item {
+    color: #0F172A !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    line-height: 50px !important;
+  }
 
-.hotel-view-select .ant-select-selector {
-  /* single visible border */
-  border: 1px solid var(--black-100, #C2CAD6) !important;
-  border-radius: 16px !important;
-  box-shadow: none !important;
-}
+  .hotel-view-select .ant-select-arrow {
+    right: 12px !important;
+  }
 
-/* If the top header's radioButtonGroup is empty, remove its border to avoid duplicate outline */
-.tadioButtonGroupWrap .radioButtonGroup:empty {
-  border: none !important;
-  padding: 0 !important;
-}
+  .hotel-view-select .ant-select-selection-search-input {
+    opacity: 0 !important;
+    height: 50px !important;
+  }
 
-/* Remove wrapper border in the top header so only the Select's selector shows a border */
-.tadioButtonGroupWrap .radioButtonGroup {
-  border: none !important;
-  padding: 0 !important;
-}
+  .hotel-view-select .ant-select-selector .ant-select-selection-item,
+  .hotel-view-select .ant-select-selector .ant-select-selection-placeholder {
+    padding: 0 !important;
+  }
 
-/* Ensure hotel view select has no focus outline or shadow */
-.hotel-view-select .ant-select-selector,
-.hotel-view-select .ant-select-selector:focus,
-.hotel-view-select .ant-select-focused .ant-select-selector {
-  box-shadow: none !important;
-  outline: none !important;
-}
+  /* (removed empty ruleset) */
 
-/* Tune padding for visually centered text */
-.hotel-view-select .ant-select-selection-item {
-  padding-left: 16px !important;
-}
+  /* Ensure all Ant Design select selectors use 16px radius to match Figma */
+  .ant-select-selector {
+    border-radius: 16px !important;
+  }
+
+  /* Ensure only the internal selector shows a single border for hotel view select */
+  .hotel-view-select.ant-select {
+    /* remove outer border/outline from the host element */
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    padding: 0 !important;
+  }
+
+  .hotel-view-select .ant-select-selector {
+    /* single visible border */
+    border: 1px solid var(--black-100, #C2CAD6) !important;
+    border-radius: 16px !important;
+    box-shadow: none !important;
+  }
+
+  /* If the top header's radioButtonGroup is empty, remove its border to avoid duplicate outline */
+  .tadioButtonGroupWrap .radioButtonGroup:empty {
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  /* Remove wrapper border in the top header so only the Select's selector shows a border */
+  .tadioButtonGroupWrap .radioButtonGroup {
+    border: none !important;
+    padding: 0 !important;
+  }
+
+  /* Ensure hotel view select has no focus outline or shadow */
+  .hotel-view-select .ant-select-selector,
+  .hotel-view-select .ant-select-selector:focus,
+  .hotel-view-select .ant-select-focused .ant-select-selector {
+    box-shadow: none !important;
+    outline: none !important;
+  }
+
+  /* Tune padding for visually centered text */
+  .hotel-view-select .ant-select-selection-item {
+    padding-left: 16px !important;
+  }
+
   letter-spacing: 0px;
 }
 
@@ -1608,6 +1687,7 @@ input[type="number"] {
 
 /* Flight result cards responsive layout */
 @media (min-width: 993px) and (max-width: 1280px) {
+
   .flightDetailCards .topHalfCard,
   .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
     flex-wrap: wrap !important;
@@ -1627,7 +1707,7 @@ input[type="number"] {
   }
 
   /* Round-trip wrapper has an extra left block; keep it full width */
-  .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap > div:first-child {
+  .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap>div:first-child {
     flex: 1 1 100%;
     min-width: 0;
   }
@@ -1641,8 +1721,8 @@ input[type="number"] {
     gap: 8px !important;
   }
 
-  .flightDetailCards .topHalfCard .StartingPrice > div,
-  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div {
+  .flightDetailCards .topHalfCard .StartingPrice>div,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice>div {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
@@ -1666,6 +1746,7 @@ input[type="number"] {
 }
 
 @media (max-width: 992px) {
+
   .flightDetailCards .topHalfCard,
   .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
     flex-wrap: wrap !important;
@@ -1690,8 +1771,8 @@ input[type="number"] {
     align-self: flex-start !important;
   }
 
-  .flightDetailCards .topHalfCard .StartingPrice > div,
-  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div {
+  .flightDetailCards .topHalfCard .StartingPrice>div,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice>div {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
@@ -1713,6 +1794,7 @@ input[type="number"] {
 }
 
 @media (max-width: 768px) {
+
   .flightDetailCards .topHalfCard .StartingPrice h5,
   .flightDetailCards.flightDetailRoundTripCards .StartingPrice h5 {
     font-size: 22px !important;
@@ -1755,8 +1837,7 @@ input[type="number"] {
   font-weight: 400;
 }
 
-.reminderCard
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-switch.ant-switch-checked {
+.reminderCard :where(.css-dev-only-do-not-override-1ur7oz).ant-switch.ant-switch-checked {
   background: #ffffff;
 }
 
@@ -1764,9 +1845,7 @@ input[type="number"] {
   background: #ffffff;
 }
 
-.reminderCard
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-switch
-  .ant-switch-handle::before {
+.reminderCard :where(.css-dev-only-do-not-override-1ur7oz).ant-switch .ant-switch-handle::before {
   background: var(--primary-300, #2351a3);
 }
 
@@ -1871,9 +1950,7 @@ input[type="number"] {
 
 /* Radio ko checkbox jesa */
 
-.cardPrice
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-wrapper
-  .ant-radio-inne {
+.cardPrice :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-wrapper .ant-radio-inne {
   border-radius: 6px;
 }
 
@@ -2234,6 +2311,7 @@ input[type="number"] {
 .compareCard .featureIconTooltipWrap {
   position: relative;
 }
+
 .compareCard .featureIconTooltipWrap .tooltip {
   z-index: 9999;
 }
@@ -2467,21 +2545,25 @@ img:hover {
 .flightDetailTemplateWrap {
   padding: 0 16px;
 }
+
 @media (min-width: 576px) {
   .flightDetailTemplateWrap {
     padding: 0 24px;
   }
 }
+
 @media (min-width: 768px) {
   .flightDetailTemplateWrap {
     padding: 0 48px;
   }
 }
+
 @media (min-width: 1024px) {
   .flightDetailTemplateWrap {
     padding: 0 64px;
   }
 }
+
 @media (min-width: 1280px) {
   .flightDetailTemplateWrap {
     padding: 0 50px;
@@ -2544,8 +2626,7 @@ img:hover {
   margin-top: 4px !important;
 }
 
-.custom-phone-wrapper
-  .react-international-phone-country-selector-dropdown__list-item-search-input {
+.custom-phone-wrapper .react-international-phone-country-selector-dropdown__list-item-search-input {
   width: calc(100% - 16px) !important;
   margin: 8px !important;
   padding: 8px 12px !important;
@@ -2555,8 +2636,7 @@ img:hover {
   color: #3d495c !important;
 }
 
-.custom-phone-wrapper
-  .react-international-phone-country-selector-dropdown__list-item:hover {
+.custom-phone-wrapper .react-international-phone-country-selector-dropdown__list-item:hover {
   background-color: #f3f4f6 !important;
 }
 
@@ -2621,8 +2701,7 @@ img:hover {
     max-width: 100%;
   }
 
-  .bottomHeaderFlex
-    :where(.css-dev-only-do-not-override-1w2pzdr).ant-flex-align-stretch {
+  .bottomHeaderFlex :where(.css-dev-only-do-not-override-1w2pzdr).ant-flex-align-stretch {
     max-width: 100% !important;
   }
 
@@ -2918,13 +2997,13 @@ img:hover {
     gap: 0.5rem;
   }
 
-  .enhance-baggage-grid > *,
-  .enhance-airport-and-travel-grid > * {
+  .enhance-baggage-grid>*,
+  .enhance-airport-and-travel-grid>* {
     grid-column: 1 / -1;
   }
 
-  .enhance-baggage-grid > *:nth-child(5),
-  .enhance-airport-and-travel-grid > *:nth-child(4) {
+  .enhance-baggage-grid>*:nth-child(5),
+  .enhance-airport-and-travel-grid>*:nth-child(4) {
     justify-self: start;
   }
 
@@ -2932,7 +3011,7 @@ img:hover {
     grid-template-columns: 1fr;
   }
 
-  .enhance-seat-grid > * {
+  .enhance-seat-grid>* {
     min-width: 0;
   }
 
@@ -2944,6 +3023,7 @@ img:hover {
 /* Small Screens Filter Toggle */
 
 @media print {
+
   /* page sizing — choose A4 or Letter. Change if you prefer Letter (8.5in 11in). */
   @page {
     size: A4 portrait;
@@ -2966,7 +3046,8 @@ img:hover {
     position: absolute !important;
     left: 0 !important;
     top: 0 !important;
-    width: 210mm; /* match A4 width minus margins; change to 8.5in for Letter */
+    width: 210mm;
+    /* match A4 width minus margins; change to 8.5in for Letter */
     box-sizing: border-box;
     overflow: visible !important;
     pointer-events: auto !important;
@@ -2982,8 +3063,10 @@ img:hover {
 
   /* force page breaks so each .print-page becomes a printed page */
   .print-page {
-    page-break-after: always; /* legacy */
-    break-after: page; /* modern */
+    page-break-after: always;
+    /* legacy */
+    break-after: page;
+    /* modern */
     width: 100%;
     box-sizing: border-box;
   }

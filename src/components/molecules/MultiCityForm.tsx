@@ -65,7 +65,7 @@ const MultiCityForm: React.FC<Props> = ({
   passengersError = "",
   cabinClassError = "",
   countriesHasMore = false,
-  countriesFetchNext = () => {},
+  countriesFetchNext = () => { },
   countriesLoadingMore = false,
 }) => {
   const [internalLegs, setInternalLegs] = useState<MultiCityLeg[]>([
@@ -90,9 +90,9 @@ const MultiCityForm: React.FC<Props> = ({
       prev.map((l, idx) =>
         idx === i
           ? {
-              ...l,
-              ...next,
-            }
+            ...l,
+            ...next,
+          }
           : l,
       ),
     );
@@ -157,7 +157,7 @@ const MultiCityForm: React.FC<Props> = ({
           updated[i + 1] = {
             ...nextLeg,
             fromCode: currentLeg.toCode,
-            fromOption: currentLeg.toOption, 
+            fromOption: currentLeg.toOption,
           };
           hasChanges = true;
         }
@@ -202,7 +202,7 @@ const MultiCityForm: React.FC<Props> = ({
             errorMessage={
               passengersError ||
               (!loadingPassengers &&
-              (!passengerSchema || passengerSchema.length === 0)
+                (!passengerSchema || passengerSchema.length === 0)
                 ? "Passenger types are not available right now. Please try again later."
                 : null)
             }
