@@ -302,7 +302,7 @@ const ChatBot: React.FC = () => {
           ? `\n\nAvailable categories:\n${currentCategories.map(cat => `• ${cat.categoryName}`).join('\n')}`
           : '\n\n(No categories available)';
 
-        console.log("Category list text:", categoryList);
+        // console.log("Category list text:", categoryList);
 
         const assistantMessage: Message = {
           id: `msg-${Date.now()}-1`,
