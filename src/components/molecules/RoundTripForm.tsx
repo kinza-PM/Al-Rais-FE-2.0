@@ -8,6 +8,7 @@ import type {
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import PassengerCabinDropdown from "../atoms/PassengerCabinDropdown";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
+import { sameCalendarDate } from "../../utils/helpers";
 
 type Props = {
   countries?: AirportOption[];
@@ -93,6 +94,21 @@ const RoundTripForm: React.FC<Props> = ({
   const [arrivalDate, setArrivalDate] = React.useState<Date | null>(
     arrivalDateValue,
   );
+
+  React.useEffect(() => {
+    const next = departDateValue ?? null;
+    setDepartDate((prev) =>
+      sameCalendarDate(prev, next) ? prev : next,
+    );
+  }, [departDateValue]);
+
+  React.useEffect(() => {
+    const next = arrivalDateValue ?? null;
+    setArrivalDate((prev) =>
+      sameCalendarDate(prev, next) ? prev : next,
+    );
+  }, [arrivalDateValue]);
+
   const [, setPaxCounts] = React.useState<{ [k: string]: number }>({});
   const passengerRequestOrder = React.useRef<string[]>(
     ((passengerSchema as any[]) || []).map((s: any) => s.key),

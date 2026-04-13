@@ -13,6 +13,7 @@ import ArrowLeft from "../assets/images/arrow-left-s-line 1.png";
 import ArrowRight from "../assets/images/arrow-right-s-line 2.png";
 import PopularDestinationSection from "../components/molecules/PopularDestinationSection";
 import RecentSearchesSection from "../components/molecules/RecentSearchesSection";
+import { useLandingHeroStore } from "../store/useLandingHeroStore";
 import BestDealsSection from "../components/molecules/BestDealsSection";
 import CustomersFeedbackSection from "../components/molecules/CustomersFeedbackSection";
 
@@ -33,12 +34,10 @@ const LandingPage: React.FC = () => {
     useOutletContext<LandingPageContext>();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  // Lifted hero tab state so top buttons can control Flights/Hotels search tab
-  const [heroSearchTab, setHeroSearchTab] = useState<"flights" | "hotels">(
-    "flights",
-  );
+  const heroSearchTab = useLandingHeroStore((s) => s.heroTab);
+  const setHeroSearchTab = useLandingHeroStore((s) => s.setHeroTab);
 
-  const handleHeroTopTabClick = (tab: "flights" | "hotels") => {
+  const handleHeroTopTabClick = (tab: "flights" | "hotels" | "sightseeing") => {
     setHeroSearchTab(tab);
     // scroll the hero search form into view
     const el = document.getElementById("hero-search-form");
@@ -187,20 +186,19 @@ const LandingPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Bottom tabs: Flights / Hotels / Packages (now control hero search tab) */}
+            {/* Bottom tabs: Flights / Hotels / Sightseeing / Packages */}
             <div
-              className="absolute left-1/2 flex gap-[10px] z-10"
+              className="absolute left-1/2 flex flex-wrap justify-center gap-[8px] sm:gap-[10px] z-10 max-w-[95vw]"
               style={{ transform: "translateX(-50%)", bottom: "-0.01rem" }}
             >
-              {/* Active tab – Flights */}
               <button
                 type="button"
                 onClick={() => handleHeroTopTabClick("flights")}
-                className={`flex items-center justify-center text-[16px] font-medium leading-[1] ${heroSearchTab === "flights" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
+                className={`flex items-center justify-center whitespace-nowrap text-[13px] sm:text-[16px] font-medium leading-[1] ${heroSearchTab === "flights" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
                 style={{
-                  width: 108,
+                  minWidth: 96,
                   height: 39,
-                  padding: "10px 20px",
+                  padding: "10px 14px",
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                 }}
@@ -208,15 +206,14 @@ const LandingPage: React.FC = () => {
                 FLIGHTS
               </button>
 
-              {/* Inactive tab – Hotels */}
               <button
                 type="button"
                 onClick={() => handleHeroTopTabClick("hotels")}
-                className={`flex items-center justify-center text-[16px] font-medium leading-[1] ${heroSearchTab === "hotels" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
+                className={`flex items-center justify-center whitespace-nowrap text-[13px] sm:text-[16px] font-medium leading-[1] ${heroSearchTab === "hotels" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
                 style={{
-                  width: 108,
+                  minWidth: 96,
                   height: 39,
-                  padding: "10px 20px",
+                  padding: "10px 14px",
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                 }}
@@ -224,15 +221,28 @@ const LandingPage: React.FC = () => {
                 HOTELS
               </button>
 
-              {/* Inactive tab – Packages */}
               <button
                 type="button"
-                // Packages remains independent for now
-                className="flex items-center justify-center text-[16px] font-medium leading-[1] text-[#081326] bg-[#E5E7EB]"
+                onClick={() => handleHeroTopTabClick("sightseeing")}
+                className={`flex items-center justify-center whitespace-nowrap text-[13px] sm:text-[16px] font-medium leading-[1] ${heroSearchTab === "sightseeing" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
                 style={{
-                  width: 108,
+                  minWidth: 96,
                   height: 39,
-                  padding: "10px 20px",
+                  padding: "10px 14px",
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                }}
+              >
+                SIGHTSEEING
+              </button>
+
+              <button
+                type="button"
+                className="flex items-center justify-center whitespace-nowrap text-[13px] sm:text-[16px] font-medium leading-[1] text-[#081326] bg-[#E5E7EB]"
+                style={{
+                  minWidth: 96,
+                  height: 39,
+                  padding: "10px 14px",
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                 }}
@@ -245,10 +255,7 @@ const LandingPage: React.FC = () => {
 
         {/* Spacing below hero form so calendar can fully show */}
         <div className="mt-8 sm:mt-12 mb-24">
-          <HeroSection
-            activeTab={heroSearchTab}
-            onTabChange={setHeroSearchTab}
-          />
+          <HeroSection activeTab={heroSearchTab} />
         </div>
       </div>
 

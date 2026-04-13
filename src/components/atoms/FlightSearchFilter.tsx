@@ -151,7 +151,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
 
     const aedLabelStyle: React.CSSProperties = {
         fontSize: "10px",
-        fontWeight: 700,
+        fontWeight: 300,
         color: "#2351A3",
         flexShrink: 0,
         letterSpacing: "0.04em",
@@ -164,7 +164,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
         border: "none",
         outline: "none",
         fontSize: "14px",
-        fontWeight: 500,
+        fontWeight: 300,
         color: "#0F172A",
         background: "transparent",
     };
@@ -218,10 +218,10 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
 
             {/* Filters Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
-                <h4 style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A', margin: 0 }}>
+                <h4 style={{ fontSize: '16px', fontWeight: 300, color: '#0F172A', margin: 0 }}>
                     Filters
                     <span style={{ margin: '0 8px', color: '#64748B' }}>•</span>
-                    <span style={{ fontSize: '14px', fontWeight: 400, color: '#64748B' }}>{activeCount} Active</span>
+                    <span style={{ fontSize: '14px', fontWeight: 300, color: '#64748B' }}>{activeCount} Active</span>
                 </h4>
                 <button 
                     onClick={onReset}
@@ -230,7 +230,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                         border: 'none', 
                         color: '#2351A3', 
                         fontSize: '14px',
-                        fontWeight: 500,
+                        fontWeight: 300,
                         cursor: 'pointer',
                         padding: 0
                     }}
@@ -326,6 +326,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                                     <label
                                         style={{
                                             fontSize: "12px",
+                                            fontWeight: 300,
                                             color: "#64748B",
                                             display: "block",
                                             marginBottom: "6px",
@@ -368,6 +369,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                                     <label
                                         style={{
                                             fontSize: "12px",
+                                            fontWeight: 300,
                                             color: "#64748B",
                                             display: "block",
                                             marginBottom: "6px",
@@ -460,7 +462,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                         style={{ border: 'none' }}
                     >
                         <div style={{ padding: '12px 16px 18px' }}>
-                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, marginBottom: '8px', marginTop: 0 }}>
+                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 300, marginBottom: '8px', marginTop: 0 }}>
                                 Departure
                             </p>
                             <div className="departureArrival" style={{ marginBottom: '14px' }}>
@@ -505,7 +507,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                                 />
                             </div>
 
-                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, marginBottom: '8px', marginTop: 0 }}>
+                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 300, marginBottom: '8px', marginTop: 0 }}>
                                 Arrival
                             </p>
                             <div className="departureArrival">

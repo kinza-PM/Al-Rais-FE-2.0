@@ -47,6 +47,7 @@ import {
   extractPassengersFromCacheResponse,
 } from "../../utils/passengerCacheHelper";
 import ConfirmationModal from "../common/ConfirmationModal";
+import Loader from "../atoms/Loader";
 
 type FlightBookingBookSectionProps = {
   trip: any;
@@ -102,7 +103,7 @@ export default function FlightBookingBookSection({
 
   const pRules = fareBookingSearchRules?.passengerRules?.[0] ?? {};
   const { mutateAsync, isPending } = useFlightInitialBooking();
-  const { mutateAsync: addPassengerCache } = usePassengerCacheAdd();
+  const { mutateAsync: addPassengerCache, isPending: isAddingCache } = usePassengerCacheAdd();
   const { data: passengerCacheResp } = usePassengerCacheFetch();
 
   // First ADT's phone for CHD/INF fallback
@@ -205,26 +206,26 @@ export default function FlightBookingBookSection({
     //     return;
     //   }
     // }
-    setHasAttemptedValidation(true);
-    const fieldErrors = validatePassengersForFlightProvisionalBookingFields(
-      fareBookingSearchRules,
-      flightBookingPayload,
-    );
-    setValidationErrors(fieldErrors);
+    // setHasAttemptedValidation(true);
+    // const fieldErrors = validatePassengersForFlightProvisionalBookingFields(
+    //   fareBookingSearchRules,
+    //   flightBookingPayload,
+    // );
+    // setValidationErrors(fieldErrors);
 
-    if (Object.keys(fieldErrors).length > 0) {
-      // Still check overall validation for backward compatibility
-      if (typeof validatePassengersForFlightProvisionalBooking === "function") {
-        const { valid } = validatePassengersForFlightProvisionalBooking(
-          fareBookingSearchRules,
-          flightBookingPayload,
-        );
-        if (!valid) {
-          return;
-        }
-      }
-      return;
-    }
+    // if (Object.keys(fieldErrors).length > 0) {
+    //   // Still check overall validation for backward compatibility
+    //   if (typeof validatePassengersForFlightProvisionalBooking === "function") {
+    //     const { valid } = validatePassengersForFlightProvisionalBooking(
+    //       fareBookingSearchRules,
+    //       flightBookingPayload,
+    //     );
+    //     if (!valid) {
+    //       return;
+    //     }
+    //   }
+    //   return;
+    // }
 
     const selectedPassengersForCache = passengers.filter((p, idx) =>
       saveToggleChecked(saveToggleKey(idx, p?.passengerKey)),
@@ -424,6 +425,10 @@ export default function FlightBookingBookSection({
 
   return (
     <section className="mx-auto max-w-full px-10 flight-booking-section">
+      <Loader
+        show={isPending || isAddingCache}
+        label="Please wait while we complete your provisional booking"
+      />
       <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
           <SavedTravelersSection
@@ -1270,7 +1275,18 @@ export default function FlightBookingBookSection({
             overrideClasses
             className="mt-6 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-[#2351A3] flex items-center justify-center gap-[10px]"
             // onClick={() => handleFlightProvInitialBooking()}
-            onClick={() => setShowBookingConfirm(true)}
+            onClick={async () => {
+              setHasAttemptedValidation(true);
+              const fieldErrors = validatePassengersForFlightProvisionalBookingFields(
+                fareBookingSearchRules,
+                flightBookingPayload,
+              );
+              setValidationErrors(fieldErrors);
+
+              if (Object.keys(fieldErrors).length > 0) return;
+
+              setShowBookingConfirm(true);
+            }}
             disabled={isPending}
           >
             {isPending ? "Loading..." : "Continue"}

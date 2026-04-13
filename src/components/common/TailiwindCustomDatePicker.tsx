@@ -19,6 +19,8 @@ type DatePickerProps = {
   disablePastDates?: boolean;
   /** When set, dates before this (at start-of-day) are disabled. Use e.g. for return date >= departure. */
   minDate?: Date | null;
+  /** When set, dates after this calendar day are disabled (e.g. birth date or booking window end). */
+  maxDate?: Date | null;
   tooltip?: string | null;
 };
 
@@ -108,6 +110,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   error = null,
   disablePastDates = false,
   minDate = null,
+  maxDate = null,
   tooltip = null,
 }) => {
   const [open, setOpen] = useState(false);
@@ -226,9 +229,11 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
       isSelected: boolean;
       isPast: boolean;
       isBeforeMin: boolean;
+      isAfterMax: boolean;
     }[] = [];
     const today = new Date();
     const minDateStart = minDate ? startOfDay(minDate) : null;
+    const maxDateStart = maxDate ? startOfDay(maxDate) : null;
 
     for (let i = 0; i < totalCells; i++) {
       const d = new Date(firstGridDate);
@@ -239,6 +244,8 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
       const isPast = d.getTime() < today.getTime() && !isToday;
       const isBeforeMin =
         minDateStart !== null ? startOfDay(d) < minDateStart : false;
+      const isAfterMax =
+        maxDateStart !== null ? startOfDay(d) > maxDateStart : false;
       cells.push({
         date: d,
         inMonth,
@@ -246,10 +253,11 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
         isSelected,
         isPast,
         isBeforeMin,
+        isAfterMax,
       });
     }
     return cells;
-  }, [view, value, minDate]);
+  }, [view, value, disablePastDates, minDate, maxDate]);
 
   return (
     <div ref={rootRef} className="relative">
@@ -449,6 +457,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
                     isSelected,
                     isPast,
                     isBeforeMin,
+                    isAfterMax,
                   }) => {
                     const base =
                       "h-9 w-9 mx-auto flex items-center justify-center rounded-md text-[13px] transition";
@@ -467,7 +476,9 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
                       isToday && !isSelected ? "ring-1 ring-[#2351A3]" : "";
 
                     const isDisabled =
-                      (disablePastDates && isPast) || isBeforeMin;
+                      (disablePastDates && isPast) ||
+                      isBeforeMin ||
+                      isAfterMax;
                     const disabledVisual = isDisabled
                       ? "opacity-50 cursor-not-allowed hover:bg-transparent"
                       : "";
@@ -514,7 +525,12 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
                     minDate.getMonth(),
                     1,
                   ).getTime();
-                const isDisabled = !!isPast || !!isBeforeMin;
+                const isAfterMax =
+                  maxDate &&
+                  (monthDate.getFullYear() > maxDate.getFullYear() ||
+                    (monthDate.getFullYear() === maxDate.getFullYear() &&
+                      monthDate.getMonth() > maxDate.getMonth()));
+                const isDisabled = !!isPast || !!isBeforeMin || !!isAfterMax;
 
                 return (
                   <button
@@ -548,7 +564,8 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
                 const isPast =
                   disablePastDates && year < today.getFullYear();
                 const isBeforeMin = minDate && year < minDate.getFullYear();
-                const isDisabled = !!isPast || !!isBeforeMin;
+                const isAfterMax = maxDate && year > maxDate.getFullYear();
+                const isDisabled = !!isPast || !!isBeforeMin || !!isAfterMax;
 
                 return (
                   <button

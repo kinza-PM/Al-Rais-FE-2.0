@@ -178,6 +178,10 @@ export const validatePassengersForFlightProvisionalBookingFields = (
       passengerErrors["identityDocuments.0.issuingCountryCode"] =
         "Issuing country is required.";
     }
+    if (isEmpty(id.residenceCountryCode)) {
+      passengerErrors["identityDocuments.0.residenceCountryCode"] =
+        "Residence country is required.";
+    }
     if (pRules.isDateOfIssueMandatory && isEmpty(id.dateOfIssue)) {
       passengerErrors["identityDocuments.0.dateOfIssue"] =
         "Date of issue is required.";
@@ -543,7 +547,7 @@ export function openBlankPopupAndCheckWebisteAllowPopup(
         </div>
       </div>
     `;
-  } catch (e) {}
+  } catch (e) { }
 
   return popup;
 }
@@ -569,7 +573,7 @@ export function waitFor3DSecurePaymentPopupReturnResponse(
     const cleanup = () => {
       try {
         window.removeEventListener("message", handler);
-      } catch (_) {}
+      } catch (_) { }
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
