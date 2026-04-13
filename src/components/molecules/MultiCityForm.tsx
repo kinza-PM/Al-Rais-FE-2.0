@@ -173,9 +173,9 @@ const MultiCityForm: React.FC<Props> = ({
       : null;
 
   return (
-    <div className="px-6 pb-6 pt-3">
+    <div className="px-6 pb-5 pt-2">
       {/* ROW 1 — Passengers only (cabin is per flight row below) */}
-      <div className="flex gap-3 mb-5 justify-center">
+      <div className="flex gap-3 mb-3 justify-center">
         <div className="relative w-full sm:w-[200px]">
           <label className="flex items-center gap-2 text-[12px] text-[#3D495C] mb-1">
             Passengers
@@ -217,12 +217,12 @@ const MultiCityForm: React.FC<Props> = ({
 
       {/* Dynamic legs */}
       {legs.map((leg, idx) => (
-        <div key={idx} className="space-y-4 mb-6">
+        <div key={idx} className="space-y-3 mb-4">
           <p className="text-[14px] text-[#11253E] font-medium">
             Flight {String(idx + 1).padStart(2, "0")}
           </p>
           {/* grid: From | swap | To (flex) | Departure date | Cabin | Remove */}
-          <div className="grid grid-cols-1 items-center gap-3 md:gap-4 md:grid-cols-[230px_47px_minmax(230px,1fr)_230px_220px_40px]">
+          <div className="grid grid-cols-1 items-center gap-2.5 md:gap-3 md:grid-cols-[230px_47px_minmax(230px,1fr)_230px_220px_40px]">
             <TravelRoutePicker
               options={countries}
               loading={loadingCountries}
@@ -323,7 +323,7 @@ const MultiCityForm: React.FC<Props> = ({
       ))}
 
       {/* Add another stop */}
-      <div className="flex justify-center mb-4">
+      <div className="flex justify-center mb-3">
         <button
           type="button"
           onClick={addAnotherStop}

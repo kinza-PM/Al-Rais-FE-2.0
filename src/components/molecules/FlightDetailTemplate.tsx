@@ -66,6 +66,7 @@ import {
   type AncillaryFilterMode,
 } from "../../utils/flightFilters";
 import { sortFlightOffers } from "../../utils/flightSortUtils";
+import { resolveAirlineLogoFromSegment } from "../../utils/searchFlightListingHelpers";
 // import dayjs from "dayjs";
 import SearchableDropdown from "../common/SearchableDropdown";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
@@ -345,19 +346,11 @@ const FlightDetailTemplate: React.FC = () => {
     return `${hours}h ${minutes}min`;
   }
 
-  const resolveAirlineLogo = (seg: any) => {
-    const apiLogo = String(seg?.marketingAirlineLogo ?? "").trim();
-    if (apiLogo) return apiLogo;
-    const marketingCode = String(seg?.marketingAirline ?? "").trim();
-    if (marketingCode) return `/airlines/${marketingCode}.png`;
-    return "";
-  };
-
   const formatFlightSegmentForTrips = (seg: any, journeyItem?: any) => {
     if (!seg) return null;
     return {
       id: seg.segmentKey,
-      logo: resolveAirlineLogo(seg),
+      logo: resolveAirlineLogoFromSegment(seg),
       name: seg.marketingAirline,
       flight_detail: {
         flight_number: seg.flightNumber,
@@ -379,7 +372,7 @@ const FlightDetailTemplate: React.FC = () => {
     };
   };
 
-  const logoFromFlightSegment = (seg: any) => (seg ? resolveAirlineLogo(seg) : "");
+  const logoFromFlightSegment = (seg: any) => resolveAirlineLogoFromSegment(seg);
 
   const mapFlightRawResponseToFormats = (
     item: any,
@@ -899,7 +892,7 @@ const FlightDetailTemplate: React.FC = () => {
     const ro = new ResizeObserver(syncHeight);
     ro.observe(form);
     return () => ro.disconnect();
-  }, [trip]);
+  }, [trip, multicityLegs.length]);
 
   // useEffect(() => {
   //   if (!fromCode && (countries as AirportOption[])[0]) {
@@ -1807,7 +1800,7 @@ const FlightDetailTemplate: React.FC = () => {
       >
         <div
           ref={flightSearchFormRef}
-          className="bottomHeaderSetting flight-search-form-sticky"
+          className={`bottomHeaderSetting flight-search-form-sticky${trip === "multicity" ? " flight-search-form--multicity" : ""}`}
         >
           {trip === "multicity" ? (
             <>
@@ -1995,7 +1988,7 @@ const FlightDetailTemplate: React.FC = () => {
               ))}
 
               {/* ===== SECTION 3: ADD ANOTHER STOP BUTTON (CENTERED) ===== */}
-              <Flex align="center" justify="center" className="mt-2">
+              <Flex align="center" justify="center" className="mt-0 sm:mt-1">
                 <button
                   type="button"
                   onClick={() =>
@@ -2009,7 +2002,7 @@ const FlightDetailTemplate: React.FC = () => {
                       },
                     ])
                   }
-                  className="inline-flex items-center gap-2 px-4 py-2.5 text-[14px] font-medium text-[#2351A3] hover:underline"
+                  className="inline-flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 text-[14px] font-medium text-[#2351A3] hover:underline"
                 >
                   <svg
                     width="16"
@@ -2029,7 +2022,7 @@ const FlightDetailTemplate: React.FC = () => {
               </Flex>
 
               {/* ===== SECTION 4: SEARCH BUTTON (BOTTOM CENTER) ===== */}
-              <Flex align="center" justify="center" className="mt-4">
+              <Flex align="center" justify="center" className="mt-2 sm:mt-3">
                 <CustomButton
                   className="searchFilterBtn"
                   onClick={() => handleSearch()}

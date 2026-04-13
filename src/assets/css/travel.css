@@ -298,6 +298,12 @@ input[type="number"] {
   box-shadow: none;
 }
 
+/* Multi-city: slightly tighter vertical rhythm (stacked legs + add-stop + search) */
+.flight-search-page .bottomHeaderSetting.flight-search-form-sticky.flight-search-form--multicity {
+  gap: 12px;
+  padding-top: 18px;
+}
+
 /* Flight Search Detail: input alignment only (NOT home page) */
 .flight-search-page .flight-search-detail-inputs {
   width: 100%;
@@ -448,6 +454,39 @@ input[type="number"] {
   align-items: center;
 }
 
+/* Round-trip / multi-city listing: stacked legs + shared price (reuses one-way card tokens) */
+.flight-search-page .flightDetailCards.flight-ow-card.flightDetailRoundTripCards,
+.flight-search-page .flightDetailCards.flight-ow-card.flightDetailMultiCityCards {
+  margin-bottom: 0 !important;
+  overflow: visible;
+}
+
+.flight-search-page
+  .flightDetailCards.flight-ow-card
+  .topHalfCard.ow-card-main-row.ow-card-rt-main {
+  /* Vertically center price + CTAs between outbound / inbound rows */
+  align-items: center;
+}
+
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-rt-legs {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-rt-leg {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .flight-search-page .flightDetailCards.flight-ow-card .fightTitle.ow-card-airline-col {
   align-items: flex-start;
   align-self: center;
@@ -466,9 +505,18 @@ input[type="number"] {
   gap: 6px;
 }
 
+.flight-search-page .flightDetailCards.flight-ow-card .flightIcon.ow-card-airline-logo {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+}
+
 .flight-search-page .flightDetailCards.flight-ow-card .flightIcon.ow-card-airline-logo img {
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   display: block;
+  object-fit: cover;
 }
 
 .flight-search-page .flightDetailCards.flight-ow-card .ow-card-airline-content {
@@ -494,6 +542,10 @@ input[type="number"] {
 }
 
 .flight-search-page .flightDetailCards.flight-ow-card .ow-card-feature-icons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
   gap: 8px;
 }
 
@@ -501,6 +553,15 @@ input[type="number"] {
   width: 20px;
   height: 20px;
   object-fit: contain;
+  display: block;
+}
+
+.flight-search-page
+  .flightDetailCards.flight-ow-card
+  .ow-card-feature-icons
+  .featureIconTooltipWrap {
+  max-width: none;
+  flex-shrink: 0;
 }
 
 .flight-search-page .flightDetailCards.flight-ow-card .StartingPrice.ow-card-price-block {
@@ -681,7 +742,8 @@ input[type="number"] {
 /* Flight search cards: narrow main column (sidebar + ~1480px viewport) */
 @media (max-width: 1560px) {
   .flight-search-page .flightDetailCards .topHalfCard,
-  .flight-search-page .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
+  .flight-search-page .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap,
+  .flight-search-page .flightDetailCards.flightDetailMultiCityCards .topHalfCardWrap {
     flex-wrap: wrap !important;
     align-items: stretch !important;
     gap: 14px !important;
@@ -698,7 +760,8 @@ input[type="number"] {
   }
 
   .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block,
-  .flight-search-page .flightDetailCards.flightDetailRoundTripCards .StartingPrice {
+  .flight-search-page .flightDetailCards.flightDetailRoundTripCards .StartingPrice,
+  .flight-search-page .flightDetailCards.flightDetailMultiCityCards .StartingPrice {
     flex-direction: column !important;
     align-items: flex-start !important;
     justify-content: flex-start !important;
@@ -726,6 +789,31 @@ input[type="number"] {
   }
 
   .flight-search-page .flightDetailCards .ow-card-cta-group {
+    width: 100%;
+    justify-content: flex-start !important;
+  }
+
+  .flight-search-page
+    .flightDetailCards.flight-ow-card
+    .topHalfCard.ow-card-main-row.ow-card-rt-main {
+    flex-wrap: wrap !important;
+    /* Keep price + CTAs vertically centered vs. both legs when row still fits */
+    align-items: center !important;
+    gap: 14px !important;
+  }
+
+  .flight-search-page .flightDetailCards.flight-ow-card .ow-card-rt-leg {
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    gap: 14px !important;
+  }
+
+  .flight-search-page .flightDetailCards.flight-ow-card .ow-card-rt-leg .fightTitle {
+    min-width: 0 !important;
+    width: 100%;
+  }
+
+  .flight-search-page .flightDetailCards.flight-ow-card .ow-card-rt-leg .stopsOnLarge {
     width: 100%;
     justify-content: flex-start !important;
   }
@@ -799,18 +887,22 @@ input[type="number"] {
   max-width: 100%;
   display: grid;
   grid-template-columns: 280px 280px;
-  gap: 16px;
+  column-gap: 8px;
+  row-gap: 8px;
   align-items: end;
+  justify-content: start;
 }
 
 .flight-search-page .flight-search-multicity-legrow {
   width: 100%;
   max-width: 100%;
   display: grid;
-  grid-template-columns: 280px 48px 280px 220px 220px;
-  gap: 16px;
+  grid-template-columns: minmax(0, 260px) 44px minmax(0, 260px) minmax(0, 200px) minmax(0, 200px);
+  column-gap: 6px;
+  row-gap: 8px;
   align-items: end;
-  margin-top: 12px;
+  margin-top: 0;
+  justify-content: start;
 }
 
 /* Let TravelRoutePicker's three siblings become the first 3 grid columns */
@@ -820,15 +912,15 @@ input[type="number"] {
 
 .flight-search-page .multicityFromTo {
   width: 100%;
-  max-width: 280px;
+  max-width: 260px;
   min-width: 0;
 }
 
 .flight-search-page .flight-search-multicity-legrow .fromToBtn {
-  width: 48px !important;
-  height: 48px !important;
-  min-width: 48px !important;
-  max-width: 48px !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-width: 44px !important;
+  max-width: 44px !important;
   margin: 0 !important;
   justify-self: center;
   align-self: center;
@@ -836,18 +928,20 @@ input[type="number"] {
 
 .flight-search-page .flight-search-multicity-side {
   min-width: 0;
-  max-width: 220px;
+  max-width: 200px;
 }
 
 @media (max-width: 1023.98px) {
   .flight-search-page .flight-search-multicity-toprow {
     grid-template-columns: 1fr;
-    gap: 12px;
+    column-gap: 0;
+    row-gap: 8px;
   }
 
   .flight-search-page .flight-search-multicity-legrow {
     grid-template-columns: 1fr;
-    gap: 12px;
+    column-gap: 0;
+    row-gap: 8px;
   }
 
   .flight-search-page .multicityFromTo {
@@ -860,6 +954,29 @@ input[type="number"] {
 
   .flight-search-page .flight-search-multicity-side {
     max-width: 100%;
+  }
+}
+
+/* Multi-city (search page): compact vertical rhythm on small viewports so results stay visible */
+@media (max-width: 1023.98px) {
+  .flight-search-page .bottomHeaderSetting.flight-search-form-sticky.flight-search-form--multicity {
+    gap: 6px;
+    padding-top: 8px;
+    margin-bottom: 8px;
+  }
+
+  .flight-search-page .flight-search-multicity-toprow,
+  .flight-search-page .flight-search-multicity-legrow {
+    gap: 6px;
+  }
+
+  .flight-search-page .flight-search-multicity-legrow .fromToBtn {
+    margin-top: 4px !important;
+  }
+
+  .flight-search-page .flight-search-divider {
+    margin-top: 8px;
+    margin-bottom: 10px;
   }
 }
 

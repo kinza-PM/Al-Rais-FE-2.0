@@ -21,6 +21,7 @@ import {
   mapOfferForCompareOneWay,
   pickRandomFlightsForCompare,
   extractFlightFeatures,
+  resolveAirlineLogoFromSegment,
 } from "../../utils/searchFlightListingHelpers";
 import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
 
@@ -254,6 +255,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
         const marketingAirline = currentSeg?.marketingAirline;
         const highDemandInfo = getHighDemandInfo(marketingAirline);
 
+        const listingAirlineLogo =
+          resolveAirlineLogoFromSegment(currentSeg) ||
+          String(item?.logo ?? "").trim();
+
         return (
           <div
             className="flightDetailCards flight-ow-card"
@@ -264,7 +269,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 <div className="fightTitle ow-card-airline-col">
                   <div className="flightIcon ow-card-airline-logo">
                     <img
-                      src={item?.logo || defaultAirlineLogo}
+                      src={listingAirlineLogo || defaultAirlineLogo}
                       alt={item?.name || "Airline"}
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;

@@ -1,14 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "../../assets/css/travel.css";
 
-import highDemandIcon from "../../assets/svgs/high-demand.svg";
 import offerViewIcon from "../../assets/svgs/offer-view-icon.svg";
-import whatsappIcon from "../../assets/svgs/Icon.png.svg";
-import defaultAirlineLogo from "../../assets/images/alRaisLogo.jpg";
+import defaultAirlineLogo from "../../assets/images/emirates.png";
 
 import { Modal } from "antd";
 import { useNavigate } from "react-router-dom";
 import { travelData } from "../../utils/mockData";
+import { formatListingStartingFare } from "../../utils/helpers";
 
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
 const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
@@ -27,6 +26,7 @@ import {
   mapOfferForCompareRoundTrip,
   pickRandomFlightsForCompare,
   extractFlightFeatures,
+  resolveAirlineLogoFromSegment,
 } from "../../utils/searchFlightListingHelpers";
 import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
 
@@ -44,6 +44,17 @@ type TravelRoundTripProps = {
   highDemandIndicators?: any[];
 };
 
+const getAirlineDisplayName = (item: any, seg?: any) => {
+  return (
+    item?.airlineName ||
+    seg?.marketingAirlineName ||
+    seg?.operatingAirlineName ||
+    item?.name ||
+    seg?.marketingAirline ||
+    "Airline"
+  );
+};
+
 const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   passData,
   passengersForRequest,
@@ -55,8 +66,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   highDemandIndicators = [],
 }) => {
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
-  const [shareModal, setshareModal] = useState(false);
-  const [filterData] = useState<any[]>([]);
   const [, setFilterDetail] = useState<any[]>([]);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
@@ -169,12 +178,8 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     [selectedItem, detailById, passData],
   );
 
-  const handleCancelCompare = (modalType: "compare" | "share") => {
-    if (modalType === "compare") {
-      setIsCompareModalOpen(false);
-    } else {
-      setshareModal(false);
-    }
+  const handleCancelCompare = () => {
+    setIsCompareModalOpen(false);
   };
 
   const handleOfferSelection = React.useCallback(
@@ -201,14 +206,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   }
 
   return (
-    <div
-      style={{
-        background: "#FFFFFF",
-        borderRadius: "16px",
-        padding: "20px",
-        boxShadow: "0 1px 3px rgba(0, 0, 0, 0.1)",
-      }}
-    >
+    <div className="flex flex-col gap-0" style={{ background: "transparent" }}>
       {passData?.map((item: any, index: number) => {
         const renderRoundTopCard = (display: any, parent: any) => {
           const d = display ?? parent;
@@ -268,43 +266,29 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
             label: f.label,
           }));
 
+          const flightNo = itemForTiming?.flight_detail?.flight_number;
+          const flightClass = itemForTiming?.flight_detail?.flight_class;
+          const airlineDisplayName = getAirlineDisplayName(d, currentSeg);
+          const subtitle =
+            flightNo && flightClass
+              ? `${flightNo} - ${flightClass}`
+              : [flightNo, flightClass].filter(Boolean).join(" • ") ||
+                airlineDisplayName;
+
+          const listingAirlineLogo =
+            resolveAirlineLogoFromSegment(currentSeg) ||
+            String(d?.logo ?? "").trim();
+
           return (
             <div
-              className="topHalfCard RoundTripCardDetail"
-              key={`round-${d?.id || parent?.id || Math.random()}`}
-              style={{
-                width: "100%",
-                minHeight: "101px",
-                display: "flex",
-                alignItems: "center",
-                padding: "20px 0",
-                gap: "24px",
-                background: "transparent",
-                borderRadius: "0",
-                border: "none",
-                boxSizing: "border-box",
-                marginBottom: "0",
-              }}
+              className="ow-card-rt-leg RoundTripCardDetail"
+              key={`round-${d?.id || parent?.id || journeyIndex}`}
             >
-              <div
-                className="fightTitle"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "1px",
-                  minWidth: "201px",
-                }}
-              >
-                <div className="flightIcon" style={{ flexShrink: 0 }}>
+              <div className="fightTitle ow-card-airline-col">
+                <div className="flightIcon ow-card-airline-logo">
                   <img
-                    src={d?.logo || defaultAirlineLogo}
-                    alt={d?.name || "Airline"}
-                    style={{
-                      width: "48px",
-                      height: "48px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                    }}
+                    src={listingAirlineLogo || defaultAirlineLogo}
+                    alt={airlineDisplayName}
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       target.onerror = null;
@@ -313,60 +297,21 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   />
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                    flex: 1,
-                  }}
-                >
-                  <div className="nameAndDetails">
-                    <h5
-                      style={{
-                        margin: 0,
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        color: "#0F172A",
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {d?.name}
-                    </h5>
-                    <p
-                      style={{
-                        margin: 0,
-                        fontSize: "11px",
-                        color: "#64748B",
-                        lineHeight: 1.3,
-                        marginTop: "2px",
-                      }}
-                    >
-                      {itemForTiming?.flight_detail?.flight_number} -{" "}
-                      {itemForTiming?.flight_detail?.flight_class}
-                    </p>
+                <div className="ow-card-airline-content">
+                  <div className="nameAndDetails ow-card-name-group">
+                    <h5>{airlineDisplayName}</h5>
+                    <p>{subtitle}</p>
                   </div>
 
                   {visible.length ? (
-                    <div
-                      className="featureIcons"
-                      style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}
-                    >
+                    <div className="featureIcons ow-card-feature-icons">
                       {visible.slice(0, 6).map((f) => (
                         <div
                           className="featureIconTooltipWrap"
                           key={f.key}
                           style={{ position: "relative" }}
                         >
-                          <img
-                            src={f.icon}
-                            alt={f.key}
-                            style={{
-                              width: "18px",
-                              height: "18px",
-                              cursor: "pointer",
-                            }}
-                          />
+                          <img src={f.icon} alt={f.key} />
                           <span className="tooltip">{f.label}</span>
                         </div>
                       ))}
@@ -375,19 +320,11 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 </div>
               </div>
 
-              <div
-                className="stopsOnLarge"
-                style={{
-                  flex: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
+              <div className="stopsOnLarge ow-card-timing-col">
                 <FlightTimingAndStops passSome={itemForTiming} />
               </div>
 
-              <div className="stopsOnSmall">
+              <div className="stopsOnSmall ow-card-timing-mobile">
                 <FlightTimingAndStops passSome={itemForTiming} />
               </div>
             </div>
@@ -399,169 +336,118 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
         return (
           <div
-            key={index}
-            className={`flightDetailCards ${
+            key={item?.id ?? index}
+            className={`flightDetailCards flight-ow-card ${
               inbound ? "flightDetailRoundTripCards" : ""
             }`}
-            style={{
-              border: "none",
-              marginBottom: "0",
-              paddingBottom: "0",
-              borderBottom:
-                index < passData.length - 1 ? "2px solid #E4E4E7" : "none",
-            }}
           >
-            <div
-              className="topHalfCardWrap"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "24px",
-                padding: "20px 0",
-              }}
-            >
-              <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                {renderRoundTopCard(outbound ?? item, item)}
-                {inbound && renderRoundTopCard(inbound, item)}
-              </div>
-
-              <div
-                className="StartingPrice"
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "flex-end",
-                  gap: "8px",
-                  minWidth: "320px",
-                }}
-              >
-                <p
-                  style={{
-                    margin: 0,
-                    fontSize: "12px",
-                    color: "#64748B",
-                    fontWeight: 400,
-                    alignSelf: "flex-start",
-                  }}
-                >
-                  Starting from
-                </p>
-
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <h5
-                    style={{
-                      margin: 0,
-                      fontSize: "27px",
-                      fontWeight: 700,
-                      color: "#2351A3",
-                      lineHeight: 1,
-                      letterSpacing: "-0.5px",
-                    }}
-                  >
-                    {item?.raw?.fare?.currencyCode ?? "$"}
-                    {item.rawTotalStartingFare}
-                  </h5>
-
-                  <button
-                    onClick={() => openDetailsModal(item, "price")}
-                    style={{
-                      width: "150px",
-                      height: "47px",
-                      borderRadius: "100px",
-                      padding: "14px 25px",
-                      background:
-                        "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                      color: "#FFFFFF",
-                      fontSize: "15px",
-                      fontWeight: 600,
-                      border: "none",
-                      cursor: "pointer",
-                      boxShadow: "0 4px 12px rgba(35, 81, 163, 0.3)",
-                      transition: "all 0.2s ease",
-                      flexShrink: 0,
-                    }}
-                  >
-                    View details
-                  </button>
-
-                  <button
-                    onClick={() => handleOfferSelection(item?.offerId, item)}
-                    style={{
-                      width: "130px",
-                      height: "47px",
-                      background:
-                        "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                      borderRadius: "100px",
-                      padding: "14px 25px",
-                      border: "none",
-                      cursor: "pointer",
-                      color: "#FFFFFF",
-                      fontSize: "14px",
-                      fontWeight: 600,
-                      flexShrink: 0,
-                    }}
-                  >
-                    Book Now
-                  </button>
+            <div className="topHalfCardWrap ow-card-wrap">
+              <div className="topHalfCard ow-card-main-row ow-card-rt-main">
+                <div className="ow-card-rt-legs">
+                  {renderRoundTopCard(outbound ?? item, item)}
+                  {inbound ? renderRoundTopCard(inbound, item) : null}
                 </div>
-              </div>
-            </div>
 
-            <div className="selectPriceBtn flex items-center gap-2 mb-4">
-              {item.offerViewCount > 0 && (
-                <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
-                  <img src={offerViewIcon} alt="icon" className="mr-1" />
-                  {item.offerViewCount} People viewing this
-                </div>
-              )}
+                <div className="StartingPrice ow-card-price-block">
+                  <div className="ow-card-price-actions-row">
+                    <div className="ow-card-price-copy">
+                      <p className="ow-card-price-label">Starting from</p>
+                      <h5>
+                        {formatListingStartingFare(
+                          item?.raw?.fare?.currencyCode ?? "$",
+                          item.rawTotalStartingFare,
+                        )}
+                      </h5>
+                    </div>
 
-              {offerHasAncillaryDetailsAvailable(item) ? (
-                <div className="inline-flex items-center justify-center text-xs text-[#0F5132] border border-[#A3CFBB] rounded-full px-3 py-2 bg-[#D1E7DD] whitespace-nowrap font-medium">
-                  Add-ons available
-                </div>
-              ) : null}
+                    <div className="ow-card-cta-group">
+                      <button
+                        type="button"
+                        className="ow-card-btn ow-card-btn-outline"
+                        onClick={() => openDetailsModal(item, "price")}
+                      >
+                        View Details
+                      </button>
 
-              {(() => {
-                const outboundSegs =
-                  item?.outbound?.raw?.journey?.[0]?.flightSegments ??
-                  item?.raw?.journey?.[0]?.flightSegments ??
-                  [];
-                const outboundSeg = Array.isArray(outboundSegs)
-                  ? outboundSegs[0]
-                  : (outboundSegs?.[0] ?? outboundSegs ?? null);
-                const outboundAirline = outboundSeg?.marketingAirline;
-
-                const inboundSegs =
-                  item?.inbound?.raw?.journey?.[0]?.flightSegments ??
-                  item?.raw?.journey?.[1]?.flightSegments ??
-                  [];
-                const inboundSeg = Array.isArray(inboundSegs)
-                  ? inboundSegs[0]
-                  : (inboundSegs?.[0] ?? inboundSegs ?? null);
-                const inboundAirline = inboundSeg?.marketingAirline;
-
-                const highDemandInfo = getHighDemandInfo(
-                  outboundAirline,
-                  inboundAirline,
-                );
-
-                return highDemandInfo ? (
-                  <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
-                    <img
-                      src={highDemandIcon}
-                      alt="icon"
-                      className="w-3 h-3 mr-1"
-                    />
-                    High-demand
+                      <button
+                        type="button"
+                        className="ow-card-btn ow-card-btn-primary ow-card-book-now--inrow"
+                        onClick={() =>
+                          handleOfferSelection(item?.offerId, item)
+                        }
+                      >
+                        Book Now
+                      </button>
+                    </div>
                   </div>
-                ) : null;
-              })()}
+                </div>
+              </div>
+
+              <div className="selectPriceBtn ow-card-badge-row">
+                {item.offerViewCount > 0 ? (
+                  <div
+                    className="inline-flex items-center justify-center whitespace-nowrap bg-[#A7C0EC] px-3 py-1.5 text-[12px] font-medium uppercase text-[#1A3C7A]"
+                    style={{ borderRadius: "6px" }}
+                  >
+                    {item.offerViewCount} PEOPLE VIEWING
+                  </div>
+                ) : null}
+
+                {offerHasAncillaryDetailsAvailable(item) ? (
+                  <div
+                    className="inline-flex items-center justify-center whitespace-nowrap bg-[#D1E7DD] px-3 py-1.5 text-[12px] font-medium uppercase text-[#0F5132]"
+                    style={{ borderRadius: "6px" }}
+                  >
+                    Add-ons available
+                  </div>
+                ) : null}
+
+                {(() => {
+                  const outboundSegs =
+                    item?.outbound?.raw?.journey?.[0]?.flightSegments ??
+                    item?.raw?.journey?.[0]?.flightSegments ??
+                    [];
+                  const outboundSeg = Array.isArray(outboundSegs)
+                    ? outboundSegs[0]
+                    : (outboundSegs?.[0] ?? outboundSegs ?? null);
+                  const outboundAirline = outboundSeg?.marketingAirline;
+
+                  const inboundSegs =
+                    item?.inbound?.raw?.journey?.[0]?.flightSegments ??
+                    item?.raw?.journey?.[1]?.flightSegments ??
+                    [];
+                  const inboundSeg = Array.isArray(inboundSegs)
+                    ? inboundSegs[0]
+                    : (inboundSegs?.[0] ?? inboundSegs ?? null);
+                  const inboundAirline = inboundSeg?.marketingAirline;
+
+                  const highDemandInfo = getHighDemandInfo(
+                    outboundAirline,
+                    inboundAirline,
+                  );
+
+                  return highDemandInfo ? (
+                    <div
+                      className="inline-flex items-center justify-center whitespace-nowrap bg-[#FFB8C4] px-3 py-1.5 text-[12px] font-medium uppercase text-[#B80020]"
+                      style={{ borderRadius: "6px" }}
+                    >
+                      HIGH DEMAND
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+
+              <div className="ow-card-mobile-book-now">
+                <button
+                  type="button"
+                  className="ow-card-btn ow-card-btn-primary ow-card-book-now--footer"
+                  onClick={() =>
+                    handleOfferSelection(item?.offerId, item)
+                  }
+                >
+                  Book Now
+                </button>
+              </div>
             </div>
           </div>
         );
@@ -705,9 +591,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         open={isCompareModalOpen}
         footer={null}
         centered={true}
-        onCancel={() => {
-          handleCancelCompare("compare");
-        }}
+        onCancel={handleCancelCompare}
         className="compareModal"
       >
         {travelData?.map((item) => (
@@ -724,67 +608,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     {item?.flight_detail?.flight_class}
                   </p>
                 </div>
-              </div>
-            </div>
-          </div>
-        ))}
-      </Modal>
-
-      <Modal
-        title={
-          <div className="modalHeader" style={{ textAlign: "center" }}>
-            <h2>Share this flight</h2>
-          </div>
-        }
-        closable={{ "aria-label": "Custom Close Button" }}
-        open={shareModal}
-        footer={null}
-        centered={true}
-        onCancel={() => {
-          handleCancelCompare("share");
-        }}
-        className="compareModal"
-      >
-        {filterData?.map((item) => (
-          <div key={item?.id}>
-            <div className="modalFlightDetailCard">
-              <div className="modalFlightDetail">
-                <div className="fightTitle">
-                  <div className="flightIcon">
-                    <img src={item?.logo} alt="" />
-                  </div>
-                  <div className="nameAndDetails">
-                    <h5>{item?.name}</h5>
-                    <p>
-                      {item?.flight_detail?.flight_number} -{" "}
-                      {item?.flight_detail?.flight_class}
-                    </p>
-                  </div>
-                </div>
-                <div className="StartingPrice">
-                  <p>Start from</p>
-                  <h5>
-                    {item?.raw?.fare?.currencyCode ?? "$"}
-                    {item.rawTotalStartingFare}
-                  </h5>
-                </div>
-              </div>
-            </div>
-
-            <div className="copyMailWhatsappBtn">
-              <div className="textCenter">
-                <button className="copyEmailBtn btnClass">Copy</button>
-                <p>Copy link</p>
-              </div>
-              <div className="textCenter">
-                <button className="copyEmailBtn btnClass">Email</button>
-                <p>Email</p>
-              </div>
-              <div className="textCenter">
-                <button className="btnClass">
-                  <img src={whatsappIcon} alt="" />
-                </button>
-                <p>WhatsApp</p>
               </div>
             </div>
           </div>
