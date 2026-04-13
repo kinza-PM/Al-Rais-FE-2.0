@@ -22,6 +22,12 @@ export type SupportConversation = {
   redirectUrl?: string;
 };
 
+export type SupportConversationResponse = {
+  success: boolean;
+  message: string;
+  data: SupportConversation;
+};
+
 export type Category = {
   categoryId: string;
   categoryName: string;
@@ -81,9 +87,9 @@ const DEFAULT_CATEGORIES: Category[] = [
   }
 ];
 
-export async function sendSupportMessage<TResp = SupportConversation>(
+export async function sendSupportMessage(
   data: SendSupportMessageRequest
-): Promise<TResp> {
+): Promise<SupportConversationResponse> {
   try {
     const payload: any = {
       message: data.message,
@@ -101,7 +107,7 @@ export async function sendSupportMessage<TResp = SupportConversation>(
     }
 
     // console.log("payload", payload);
-    return await chatbotApi.post<TResp>("/support/ticket", payload);
+    return await chatbotApi.post<SupportConversationResponse>("/support/ticket", payload);
   } catch (err) {
     console.error("Error sending support message:", err);
     throw err;
@@ -110,7 +116,9 @@ export async function sendSupportMessage<TResp = SupportConversation>(
 
 export async function getCategories<TResp = Category[]>(): Promise<TResp> {
   try {
-    return await chatbotApi.get<TResp>("/categories");
+    const response: any = await chatbotApi.get("/categories");
+    // API returns {success, data} wrapper, extract the data array
+    return (response?.data || response) as TResp;
   } catch (err) {
     console.error("Error fetching categories, using defaults:", err);
     return DEFAULT_CATEGORIES as unknown as TResp;
@@ -121,7 +129,9 @@ export async function getSubcategories<TResp = Subcategory[]>(
   categoryId: string
 ): Promise<TResp> {
   try {
-    return await chatbotApi.get<TResp>(`/subcategories/${categoryId}`);
+    const response: any = await chatbotApi.get(`/subcategories/${categoryId}`);
+    // API returns {success, data} wrapper, extract the data array
+    return (response?.data || response) as TResp;
   } catch (err) {
     console.error("Error fetching subcategories:", err);
     throw err;

@@ -4,6 +4,7 @@ import { generateClient } from 'aws-amplify/api';
 
 const APPSYNC_ENDPOINT = import.meta.env.VITE_APPSYNC_ENDPOINT || '';
 const APPSYNC_API_KEY = import.meta.env.VITE_APPSYNC_API_KEY || '';
+const APPSYNC_REGION = import.meta.env.VITE_APPSYNC_REGION || 'eu-west-1';
 
 // Configure Amplify for AppSync
 if (APPSYNC_ENDPOINT && APPSYNC_API_KEY) {
@@ -11,12 +12,14 @@ if (APPSYNC_ENDPOINT && APPSYNC_API_KEY) {
     API: {
       GraphQL: {
         endpoint: APPSYNC_ENDPOINT,
-        region: 'eu-west-1',
+        region: APPSYNC_REGION,
         defaultAuthMode: 'apiKey',
         apiKey: APPSYNC_API_KEY
       }
     }
   });
+} else {
+  console.warn('AppSync configuration missing - subscriptions will not work');
 }
 
 const client = new GraphQLClient(APPSYNC_ENDPOINT, {
@@ -100,7 +103,7 @@ const UPDATE_CONVERSATION_STATUS = gql`
 `;
 
 const CREATE_TICKET_FROM_CONVERSATION = gql`
-  mutation CreateTicketFromConversation($conversationId: ID!, $category: String!, $subcategory: String!) {
+  mutation CreateTicketFromConversation($conversationId: ID!, $category: String!, $subcategory: String) {
     createTicketFromConversation(conversationId: $conversationId, category: $category, subcategory: $subcategory) {
       success
       ticketId
@@ -165,7 +168,7 @@ export type SendMessageInput = {
 
 export async function getConversation(conversationId: string): Promise<Conversation> {
   try {
-    const data = await client.request(GET_CONVERSATION, { conversationId });
+    const data = await client.request(GET_CONVERSATION, { conversationId }) as any;
     return data.getConversation;
   } catch (error) {
     console.error('Error fetching conversation:', error);
@@ -183,7 +186,7 @@ export async function listConversationsByUser(
       userId,
       limit,
       nextToken,
-    });
+    }) as any;
     return data.listConversationsByUser;
   } catch (error) {
     console.error('Error listing conversations:', error);
@@ -193,7 +196,7 @@ export async function listConversationsByUser(
 
 export async function sendMessage(input: SendMessageInput): Promise<Message> {
   try {
-    const data = await client.request(SEND_MESSAGE, { input });
+    const data = await client.request(SEND_MESSAGE, { input }) as any;
     return data.sendMessage;
   } catch (error) {
     console.error('Error sending message:', error);
@@ -209,7 +212,7 @@ export async function updateConversationStatus(
     const data = await client.request(UPDATE_CONVERSATION_STATUS, {
       conversationId,
       status,
-    });
+    }) as any;
     return data.updateConversationStatus;
   } catch (error) {
     console.error('Error updating conversation status:', error);
@@ -220,14 +223,14 @@ export async function updateConversationStatus(
 export async function createTicketFromConversation(
   conversationId: string,
   category: string,
-  subcategory: string
+  subcategory?: string
 ): Promise<{ success: boolean; ticketId?: string; message: string }> {
   try {
     const data = await client.request(CREATE_TICKET_FROM_CONVERSATION, {
       conversationId,
       category,
-      subcategory,
-    });
+      subcategory: subcategory || null,
+    }) as any;
     return data.createTicketFromConversation;
   } catch (error) {
     console.error('Error creating ticket from conversation:', error);
@@ -240,11 +243,18 @@ export function subscribeToMessageReceived(
   onMessage: (message: Message) => void,
   onError?: (error: any) => void
 ) {
+  if (!APPSYNC_ENDPOINT || !APPSYNC_API_KEY) {
+    console.error('AppSync not configured - cannot subscribe to messages');
+    onError?.(new Error('AppSync not configured'));
+    return { unsubscribe: () => {} };
+  }
+
   try {
-    const subscription = amplifyClient.graphql({
+    console.log('Subscribing to messages for conversation:', conversationId);
+    const subscription = (amplifyClient.graphql({
       query: ON_MESSAGE_RECEIVED,
       variables: { conversationId }
-    }).subscribe({
+    }) as any).subscribe({
       next: ({ data }: any) => {
         if (data?.onMessageReceived) {
           onMessage(data.onMessageReceived);
@@ -276,10 +286,10 @@ export function subscribeToConversationUpdated(
   onError?: (error: any) => void
 ) {
   try {
-    const subscription = amplifyClient.graphql({
+    const subscription = (amplifyClient.graphql({
       query: ON_CONVERSATION_UPDATED,
       variables: { conversationId }
-    }).subscribe({
+    }) as any).subscribe({
       next: ({ data }: any) => {
         if (data?.onConversationUpdated) {
           onUpdate(data.onConversationUpdated);

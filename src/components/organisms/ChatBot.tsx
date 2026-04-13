@@ -129,9 +129,12 @@ const ChatBot: React.FC = () => {
   const loadCategories = async () => {
     try {
       const cats = await getCategories();
-      setCategories(cats?.data || []);
+      // console.log("Loaded categories:", cats);
+      setCategories(cats || []);
     } catch (error) {
       console.error("Failed to load categories:", error);
+      // Set empty array on error to prevent undefined issues
+      setCategories([]);
     }
   };
 
@@ -140,6 +143,18 @@ const ChatBot: React.FC = () => {
     const userSession = localStorage.getItem("userSession");
     const isLoggedIn = !!userSession;
     setSupportState(prev => ({ ...prev, isLoggedIn }));
+  };
+
+  const isValidEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isValidPhone = (phone: string): boolean => {
+    // International format: +[country code] [number]
+    // Example: +92 3XXXXXXXXX or +92 XXXXXXXXXX
+    const phoneRegex = /^\+\d{1,4}\s?\d{7,15}$/;
+    return phoneRegex.test(phone);
   };
 
   const handleSwitchToSupport = () => {
@@ -218,6 +233,19 @@ const ChatBot: React.FC = () => {
         };
         setMessages(prev => [...prev, assistantMessage]);
       } else if (step === "email") {
+        // Validate email format
+        if (!isValidEmail(inputValue)) {
+          const errorMessage: Message = {
+            id: `msg-${Date.now()}-1`,
+            role: "assistant",
+            content: `❌ That doesn't look like a valid email address. Please enter a valid email (e.g., example@email.com)`,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          setLoading(false);
+          return;
+        }
+
         // Collect email
         setSupportState(prev => ({
           ...prev,
@@ -233,6 +261,34 @@ const ChatBot: React.FC = () => {
         };
         setMessages(prev => [...prev, assistantMessage]);
       } else if (step === "phone") {
+        // Validate phone format
+        if (!isValidPhone(inputValue)) {
+          const errorMessage: Message = {
+            id: `msg-${Date.now()}-1`,
+            role: "assistant",
+            content: `❌ Please enter a valid phone number in international format (e.g., +92 3XXXXXXXXX)`,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+          };
+          setMessages(prev => [...prev, errorMessage]);
+          setLoading(false);
+          return;
+        }
+
+        // Ensure categories are loaded before proceeding
+        let currentCategories = categories;
+        if (currentCategories.length === 0) {
+          try {
+            currentCategories = await getCategories();
+            console.log("Categories fetched in phone step:", currentCategories);
+            setCategories(currentCategories);
+          } catch (error) {
+            console.error("Failed to load categories:", error);
+            currentCategories = [];
+          }
+        } else {
+          console.log("Using existing categories:", currentCategories);
+        }
+
         // Collect phone and move to category
         setSupportState(prev => ({
           ...prev,
@@ -240,10 +296,18 @@ const ChatBot: React.FC = () => {
           step: "category"
         }));
 
+        // Build category list for message
+        console.log("Building category list, count:", currentCategories.length);
+        const categoryList = currentCategories.length > 0
+          ? `\n\nAvailable categories:\n${currentCategories.map(cat => `• ${cat.categoryName}`).join('\n')}`
+          : '\n\n(No categories available)';
+
+        console.log("Category list text:", categoryList);
+
         const assistantMessage: Message = {
           id: `msg-${Date.now()}-1`,
           role: "assistant",
-          content: `Perfect! Thank you for your information. Now, what category does your issue fall under?`,
+          content: `Perfect! Thank you for your information. Now, what category does your issue fall under?${categoryList}\n\nPlease select a category from the buttons below or type it.`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
         };
         setMessages(prev => [...prev, assistantMessage]);
