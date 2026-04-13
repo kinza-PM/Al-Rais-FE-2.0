@@ -70,6 +70,7 @@ export default function SightseeingBookingPaymentSection({
   const [isProcessing, setIsProcessing] = useState(false);
   const [showMinimumLoading, setShowMinimumLoading] = useState(false);
   const [isConfirmingBooking, setIsConfirmingBooking] = useState(false);
+  const [openPrice, setOpenPrice] = useState(false);
 
   const { mutateAsync: paymentMutateAsync, isPending: paymentPending } =
     usePayfortPayment();
@@ -475,12 +476,11 @@ export default function SightseeingBookingPaymentSection({
                   <TailwindCustomInput
                     type="email"
                     placeholder="Enter an email"
-                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none ${
-                      hasAttemptedValidation &&
+                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none ${hasAttemptedValidation &&
                       validationErrors["customerInfo.emailAddress"]
-                        ? "border-[#E65959]"
-                        : "border-[#C2CAD6]"
-                    }`}
+                      ? "border-[#E65959]"
+                      : "border-[#C2CAD6]"
+                      }`}
                     label="Email"
                     name="customerInfo.emailAddress"
                     value={email}
@@ -502,12 +502,11 @@ export default function SightseeingBookingPaymentSection({
                       <TailwindCustomInput
                         type="text"
                         placeholder="0000 0000 0000 0000"
-                        className={`h-12 w-full rounded-2xl border px-4 pr-20 text-[14px] ${
-                          hasAttemptedValidation &&
+                        className={`h-12 w-full rounded-2xl border px-4 pr-20 text-[14px] ${hasAttemptedValidation &&
                           validationErrors["card.number"]
-                            ? "border-[#E65959]"
-                            : "border-[#C2CAD6]"
-                        }`}
+                          ? "border-[#E65959]"
+                          : "border-[#C2CAD6]"
+                          }`}
                         name="number"
                         value={cardDetails.number}
                         onChange={handleCardFieldChange}
@@ -531,12 +530,11 @@ export default function SightseeingBookingPaymentSection({
                     <TailwindCustomInput
                       type="text"
                       placeholder="MM/YY"
-                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
-                        hasAttemptedValidation &&
+                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation &&
                         validationErrors["card.expiry"]
-                          ? "border-[#E65959]"
-                          : "border-[#C2CAD6]"
-                      }`}
+                        ? "border-[#E65959]"
+                        : "border-[#C2CAD6]"
+                        }`}
                       name="expiry"
                       value={cardDetails.expiryDisplay}
                       onChange={handleCardFieldChange}
@@ -549,12 +547,11 @@ export default function SightseeingBookingPaymentSection({
                     <TailwindCustomInput
                       type="text"
                       placeholder="000"
-                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
-                        hasAttemptedValidation &&
+                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation &&
                         validationErrors["card.cvv"]
-                          ? "border-[#E65959]"
-                          : "border-[#C2CAD6]"
-                      }`}
+                        ? "border-[#E65959]"
+                        : "border-[#C2CAD6]"
+                        }`}
                       name="cvv"
                       value={cardDetails.cvv}
                       onChange={handleCardFieldChange}
@@ -568,12 +565,11 @@ export default function SightseeingBookingPaymentSection({
                   <TailwindCustomInput
                     type="text"
                     placeholder="Enter cardholder name"
-                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
-                      hasAttemptedValidation &&
+                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation &&
                       validationErrors["card.holderName"]
-                        ? "border-[#E65959]"
-                        : "border-[#C2CAD6]"
-                    }`}
+                      ? "border-[#E65959]"
+                      : "border-[#C2CAD6]"
+                      }`}
                     label="Cardholder name"
                     name="holderName"
                     value={cardDetails.holderName}
@@ -598,17 +594,17 @@ export default function SightseeingBookingPaymentSection({
           </div>
         )}
 
-        <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} />
+        <HotelPriceBreakdown open={openPrice}
+          onToggleOpen={() => setOpenPrice((v) => !v)} totalPrice={totalPrice} currency={currency} />
 
         <div className="mt-16 flex flex-col items-center">
           <Button
             type="button"
             overrideClasses
-            className={`flex h-[48px] min-w-[200px] items-center justify-center gap-3 rounded-[100px] px-8 py-[14px] text-[15px] font-semibold text-white transition-all duration-200 ${
-              isPayButtonLoading
-                ? "cursor-not-allowed opacity-95"
-                : "hover:opacity-95 active:opacity-90"
-            }`}
+            className={`flex h-[48px] min-w-[200px] items-center justify-center gap-3 rounded-[100px] px-8 py-[14px] text-[15px] font-semibold text-white transition-all duration-200 ${isPayButtonLoading
+              ? "cursor-not-allowed opacity-95"
+              : "hover:opacity-95 active:opacity-90"
+              }`}
             style={{
               background:
                 "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",

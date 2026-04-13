@@ -24,7 +24,7 @@ import {
 import { useFlightInitialBooking } from "../../hooks/useFlightBooking";
 import toast from "react-hot-toast";
 import {
-  validatePassengersForFlightProvisionalBooking,
+  // validatePassengersForFlightProvisionalBooking,
   validatePassengersForFlightProvisionalBookingFields,
 } from "../../utils/flightBookingHelper";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";

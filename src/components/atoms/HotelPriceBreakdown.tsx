@@ -150,7 +150,7 @@ export default function HotelPriceBreakdown({
 
                 {aggregatedTaxes.length > 0 && roomLines.length > 1 && (
                   <div className="mt-4">
-                  {/* <div className="mt-4 border-t border-[#E4E4E7] pt-3"> */}
+                    {/* <div className="mt-4 border-t border-[#E4E4E7] pt-3"> */}
                     <div className="text-[14px] font-semibold text-[#0A0C0F]">
                       Taxes & fees (all rooms)
                     </div>
