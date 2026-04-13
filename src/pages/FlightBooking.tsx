@@ -27,11 +27,64 @@ import FlightBookingAnicllarySection from "../components/molecules/FlightBooking
 import AncillaryConfirmationModal from "../components/common/AncillaryConfirmationModal";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import * as RemoteUserService from "../services/api/remoteUserService";
+import { useFlightStore } from "../store/UseFlightStore";
+
+/** BK209: Extract flight search params from offerData for "Change" - prefill search without restarting */
+function buildFlightFromOffer(offerData: any) {
+  if (!offerData?.flightDetail?.raw?.journey) return null;
+  const journeys = Array.isArray(offerData.flightDetail.raw.journey)
+    ? offerData.flightDetail.raw.journey
+    : [];
+  if (journeys.length === 0) return null;
+  const firstJourney = journeys[0];
+  const firstSeg = firstJourney?.flightSegments?.[0];
+  if (!firstSeg) return null;
+  const fromCode = firstSeg.departureAirportCode ?? "";
+  const toCode = firstSeg.arrivalAirportCode ?? "";
+  const depDt = firstSeg.departureDateTime;
+  const departure = depDt
+    ? `${String(new Date(depDt).getFullYear())}-${String(new Date(depDt).getMonth() + 1).padStart(2, "0")}-${String(new Date(depDt).getDate()).padStart(2, "0")}`
+    : "";
+  let arrival = "";
+  if (journeys.length >= 2) {
+    const retSeg = journeys[1]?.flightSegments?.[0];
+    if (retSeg?.departureDateTime) {
+      const d = new Date(retSeg.departureDateTime);
+      arrival = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+  }
+  const trip = journeys.length >= 2 ? "roundtrip" : "oneway";
+  const cabinClass = firstSeg.cabinClass ?? "Economy";
+  const cabinMap: Record<string, string> = {
+    Economy: "1",
+    PremiumEconomy: "2",
+    Business: "3",
+    First: "4",
+  };
+  const selectedCabinClassId = cabinMap[cabinClass] ?? "1";
+  const fromOption = fromCode
+    ? { id: fromCode, label: fromCode, code: fromCode, city: fromCode, country: "" }
+    : null;
+  const toOption = toCode
+    ? { id: toCode, label: toCode, code: toCode, city: toCode, country: "" }
+    : null;
+  return {
+    fromCode,
+    toCode,
+    fromOption,
+    toOption,
+    departure: departure || null,
+    arrival: arrival || null,
+    trip,
+    selectedCabinClassId,
+  };
+}
 
 const FlightBooking = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { setFlight } = useFlightStore();
   const hasPrefilledRef = useRef(false);
   const initialOfferData =
     (location.state && (location.state as any)) ||
@@ -133,7 +186,7 @@ const FlightBooking = () => {
       passengers,
       reservationType: "TICKET",
       paymentDetails: {
-        paymentMode: "CR",
+        paymentMode: "CC",
       },
     };
   });
@@ -170,7 +223,7 @@ const FlightBooking = () => {
         },
         passengers: flightBookingPayload?.passengers,
         paymentDetails: {
-          paymentMode: "CR",
+          paymentMode: "CC",
           transactionAmount: null,
           // cardInfo: "U2FsdGVkX1+aBcdefghijklmnoPQRS+tuvwxYZ1234==",
           cardInfo: "",
@@ -421,6 +474,15 @@ const FlightBooking = () => {
     });
   };
 
+  /** BK209: Change flight - prefill search with current route/dates for modification without full restart */
+  const handleChangeFlight = () => {
+    const flight = buildFlightFromOffer(offerData);
+    if (flight) {
+      setFlight(flight as any);
+    }
+    navigate("/search_flight");
+  };
+
   const flightAncillarySearch = async (offerId: string) => {
     if (!offerId) return;
     try {
@@ -430,6 +492,7 @@ const FlightBooking = () => {
         otherAncillaryRequested: true,
         formOfPayment: "CR",
         travelType: "P",
+        searchKey: offerData?.searchKey,
       });
       const ancillarySearch = response?.data?.[0] ?? null;
       setAncillarySearchData(ancillarySearch);
@@ -644,7 +707,7 @@ const FlightBooking = () => {
                 }
               }}
               onUpdateFlightRaw={handleUpdateFlightRawDetails}
-              // flightAncillarySearch={ancillarySearchData}
+              onChangeFlight={handleChangeFlight}
             />
           )}
           {currentStep === enhanceStepIndex &&
@@ -656,6 +719,8 @@ const FlightBooking = () => {
                 flightAncillarySearch={ancillarySearchData}
                 onNext={() => setCurrentStep(2)}
                 offerId={offerData?.offerId}
+                searchKey={offerData?.searchKey}
+                onChangeFlight={handleChangeFlight}
               />
             )}
           {currentStep === reviewStepIndex && (
@@ -663,20 +728,10 @@ const FlightBooking = () => {
               trip={offerData.flightDetail}
               fareBookingSearchRules={fareBookingSearchRules}
               flightBookingPayload={flightBookingPayload}
-              // cities={cityOptions}
               countries={countriesOptions}
               onNext={() => setCurrentStep(enhanceAvailable ? 3 : 2)}
-              // onNext={() => setCurrentStep(3)}
-              onPrevious={() => {
-                setCurrentStep(0);
-                setOfferData(initialOfferData);
-                setFlightBookingPayload((prev) => ({
-                  ...prev,
-                  offerId: initialOfferData.offerId ?? prev.offerId,
-                  journey:
-                    initialOfferData.flightDetail?.raw?.journey ?? prev.journey,
-                }));
-              }}
+              onEditDetails={() => setCurrentStep(0)}
+              onChangeFlight={handleChangeFlight}
             />
           )}
           {currentStep === payStepIndex && (

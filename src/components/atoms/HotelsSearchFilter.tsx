@@ -2,7 +2,10 @@ import React, { useState, useCallback } from "react";
 import { Collapse, Checkbox, Input } from "antd";
 import CustomCollapse from "../common/CustomCollapse";
 import type { HotelFilters, SortOption } from "../../utils/hotelFilters";
-import { getActiveFilterCount } from "../../utils/hotelFilters";
+import {
+  getActiveFilterCount,
+  PROPERTY_TYPE_MAPPINGS,
+} from "../../utils/hotelFilters";
 
 const { Panel } = Collapse;
 
@@ -11,8 +14,57 @@ export type HotelsSearchFilterProps = {
   onFiltersChange: (filters: HotelFilters) => void;
   sortOption: SortOption;
   onSortChange: (sort: SortOption) => void;
-  hotels?: any[]; // Hotel data to extract dynamic filters
+  hotels?: any[];
 };
+
+const CountBadge: React.FC<{ count: number }> = ({ count }) => (
+  <span
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minWidth: "36px",
+      height: "22px",
+      borderRadius: "20px",
+      backgroundColor: "#F0F2F5",
+      color: "#3D495C",
+      fontFamily: "Inter, sans-serif",
+      fontSize: "12px",
+      fontWeight: 500,
+      lineHeight: "100%",
+      padding: "0 8px",
+      flexShrink: 0,
+    }}
+  >
+    {count.toLocaleString()}
+  </span>
+);
+
+const FilterCheckboxRow: React.FC<{
+  label: string;
+  count?: number;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}> = ({ label, count, checked, onChange }) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: "8px",
+    }}
+  >
+    <Checkbox
+      className="baggageCheckbox"
+      checked={checked}
+      onChange={(e) => onChange(e.target.checked)}
+      style={{ flex: 1, minWidth: 0 }}
+    >
+      {label}
+    </Checkbox>
+    {count !== undefined && count > 0 && <CountBadge count={count} />}
+  </div>
+);
 
 const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
   filters,
@@ -22,27 +74,48 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
   hotels = [],
 }) => {
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [pointOfInterest, setPointOfInterest] = useState("");
 
   const activeFilterCount = getActiveFilterCount(filters);
 
-  // Extract unique facilities from hotels data
-  const { propertyFacilities, roomFacilities, meals } = React.useMemo(() => {
+  const {
+    propertyFacilities,
+    roomFacilities,
+    meals,
+    propertyTypes,
+    cancellationPolicies,
+  } = React.useMemo(() => {
     const propertyFacSet = new Set<string>();
     const roomFacSet = new Set<string>();
     const mealsSet = new Set<string>();
 
+    const propertyFacCountMap: Record<string, number> = {};
+    const roomFacCountMap: Record<string, number> = {};
+    const mealCountMap: Record<string, number> = {};
+    const propertyTypeCountMap: Record<string, number> = {};
+    const cancellationCountMap: Record<string, number> = {};
+
     hotels.forEach((hotel) => {
-      // Property facilities
+      const rawCode = (hotel?.propertyInfo?.propertyType || "")
+        .trim()
+        .toUpperCase();
+
+      if (rawCode) {
+        const readableLabel = PROPERTY_TYPE_MAPPINGS[rawCode] || rawCode;
+        propertyTypeCountMap[readableLabel] =
+          (propertyTypeCountMap[readableLabel] ?? 0) + 1;
+      }
+
       if (hotel?.propertyInfo?.facilities) {
         hotel.propertyInfo.facilities.forEach((facility: any) => {
           const name = facility?.name || facility;
           if (name && typeof name === "string") {
             propertyFacSet.add(name);
+            propertyFacCountMap[name] = (propertyFacCountMap[name] ?? 0) + 1;
           }
         });
       }
 
-      // Room facilities
       if (hotel?.rooms) {
         hotel.rooms.forEach((room: any) => {
           if (room?.roomFacilities) {
@@ -50,38 +123,82 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               const name = facility?.name || facility;
               if (name && typeof name === "string") {
                 roomFacSet.add(name);
+                roomFacCountMap[name] = (roomFacCountMap[name] ?? 0) + 1;
               }
             });
           }
 
-          // Meals
           if (room?.ratePlan?.meal) {
             const meal = room.ratePlan.meal.trim();
             if (meal) {
-              // Convert to title case (first letter uppercase, rest lowercase)
               const normalizedMeal = meal
                 .toLowerCase()
                 .split(" ")
                 .map(
-                  (word: string) => word.charAt(0).toUpperCase() + word.slice(1)
+                  (word: string) =>
+                    word.charAt(0).toUpperCase() + word.slice(1)
                 )
                 .join(" ");
+
               mealsSet.add(normalizedMeal);
+              mealCountMap[normalizedMeal] =
+                (mealCountMap[normalizedMeal] ?? 0) + 1;
+            }
+          }
+
+          const rawPolicy = (
+            room?.ratePlan?.cancellationPolicy ||
+            room?.ratePlan?.cancelPolicyIndicator ||
+            room?.rateNotes ||
+            ""
+          ).trim();
+
+          if (rawPolicy) {
+            const lc = rawPolicy.toLowerCase();
+            let normalizedPolicy = "";
+
+            if (
+              lc.includes("free cancellation") ||
+              (lc.includes("refundable") && !lc.includes("non-refundable"))
+            ) {
+              normalizedPolicy = "Free cancellation";
+            } else if (
+              lc.includes("non-refundable") ||
+              lc.includes("non refundable") ||
+              lc.includes("no refund")
+            ) {
+              normalizedPolicy = "Non-refundable";
+            }
+
+            if (normalizedPolicy) {
+              cancellationCountMap[normalizedPolicy] =
+                (cancellationCountMap[normalizedPolicy] ?? 0) + 1;
             }
           }
         });
       }
     });
 
-    // Remove duplicates between property and room facilities
     const roomFacilitiesArray = Array.from(roomFacSet).filter(
-      (facility) => !propertyFacSet.has(facility)
+      (f) => !propertyFacSet.has(f)
     );
 
     return {
-      propertyFacilities: Array.from(propertyFacSet).sort(),
-      roomFacilities: roomFacilitiesArray.sort(),
-      meals: Array.from(mealsSet).sort(),
+      propertyFacilities: Array.from(propertyFacSet)
+        .sort()
+        .map((name) => ({ name, count: propertyFacCountMap[name] ?? 0 })),
+      roomFacilities: roomFacilitiesArray
+        .sort()
+        .map((name) => ({ name, count: roomFacCountMap[name] ?? 0 })),
+      meals: Array.from(mealsSet)
+        .sort()
+        .map((name) => ({ name, count: mealCountMap[name] ?? 0 })),
+      propertyTypes: Object.entries(propertyTypeCountMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([name, count]) => ({ name, count })),
+      cancellationPolicies: Object.entries(cancellationCountMap)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([name, count]) => ({ name, count })),
     };
   }, [hotels]);
 
@@ -98,22 +215,18 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       } else if (filterType === "ratings") {
         const currentArray = newFilters.ratings;
         if (isChecked !== undefined) {
-          if (isChecked) {
-            newFilters.ratings = [...currentArray, value as number];
-          } else {
-            newFilters.ratings = currentArray.filter((item) => item !== value);
-          }
+          newFilters.ratings = isChecked
+            ? [...currentArray, value as number]
+            : currentArray.filter((item) => item !== value);
         }
       } else {
         const currentArray = newFilters[filterType] as string[];
         if (isChecked !== undefined) {
-          if (isChecked) {
-            newFilters[filterType] = [...currentArray, value as string] as any;
-          } else {
-            newFilters[filterType] = currentArray.filter(
-              (item) => item !== value
-            ) as any;
-          }
+          newFilters[filterType] = (
+            isChecked
+              ? [...currentArray, value as string]
+              : currentArray.filter((item) => item !== value)
+          ) as any;
         }
       }
 
@@ -133,6 +246,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       meals: [],
       cancellationPolicy: [],
     });
+    setPointOfInterest("");
   }, [onFiltersChange]);
 
   const sortOptions = [
@@ -147,37 +261,52 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       label: "Property rating (low to high)",
       value: "rating_low" as SortOption,
     },
-    // { label: "Top picks for families", value: "top_picks" },
-    // { label: "Homes & apartments first", value: "homes_first" },
-    // { label: "Best reviewed & lowest price", value: "best_reviewed" },
-    // { label: "Property rating & price", value: "rating_price" },
-    // { label: "Distance from downtown", value: "distance" },
-    // { label: "Top reviewed", value: "top_reviewed" },
-    // { label: "Discounts first", value: "discounts" },
-    // { label: "Closest to the beach", value: "beach" },
   ];
 
   const selectedLabel =
     sortOptions.find((opt) => opt.value === sortOption)?.label ||
     "Please Select";
+
   return (
     <div className="filterSectionStyle">
       <div className="relative">
         <button
           onClick={() => setIsSortOpen(!isSortOpen)}
-          className="w-full bg-white rounded-2xl border border-[#E7EEF7] px-4 py-3 text-left"
+          className="w-full bg-white text-left flex flex-col justify-center"
+          style={{
+            height: "70px",
+            borderRadius: "16px",
+            border: "1px solid #C2CAD6",
+            padding: "12px 16px",
+          }}
         >
-          <div style={{ fontSize: 12, fontWeight: 400, color: "#3D495C" }}>
+          <div
+            style={{
+              fontFamily: "Inter, sans-serif",
+              fontSize: "12px",
+              fontWeight: 400,
+              color: "#3D495C",
+              lineHeight: "100%",
+              marginBottom: "6px",
+            }}
+          >
             Sort by
           </div>
-          <div className="flex items-center justify-between mt-1">
-            <span style={{ fontSize: 14, fontWeight: 500, color: "#0A0C0F" }}>
+          <div className="flex items-center justify-between">
+            <span
+              style={{
+                fontFamily: "Inter, sans-serif",
+                fontSize: "14px",
+                fontWeight: 500,
+                color: "#0A0C0F",
+                lineHeight: "100%",
+              }}
+            >
               {selectedLabel}
             </span>
             <svg
-              className={`w-5 h-5 transition-transform ${
-                isSortOpen ? "rotate-180" : ""
-              }`}
+              className={`w-5 h-5 transition-transform flex-shrink-0 ${isSortOpen ? "rotate-180" : ""
+                }`}
               fill="none"
               stroke="#3D495C"
               viewBox="0 0 24 24"
@@ -192,31 +321,25 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           </div>
         </button>
 
-        {/* Dropdown Menu */}
         {isSortOpen && (
           <div className="absolute top-full left-0 right-0 mt-2 bg-[#F2F2F3] rounded-2xl border border-[#F2F2F3] shadow-lg z-10 overflow-hidden">
             {sortOptions.map((option, index) => (
               <div
                 key={option.value}
                 onClick={() => {
-                  // if (option.value) {
                   onSortChange(option.value);
-                  // }
                   setIsSortOpen(false);
                 }}
-                className={`px-4 py-3 cursor-pointer flex items-center justify-between ${
-                  index !== sortOptions.length - 1
+                className={`px-4 py-3 cursor-pointer flex items-center justify-between ${index !== sortOptions.length - 1
                     ? "border-b border-[#E4E4E7]"
                     : ""
-                }`}
+                  }`}
               >
                 <span
                   style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 400 }}
                 >
                   {option.label}
                 </span>
-
-                {/* Tick Icon */}
                 {sortOption === option.value && (
                   <svg
                     width="16"
@@ -237,15 +360,13 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         )}
       </div>
 
-      <div className="filterStyle max-h-[calc(100vh-50vh)] overflow-y-auto overflow-x-hidden scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <div className="filterStyle max-h-[calc(100vh-40vh)] overflow-y-auto overflow-x-hidden scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="filterHeading">
           <div>
             <h4>
               Filters
               <span className="smallDot">•</span>
-              <span className="lightActiveText">
-                {activeFilterCount} Active
-              </span>
+              <span className="lightActiveText">{activeFilterCount} Active</span>
             </h4>
           </div>
           <div className="resetAllBtn">
@@ -264,26 +385,94 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         <CustomCollapse>
           <Panel header="Hotel name" key="hotel_name">
             <Input
+              allowClear={{
+                clearIcon: (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: "#D9DEE7",
+                      color: "#3D495C",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </span>
+                ),
+              }}
               placeholder="Search for a hotel"
               value={filters.hotelName}
               onChange={(e) => handleFilterChange("hotelName", e.target.value)}
-              className="w-full border border-[#C2CAD6] focus:outline-none focus:ring-0 focus:border-[#C2CAD6]"
+              style={{
+                height: "50px",
+                borderRadius: "16px",
+                border: "1px solid #C2CAD6",
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 500,
+                fontSize: "16px",
+                color: "#0A0C0F",
+                width: "100%",
+                paddingLeft: "16px",
+                boxShadow: "none",
+              }}
             />
           </Panel>
         </CustomCollapse>
 
-        {/* <CustomCollapse>
-          <Panel header="Point of interest" key="point_intereset">
+        <CustomCollapse>
+          <Panel header="Point of interest" key="point_interest">
             <Input
+              allowClear={{
+                clearIcon: (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 20,
+                      height: 20,
+                      borderRadius: "50%",
+                      background: "#D9DEE7",
+                      color: "#3D495C",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      lineHeight: 1,
+                    }}
+                  >
+                    ×
+                  </span>
+                ),
+              }}
               placeholder="Enter a location"
-              className="w-full border border-[#C2CAD6] focus:outline-none focus:ring-0 focus:border-[#C2CAD6]"
+              value={pointOfInterest}
+              onChange={(e) => setPointOfInterest(e.target.value)}
+              style={{
+                height: "50px",
+                borderRadius: "16px",
+                border: "1px solid #C2CAD6",
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 500,
+                fontSize: "16px",
+                color: "#0A0C0F",
+                width: "100%",
+                paddingLeft: "16px",
+                boxShadow: "none",
+              }}
             />
           </Panel>
-        </CustomCollapse> */}
+        </CustomCollapse>
 
-        {/* <CustomCollapse>
+        <CustomCollapse>
           <Panel header="Previously used filters" key="previously">
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-[10px]">
               <Checkbox className="baggageCheckbox">Top reviewed</Checkbox>
               <Checkbox className="baggageCheckbox">Discounts first</Checkbox>
               <Checkbox className="baggageCheckbox">
@@ -291,122 +480,42 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               </Checkbox>
             </div>
           </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Popular filters" key="popular">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">5 stars</Checkbox>
-              <Checkbox className="baggageCheckbox">Vacation homes</Checkbox>
-              <Checkbox className="baggageCheckbox">Spa</Checkbox>
-              <Checkbox className="baggageCheckbox">Guesthouses</Checkbox>
-              <Checkbox className="baggageCheckbox">Villas</Checkbox>
-              <Checkbox className="baggageCheckbox">Restaurants</Checkbox>
-              <Checkbox className="baggageCheckbox">Hotels</Checkbox>
-              <Checkbox className="baggageCheckbox">Air conditioning</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
-
-        <CustomCollapse>
-          <Panel header="Property type" key="property">
-            <div className="flex flex-col gap-2">
-              <Checkbox
-                className="baggageCheckbox"
-                checked={filters.propertyTypes.includes("Hotels")}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "propertyTypes",
-                    "Hotels",
-                    e.target.checked
-                  )
-                }
-              >
-                Hotels
-              </Checkbox>
-              <Checkbox
-                className="baggageCheckbox"
-                checked={filters.propertyTypes.includes("Pension/Property")}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "propertyTypes",
-                    "Pension/Property",
-                    e.target.checked
-                  )
-                }
-              >
-                Pension/Property
-              </Checkbox>
-              {/* {[
-                "Apartments",
-                "Guesthouses",
-                "Vacation homes",
-                "Villas",
-                "Bed and breakfasts",
-                "Hostels",
-                "Farm stays",
-                "Campgrounds",
-                "Resorts",
-                "Resort Villages",
-                "Capsule Hotels",
-                "Motels",
-                "Lodges",
-                "Country Houses",
-                "Love Hotels",
-              ].map((type) => (
-                <Checkbox
-                  key={type}
-                  className="baggageCheckbox"
-                  checked={filters.propertyTypes.includes(type)}
-                  onChange={(e) =>
-                    handleFilterChange("propertyTypes", type, e.target.checked)
-                  }
-                >
-                  {type}
-                </Checkbox>
-              ))} */}
-            </div>
-          </Panel>
         </CustomCollapse>
 
-        <CustomCollapse>
-          <Panel header="Rating" key="rating">
-            <div className="flex flex-col gap-2">
-              {[7, 6, 5, 4, 3, 2, 1].map((rating) => (
-                <Checkbox
-                  key={rating}
-                  className="baggageCheckbox"
-                  checked={filters.ratings.includes(rating)}
-                  onChange={(e) =>
-                    handleFilterChange("ratings", rating, e.target.checked)
-                  }
-                >
-                  {rating} {rating === 1 ? "Star" : "Stars"}
-                </Checkbox>
-              ))}
-            </div>
-          </Panel>
-        </CustomCollapse>
+        {propertyTypes.length > 0 && (
+          <CustomCollapse>
+            <Panel header="Property type" key="property">
+              <div className="flex flex-col gap-2">
+                {propertyTypes.map(({ name, count }) => (
+                  <FilterCheckboxRow
+                    key={name}
+                    label={name}
+                    count={count}
+                    checked={filters.propertyTypes.includes(name)}
+                    onChange={(checked) =>
+                      handleFilterChange("propertyTypes", name, checked)
+                    }
+                  />
+                ))}
+              </div>
+            </Panel>
+          </CustomCollapse>
+        )}
 
         {propertyFacilities.length > 0 && (
           <CustomCollapse>
             <Panel header="Property facilities" key="facilities">
               <div className="flex flex-col gap-2">
-                {propertyFacilities.map((facility) => (
-                  <Checkbox
-                    key={facility}
-                    className="baggageCheckbox"
-                    checked={filters.propertyFacilities.includes(facility)}
-                    onChange={(e) =>
-                      handleFilterChange(
-                        "propertyFacilities",
-                        facility,
-                        e.target.checked
-                      )
+                {propertyFacilities.map(({ name, count }) => (
+                  <FilterCheckboxRow
+                    key={name}
+                    label={name}
+                    count={count}
+                    checked={filters.propertyFacilities.includes(name)}
+                    onChange={(checked) =>
+                      handleFilterChange("propertyFacilities", name, checked)
                     }
-                  >
-                    {facility}
-                  </Checkbox>
+                  />
                 ))}
               </div>
             </Panel>
@@ -415,264 +524,63 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
 
         {roomFacilities.length > 0 && (
           <CustomCollapse>
-            <Panel header="Room facilities " key="room_facilities">
+            <Panel header="Room facilities" key="room_facilities">
               <div className="flex flex-col gap-2">
-                {roomFacilities.map((facility) => (
-                  <Checkbox
-                    key={facility}
-                    className="baggageCheckbox"
-                    checked={filters.roomFacilities.includes(facility)}
-                    onChange={(e) =>
-                      handleFilterChange(
-                        "roomFacilities",
-                        facility,
-                        e.target.checked
-                      )
+                {roomFacilities.map(({ name, count }) => (
+                  <FilterCheckboxRow
+                    key={name}
+                    label={name}
+                    count={count}
+                    checked={filters.roomFacilities.includes(name)}
+                    onChange={(checked) =>
+                      handleFilterChange("roomFacilities", name, checked)
                     }
-                  >
-                    {facility}
-                  </Checkbox>
+                  />
                 ))}
               </div>
             </Panel>
           </CustomCollapse>
         )}
-
-        {/* <CustomCollapse>
-          <Panel header="Neighborhood " key="neighborhood">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">Gulberg</Checkbox>
-              <Checkbox className="baggageCheckbox">Johar Town</Checkbox>
-              <Checkbox className="baggageCheckbox">M.M. Alam Road</Checkbox>
-              <Checkbox className="baggageCheckbox">Model Town</Checkbox>
-              <Checkbox className="baggageCheckbox">Mall Road</Checkbox>
-              <Checkbox className="baggageCheckbox">Township</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Review score " key="review_score">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">Wonderful: 9+</Checkbox>
-              <Checkbox className="baggageCheckbox">Very good: 8+</Checkbox>
-              <Checkbox className="baggageCheckbox">Good: 7+</Checkbox>
-              <Checkbox className="baggageCheckbox">Pleasant: 6+</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Fun things to do" key="fun">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">Playground</Checkbox>
-              <Checkbox className="baggageCheckbox">Fitness</Checkbox>
-              <Checkbox className="baggageCheckbox">Tennis equipment</Checkbox>
-              <Checkbox className="baggageCheckbox">Themed dinners</Checkbox>
-              <Checkbox className="baggageCheckbox">Movie nights</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Distance from the city center" key="distance">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">{"< 1 km"}</Checkbox>
-              <Checkbox className="baggageCheckbox">{"< 3 km"}</Checkbox>
-              <Checkbox className="baggageCheckbox">{"< 5 km"}</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Travel group" key="travel">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">Pet friendly</Checkbox>
-              <Checkbox className="baggageCheckbox">Adults only</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Landmarks" key="landmarks">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">Badshahi Mosque</Checkbox>
-              <Checkbox className="baggageCheckbox">Lahore Fort</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Highly rated features" key="features">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">
-                Very good breakfast
-              </Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
-
-        {/* <CustomCollapse>
-          <Panel header="Bed preferences" key="bed">
-            <div className="flex flex-col gap-2">
-              {["Twin beds", "Double bed"].map((preference) => (
-                <Checkbox
-                  key={preference}
-                  className="baggageCheckbox"
-                  checked={filters.bedPreferences.includes(preference)}
-                  onChange={(e) =>
-                    handleFilterChange(
-                      "bedPreferences",
-                      preference,
-                      e.target.checked
-                    )
-                  }
-                >
-                  {preference}
-                </Checkbox>
-              ))}
-            </div>
-          </Panel>
-        </CustomCollapse> */}
 
         {meals.length > 0 && (
           <CustomCollapse>
             <Panel header="Meals" key="meals">
               <div className="flex flex-col gap-2">
-                {meals.map((meal) => (
-                  <Checkbox
-                    key={meal}
-                    className="baggageCheckbox"
-                    checked={filters.meals.includes(meal)}
-                    onChange={(e) =>
-                      handleFilterChange("meals", meal, e.target.checked)
+                {meals.map(({ name, count }) => (
+                  <FilterCheckboxRow
+                    key={name}
+                    label={name}
+                    count={count}
+                    checked={filters.meals.includes(name)}
+                    onChange={(checked) =>
+                      handleFilterChange("meals", name, checked)
                     }
-                  >
-                    {meal}
-                  </Checkbox>
+                  />
                 ))}
               </div>
             </Panel>
           </CustomCollapse>
         )}
 
-        <CustomCollapse>
-          <Panel header="Cancellation policy" key="cancellation">
-            <div className="flex flex-col gap-2">
-              <Checkbox
-                className="baggageCheckbox"
-                checked={filters.cancellationPolicy.includes(
-                  "Free cancellation"
-                )}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "cancellationPolicy",
-                    "Free cancellation",
-                    e.target.checked
-                  )
-                }
-              >
-                Free cancellation
-              </Checkbox>
-              <Checkbox
-                className="baggageCheckbox"
-                checked={filters.cancellationPolicy.includes("Non-refundable")}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "cancellationPolicy",
-                    "Non-refundable",
-                    e.target.checked
-                  )
-                }
-              >
-                Non-refundable
-              </Checkbox>
-              {/* <Checkbox
-                className="baggageCheckbox"
-                checked={filters.cancellationPolicy.includes(
-                  "Book without credit card"
-                )}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "cancellationPolicy",
-                    "Book without credit card",
-                    e.target.checked
-                  )
-                }
-              >
-                Book without credit card
-              </Checkbox> */}
-              {/* <Checkbox
-                className="baggageCheckbox"
-                checked={filters.cancellationPolicy.includes("No prepayment")}
-                onChange={(e) =>
-                  handleFilterChange(
-                    "cancellationPolicy",
-                    "No prepayment",
-                    e.target.checked
-                  )
-                }
-              >
-                No prepayment
-              </Checkbox> */}
-            </div>
-          </Panel>
-        </CustomCollapse>
-        {/* 
-        <CustomCollapse>
-          <Panel header="Brands" key="brands">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">Ramada</Checkbox>
-              <Checkbox className="baggageCheckbox">
-                Best Western Premier
-              </Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse>
-
-        <CustomCollapse>
-          <Panel header="Property accessibility" key="accessibility">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">
-                Toilet with grab rails
-              </Checkbox>
-              <Checkbox className="baggageCheckbox">Raised toilet</Checkbox>
-              <Checkbox className="baggageCheckbox">Lowered sink</Checkbox>
-              <Checkbox className="baggageCheckbox">
-                Bathroom emergency cord
-              </Checkbox>
-              <Checkbox className="baggageCheckbox">
-                Visual aids (Braille)
-              </Checkbox>
-              <Checkbox className="baggageCheckbox">
-                Visual aids (tactile signs)
-              </Checkbox>
-              <Checkbox className="baggageCheckbox">Auditory guidance</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse>
-
-        <CustomCollapse>
-          <Panel header="Room accessibility" key="room_accessibility">
-            <div className="flex flex-col gap-2">
-              <Checkbox className="baggageCheckbox">
-                Entire unit on ground floor
-              </Checkbox>
-              <Checkbox className="baggageCheckbox">Elevators</Checkbox>
-              <Checkbox className="baggageCheckbox">
-                Wheelchair accessible
-              </Checkbox>
-              <Checkbox className="baggageCheckbox">
-                Toilet with grab rails
-              </Checkbox>
-              <Checkbox className="baggageCheckbox">Adapted bath</Checkbox>
-              <Checkbox className="baggageCheckbox">Roll-in shower</Checkbox>
-              <Checkbox className="baggageCheckbox">Walk-in shower</Checkbox>
-              <Checkbox className="baggageCheckbox">Raised toilet</Checkbox>
-              <Checkbox className="baggageCheckbox">Lower sink</Checkbox>
-            </div>
-          </Panel>
-        </CustomCollapse> */}
+        {cancellationPolicies.length > 0 && (
+          <CustomCollapse>
+            <Panel header="Cancellation policy" key="cancellation">
+              <div className="flex flex-col gap-2">
+                {cancellationPolicies.map(({ name, count }) => (
+                  <FilterCheckboxRow
+                    key={name}
+                    label={name}
+                    count={count}
+                    checked={filters.cancellationPolicy.includes(name)}
+                    onChange={(checked) =>
+                      handleFilterChange("cancellationPolicy", name, checked)
+                    }
+                  />
+                ))}
+              </div>
+            </Panel>
+          </CustomCollapse>
+        )}
       </div>
     </div>
   );

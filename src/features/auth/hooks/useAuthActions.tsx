@@ -501,6 +501,8 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       StorageService.clearAuth();
       // Clear token(s)
       TokenService.clearToken();
+      // Set logout timestamp to trigger cross-tab logout
+      StorageService.setLogoutTimestamp();
 
       // Create new guest user after logout
       resetAuthCheckCompleted(); // Allow re-initialization
@@ -518,6 +520,8 @@ export const useAuthActions = (state: AuthState, actions: AuthActions) => {
       StorageService.clearAuth();
       // Clear token even on error
       TokenService.clearToken();
+      // Set logout timestamp even on error to trigger cross-tab logout
+      StorageService.setLogoutTimestamp();
       // Try to create guest user even if logout had errors
       try {
         await initializeGuestUser();

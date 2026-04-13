@@ -24,6 +24,8 @@ export const useAuth = () => {
       setInitializationComplete: authState.setInitializationComplete,
       markAuthCheckCompleted: authState.markAuthCheckCompleted,
       initializeGuestUser: guestUserManager.initializeGuestUser,
+      resetAuthState: authState.resetAuthState,
+      resetAuthCheckCompleted: authState.resetAuthCheckCompleted,
     }
   );
 
@@ -90,6 +92,7 @@ export const useAuth = () => {
     signOut: authActions.signOut,
     refreshAuth: authActions.refreshAuth,
     clearError: authState.clearError,
+    resetAuthState: authState.resetAuthState,
 
     // Password recovery actions
     forgotPassword: passwordRecovery.forgotPassword,

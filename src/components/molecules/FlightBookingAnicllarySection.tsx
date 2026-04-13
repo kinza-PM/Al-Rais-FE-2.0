@@ -25,7 +25,6 @@ import {
 } from "../../utils/flightBookingHelper";
 import LoginModal from "../common/LoginModal";
 import { useAuth } from "../../features/auth/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import {
   useAncillaryStore,
   type AllSelections,
@@ -44,6 +43,8 @@ type FlightBookingAnicllarySectionProps = {
   flightAncillarySearch?: any;
   onNext?: () => void;
   offerId?: string;
+  searchKey?: string;
+  onChangeFlight?: () => void;
 };
 
 export default function FlightBookingAnicllarySection({
@@ -52,10 +53,11 @@ export default function FlightBookingAnicllarySection({
   flightAncillarySearch,
   onNext,
   offerId,
+  searchKey,
+  onChangeFlight,
 }: FlightBookingAnicllarySectionProps) {
   const { isAuthenticated } = useAuth();
   const { getAllSelections, clearAll } = useAncillaryStore();
-  const navigate = useNavigate();
   const [openPrice, setOpenPrice] = useState(false);
   const [openBaggage, setOpenBaggage] = useState(true);
   const [openSeats, setOpenSeats] = useState(true);
@@ -89,7 +91,9 @@ export default function FlightBookingAnicllarySection({
     value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
     changeText: "Change",
     onChangeClick: () => {
-      navigate("/search_flight");
+      if (typeof onChangeFlight === "function") {
+        onChangeFlight();
+      }
     },
   };
 
@@ -99,7 +103,7 @@ export default function FlightBookingAnicllarySection({
 
   const handleFlightAncillaryProvBooking = async () => {
     const all = getAllSelections() as AllSelections;
-    const payload = buildAncillaryPayload(all, offerId);
+    const payload = buildAncillaryPayload(all, offerId, searchKey);
 
     try {
       const response = await mutateAsync(payload);

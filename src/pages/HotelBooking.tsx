@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "../components";
 import HotelBookingBookSection from "../components/molecules/HotelBookingBookSection";
@@ -17,6 +17,8 @@ import {
   type HotelBookingPayload,
 } from "../utils/hotelBookingHelper";
 import { useCountriesOptions } from "../hooks/masterListings/listing";
+import * as RemoteUserService from "../services/api/remoteUserService";
+import { AuthService } from "../features/auth/services/authService";
 
 const HotelBooking = () => {
   const location = useLocation();
@@ -50,6 +52,13 @@ const HotelBooking = () => {
 
   const { mutateAsync, isPending } = useHotelPreBooking();
   const bookingParams = state.bookingParams ?? hotelFromStore ?? null;
+  const { user } = useAuth(); // isAuthenticated already use ho raha hai, user bhi lo
+  const hasPrefilledRef = useRef(false);
+  const [resolvedUser, setResolvedUser] = useState(user);
+
+  useEffect(() => {
+    if (user) setResolvedUser(user);
+  }, [user]);
 
   // const init = async () => {
   //   if (isAuthenticated) {
@@ -70,7 +79,7 @@ const HotelBooking = () => {
   //         response?.meta?.statusMessage === "SUCCESS"
   //       ) {
   //         setPreBookData(response);
-  //         toast.success("Hotel Pre Booking Successfully.");
+  //         toast.success("Hotel pre-booking successful");
   //       } else {
   //         window.history.back();
   //       }
@@ -227,6 +236,52 @@ const HotelBooking = () => {
     pax,
   ]);
 
+  useEffect(() => {
+    const syncAuthUser = async () => {
+      const currentUser = await AuthService.getCurrentUser();
+      if (currentUser) setResolvedUser(currentUser);
+    };
+
+    const onAuthChanged = () => {
+      void syncAuthUser();
+    };
+
+    window.addEventListener("alrais:auth-changed", onAuthChanged);
+    return () => window.removeEventListener("alrais:auth-changed", onAuthChanged);
+  }, []);
+
+  useEffect(() => {
+    if (!resolvedUser || hasPrefilledRef.current || !hotelBookingPayload) return;
+
+    const fetchAndPrefill = async () => {
+      try {
+        const email = (resolvedUser.email || "").trim().toLowerCase();
+        const phoneNumber = (resolvedUser.phone || "").trim();
+
+        const userDetails =
+          email || phoneNumber
+            ? await RemoteUserService.getByIdentifier({
+              email: email || undefined,
+              phoneNumber: phoneNumber || undefined,
+            })
+            : null;
+
+        if (userDetails) {
+          prefillFirstPassengerFromUserDetail(userDetails);
+        } else {
+          prefillFirstPassengerFromAuthUser(resolvedUser);
+        }
+        hasPrefilledRef.current = true;
+      } catch (error) {
+        console.error("User detail fetch failed:", error);
+        prefillFirstPassengerFromAuthUser(resolvedUser);
+        hasPrefilledRef.current = true;
+      }
+    };
+
+    fetchAndPrefill();
+  }, [resolvedUser, hotelBookingPayload]);
+
   const setNested = (obj: any, path: string, value: any) => {
     const parts = path.split(".");
     let cur = obj;
@@ -248,6 +303,66 @@ const HotelBooking = () => {
     } else {
       cur[last] = value;
     }
+  };
+
+  const prefillFirstPassengerFromUserDetail = (ud: any) => {
+    if (!ud) return;
+
+    const fullName = (ud.name || "").trim();
+    const nameParts = fullName.split(" ").filter(Boolean);
+    const surname = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+    const givenName =
+      nameParts.length > 1
+        ? nameParts.slice(0, -1).join(" ")
+        : nameParts[0] || "";
+
+    const titleMap: Record<string, string> = { MR: "MR", MS: "MS", MRS: "MRS" };
+    const nameTitle = titleMap[(ud.title || "").toUpperCase()] ?? "";
+
+    const genderMap: Record<string, string> = {
+      M: "male",
+      F: "female",
+      MALE: "male",
+      FEMALE: "female",
+    };
+    const gender = (ud.gender && genderMap[(ud.gender || "").toUpperCase()]) ?? "";
+
+    setHotelBookingPayload((prev) => {
+      if (!prev) return prev;
+      const next = JSON.parse(JSON.stringify(prev));
+      if (!next.rooms?.[0]?.passengers?.[0]) return prev;
+
+      next.rooms[0].passengers[0].passengerInfo = {
+        ...next.rooms[0].passengers[0].passengerInfo,
+        nameTitle,
+        givenName,
+        surname,
+        gender,
+      };
+
+      return next;
+    });
+  };
+
+  const prefillFirstPassengerFromAuthUser = (authUser: { name?: string }) => {
+    const fullName = (authUser?.name || "").trim();
+    if (!fullName) return;
+
+    const nameParts = fullName.split(" ").filter(Boolean);
+    const surname = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "";
+    const givenName =
+      nameParts.length > 1 ? nameParts.slice(0, -1).join(" ") : nameParts[0] || "";
+
+    setHotelBookingPayload((prev) => {
+      if (!prev) return prev;
+      const next = JSON.parse(JSON.stringify(prev));
+      const passengerInfo = next.rooms?.[0]?.passengers?.[0]?.passengerInfo;
+      if (!passengerInfo) return prev;
+
+      passengerInfo.givenName = passengerInfo.givenName || givenName;
+      passengerInfo.surname = passengerInfo.surname || surname;
+      return next;
+    });
   };
 
   const updatePassengerField = useCallback(
@@ -310,7 +425,7 @@ const HotelBooking = () => {
             })),
           };
         });
-        toast.success("Hotel Pre Booking Successfully.");
+        toast.success("Hotel pre-booking successful");
         setCurrentStep(1);
       } else {
         toast.error("Pre-booking failed. Please try again.");
@@ -328,7 +443,7 @@ const HotelBooking = () => {
 
   return (
     <>
-      <div className={`p-8`}>
+      <div className="px-3 py-4 sm:px-6 sm:py-6 lg:px-12 lg:py-8">
         <Loader
           show={isPending}
           label="Please wait while we complete your provisional booking"
@@ -345,7 +460,7 @@ const HotelBooking = () => {
             </div>
           </div>
 
-          <ol className="relative z-10 flex items-center justify-between">
+          <ol className="relative z-10 flex items-center justify-between gap-2">
             {steps.map((label, i) => {
               const isReached = i <= currentStep;
 
@@ -370,7 +485,7 @@ const HotelBooking = () => {
                     type="button"
                     // onClick={() => setCurrentStep(i)}
                     className={[
-                      "mt-2 text-sm transition-colors bg-transparent border-none hover:text-[#2351A3]",
+                      "mt-2 text-xs sm:text-sm transition-colors bg-transparent border-none hover:text-[#2351A3]",
                       isReached
                         ? "text-[#2351A3] font-medium"
                         : "text-[#3D495C]",
@@ -426,6 +541,7 @@ const HotelBooking = () => {
               onEditPassengers={() => setCurrentStep(0)}
               hotelDetail={hotelDetail}
               bookingInfo={bookingInfo}
+              selectedRooms={selectedRooms}
               totalPrice={totalPrice}
               currency={currency}
               hotelBookingPayload={hotelBookingPayload}

@@ -3,16 +3,23 @@ import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
 import ChatBot from "../organisms/ChatBot";
-import { useEffect, useState } from "react";
+import AuthModal from "../organisms/AuthModal";
+import { useCallback, useEffect, useState } from "react";
 import SessionExpiryWarning from "../../features/auth/components/SessionExpiryWarning";
 import { AuthService } from "../../features/auth/services/authService";
+import type { AuthMode } from "../../types/AuthTypes";
+import { useAuth } from "../../features/auth/hooks/useAuth";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { refreshAuth } = useAuth();
 
   const [hideHeader, setHideHeader] = useState<boolean>(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const [headerKey, setHeaderKey] = useState<number>(0);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -23,15 +30,66 @@ const AppLayout: React.FC = () => {
     void checkAuth();
   }, [location.pathname]);
 
+  // When on /auth route, show the auth modal (same as navbar) instead of full page
+  useEffect(() => {
+    if (location.pathname === "/auth") {
+      const mode = (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
+      setAuthMode(mode);
+      setAuthModalOpen(true);
+    }
+  }, [location.pathname, location.state]);
+
+  // Scroll to top when navigating to a new page (e.g. footer links)
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [location.pathname]);
+
   const openLogin = () => {
-    navigate("/auth", { state: { mode: "login" } });
+    setAuthMode("login");
+    setAuthModalOpen(true);
   };
 
   const openSignup = () => {
-    navigate("/auth", { state: { mode: "signup" } });
+    setAuthMode("signup");
+    setAuthModalOpen(true);
   };
 
-  const gradientRoutes = ["/", "/about"]; // define routes to show the gradient
+  const closeAuthModal = () => {
+    setAuthModalOpen(false);
+    if (location.pathname === "/auth") {
+      const state = (location.state || {}) as {
+        returnUrl?: string;
+        bookingData?: unknown;
+        from?: string;
+      };
+
+      const targetPath = state.returnUrl || state.from || "/";
+
+      navigate(targetPath, {
+        replace: true,
+        state: state.bookingData ?? undefined,
+      });
+    }
+  };
+
+  const handleAuthSuccess = async () => {
+    await refreshAuth();
+    setHeaderKey((prev) => prev + 1);
+  };
+
+  // Keep header/auth UI in sync when auth is completed from non-shared hooks (e.g. booking modals).
+  const handleExternalAuthChanged = useCallback(() => {
+    void handleAuthSuccess();
+  }, [refreshAuth]);
+
+  useEffect(() => {
+    const onAuthChanged = () => handleExternalAuthChanged();
+    window.addEventListener("alrais:auth-changed", onAuthChanged);
+    return () => window.removeEventListener("alrais:auth-changed", onAuthChanged);
+  }, [handleExternalAuthChanged]);
+
+  // Apply gradient only where desired (remove "/" so LandingPage stays neutral)
+  const gradientRoutes = ["/about"]; // define routes to show the gradient
   const shouldAddGradient = gradientRoutes.includes(location.pathname);
 
   return (
@@ -50,8 +108,9 @@ const AppLayout: React.FC = () => {
             background: transparent;
           }
           .modal-overlay {
-            background-color: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(4px);
+            background-color: rgba(10, 12, 15, 0.55);
+            backdrop-filter: blur(12px) saturate(1.4);
+            -webkit-backdrop-filter: blur(12px) saturate(1.4);
           }
           .underline-blur {
             position: absolute;
@@ -68,16 +127,26 @@ const AppLayout: React.FC = () => {
           .hide-date-icon { color-scheme: light; }
         `}</style>
 
-        {location.pathname !== "/auth" && !hideHeader && (
+        {!hideHeader && (
           <AppHeader
+            key={headerKey}
             logoSrc={AlRaisLogo}
             onLoginClick={openLogin}
             onSignupClick={openSignup}
           />
         )}
 
+        {/* Auth Modal — opens as overlay, stays on current page */}
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={closeAuthModal}
+          onAuthSuccess={handleAuthSuccess}
+          mode={authMode}
+          onModeChange={setAuthMode}
+          logoSrc={AlRaisLogo}
+        />
+
         {/* Session expiry UX guard (warn before auto-logout) */}
-        {/* <SessionExpiryWarning warningSeconds={120} /> */}
         {isAuthenticated && <SessionExpiryWarning warningSeconds={120} />}
 
         <main className="min-h-screen">

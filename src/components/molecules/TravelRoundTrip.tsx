@@ -1,45 +1,36 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import "../../assets/css/travel.css";
 
 import highDemandIcon from "../../assets/svgs/high-demand.svg";
 import offerViewIcon from "../../assets/svgs/offer-view-icon.svg";
 import whatsappIcon from "../../assets/svgs/Icon.png.svg";
-// import colSeparater from "../../assets/svgs/Lineseparater.svg";
 import defaultAirlineLogo from "../../assets/images/alRaisLogo.jpg";
 
 import { Modal } from "antd";
+import { useNavigate } from "react-router-dom";
+import { travelData } from "../../utils/mockData";
 
-// import CustomButton from "../common/CustomButton";
-
-import { useEffect, useMemo, useState } from "react";
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
+const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
+const CompareCard = React.lazy(() => import("./CompareCard"));
 
 import cabinIcon from "../../assets/svgs/cabin.svg";
 import baggageIcon from "../../assets/svgs/baggage.svg";
-// import entertainmentIcon from "../../assets/svgs/entertainment.svg";
-// import mealIcon from "../../assets/svgs/meals.svg";
-// import portsIcon from "../../assets/svgs/ports.svg";
-// import wifiIcon from "../../assets/svgs/wifi.svg";
 import durationIcon from "../../assets/svgs/duration.svg";
 import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
+import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 
-import { travelData } from "../../utils/mockData";
-const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
-const CompareCard = React.lazy(() => import("./CompareCard"));
-// removed: format helpers are handled in utilities
-import { useNavigate } from "react-router-dom";
 import {
   buildPerSegmentFlightDetail,
   mapOfferForCompareRoundTrip,
   pickRandomFlightsForCompare,
   extractFlightFeatures,
 } from "../../utils/searchFlightListingHelpers";
-import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 
 type TravelRoundTripProps = {
-  passData: any[]; // yahan aap type refine kar sakte ho
+  passData: any[];
   passengersForRequest?: { id: string; ptc: string }[];
   isLoadingMore?: boolean;
   hasMore?: boolean;
@@ -62,15 +53,19 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   emptyState,
   highDemandIndicators = [],
 }) => {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
   const [shareModal, setshareModal] = useState(false);
-  const [filterData, setFilterData] = useState<any[]>([]);
-  const [filterDetail, setFilterDetail] = useState<any[]>([]);
+  const [filterData] = useState<any[]>([]);
+  const [, setFilterDetail] = useState<any[]>([]);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<"price" | "flight" | "compare">(
+    "price",
+  );
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // preload tab components to reduce first-click latency
     import("./PricingDetailCard");
     import("./FlightDetailsCard");
     import("./CompareCard");
@@ -86,34 +81,12 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     return lookup;
   }, [passData]);
 
-  // const showModalCompare = ({
-  //   modalType,
-  //   id,
-  // }: {
-  //   modalType: "compare" | "share";
-  //   id: number | undefined;
-  // }) => {
-  //   if (modalType === "compare") {
-  //     setIsModalOpen(true);
-  //   } else {
-  //     setshareModal(true);
-  //     const filtered = travelData.filter((item) => item.id === id);
-  //     setFilterData(filtered);
-  //   }
-  // };
-
-  const HandlePriceOption = ({ id }: { id: number | undefined }) => {
-    const filtered = (id !== undefined && detailById[id]) || [];
-    setFilterDetail(filtered);
-    setFilterData([]);
-  };
-
   const highDemandLookup = useMemo(() => {
     if (!highDemandIndicators || highDemandIndicators.length === 0) return null;
 
     return {
-      outbound: highDemandIndicators[0] || null, // First object = outbound
-      inbound: highDemandIndicators[1] || null, // Second object = inbound
+      outbound: highDemandIndicators[0] || null,
+      inbound: highDemandIndicators[1] || null,
     };
   }, [highDemandIndicators]);
 
@@ -123,17 +96,14 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
       const { outbound, inbound } = highDemandLookup;
 
-      // Check if outbound airline matches first indicator
       const outboundMatches =
         outbound?.highDemand === true &&
         outbound?.marketingAirline === outboundAirline;
 
-      // Check if inbound airline matches second indicator
       const inboundMatches =
         inbound?.highDemand === true &&
         inbound?.marketingAirline === inboundAirline;
 
-      // Only show if BOTH match
       if (outboundMatches && inboundMatches) {
         return {
           outboundCount: outbound.totalCounts,
@@ -148,23 +118,66 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     [highDemandLookup],
   );
 
+  const openDetailsModal = useCallback(
+    (item: any, tab: "price" | "flight" | "compare" = "price") => {
+      setSelectedItem(item);
+      setActiveTab(tab);
+
+      if (tab === "price") {
+        const filtered = (item?.id !== undefined && detailById[item.id]) || [];
+        setFilterDetail(filtered);
+      }
+
+      if (tab === "compare") {
+        const compareList = pickRandomFlightsForCompare(
+          passData || [],
+          item?.id,
+          4,
+          mapOfferForCompareRoundTrip,
+        );
+        setFilterDetail(compareList);
+      }
+
+      setIsDetailsModalOpen(true);
+    },
+    [detailById, passData],
+  );
+
+  const handleTabChange = useCallback(
+    (tab: "price" | "flight" | "compare") => {
+      if (!selectedItem) return;
+
+      setActiveTab(tab);
+
+      if (tab === "price") {
+        const filtered =
+          (selectedItem?.id !== undefined && detailById[selectedItem.id]) || [];
+        setFilterDetail(filtered);
+      }
+
+      if (tab === "compare") {
+        const compareList = pickRandomFlightsForCompare(
+          passData || [],
+          selectedItem?.id,
+          4,
+          mapOfferForCompareRoundTrip,
+        );
+        setFilterDetail(compareList);
+      }
+    },
+    [selectedItem, detailById, passData],
+  );
+
   const handleCancelCompare = (modalType: "compare" | "share") => {
-    if (modalType == "compare") {
-      setIsModalOpen(false);
+    if (modalType === "compare") {
+      setIsCompareModalOpen(false);
     } else {
       setshareModal(false);
     }
   };
 
-  // Updated mapping function for round trip (multiple segments support)
-  // moved to helper: mapOfferForCompareRoundTrip
-
-  // YEH FUNCTION BILKUL THEEK HAI - ISAY MAT HATANA!
-  // moved to helper: pickRandomFlightsForCompare
-
   const handleOfferSelection = React.useCallback(
     (offerId: string, item: any) => {
-      // console.log(offerId);
       navigate("/flight-booking", {
         state: {
           offerId,
@@ -177,8 +190,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     [navigate, passengersForRequest],
   );
 
-  const [active, setActive] = useState({ name: "", id: 0 });
-
   if (!passData || passData.length === 0) {
     return (
       <div>
@@ -190,7 +201,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
   return (
     <div
-      className=""
       style={{
         background: "#FFFFFF",
         borderRadius: "16px",
@@ -199,38 +209,26 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       }}
     >
       {passData?.map((item: any, index: number) => {
-        // Replace the existing renderRoundTopCard with this version
-        const renderRoundTopCard = (
-          display: any,
-          parent: any,
-          showPrice = false,
-        ) => {
+        const renderRoundTopCard = (display: any, parent: any) => {
           const d = display ?? parent;
-          const price =
-            d?.rawTotalStartingFare ??
-            parent?.rawTotalStartingFare ??
-            parent?.totalFare ??
-            0;
-
-          // get raw segments safely
           const raw = d?.raw ?? parent?.raw ?? {};
           const parentJourneys = parent?.raw?.journey ?? raw?.journey ?? [];
           let journeyIndex = 0;
+
           if (Array.isArray(parentJourneys) && parentJourneys.length > 1) {
             if (display === parent?.inbound) journeyIndex = 1;
             else if (display === parent?.outbound) journeyIndex = 0;
           }
+
           const segs = raw?.journey?.[journeyIndex]?.flightSegments ?? [];
           const hasSegs = Array.isArray(segs) && segs.length > 0;
           const currentSeg = hasSegs ? segs[0] : null;
 
-          // build per-segment flight_detail for timings/FlightTimingAndStops
           const perSegFlightDetail = buildPerSegmentFlightDetail(
             d?.flight_detail || {},
             currentSeg,
           );
 
-          // Pass all segments to FlightTimingAndStops for proper multi-segment handling
           const itemForTiming = {
             ...d,
             flight_detail: perSegFlightDetail,
@@ -250,7 +248,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
             },
           };
 
-          // Use shared function to extract features
           const baseFeatures = extractFlightFeatures(
             currentSeg,
             d?.flight_detail || {},
@@ -265,7 +262,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
             },
           );
 
-          // Convert to label format for TravelRoundTrip (which uses label instead of value)
           const visible = baseFeatures.map((f) => ({
             ...f,
             label: f.label,
@@ -315,6 +311,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     }}
                   />
                 </div>
+
                 <div
                   style={{
                     display: "flex",
@@ -389,38 +386,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 <FlightTimingAndStops passSome={itemForTiming} />
               </div>
 
-              {showPrice && (
-                <div
-                  className="StartingPrice"
-                  style={{ minWidth: "160px", textAlign: "right" }}
-                >
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: "12px",
-                      color: "#64748B",
-                      marginBottom: "6px",
-                      fontWeight: 400,
-                    }}
-                  >
-                    Starting from
-                  </p>
-                  <h5
-                    style={{
-                      margin: 0,
-                      fontSize: "27px",
-                      fontWeight: 700,
-                      color: "#2351A3",
-                      lineHeight: 1,
-                      letterSpacing: "-0.5px",
-                    }}
-                  >
-                    {d?.raw?.fare?.currencyCode ?? "$"}
-                    {price}
-                  </h5>
-                </div>
-              )}
-
               <div className="stopsOnSmall">
                 <FlightTimingAndStops passSome={itemForTiming} />
               </div>
@@ -455,11 +420,10 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
               }}
             >
               <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
-                {renderRoundTopCard(outbound ?? item, item, false)}
-                {inbound && renderRoundTopCard(inbound, item, false)}
+                {renderRoundTopCard(outbound ?? item, item)}
+                {inbound && renderRoundTopCard(inbound, item)}
               </div>
 
-              {/* Price and Button Section - Inline Layout (same as TravelOneWay) */}
               <div
                 className="StartingPrice"
                 style={{
@@ -467,7 +431,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   flexDirection: "column",
                   alignItems: "flex-end",
                   gap: "8px",
-                  minWidth: "300px",
+                  minWidth: "320px",
                 }}
               >
                 <p
@@ -481,11 +445,12 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 >
                   Starting from
                 </p>
+
                 <div
                   style={{
                     display: "flex",
                     alignItems: "center",
-                    gap: "16px",
+                    gap: "12px",
                   }}
                 >
                   <h5
@@ -501,360 +466,96 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     {item?.raw?.fare?.currencyCode ?? "$"}
                     {item.rawTotalStartingFare}
                   </h5>
-                  {/* Show View Details button when tabs are NOT active */}
-                  {!(
-                    active?.id === index &&
-                    (active?.name === "price" ||
-                      active?.name === "flight" ||
-                      active?.name === "compare")
-                  ) && (
-                    <button
-                      onClick={() => {
-                        HandlePriceOption({ id: item.id });
-                        setActive((prev) => ({
-                          ...prev,
-                          name: "price",
-                          id: index,
-                        }));
-                      }}
-                      style={{
-                        width: "150px",
-                        height: "47px",
-                        borderRadius: "100px",
-                        padding: "14px 25px",
-                        background:
-                          "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                        color: "#FFFFFF",
-                        fontSize: "15px",
-                        fontWeight: 600,
-                        border: "none",
-                        cursor: "pointer",
-                        boxShadow: "0 4px 12px rgba(35, 81, 163, 0.3)",
-                        transition: "all 0.2s ease",
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 6px 16px rgba(35, 81, 163, 0.4)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow =
-                          "0 4px 12px rgba(35, 81, 163, 0.3)";
-                      }}
-                    >
-                      View details
-                    </button>
-                  )}
-                  {active?.id === index && active?.name === "price" && (
-                    <button
-                      onClick={() => handleOfferSelection(item?.offerId, item)}
-                      style={{
-                        width: "130px",
-                        height: "47px",
-                        background:
-                          "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                        borderRadius: "100px",
-                        padding: "14px 25px",
-                        gap: "10px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "#FFFFFF",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        transition: "all 0.3s ease",
-                        boxShadow: "0 2px 8px rgba(35, 81, 163, 0.3)",
-                        flexShrink: 0,
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-2px)";
-                        e.currentTarget.style.boxShadow =
-                          "0 6px 16px rgba(35, 81, 163, 0.4)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow =
-                          "0 2px 8px rgba(35, 81, 163, 0.3)";
-                      }}
-                    >
-                      Book Now
-                    </button>
-                  )}
-                  {active?.id === index &&
-                    (active?.name === "flight" ||
-                      active?.name === "compare") && (
-                      <button
-                        onClick={() => {
-                          setActive((prev) => ({
-                            ...prev,
-                            name: "",
-                            id: -1,
-                          }));
-                        }}
-                        style={{
-                          width: "143px",
-                          height: "47px",
-                          borderRadius: "100px",
-                          padding: "14px 25px",
-                          gap: "10px",
-                          background: "#FFFFFF",
-                          color: "#2351A3",
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          border: "2px solid #2351A3",
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          transition: "all 0.2s ease",
-                          flexShrink: 0,
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.background = "#F1F5F9";
-                          e.currentTarget.style.transform = "translateY(-2px)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.background = "#FFFFFF";
-                          e.currentTarget.style.transform = "translateY(0)";
-                        }}
-                      >
-                        Less Details
-                      </button>
-                    )}
+
+                  <button
+                    onClick={() => openDetailsModal(item, "price")}
+                    style={{
+                      width: "150px",
+                      height: "47px",
+                      borderRadius: "100px",
+                      padding: "14px 25px",
+                      background:
+                        "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                      color: "#FFFFFF",
+                      fontSize: "15px",
+                      fontWeight: 600,
+                      border: "none",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(35, 81, 163, 0.3)",
+                      transition: "all 0.2s ease",
+                      flexShrink: 0,
+                    }}
+                  >
+                    View details
+                  </button>
+
+                  <button
+                    onClick={() => handleOfferSelection(item?.offerId, item)}
+                    style={{
+                      width: "130px",
+                      height: "47px",
+                      background:
+                        "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                      borderRadius: "100px",
+                      padding: "14px 25px",
+                      border: "none",
+                      cursor: "pointer",
+                      color: "#FFFFFF",
+                      fontSize: "14px",
+                      fontWeight: 600,
+                      flexShrink: 0,
+                    }}
+                  >
+                    Book Now
+                  </button>
                 </div>
               </div>
             </div>
 
-            {/* Only show tabs and content when View details is clicked */}
-            {(active?.name === "price" ||
-              active?.name === "flight" ||
-              active?.name === "compare") &&
-              active?.id === index && (
-                <div className="bottomHalfCard">
-                  <div className="bottomHalfCardflexStyle">
-                    <div className="modalOptions">
-                      <div
-                        className="tabs"
-                        style={{
-                          display: "flex",
-                          gap: "8px",
-                          marginBottom: "16px",
-                        }}
-                      >
-                        <div
-                          className={`tab ${active?.name === "price" && active?.id === index ? "active" : ""}`}
-                          onClick={() => {
-                            HandlePriceOption({ id: item.id });
-                            setActive((prev) => ({
-                              ...prev,
-                              name: "price",
-                              id: index,
-                            }));
-                          }}
-                          style={{
-                            width: "105px",
-                            height: "35px",
-                            borderTopLeftRadius: "16px",
-                            borderTopRightRadius: "16px",
-                            borderBottomLeftRadius: "0",
-                            borderBottomRightRadius: "0",
-                            background:
-                              active?.name === "price" && active?.id === index
-                                ? "#2351A3"
-                                : "#F1F5F9",
-                            color:
-                              active?.name === "price" && active?.id === index
-                                ? "#FFFFFF"
-                                : "#64748B",
-                            fontSize: "13px",
-                            fontWeight: 500,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            border: "none",
-                            transition: "all 0.2s ease",
-                          }}
-                        >
-                          Price options
-                        </div>
-                        <div
-                          className={`tab ${active?.name === "flight" && active?.id === index ? "active" : ""}`}
-                          onClick={() => {
-                            HandlePriceOption({ id: item.id });
-                            setActive((prev) => ({
-                              ...prev,
-                              name: "flight",
-                              id: index,
-                            }));
-                          }}
-                          style={{
-                            width: "105px",
-                            height: "35px",
-                            borderTopLeftRadius: "16px",
-                            borderTopRightRadius: "16px",
-                            borderBottomLeftRadius: "0",
-                            borderBottomRightRadius: "0",
-                            background:
-                              active?.name === "flight" && active?.id === index
-                                ? "#2351A3"
-                                : "#F1F5F9",
-                            color:
-                              active?.name === "flight" && active?.id === index
-                                ? "#FFFFFF"
-                                : "#64748B",
-                            fontSize: "13px",
-                            fontWeight: 500,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            border: "none",
-                            transition: "all 0.2s ease",
-                          }}
-                        >
-                          Flight details
-                        </div>
-                        <div
-                          className={`tab ${active?.name === "compare" && active?.id === index ? "active" : ""}`}
-                          onClick={() => {
-                            setActive((prev) => ({
-                              ...prev,
-                              name: "compare",
-                              id: index,
-                            }));
-                          }}
-                          style={{
-                            width: "105px",
-                            height: "35px",
-                            borderTopLeftRadius: "16px",
-                            borderTopRightRadius: "16px",
-                            borderBottomLeftRadius: "0",
-                            borderBottomRightRadius: "0",
-                            background:
-                              active?.name === "compare" && active?.id === index
-                                ? "#2351A3"
-                                : "#F1F5F9",
-                            color:
-                              active?.name === "compare" && active?.id === index
-                                ? "#FFFFFF"
-                                : "#64748B",
-                            fontSize: "13px",
-                            fontWeight: 500,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            border: "none",
-                            transition: "all 0.2s ease",
-                          }}
-                        >
-                          Compare
-                        </div>
-                      </div>
-                      {/* <p
-                  className="compareLikeButton"
-                  onClick={() => {
-                    showModalCompare({ modalType: "compare", id: undefined });
-                  }}
-                >
-                  Compare
-                </p> */}
-                      {/* <img
-                    src={colSeparater}
-                    alt=""
-                    style={{ width: 1, height: 30 }}
-                  />
-                  <p
-                    className="shareModalBtn compareLikeButton"
-                    onClick={() => {
-                      showModalCompare({ modalType: "share", id: item.id });
-                    }}
-                  >
-                    Share
-                  </p> */}
-                    </div>
-                    <div className="selectPriceBtn flex items-center gap-2">
-                      {item.offerViewCount > 0 && (
-                        <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
-                          <img
-                            src={offerViewIcon}
-                            alt="icon"
-                            className="mr-1"
-                          />
-                          {item.offerViewCount} People viewing this
-                        </div>
-                      )}
-                      {(() => {
-                        const outboundSegs =
-                          item?.outbound?.raw?.journey?.[0]?.flightSegments ??
-                          item?.raw?.journey?.[0]?.flightSegments ??
-                          [];
-                        const outboundSeg = Array.isArray(outboundSegs)
-                          ? outboundSegs[0]
-                          : (outboundSegs?.[0] ?? outboundSegs ?? null);
-                        const outboundAirline = outboundSeg?.marketingAirline;
-
-                        const inboundSegs =
-                          item?.inbound?.raw?.journey?.[0]?.flightSegments ??
-                          item?.raw?.journey?.[1]?.flightSegments ??
-                          [];
-                        const inboundSeg = Array.isArray(inboundSegs)
-                          ? inboundSegs[0]
-                          : (inboundSegs?.[0] ?? inboundSegs ?? null);
-                        const inboundAirline = inboundSeg?.marketingAirline;
-
-                        const highDemandInfo = getHighDemandInfo(
-                          outboundAirline,
-                          inboundAirline,
-                        );
-
-                        return highDemandInfo ? (
-                          <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
-                            <img
-                              src={highDemandIcon}
-                              alt="icon"
-                              className="w-3 h-3 mr-1"
-                            />
-                            High-demand
-                            {/* High-demand ({highDemandInfo.totalCounts}) */}
-                          </div>
-                        ) : null;
-                      })()}
-                      {/* <CustomButton onClick={() => handleOfferSelection(item?.offerId, item)}>
-                    Select Price
-                  </CustomButton> */}
-                    </div>
-                  </div>
-                  <React.Suspense
-                    fallback={
-                      <div className="tab-loading-placeholder">Loading…</div>
-                    }
-                  >
-                    {active?.name == "price" && active?.id == index ? (
-                      <PricingDetailCard passSome={filterDetail} />
-                    ) : active?.name == "flight" && active?.id == index ? (
-                      <FlightDetailsCard details={item} />
-                    ) : active?.name == "compare" && active?.id == index ? (
-                      <CompareCard
-                        currentFlight={mapOfferForCompareRoundTrip(item)}
-                        availableFlights={pickRandomFlightsForCompare(
-                          passData || [],
-                          item.id,
-                          4,
-                          mapOfferForCompareRoundTrip,
-                        )}
-                      />
-                    ) : (
-                      ""
-                    )}
-                  </React.Suspense>
+            <div className="selectPriceBtn flex items-center gap-2 mb-4">
+              {item.offerViewCount > 0 && (
+                <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
+                  <img src={offerViewIcon} alt="icon" className="mr-1" />
+                  {item.offerViewCount} People viewing this
                 </div>
               )}
+
+              {(() => {
+                const outboundSegs =
+                  item?.outbound?.raw?.journey?.[0]?.flightSegments ??
+                  item?.raw?.journey?.[0]?.flightSegments ??
+                  [];
+                const outboundSeg = Array.isArray(outboundSegs)
+                  ? outboundSegs[0]
+                  : (outboundSegs?.[0] ?? outboundSegs ?? null);
+                const outboundAirline = outboundSeg?.marketingAirline;
+
+                const inboundSegs =
+                  item?.inbound?.raw?.journey?.[0]?.flightSegments ??
+                  item?.raw?.journey?.[1]?.flightSegments ??
+                  [];
+                const inboundSeg = Array.isArray(inboundSegs)
+                  ? inboundSegs[0]
+                  : (inboundSegs?.[0] ?? inboundSegs ?? null);
+                const inboundAirline = inboundSeg?.marketingAirline;
+
+                const highDemandInfo = getHighDemandInfo(
+                  outboundAirline,
+                  inboundAirline,
+                );
+
+                return highDemandInfo ? (
+                  <div className="inline-flex items-center justify-center text-xs text-[#B80020] border border-[#B80020] rounded-full px-3 py-2 bg-[#FFB8C4] whitespace-nowrap">
+                    <img
+                      src={highDemandIcon}
+                      alt="icon"
+                      className="w-3 h-3 mr-1"
+                    />
+                    High-demand
+                  </div>
+                ) : null;
+              })()}
+            </div>
           </div>
         );
       })}
@@ -864,28 +565,146 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       </div>
 
       <Modal
+        open={isDetailsModalOpen}
+        onCancel={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedItem(null);
+          setActiveTab("price");
+          setFilterDetail([]);
+        }}
+        footer={null}
+        centered
+        width={1180}
+        destroyOnClose
+        className="flight-details-popup"
+        styles={{
+          body: {
+            maxHeight: "80vh",
+            overflowY: "auto",
+            padding: "20px 24px 24px",
+          },
+        }}
         title={
+          <div style={{ textAlign: "center", paddingTop: 4 }}>
+            <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 700 }}>
+              Flight details
+            </h2>
+            <p style={{ margin: "6px 0 0", color: "#64748B" }}>
+              Review price options, flight details and compare flights
+            </p>
+          </div>
+        }
+      >
+        {selectedItem && (
           <>
-            <div className="modalHeader" style={{ textAlign: "center" }}>
-              <h2>Add another flight</h2>
-              <p>
-                Compare the flights from this listing to see what suits you best
-              </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: "16px",
+                marginBottom: "16px",
+                flexWrap: "wrap",
+              }}
+            >
+              <div style={{ display: "flex", gap: "8px" }}>
+                {[
+                  { key: "price", label: "Price options" },
+                  { key: "flight", label: "Flight details" },
+                  { key: "compare", label: "Compare" },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() =>
+                      handleTabChange(tab.key as "price" | "flight" | "compare")
+                    }
+                    style={{
+                      height: "38px",
+                      padding: "0 16px",
+                      borderRadius: "14px 14px 0 0",
+                      border: "none",
+                      cursor: "pointer",
+                      background: activeTab === tab.key ? "#2351A3" : "#F1F5F9",
+                      color: activeTab === tab.key ? "#FFFFFF" : "#64748B",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                {selectedItem.offerViewCount > 0 && (
+                  <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
+                    <img src={offerViewIcon} alt="icon" className="mr-1" />
+                    {selectedItem.offerViewCount} People viewing this
+                  </div>
+                )}
+
+                <button
+                  onClick={() =>
+                    handleOfferSelection(selectedItem?.offerId, selectedItem)
+                  }
+                  style={{
+                    width: "130px",
+                    height: "44px",
+                    background:
+                      "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                    borderRadius: "100px",
+                    border: "none",
+                    color: "#FFFFFF",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                  }}
+                >
+                  Book Now
+                </button>
+              </div>
             </div>
+
+            <React.Suspense fallback={<div>Loading…</div>}>
+              {activeTab === "price" ? (
+                <PricingDetailCard passSome={detailById[selectedItem.id] || []} />
+              ) : activeTab === "flight" ? (
+                <FlightDetailsCard details={selectedItem} />
+              ) : (
+                <CompareCard
+                  currentFlight={mapOfferForCompareRoundTrip(selectedItem)}
+                  availableFlights={pickRandomFlightsForCompare(
+                    passData || [],
+                    selectedItem.id,
+                    4,
+                    mapOfferForCompareRoundTrip,
+                  )}
+                />
+              )}
+            </React.Suspense>
           </>
+        )}
+      </Modal>
+
+      <Modal
+        title={
+          <div className="modalHeader" style={{ textAlign: "center" }}>
+            <h2>Add another flight</h2>
+            <p>
+              Compare the flights from this listing to see what suits you best
+            </p>
+          </div>
         }
         closable={{ "aria-label": "Custom Close Button" }}
-        open={isModalOpen}
+        open={isCompareModalOpen}
         footer={null}
         centered={true}
-        // onOk={handleOkCompare}
         onCancel={() => {
           handleCancelCompare("compare");
         }}
         className="compareModal"
       >
         {travelData?.map((item) => (
-          <div className="modalFlightDetailCard">
+          <div className="modalFlightDetailCard" key={item?.id}>
             <div className="modalFlightDetail">
               <div className="fightTitle">
                 <div className="flightIcon">
@@ -894,136 +713,9 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                 <div className="nameAndDetails">
                   <h5>{item?.name}</h5>
                   <p>
-                    {item?.flight_detail?.flight_number} -
+                    {item?.flight_detail?.flight_number} -{" "}
                     {item?.flight_detail?.flight_class}
                   </p>
-                </div>
-              </div>
-              <div className="featureIcons">
-                <div>
-                  <svg
-                    width="18"
-                    height="16"
-                    viewBox="0 0 18 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M15.875 3.375H12.75V2.75C12.75 2.25272 12.5525 1.77581 12.2008 1.42417C11.8492 1.07254 11.3723 0.875 10.875 0.875H7.125C6.62772 0.875 6.15081 1.07254 5.79917 1.42417C5.44754 1.77581 5.25 2.25272 5.25 2.75V3.375H2.125C1.79348 3.375 1.47554 3.5067 1.24112 3.74112C1.0067 3.97554 0.875 4.29348 0.875 4.625V14.625C0.875 14.9565 1.0067 15.2745 1.24112 15.5089C1.47554 15.7433 1.79348 15.875 2.125 15.875H15.875C16.2065 15.875 16.5245 15.7433 16.7589 15.5089C16.9933 15.2745 17.125 14.9565 17.125 14.625V4.625C17.125 4.29348 16.9933 3.97554 16.7589 3.74112C16.5245 3.5067 16.2065 3.375 15.875 3.375ZM6.5 2.75C6.5 2.58424 6.56585 2.42527 6.68306 2.30806C6.80027 2.19085 6.95924 2.125 7.125 2.125H10.875C11.0408 2.125 11.1997 2.19085 11.3169 2.30806C11.4342 2.42527 11.5 2.58424 11.5 2.75V3.375H6.5V2.75ZM11.5 4.625V14.625H6.5V4.625H11.5ZM2.125 4.625H5.25V14.625H2.125V4.625ZM15.875 14.625H12.75V4.625H15.875V14.625Z"
-                      fill="#3D495C"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <svg
-                    width="14"
-                    height="20"
-                    viewBox="0 0 14 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M5.125 6.875V14.375C5.125 14.5408 5.05915 14.6997 4.94194 14.8169C4.82473 14.9342 4.66576 15 4.5 15C4.33424 15 4.17527 14.9342 4.05806 14.8169C3.94085 14.6997 3.875 14.5408 3.875 14.375V6.875C3.875 6.70924 3.94085 6.55027 4.05806 6.43306C4.17527 6.31585 4.33424 6.25 4.5 6.25C4.66576 6.25 4.82473 6.31585 4.94194 6.43306C5.05915 6.55027 5.125 6.70924 5.125 6.875ZM7 6.25C6.83424 6.25 6.67527 6.31585 6.55806 6.43306C6.44085 6.55027 6.375 6.70924 6.375 6.875V14.375C6.375 14.5408 6.44085 14.6997 6.55806 14.8169C6.67527 14.9342 6.83424 15 7 15C7.16576 15 7.32473 14.9342 7.44194 14.8169C7.55915 14.6997 7.625 14.5408 7.625 14.375V6.875C7.625 6.70924 7.55915 6.55027 7.44194 6.43306C7.32473 6.31585 7.16576 6.25 7 6.25ZM9.5 6.25C9.33424 6.25 9.17527 6.31585 9.05806 6.43306C8.94085 6.55027 8.875 6.70924 8.875 6.875V14.375C8.875 14.5408 8.94085 14.6997 9.05806 14.8169C9.17527 14.9342 9.33424 15 9.5 15C9.66576 15 9.82473 14.9342 9.94194 14.8169C10.0592 14.6997 10.125 14.5408 10.125 14.375V6.875C10.125 6.70924 10.0592 6.55027 9.94194 6.43306C9.82473 6.31585 9.66576 6.25 9.5 6.25ZM13.25 5V16.25C13.25 16.5815 13.1183 16.8995 12.8839 17.1339C12.6495 17.3683 12.3315 17.5 12 17.5H10.75V18.75C10.75 18.9158 10.6842 19.0747 10.5669 19.1919C10.4497 19.3092 10.2908 19.375 10.125 19.375C9.95924 19.375 9.80027 19.3092 9.68306 19.1919C9.56585 19.0747 9.5 18.9158 9.5 18.75V17.5H4.5V18.75C4.5 18.9158 4.43415 19.0747 4.31694 19.1919C4.19973 19.3092 4.04076 19.375 3.875 19.375C3.70924 19.375 3.55027 19.3092 3.43306 19.1919C3.31585 19.0747 3.25 18.9158 3.25 18.75V17.5H2C1.66848 17.5 1.35054 17.3683 1.11612 17.1339C0.881696 16.8995 0.75 16.5815 0.75 16.25V5C0.75 4.66848 0.881696 4.35054 1.11612 4.11612C1.35054 3.8817 1.66848 3.75 2 3.75H3.875V1.875C3.875 1.37772 4.07254 0.900805 4.42417 0.549175C4.77581 0.197544 5.25272 0 5.75 0L8.25 0C8.74728 0 9.22419 0.197544 9.57583 0.549175C9.92746 0.900805 10.125 1.37772 10.125 1.875V3.75H12C12.3315 3.75 12.6495 3.8817 12.8839 4.11612C13.1183 4.35054 13.25 4.66848 13.25 5ZM5.125 3.75H8.875V1.875C8.875 1.70924 8.80915 1.55027 8.69194 1.43306C8.57473 1.31585 8.41576 1.25 8.25 1.25H5.75C5.58424 1.25 5.42527 1.31585 5.30806 1.43306C5.19085 1.55027 5.125 1.70924 5.125 1.875V3.75ZM12 16.25V5H2V16.25H12Z"
-                      fill="#3D495C"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <g clipPath="url(#clip0_3993_978)">
-                      <path
-                        d="M6.875 3.75V1.25C6.875 1.08424 6.94085 0.925268 7.05806 0.808058C7.17527 0.690848 7.33424 0.625 7.5 0.625C7.66576 0.625 7.82473 0.690848 7.94194 0.808058C8.05915 0.925268 8.125 1.08424 8.125 1.25V3.75C8.125 3.91576 8.05915 4.07473 7.94194 4.19194C7.82473 4.30915 7.66576 4.375 7.5 4.375C7.33424 4.375 7.17527 4.30915 7.05806 4.19194C6.94085 4.07473 6.875 3.91576 6.875 3.75ZM10 4.375C10.1658 4.375 10.3247 4.30915 10.4419 4.19194C10.5592 4.07473 10.625 3.91576 10.625 3.75V1.25C10.625 1.08424 10.5592 0.925268 10.4419 0.808058C10.3247 0.690848 10.1658 0.625 10 0.625C9.83424 0.625 9.67527 0.690848 9.55806 0.808058C9.44085 0.925268 9.375 1.08424 9.375 1.25V3.75C9.375 3.91576 9.44085 4.07473 9.55806 4.19194C9.67527 4.30915 9.83424 4.375 10 4.375ZM12.5 4.375C12.6658 4.375 12.8247 4.30915 12.9419 4.19194C13.0592 4.07473 13.125 3.91576 13.125 3.75V1.25C13.125 1.08424 13.0592 0.925268 12.9419 0.808058C12.8247 0.690848 12.6658 0.625 12.5 0.625C12.3342 0.625 12.1753 0.690848 12.0581 0.808058C11.9409 0.925268 11.875 1.08424 11.875 1.25V3.75C11.875 3.91576 11.9409 4.07473 12.0581 4.19194C12.1753 4.30915 12.3342 4.375 12.5 4.375ZM19.75 8L17.5 9.6875V14.375C17.5 15.038 17.2366 15.6739 16.7678 16.1428C16.2989 16.6116 15.663 16.875 15 16.875H5C4.33696 16.875 3.70108 16.6116 3.23224 16.1428C2.76339 15.6739 2.5 15.038 2.5 14.375V9.6875L0.250003 8C0.117394 7.90054 0.0297262 7.75248 0.00628412 7.58839C-0.0171579 7.42429 0.0255464 7.25761 0.125003 7.125C0.224459 6.99239 0.37252 6.90472 0.536614 6.88128C0.700709 6.85784 0.867394 6.90054 1 7L2.5 8.125V6.25C2.5 6.08424 2.56585 5.92527 2.68306 5.80806C2.80027 5.69085 2.95924 5.625 3.125 5.625H16.875C17.0408 5.625 17.1997 5.69085 17.3169 5.80806C17.4342 5.92527 17.5 6.08424 17.5 6.25V8.125L19 7C19.1326 6.90054 19.2993 6.85784 19.4634 6.88128C19.6275 6.90472 19.7755 6.99239 19.875 7.125C19.9745 7.25761 20.0172 7.42429 19.9937 7.58839C19.9703 7.75248 19.8826 7.90054 19.75 8ZM16.25 6.875H3.75V14.375C3.75 14.7065 3.8817 15.0245 4.11612 15.2589C4.35054 15.4933 4.66848 15.625 5 15.625H15C15.3315 15.625 15.6495 15.4933 15.8839 15.2589C16.1183 15.0245 16.25 14.7065 16.25 14.375V6.875Z"
-                        fill="#3D495C"
-                      />
-                    </g>
-                    <defs>
-                      <clipPath id="clip0_3993_978">
-                        <rect width="20" height="20" fill="white" />
-                      </clipPath>
-                    </defs>
-                  </svg>
-                </div>
-                <div>
-                  <svg
-                    width="18"
-                    height="14"
-                    viewBox="0 0 18 14"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M9.93731 12.9375C9.93731 13.1229 9.88232 13.3042 9.77931 13.4583C9.6763 13.6125 9.52988 13.7327 9.35857 13.8036C9.18727 13.8746 8.99877 13.8931 8.81691 13.857C8.63505 13.8208 8.46801 13.7315 8.33689 13.6004C8.20578 13.4693 8.11649 13.3022 8.08032 13.1204C8.04415 12.9385 8.06271 12.75 8.13367 12.5787C8.20463 12.4074 8.32479 12.261 8.47896 12.158C8.63313 12.055 8.81439 12 8.99981 12C9.24845 12 9.4869 12.0987 9.66272 12.2746C9.83854 12.4504 9.93731 12.6888 9.93731 12.9375ZM17.5217 3.79685C15.1189 1.82605 12.1074 0.748962 8.99981 0.748962C5.89221 0.748962 2.88067 1.82605 0.477933 3.79685C0.414478 3.84897 0.361909 3.91307 0.323229 3.98551C0.284549 4.05794 0.260515 4.13729 0.252498 4.21901C0.244482 4.30073 0.252641 4.38323 0.276509 4.4618C0.300377 4.54037 0.339486 4.61347 0.391605 4.67693C0.443723 4.74038 0.507829 4.79295 0.580264 4.83163C0.652698 4.87031 0.732042 4.89435 0.813764 4.90236C0.978811 4.91855 1.14353 4.86851 1.27168 4.76326C3.45075 2.97631 6.18174 1.99973 8.99981 1.99973C11.8179 1.99973 14.5489 2.97631 16.7279 4.76326C16.8561 4.86851 17.0208 4.91855 17.1859 4.90236C17.3509 4.88617 17.5028 4.80508 17.608 4.67693C17.7133 4.54877 17.7633 4.38406 17.7471 4.21901C17.7309 4.05396 17.6498 3.90211 17.5217 3.79685ZM15.0154 6.59138C13.304 5.2364 11.1851 4.49915 9.00215 4.49915C6.81925 4.49915 4.70033 5.2364 2.98887 6.59138C2.85896 6.69436 2.77527 6.84473 2.75622 7.00941C2.73718 7.17409 2.78433 7.33959 2.88731 7.46951C2.99029 7.59942 3.14066 7.68311 3.30534 7.70215C3.47002 7.7212 3.63552 7.67405 3.76543 7.57107C5.25595 6.39125 7.1012 5.74932 9.00215 5.74932C10.9031 5.74932 12.7484 6.39125 14.2389 7.57107C14.3032 7.62207 14.3769 7.65989 14.4559 7.68239C14.5348 7.70489 14.6174 7.71161 14.699 7.70218C14.7805 7.69275 14.8594 7.66735 14.9311 7.62742C15.0029 7.5875 15.066 7.53384 15.117 7.46951C15.168 7.40518 15.2058 7.33144 15.2283 7.2525C15.2508 7.17355 15.2575 7.09095 15.2481 7.00941C15.2387 6.92786 15.2133 6.84898 15.1734 6.77725C15.1334 6.70552 15.0798 6.64237 15.0154 6.59138ZM12.4951 9.38513C11.4799 8.64732 10.2571 8.24992 9.00215 8.24992C7.74715 8.24992 6.52439 8.64732 5.50918 9.38513C5.37512 9.48272 5.28532 9.62957 5.25954 9.79337C5.23375 9.95717 5.27409 10.1245 5.37168 10.2586C5.46927 10.3926 5.61612 10.4824 5.77992 10.5082C5.94373 10.534 6.11106 10.4937 6.24512 10.3961C7.0463 9.8134 8.01149 9.49954 9.00215 9.49954C9.99281 9.49954 10.958 9.8134 11.7592 10.3961C11.8256 10.4444 11.9008 10.4792 11.9806 10.4984C12.0604 10.5176 12.1433 10.521 12.2244 10.5082C12.3055 10.4954 12.3833 10.4668 12.4533 10.424C12.5234 10.3812 12.5843 10.3249 12.6326 10.2586C12.6809 10.1922 12.7157 10.1169 12.735 10.0371C12.7542 9.9573 12.7575 9.87448 12.7448 9.79337C12.732 9.71227 12.7034 9.63447 12.6605 9.56442C12.6177 9.49438 12.5615 9.43345 12.4951 9.38513Z"
-                      fill="#3D495C"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <svg
-                    width="20"
-                    height="16"
-                    viewBox="0 0 20 16"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M19.7219 7.47969L15.9719 4.97969C15.8777 4.91688 15.7683 4.88081 15.6552 4.87533C15.5422 4.86985 15.4298 4.89518 15.33 4.9486C15.2302 5.00201 15.1468 5.08152 15.0887 5.17864C15.0306 5.27575 14.9999 5.38683 15 5.50001V7.37501H5.625V3.62501H8.20312C8.35525 4.21417 8.71702 4.72762 9.22063 5.06913C9.72424 5.41064 10.3351 5.55675 10.9388 5.48008C11.5424 5.40341 12.0973 5.10922 12.4996 4.65265C12.9018 4.19609 13.1237 3.60849 13.1237 3.00001C13.1237 2.39152 12.9018 1.80393 12.4996 1.34736C12.0973 0.890794 11.5424 0.596603 10.9388 0.519932C10.3351 0.44326 9.72424 0.589372 9.22063 0.93088C8.71702 1.27239 8.35525 1.78584 8.20312 2.37501H5.625C5.29348 2.37501 4.97554 2.5067 4.74112 2.74112C4.5067 2.97554 4.375 3.29349 4.375 3.62501V7.37501H0.625C0.45924 7.37501 0.300269 7.44085 0.183058 7.55806C0.065848 7.67527 0 7.83425 0 8.00001C0 8.16577 0.065848 8.32474 0.183058 8.44195C0.300269 8.55916 0.45924 8.62501 0.625 8.62501H4.375V12.375C4.375 12.7065 4.5067 13.0245 4.74112 13.2589C4.97554 13.4933 5.29348 13.625 5.625 13.625H8.125V14.25C8.125 14.5815 8.2567 14.8995 8.49112 15.1339C8.72554 15.3683 9.04348 15.5 9.375 15.5H11.875C12.2065 15.5 12.5245 15.3683 12.7589 15.1339C12.9933 14.8995 13.125 14.5815 13.125 14.25V11.75C13.125 11.4185 12.9933 11.1005 12.7589 10.8661C12.5245 10.6317 12.2065 10.5 11.875 10.5H9.375C9.04348 10.5 8.72554 10.6317 8.49112 10.8661C8.2567 11.1005 8.125 11.4185 8.125 11.75V12.375H5.625V8.62501H15V10.5C14.9999 10.6132 15.0306 10.7243 15.0887 10.8214C15.1468 10.9185 15.2302 10.998 15.33 11.0514C15.4298 11.1048 15.5422 11.1302 15.6552 11.1247C15.7683 11.1192 15.8777 11.0831 15.9719 11.0203L19.7219 8.52032C19.8076 8.46327 19.8779 8.38591 19.9265 8.29514C19.9752 8.20437 20.0006 8.10298 20.0006 8.00001C20.0006 7.89703 19.9752 7.79564 19.9265 7.70487C19.8779 7.6141 19.8076 7.53675 19.7219 7.47969ZM10.625 1.75001C10.8722 1.75001 11.1139 1.82332 11.3195 1.96067C11.525 2.09802 11.6852 2.29324 11.7799 2.52165C11.8745 2.75006 11.8992 3.00139 11.851 3.24387C11.8028 3.48635 11.6837 3.70907 11.5089 3.88389C11.3341 4.0587 11.1113 4.17776 10.8689 4.22599C10.6264 4.27422 10.3751 4.24946 10.1466 4.15486C9.91824 4.06025 9.72301 3.90003 9.58566 3.69447C9.44831 3.48891 9.375 3.24723 9.375 3.00001C9.375 2.66849 9.5067 2.35054 9.74112 2.11612C9.97554 1.8817 10.2935 1.75001 10.625 1.75001ZM9.375 11.75H11.875V14.25H9.375V11.75ZM16.25 9.33204V6.67188L18.2484 8.00001L16.25 9.33204Z"
-                      fill="#3D495C"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <svg
-                    width="18"
-                    height="14"
-                    viewBox="0 0 18 14"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M11.8469 5.22969L8.09688 2.72969C8.00273 2.66687 7.89329 2.6308 7.78024 2.62533C7.6672 2.61985 7.55479 2.64517 7.45501 2.69859C7.35523 2.75201 7.27183 2.83152 7.21371 2.92863C7.15559 3.02575 7.12493 3.13682 7.125 3.25V8.25C7.12493 8.36318 7.15559 8.47425 7.21371 8.57137C7.27183 8.66848 7.35523 8.74799 7.45501 8.80141C7.55479 8.85483 7.6672 8.88015 7.78024 8.87467C7.89329 8.8692 8.00273 8.83313 8.09688 8.77031L11.8469 6.27031C11.9326 6.21326 12.0029 6.13591 12.0515 6.04513C12.1002 5.95436 12.1256 5.85298 12.1256 5.75C12.1256 5.64702 12.1002 5.54564 12.0515 5.45487C12.0029 5.36409 11.9326 5.28674 11.8469 5.22969ZM8.375 7.08203V4.42188L10.3734 5.75L8.375 7.08203ZM15.875 0.125H2.125C1.79348 0.125 1.47554 0.256696 1.24112 0.491116C1.0067 0.725537 0.875 1.04348 0.875 1.375V10.125C0.875 10.4565 1.0067 10.7745 1.24112 11.0089C1.47554 11.2433 1.79348 11.375 2.125 11.375H15.875C16.2065 11.375 16.5245 11.2433 16.7589 11.0089C16.9933 10.7745 17.125 10.4565 17.125 10.125V1.375C17.125 1.04348 16.9933 0.725537 16.7589 0.491116C16.5245 0.256696 16.2065 0.125 15.875 0.125ZM15.875 10.125H2.125V1.375H15.875V10.125ZM17.125 13.25C17.125 13.4158 17.0592 13.5747 16.9419 13.6919C16.8247 13.8092 16.6658 13.875 16.5 13.875H1.5C1.33424 13.875 1.17527 13.8092 1.05806 13.6919C0.940848 13.5747 0.875 13.4158 0.875 13.25C0.875 13.0842 0.940848 12.9253 1.05806 12.8081C1.17527 12.6908 1.33424 12.625 1.5 12.625H16.5C16.6658 12.625 16.8247 12.6908 16.9419 12.8081C17.0592 12.9253 17.125 13.0842 17.125 13.25Z"
-                      fill="#3D495C"
-                    />
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <div className="modalFlightTiming">
-              <div className="flightTiming">
-                <div className="startTime">
-                  <h5>{item?.flight_detail?.start_time}</h5>
-                  <p>{item?.flight_detail?.start_date}</p>
-                </div>
-                <div className="FlightDirection">
-                  <div className="visualGuid">
-                    <div className="stopPoint"></div>
-
-                    {item?.stop?.length > 0 ? (
-                      item?.stop?.map((stopStayTime) => (
-                        <div className="stopsDetail">
-                          <span>{stopStayTime?.stayTime}</span>
-                          <div className="stopPoint stopDots"></div>
-                          <span>{stopStayTime?.name}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="stopsDetail">
-                        <span>03h 15min</span>
-                        <div className=""></div>
-                        <span>Direct</span>
-                      </div>
-                    )}
-                    <div className="stopPoint"></div>
-                  </div>
-                </div>
-                <div className="EndTime">
-                  <h5>{item.flight_detail.end_time}</h5>
-                  <p>{item.flight_detail.end_date}</p>
                 </div>
               </div>
             </div>
@@ -1033,24 +725,21 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
       <Modal
         title={
-          <>
-            <div className="modalHeader" style={{ textAlign: "center" }}>
-              <h2>Share this flight</h2>
-            </div>
-          </>
+          <div className="modalHeader" style={{ textAlign: "center" }}>
+            <h2>Share this flight</h2>
+          </div>
         }
         closable={{ "aria-label": "Custom Close Button" }}
         open={shareModal}
         footer={null}
         centered={true}
-        // onOk={handleOkCompare}
         onCancel={() => {
           handleCancelCompare("share");
         }}
         className="compareModal"
       >
         {filterData?.map((item) => (
-          <div>
+          <div key={item?.id}>
             <div className="modalFlightDetailCard">
               <div className="modalFlightDetail">
                 <div className="fightTitle">
@@ -1060,7 +749,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   <div className="nameAndDetails">
                     <h5>{item?.name}</h5>
                     <p>
-                      {item?.flight_detail?.flight_number} -
+                      {item?.flight_detail?.flight_number} -{" "}
                       {item?.flight_detail?.flight_class}
                     </p>
                   </div>
@@ -1071,50 +760,24 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     {item?.raw?.fare?.currencyCode ?? "$"}
                     {item.rawTotalStartingFare}
                   </h5>
-                  {/* <h5>${item.price.economyLite.price}/per seat</h5> */}
                 </div>
               </div>
             </div>
+
             <div className="copyMailWhatsappBtn">
               <div className="textCenter">
-                <button className="copyEmailBtn btnClass">
-                  <svg
-                    width="21"
-                    height="20"
-                    viewBox="0 0 21 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M14.875 5H3.625C3.45924 5 3.30027 5.06585 3.18306 5.18306C3.06585 5.30027 3 5.45924 3 5.625V16.875C3 17.0408 3.06585 17.1997 3.18306 17.3169C3.30027 17.4342 3.45924 17.5 3.625 17.5H14.875C15.0408 17.5 15.1997 17.4342 15.3169 17.3169C15.4342 17.1997 15.5 17.0408 15.5 16.875V5.625C15.5 5.45924 15.4342 5.30027 15.3169 5.18306C15.1997 5.06585 15.0408 5 14.875 5ZM14.25 16.25H4.25V6.25H14.25V16.25ZM18 3.125V14.375C18 14.5408 17.9342 14.6997 17.8169 14.8169C17.6997 14.9342 17.5408 15 17.375 15C17.2092 15 17.0503 14.9342 16.9331 14.8169C16.8158 14.6997 16.75 14.5408 16.75 14.375V3.75H6.125C5.95924 3.75 5.80027 3.68415 5.68306 3.56694C5.56585 3.44973 5.5 3.29076 5.5 3.125C5.5 2.95924 5.56585 2.80027 5.68306 2.68306C5.80027 2.56585 5.95924 2.5 6.125 2.5H17.375C17.5408 2.5 17.6997 2.56585 17.8169 2.68306C17.9342 2.80027 18 2.95924 18 3.125Z"
-                      fill="#1A3C7A"
-                    />
-                  </svg>
-                </button>
+                <button className="copyEmailBtn btnClass">Copy</button>
                 <p>Copy link</p>
               </div>
               <div className="textCenter">
-                <button className="copyEmailBtn btnClass">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M17.5 3.75H2.5C2.33424 3.75 2.17527 3.81585 2.05806 3.93306C1.94085 4.05027 1.875 4.20924 1.875 4.375V15C1.875 15.3315 2.0067 15.6495 2.24112 15.8839C2.47554 16.1183 2.79348 16.25 3.125 16.25H16.875C17.2065 16.25 17.5245 16.1183 17.7589 15.8839C17.9933 15.6495 18.125 15.3315 18.125 15V4.375C18.125 4.20924 18.0592 4.05027 17.9419 3.93306C17.8247 3.81585 17.6658 3.75 17.5 3.75ZM15.893 5L10 10.4023L4.10703 5H15.893ZM16.875 15H3.125V5.79609L9.57734 11.7109C9.69265 11.8168 9.84348 11.8755 10 11.8755C10.1565 11.8755 10.3074 11.8168 10.4227 11.7109L16.875 5.79609V15Z"
-                      fill="#1A3C7A"
-                    />
-                  </svg>
-                </button>
+                <button className="copyEmailBtn btnClass">Email</button>
                 <p>Email</p>
               </div>
               <div className="textCenter">
                 <button className="btnClass">
                   <img src={whatsappIcon} alt="" />
                 </button>
-                <p>Email</p>
+                <p>WhatsApp</p>
               </div>
             </div>
           </div>

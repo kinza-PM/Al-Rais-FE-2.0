@@ -11,6 +11,8 @@ export const buildPerSegmentFlightDetail = (baseDetail: any = {}, seg: any = {})
     end_date: seg?.arrivalDateTime ? formatDate(seg?.arrivalDateTime) : baseDetail?.end_date,
     duration: seg?.duration ?? baseDetail?.duration,
     marketingAirline: seg?.marketingAirline ?? baseDetail?.marketingAirline,
+    departureTerminal: seg?.departureTerminal ?? baseDetail?.departureTerminal,
+    arrivalTerminal: seg?.arrivalTerminal ?? baseDetail?.arrivalTerminal,
   };
 };
 
@@ -36,6 +38,8 @@ export const mapOfferForCompareOneWay = (f: any) => {
       layoverTime: s?.layoverTime ?? null,
       fromCode: s?.departureAirportCode,
       toCode: s?.arrivalAirportCode,
+      departureTerminal: s?.departureTerminal ?? null,
+      arrivalTerminal: s?.arrivalTerminal ?? null,
       equipment: s?.equipmentName ?? s?.equipmentType ?? null,
       seatsAvailable: s?.seatsAvailable ?? null,
       baggageChecked: checked ? `${checked.value}${checked.unit ?? ""}` : null,
@@ -98,6 +102,8 @@ export const mapOfferForCompareRoundTrip = (f: any) => {
       layoverTime: seg?.layoverTime ?? null,
       fromCode: seg?.departureAirportCode,
       toCode: seg?.arrivalAirportCode,
+      departureTerminal: seg?.departureTerminal ?? null,
+      arrivalTerminal: seg?.arrivalTerminal ?? null,
       equipment: seg?.equipmentName ?? seg?.equipmentType ?? null,
       seatsAvailable: seg?.seatsAvailable ?? null,
       baggageChecked: checked ? `${checked.value}${checked.unit ?? ""}` : null,
@@ -117,6 +123,8 @@ export const mapOfferForCompareRoundTrip = (f: any) => {
       layoverTime: seg?.layoverTime ?? null,
       fromCode: seg?.departureAirportCode,
       toCode: seg?.arrivalAirportCode,
+      departureTerminal: seg?.departureTerminal ?? null,
+      arrivalTerminal: seg?.arrivalTerminal ?? null,
       equipment: seg?.equipmentName ?? seg?.equipmentType ?? null,
       seatsAvailable: seg?.seatsAvailable ?? null,
       baggageChecked: checked ? `${checked.value}${checked.unit ?? ""}` : null,

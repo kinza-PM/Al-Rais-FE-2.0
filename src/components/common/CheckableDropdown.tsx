@@ -6,6 +6,7 @@ export interface DropdownOption {
   value: string;
   label: string;
   disabled?: boolean;
+  hideSelectionIcon?: boolean;
 }
 
 interface CheckableDropdownProps {
@@ -90,12 +91,18 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
       // Radio-like behavior: select only this option
       const newValue = value === optionValue ? "" : optionValue;
       onChange(newValue);
+      setIsOpen(false);
     } else {
-      // Multi-select behavior: toggle option
-      const currentValue = value as string[];
+      // Multi-select: "Clear" row (empty value) resets all selections
+      if (optionValue === "") {
+        onChange([]);
+        setIsOpen(false);
+        return;
+      }
+      const currentValue = (value as string[]) || [];
       const newValue = currentValue.includes(optionValue)
-        ? currentValue.filter((val) => val !== optionValue) // Remove if already selected
-        : [...currentValue, optionValue]; // Add if not selected
+        ? currentValue.filter((val) => val !== optionValue)
+        : [...currentValue, optionValue];
 
       onChange(newValue);
     }
@@ -132,8 +139,8 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
   };
 
   const baseClasses = `
-        appearance-none h-11 w-full rounded-xl border pl-4 pr-8 text-[14px] text-[#0F172A] 
-        outline-none border-[#DFE7F3]
+        appearance-none h-[50px] w-full rounded-[16px] border pl-4 pr-8 text-[14px] text-[#0F172A]
+        outline-none border-[#C2CAD6]
         ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"}
         ${error ? "border-red-500" : ""}
     `;
@@ -227,26 +234,35 @@ const CheckableDropdown: React.FC<CheckableDropdownProps> = ({
                 options.map((option) => (
                   <label
                     key={option.id}
+                    role="option"
+                    aria-selected={valueArray.includes(option.value)}
                     className={`
                                             flex items-center w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
                                             ${option.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                                             ${valueArray.includes(option.value) ? "bg-[#2351A3]/5" : ""}
                                         `}
+                    onClick={
+                      option.hideSelectionIcon
+                        ? () => handleOptionToggle(option.value)
+                        : undefined
+                    }
                   >
-                    <input
-                      type={singleSelect ? "radio" : "checkbox"}
-                      name={singleSelect ? "radio-group" : undefined}
-                      checked={valueArray.includes(option.value)}
-                      onChange={() => handleOptionToggle(option.value)}
-                      disabled={option.disabled}
-                      className={
-                        singleSelect
-                          ? "h-4 w-4 text-[#2351A3] border-[#DFE7F3] focus:ring-[#2351A3] focus:ring-offset-0"
-                          : "h-4 w-4 text-[#2351A3] border-[#DFE7F3] rounded focus:ring-[#2351A3] focus:ring-offset-0"
-                      }
-                    />
+                    {!option.hideSelectionIcon && (
+                      <input
+                        type={singleSelect ? "radio" : "checkbox"}
+                        name={singleSelect ? "radio-group" : undefined}
+                        checked={valueArray.includes(option.value)}
+                        onChange={() => handleOptionToggle(option.value)}
+                        disabled={option.disabled}
+                        className={
+                          singleSelect
+                            ? "h-4 w-4 text-[#2351A3] border-[#DFE7F3] focus:ring-[#2351A3] focus:ring-offset-0"
+                            : "h-4 w-4 text-[#2351A3] border-[#DFE7F3] rounded focus:ring-[#2351A3] focus:ring-offset-0"
+                        }
+                      />
+                    )}
                     <span
-                      className={`ml-3 ${valueArray.includes(option.value) ? "text-[#2351A3] font-medium" : "text-[#0F172A]"}`}
+                      className={`${option.hideSelectionIcon ? "" : "ml-3"} ${valueArray.includes(option.value) ? "text-[#2351A3] font-medium" : "text-[#0F172A]"}`}
                     >
                       {option.label}
                     </span>

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Input from "../atoms/Input";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import logoSmall from "../../assets/images/logo-small.png";
@@ -29,11 +29,19 @@ import { PhoneInput } from "react-international-phone";
 interface SignupFormProps {
   onLoginClick: () => void;
   onSignupSuccess?: () => void;
+  onClose?: () => void;
+  compact?: boolean;
+  returnUrl?: string;
+  bookingData?: unknown;
 }
 
 const SignupForm: React.FC<SignupFormProps> = ({
   onLoginClick,
   onSignupSuccess,
+  onClose,
+  compact = false,
+  returnUrl: returnUrlProp,
+  bookingData: bookingDataProp,
 }) => {
   const [formData, setFormData] = useState({
     title: "MR",
@@ -81,8 +89,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
   } = useAuth();
   const { isOnline } = useNetworkStatus();
 
-  const returnUrl = (location.state as any)?.returnUrl;
-  const bookingData = (location.state as any)?.bookingData;
+  const returnUrl = returnUrlProp ?? (location.state as any)?.returnUrl;
+  const bookingData = bookingDataProp ?? (location.state as any)?.bookingData;
 
   function ChevronDown() {
     return (
@@ -160,8 +168,14 @@ const SignupForm: React.FC<SignupFormProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "email" ? filterEmailInput(value) : value,
+      [name]:
+        name === "email"
+          ? filterEmailInput(value).slice(0, 254)
+          : value,
     }));
+    if (name === "email" && !touched.email) {
+      setTouched((prev) => ({ ...prev, email: true }));
+    }
   };
 
   const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
@@ -211,15 +225,22 @@ const SignupForm: React.FC<SignupFormProps> = ({
     if (result.success) {
       // Fallback: if page doesn't reload in 2 seconds, close modal
       toast.success("Account verified successfully!");
+      // If parent provided onSignupSuccess (e.g. modal flow), always prefer that so the modal can close.
+      if (onSignupSuccess) {
+        setTimeout(() => {
+          onSignupSuccess();
+        }, 600);
+        return;
+      }
+
       if (returnUrl && bookingData) {
         setTimeout(() => {
           navigate(returnUrl, { state: bookingData, replace: true });
         }, 1500);
-      } else {
-        setTimeout(() => {
-          onSignupSuccess?.();
-        }, 2000);
+        return;
       }
+
+      // No modal callback and no return target: keep current state.
     } else {
       //useeffect error will handle this (useAuth)
       // toast.error(result.message || "Invalid verification code...");
@@ -365,23 +386,27 @@ const SignupForm: React.FC<SignupFormProps> = ({
       ) {
         // Auto-login was successful
         toast.success("Account created and logged in successfully!");
+        if (onSignupSuccess) {
+          onSignupSuccess();
+          return;
+        }
         if (returnUrl && bookingData) {
           setTimeout(() => {
             navigate(returnUrl, { state: bookingData, replace: true });
           }, 1500);
-        } else {
-          onSignupSuccess?.();
         }
       } else {
         toast.success(result.message || "Account created successfully!");
+        if (onSignupSuccess) {
+          setTimeout(() => {
+            onSignupSuccess();
+          }, 400);
+          return;
+        }
         if (returnUrl && bookingData) {
           setTimeout(() => {
             navigate(returnUrl, { state: bookingData, replace: true });
           }, 1500);
-        } else {
-          setTimeout(() => {
-            onSignupSuccess?.();
-          }, 1000);
         }
       }
     } else {
@@ -423,7 +448,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
   const PasswordRequirement = () => {
     return (
       <div className="flex items-center gap-1.5 text-[11px] text-[#3D495C] mt-1">
-        <svg
+        {/* <svg
           width="16"
           height="16"
           viewBox="0 0 18 18"
@@ -435,7 +460,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
             d="M9 0.875C7.39303 0.875 5.82214 1.35152 4.486 2.24431C3.14985 3.1371 2.10844 4.40605 1.49348 5.8907C0.87852 7.37535 0.717618 9.00901 1.03112 10.5851C1.34463 12.1612 2.11846 13.6089 3.25476 14.7452C4.39106 15.8815 5.8388 16.6554 7.4149 16.9689C8.99099 17.2824 10.6247 17.1215 12.1093 16.5065C13.594 15.8916 14.8629 14.8502 15.7557 13.514C16.6485 12.1779 17.125 10.607 17.125 9C17.1227 6.84581 16.266 4.78051 14.7427 3.25727C13.2195 1.73403 11.1542 0.877275 9 0.875ZM12.5672 7.56719L8.19219 11.9422C8.13415 12.0003 8.06522 12.0464 7.98934 12.0779C7.91347 12.1093 7.83214 12.1255 7.75 12.1255C7.66787 12.1255 7.58654 12.1093 7.51067 12.0779C7.43479 12.0464 7.36586 12.0003 7.30782 11.9422L5.43282 10.0672C5.31554 9.94991 5.24966 9.79085 5.24966 9.625C5.24966 9.45915 5.31554 9.30009 5.43282 9.18281C5.55009 9.06554 5.70915 8.99965 5.875 8.99965C6.04086 8.99965 6.19992 9.06554 6.31719 9.18281L7.75 10.6164L11.6828 6.68281C11.7409 6.62474 11.8098 6.57868 11.8857 6.54725C11.9616 6.51583 12.0429 6.49965 12.125 6.49965C12.2071 6.49965 12.2884 6.51583 12.3643 6.54725C12.4402 6.57868 12.5091 6.62474 12.5672 6.68281C12.6253 6.74088 12.6713 6.80982 12.7027 6.88569C12.7342 6.96156 12.7504 7.04288 12.7504 7.125C12.7504 7.20712 12.7342 7.28844 12.7027 7.36431C12.6713 7.44018 12.6253 7.50912 12.5672 7.56719Z"
             fill="#22c55e"
           />
-        </svg>
+        </svg> */}
         Contains letters (A-Z, a-z), digits 0-9 AND special characters.
       </div>
     );
@@ -443,17 +468,39 @@ const SignupForm: React.FC<SignupFormProps> = ({
 
   return (
     <div
-      className="w-full max-w-[468px] space-y-4 rounded-xl border border-[#E4E4E7] bg-white shadow-lg transition-shadow sm:rounded-2xl"
+      className={[
+        "relative w-full max-w-[468px] rounded-xl border border-[#E4E4E7] bg-white shadow-lg transition-shadow sm:rounded-2xl",
+        compact ? "space-y-2" : "space-y-4",
+      ].join(" ")}
       style={{
         opacity: 1,
         width: "100%",
         minHeight: 0,
       }}
     >
-      <div className="px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10">
+      {/* Close button — inside the card, top-right corner */}
+      {onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-[#3D495C] hover:bg-[#F2F2F3] transition-colors z-10"
+          aria-label="Close"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
+      <div
+        className={[
+          "px-4",
+          compact
+            ? "py-2 sm:py-3 md:px-6 md:py-4"
+            : "py-6 sm:py-8 md:px-8 md:py-10",
+        ].join(" ")}
+      >
         {!showOtpInput ? (
           <div>
-            <div className="flex justify-center mb-6">
+            <div className={compact ? "flex justify-center mb-2" : "flex justify-center mb-6"}>
               <Link
                 to="/"
                 aria-label="Go to home page"
@@ -468,15 +515,15 @@ const SignupForm: React.FC<SignupFormProps> = ({
               </Link>
             </div>
 
-            <h2 className="mb-1 text-center text-xl font-semibold text-[#0A0C0F] sm:text-2xl">
+            <h2 className={compact ? "mb-0.5 text-center text-xl font-semibold text-[#0A0C0F]" : "mb-1 text-center text-xl font-semibold text-[#0A0C0F] sm:text-2xl"}>
               Welcome
             </h2>
-            <p className="mb-6 text-center text-sm text-[#3D495C]">
+            <p className={compact ? "mb-2 text-center text-sm text-[#3D495C]" : "mb-6 text-center text-sm text-[#3D495C]"}>
               Let's setup an account
             </p>
 
             {/* Toggle Buttons */}
-            <div className="flex justify-center mb-6">
+            <div className={compact ? "flex justify-center mb-2" : "flex justify-center mb-6"}>
               <div className="flex items-center rounded-xl ring-1 ring-[#C2CAD6] px-2 py-1">
                 <button
                   type="button"
@@ -484,9 +531,8 @@ const SignupForm: React.FC<SignupFormProps> = ({
                     setUsePhone(false);
                     setTouched((prev) => ({ ...prev, email: false }));
                   }}
-                  className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                    !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                  }`}
+                  className={`px-6 py-1.5 text-[13px] rounded-xl transition-colors ${!usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                    }`}
                 >
                   Email
                 </button>
@@ -496,16 +542,15 @@ const SignupForm: React.FC<SignupFormProps> = ({
                     setUsePhone(true);
                     setTouched((prev) => ({ ...prev, email: false }));
                   }}
-                  className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                    usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-                  }`}
+                  className={`px-6 py-1.5 text-[13px] rounded-xl transition-colors ${usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                    }`}
                 >
                   Phone
                 </button>
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className={compact ? "space-y-2.5" : "space-y-4"}>
               {/* <div>
                 <Input
                   type="text"
@@ -534,18 +579,20 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 <label className="text-sm text-xs font-normal text-[#3D495C] mb-1 block">
                   Full Name
                 </label>
-                <div className="flex gap-2">
+                <div className={compact ? "flex gap-1.5" : "flex gap-2"}>
                   <div className="relative flex items-center w-24">
                     <select
                       aria-label="Title"
-                      className="px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"
+                      className={compact ? "px-2.5 py-1.5 w-full h-9 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent" : "px-3 py-2 w-full h-10 appearance-none rounded-xl border border-[#C2CAD6] bg-white pr-6 text-sm text-[#3D495C] focus:outline-none focus:ring-1 focus:ring-[#C2CAD6] focus:border-transparent"}
                       value={formData.title}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const newTitle = e.target.value;
                         setFormData((prev) => ({
                           ...prev,
-                          title: e.target.value,
-                        }))
-                      }
+                          title: newTitle,
+                          gender: newTitle === "MR" ? "M" : "F",
+                        }));
+                      }}
                     >
                       <option value="MR">Mr.</option>
                       <option value="MS">Ms.</option>
@@ -651,6 +698,21 @@ const SignupForm: React.FC<SignupFormProps> = ({
                       error={emailHasError}
                       rounded="xl"
                       required
+                      inputProps={{
+                        maxLength: 254,
+                        autoComplete: "email",
+                        inputMode: "email",
+                        spellCheck: false,
+                        onPaste: (e) => {
+                          const pasted = (e.clipboardData?.getData("text") || "").trim();
+                          const sanitized = filterEmailInput(pasted).slice(0, 254);
+                          e.preventDefault();
+                          setFormData((prev) => ({ ...prev, email: sanitized }));
+                          if (!touched.email) {
+                            setTouched((prev) => ({ ...prev, email: true }));
+                          }
+                        },
+                      }}
                     />
                   )}
                   {touched.email && emailHasError && (
@@ -664,7 +726,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] text-[#3D495C]">
+                <div className={compact ? "flex items-center justify-between text-[10px] text-[#3D495C]" : "flex items-center justify-between text-[11px] text-[#3D495C]"}>
                   <p>
                     I would like to receive important updates and exciting deals
                   </p>
@@ -772,20 +834,19 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 </div>
               )} */}
 
-              <div className="flex justify-center pt-1">
+              <div className={compact ? "flex justify-center pt-0.5" : "flex justify-center pt-1"}>
                 <button
                   type="submit"
                   disabled={!isFormValid || loading.signup || !isOnline}
                   // className="flex min-h-[47px] min-w-[142px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-white transition-opacity hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-70 sm:min-w-[142px]"
                   className={`
-                    flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5
-                    rounded-full px-10 py-3.5
+                    flex min-h-[42px] min-w-[140px] items-center justify-center gap-2
+                    rounded-full px-8 py-2.5
                     font-semibold text-white tracking-[0.5px]
                     transition-opacity hover:opacity-95
-                    ${
-                      !isFormValid || loading.signup || !isOnline
-                        ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
-                        : "auth-bg-btn"
+                    ${!isFormValid || loading.signup || !isOnline
+                      ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                      : "auth-bg-btn"
                     }
                   `}
                   style={{
@@ -885,10 +946,9 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   rounded-full px-10 py-3.5
                   font-semibold text-white tracking-[0.5px]
                   transition-opacity hover:opacity-95
-                  ${
-                    !otpCode || otpCode.length !== 6 || otpLoading || !isOnline
-                      ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
-                      : "auth-bg-btn"
+                  ${!otpCode || otpCode.length !== 6 || otpLoading || !isOnline
+                    ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                    : "auth-bg-btn"
                   }
                 `}
                 style={{ background: "var(--black-100, #C2CAD6)", opacity: 1 }}
@@ -930,7 +990,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
 
         {!showOtpInput && (
           <>
-            <div className="mt-6 text-center">
+            <div className={compact ? "mt-2 text-center" : "mt-6 text-center"}>
               <p className="text-sm text-[#3D495C]">
                 Already have an account?{" "}
                 <button
@@ -942,7 +1002,7 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 </button>
               </p>
             </div>
-            <div className="mt-8 text-center">
+            <div className={compact ? "mt-2.5 text-center" : "mt-8 text-center"}>
               <p
                 className="text-[#3D495C]"
                 style={{

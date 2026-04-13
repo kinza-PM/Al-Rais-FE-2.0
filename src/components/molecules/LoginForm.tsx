@@ -13,13 +13,16 @@ interface LoginFormProps {
   onSignupClick: () => void;
   onLoginSuccess?: () => void;
   onForgotPasswordClick?: () => void;
-  // onLoginError?: () => void;
+  onLoginFailed?: () => void;
+  onClose?: () => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({
   onSignupClick,
   onLoginSuccess,
   onForgotPasswordClick,
+  onLoginFailed,
+  onClose,
 }) => {
   const [formData, setFormData] = useState({
     email: "",
@@ -39,8 +42,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "email" ? filterEmailInput(value) : value,
+      [name]:
+        name === "email"
+          ? filterEmailInput(value).slice(0, 254)
+          : value,
     }));
+    if (name === "email" && !touched.email) {
+      setTouched((prev) => ({ ...prev, email: true }));
+    }
     if (error) clearError();
   };
 
@@ -99,12 +108,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
     const errorMessage = result.message || "Login failed. Please try again.";
 
     const errorActions: Record<string, () => void> = {
-      INVALID_CREDENTIALS: () =>
-        showErrorWithAction(
-          errorMessage,
-          "Reset password",
-          onForgotPasswordClick,
-        ),
+      INVALID_CREDENTIALS: () => {
+        if (onLoginFailed) {
+          onLoginFailed();
+        } else {
+          showErrorWithAction(errorMessage, "Reset password", onForgotPasswordClick);
+        }
+      },
       PASSWORD_RESET_REQUIRED: () =>
         showErrorWithAction(
           errorMessage,
@@ -227,7 +237,19 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
   return (
     <div className="flex items-center justify-center">
-      <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg w-full max-w-[468px] px-6 py-10 sm:px-8">
+      <div className="relative bg-white rounded-2xl shadow-lg w-full max-w-[424px] px-8 py-8" style={{ minHeight: "600px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+        {/* Close button — inside the card, top-right corner */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-[#3D495C] hover:bg-[#F2F2F3] transition-colors"
+            aria-label="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M11 3L3 11M3 3L11 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </svg>
+          </button>
+        )}
         <div className="flex justify-center mb-6">
           <Link
             to="/"
@@ -258,9 +280,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 setUsePhone(false);
                 setTouched((prev) => ({ ...prev, email: false }));
               }}
-              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                !usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-              }`}
+              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${!usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                }`}
             >
               Email
             </button>
@@ -270,9 +291,8 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 setUsePhone(true);
                 setTouched((prev) => ({ ...prev, email: false }));
               }}
-              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${
-                usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
-              }`}
+              className={`px-7 py-2 text-[14px] rounded-xl transition-colors ${usePhone ? "bg-[#2351A3] text-white" : "text-[#3D495C]"
+                }`}
             >
               Phone
             </button>
@@ -355,6 +375,19 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 error={emailHasError}
                 rounded="xl"
                 inputProps={{
+                  maxLength: 254,
+                  autoComplete: "email",
+                  inputMode: "email",
+                  spellCheck: false,
+                  onPaste: (e) => {
+                    const pasted = (e.clipboardData?.getData("text") || "").trim();
+                    const sanitized = filterEmailInput(pasted).slice(0, 254);
+                    e.preventDefault();
+                    setFormData((prev) => ({ ...prev, email: sanitized }));
+                    if (!touched.email) {
+                      setTouched((prev) => ({ ...prev, email: true }));
+                    }
+                  },
                   "aria-invalid":
                     touched.email && emailHasError ? "true" : "false",
                   "aria-describedby":
@@ -428,10 +461,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
               flex w-full min-h-[47px] items-center justify-center gap-2.5
               rounded-full px-10 py-3.5
               font-medium text-white transition-opacity hover:opacity-95
-              ${
-                !isFormValid || !!loading.login || !isOnline
-                  ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
-                  : "auth-bg-btn"
+              ${!isFormValid || !!loading.login || !isOnline
+                ? "bg-[#C2CAD6] cursor-not-allowed opacity-70"
+                : "auth-bg-btn"
               }
             `}
           >

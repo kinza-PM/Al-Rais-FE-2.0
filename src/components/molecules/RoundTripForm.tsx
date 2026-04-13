@@ -110,7 +110,7 @@ const RoundTripForm: React.FC<Props> = ({
   );
   console.log(passengersError, cabinClassError);
   return (
-    <div className="flex items-end gap-4">
+    <div className="flex flex-col md:flex-row items-stretch md:items-end gap-4">
       <TravelRoutePicker
         options={countries}
         loading={loadingCountries}
@@ -124,7 +124,7 @@ const RoundTripForm: React.FC<Props> = ({
         labels={{ from: "From", to: "To" }}
         placeholders={{ from: "Please select", to: "Please select" }}
         disableSameSelection
-        widthClass="w-[190px]"
+        widthClass="w-full md:w-[190px]"
         fromError={fromError || undefined}
         toError={toError || undefined}
         onLoadMore={() => {
@@ -137,7 +137,7 @@ const RoundTripForm: React.FC<Props> = ({
       />
 
       {/* Departure date */}
-      <div className="w-[200px] relative">
+      <div className="w-full md:w-[240px] relative">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
@@ -180,7 +180,7 @@ const RoundTripForm: React.FC<Props> = ({
         </div> */}
       </div>
 
-      <div className="w-[200px] relative">
+      <div className="w-full md:w-[240px] relative">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Return date
         </label>
@@ -220,7 +220,7 @@ const RoundTripForm: React.FC<Props> = ({
       </div>
 
       {/* Passengers */}
-      <div className="w-[190px] relative">
+      <div className="w-full md:w-[240px] relative">
         <PassengerCabinDropdown
           schema={passengerSchema}
           loadingPassengers={loadingPassengers}

@@ -379,24 +379,34 @@ const FlightHeroSection: React.FC = () => {
       ) : (
         <>
           {/* Trip type segmented control */}
-          <div className="flex justify-center mt-4">
-            <div className="flex items-center rounded-xl ring-1 ring-[#D9E2EF] p-1 bg-white">
+          {/* Trip type segmented control */}
+          {/* Trip type segmented control */}
+          <div className="flex justify-center mt-0.5"> {/* Changed from mt-1 to mt-0.5 */}
+            <div className="flex items-center rounded-xl p-1 bg-white">
               {nsLoading.flightTypes && (
                 <div className="px-6 py-2 text-[14px] rounded-xl text-[#3A4350] opacity-60">
                   Loading…
                 </div>
               )}
               {!nsLoading.flightTypes &&
-                tabs.map((t) => (
+                tabs.map((t, index) => (
                   <button
                     key={t.id}
                     type="button"
                     onClick={() => setTrip(t.key)}
-                    className={`px-6 py-2 text-[14px] rounded-xl transition-colors ${
-                      trip === t.key
-                        ? "bg-[#2351A3] text-white"
-                        : "text-[#3A4350] hover:bg-[#F4F7FD]"
-                    }`}
+                    className={`text-[14px] transition-colors cursor-pointer flex items-center justify-center ${trip === t.key ? "text-white" : "text-[#3A4350]"
+                      }`}
+                    style={{
+                      width: 115,
+                      height: 35,
+                      padding: "0 16px",
+                      borderBottomLeftRadius: 16,
+                      borderBottomRightRadius: 16,
+                      background: trip === t.key ? "var(--primary-300, #2351A3)" : "#F2F2F3",
+                      opacity: 1,
+                      transform: "rotate(0deg)",
+                      marginRight: index < tabs.length - 1 ? 8 : 0,
+                    }}
                   >
                     {t.label}
                   </button>
@@ -404,8 +414,8 @@ const FlightHeroSection: React.FC = () => {
             </div>
           </div>
 
-          {/* Form row */}
-          <div className="px-10 pb-8 pt-6">
+          {/* ── Form fields + Search button ── */}
+          <div className="px-4 sm:px-6 md:px-10 pt-5 pb-5">
             {trip === "oneway" && (
               <OneWayForm
                 countries={countries as AirportOption[]}
@@ -534,12 +544,15 @@ const FlightHeroSection: React.FC = () => {
               />
             )}
 
-            {/* Search */}
-            <div className="flex justify-center mt-8">
+            {/* ── Search button ── */}
+            <div
+              className={`flex justify-center ${!hasAttemptedValidation ? "mt-4" : "mt-8"}`}
+            >
               <button
-                className="text-[16px] font-medium text-white"
+                className="text-[16px] font-medium text-white w-full sm:w-auto"
                 style={{
-                  width: 137,
+                  width: "auto",
+                  minWidth: 137,
                   height: 47,
                   borderRadius: 100,
                   padding: "14px 40px",

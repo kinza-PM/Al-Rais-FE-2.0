@@ -36,11 +36,10 @@ const IconBtn: React.FC<{
     aria-label={label}
     onClick={onClick}
     disabled={disabled}
-    className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-[14px] ${
-      disabled
-        ? "bg-[#E6EEFF] text-[#9BB3E8] cursor-not-allowed"
-        : "bg-[#2351A3]"
-    }`}
+    className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-[14px] ${disabled
+      ? "bg-[#E6EEFF] text-[#9BB3E8] cursor-not-allowed"
+      : "bg-[#2351A3]"
+      }`}
   >
     <span className="block leading-none transform -translate-y-px">
       {children}
@@ -85,9 +84,17 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   // schema rows (from API)
   const rows = useMemo(() => schema ?? [], [schema]);
 
-  // initial pax state (keeps shape from schema)
+  // Initial pax state should preserve incoming values even before schema loads.
   const initialPax = useMemo<Pax>(() => {
-    const p: Pax = { rooms: value?.rooms ?? 0 };
+    const p: Pax = {
+      adults: value?.adults ?? 0,
+      kids: value?.kids ?? 0,
+      children: value?.children ?? 0,
+      infants: value?.infants ?? 0,
+      seniors: value?.seniors ?? 0,
+      rooms: value?.rooms ?? 1,
+    };
+
     for (const r of rows) (p as any)[r.key] = (value as any)?.[r.key] ?? 0;
     return p;
   }, [rows, value]);
@@ -98,10 +105,15 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   const ref = useRef<HTMLDivElement>(null);
   const isUpdatingFromProps = useRef(false);
 
-  // total passengers (sum of rows keys)
+  // Total passengers should not depend on schema loading, otherwise refresh can
+  // briefly show 00 passengers while rows are still empty.
   const total = useMemo(
-    () => rows.reduce((acc, r) => acc + ((pax as any)[r.key] || 0), 0),
-    [rows, pax],
+    () =>
+      (pax.adults || 0) +
+      (pax.kids || pax.children || 0) +
+      (pax.infants || 0) +
+      (pax.seniors || 0),
+    [pax],
   );
 
   useEffect(() => {
@@ -149,6 +161,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
       "required",
       "Please complete",
       "Maximum",
+      "Please specify"
     ];
     return validationKeywords.some((keyword) =>
       errorMessage.toLowerCase().includes(keyword.toLowerCase()),
@@ -170,13 +183,16 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
 
   // --- CHILDREN AGES HANDLING ---
   // detect children key in schema (support 'kids' or 'children')
-  const childRowKey = useMemo(
-    () =>
-      rows.find((r) => r.key === "kids")?.key as
-        | (keyof Pax & string)
-        | undefined,
-    [rows],
-  );
+  const childRowKey = useMemo(() => {
+    const explicitKey = rows.find((r) => r.key === "kids")?.key as
+      | (keyof Pax & string)
+      | undefined;
+
+    if (explicitKey) return explicitKey;
+    if ((pax.kids ?? 0) > 0) return "kids";
+    if ((pax.children ?? 0) > 0) return "children";
+    return undefined;
+  }, [rows, pax.kids, pax.children]);
 
   const childCount = (childRowKey && ((pax as any)[childRowKey] || 0)) || 0;
 
@@ -203,17 +219,34 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
 
   const handleChildAgeChange = (index: number, value: string) => {
     // const num = value === "" ? null : Math.max(2, Math.min(12, Number(value)));
+    if (value !== "" && !/^\d+$/.test(value)) return;
     const num = value === "" ? null : Number(value);
+    if (value === "") {
+      setChildAges((prev) => {
+        const next = [...prev];
+        next[index] = null;
+        return next;
+      });
+      return;
+    }
     setChildAges((prev) => {
       const next = [...prev];
       next[index] = num;
       return next;
     });
-  };
+  }
 
   const handleChildAgeBlur = (index: number, value: string) => {
-    // Focus chorne ke baad clamp karo
     if (value === "") return;
+    // Guard against browser autofill or paste edge-cases that bypass onChange
+    if (!/^\d+$/.test(value)) {
+      setChildAges((prev) => {
+        const next = [...prev];
+        next[index] = null;
+        return next;
+      });
+      return;
+    }
     const num = Math.max(2, Math.min(12, Number(value)));
     setChildAges((prev) => {
       const next = [...prev];
@@ -229,9 +262,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   );
 
   useEffect(() => {
-    if (initialChildAges && initialChildAges.length > 0) {
-      setChildAges(initialChildAges);
-    }
+    setChildAges(initialChildAges ?? []);
   }, [initialChildAges]);
 
   return (
@@ -251,7 +282,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
               handleToggle();
             }
           }}
-          className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none ${errorMessage && isValidationError ? "border-red-500" : "border-[#DFE7F3]"}`}
+          className={`h-[50px] w-full rounded-[16px] border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none ${errorMessage && isValidationError ? "border-red-500" : "border-[#C2CAD6]"}`}
           aria-haspopup="dialog"
           aria-expanded={open || showError}
           aria-invalid={showError}
@@ -357,6 +388,11 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
                         ? ""
                         : String(childAges[i])
                     }
+                    onKeyDown={(e) => {
+                      if ([".", "-", "+", "e", "E"].includes(e.key)) {
+                        e.preventDefault();
+                      }
+                    }}
                     onChange={(e) => handleChildAgeChange(i, e.target.value)}
                     onBlur={(e) => handleChildAgeBlur(i, e.target.value)}
                     className="w-20 h-9 rounded-xl border border-[#EDEFF6] pl-3 text-[14px] text-[#0F172A] bg-white placeholder:text-[#94A3B8] focus:outline-none focus:ring-0"

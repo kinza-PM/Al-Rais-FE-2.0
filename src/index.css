@@ -1,13 +1,17 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2351A3;
+}
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
-html, body {
+
+html,
+body {
   margin: 0;
   padding: 0;
   height: 100%;
@@ -16,9 +20,6 @@ html, body {
 #root {
   margin: 0;
   padding: 0;
-}
-@theme {
-  --color-primary: #2351A3;
 }
 
 /* Notification consent modal styles */
@@ -111,15 +112,12 @@ html, body {
   color: #2351a3;
 }
 
-/* Best deals: price filters row — disable vertical center at sm */
 @media (min-width: 640px) {
   .best-deals-filters-row {
-    /* align-items: center; */
     align-items: flex-start;
   }
 }
 
-/* Partners: continuous infinite marquee — no pause */
 @keyframes partners-marquee {
   0% {
     transform: translateX(0);
@@ -128,9 +126,64 @@ html, body {
     transform: translateX(-50%);
   }
 }
+
 .animate-partners-marquee {
   animation: partners-marquee 45s linear infinite;
 }
+
 .animate-partners-marquee:hover {
   animation-play-state: paused;
+}
+
+.custom-arrow {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .sm\:w-6-figma {
+    width: 5.5rem;
+  }
+
+  .sm\:h-6-figma {
+    height: 2.5rem;
+  }
+
+  .custom-arrow {
+    width: 5.5rem;
+    height: 2.5rem;
+  }
+}
+
+:root {
+  --hero-outer-h: 420px;
+  --hero-inner-h: 380px;
+}
+
+.hero-outer {
+  min-height: var(--hero-outer-h);
+}
+
+.hero-inner {
+  min-height: var(--hero-inner-h);
+  display: block;
+}
+
+.hotel-map-custom-tooltip.leaflet-tooltip {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  max-width: none !important;
+}
+
+.hotel-map-custom-tooltip .leaflet-tooltip-content {
+  margin: 0 !important;
+  min-width: 220px;
+  max-width: 260px;
+  width: max-content;
+}
+
+.hotel-map-custom-tooltip::before {
+  display: none !important;
 }

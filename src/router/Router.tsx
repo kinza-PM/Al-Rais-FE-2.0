@@ -7,7 +7,6 @@ import SearchHotel from "../pages/SearchHotel";
 import HotellDetailListing from "../pages/HotellDetailListing";
 const LandingPage = lazy(() => import("../pages/LandingPage"));
 // const TravelPage = lazy(() => import("../pages/TravelPage"));
-const AuthPage = lazy(() => import("../pages/AuthPage"));
 const PackagesPage = lazy(() => import("../pages/PackagesPage"));
 const AboutPage = lazy(() => import("../pages/AboutPage"));
 const MyBookingsPage = lazy(() => import("../pages/MyBookingsPage"));
@@ -21,6 +20,15 @@ const Travellers = lazy(() => import("../pages/Travellers"));
 const FlightBooking = lazy(() => import("../pages/FlightBooking"));
 const HotelBooking = lazy(() => import("../pages/HotelBooking"));
 const CustomerSupportPage = lazy(() => import("../pages/CustomerSupportPage"));
+const CookiesPolicyPage = lazy(() => import("../pages/CookiesPolicyPage"));
+const PrivacyPolicyPage = lazy(() => import("../pages/PrivacyPolicyPage"));
+const TermsOfServicesPage = lazy(() => import("../pages/TermsOfServicesPage"));
+const FAQPage = lazy(() => import("../pages/FAQPage"));
+const PaymentsHelpPage = lazy(() => import("../pages/PaymentsHelpPage"));
+const RefundCancellationPolicyPage = lazy(() => import("../pages/RefundCancellationPolicyPage")); // New import
+const HotelCancellationPage = lazy(() => import("../pages/HotelCancellationPage"));
+const HotelBookingDetailPage = lazy(() => import("../pages/HotelBookingDetailPage"));
+const FlightCancellationPage = lazy(() => import("../pages/FlightCancellationPage"));
 
 const router = createBrowserRouter([
   {
@@ -33,7 +41,7 @@ const router = createBrowserRouter([
       },
       {
         path: "auth",
-        element: <AuthPage />,
+        element: <LandingPage />,
       },
       {
         path: "travel",
@@ -63,6 +71,10 @@ const router = createBrowserRouter([
       {
         path: "flight-booking",
         element: <FlightBooking />,
+      },
+      {
+        path: "flight-cancellation",
+        element: <FlightCancellationPage />,
       },
       {
         path: "hotel-booking",
@@ -103,6 +115,42 @@ const router = createBrowserRouter([
       {
         path: "customer-support",
         element: <CustomerSupportPage />,
+      },
+      {
+        path: "cookies-policy",
+        element: <CookiesPolicyPage />,
+      },
+      {
+        path: "privacy-policy",
+        element: <PrivacyPolicyPage />,
+      },
+      {
+        path: "terms-of-services",
+        element: <TermsOfServicesPage />,
+      },
+      {
+        path: "faq",
+        element: <FAQPage />,
+      },
+      {
+        path: "payments-help",
+        element: <PaymentsHelpPage />,
+      },
+      {
+        path: "refund-cancellation-policy", // New route added
+        element: <RefundCancellationPolicyPage />,
+      },
+      {
+        path: "hotel-cancellation", // New route added
+        element: <HotelCancellationPage />,
+      },
+      {
+        path: "hotel-booking-detail",
+        element: (
+          <ProtectedRoute>
+            <HotelBookingDetailPage />
+          </ProtectedRoute>
+        ),
       },
       {
         path: "*",

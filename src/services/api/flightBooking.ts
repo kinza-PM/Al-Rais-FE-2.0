@@ -14,6 +14,7 @@ export type FlightInitialBooking = {
 export type FlightAncillaryBooking = {
   data: {
     offerId: string;
+    searchKey: string;
     selectedAncillaries: Array<{
       ancillaryOfferId: string;
       passengerKey: string;
@@ -28,6 +29,7 @@ export type FlightAncillarySearch = {
   otherAncillaryRequested: boolean;
   formOfPayment: string;
   travelType: string;
+  searchKey: string;
 };
 
 export type FlightFareRuleSearch = {

@@ -40,7 +40,7 @@ import toast from "react-hot-toast";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import {
   openBlankPopupAndCheckWebisteAllowPopup,
-  validateReservationFlightBookingData,
+  // validateReservationFlightBookingData,
   validateReservationFlightBookingDataFields,
   waitFor3DSecurePaymentPopupReturnResponse,
   type FlightFinalReservedBooking,
@@ -62,8 +62,8 @@ type FlightBookingPaymentSectionProps = {
   onReservationChange: (
     eOrPath:
       | React.ChangeEvent<
-          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-        >
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
       | string,
     maybeValue?: any,
   ) => void;
@@ -241,13 +241,13 @@ export default function FlightBookingPaymentSection({
 
     if (Object.keys(fieldErrors).length > 0) {
       // Still check overall validation for backward compatibility
-      const { valid } = validateReservationFlightBookingData(
-        reservation,
-        cardDetails,
-      );
-      if (!valid) {
-        return;
-      }
+      // const { valid } = validateReservationFlightBookingData(
+      //   reservation,
+      //   cardDetails,
+      // );
+      // if (!valid) {
+      //   return;
+      // }
       return;
     }
     // console.log("cardDetails", cardDetails);
@@ -355,7 +355,7 @@ export default function FlightBookingPaymentSection({
       // always cleanup/close popup if still open
       try {
         if (popup && !popup.closed) popup.close();
-      } catch (_) {}
+      } catch (_) { }
       setIsProcessing(false);
     }
   };
@@ -774,7 +774,7 @@ export default function FlightBookingPaymentSection({
 
                       <CardCollapseToggle
                         open={openAddress}
-                        onClick={() => {}}
+                        onClick={() => { }}
                         className="pointer-events-none"
                       />
                     </div>

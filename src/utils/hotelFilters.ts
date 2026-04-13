@@ -24,6 +24,45 @@ export type SortOption =
   | "discounts"
   | "beach";
 
+export function createEmptyHotelListingFilters(): HotelFilters {
+  return {
+    hotelName: "",
+    propertyTypes: [],
+    ratings: [],
+    propertyFacilities: [],
+    roomFacilities: [],
+    bedPreferences: [],
+    meals: [],
+    cancellationPolicy: [],
+  };
+}
+
+export function cloneHotelListingFilters(f: HotelFilters): HotelFilters {
+  return {
+    hotelName: f.hotelName,
+    propertyTypes: [...f.propertyTypes],
+    ratings: [...f.ratings],
+    propertyFacilities: [...f.propertyFacilities],
+    roomFacilities: [...f.roomFacilities],
+    bedPreferences: [...f.bedPreferences],
+    meals: [...f.meals],
+    cancellationPolicy: [...f.cancellationPolicy],
+  };
+}
+
+export const PROPERTY_TYPE_MAPPINGS: Record<string, string> = {
+  H: "Hotel",
+  P: "Pension / Guesthouse",
+  A: "Apartment",
+  S: "Suite / Studio",
+  V: "Villa",
+  R: "Resort",
+  G: "Guesthouse",
+  B: "Bed & Breakfast",
+  M: "Motel",
+  L: "Lodge",
+};
+
 // Facility name mappings for case-insensitive matching
 const FACILITY_MAPPINGS: Record<string, string[]> = {
   "Free WIFI": ["wifi", "wi-fi", "wireless", "internet"],
@@ -47,10 +86,10 @@ const FACILITY_MAPPINGS: Record<string, string[]> = {
 };
 
 // Property type mappings
-const PROPERTY_TYPE_MAPPINGS: Record<string, string[]> = {
-  Hotels: ["H"],
-  "Pension/Property": ["P"],
-};
+// const PROPERTY_TYPE_MAPPINGS: Record<string, string[]> = {
+//   Hotels: ["H"],
+//   "Pension/Property": ["P"],
+// };
 
 // Check if facility exists (case-insensitive)
 const hasFacility = (facilities: any[], searchTerm: string): boolean => {
@@ -73,16 +112,21 @@ const matchesPropertyType = (
   if (selectedTypes.length === 0) return true;
   if (!propertyType) return false;
 
-  const propertyTypeUpper = propertyType.toUpperCase();
+  const rawCode = propertyType.trim().toUpperCase();
+  const readableLabel = PROPERTY_TYPE_MAPPINGS[rawCode] || rawCode;
 
-  return selectedTypes.some((selectedType) => {
-    const mappings = PROPERTY_TYPE_MAPPINGS[selectedType] || [];
-    return mappings.some(
-      (mapping) =>
-        mapping.toUpperCase() === propertyTypeUpper ||
-        selectedType.toLowerCase() === "hotels"
-    );
-  });
+  return selectedTypes.includes(readableLabel);
+
+  // const propertyTypeUpper = propertyType.toUpperCase();
+
+  // return selectedTypes.some((selectedType) => {
+  //   const mappings = PROPERTY_TYPE_MAPPINGS[selectedType] || [];
+  //   return mappings.some(
+  //     (mapping) =>
+  //       mapping.toUpperCase() === propertyTypeUpper ||
+  //       selectedType.toLowerCase() === "hotels"
+  //   );
+  // });
 };
 
 // Check if rating matches
@@ -100,7 +144,15 @@ const matchesRating = (
 // Check if hotel has free cancellation
 const hasCancellationPolicy = (rooms: any[], policyType: string): boolean => {
   return rooms.some((room: any) => {
-    const policy = (room?.ratePlan?.cancelPolicyIndicator || "").toLowerCase();
+    // const policy = (room?.ratePlan?.cancelPolicyIndicator || "").toLowerCase();
+    const policy = (
+      room?.ratePlan?.cancellationPolicy ||
+      room?.ratePlan?.cancelPolicyIndicator ||
+      room?.rateNotes ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
 
     if (policyType === "Free cancellation") {
       return (
@@ -108,8 +160,15 @@ const hasCancellationPolicy = (rooms: any[], policyType: string): boolean => {
       );
     }
 
+    // if (policyType === "Non-refundable") {
+    //   return policy.includes("non-refundable");
+    // }
     if (policyType === "Non-refundable") {
-      return policy.includes("non-refundable");
+      return (
+        policy.includes("non-refundable") ||
+        policy.includes("non refundable") ||
+        policy.includes("no refund")
+      );
     }
 
     return false;

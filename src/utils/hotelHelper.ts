@@ -9,6 +9,7 @@ import RoomService from "../assets/svgs/room-service.svg";
 import TeaCoffeeMaker from "../assets/svgs/tea-coffee-maker.svg";
 import HotelBreakfast from "../assets/svgs/hotel-breakfast.svg";
 import Hotel from "../assets/svgs/hotel.svg";
+import toast from "react-hot-toast";
 
 export const FACILITY_KEYWORDS: Record<string, string[]> = {
   bathroom: [
@@ -247,10 +248,10 @@ export const processHotelSearchListingData = (
   let bestRoom =
     availableRooms.length > 0
       ? availableRooms.reduce((cheapest: any, room: any) => {
-          const roomPrice = room?.roomRate?.netAmount || 0;
-          const cheapestPrice = cheapest?.roomRate?.netAmount || 0;
-          return roomPrice < cheapestPrice ? room : cheapest;
-        })
+        const roomPrice = room?.roomRate?.netAmount || 0;
+        const cheapestPrice = cheapest?.roomRate?.netAmount || 0;
+        return roomPrice < cheapestPrice ? room : cheapest;
+      })
       : allRooms[0];
 
   // Fallback to first room if no bestRoom found
@@ -310,11 +311,11 @@ export const processHotelSearchListingData = (
       offers.length > 0 && offers.some((offer: any) => offer.included);
     const totalDiscount = hasOffer
       ? offers
-          .filter((offer: any) => offer.included)
-          .reduce(
-            (sum: number, offer: any) => sum + Math.abs(offer.amount || 0),
-            0
-          )
+        .filter((offer: any) => offer.included)
+        .reduce(
+          (sum: number, offer: any) => sum + Math.abs(offer.amount || 0),
+          0
+        )
       : 0;
     totalOriginalPrice = hasOffer ? price + totalDiscount : price;
 
@@ -350,3 +351,156 @@ export const processHotelSearchListingData = (
     hasOffer,
   };
 };
+
+export const handleHotelShare = (
+  hotelKey: string,
+  searchKey: string,
+  bookingParams?: object | null
+) => {
+  const params = new URLSearchParams({
+    searchKey: searchKey ?? "",
+  });
+
+  if (bookingParams) {
+    params.set("bookingParams", JSON.stringify(bookingParams));
+  }
+
+  const shareUrl = `${window.location.origin}/hotel-detail/${hotelKey}?${params.toString()}`;
+
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(shareUrl);
+  } else {
+    const textArea = document.createElement("textarea");
+    textArea.value = shareUrl;
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+  }
+
+  toast.success("Link copied to clipboard!");
+};
+
+/** Guest score (0–10) and review count from common API shapes (search + detail). */
+export function getHotelGuestReviewMeta(hotel: any): {
+  reviewScore?: number;
+  reviewCount?: number;
+} {
+  const pi = hotel?.propertyInfo ?? {};
+  const rawScore =
+    pi.reviewScore ??
+    pi.guestScore ??
+    pi.guestReviewScore ??
+    pi.averageReviewScore ??
+    pi.overallRating ??
+    pi.rating ??
+    hotel?.reviewScore ??
+    hotel?.guestScore ??
+    pi?.reviews?.averageScore ??
+    pi?.review?.score;
+  const rawCount =
+    pi.reviewCount ??
+    pi.totalReviews ??
+    pi.numberOfReviews ??
+    pi.reviewCountTotal ??
+    hotel?.reviewCount ??
+    pi?.reviews?.count ??
+    pi?.review?.count;
+
+  const score =
+    rawScore !== undefined && rawScore !== null && rawScore !== ""
+      ? Number(rawScore)
+      : undefined;
+  const count =
+    rawCount !== undefined && rawCount !== null && rawCount !== ""
+      ? Number(rawCount)
+      : undefined;
+
+  return {
+    reviewScore: Number.isFinite(score) ? score : undefined,
+    reviewCount: Number.isFinite(count) ? count : undefined,
+  };
+}
+
+export function getHotelGuestReviewQualityLabel(score: number): string {
+  if (score >= 9.5) return "Exceptional";
+  if (score >= 9.0) return "Excellent";
+  if (score >= 8.5) return "Superb";
+  if (score >= 8.0) return "Fabulous";
+  if (score >= 7.5) return "Very Good";
+  if (score >= 7.0) return "Good";
+  if (score >= 6.5) return "Pleasant";
+  return "Reviewed";
+}
+
+/** Room-type one-liners (e.g. "DUPLEX TENT") are not property blurbs */
+const MIN_ROOM_DESC_AS_PROPERTY_BLURB = 80;
+
+/**
+ * Hotel-specific listing blurb from supplier/API only.
+ * No generic placeholder — wrong copy must not appear under another hotel name.
+ */
+export function getHotelListingDescription(
+  hotel: any,
+  bestRoom?: { roomTypeDesc?: string } | null,
+): string {
+  const pi = hotel?.propertyInfo ?? {};
+  const propertyCandidates = [
+    pi.description,
+    pi.overview,
+    pi.longDescription,
+    pi.hotelDescription,
+    pi.summary,
+    pi.shortDescription,
+    pi.propertyDescription,
+    hotel?.description,
+  ];
+  for (const p of propertyCandidates) {
+    const s = typeof p === "string" ? p.trim() : "";
+    if (s) return s;
+  }
+  const roomDesc =
+    typeof bestRoom?.roomTypeDesc === "string"
+      ? bestRoom.roomTypeDesc.trim()
+      : "";
+  if (roomDesc.length >= MIN_ROOM_DESC_AS_PROPERTY_BLURB) return roomDesc;
+  return "";
+}
+
+/** Figma hotel list card — use when API omits guest review fields */
+export const HOTEL_LISTING_REVIEW_FALLBACK = {
+  score: 9.1,
+  reviewCount: 283,
+} as const;
+
+export function resolveHotelListingReviewDisplay(
+  reviewScore: number | undefined,
+  reviewCount: number | undefined,
+): { score: number | null; count: number | null; label: string | null } {
+  const hasApiScore =
+    reviewScore != null && Number.isFinite(Number(reviewScore));
+  const hasApiCount =
+    reviewCount != null && Number.isFinite(Number(reviewCount));
+  if (!hasApiScore) {
+    return { score: null, count: null, label: null };
+  }
+  const score = hasApiScore
+    ? Number(reviewScore)
+    : HOTEL_LISTING_REVIEW_FALLBACK.score;
+  /** Use Figma dummy (283) only when API sends no score; else omit count if unknown */
+  const count = hasApiCount
+    ? Number(reviewCount)
+    : hasApiScore
+      ? null
+      : HOTEL_LISTING_REVIEW_FALLBACK.reviewCount;
+
+  return {
+    score,
+    count,
+    label: getHotelGuestReviewQualityLabel(score),
+  };
+}
+

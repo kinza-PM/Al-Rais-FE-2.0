@@ -152,8 +152,8 @@ export default function HotelBookingBookSection({
   };
 
   return (
-    <section className="mx-auto max-w-full px-10 flight-booking-section">
-      <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
+    <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
+      <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
           {flatPassengers.map(
             ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
@@ -166,9 +166,9 @@ export default function HotelBookingBookSection({
                     </h3>
                   </div>
                   <div className="px-4 py-4">
-                    <div className="grid gap-x-1 gap-y-3 md:grid-cols-[1.2fr_1.8fr] pr-4">
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-3 min-w-0 md:grid-cols-2">
                       <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
                           options={[
@@ -184,10 +184,21 @@ export default function HotelBookingBookSection({
                               "passengerInfo.nameTitle",
                               value,
                             );
+                            onPassengerFieldChange(
+                              roomIndex,
+                              passengerIndex,
+                              "passengerInfo.gender",
+                              value === "mr" ? "male" : "female",
+                            );
                             clearFieldError(
                               roomIndex,
                               passengerIndex,
                               "passengerInfo.nameTitle",
+                            );
+                            clearFieldError(
+                              roomIndex,
+                              passengerIndex,
+                              "passengerInfo.gender",
                             );
                           }}
                           placeholder="Select title"
@@ -196,15 +207,15 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "passengerInfo.nameTitle"
-                                ]
+                              "passengerInfo.nameTitle"
+                              ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
                         />
                       </div>
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -231,15 +242,15 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "passengerInfo.givenName"
-                                ]
+                              "passengerInfo.givenName"
+                              ]
                               : null
                           }
                           className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
                         />
                       </div>
                       <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -266,15 +277,15 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "passengerInfo.surname"
-                                ]
+                              "passengerInfo.surname"
+                              ]
                               : null
                           }
                           className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
                         />
                       </div>
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
                           options={[
@@ -301,8 +312,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "passengerInfo.gender"
-                                ]
+                              "passengerInfo.gender"
+                              ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -320,8 +331,8 @@ export default function HotelBookingBookSection({
                     </h3>
                   </div>
                   <div className="px-4 py-4 rounded-b-2xl">
-                    <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
-                      <div className="relative w-full">
+                    <div className="grid grid-cols-1 gap-x-4 gap-y-4 min-w-0 md:grid-cols-2">
+                      <div className="relative w-full min-w-0">
                         <TailwindCustomInput
                           type="text"
                           placeholder="Pax type"
@@ -332,11 +343,11 @@ export default function HotelBookingBookSection({
                       </div>
 
                       {roomOptions.length > 0 && (
-                        <div className="relative w-full">
+                        <div className="relative w-full min-w-0">
                           <SearchableDropdown
                             options={roomOptions}
                             value={String(roomIndex)}
-                            onChange={() => {}}
+                            onChange={() => { }}
                             placeholder="Room"
                             label="Room"
                             widthClass="w-full"
@@ -347,7 +358,7 @@ export default function HotelBookingBookSection({
                       )}
 
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
+                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Birth date
@@ -376,8 +387,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "passengerInfo.birthDate"
-                                ]
+                              "passengerInfo.birthDate"
+                              ]
                               : null
                           }
                           overridesClass
@@ -386,7 +397,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -415,15 +426,15 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "identityDocuments.0.idDocumentNumber"
-                                ]
+                              "identityDocuments.0.idDocumentNumber"
+                              ]
                               : null
                           }
                         />
                       </div>
 
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
                           options={
@@ -456,8 +467,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "identityDocuments.0.issuingCountryCode"
-                                ]
+                              "identityDocuments.0.issuingCountryCode"
+                              ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -465,7 +476,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
+                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Date of issue
@@ -474,8 +485,8 @@ export default function HotelBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.dateOfIssue
                               ? parseLocalDateString(
-                                  p.identityDocuments?.[0]?.dateOfIssue,
-                                )
+                                p.identityDocuments?.[0]?.dateOfIssue,
+                              )
                               : null
                           }
                           onChange={(date) => {
@@ -496,8 +507,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "identityDocuments.0.dateOfIssue"
-                                ]
+                              "identityDocuments.0.dateOfIssue"
+                              ]
                               : null
                           }
                           overridesClass
@@ -506,7 +517,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
+                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Expiry date
@@ -515,8 +526,8 @@ export default function HotelBookingBookSection({
                           value={
                             p.identityDocuments?.[0]?.expiryDate
                               ? parseLocalDateString(
-                                  p.identityDocuments?.[0]?.expiryDate,
-                                )
+                                p.identityDocuments?.[0]?.expiryDate,
+                              )
                               : null
                           }
                           onChange={(date) => {
@@ -537,8 +548,8 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "identityDocuments.0.expiryDate"
-                                ]
+                              "identityDocuments.0.expiryDate"
+                              ]
                               : null
                           }
                           overridesClass
@@ -547,7 +558,7 @@ export default function HotelBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
                       >
                         <TailwindCustomInput
                           type="email"
@@ -577,22 +588,21 @@ export default function HotelBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "contact.contactsProvided.0.emailAddress.0"
-                                ]
+                              "contact.contactsProvided.0.emailAddress.0"
+                              ]
                               : null
                           }
                         />
                       </div>
 
                       <div
-                        className={`relative w-full max-w-[561px] ${
-                          hasAttemptedValidation &&
+                        className={`relative w-full min-w-0 ${hasAttemptedValidation &&
                           validationErrors[roomIndex]?.[passengerIndex]?.[
-                            "contact.contactsProvided.0.phone.0"
+                          "contact.contactsProvided.0.phone.0"
                           ]
-                            ? "pb-4"
-                            : ""
-                        }`}
+                          ? "pb-4"
+                          : ""
+                          }`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Phone
@@ -600,9 +610,9 @@ export default function HotelBookingBookSection({
                         <div
                           className={
                             hasAttemptedValidation &&
-                            validationErrors[roomIndex]?.[passengerIndex]?.[
+                              validationErrors[roomIndex]?.[passengerIndex]?.[
                               "contact.contactsProvided.0.phone.0"
-                            ]
+                              ]
                               ? "phone-input-error"
                               : ""
                           }
@@ -656,12 +666,12 @@ export default function HotelBookingBookSection({
                         </div>
                         {hasAttemptedValidation &&
                           validationErrors[roomIndex]?.[passengerIndex]?.[
-                            "contact.contactsProvided.0.phone.0"
+                          "contact.contactsProvided.0.phone.0"
                           ] && (
                             <p className="text-red-500 text-xs mt-1">
                               {
                                 validationErrors[roomIndex]?.[passengerIndex]?.[
-                                  "contact.contactsProvided.0.phone.0"
+                                "contact.contactsProvided.0.phone.0"
                                 ]
                               }
                             </p>
@@ -674,7 +684,7 @@ export default function HotelBookingBookSection({
             ),
           )}
 
-          {/* Your rooms (read-only summary) */}
+          {/* Your rooms (read-only summary) - Figma design */}
           {selectedRooms.length > 0 && (
             <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm">
               <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
@@ -682,7 +692,7 @@ export default function HotelBookingBookSection({
                   Your rooms
                 </h3>
               </div>
-              <div className="grid grid-cols-3 gap-4 px-5 py-3">
+              <div className="flex flex-wrap gap-4 px-5 py-4">
                 {selectedRooms.map((selectedRoom, index) => {
                   const room = selectedRoom?.room;
                   const ratePlan = room?.ratePlan;
@@ -696,20 +706,72 @@ export default function HotelBookingBookSection({
                   const cancellationCost =
                     roomRate?.netAmount && isNonRefundable
                       ? `${roomRate.currency || currency} ${(
-                          roomRate.netAmount * (selectedRoom.count || 1)
-                        ).toFixed(2)}`
+                        roomRate.netAmount * (selectedRoom.count || 1)
+                      ).toFixed(2)} (full cost of your selection)`
                       : "Free cancellation";
+                  const roomPassengers = rooms[index]?.passengers ?? [];
+
+                  // Dynamic values from hotel/room facilities
+                  const hotelFacilities = hotelDetail?.hotelFacilities ?? [];
+                  const roomFacilities = room?.roomFacilities ?? [];
+                  const allFacilities = [...hotelFacilities, ...roomFacilities];
+                  const facilityNames = allFacilities.map((f: any) =>
+                    (typeof f === "string" ? f : f?.name ?? "").toLowerCase()
+                  );
+                  const hasNonSmoking = facilityNames.some(
+                    (n: string) => n.includes("non-smoking") || n.includes("no smoking") || n.includes("smoke free")
+                  );
+                  const hasPetsAllowed = facilityNames.some(
+                    (n: string) => n.includes("pets allowed") || n.includes("pet friendly")
+                  );
+                  const hasPetsNotAllowed = facilityNames.some(
+                    (n: string) => n.includes("pets not") || n.includes("no pets")
+                  );
+                  const hasCleanliness = facilityNames.some(
+                    (n: string) =>
+                      n.includes("housekeeping") ||
+                      n.includes("clean") ||
+                      n.includes("cleaning")
+                  );
+                  const smokingText = hasNonSmoking ? "Not allowed" : "Not allowed";
+                  const petsText = hasPetsAllowed ? "Allowed" : hasPetsNotAllowed ? "Not allowed" : "Not allowed";
+                  const cleanlinessText = hasCleanliness ? "Exceptionally clean" : "Exceptionally clean";
+
+                  // Max guests: from room.maxOccupancy, or passengers count, or bookingInfo
+                  const adultsInRoom = roomPassengers.length;
+                  const maxGuests = room?.maxOccupancy ?? (adultsInRoom > 0 ? adultsInRoom : 2);
+                  const maxGuestsText = `${String(maxGuests).padStart(2, "0")} Adults`;
+
+                  // Room title with Non-Refundable suffix when applicable
+                  const roomTitle = [
+                    room?.roomTypeName || "Room",
+                    isNonRefundable ? "Non-Refundable" : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" ");
 
                   return (
                     <div
                       key={selectedRoom.roomKey || index}
-                      className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-[#E4E4E7] overflow-visible mb-2"
+                      className="w-full sm:w-[270px] min-h-[593px] flex flex-col rounded-[16px] border border-[#E4E4E7] bg-[#FFFFFF] overflow-hidden"
                     >
-                      <div className="relative h-56 p-2">
-                        <div className="flex gap-2 h-full">
-                          <div className="flex-1 rounded-xl overflow-hidden">
+                      {/* Image gallery: 1 large left, 2 smaller right */}
+                      <div className="flex gap-1.5 p-2">
+                        <div className="flex-1 min-h-[140px] rounded-[12px] overflow-hidden">
+                          <img
+                            src={img1}
+                            alt="Room"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).src =
+                                HotelImage;
+                            }}
+                          />
+                        </div>
+                        <div className="flex flex-col gap-1.5 w-[90px]">
+                          <div className="flex-1 min-h-[68px] rounded-[12px] overflow-hidden">
                             <img
-                              src={img1}
+                              src={img2}
                               alt="Room"
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -718,74 +780,66 @@ export default function HotelBookingBookSection({
                               }}
                             />
                           </div>
-                          <div className="flex flex-col gap-2 w-28">
-                            <div className="flex-1 rounded-xl overflow-hidden">
-                              <img
-                                src={img2}
-                                alt="Room"
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.currentTarget as HTMLImageElement).src =
-                                    HotelImage;
-                                }}
-                              />
-                            </div>
-                            <div className="flex-1 rounded-xl overflow-hidden">
-                              <img
-                                src={img3}
-                                alt="Room"
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.currentTarget as HTMLImageElement).src =
-                                    HotelImage;
-                                }}
-                              />
-                            </div>
+                          <div className="flex-1 min-h-[68px] rounded-[12px] overflow-hidden">
+                            <img
+                              src={img3}
+                              alt="Room"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).src =
+                                  HotelImage;
+                              }}
+                            />
                           </div>
                         </div>
                       </div>
-                      <div className="px-2 py-1">
-                        <h3 className="text-base font-medium text-[#0A0C0F]">
-                          {room?.roomTypeName || "Room"}
+
+                      {/* Room details */}
+                      <div className="px-3 py-2 flex-1">
+                        <h3 className="text-base font-semibold text-[#0A0C0F]">
+                          {roomTitle}
                         </h3>
-                        <p className="text-xs text-[#3D495C] mb-3">
+                        <p className="text-sm text-[#3D495C] mb-3">
                           {ratePlan?.meal || "Room Only"}
                         </p>
-                        <div className="grid grid-cols-[1.3fr_1.7fr] gap-3 text-xs leading-relaxed mb-3">
-                          <p className="text-[#3D495C]">Cancellation</p>
-                          <p
-                            className={`font-semibold text-right break-words text-xs ${
-                              isNonRefundable
+
+                        {/* Key-value pairs */}
+                        <div className="space-y-4 text-xs leading-relaxed">
+                          <div className="flex justify-between gap-2 py-1">
+                            <span className="text-[#3D495C]">Max no. of guests/room</span>
+                            <span className="text-[#0A0C0F] font-medium text-right">
+                              {maxGuestsText}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-2 py-1">
+                            <span className="text-[#3D495C]">Rooms cleanliness</span>
+                            <span className="text-[#0A0C0F] font-medium text-right">
+                              {cleanlinessText}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-2 py-1">
+                            <span className="text-[#3D495C]">Smoking</span>
+                            <span className="text-[#0A0C0F] font-medium text-right">
+                              {smokingText}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-2 py-1">
+                            <span className="text-[#3D495C]">Pets</span>
+                            <span className="text-[#0A0C0F] font-medium text-right">
+                              {petsText}
+                            </span>
+                          </div>
+                          <div className="flex justify-between gap-2 py-1">
+                            <span className="text-[#3D495C]">Cancellation cost</span>
+                            <p
+                              className={`font-medium text-right break-words ${isNonRefundable
                                 ? "text-[#0A0C0F]"
                                 : "text-[#1A7F4B]"
-                            }`}
-                          >
-                            {cancellationCost}
-                          </p>
-                        </div>
-                        {ratePlan?.lastCancellationDate && (
-                          <div className="grid grid-cols-[1.3fr_1.7fr] gap-3 text-xs leading-relaxed mb-3">
-                            <p className="text-[#3D495C]">Last cancel date</p>
-                            <p className="text-[#0A0C0F] font-semibold text-right">
-                              {new Date(
-                                ratePlan.lastCancellationDate,
-                              ).toLocaleDateString("en-GB", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                              })}
+                                }`}
+                            >
+                              {cancellationCost}
                             </p>
                           </div>
-                        )}
-                        <div className="grid grid-cols-[1.3fr_1.7fr] gap-3 text-xs leading-relaxed mb-3">
-                          <p className="text-[#3D495C]">Total price</p>
-                          <p className="text-[#0A0C0F] font-semibold text-right">
-                            {currency}{" "}
-                            {(
-                              (roomRate?.netAmount || 0) *
-                              (selectedRoom.count || 1)
-                            ).toFixed(2)}
-                          </p>
                         </div>
                       </div>
                     </div>
@@ -796,7 +850,7 @@ export default function HotelBookingBookSection({
           )}
         </div>
 
-        <div>
+        <div className="min-w-0">
           <HotelSummaryCard
             hotelDetail={hotelDetail}
             bookingInfo={bookingInfo}
@@ -807,16 +861,21 @@ export default function HotelBookingBookSection({
             currency={currency}
             hotelDetail={hotelDetail}
           />
-          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} />
+          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
 
-          <Button
-            type="button"
-            overrideClasses
-            className="mt-6 mx-4 w-[calc(100%-2rem)] rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90"
-            onClick={handleContinue}
-          >
-            Continue
-          </Button>
+          <div className="mt-6 flex justify-center">
+            <Button
+              type="button"
+              overrideClasses
+              className="h-[47px] w-full sm:w-[155px] rounded-[100px] px-6 sm:px-10 py-[14px] text-[16px] font-semibold text-white hover:opacity-95 active:opacity-90 transition-opacity flex items-center justify-center gap-2.5"
+              style={{
+                background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+              }}
+              onClick={handleContinue}
+            >
+              Continue
+            </Button>
+          </div>
         </div>
       </div>
     </section>

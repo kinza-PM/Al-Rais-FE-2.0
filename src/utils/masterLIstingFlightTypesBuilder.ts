@@ -91,7 +91,7 @@ export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
       .map((i, key) => ({
         id: `${key}`,
         // label: `${i.city}, ${i.country}`,
-        label: `${i.city}, ${i.country} (${i.iataCode})`,
+        label: `${i.airportName || i.city} – ${i.iataCode}`,
         // label: `${i.airportName}`,
         // label: `${i.city} (${i.cityCode}), ${i.country}`,
         code: i.iataCode,
@@ -100,8 +100,8 @@ export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
         country: i.country,
         countryCode: i.countryCode,
       }))
-      // optional: stable sort by city
-      // .sort((a, b) => a.city.localeCompare(b.city))
+    // optional: stable sort by city
+    // .sort((a, b) => a.city.localeCompare(b.city))
   );
 }
 
@@ -151,8 +151,8 @@ export function buildCabinClassOptions(
     (items || [])
       .filter((i) => i.status === 1 && i.category?.trim())
       .map((i) => ({ id: String(i.id), label: i.category.trim() }))
-      // optional stable sort by label
-      // .sort((a, b) => a.label.localeCompare(b.label))
+    // optional stable sort by label
+    // .sort((a, b) => a.label.localeCompare(b.label))
   );
 }
 
@@ -178,14 +178,28 @@ export function buildPriceSortOptions(
   return opts.sort((a, b) => rank(a.label) - rank(b.label));
 }
 
+const STOPS_LABEL_MAP: Record<string, string> = {
+  "0": "Non-stop",
+  "01": "1 Stop",
+  "1": "1 Stop",
+  "02": "2 Stops",
+  "2": "2 Stops",
+};
+
 export function buildNumberStopsOptions(
   items: NumberStopsItem[]
 ): NumberStopsOption[] {
   const opts = (items || [])
     .filter((i) => i.status === 1 && i.category?.trim())
-    .map((i) => ({ label: i.category.trim(), value: i.category.trim() }));
-  if (!opts.length) return [{ label: "0", value: "0" }];
-  // numeric-ish sort: 0, 01, 02 ...
+    .map((i) => {
+      const val = i.category.trim();
+      const numVal = parseInt(val, 10);
+      const label =
+        STOPS_LABEL_MAP[val] ??
+        (numVal === 0 ? "Non-stop" : numVal === 1 ? "1 Stop" : `${numVal} Stops`);
+      return { label, value: val };
+    });
+  if (!opts.length) return [{ label: "Non-stop", value: "0" }];
   return opts.sort((a, b) => parseInt(a.value, 10) - parseInt(b.value, 10));
 }
 

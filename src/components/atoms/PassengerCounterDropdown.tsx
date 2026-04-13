@@ -20,6 +20,14 @@ type Props = {
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
+const DEFAULT_SUBTITLES: Record<string, string> = {
+  adults: "Above 12 yrs",
+  kids: "2 – 12 yrs",
+  children: "2 – 12 yrs",
+  infants: "0 – 2 yrs",
+  seniors: "60+ yrs",
+};
+
 const IconBtn: React.FC<{
   disabled?: boolean;
   onClick: () => void;
@@ -45,14 +53,20 @@ const IconBtn: React.FC<{
 
 const Row: React.FC<{
   title: string;
+  subtitle?: string;
   count: number;
   dec: () => void;
   inc: () => void;
   disableDec?: boolean;
   disableInc?: boolean;
-}> = ({ title, count, dec, inc, disableDec, disableInc }) => (
+}> = ({ title, subtitle, count, dec, inc, disableDec, disableInc }) => (
   <div className="flex items-center justify-between py-2">
-    <div className="text-[13px] leading-5 text-[#0F172A]">{title}</div>
+    <div className="flex flex-col leading-tight">
+      <span className="text-[13px] text-[#0F172A]">{title}</span>
+      {subtitle && (
+        <span className="text-[11px] text-[#94A3B8] mt-0.5">{subtitle}</span>
+      )}
+    </div>
     <div className="flex items-center gap-3">
       <IconBtn label="decrease" onClick={dec} disabled={disableDec}>
         –
@@ -111,8 +125,7 @@ const PassengerCounterDropdown: React.FC<Props> = ({
       .map((r) => {
         const count = (pax as any)[r.key] || 0;
         const title = r.title || r.key;
-        const singular =
-          singularMap[r.key] ?? title.replace(/s$/, "") ?? title;
+        const singular = singularMap[r.key] ?? title.replace(/s$/, "") ?? title;
         return count === 1 ? `1 ${singular}` : `${count} ${title}`;
       });
     return parts.length > 0 ? parts.join(", ") : "Select Passengers";
@@ -196,7 +209,7 @@ const PassengerCounterDropdown: React.FC<Props> = ({
       "Please complete",
     ];
     return validationKeywords.some((keyword) =>
-      errorMessage.toLowerCase().includes(keyword.toLowerCase())
+      errorMessage.toLowerCase().includes(keyword.toLowerCase()),
     );
   }, [errorMessage]);
 
@@ -205,7 +218,7 @@ const PassengerCounterDropdown: React.FC<Props> = ({
     // Only show popup for API errors, not validation errors
     const hasApiError = !!errorMessage && !isValidationError;
     const hasNoSchema = rows.length === 0;
-    
+
     if (hasApiError || hasNoSchema) {
       setShowError((s) => !s);
       setOpen(false);
@@ -233,8 +246,7 @@ const PassengerCounterDropdown: React.FC<Props> = ({
             }
           }}
           // className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none border-[#DFE7F3]`}
-          className={`h-11 w-full rounded-xl border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none border-[#DFE7F3] transition-all
-            group-hover:shadow-sm`}
+          className={`h-[50px] w-full rounded-[16px] border px-4 text-[14px] text-[#0F172A] flex items-center justify-between leading-none border-[#C2CAD6] transition-all group-hover:shadow-sm`}
           aria-haspopup="dialog"
           aria-expanded={open || showError}
           aria-invalid={showError}
@@ -291,6 +303,7 @@ const PassengerCounterDropdown: React.FC<Props> = ({
             <React.Fragment key={r.key}>
               <Row
                 title={r.title}
+                subtitle={(r as any).subtitle ?? DEFAULT_SUBTITLES[r.key]}
                 count={(pax as any)[r.key] || 0}
                 dec={() => dec(r.key)}
                 inc={() => inc(r.key)}

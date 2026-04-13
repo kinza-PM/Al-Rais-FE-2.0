@@ -1,5 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Calendar from "../../assets/svgs/calendar.svg";
+
+const POPUP_WIDTH = 300;
+const POPUP_HEIGHT = 360;
+const GAP = 8;
+const VIEWPORT_PADDING = 16;
 
 type DatePickerProps = {
   value?: Date | null;
@@ -53,12 +59,13 @@ function isSameDay(a: Date, b: Date) {
     a.getDate() === b.getDate()
   );
 }
-function fmtLong(d?: Date | null) {
+/** Compact label for narrow inputs: "Wed, 29 Apr 2026" */
+function fmtAbbreviated(d?: Date | null) {
   if (!d) return "";
   const parts = new Intl.DateTimeFormat("en-GB", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
+    weekday: "short",
+    day: "numeric",
+    month: "short",
     year: "numeric",
   }).formatToParts(d);
 
@@ -67,7 +74,7 @@ function fmtLong(d?: Date | null) {
   const month = parts.find((p) => p.type === "month")?.value ?? "";
   const year = parts.find((p) => p.type === "year")?.value ?? "";
 
-  return `${weekday}, ${Number(day)} ${month} ${year}`;
+  return `${weekday}, ${day} ${month} ${year}`;
 }
 
 function startOfDay(d: Date) {
@@ -95,11 +102,42 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
     return Math.floor(currentYear / 12) * 12; // Start from a multiple of 12
   });
   const rootRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, openAbove: false });
 
-  // Close on outside click
+  // Compute popup position (viewport-aware) when open
+  useLayoutEffect(() => {
+    if (!open || !rootRef.current) return;
+    const rect = rootRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openAbove = spaceBelow < POPUP_HEIGHT + GAP && spaceAbove >= POPUP_HEIGHT + GAP;
+
+    let top: number;
+    if (openAbove) {
+      top = rect.top - POPUP_HEIGHT - GAP;
+    } else {
+      top = rect.bottom + GAP;
+    }
+
+    let left = rect.left;
+    if (left + POPUP_WIDTH > window.innerWidth - VIEWPORT_PADDING) {
+      left = window.innerWidth - POPUP_WIDTH - VIEWPORT_PADDING;
+    } else if (left < VIEWPORT_PADDING) {
+      left = VIEWPORT_PADDING;
+    }
+
+    setPopupPosition({ top, left, openAbove });
+  }, [open]);
+
+  // Close on outside click (including when popup is in portal)
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
-      if (!rootRef.current?.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (
+        !rootRef.current?.contains(target) &&
+        !panelRef.current?.contains(target)
+      ) {
         setOpen(false);
         setViewMode("calendar");
       }
@@ -203,7 +241,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
       <div className="group relative">
         <input
           readOnly
-          value={fmtLong(value) || ""}
+          value={fmtAbbreviated(value) || ""}
           placeholder={placeholder}
           onClick={() => setOpen(true)}
           //   className={`${
@@ -216,8 +254,8 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
           className={`${
             overridesClass
               ? inputClass
-              : `h-11 w-full rounded-xl border pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer ${
-                  error ? "border-[#E65959]" : "border-[#DFE7F3]"
+              : `h-[50px] w-full rounded-[16px] border pl-4 pr-10 text-[14px] text-[#0F172A] outline-none cursor-pointer ${
+                  error ? "border-[#E65959]" : "border-[#C2CAD6]"
                 }`
           }`}
         />
@@ -258,7 +296,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
           `}
           >
             <div className="text-center">
-              {value ? fmtLong(value) : tooltip}
+              {value ? fmtAbbreviated(value) : tooltip}
             </div>
           </div>
         )}
@@ -269,9 +307,22 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
         </p>
       )}
 
-      {/* Popup calendar */}
-      {open && (
-        <div className="absolute z-[9999] mt-2 w-[280px] rounded-2xl border border-[#DFE7F3] bg-white shadow-[0_12px_30px_rgba(16,24,40,0.12)]">
+      {/* Popup calendar - rendered via portal for viewport-aware positioning */}
+      {open && (createPortal(
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Calendar"
+          style={{
+            position: "fixed",
+            top: popupPosition.top,
+            left: popupPosition.left,
+            width: POPUP_WIDTH,
+            zIndex: 99999,
+          }}
+          className="rounded-2xl border border-[#DFE7F3] bg-white shadow-[0_12px_30px_rgba(16,24,40,0.12)]"
+        >
           {/* Month header */}
           <div className="flex items-center justify-between px-3 pt-3">
             <button
@@ -511,8 +562,9 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
               })}
             </div>
           )}
-        </div>
-      )}
+        </div>,
+        document.body
+      ))}
     </div>
   );
 };

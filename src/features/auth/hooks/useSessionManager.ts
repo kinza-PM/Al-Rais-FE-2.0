@@ -1,6 +1,7 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { AuthService } from '../services/authService';
 import { StorageService } from '../../../utils/storage';
+import { TokenService } from '../../../services/tokenService';
 import type { User } from '../types';
 
 interface SessionManagerActions {
@@ -8,6 +9,8 @@ interface SessionManagerActions {
   setInitializationComplete: () => void;
   markAuthCheckCompleted: () => void;
   initializeGuestUser: () => Promise<void>;
+  resetAuthState: () => void;
+  resetAuthCheckCompleted: () => void;
 }
 
 interface SessionManagerState {
@@ -22,7 +25,9 @@ export const useSessionManager = (
     setAuthenticatedState,
     setInitializationComplete,
     markAuthCheckCompleted,
-    initializeGuestUser
+    initializeGuestUser,
+    resetAuthState,
+    resetAuthCheckCompleted
   } = actions;
 
   // Initialize auth state on mount
@@ -69,21 +74,53 @@ export const useSessionManager = (
     }
   }, [initializeGuestUser, setAuthenticatedState, setInitializationComplete]);
 
+  // Store latest function references in refs to ensure listener is registered only once
+  const resetAuthStateRef = useRef(resetAuthState);
+  const resetAuthCheckCompletedRef = useRef(resetAuthCheckCompleted);
+  const initializeGuestUserRef = useRef(initializeGuestUser);
+  const checkAuthRef = useRef(checkAuth);
+
+  // Update refs when functions change
+  useEffect(() => {
+    resetAuthStateRef.current = resetAuthState;
+    resetAuthCheckCompletedRef.current = resetAuthCheckCompleted;
+    initializeGuestUserRef.current = initializeGuestUser;
+    checkAuthRef.current = checkAuth;
+  }, [resetAuthState, resetAuthCheckCompleted, initializeGuestUser, checkAuth]);
+
   // Cross-tab/session synchronization: when auth keys change in another tab, re-check auth.
+  // Listener is registered only once and uses refs to access latest functions
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (!e.key) return;
+      
+      // Handle logout from another tab - must be immediate and synchronous
+      if (e.key === "logout" && e.newValue) {
+        // Immediately clear in-memory auth state (React state)
+        resetAuthStateRef.current();
+        // Clear localStorage and tokens
+        StorageService.clearAuth();
+        TokenService.clearToken();
+        // Reset auth check to allow re-initialization
+        resetAuthCheckCompletedRef.current();
+        // Initialize guest user to maintain app functionality
+        void initializeGuestUserRef.current();
+        return;
+      }
+      
+      // Handle login/auth changes from another tab
       if (
         e.key === "al_rais_auth_status" ||
         e.key === "al_rais_user" ||
         e.key === "al_rais_auth_token"
       ) {
-        void checkAuth();
+        void checkAuthRef.current();
       }
     };
+    
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  }, [checkAuth]);
+  }, []); // Empty dependency array - listener registered only once
 
   // Check if user is authenticated
   const isAuthenticated = async () => {

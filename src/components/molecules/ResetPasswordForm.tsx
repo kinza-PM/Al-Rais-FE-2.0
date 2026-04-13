@@ -3,7 +3,8 @@ import Input from "../atoms/Input";
 import { AuthService } from "../../features/auth/services/authService";
 import type { ResetPasswordForm as ResetPasswordFormType } from "../../features/auth/types";
 import toast from "react-hot-toast";
-import { getPasswordError } from "../../utils/validators";
+import { getPasswordError, evaluatePasswordRules, isPasswordValid } from "../../utils/validators";
+import PasswordChecklist from "../common/PasswordChecklist";
 
 interface ResetPasswordFormProps {
   email: string;
@@ -46,23 +47,25 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+    // Enable real-time validation feedback
+    if (name === "newPassword" && !touched.newPassword) {
+      setTouched((prev) => ({ ...prev, newPassword: true }));
+    }
+    if (name === "confirmPassword" && !touched.confirmPassword) {
+      setTouched((prev) => ({ ...prev, confirmPassword: true }));
+    }
     if (error) setError(null);
   };
 
-  const validatePassword = (password: string): string | null => {
-    if (password.length < 8) {
-      return "Password must be at least 8 characters long";
+  // Friendly mapping for backend generic password errors
+  const mapBackendPasswordError = (msg: string | undefined): string => {
+    if (!msg) return "Failed to reset password";
+    const lc = msg.toLowerCase();
+    if (lc.includes("security rules") || lc.includes("password does not conform")) {
+      return "Your new password must meet all the requirements shown above.";
     }
-    if (!/(?=.*[a-z])(?=.*[A-Z])/.test(password)) {
-      return "Password must contain both uppercase and lowercase letters";
-    }
-    if (!/(?=.*\d)/.test(password)) {
-      return "Password must contain at least one number";
-    }
-    if (!/(?=.*[!@#$%^&*])/.test(password)) {
-      return "Password must contain at least one special character (!@#$%^&*)";
-    }
-    return null;
+    // Otherwise return the same message
+    return msg;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -86,7 +89,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       if (result.success) {
         onPasswordReset();
       } else {
-        setError(result.message || "Failed to reset password");
+        setError(mapBackendPasswordError(result.message));
       }
     } catch (error) {
       console.error("ResetPasswordForm error:", error);
@@ -108,6 +111,10 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     return getPasswordError(formData.newPassword);
   }, [formData.newPassword]);
 
+  const passwordRules = useMemo(() => {
+    return evaluatePasswordRules(formData.newPassword);
+  }, [formData.newPassword]);
+
   const confirmPasswordError = useMemo(() => {
     if (formData.confirmPassword.trim() === "")
       return "Confirm password is required.";
@@ -120,8 +127,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     if (!formData.otp || formData.otp.length !== 6) return false;
     if (!formData.newPassword || !formData.confirmPassword) return false;
     if (formData.newPassword !== formData.confirmPassword) return false;
-    const passwordError = validatePassword(formData.newPassword);
-    return passwordError === null;
+    return isPasswordValid(formData.newPassword);
   }, [formData.otp, formData.newPassword, formData.confirmPassword]);
 
   useEffect(() => {
@@ -188,6 +194,8 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
               rounded="xl"
               required
             />
+            {/* Live password checklist */}
+            <PasswordChecklist rules={passwordRules} className="mt-2" />
             {touched.newPassword && passwordError && (
               <p
                 id="reset-new-password-error"
@@ -211,12 +219,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
               rounded="xl"
               required
               onBlur={handleBlur}
-              touched={touched.confirmPassword}
+              touched={touched.confirmPassword || formData.confirmPassword.length > 0}
               error={Boolean(confirmPasswordError)}
               errorBorderColor="#FF5270"
             />
             {/* Figma: "Password doesn't match" error in red */}
-            {touched.confirmPassword && confirmPasswordError && (
+            {(touched.confirmPassword || formData.confirmPassword.length > 0) && confirmPasswordError && (
               <p
                 id="reset-confirm-password-error"
                 role="alert"
@@ -243,6 +251,18 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
               className={`flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-white transition-opacity hover:opacity-95 ${!isFormValid || loading ? "bg-[#C2CAD6] disabled:cursor-not-allowed disabled:opacity-70" : "auth-bg-btn"}`}
             >
               {loading ? "Updating..." : "Update password"}
+            </button>
+          </div>
+
+          {/* Back link for easy exit/navigation */}
+          <div className="mt-3 text-center">
+            <button
+              type="button"
+              onClick={_onBackToOTP}
+              className="text-sm text-[#5383DA] hover:underline font-medium"
+              aria-label="Back"
+            >
+              Back
             </button>
           </div>
         </form>

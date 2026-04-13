@@ -76,10 +76,10 @@ export function transformBookingItem(apiItem: any): any {
   const bookingRef =
     status === "Confirmed"
       ? apiItem.bookingReferenceId ||
-        apiItem.detail?.supplierLocator ||
-        apiItem.detail?.airlineLocators?.[0]?.airlineLocator ||
-        apiItem.offerId?.split("-")[0] ||
-        "N/A"
+      apiItem.detail?.supplierLocator ||
+      apiItem.detail?.airlineLocators?.[0]?.airlineLocator ||
+      apiItem.offerId?.split("-")[0] ||
+      "N/A"
       : null;
 
   // Calculate countdown for pending bookings
@@ -209,4 +209,242 @@ export function transformBookingsResponse(apiResponse: any): any[] {
   }
 
   return apiResponse.items.map((item: any) => transformBookingItem(item));
+}
+
+// --- Hotel bookings transform ---
+export type HotelBookingCardItem = {
+  id: string;
+  status: BookingStatus;
+  hotelName: string;
+  address: string;
+  checkInTime: string;
+  checkInDate: string;
+  checkOutTime: string;
+  checkOutDate: string;
+  totalStay: string;
+  roomLabel: string;
+  bookingRef: string;
+  countdown?: { hours: string; mins: string; secs: string };
+  /** Free cancellation deadline date (e.g. "Mon, 16 Jun 2025") */
+  cancellationDeadline?: string;
+  /** Raw date string for comparison (e.g. "2025-06-16") - used to disable Cancel if past deadline */
+  cancellationDeadlineDate?: string;
+  /** Required for hotelRetrieve / View details */
+  searchKey?: string;
+  bookingKey?: string;
+  /** Paid total for refund estimate on cancellation page (if API provides it) */
+  totalPaid?: number;
+  currency?: string;
+  imageUrl?: string;
+  starRating?: number;
+};
+
+function formatDateForHotel(dateStr: string): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("en-US", {
+      weekday: "short",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function formatTimeForHotel(dateStr: string, defaultTime: string): string {
+  if (!dateStr) return defaultTime;
+  if (!dateStr.includes("T") && !dateStr.includes(" ") && !dateStr.includes(":")) {
+    return defaultTime;
+  }
+  if (dateStr.endsWith("T00:00:00Z") || dateStr.endsWith("T00:00:00.000Z") || dateStr.endsWith("T00:00:00+00:00")) {
+    return defaultTime;
+  }
+  try {
+    return new Date(dateStr).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  } catch {
+    return defaultTime;
+  }
+}
+
+export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
+  const statusMap: Record<string, BookingStatus> = {
+    expired: "Expired",
+    pending: "Pending",
+    active: "Confirmed",
+    completed: "Confirmed",
+    confirmed: "Confirmed",
+  };
+  const rawStatus = (apiItem.status || apiItem.bookingStatus || "").toLowerCase();
+  const status = statusMap[rawStatus] || "Pending";
+
+  const hotel = apiItem || {};
+  // const hotel = apiItem.hotel || apiItem.propertyInfo || apiItem.property || {};
+  // console.log('hotel--------------------', apiItem);
+  const hotelName =
+    hotel.name ||
+    hotel.hotelName ||
+    apiItem.hotelName ||
+    hotel.propertyName ||
+    "Hotel";
+
+  const address = apiItem?.verifiedPropertyInfo?.address
+    ? `${apiItem.verifiedPropertyInfo.address}${apiItem.verifiedPropertyInfo.city ? `, ${apiItem.verifiedPropertyInfo.city}` : ""
+    }${apiItem.verifiedPropertyInfo.country ? `, ${apiItem.verifiedPropertyInfo.country}` : ""}`
+    : ""
+
+  let imageUrl = hotel.imageUrl || hotel.image || hotel.thumbnail || apiItem.heroImage || "";
+  if (!imageUrl && hotel.images && hotel.images.length > 0) {
+    imageUrl = typeof hotel.images[0] === "string" ? hotel.images[0] : hotel.images[0]?.url || hotel.images[0]?.path || "";
+  }
+  const starRating = Number(hotel.starRating || hotel.rating || apiItem.starRating) || 0;
+
+  const checkIn =
+    apiItem.checkInDate ||
+    apiItem.checkIn ||
+    apiItem.stayDateRange?.checkIn ||
+    hotel.checkInDate ||
+    "";
+  const checkOut =
+    apiItem.checkOutDate ||
+    apiItem.checkOut ||
+    apiItem.stayDateRange?.checkOut ||
+    hotel.checkOutDate ||
+    "";
+
+  const totalNights =
+    apiItem.totalNights ??
+    apiItem.nights ??
+    (checkIn && checkOut
+      ? Math.ceil(
+        (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
+        (1000 * 60 * 60 * 24)
+      )
+      : 1);
+  const totalStay = `Total stay: ${totalNights} ${totalNights === 1 ? "night" : "nights"}`;
+
+  const rooms = apiItem.rooms || apiItem.roomDetails || [];
+  const roomParts = rooms.map((r: any) => {
+    const count = r.count ?? r.roomCount ?? 1;
+    const name = r.roomTypeName ?? r.roomType ?? r.name ?? "Room";
+    return `${String(count).padStart(2, "0")}, ${name}`;
+  });
+  const roomLabel = roomParts.length > 0 ? roomParts.join("; ") : "01, Room";
+
+  const bookingRef =
+    apiItem.bookingReferenceId ||
+    apiItem.bookingRef ||
+    apiItem.bookingReference ||
+    apiItem.supplierLocator ||
+    apiItem.detail?.supplierLocator ||
+    apiItem.id ||
+    "N/A";
+
+  const id = apiItem.id || apiItem.bookingKey || bookingRef || `hotel-${Date.now()}`;
+
+  const searchKey =
+    apiItem.searchKey ||
+    apiItem.search_key ||
+    apiItem.detail?.searchKey ||
+    "";
+  const bookingKey = apiItem.bookingKey || apiItem.booking_key || id || "";
+
+  const rawTotal =
+    apiItem.totalPaid ??
+    apiItem.totalPrice ??
+    apiItem.paidAmount ??
+    apiItem.grandTotal ??
+    apiItem.totalAmount ??
+    apiItem.amount ??
+    apiItem.financialInfo?.total ??
+    hotel?.totalPrice ??
+    hotel?.totalAmount;
+  const totalNum =
+    rawTotal != null && rawTotal !== ""
+      ? Number(rawTotal)
+      : Number.NaN;
+  const totalPaid =
+    Number.isFinite(totalNum) && totalNum > 0 ? totalNum : undefined;
+  const currency =
+    apiItem.currency ||
+    apiItem.currencyCode ||
+    apiItem.detail?.currency ||
+    hotel?.currency ||
+    "AED";
+
+  const cancellationDeadlineRaw =
+    apiItem.lastCancellationDate ||
+    apiItem.cancellationDeadline ||
+    hotel?.lastCancellationDate ||
+    (rooms[0] as any)?.ratePlan?.lastCancellationDate ||
+    (rooms[0] as any)?.lastCancellationDate ||
+    "";
+  const cancellationDeadline = cancellationDeadlineRaw
+    ? formatDateForHotel(cancellationDeadlineRaw)
+    : undefined;
+
+  const createdAt = apiItem.createdAt || apiItem.created_at;
+  const countdown =
+    status === "Pending" && createdAt
+      ? (() => {
+        const createdTime = new Date(createdAt).getTime();
+        const currentTime = Date.now();
+        const totalMs = 15 * 60 * 1000;
+        const remainingMs = Math.max(0, totalMs - (currentTime - createdTime));
+        const mins = Math.floor(remainingMs / 60000);
+        const secs = Math.floor((remainingMs % 60000) / 1000);
+        return {
+          hours: String(Math.floor(mins / 60)).padStart(2, "0"),
+          mins: String(mins % 60).padStart(2, "0"),
+          secs: String(secs).padStart(2, "0"),
+        };
+      })()
+      : undefined;
+
+  return {
+    id,
+    status,
+    hotelName,
+    address,
+    checkInTime: formatTimeForHotel(checkIn, ""),
+    checkInDate: formatDateForHotel(checkIn) || "—",
+    checkOutTime: formatTimeForHotel(checkOut, ""),
+    checkOutDate: formatDateForHotel(checkOut) || "—",
+    totalStay,
+    roomLabel,
+    bookingRef,
+    countdown,
+    cancellationDeadline,
+    cancellationDeadlineDate: cancellationDeadlineRaw || undefined,
+    searchKey: searchKey || undefined,
+    bookingKey: bookingKey || undefined,
+    totalPaid,
+    currency: currency || "AED",
+    imageUrl,
+    starRating,
+  };
+}
+
+export function transformHotelBookingsResponse(apiResponse: any): HotelBookingCardItem[] {
+  if (apiResponse == null) return [];
+  const raw =
+    apiResponse?.data?.items ??
+    apiResponse?.data?.data ??
+    apiResponse?.data ??
+    apiResponse?.items ??
+    apiResponse?.bookings ??
+    apiResponse?.body ??
+    apiResponse;
+  const items = Array.isArray(raw) ? raw : [];
+  try {
+    return items.map((item: any) => transformHotelBookingItem(item));
+  } catch {
+    return [];
+  }
 }

@@ -4,6 +4,14 @@
   --black-200: #3d495c;
 }
 
+/* Force Ant Design select visual to match Figma / element.style
+   Applies a single 16px radius and 1.5px #cdcbcb border to the selector */
+.ant-select-selector {
+  border-radius: 16px !important;
+  border: 1.5px solid #cdcbcb !important;
+  box-shadow: none !important;
+}
+
 .auth-bg-btn {
   background: linear-gradient(90.59deg, #5383da 0%, #2351a3 50%, #081326 100%) !important;
 }
@@ -140,7 +148,7 @@ input[type="number"] {
 }
 
 .topHeaderTabs {
-  margin-right: 100px;
+  margin-right: 0;
 }
 
 .topHeaderTabs
@@ -230,6 +238,168 @@ input[type="number"] {
   gap: 20px;
   padding: 24px 32px;
   border-radius: 16px;
+  /* Safari/Edge: ensure flex children don't overflow */
+  min-width: 0;
+}
+
+/* Hotel search filters - match design image: white card, no border */
+.hotelSearchFilterCard {
+  background: #FFFFFF;
+  border: none;
+  border-radius: 16px;
+  padding: 20px 24px;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 767px) {
+  .hotelSearchFilterCard {
+    padding: 16px;
+    gap: 14px;
+  }
+}
+
+/* Hotel filter grid - all 8 fields in 4 equal columns, Search button in col 4 like Dates */
+.hotel-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+  align-items: end;
+}
+@media (min-width: 640px) {
+  .hotel-filter-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .hotel-filter-grid {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto auto;
+  }
+}
+.hotel-filter-grid > * {
+  min-width: 0;
+}
+/* Row 1: View(1) Country(2) City(3) Dates(4) */
+.hotel-filter-grid .hotel-filter-view { grid-column: 1; grid-row: 1; }
+.hotel-filter-grid .hotel-filter-country { grid-column: 2; grid-row: 1; }
+.hotel-filter-grid .hotel-filter-city { grid-column: 3; grid-row: 1; }
+.hotel-filter-grid .hotel-filter-dates { grid-column: 4; grid-row: 1; }
+/* Row 2: Nationality(1)=View, Travellers(2)=Country, Star(3)=City, Search(4)=Dates */
+.hotel-filter-grid .hotel-filter-nationality { grid-column: 1; grid-row: 2; }
+.hotel-filter-grid .hotel-filter-travellers { grid-column: 2; grid-row: 2; }
+.hotel-filter-grid .hotel-filter-star { grid-column: 3; grid-row: 2; }
+.hotel-filter-grid .hotel-filter-search {
+  grid-column: 4;
+  grid-row: 2;
+  display: flex;
+  align-items: stretch;
+}
+.hotel-filter-grid .hotel-filter-search .searchFilterBtn,
+.hotel-filter-grid .hotel-filter-search button {
+  width: 100%;
+}
+@media (max-width: 1279px) {
+  .hotel-filter-grid .hotel-filter-view,
+  .hotel-filter-grid .hotel-filter-country,
+  .hotel-filter-grid .hotel-filter-city,
+  .hotel-filter-grid .hotel-filter-dates,
+  .hotel-filter-grid .hotel-filter-nationality,
+  .hotel-filter-grid .hotel-filter-travellers,
+  .hotel-filter-grid .hotel-filter-star,
+  .hotel-filter-grid .hotel-filter-search {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+/* Fallback: hotel-filter-row for flex layout when not using grid */
+.hotel-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  width: 100%;
+}
+.hotel-filter-row > *:not(.hotel-search-btn-cell) {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+.hotel-filter-row .hotel-search-btn-cell {
+  flex: 0 0 auto;
+  margin-left: auto;
+  min-width: 0;
+}
+/* Hero section: 4 cols - Country, City, Dates | Nationality, Travellers, Star Rating, Search - all same widths */
+.hotel-filter-grid-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+  align-items: end;
+}
+@media (min-width: 640px) {
+  .hotel-filter-grid-hero {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .hotel-filter-grid-hero {
+    grid-template-columns: 1fr 1fr 1.5fr 1fr;
+    grid-template-rows: auto auto;
+  }
+}
+/* Hero row 1: Country, City, Dates (wider for check-in/check-out) */
+.hotel-filter-grid-hero .hero-country { grid-column: 1; grid-row: 1; }
+.hotel-filter-grid-hero .hero-city { grid-column: 2; grid-row: 1; }
+.hotel-filter-grid-hero .hero-dates { grid-column: 3 / span 2; grid-row: 1; }
+/* Hero row 2: Nationality=Country, Travellers=City, Star=Dates width, Search in col 4 */
+.hotel-filter-grid-hero .hero-nationality { grid-column: 1; grid-row: 2; }
+.hotel-filter-grid-hero .hero-travellers { grid-column: 2; grid-row: 2; }
+.hotel-filter-grid-hero .hero-star { grid-column: 3; grid-row: 2; }
+.hotel-filter-grid-hero .hero-search {
+  grid-column: 4;
+  grid-row: 2;
+  display: flex;
+  align-items: stretch;
+}
+.hotel-filter-grid-hero .hero-search button {
+  width: 100%;
+}
+.hotel-filter-grid-hero > * {
+  min-width: 0;
+}
+@media (max-width: 1279px) {
+  .hotel-filter-grid-hero .hero-country,
+  .hotel-filter-grid-hero .hero-city,
+  .hotel-filter-grid-hero .hero-dates,
+  .hotel-filter-grid-hero .hero-nationality,
+  .hotel-filter-grid-hero .hero-travellers,
+  .hotel-filter-grid-hero .hero-star,
+  .hotel-filter-grid-hero .hero-search { grid-column: auto; grid-row: auto; }
+}
+
+/* Legacy: hotel-filter-row-3 */
+.hotel-filter-row-3 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+  width: 100%;
+  align-items: end;
+}
+@media (min-width: 640px) {
+  .hotel-filter-row-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1280px) {
+  .hotel-filter-row-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.hotel-filter-row > *,
+.hotel-filter-row-3 > * {
+  min-width: 0;
 }
 
 .fromToIcon svg {
@@ -243,12 +413,16 @@ input[type="number"] {
 }
 
 .flightDetailFilter {
-  /* width: 100%; */
+  width: 280px;
+  min-width: 280px;
+  flex-shrink: 0;
 }
 
 .filterSectionStyle {
   width: 100%;
-  min-width: 250px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .flightDetailMainContent {
@@ -256,43 +430,57 @@ input[type="number"] {
 }
 
 .collapseStyle {
-  border-radius: 15px !important;
+  border-radius: 16px !important;
   overflow: hidden;
+  border: 1px solid #e4e4e7 !important;
+  background: #ffffff !important;
 }
 
 .collapseStyle .ant-collapse-header-text {
-  color: #3d495c;
+  color: #0a0c0f;
   letter-spacing: 0px;
-  font-size: 12px;
-  font-weight: 400;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .collapseStyle .ant-collapse-header {
-  background: #ffffff;
-}
-
-.collapseStyle .ant-collapse-header {
+  background: #ffffff !important;
   align-items: center !important;
+  padding: 14px 16px !important;
+  min-height: 52px;
 }
 
 .collapseStyle .ant-collapse-content {
   border: none !important;
+  background: #ffffff !important;
 }
 
 .collapseStyle .ant-collapse-content-box {
-  padding-top: 0px !important;
+  padding: 0 12px 14px 12px !important;
+  background: #ffffff !important;
+}
+
+.collapseStyle .ant-collapse-item {
+  border: none !important;
 }
 
 .filterHeading {
   display: flex;
   justify-content: space-between;
-  margin-top: 25px;
-  margin-bottom: 15px;
+  align-items: center;
+  margin-top: 16px;
+  margin-bottom: 12px;
 }
 
 .stopsRadioStyle {
-  display: flex;
-  gap: 5px;
+  display: grid !important;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.stopsRadioStyle.ant-radio-group {
+  width: 100%;
 }
 
 .transitHours {
@@ -301,26 +489,47 @@ input[type="number"] {
   gap: 5px;
 }
 
-.stopsRadioStyle label,
-.transitHours label {
-  border-radius: 100px !important;
-  width: 100%;
-  max-width: 50px !important;
-  /* height: 39px !important; */
-  /* border: none !important; */
-  padding: 0px;
-  border: 1px solid var(--black-100);
+.stopsRadioStyle .ant-radio-button-wrapper {
+  border-radius: 10px !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 12px !important;
+  border: 1.5px solid #C2CAD6 !important;
+  background: #FFFFFF !important;
+  text-align: center !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+}
+
+.stopsRadioStyle .ant-radio-button-wrapper .ant-radio-button-label {
+  white-space: nowrap !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  color: #0A0C0F !important;
+  line-height: 1 !important;
 }
 
 .transitHours label {
   border-radius: 100px !important;
   width: 100%;
   max-width: 68px !important;
+  padding: 0px;
+  border: 1px solid var(--black-100);
 }
 
 .stopsRadioStyle .ant-radio-button-wrapper-checked {
-  width: 100%;
-  max-width: 40px !important;
+  background: linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%) !important;
+  border-color: #2351A3 !important;
+  box-shadow: 0 1px 3px rgba(35, 81, 163, 0.25) !important;
+}
+.stopsRadioStyle .ant-radio-button-wrapper-checked .ant-radio-button-label {
+  color: #FFFFFF !important;
 }
 
 .transitHours .ant-radio-button-wrapper-checked {
@@ -351,13 +560,17 @@ input[type="number"] {
 }
 
 .baggageCheckbox {
-  color: #3d495c;
+  color: #0a0c0f;
+  font-family: Inter, sans-serif;
   font-size: 14px;
   font-weight: 500;
+  line-height: 100%;
 }
 
 .baggageCheckbox .ant-checkbox-inner {
-  border-radius: 6px !important;
+  border-radius: 4px !important;
+  width: 16px !important;
+  height: 16px !important;
 }
 
 .departureArrival {
@@ -397,10 +610,14 @@ input[type="number"] {
 
 .filterHeading h4 {
   color: #0a0c0f;
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 1;
+  font-family: Inter, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 100%;
   letter-spacing: 0px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .smallDot {
@@ -410,6 +627,7 @@ input[type="number"] {
 }
 
 .lightActiveText {
+  font-family: Inter, sans-serif;
   font-size: 14px;
   color: #3d495c;
   font-weight: 400;
@@ -417,14 +635,16 @@ input[type="number"] {
 }
 
 .resetAllBtn a {
+  font-family: Inter, sans-serif;
   color: #5383da;
-  font-size: 12px;
-  font-weight: 400;
+  font-size: 14px;
+  font-weight: 500;
   letter-spacing: 0;
+  text-decoration: none;
 }
 
 .collapseStyle {
-  margin-bottom: 5px;
+  margin-bottom: 8px;
 }
 
 .departureArrivalHeading {
@@ -439,6 +659,23 @@ input[type="number"] {
 .contentWrapFlex {
   display: flex;
   gap: 16px;
+}
+
+/* Hotel search (desktop): sidebar margin + filters scroll independently */
+@media (min-width: 1024px) {
+  .hotel-search-listing-page .contentWrapFlex {
+    margin-left: 30px;
+  }
+
+  .hotel-search-listing-page .contentWrapFlex .flightDetailFilter {
+    max-height: calc(100dvh - 260px);
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    align-self: stretch;
+    min-height: 0;
+  }
 }
 
 .setHeroImage {
@@ -614,6 +851,82 @@ input[type="number"] {
   color: #0a0c0f;
   font-size: 14px;
   font-weight: 500;
+.hotel-view-select .ant-select-selector {
+  height: 50px !important;
+  border-radius: 16px !important;
+  background: var(--white-200, #FFFFFF) !important;
+  border: 1px solid var(--black-100, #C2CAD6) !important;
+  box-shadow: none !important;
+  display: flex !important;
+  align-items: center !important;
+  padding: 0 12px !important;
+}
+.hotel-view-select .ant-select-selection-item {
+  color: #0F172A !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 50px !important;
+}
+.hotel-view-select .ant-select-arrow {
+  right: 12px !important;
+}
+.hotel-view-select .ant-select-selection-search-input {
+  opacity: 0 !important;
+  height: 50px !important;
+}
+.hotel-view-select .ant-select-selector .ant-select-selection-item,
+.hotel-view-select .ant-select-selector .ant-select-selection-placeholder {
+  padding: 0 !important;
+}
+.hotel-view-select-popup .rc-virtual-list-holder {
+  /* leave default */
+}
+
+/* Ensure all Ant Design select selectors use 16px radius to match Figma */
+.ant-select-selector {
+  border-radius: 16px !important;
+}
+
+/* Ensure only the internal selector shows a single border for hotel view select */
+.hotel-view-select.ant-select {
+  /* remove outer border/outline from the host element */
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.hotel-view-select .ant-select-selector {
+  /* single visible border */
+  border: 1px solid var(--black-100, #C2CAD6) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+
+/* If the top header's radioButtonGroup is empty, remove its border to avoid duplicate outline */
+.tadioButtonGroupWrap .radioButtonGroup:empty {
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Remove wrapper border in the top header so only the Select's selector shows a border */
+.tadioButtonGroupWrap .radioButtonGroup {
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* Ensure hotel view select has no focus outline or shadow */
+.hotel-view-select .ant-select-selector,
+.hotel-view-select .ant-select-selector:focus,
+.hotel-view-select .ant-select-focused .ant-select-selector {
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Tune padding for visually centered text */
+.hotel-view-select .ant-select-selection-item {
+  padding-left: 16px !important;
+}
   letter-spacing: 0px;
 }
 
@@ -771,7 +1084,7 @@ input[type="number"] {
   padding: 0px;
   border-bottom-left-radius: 12px;
   border-bottom-right-radius: 12px;
-  border: 1px solid var(--white-300, #e4e4e7);
+  /* border: 1px solid var(--white-300, #e4e4e7); */
   border-top: none;
 }
 
@@ -826,8 +1139,14 @@ input[type="number"] {
   margin-bottom: 15px;
 }
 
+/* For round-trip/multi-segment flight cards adjust bottom spacing and hide overflow */
+.flightDetailCards.flightDetailRoundTripCards {
+  margin-bottom: -33px !important;
+  overflow: hidden;
+}
+
 .flightDetailRoundTripCards {
-  border: 1px solid var(--white-300, #e4e4e7);
+  /* border: 1px solid var(--white-300, #e4e4e7); */
   border-radius: 12px;
 }
 
@@ -1410,13 +1729,13 @@ img:hover {
 
 .fromToSelectWidth {
   width: 100%;
-  max-width: 396px;
+  max-width: 318px;
 }
 
 .bottomHeaderFlex .fromToBtn {
   width: 100% !important;
-  height: 48px !important;
-  max-width: 48px;
+  height: 47px !important;
+  max-width: 47px;
 }
 
 .bottomHeaderFlex {
@@ -1428,13 +1747,40 @@ img:hover {
   flex-wrap: wrap;
 }
 
+@media (min-width: 768px) {
+  .md\:grid-cols-\[250px_30px_minmax\(250px\2c 1fr\)_200px_220px_40px\] {
+    grid-template-columns: 251px 57px minmax(265px, 2fr) 201px 219px 34px;
+  }
+
+  .md\:grid-cols-\[230px_47px_minmax\(230px\2c 1fr\)_230px_220px_40px\] {
+    grid-template-columns: 230px 47px minmax(230px, 2fr) 230px 220px 40px;
+  }
+}
+
+/* Ensure filter collapse header/content use requested background */
+.stopsCollapse .ant-collapse .ant-collapse-header {
+  background: #F2F2F3 !important;
+}
+.stopsCollapse .ant-collapse .ant-collapse-content,
+.stopsCollapse .ant-collapse .ant-collapse-content-box {
+  background: #F2F2F3 !important;
+}
+
+.timeCollapse .ant-collapse .ant-collapse-header {
+  background: #e1e1e1 !important;
+}
+.timeCollapse .ant-collapse .ant-collapse-content,
+.timeCollapse .ant-collapse .ant-collapse-content-box {
+  background: #e1e1e1 !important;
+}
+
 .searchFilterBtn {
-  max-width: 137px !important;
-  width: 137px !important;
+  max-width: 120px !important;
+  width: 120px !important;
   border-radius: 100px !important;
   margin-left: auto;
   align-self: flex-end;
-  padding: 14px 40px !important;
+  padding: 14px 28px !important;
   color: #f2f2f3 !important;
   font-size: 16px !important;
   min-height: 47px !important;
@@ -1452,6 +1798,15 @@ img:hover {
   letter-spacing: 0.5px;
   height: auto;
   max-height: 57px;
+}
+
+/* Hotel search filters - responsive for Edge, Safari, all screens */
+/* Search button fills its grid cell - same width as other fields */
+.hotel-search-btn-responsive {
+  width: 100% !important;
+  max-width: 100% !important;
+  height: 47px !important;
+  min-height: 47px !important;
 }
 
 .stopsOnSmall {
@@ -1477,7 +1832,27 @@ img:hover {
 }
 
 .flightDetailTemplateWrap {
-  padding: 0px 32px;
+  padding: 0 16px;
+}
+@media (min-width: 576px) {
+  .flightDetailTemplateWrap {
+    padding: 0 24px;
+  }
+}
+@media (min-width: 768px) {
+  .flightDetailTemplateWrap {
+    padding: 0 48px;
+  }
+}
+@media (min-width: 1024px) {
+  .flightDetailTemplateWrap {
+    padding: 0 64px;
+  }
+}
+@media (min-width: 1280px) {
+  .flightDetailTemplateWrap {
+    padding: 0 50px;
+  }
 }
 
 .custom-phone-wrapper .react-international-phone-country-selector-button {

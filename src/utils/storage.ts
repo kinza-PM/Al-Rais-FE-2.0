@@ -5,6 +5,7 @@ const STORAGE_KEYS = {
   AUTH_STATUS: 'al_rais_auth_status',
   LAST_LOGIN: 'al_rais_last_login',
   AUTH_TOKEN: 'al_rais_auth_token',
+  LOGOUT: 'al_rais_logout',
 } as const;
 
 export const StorageService = {
@@ -49,8 +50,20 @@ export const StorageService = {
       localStorage.removeItem(STORAGE_KEYS.AUTH_STATUS);
       localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.LAST_LOGIN);
+      localStorage.removeItem(STORAGE_KEYS.LOGOUT);
+      // Also remove the "logout" key used for cross-tab synchronization
+      localStorage.removeItem('logout');
     } catch (error) {
       console.error('Failed to clear auth data:', error);
+    }
+  },
+
+  setLogoutTimestamp: (): void => {
+    try {
+      // Use "logout" key as specified in requirements for cross-tab synchronization
+      localStorage.setItem('logout', Date.now().toString());
+    } catch (error) {
+      console.error('Failed to set logout timestamp:', error);
     }
   },
 

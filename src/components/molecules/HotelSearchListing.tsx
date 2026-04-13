@@ -1,15 +1,10 @@
 import React, { useMemo, useEffect, useRef } from "react";
 
 import "../../assets/css/travel.css";
-import FlagUae from "../../assets/svgs/Flag-uae.svg";
-import FlagInd from "../../assets/svgs/Flag-ind.svg";
-import FlagUsa from "../../assets/svgs/Flag-usa.svg";
 import Info from "../../assets/svgs/info-black.svg";
-import colSeparater from "../../assets/svgs/Lineseparater.svg";
-import { Segmented, Tabs, Select, Flex, Grid, Drawer, Button } from "antd";
+import { Grid, Drawer, Button } from "antd";
 import CustomButton from "../common/CustomButton";
 
-import type { TabsProps } from "antd";
 import { useState, useCallback } from "react";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 
@@ -34,9 +29,15 @@ import Loader from "../atoms/Loader";
 import {
   filterHotels,
   sortHotels,
+  cloneHotelListingFilters,
   type HotelFilters,
   type SortOption,
 } from "../../utils/hotelFilters";
+import {
+  convertDateToString as formatHotelBookingDate,
+  convertPaxToRooms,
+  getHotelBookingValidationError,
+} from "../../utils/hotelBookingParams";
 import { useHotelStore } from "../../store/UseHotelStore";
 import { useCountriesOptions } from "../../hooks/masterListings/listing";
 import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
@@ -46,24 +47,20 @@ import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
 //   getUniqueCountries,
 // } from "../../utils/dropdownHelper";
 
-const onChange = (key: string) => {
-  console.log(key);
-};
-const handleChange = (value: string) => {
-  console.log(`selected ${value}`);
-};
-
-const items: TabsProps["items"] = [
-  { key: "1", label: "Flights", children: "" },
-  { key: "2", label: "Hotels", children: "" },
-];
+// const items: TabsProps["items"] = [
+//   { key: "1", label: "Flights", children: "" },
+//   { key: "2", label: "Hotels", children: "" },
+// ];
 
 const starRatingOptions = [
+  { id: "0", value: "", label: "Clear rating", hideSelectionIcon: true },
   { id: "1", value: "1", label: "1 star" },
   { id: "2", value: "2", label: "2 stars" },
   { id: "3", value: "3", label: "3 stars" },
   { id: "4", value: "4", label: "4 stars" },
   { id: "5", value: "5", label: "5 stars" },
+  { id: "6", value: "6", label: "6 stars" },
+  { id: "7", value: "7", label: "7 stars" },
 ];
 
 const hotelViewTypes = [
@@ -73,14 +70,20 @@ const hotelViewTypes = [
 ];
 
 const HotelSearchListing: React.FC = () => {
-  const [hotelView, setHotelView] = useState<HotelViewType>("listview");
   const [open, setOpen] = useState(false);
   const showDrawer = () => setOpen(true);
   const onClose = () => setOpen(false);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
 
-  const { hotel, setHotel } = useHotelStore();
+  const {
+    hotel,
+    setHotel,
+    hotelView,
+    setHotelView,
+    setHotelListingFilters,
+    setHotelListingSortOption,
+  } = useHotelStore();
 
   const { passengers } = useMasterListings({
     include: ["passengers"],
@@ -106,6 +109,7 @@ const HotelSearchListing: React.FC = () => {
     filters: {
       currency: "AED",
       minStarRating: 0,
+      starRatings: [],
     },
   });
   // Local state for TravellersAndRoomDropdown (Pax format)
@@ -124,18 +128,21 @@ const HotelSearchListing: React.FC = () => {
   const [hotelSearchResults, setHotelSearchResults] = useState<any[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Filter and sort state
-  const [filters, setFilters] = useState<HotelFilters>({
-    hotelName: "",
-    propertyTypes: [],
-    ratings: [],
-    propertyFacilities: [],
-    roomFacilities: [],
-    bedPreferences: [],
-    meals: [],
-    cancellationPolicy: [],
-  });
-  const [sortOption, setSortOption] = useState<SortOption>("");
+  // Filter and sort state (persist across home ↔ listing via store)
+  const [filters, setFilters] = useState<HotelFilters>(() =>
+    cloneHotelListingFilters(useHotelStore.getState().hotelListingFilters),
+  );
+  const [sortOption, setSortOption] = useState<SortOption>(
+    () => useHotelStore.getState().hotelListingSortOption,
+  );
+
+  useEffect(() => {
+    setHotelListingFilters(cloneHotelListingFilters(filters));
+  }, [filters, setHotelListingFilters]);
+
+  useEffect(() => {
+    setHotelListingSortOption(sortOption);
+  }, [sortOption, setHotelListingSortOption]);
 
   const { data: countriesOptions, isLoading: isCountriesLoading } =
     useCountriesOptions();
@@ -173,30 +180,13 @@ const HotelSearchListing: React.FC = () => {
       //   setValidationError(null);
       // }
     },
-    [validationError],
-  );
-
-  // Handle nested filter changes
-  const handleFilterChange = useCallback(
-    (field: keyof HotelSearchRequest["filters"], value: any) => {
-      setSearchState((prev) => ({
-        ...prev,
-        filters: {
-          ...prev.filters,
-          [field]: value,
-        },
-      }));
-    },
     [],
   );
 
-  const convertDateToString = useCallback((date: Date | null): string => {
-    if (!date) return "";
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }, []);
+  const convertDateToString = useCallback(
+    (date: Date | null): string => formatHotelBookingDate(date),
+    [],
+  );
 
   const convertPaxToRoom = useCallback(
     (
@@ -207,55 +197,7 @@ const HotelSearchListing: React.FC = () => {
         rooms?: number;
       },
       ages: Array<number | null>,
-    ): RoomData[] => {
-      const numRooms = pax.rooms || 1;
-      const totalAdults = pax.adults || 0;
-      const totalChildren = pax.kids || pax.children || 0;
-
-      const childAgeArray: number[] = ages
-        .filter((age): age is number => age !== null)
-        .slice(0, totalChildren);
-
-      const rooms: RoomData[] = [];
-
-      const baseAdultsPerRoom = Math.floor(totalAdults / numRooms);
-      const extraAdults = totalAdults % numRooms;
-
-      const baseChildrenPerRoom = Math.floor(totalChildren / numRooms);
-      const extraChildren = totalChildren % numRooms;
-
-      let childAgeIndex = 0;
-
-      for (let i = 0; i < numRooms; i++) {
-        const adultsInRoom = Math.min(
-          baseAdultsPerRoom + (i < extraAdults ? 1 : 0),
-          2, // Max 2 per room
-        );
-
-        // Distribute children: base + 1 extra for first few rooms
-        const childrenInRoom = Math.min(
-          baseChildrenPerRoom + (i < extraChildren ? 1 : 0),
-          2, // Max 2 per room
-        );
-
-        const childAgesForRoom: number[] = [];
-        for (let j = 0; j < childrenInRoom; j++) {
-          if (childAgeIndex < childAgeArray.length) {
-            childAgesForRoom.push(childAgeArray[childAgeIndex]);
-            childAgeIndex++;
-          }
-        }
-
-        rooms.push({
-          adult: adultsInRoom,
-          child: childrenInRoom,
-          childAge: childAgesForRoom,
-          roomIndex: i + 1,
-        });
-      }
-
-      return rooms;
-    },
+    ): RoomData[] => convertPaxToRooms(pax, ages),
     [],
   );
 
@@ -268,23 +210,37 @@ const HotelSearchListing: React.FC = () => {
       rooms?: number;
     }) => {
       setPaxData(pax);
-      const room = convertPaxToRoom(pax, childAges);
-      handleSearchChange("rooms", room);
     },
-    [childAges, convertPaxToRoom, handleSearchChange],
+    [],
   );
 
   const handleChildrenAgesChange = useCallback(
     (ages: Array<number | null>) => {
       setChildAges(ages);
-      const room = convertPaxToRoom(paxData, ages);
-      handleSearchChange("rooms", room);
     },
-    [paxData, convertPaxToRoom, handleSearchChange],
+    [],
   );
 
-  // Hydrate from store only when coming from HotelHeroSectionTab (pre-fill + auto-search)
-  // When user navigates to hotel detail, clearHotel() is called - so back = empty form, no data
+  useEffect(() => {
+    const nextRooms = convertPaxToRoom(paxData, childAges);
+
+    setSearchState((prev) => {
+      const currentRooms = JSON.stringify(prev.rooms ?? []);
+      const upcomingRooms = JSON.stringify(nextRooms);
+
+      if (currentRooms === upcomingRooms) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        rooms: nextRooms,
+      };
+    });
+  }, [paxData, childAges, convertPaxToRoom]);
+
+  // Hydrate from store when coming from HotelHeroSectionTab or when returning from hotel detail (back button)
+  // Store is preserved on navigate to detail so back button restores search context
   const hydratedHotelSnapshotRef = useRef<string | null>(null);
   const shouldAutoSearchRef = useRef(false);
 
@@ -313,7 +269,18 @@ const HotelSearchListing: React.FC = () => {
       rooms: convertPaxToRoom(hotel.paxData, hotel.childAges),
       filters: {
         ...prev.filters,
-        minStarRating: hotel.minStarRating ?? 0,
+        starRatings:
+          hotel.starRatings && hotel.starRatings.length > 0
+            ? hotel.starRatings
+            : hotel.minStarRating && hotel.minStarRating > 0
+              ? [hotel.minStarRating]
+              : [],
+        minStarRating:
+          hotel.starRatings && hotel.starRatings.length > 0
+            ? Math.min(...hotel.starRatings)
+            : hotel.minStarRating && hotel.minStarRating > 0
+              ? hotel.minStarRating
+              : 0,
       },
     }));
     setPaxData(hotel.paxData);
@@ -326,118 +293,25 @@ const HotelSearchListing: React.FC = () => {
   }, [hotel, convertPaxToRoom]);
 
   const validateForm = useCallback((): boolean => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const validationMessage = getHotelBookingValidationError({
+      country: searchState.country,
+      city: searchState.city,
+      checkIn: searchState.checkIn,
+      checkOut: searchState.checkOut,
+      travelerCountryOfResidence: searchState.travelerCountryOfResidence,
+      paxData,
+      childAges,
+      requireSearchContext: true,
+    });
 
-    const hasMultipleErrors =
-      [
-        !searchState.country || searchState.country.trim() === "",
-        !searchState.city || searchState.city.trim() === "",
-        !searchState.checkIn || searchState.checkIn.trim() === "",
-        !searchState.checkOut || searchState.checkOut.trim() === "",
-        !searchState.travelerCountryOfResidence ||
-          searchState.travelerCountryOfResidence.trim() === "",
-      ].filter(Boolean).length > 1;
-
-    if (hasMultipleErrors) {
-      setValidationError(
-        "Please complete all required fields before searching.",
-      );
+    if (validationMessage) {
+      setValidationError(validationMessage);
       return false;
-    }
-
-    if (!searchState.country || searchState.country.trim() === "") {
-      setValidationError("Country is required");
-      return false;
-    }
-
-    if (!searchState.city || searchState.city.trim() === "") {
-      setValidationError("City is required");
-      return false;
-    }
-
-    if (!searchState.checkIn || searchState.checkIn.trim() === "") {
-      setValidationError("Check-in date is required");
-      return false;
-    }
-
-    if (!searchState.checkOut || searchState.checkOut.trim() === "") {
-      setValidationError("Check-out date is required");
-      return false;
-    }
-
-    const checkInDate = new Date(searchState.checkIn);
-    checkInDate.setHours(0, 0, 0, 0);
-    if (checkInDate < today) {
-      setValidationError("Check-in date cannot be in the past");
-      return false;
-    }
-
-    const checkOutDate = new Date(searchState.checkOut);
-    checkOutDate.setHours(0, 0, 0, 0);
-    if (checkOutDate < today) {
-      setValidationError("Check-out date cannot be in the past");
-      return false;
-    }
-
-    if (checkOutDate <= checkInDate) {
-      setValidationError("Check-out date must be after check-in date");
-      return false;
-    }
-
-    if (
-      !searchState.travelerCountryOfResidence ||
-      searchState.travelerCountryOfResidence.trim() === ""
-    ) {
-      setValidationError("Nationality is required");
-      return false;
-    }
-
-    const numRooms = paxData.rooms || 1;
-    const totalAdults = paxData.adults || 0;
-    const totalChildren = paxData.kids || paxData.children || 0;
-
-    // Check if adults exceed room capacity (2 per room)
-    const maxAdultsAllowed = numRooms * 2;
-    if (totalAdults < numRooms) {
-      setValidationError(
-        `Minimum ${numRooms} adult${numRooms > 1 ? "s" : ""} required for ${numRooms} room${numRooms > 1 ? "s" : ""} (1 per room)`,
-      );
-      return false;
-    } else if (totalAdults > maxAdultsAllowed) {
-      setValidationError(
-        `Maximum ${maxAdultsAllowed} adults allowed for ${numRooms} room${
-          numRooms > 1 ? "s" : ""
-        } (2 per room)`,
-      );
-      return false;
-    }
-
-    // Check if children exceed room capacity (2 per room)
-    const maxChildrenAllowed = numRooms * 2;
-    if (totalChildren > maxChildrenAllowed) {
-      setValidationError(
-        `Maximum ${maxChildrenAllowed} children allowed for ${numRooms} room${
-          numRooms > 1 ? "s" : ""
-        } (2 per room)`,
-      );
-      return false;
-    }
-
-    // Validate child ages - all children must have ages specified
-    if (totalChildren > 0) {
-      const validChildAges = childAges.filter(
-        (age): age is number => age !== null,
-      );
-      if (validChildAges.length !== totalChildren) {
-        setValidationError(`Please specify ages for all children`);
-        return false;
-      }
     }
 
     setValidationError(null);
     return true;
-  }, [searchState]);
+  }, [searchState, paxData, childAges]);
 
   // Handle search button click
   const handleSearchHotels = useCallback(async () => {
@@ -474,6 +348,7 @@ const HotelSearchListing: React.FC = () => {
           paxData,
           childAges,
           minStarRating: searchState.filters?.minStarRating ?? 0,
+          starRatings: searchState.filters?.starRatings ?? [],
         });
       } else {
         setHotelSearchResults([]);
@@ -516,9 +391,15 @@ const HotelSearchListing: React.FC = () => {
   const filteredAndSortedHotels = React.useMemo(() => {
     let result = [...hotelSearchResults];
 
-    // Apply filters
+    // Apply filters (merge star rating from search bar into filters)
     if (hasSearched && result.length > 0) {
-      result = filterHotels(result, filters);
+      const barStarRatings = searchState.filters?.starRatings ?? [];
+      const effectiveFilters = {
+        ...filters,
+        ratings:
+          barStarRatings.length > 0 ? barStarRatings : filters.ratings,
+      };
+      result = filterHotels(result, effectiveFilters);
     }
 
     // Apply sorting
@@ -527,265 +408,168 @@ const HotelSearchListing: React.FC = () => {
     }
 
     return result;
-  }, [hotelSearchResults, filters, sortOption, hasSearched]);
+  }, [
+    hotelSearchResults,
+    filters,
+    sortOption,
+    hasSearched,
+    searchState.filters?.starRatings,
+  ]);
 
   return (
     <div className="">
       <Loader
         show={isPending || isCountriesLoading || isCitiesLoading}
-        label={`${
-          isPending
-            ? "Please wait while we are looking for available hotels"
-            : isCitiesLoading
-              ? "Loading cities..."
-              : "Please wait while we are fetching details"
-        }`}
+        label={`${isPending
+          ? "Please wait while we are looking for available hotels"
+          : isCitiesLoading
+            ? "Loading cities..."
+            : "Please wait while we are fetching details"
+          }`}
       />
-      <div className="topHeaderSetting">
-        <div className="topHeaderSettingInner">
-          <div className="tadioButtonGroupWrap py-pxTopHeader">
-            <div className="radioButtonGroup">
-              <Segmented
+      <div className="topHeaderSetting"></div>
+
+      <div className="flightDetailTemplateWrap hotel-search-listing-page">
+        <div className="bottomHeaderSetting hotelSearchFilterCard">
+          {/* Grid: Row 1 (View, Country, City, Dates) | Row 2 (Nationality, Travellers, Star Rating, Search) - widths aligned */}
+          <div className="hotel-filter-grid">
+            <div className="hotel-filter-view w-full min-w-0">
+              <SearchableDropdown
+                options={hotelViewTypes.map((t) => ({
+                  id: t.value,
+                  value: t.value,
+                  label: t.label,
+                }))}
                 value={hotelView}
-                style={{ marginBottom: 0 }}
                 onChange={(v) => setHotelView(v as HotelViewType)}
-                options={hotelViewTypes}
+                label="View"
+                widthClass="w-full"
+                searchPlaceholder="Search"
               />
             </div>
-          </div>
-          <div className="topHeaderTabs">
-            <Tabs
-              defaultActiveKey="2"
-              className="customIndicate"
-              items={items}
-              onChange={onChange}
-              tabBarStyle={{ marginBottom: "16px !important" }}
-              // indicator={{ size: (origin) => origin - 20, align: alignValue }}
-            />
-          </div>
-          <div className="countrySelectAndGetHelp py-pxTopHeader">
-            <div>
-              <Select
-                className="countrySelectBox"
-                defaultValue="US"
-                style={{
-                  width: 100,
-                  borderRadius: 12,
-                  height: 44,
+            <div className="hotel-filter-country w-full min-w-0">
+              <SearchableDropdown
+                options={
+                  countriesOptions?.map((c) => ({
+                    id: c.iso2,
+                    value: c.label,
+                    label: c.label,
+                  })) || []
+                }
+                value={searchState.country}
+                onChange={(value) => {
+                  handleSearchChange("country", value);
+                  handleSearchChange("city", "");
                 }}
-                onChange={handleChange}
-                options={[
-                  {
-                    value: "US",
-                    label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagUsa}
-                          alt="US Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
-                        US
-                      </span>
-                    ),
-                  },
-
-                  {
-                    value: "UAE",
-                    label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagUae}
-                          alt="UAE Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
-                        UAE
-                      </span>
-                    ),
-                  },
-                  {
-                    value: "Ind",
-                    label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagInd}
-                          alt="IND Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
-                        IND
-                      </span>
-                    ),
-                  },
-                ]}
+                placeholder="Where are you traveling to?"
+                label="Country"
+                widthClass="w-full"
+                searchPlaceholder="Search"
+                tooltip="Where are you traveling to?"
               />
             </div>
-            <div className="smalSeparater">
-              <img src={colSeparater} alt="" style={{ width: 1, height: 30 }} />
+            <div className="hotel-filter-city w-full min-w-0">
+              <SearchableDropdown
+                options={
+                  citiesData?.map((c, index) => ({
+                    id: `${index}-${c.value}`,
+                    value: c.value,
+                    label: c.label,
+                  })) || []
+                }
+                value={searchState.city}
+                onChange={(value) => handleSearchChange("city", value)}
+                placeholder="Where are you traveling to?"
+                label="City"
+                widthClass="w-full"
+                searchPlaceholder="Search"
+                tooltip="Where are you traveling to?"
+              />
+            </div>
+            <div className="hotel-filter-dates w-full min-w-0">
+              <label className="block text-[12px] text-[#3D495C] mb-1">
+                Dates
+              </label>
+              <div
+                className="h-[50px] w-full min-w-0 rounded-[16px] border border-[#C2CAD6] px-2 flex items-center"
+                style={{ background: "var(--white-200, #FFFFFF)" }}
+              >
+                <TailiwindCustomDatePicker
+                  value={
+                    searchState.checkIn ? new Date(searchState.checkIn) : null
+                  }
+                  onChange={(date) => {
+                    const dateStr = convertDateToString(date);
+                    handleSearchChange("checkIn", dateStr);
+                  }}
+                  placeholder="Check-in date"
+                  buttonIconSrc={true}
+                  overridesClass={true}
+                  showCalendarIconRight={false}
+                  inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none outline-none pl-10 pr-1 text-[12px] sm:text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
+                  disablePastDates={true}
+                  tooltip="Select check-in date"
+                />
+                <span className="text-[#94A3B8] select-none px-1 flex-shrink-0">
+                  —
+                </span>
+                <TailiwindCustomDatePicker
+                  value={
+                    searchState.checkOut ? new Date(searchState.checkOut) : null
+                  }
+                  onChange={(date) => {
+                    const dateStr = convertDateToString(date);
+                    handleSearchChange("checkOut", dateStr);
+                  }}
+                  placeholder="Check-out date"
+                  buttonIconSrc={true}
+                  overridesClass={true}
+                  showCalendarIconRight={false}
+                  inputClass="h-[50px] flex-1 min-w-0 rounded-[16px] border-none pl-10 pr-2 outline-none text-[12px] sm:text-[14px] text-[#0F172A] bg-transparent cursor-pointer w-full"
+                  disablePastDates={true}
+                  minDate={new Date(searchState.checkIn)}
+                  tooltip="Select check-out date"
+                />
+              </div>
             </div>
 
-            <div className="getHelpLink">
-              <a href="#">Get help</a>
+            <div className="hotel-filter-nationality w-full min-w-0">
+              <SearchableDropdown
+                options={
+                  countriesOptions?.map((c) => ({
+                    id: c.iso2,
+                    value: `${c.label},${c.iso2}`,
+                    label: c.label,
+                  })) || []
+                }
+                value={searchState.travelerNationality}
+                onChange={(value) => {
+                  handleSearchChange("travelerNationality", value);
+                  handleSearchChange("travelerCountryOfResidence", value);
+                }}
+                placeholder="Country of Residence?"
+                label="Nationality"
+                widthClass="w-full"
+                searchPlaceholder="Search"
+                tooltip="Select your country of residence"
+              />
             </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flightDetailTemplateWrap">
-        <div className="bottomHeaderSetting">
-          <Flex className="bottomHeaderFlex">
-            <Flex vertical style={{ width: "100%", maxWidth: 450 }}>
-              <div>
-                <SearchableDropdown
-                  options={
-                    countriesOptions?.map((c) => ({
-                      id: c.iso2,
-                      value: c.label,
-                      label: c.label,
-                    })) || []
-                  }
-                  // options={[{ id: "1", value: "France", label: "France" }]}
-                  value={searchState.country}
-                  onChange={(value) => {
-                    handleSearchChange("country", value);
-                    handleSearchChange("city", "");
-                  }}
-                  // onChange={(value) => handleSearchChange("country", value)}
-                  placeholder="Where are you traveling to?"
-                  label="Country"
-                  widthClass="w-full"
-                  searchPlaceholder="Search"
-                  tooltip="Where are you traveling to?"
-                />
-              </div>
-            </Flex>
-            <Flex vertical style={{ width: "100%", maxWidth: 450 }}>
-              <div>
-                <SearchableDropdown
-                  options={
-                    citiesData?.map((c, index) => ({
-                      id: `${index}-${c.value}`,
-                      value: c.value,
-                      label: c.label,
-                    })) || []
-                  }
-                  // options={[{ id: "1", value: "Paris", label: "Paris" }]}
-                  value={searchState.city}
-                  onChange={(value) => handleSearchChange("city", value)}
-                  placeholder="Where are you traveling to?"
-                  label="City"
-                  widthClass="w-full"
-                  searchPlaceholder="Search"
-                  tooltip="Where are you traveling to?"
-                />
-              </div>
-            </Flex>
-            <Flex vertical style={{ width: "100%", maxWidth: 430 }}>
-              <div>
-                <label className="block text-[12px] text-[#3D495C] mb-1">
-                  Dates
-                </label>
-                <div className="h-11 w-full rounded-xl border border-[#DFE7F3] px-3 flex items-center">
-                  <TailiwindCustomDatePicker
-                    value={
-                      searchState.checkIn ? new Date(searchState.checkIn) : null
-                    }
-                    onChange={(date) => {
-                      const dateStr = convertDateToString(date);
-                      handleSearchChange("checkIn", dateStr);
-                    }}
-                    placeholder="Check-in date"
-                    buttonIconSrc={true}
-                    overridesClass={true}
-                    showCalendarIconRight={false}
-                    inputClass="h-10 w-[165px] rounded-xl border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
-                    disablePastDates={true}
-                    tooltip="Select check-in date"
-                  />
-                  <span className="text-[#94A3B8] select-none">-</span>
-                  <TailiwindCustomDatePicker
-                    value={
-                      searchState.checkOut
-                        ? new Date(searchState.checkOut)
-                        : null
-                    }
-                    onChange={(date) => {
-                      const dateStr = convertDateToString(date);
-                      handleSearchChange("checkOut", dateStr);
-                    }}
-                    placeholder="Check-out date"
-                    buttonIconSrc={true}
-                    overridesClass={true}
-                    showCalendarIconRight={false}
-                    inputClass="h-10 w-[165px] rounded-xl border-none pl-10 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
-                    disablePastDates={true}
-                    minDate={new Date(searchState.checkIn)}
-                    tooltip="Select check-out date"
-                  />
-                </div>
-              </div>
-            </Flex>
-            <Flex vertical style={{ width: "100%", maxWidth: 380 }}>
-              <div>
-                <SearchableDropdown
-                  options={
-                    countriesOptions?.map((c) => ({
-                      id: c.iso2,
-                      value: `${c.label},${c.iso2}`,
-                      label: c.label,
-                    })) || []
-                  }
-                  // options={[{ id: "1", value: "INDIA,IN", label: "INDIA" }]}
-                  value={searchState.travelerNationality}
-                  onChange={(value) => {
-                    handleSearchChange("travelerNationality", value);
-                    handleSearchChange("travelerCountryOfResidence", value);
-                  }}
-                  placeholder="Country of Residence?"
-                  label="Nationality"
-                  widthClass="w-full"
-                  searchPlaceholder="Search"
-                  tooltip="Select your country of residence"
-                />
-              </div>
-            </Flex>
-            <div className="w-full">
+            <div className="hotel-filter-travellers w-full min-w-0">
               <label className="block text-[12px] text-[#3D495C] mb-1 flex items-center gap-2">
                 Travellers and rooms{" "}
                 <span className="relative inline-flex group/info">
                   <img
                     src={Info}
                     alt="info"
-                    className="w-4 h-4 inline-block align-middle"
+                    className="w-4 h-4 inline-block align-middle flex-shrink-0"
                   />
                   <span
                     className="pointer-events-none absolute bottom-full left-full -translate-x-1/3 mb-2 hidden group-hover/info:block z-50 px-3 py-2 text-xs leading-5 text-white bg-[#1E293B] rounded-lg shadow-lg whitespace-nowrap text-center before:content-[''] before:absolute before:top-full before:left-1/2 before:-translate-x-1/2 before:border-6 before:border-transparent before:border-t-[#1E293B]"
                     role="tooltip"
                   >
                     Minimum 1 adult required per room <br />
-                    Maximum 2 adults allowed per room
-                    <br />
-                    Maximum 2 children allowed per room
-                    <br />
+                    Maximum 2 adults allowed per room <br />
+                    Maximum 2 children allowed per room <br />
                     Child age must be within 2 and 12 years
                   </span>
                 </span>
@@ -800,33 +584,44 @@ const HotelSearchListing: React.FC = () => {
                 tooltip="Select passengers and rooms"
               />
             </div>
-            <Flex vertical style={{ width: "100%", maxWidth: 350 }}>
-              <div>
-                <CheckableDropdown
-                  options={starRatingOptions}
-                  value={
-                    searchState.filters.minStarRating === 0
-                      ? ""
-                      : String(searchState.filters.minStarRating)
-                  }
-                  onChange={(value) => {
-                    const rating = value === "" ? 0 : Number(value);
-                    handleFilterChange("minStarRating", rating);
-                  }}
-                  placeholder="Select rating"
-                  label="Star Rating"
-                  singleSelect={true}
-                  tooltip="Select star rating"
-                />
-              </div>
-            </Flex>
-            <CustomButton
-              className="searchFilterBtn"
-              onClick={handleSearchHotels}
-            >
-              {isPending ? "Searching..." : "Search Hotels"}
-            </CustomButton>
-          </Flex>
+            <div className="hotel-filter-star w-full min-w-0">
+              <CheckableDropdown
+                options={starRatingOptions}
+                value={(searchState.filters.starRatings ?? []).map(String)}
+                onChange={(value) => {
+                  if (!Array.isArray(value)) return;
+                  const nums = [
+                    ...new Set(
+                      value
+                        .filter((v) => v !== "")
+                        .map((v) => Number(v))
+                        .filter((n) => Number.isFinite(n) && n >= 1 && n <= 7),
+                    ),
+                  ].sort((a, b) => a - b);
+                  setSearchState((prev) => ({
+                    ...prev,
+                    filters: {
+                      ...prev.filters,
+                      starRatings: nums,
+                      minStarRating: nums.length ? Math.min(...nums) : 0,
+                    },
+                  }));
+                }}
+                placeholder="Select rating"
+                label="Star Rating"
+                singleSelect={false}
+                tooltip="Select one or more star ratings"
+              />
+            </div>
+            <div className="hotel-filter-search">
+              <CustomButton
+                className="searchFilterBtn hotel-search-btn-responsive"
+                onClick={handleSearchHotels}
+              >
+                {isPending ? "Searching..." : "Search"}
+              </CustomButton>
+            </div>
+          </div>
         </div>
 
         {!screens.lg && (
@@ -850,7 +645,7 @@ const HotelSearchListing: React.FC = () => {
           </div>
         )}
 
-        <div className="contentWrapFlex">
+        <div className="contentWrapFlex flex-col lg:flex-row">
           {screens.lg && (
             <div className="flightDetailFilter">
               <HotelsSearchFilter
@@ -862,7 +657,7 @@ const HotelSearchListing: React.FC = () => {
               />
             </div>
           )}
-          <div className="flightDetailMainContent" style={{ width: "100%" }}>
+          <div className="flightDetailMainContent min-w-0" style={{ width: "100%" }}>
             {!screens.lg && (
               <Button
                 className="filterToggleBtn"

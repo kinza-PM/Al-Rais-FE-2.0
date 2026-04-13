@@ -29,7 +29,7 @@ export type SegmentSummary = {
 };
 
 export const buildInitialFlightBookingPassengersPayload = (
-  req?: Array<{ id?: string | number; ptc?: string }>
+  req?: Array<{ id?: string | number; ptc?: string }>,
 ) => {
   const emptyPassenger = () => ({
     passengerKey: generateUUID(),
@@ -78,7 +78,7 @@ export const buildInitialFlightBookingPassengersPayload = (
 // Field-level validation for passengers
 export const validatePassengersForFlightProvisionalBookingFields = (
   fareBookingRules: any,
-  flightBookingPayload: FlightInitialBooking
+  flightBookingPayload: FlightInitialBooking,
 ): Record<number, Record<string, string>> => {
   const errors: Record<number, Record<string, string>> = {};
   const today = new Date();
@@ -113,14 +113,28 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     if (isEmpty(pi.surname)) {
       passengerErrors["passengerInfo.surname"] = "Surname is required.";
     }
+    // API requires gender (VAL-004) - backend validates airPassengers[0].passengerInfo.gender
     if (isEmpty(pi.gender)) {
       passengerErrors["passengerInfo.gender"] = "Gender is required.";
     }
-    if (isEmpty(email)) {
-      passengerErrors["contact.contactsProvided.0.emailAddress.0"] = "Email address is required.";
+    // if (isEmpty(email)) {
+    //   passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
+    //     "Email address is required.";
+    // }
+    const emailVal = email ?? "";
+    if (isEmpty(emailVal)) {
+      passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
+        "Email address is required.";
+    } else if (emailVal !== emailVal.trim()) {
+      passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
+        "Remove spaces at the beginning or end of your email.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim())) {
+      passengerErrors["contact.contactsProvided.0.emailAddress.0"] =
+        "Enter a valid email address.";
     }
     if (isEmpty(phoneValue)) {
-      passengerErrors["contact.contactsProvided.0.phone.0"] = "Phone (country code and number) is required.";
+      passengerErrors["contact.contactsProvided.0.phone.0"] =
+        "Phone (country code and number) is required.";
     }
 
     // Date of birth
@@ -132,7 +146,8 @@ export const validatePassengersForFlightProvisionalBookingFields = (
         const bdDate = new Date(`${bd}T00:00:00`);
         bdDate.setHours(0, 0, 0, 0);
         if (bdDate > today) {
-          passengerErrors["passengerInfo.birthDate"] = "Birth date cannot be in the future.";
+          passengerErrors["passengerInfo.birthDate"] =
+            "Birth date cannot be in the future.";
         }
       }
     }
@@ -140,12 +155,14 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     // Expiry date
     const exp = id.expiryDate ?? null;
     if (!exp) {
-      passengerErrors["identityDocuments.0.expiryDate"] = "Expiry date is required.";
+      passengerErrors["identityDocuments.0.expiryDate"] =
+        "Expiry date is required.";
     } else {
       const expDate = new Date(`${exp}T00:00:00`);
       expDate.setHours(0, 0, 0, 0);
       if (expDate < today) {
-        passengerErrors["identityDocuments.0.expiryDate"] = "Expiry date must be booking date or a future date.";
+        passengerErrors["identityDocuments.0.expiryDate"] =
+          "Expiry date must be booking date or a future date.";
       }
     }
 
@@ -154,17 +171,18 @@ export const validatePassengersForFlightProvisionalBookingFields = (
       passengerErrors["identityDocuments.0.idType"] = "ID type is required.";
     }
     if (isEmpty(id.idDocumentNumber)) {
-      passengerErrors["identityDocuments.0.idDocumentNumber"] = "Document number is required.";
+      passengerErrors["identityDocuments.0.idDocumentNumber"] =
+        "Document number is required.";
     }
     if (isEmpty(id.issuingCountryCode)) {
-      passengerErrors["identityDocuments.0.issuingCountryCode"] = "Issuing country is required.";
+      passengerErrors["identityDocuments.0.issuingCountryCode"] =
+        "Issuing country is required.";
     }
     if (pRules.isDateOfIssueMandatory && isEmpty(id.dateOfIssue)) {
-      passengerErrors["identityDocuments.0.dateOfIssue"] = "Date of issue is required.";
+      passengerErrors["identityDocuments.0.dateOfIssue"] =
+        "Date of issue is required.";
     }
-    if (isEmpty(id.residenceCountryCode)) {
-      passengerErrors["identityDocuments.0.residenceCountryCode"] = "Residence country is required.";
-    }
+    // BK212: Residence country is not mandatory
     if (pRules.isPANMandatory && isEmpty(pi.PAN)) {
       passengerErrors["passengerInfo.PAN"] = "PAN is required.";
     }
@@ -172,7 +190,8 @@ export const validatePassengersForFlightProvisionalBookingFields = (
       passengerErrors["additionalId.type"] = "Additional ID type is required.";
     }
     if (pRules.isAdditionalDocumentNumberMandatory && isEmpty(addId.number)) {
-      passengerErrors["additionalId.number"] = "Additional document number is required.";
+      passengerErrors["additionalId.number"] =
+        "Additional document number is required.";
     }
     if (pRules.isSeatMandatory && isEmpty(p.seat)) {
       passengerErrors["seat"] = "Seat is required.";
@@ -197,7 +216,7 @@ export const validatePassengersForFlightProvisionalBookingFields = (
 
 export const validatePassengersForFlightProvisionalBooking = (
   fareBookingRules: any,
-  flightBookingPayload: FlightInitialBooking
+  flightBookingPayload: FlightInitialBooking,
 ) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -265,7 +284,7 @@ export const validatePassengersForFlightProvisionalBooking = (
         valid: false,
         error: prefixFor(
           i,
-          "Expiry date must be booking date or a future date."
+          "Expiry date must be booking date or a future date.",
         ),
       };
     // }
@@ -289,12 +308,7 @@ export const validatePassengersForFlightProvisionalBooking = (
         id.dateOfIssue,
         "Date of issue is required.",
       ],
-      [
-        // pRules.isResidenceCountryCodeMandatory,
-        true,
-        id.residenceCountryCode,
-        "Residence country is required.",
-      ],
+      [false, id.residenceCountryCode, "Residence country is required."], // BK212: Not mandatory
       // [
       //   fareBookingRules?.isLeadEmailAddressMandatory,
       //   email,
@@ -340,7 +354,7 @@ export const validatePassengersForFlightProvisionalBooking = (
 // Field-level validation for payment
 export const validateReservationFlightBookingDataFields = (
   reservation: any,
-  card: { number: string; expiry: string; cvv: string; holderName: string }
+  card: { number: string; expiry: string; cvv: string; holderName: string },
 ): Record<string, string> => {
   const errors: Record<string, string> = {};
   const isEmpty = (v: any) =>
@@ -413,8 +427,17 @@ export const validateReservationFlightBookingDataFields = (
   }
 
   // Email
-  if (isEmpty(reservation?.customerInfo?.emailAddress)) {
+  // if (isEmpty(reservation?.customerInfo?.emailAddress)) {
+  //   errors["customerInfo.emailAddress"] = "Email is required.";
+  // }
+  const emailVal = reservation?.customerInfo?.emailAddress ?? "";
+  if (isEmpty(emailVal)) {
     errors["customerInfo.emailAddress"] = "Email is required.";
+  } else if (emailVal !== emailVal.trim()) {
+    errors["customerInfo.emailAddress"] =
+      "Remove spaces at the beginning or end of your email.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim())) {
+    errors["customerInfo.emailAddress"] = "Enter a valid email address.";
   }
 
   return errors;
@@ -422,7 +445,7 @@ export const validateReservationFlightBookingDataFields = (
 
 export const validateReservationFlightBookingData = (
   reservation: any,
-  card: { number: string; expiry: string; cvv: string; holderName: string }
+  card: { number: string; expiry: string; cvv: string; holderName: string },
 ) => {
   const isEmpty = (v: any) =>
     v === undefined || v === null || String(v).trim() === "";
@@ -499,7 +522,7 @@ export const luhnCheck = (num: string) => {
 export function openBlankPopupAndCheckWebisteAllowPopup(
   windowName = "payfort3dsWindow",
   width = 600,
-  height = 800
+  height = 800,
 ) {
   const left = Math.max(0, Math.floor((window.innerWidth - width) / 2));
   const top = Math.max(0, Math.floor((window.innerHeight - height) / 2));
@@ -526,7 +549,7 @@ export function openBlankPopupAndCheckWebisteAllowPopup(
 }
 
 export function waitFor3DSecurePaymentPopupReturnResponse(
-  timeoutMs = 120000
+  timeoutMs = 120000,
 ): Promise<any> {
   return new Promise((resolve, reject) => {
     let timeoutId: number | null = null;
@@ -563,7 +586,7 @@ export function waitFor3DSecurePaymentPopupReturnResponse(
 }
 
 export function transformFlightJourneysToObjects(
-  journeys?: any[]
+  journeys?: any[],
 ): Array<{ flightSegments: SegmentSummary[] }> {
   if (!Array.isArray(journeys)) return [];
 
@@ -589,11 +612,15 @@ export function transformFlightJourneysToObjects(
   });
 }
 
-export const buildAncillaryPayload = (all: AllSelections, offerId = "") => {
+export const buildAncillaryPayload = (
+  all: AllSelections,
+  offerId = "",
+  searchKey = "",
+) => {
   const selectedAncillaries: AncillaryEntry[] = [];
 
   if (!all) {
-    return { data: { offerId, selectedAncillaries } };
+    return { data: { offerId, searchKey, selectedAncillaries } };
   }
 
   // 1) Baggage: segmentKey -> passengerKey -> ancillaryOfferId | null
@@ -608,7 +635,7 @@ export const buildAncillaryPayload = (all: AllSelections, offerId = "") => {
             segmentKey,
           });
         }
-      }
+      },
     );
   });
 
@@ -628,7 +655,7 @@ export const buildAncillaryPayload = (all: AllSelections, offerId = "") => {
                 segmentKey,
               });
             }
-          }
+          },
         );
       });
     });
@@ -665,5 +692,5 @@ export const buildAncillaryPayload = (all: AllSelections, offerId = "") => {
     });
   });
 
-  return { data: { offerId, selectedAncillaries } };
+  return { data: { offerId, searchKey, selectedAncillaries } };
 };

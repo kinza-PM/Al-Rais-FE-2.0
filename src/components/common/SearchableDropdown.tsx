@@ -281,10 +281,10 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   }, [searchTerm, remoteSearch, onSearchChange]);
 
   const baseClasses = `
-    appearance-none h-11 w-full rounded-xl border pl-4 pr-8 text-[14px] text-[#0F172A] 
-    outline-none 
+    appearance-none h-[50px] w-full rounded-[16px] border pl-4 pr-8 text-[14px] text-[#0F172A]
+    outline-none
     ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"}
-    ${error && isValidationError ? "border-red-500" : "border-[#DFE7F3]"}
+    ${error && isValidationError ? "border-red-500" : "border-[#C2CAD6]"}
   `;
 
   return (
@@ -301,14 +301,18 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           disabled={disabled}
           className={`${
             className ? className : baseClasses
-          } flex items-center justify-between`}
+          } flex min-w-0 items-center justify-between`}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
           aria-invalid={!!error}
           aria-describedby={error && showError ? "dropdown-error" : undefined}
         >
-          <span>
-            {/* <span className={`${!selectedOption ? "text-[#98A4B3]" : ""}`}> */}
+          <span
+            className={`block min-w-0 flex-1 truncate whitespace-nowrap text-left ${
+              !selectedOption && !value ? "text-[#98A4B3]" : ""
+            }`}
+            title={typeof displayValue === "string" ? displayValue : undefined}
+          >
             {displayValue}
           </span>
 

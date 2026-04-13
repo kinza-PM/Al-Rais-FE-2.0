@@ -1,46 +1,108 @@
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import HotelImage from "../../../src/assets/images/Hotel Image.png";
-// import Heart from "../../../src/assets/svgs/heart.svg";
-// import RedHeart from "../../../src/assets/svgs/red-heart.svg";
+import GreenTick from "../../../src/assets/images/tik.png";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
-import AvailableTick from "../../../src/assets/svgs/available-tick.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
-import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
-import { processHotelSearchListingData } from "../../utils/hotelHelper";
+import {
+  processHotelSearchListingData,
+  getHotelGuestReviewMeta,
+  getHotelListingDescription,
+  resolveHotelListingReviewDisplay,
+} from "../../utils/hotelHelper";
+import Loader from "../atoms/Loader";
+import toast from "react-hot-toast";
+import {
+  useAddHotelFavourite,
+  useGetHotelFavourites,
+} from "../../hooks/useHotelSearch";
+import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import ShareTicketModal from "../atoms/ShareTicketModal";
+import HotelSearchSignInUpdatesBanner from "./HotelSearchSignInUpdatesBanner";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
 };
 
+const buildHotelShareUrl = (
+  hotelKey: string,
+  searchKey: string,
+  bookingParams?: object | null
+) => {
+  const params = new URLSearchParams();
+
+  if (searchKey) {
+    params.set("searchKey", searchKey);
+  }
+
+  if (bookingParams) {
+    params.set("bookingParams", JSON.stringify(bookingParams));
+  }
+
+  const queryString = params.toString();
+
+  return `${window.location.origin}/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""
+    }`;
+};
+
 const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
   ({ hotels }) => {
     const navigate = useNavigate();
-    const { hotel: bookingParams, clearHotel } = useHotelStore();
-    // const [favorites, setFavorites] = React.useState<{ [key: string]: boolean }>(
-    //   {}
-    // );
+    const { hotel: bookingParams } = useHotelStore();
 
-    // const toggleFavorite = (hotelKey: string) => {
-    //   setFavorites((prev) => ({
-    //     ...prev,
-    //     [hotelKey]: !prev[hotelKey],
-    //   }));
-    // };
+    const [openShareModal, setOpenShareModal] = useState(false);
+    const [selectedShareHotel, setSelectedShareHotel] = useState<any>(null);
+
+    const {
+      mutateAsync: addHotelFavouriteAsync,
+      isPending: isAddFavouritePending,
+    } = useAddHotelFavourite();
+
+    const {
+      data: favouriteHotelsResponse,
+      isLoading: isGetFavouritesLoading,
+      refetch: refetchFavourites,
+    } = useGetHotelFavourites();
+
+    const [favorites, setFavorites] = useState<Record<string, boolean>>({});
+
+    const favouriteItems = useMemo(() => {
+      if (Array.isArray(favouriteHotelsResponse)) {
+        return favouriteHotelsResponse;
+      }
+
+      if (Array.isArray((favouriteHotelsResponse as any)?.data)) {
+        return (favouriteHotelsResponse as any).data;
+      }
+
+      return [];
+    }, [favouriteHotelsResponse]);
+
+    useEffect(() => {
+      const next: Record<string, boolean> = {};
+
+      favouriteItems.forEach((item: any) => {
+        if (item?.hotelKey) {
+          next[item.hotelKey] = true;
+        }
+      });
+
+      setFavorites(next);
+    }, [favouriteItems]);
 
     const renderStars = (rating: string | undefined) => {
       const numRating = rating ? parseFloat(rating) : 0;
       const fullStars = Math.floor(numRating);
-      const totalStars = 7; // 7 stars total as per design
+      const totalStars = 7;
 
       return (
-        <div className="flex items-center gap-1 mb-4">
+        <div className="mb-3 flex items-center gap-[5px]">
           {Array.from({ length: fullStars }).map((_, i) => (
             <img
               key={`filled-${i}`}
-              className="cursor-pointer"
+              className="h-5 w-5"
               src={FilledStar}
               alt="filled"
             />
@@ -48,7 +110,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
           {Array.from({ length: totalStars - fullStars }).map((_, i) => (
             <img
               key={`empty-${i}`}
-              className="cursor-pointer"
+              className="h-5 w-5"
               src={EmptyStar}
               alt="empty"
             />
@@ -57,365 +119,572 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
       );
     };
 
+    const buildFavouritePayload = useCallback((hotel: any, flag: boolean) => {
+      const rooms =
+        Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
+          ? hotel.rooms.map((room: any) => ({
+            roomIndex: room?.roomIndex ?? 1,
+            roomKey: room?.roomKey ?? "",
+            roomId: room?.roomId ?? "",
+            roomTypeName: room?.roomTypeName ?? "",
+            roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+            maxOccupancy: room?.maxOccupancy ?? -1,
+            roomFacilities: room?.roomFacilities ?? [],
+            ratePlan: {
+              supplierCode: room?.ratePlan?.supplierCode ?? "",
+              meal: room?.ratePlan?.meal ?? "",
+              availableStatus: room?.ratePlan?.availableStatus ?? "",
+              cancelPolicyIndicator:
+                room?.ratePlan?.cancelPolicyIndicator ?? "",
+              code: room?.ratePlan?.code ?? "",
+              isPackage: room?.ratePlan?.isPackage ?? false,
+              fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+              gstAssured: room?.ratePlan?.gstAssured ?? false,
+              lastCancellationDate:
+                room?.ratePlan?.lastCancellationDate ?? "",
+            },
+            roomRate: {
+              currency: room?.roomRate?.currency ?? "AED",
+              netAmount: room?.roomRate?.netAmount ?? 0,
+              rates: room?.roomRate?.rates ?? [],
+              taxes: room?.roomRate?.taxes ?? [],
+            },
+            rateNotes: room?.rateNotes ?? "",
+            financialInfo: {
+              tmc: room?.financialInfo?.tmc ?? "",
+              supplier: room?.financialInfo?.supplier ?? "",
+            },
+            isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+          }))
+          : [];
+
+      const rawFacilities = hotel?.propertyInfo?.facilities || [];
+      const facilities = rawFacilities
+        .map((f: any) => (typeof f === "string" ? f : f?.name))
+        .filter(Boolean);
+
+      const totalPrice =
+        Number(hotel?.totalPrice) ||
+        rooms.reduce(
+          (sum: number, room: any) => sum + (room?.roomRate?.netAmount || 0),
+          0
+        );
+
+      return {
+        hotelKey: hotel?.hotelKey ?? "",
+        propertyInfo: {
+          providerHotelId:
+            hotel?.propertyInfo?.providerHotelId?.toString() ||
+            hotel?.propertyInfo?.hotelCode?.toString() ||
+            "",
+          hotelName: hotel?.propertyInfo?.hotelName ?? "",
+          address: hotel?.propertyInfo?.address ?? "",
+          phoneNumber: hotel?.propertyInfo?.phoneNumber ?? "",
+          location: hotel?.propertyInfo?.location ?? "",
+          latitude: hotel?.propertyInfo?.latitude?.toString() ?? "",
+          longitude: hotel?.propertyInfo?.longitude?.toString() ?? "",
+          imageUrl: hotel?.propertyInfo?.imageUrl ?? "",
+          facilities,
+          propertyType: hotel?.propertyInfo?.propertyType ?? "",
+          starRating: hotel?.propertyInfo?.starRating?.toString() ?? "",
+        },
+        rooms,
+        totalPrice,
+        searchKey: hotel?.searchKey ?? "",
+        flag,
+      };
+    }, []);
+
+    const handleToggleFavourite = useCallback(
+      async (hotel: any) => {
+        const hotelKey = hotel?.hotelKey;
+        if (!hotelKey) return;
+
+        const currentlyFavourite = !!favorites[hotelKey];
+        const nextFlag = !currentlyFavourite;
+
+        const payload = buildFavouritePayload(hotel, nextFlag);
+
+        setFavorites((prev) => ({
+          ...prev,
+          [hotelKey]: nextFlag,
+        }));
+
+        try {
+          await addHotelFavouriteAsync(payload);
+
+          toast.success(
+            nextFlag
+              ? "Hotel added to favourites"
+              : "Hotel removed from favourites"
+          );
+
+          await refetchFavourites();
+        } catch (error) {
+          setFavorites((prev) => ({
+            ...prev,
+            [hotelKey]: currentlyFavourite,
+          }));
+
+          const err = extractErrorFromAxiosApiError(error);
+          toast.error(err || "Failed to update favourite");
+        }
+      },
+      [
+        favorites,
+        buildFavouritePayload,
+        addHotelFavouriteAsync,
+        refetchFavourites,
+      ]
+    );
+
+    const handleShareClick = useCallback((hotel: any) => {
+      setSelectedShareHotel(hotel);
+      setOpenShareModal(true);
+    }, []);
+
+    const handleCheckAvailability = useCallback(
+      (hotel: any) => {
+        const hotelKey = hotel?.hotelKey ?? "";
+        const searchKey = hotel?.searchKey ?? "";
+
+        if (!hotelKey) return;
+
+        const detailUrl = buildHotelShareUrl(
+          hotelKey,
+          searchKey,
+          bookingParams ?? null
+        );
+        const url = new URL(detailUrl);
+        navigate(`${url.pathname}${url.search}`, {
+          state: {
+            searchKey,
+            bookingParams: bookingParams ?? undefined,
+          },
+        });
+      },
+      [navigate, bookingParams]
+    );
+
     if (!hotels || hotels.length === 0) {
       return (
-        <div className="py-16 flex flex-col items-center text-center">
-          <p className="mt-2 text-[14px] text-[#0F172A]">No hotels found</p>
-        </div>
+        <>
+          <Loader
+            show={isAddFavouritePending || isGetFavouritesLoading}
+            label={
+              isGetFavouritesLoading
+                ? "Loading favourites..."
+                : "Updating favourites..."
+            }
+          />
+          <div className="py-16 flex flex-col items-center text-center">
+            <p className="mt-2 text-[14px] text-[#0F172A]">No hotels found</p>
+          </div>
+        </>
       );
     }
 
     return (
-      <div className="min-h-screen">
-        <div className="w-full">
-          {hotels.map((hotel, index) => {
-            // Process hotel data using utility function
-            const {
-              hasRooms,
-              isAvailable,
-              bestRoom,
-              currency,
-              price,
-              hasFreeCancellation,
-              totalOriginalPrice: originalPrice,
-              uniqueOfferNames,
-              hasOffer,
-            } = processHotelSearchListingData(hotel);
+      <>
+        <Loader
+          show={isAddFavouritePending || isGetFavouritesLoading}
+          label={
+            isGetFavouritesLoading
+              ? "Loading favourites..."
+              : "Updating favourites..."
+          }
+        />
 
-            const imageUrl = hotel.propertyInfo?.imageUrl || HotelImage;
-            const hotelName = hotel.propertyInfo?.hotelName || "Hotel";
-            const address = hotel.propertyInfo?.address || "";
-            const location = hotel.propertyInfo?.location || "";
-            const starRating = hotel.propertyInfo?.starRating;
+        <div className="min-h-screen">
+          <div className="w-full">
+            {hotels.map((hotel, index) => {
+              const {
+                hasRooms,
+                isAvailable,
+                bestRoom,
+                currency,
+                price,
+                hasFreeCancellation,
+                totalOriginalPrice: originalPrice,
+                hasOffer,
+                availableRooms,
+              } = processHotelSearchListingData(hotel);
 
-            return (
-              <div
-                className="bg-[#FFFFFF] rounded-2xl shadow-sm border border-[#E4E4E7] overflow-hidden mb-4"
-                key={index}
-              >
-                <div className="flex p-2">
-                  <div className="relative flex-shrink-0 w-64 h-48 mr-4">
-                    <img
-                      src={imageUrl}
-                      alt="Hotel"
-                      className="w-full h-full object-cover rounded-xl"
-                      onError={(e) => {
-                        e.currentTarget.src = HotelImage;
-                      }}
-                    />
-                    {/* <button
-                    className="absolute top-2 left-2 w-10 h-10 bg-white/60 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white/70 transition"
-                    onClick={() => toggleFavorite(hotel.hotelKey)}
-                  >
-                    <img
-                      src={favorites[hotel.hotelKey] ? RedHeart : Heart}
-                      alt="heart"
-                    />
-                  </button> */}
-                  </div>
+              const imageUrl = hotel.propertyInfo?.imageUrl || HotelImage;
+              const hotelName = hotel.propertyInfo?.hotelName || "Hotel";
+              const address = hotel.propertyInfo?.address || "";
+              const locationText = hotel.propertyInfo?.location || "";
+              const starRating = hotel.propertyInfo?.starRating;
+              const listingDescription = getHotelListingDescription(
+                hotel,
+                bestRoom,
+              );
+              const distanceFromCenter =
+                hotel.propertyInfo?.distanceFromCenter ??
+                hotel.propertyInfo?.distanceFromDowntown ??
+                "";
+              const { reviewScore, reviewCount } = getHotelGuestReviewMeta(hotel);
 
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base font-medium text-[#0A0C0F] mb-1">
-                      {hotelName}
-                    </h3>
+              const isFavourite = !!favorites[hotel.hotelKey];
 
-                    <p className="text-xs text-[#3D495C] mb-3">
-                      {address} {location && ` • ${location}`}
-                    </p>
+              const rawFacilities = hotel.propertyInfo?.facilities || [];
+              const facilityNames = rawFacilities
+                .map((f: any) => (typeof f === "string" ? f : f?.name || ""))
+                .filter(Boolean);
 
-                    {renderStars(starRating)}
+              const childMatch = facilityNames.find((n: string) =>
+                /child|family|kids/i.test(n)
+              );
+              const internetMatch = facilityNames.find((n: string) =>
+                /wifi|internet|wi-fi/i.test(n)
+              );
+              const parkingMatch = facilityNames.find((n: string) =>
+                /parking|car park/i.test(n)
+              );
 
-                    {bestRoom?.roomTypeDesc && (
-                      <p className="text-xs text-[#3D495C] leading-relaxed mb-3">
-                        {bestRoom.roomTypeDesc}
-                      </p>
-                    )}
+              const displayAmenities: string[] = [];
+              if (hasFreeCancellation) displayAmenities.push("Free cancellation");
+              displayAmenities.push(childMatch || "Free child stay");
+              displayAmenities.push(internetMatch || "High speed internet");
+              displayAmenities.push(parkingMatch || "Free parking");
 
-                    <span className="block w-full h-px bg-[#E4E4E7] mb-3 -mr-8" />
-                    {hasRooms && isAvailable && bestRoom && (
-                      <>
-                        <div>
-                          <h4 className="text-base font-semibold text-[#0A0C0F]">
-                            {bestRoom.roomTypeName}
-                          </h4>
-                        </div>
+              if (displayAmenities.length < 4) {
+                const used = new Set(
+                  displayAmenities.map((a) => a.toLowerCase())
+                );
+                const extra = facilityNames.find(
+                  (n: string) => !used.has(n.toLowerCase())
+                );
+                displayAmenities.push(extra || "Breakfast included");
+              }
 
-                        <div className="flex flex-wrap items-center gap-4 mt-3">
-                          {hasFreeCancellation && (
-                            <div className="flex items-center gap-1">
-                              <div className="flex items-center justify-center">
-                                <img src={AvailableTick} alt="icon" />
-                              </div>
-                              <p className="text-[#3D495C] text-xs leading-none">
-                                Free cancellation
-                              </p>
-                            </div>
-                          )}
-                          {hotel.propertyInfo?.facilities &&
-                            hotel.propertyInfo.facilities.length > 0 && (
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center justify-center">
-                                  <img src={AvailableTick} alt="icon" />
-                                </div>
-                                <p className="text-[#3D495C] text-xs leading-none">
-                                  Facilities available
-                                </p>
-                              </div>
-                            )}
-                        </div>
-                      </>
-                    )}
-                    {hasRooms && !isAvailable && (
-                      <div className="text-xs flex flex-col gap-2 mt-3">
-                        <p className="text-[#EA0029]">
-                          No rooms are available on the dates you selected!
-                        </p>
-                        <p className="text-[#0A0C0F]">
-                          Please select other dates
-                        </p>
-                      </div>
-                    )}
-                    {/* {index !== 1 && (
-                    <>
-                      <div>
-                        <h4 className="text-base font-semibold text-[#0A0C0F]">
-                          Deluxe room{" "}
-                          <span className="text-xs text-[#EA0029] font-normal ml-2">
-                            Only 2 rooms left on AI Rais
-                          </span>
-                        </h4>
-                      </div>
+              const amenitiesToShow = displayAmenities.slice(0, 4);
+              const reviewDisplay = resolveHotelListingReviewDisplay(
+                reviewScore,
+                reviewCount,
+              );
 
-                      <p className="text-xs text-[#3D495C] font-normal mb-3">
-                        1 king bed
-                      </p>
-                      <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex items-center gap-1">
-                          <div className="flex items-center justify-center">
-                            <img src={AvailableTick} alt="icon" />
-                          </div>
-                          <p className="text-[#3D495C] text-xs leading-none">
-                            Free cancellation
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center">
-                            <img src={AvailableTick} alt="icon" />
-                          </div>
-                          <p className="text-[#3D495C] text-xs leading-none">
-                            Free child stay
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center">
-                            <img src={AvailableTick} alt="icon" />
-                          </div>
-                          <p className="text-[#3D495C] text-xs leading-none">
-                            High speed internet
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <div className="flex items-center justify-center">
-                            <img src={AvailableTick} alt="icon" />
-                          </div>
-                          <p className="text-[#3D495C] text-xs leading-none">
-                            Free parking
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {index === 1 && (
-                    <div className="flex items-center justify-between gap-6">
-                      <div className="text-xs flex flex-col gap-2">
-                        <p className="text-[#EA0029] ">
-                          No rooms are available on the dates you selected!
-                        </p>
-                        <p className="text-[#0A0C0F]">
-                          Please select other dates
-                        </p>
-                      </div>
-
-                      <div className="border border-[#C2CAD6] rounded-3xl w-auto mr-6 py-4 px-3">
-                        <div className="flex items-center gap-4">
-                          <button className="rounded-full border border-[#C2CAD6] flex items-center justify-center p-3">
-                            <svg
-                              width="15"
-                              height="13"
-                              viewBox="0 0 15 13"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M15.0005 6.25035C15.0005 6.41611 14.9346 6.57508 14.8174 6.69229C14.7002 6.8095 14.5413 6.87535 14.3755 6.87535H2.13409L6.69268 11.4332C6.75075 11.4912 6.79681 11.5602 6.82824 11.636C6.85966 11.7119 6.87584 11.7932 6.87584 11.8753C6.87584 11.9575 6.85966 12.0388 6.82824 12.1147C6.79681 12.1905 6.75075 12.2595 6.69268 12.3175C6.63461 12.3756 6.56567 12.4217 6.4898 12.4531C6.41393 12.4845 6.33261 12.5007 6.25049 12.5007C6.16837 12.5007 6.08705 12.4845 6.01118 12.4531C5.93531 12.4217 5.86637 12.3756 5.8083 12.3175L0.183304 6.69254C0.125194 6.63449 0.0790945 6.56556 0.0476418 6.48969C0.0161892 6.41381 0 6.33248 0 6.25035C0 6.16821 0.0161892 6.08688 0.0476418 6.01101C0.0790945 5.93514 0.125194 5.86621 0.183304 5.80816L5.8083 0.18316C5.92558 0.0658846 6.08464 -1.2357e-09 6.25049 0C6.41634 1.2357e-09 6.5754 0.0658846 6.69268 0.18316C6.80996 0.300435 6.87584 0.459495 6.87584 0.625347C6.87584 0.7912 6.80996 0.95026 6.69268 1.06753L2.13409 5.62535H14.3755C14.5413 5.62535 14.7002 5.6912 14.8174 5.80841C14.9346 5.92562 15.0005 6.08459 15.0005 6.25035Z"
-                                fill="#3D495C"
-                              />
-                            </svg>
-                          </button>
-
-                          <div className="flex gap-3">
-                            <div className="flex flex-col items-center pb-2 -mb-5 relative">
-                              <span className="text-xs text-[#2351A3] mb-1">
-                                Wed, 11 Jun
-                              </span>
-                              <span className="text-xs font-semibold text-[#EA0029]">
-                                No rooms
-                              </span>
-                              <div
-                                className="absolute bottom-0 left-0 right-0 h-1 bg-[#5383DA] rounded-full"
-                                style={{ filter: "blur(1px)" }}
-                              ></div>
-                            </div>
-                            <span className="inline-block w-px bg-[#E4E4E7] self-stretch -my-2" />
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-[#3D495C] mb-1">
-                                Fri, 13 Jun
-                              </span>
-                              <span className="text-xs font-semibold text-[#0A0C0F]">
-                                $62
-                              </span>
-                            </div>
-                            <span className="inline-block w-px bg-[#E4E4E7] self-stretch -my-2" />
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-[#3D495C] mb-1">
-                                Sun, 15 Jun
-                              </span>
-                              <span className="text-xs font-semibold text-[#0A0C0F]">
-                                $70
-                              </span>
-                            </div>
-                            <span className="inline-block w-px bg-[#E4E4E7] self-stretch -my-2" />
-                            <div className="flex flex-col items-center">
-                              <span className="text-xs text-[#3D495C] mb-1">
-                                Mon, 16 Jun
-                              </span>
-                              <span className="text-xs font-semibold text-[#0A0C0F]">
-                                $48
-                              </span>
-                            </div>
-                          </div>
-
-                          <button className="rounded-full border border-[#C2CAD6] flex items-center justify-center p-3">
-                            <svg
-                              width="15"
-                              height="13"
-                              viewBox="0 0 15 13"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M14.8172 6.69254L9.19219 12.3175C9.07491 12.4348 8.91585 12.5007 8.75 12.5007C8.58415 12.5007 8.42509 12.4348 8.30781 12.3175C8.19054 12.2003 8.12465 12.0412 8.12465 11.8753C8.12465 11.7095 8.19054 11.5504 8.30781 11.4332L12.8664 6.87535H0.625C0.45924 6.87535 0.300269 6.8095 0.183058 6.69229C0.0658481 6.57508 0 6.41611 0 6.25035C0 6.08459 0.0658481 5.92562 0.183058 5.80841C0.300269 5.6912 0.45924 5.62535 0.625 5.62535H12.8664L8.30781 1.06753C8.19054 0.95026 8.12465 0.7912 8.12465 0.625347C8.12465 0.459495 8.19054 0.300435 8.30781 0.18316C8.42509 0.0658846 8.58415 0 8.75 0C8.91585 0 9.07491 0.0658846 9.19219 0.18316L14.8172 5.80816C14.8753 5.86621 14.9214 5.93514 14.9528 6.01101C14.9843 6.08688 15.0005 6.16821 15.0005 6.25035C15.0005 6.33248 14.9843 6.41381 14.9528 6.48969C14.9214 6.56556 14.8753 6.63449 14.8172 6.69254Z"
-                                fill="#3D495C"
-                              />
-                            </svg>
-                          </button>
-
-                          <button className="rounded-full border border-[#C2CAD6] flex items-center justify-center p-3">
-                            <svg
-                              width="15"
-                              height="17"
-                              viewBox="0 0 15 17"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M13.75 1.25H11.875V0.625C11.875 0.45924 11.8092 0.300268 11.6919 0.183058C11.5747 0.065848 11.4158 0 11.25 0C11.0842 0 10.9253 0.065848 10.8081 0.183058C10.6908 0.300268 10.625 0.45924 10.625 0.625V1.25H4.375V0.625C4.375 0.45924 4.30915 0.300268 4.19194 0.183058C4.07473 0.065848 3.91576 0 3.75 0C3.58424 0 3.42527 0.065848 3.30806 0.183058C3.19085 0.300268 3.125 0.45924 3.125 0.625V1.25H1.25C0.918479 1.25 0.600537 1.3817 0.366116 1.61612C0.131696 1.85054 0 2.16848 0 2.5V15C0 15.3315 0.131696 15.6495 0.366116 15.8839C0.600537 16.1183 0.918479 16.25 1.25 16.25H13.75C14.0815 16.25 14.3995 16.1183 14.6339 15.8839C14.8683 15.6495 15 15.3315 15 15V2.5C15 2.16848 14.8683 1.85054 14.6339 1.61612C14.3995 1.3817 14.0815 1.25 13.75 1.25ZM3.125 2.5V3.125C3.125 3.29076 3.19085 3.44973 3.30806 3.56694C3.42527 3.68415 3.58424 3.75 3.75 3.75C3.91576 3.75 4.07473 3.68415 4.19194 3.56694C4.30915 3.44973 4.375 3.29076 4.375 3.125V2.5H10.625V3.125C10.625 3.29076 10.6908 3.44973 10.8081 3.56694C10.9253 3.68415 11.0842 3.75 11.25 3.75C11.4158 3.75 11.5747 3.68415 11.6919 3.56694C11.8092 3.44973 11.875 3.29076 11.875 3.125V2.5H13.75V5H1.25V2.5H3.125ZM13.75 15H1.25V6.25H13.75V15ZM8.4375 9.0625C8.4375 9.24792 8.38252 9.42918 8.2795 9.58335C8.17649 9.73752 8.03007 9.85768 7.85877 9.92864C7.68746 9.99959 7.49896 10.0182 7.3171 9.98199C7.13525 9.94581 6.9682 9.85652 6.83709 9.72541C6.70598 9.5943 6.61669 9.42725 6.58051 9.2454C6.54434 9.06354 6.56291 8.87504 6.63386 8.70373C6.70482 8.53243 6.82498 8.38601 6.97915 8.283C7.13332 8.17998 7.31458 8.125 7.5 8.125C7.74864 8.125 7.9871 8.22377 8.16291 8.39959C8.33873 8.5754 8.4375 8.81386 8.4375 9.0625ZM11.875 9.0625C11.875 9.24792 11.82 9.42918 11.717 9.58335C11.614 9.73752 11.4676 9.85768 11.2963 9.92864C11.125 9.99959 10.9365 10.0182 10.7546 9.98199C10.5727 9.94581 10.4057 9.85652 10.2746 9.72541C10.1435 9.5943 10.0542 9.42725 10.018 9.2454C9.98184 9.06354 10.0004 8.87504 10.0714 8.70373C10.1423 8.53243 10.2625 8.38601 10.4167 8.283C10.5708 8.17998 10.7521 8.125 10.9375 8.125C11.1861 8.125 11.4246 8.22377 11.6004 8.39959C11.7762 8.5754 11.875 8.81386 11.875 9.0625ZM5 12.1875C5 12.3729 4.94502 12.5542 4.842 12.7083C4.73899 12.8625 4.59257 12.9827 4.42127 13.0536C4.24996 13.1246 4.06146 13.1432 3.8796 13.107C3.69775 13.0708 3.5307 12.9815 3.39959 12.8504C3.26848 12.7193 3.17919 12.5523 3.14301 12.3704C3.10684 12.1885 3.12541 12 3.19636 11.8287C3.26732 11.6574 3.38748 11.511 3.54165 11.408C3.69582 11.305 3.87708 11.25 4.0625 11.25C4.31114 11.25 4.5496 11.3488 4.72541 11.5246C4.90123 11.7004 5 11.9389 5 12.1875ZM8.4375 12.1875C8.4375 12.3729 8.38252 12.5542 8.2795 12.7083C8.17649 12.8625 8.03007 12.9827 7.85877 13.0536C7.68746 13.1246 7.49896 13.1432 7.3171 13.107C7.13525 13.0708 6.9682 12.9815 6.83709 12.8504C6.70598 12.7193 6.61669 12.5523 6.58051 12.3704C6.54434 12.1885 6.56291 12 6.63386 11.8287C6.70482 11.6574 6.82498 11.511 6.97915 11.408C7.13332 11.305 7.31458 11.25 7.5 11.25C7.74864 11.25 7.9871 11.3488 8.16291 11.5246C8.33873 11.7004 8.4375 11.9389 8.4375 12.1875ZM11.875 12.1875C11.875 12.3729 11.82 12.5542 11.717 12.7083C11.614 12.8625 11.4676 12.9827 11.2963 13.0536C11.125 13.1246 10.9365 13.1432 10.7546 13.107C10.5727 13.0708 10.4057 12.9815 10.2746 12.8504C10.1435 12.7193 10.0542 12.5523 10.018 12.3704C9.98184 12.1885 10.0004 12 10.0714 11.8287C10.1423 11.6574 10.2625 11.511 10.4167 11.408C10.5708 11.305 10.7521 11.25 10.9375 11.25C11.1861 11.25 11.4246 11.3488 11.6004 11.5246C11.7762 11.7004 11.875 11.9389 11.875 12.1875Z"
-                                fill="#2351A3"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )} */}
-                  </div>
-
-                  <span className="inline-block w-px bg-[#E4E4E7] self-stretch -my-2" />
-
-                  <div className="flex flex-col items-start w-80 flex-shrink-0 pr-8 pl-4">
-                    {/* <div className="flex items-center gap-4 mb-3">
-                    <div className="bg-[#A7C0EC] text-[#2351A3] font-semibold text-base px-6 py-3 rounded-[50px]">
-                      9.1
-                    </div>
-                    <div className="text-left">
-                      <div className="text-[#00B868] font-semibold text-sm mb-0.5">
-                        Excellent
-                      </div>
-                      <div className="text-sm text-[#3D495C]">
-                        283 guest reviews
-                      </div>
-                    </div>
-                  </div> */}
-
-                    {hasOffer && uniqueOfferNames.length > 0 && (
-                      <div className="mb-3 flex flex-wrap gap-2">
-                        {uniqueOfferNames.map((offerName, idx) => (
-                          <span
-                            key={idx}
-                            className="bg-[#00B868] text-[#FFFFFF] text-xs font-semibold px-4 py-1.5 rounded-full inline-block max-w-full break-words"
-                          >
-                            {offerName}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="mb-3 w-full">
-                      <div className="text-xs text-[#3D495C] mb-1">
-                        Starting from (including VAT)
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex flex-col items-start sm:items-end gap-0.5">
-                          {hasOffer && originalPrice > price && (
-                            <span className="text-[#EA0029] line-through text-lg font-bold whitespace-nowrap">
-                              {currency} {originalPrice.toFixed(2)}
-                            </span>
-                          )}
-                          <span className="text-lg font-bold text-[#0A0C0F] whitespace-nowrap">
-                            {currency} {price.toFixed(2)}
-                            {/* <span className="text-xs align-baseline">
-                              /Night
-                            </span> */}
-                          </span>
-                        </div>
-                        <HotelPriceSummaryTooltip
-                          totalPrice={price}
-                          currency={currency}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 w-full mt-3">
-                      <button className="p-2.5">
-                        <img src={Share} alt="icon" />
-                      </button>
-                      <button
-                        className="bg-[#2351A3] text-[#F2F2F3] text-base font-semibold py-3 px-10 rounded-lg disabled:bg-[#C2CAD6]"
-                        disabled={!isAvailable}
-                        onClick={() => {
-                          navigate(`/hotel-detail/${hotel.hotelKey}`, {
-                            state: {
-                              searchKey: hotel.searchKey,
-                              bookingParams: bookingParams ?? undefined,
-                            },
-                          });
-                          clearHotel(); // Clear store so back navigation shows empty form + no data
+              return (
+                <React.Fragment key={hotel.hotelKey || index}>
+                <div
+                  className="mb-4 bg-transparent relative"
+                  style={{ borderBottom: "2px solid var(--black-100, #C2CAD6)" }}
+                >
+                  <div className="flex flex-col lg:flex-row gap-4 p-[10px]">
+                    <div
+                      className="relative h-[220px] w-full lg:w-[244px] lg:flex-shrink-0"
+                    >
+                      <img
+                        src={imageUrl}
+                        alt="Hotel"
+                        className="w-full h-full object-cover"
+                        style={{ borderRadius: "16px" }}
+                        onError={(e) => {
+                          e.currentTarget.src = HotelImage;
                         }}
+                      />
+
+                      <button
+                        type="button"
+                        className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform"
+                        style={{
+                          top: "15px",
+                          left: "15px",
+                          width: "36px",
+                          height: "36px",
+                          background: "#FFFFFF99",
+                        }}
+                        aria-label="Add to favourites"
+                        disabled={isAddFavouritePending}
+                        onClick={() => handleToggleFavourite(hotel)}
                       >
-                        Check availability
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill={isFavourite ? "#EA0029" : "white"}
+                          stroke={isFavourite ? "#EA0029" : "#2351A3"}
+                          strokeWidth="2"
+                        >
+                          <path d="M12 21s-6.716-4.35-9.193-7.146C.894 11.692 1.163 8.24 3.514 6.56c1.925-1.376 4.48-1.072 6.104.64L12 9.09l2.382-1.89c1.624-1.712 4.179-2.016 6.104-.64 2.351 1.68 2.62 5.132.707 7.294C18.716 16.65 12 21 12 21z" />
+                        </svg>
                       </button>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <h3 className="mb-[6px] text-[16px] font-medium leading-none text-[#0A0C0F]">
+                        {hotelName}
+                      </h3>
+
+                      <div className="mb-3 flex flex-wrap items-center gap-[5px] text-[12px] leading-none text-[#3D495C]">
+                        {address ? <span>{address}</span> : null}
+                        {locationText ? (
+                          <>
+                            <span className="h-1 w-1 rounded-full bg-[#3D495C]" />
+                            <span>{locationText}</span>
+                          </>
+                        ) : null}
+                        {distanceFromCenter ? (
+                          <>
+                            <span className="h-1 w-1 rounded-full bg-[#3D495C]" />
+                            <span>{distanceFromCenter}</span>
+                          </>
+                        ) : null}
+                      </div>
+
+                      {renderStars(starRating)}
+
+                      {listingDescription.trim() ? (
+                        <p
+                          className="mb-4 line-clamp-3 max-w-[568px] overflow-hidden text-[12px] font-normal text-[#3D495C]"
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            lineHeight: "1.45",
+                          }}
+                        >
+                          {listingDescription}
+                        </p>
+                      ) : null}
+
+                      <span className="mb-3 block h-px w-full bg-[#E4E4E7]" />
+
+                      {hasRooms && isAvailable && bestRoom && (
+                        <>
+                          <div className="mb-1 flex flex-wrap items-center gap-[8px]">
+                            <h4 className="text-[16px] font-semibold leading-none text-[#0A0C0F]">
+                              {bestRoom.roomTypeName || ""}
+                            </h4>
+                            {availableRooms.length > 0 &&
+                              availableRooms.length <= 5 && (
+                                <span className="text-[12px] font-normal leading-none text-[#EA0029]">
+                                  Only {availableRooms.length} room
+                                  {availableRooms.length > 1 ? "s" : ""} left on
+                                  {" "}Al Rais
+                                </span>
+                              )}
+                          </div>
+
+                          <p
+                            className="mb-2"
+                            style={{
+                              fontFamily: "Inter, sans-serif",
+                              fontSize: "12px",
+                              color: "#3D495C",
+                              lineHeight: "100%",
+                            }}
+                          >
+                            {bestRoom.bedType || ""}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-x-[15px] gap-y-[6px]">
+                            {amenitiesToShow.map((amenity, aIdx) => (
+                              <div
+                                key={aIdx}
+                                className="flex items-center gap-[5px]"
+                              >
+                                <img
+                                  src={GreenTick}
+                                  alt="tick"
+                                  className="w-[18px] h-[18px] flex-shrink-0"
+                                />
+                                <span
+                                  style={{
+                                    fontFamily: "Inter, sans-serif",
+                                    fontSize: "12px",
+                                    color: "#3D495C",
+                                    lineHeight: "100%",
+                                  }}
+                                >
+                                  {amenity}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+
+                      {hasRooms && !isAvailable && (
+                        <div className="text-xs flex flex-col gap-2 mt-3">
+                          <p className="text-[#EA0029]">
+                            No rooms are available on the dates you selected!
+                          </p>
+                          <p className="text-[#0A0C0F]">
+                            Please select other dates
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <span
+                      className="hidden lg:inline-block self-stretch bg-[#E4E4E7]"
+                      style={{ width: "1px" }}
+                    />
+
+                    <div className="flex w-[272px] flex-shrink-0 flex-col items-end text-right">
+                      {/* Figma: guest score row + deal pill above price (right-aligned) */}
+                      <div className="mb-[14px] flex w-full flex-col items-baseline gap-[10px]">
+                        {/* Figma: score pill 71×49, #A7C0EC, gap 10px to copy */}
+                        {reviewDisplay.score !== null && (
+                          <div className="flex items-start justify-end gap-[10px]">
+                            <div
+                              className="flex flex-shrink-0 items-center justify-center rounded-[100px] box-border"
+                              style={{
+                                background: "#A7C0EC",
+                                minWidth: "71px",
+                                minHeight: "49px",
+                                padding: "15px 25px",
+                                boxSizing: "border-box",
+                              }}
+                            >
+                              <span
+                                style={{
+                                  fontFamily: "Inter, sans-serif",
+                                  fontWeight: 600,
+                                  fontSize: "16px",
+                                  lineHeight: "100%",
+                                  color: "#2351A3",
+                                  verticalAlign: "middle",
+                                }}
+                              >
+                                {reviewDisplay.score.toFixed(1)}
+                              </span>
+                            </div>
+                            <div className="flex flex-col gap-[6px] pt-[5px] text-justify">
+                              <span
+                                style={{
+                                  fontFamily: "Inter, sans-serif",
+                                  fontWeight: 600,
+                                  fontSize: "14px",
+                                  lineHeight: "100%",
+                                  color: "#00B868",
+                                  verticalAlign: "middle",
+                                }}
+                              >
+                                {reviewDisplay.label}
+                              </span>
+                              {reviewDisplay.count != null && (
+                                <span
+                                  style={{
+                                    fontFamily: "Inter, sans-serif",
+                                    fontWeight: 400,
+                                    fontSize: "14px",
+                                    lineHeight: "100%",
+                                    color: "#3D495C",
+                                    verticalAlign: "middle",
+                                  }}
+                                >
+                                  {reviewDisplay.count} guest reviews
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mb-[22px] flex w-full flex-wrap items-baseline justify-end gap-x-3 gap-y-1 text-right">
+                        {hasOffer && originalPrice > price && (
+                          <span
+                            style={{
+                              fontFamily: "Inter, sans-serif",
+                              fontWeight: 700,
+                              fontSize: "32px",
+                              lineHeight: "1",
+                              color: "#EA0029",
+                              textDecoration: "line-through",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {currency} {originalPrice.toFixed(2)}
+                          </span>
+                        )}
+                        <div className="flex items-baseline gap-1">
+                          <span
+                            style={{
+                              fontFamily: "Inter, sans-serif",
+                              fontWeight: 700,
+                              fontSize: "32px",
+                              lineHeight: "1",
+                              color: "#0A0C0F",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {currency} {price.toFixed(2)}
+                          </span>
+                          <span
+                            className="text-[12px] font-normal leading-none text-[#3D495C]"
+                            style={{ fontFamily: "Inter, sans-serif" }}
+                          >
+                            /Night
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex w-full items-center justify-end gap-[18px]">
+                        <button
+                          className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full"
+                          aria-label="Share"
+                          onClick={() => handleShareClick(hotel)}
+                        >
+                          <img src={Share} alt="share" />
+                        </button>
+
+                        <button
+                          className="flex-1 text-[#F2F2F3] font-semibold rounded-[100px] disabled:opacity-50 disabled:cursor-not-allowed transition-all whitespace-nowrap"
+                          style={{
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: "14px",
+                            fontWeight: 600,
+                            padding: "14px 20px",
+                            background: isAvailable
+                              ? "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)"
+                              : "#C2CAD6",
+                          }}
+                          disabled={!isAvailable}
+                          onClick={() => handleCheckAvailability(hotel)}
+                        >
+                          Check availability
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+                {index === 1 && <HotelSearchSignInUpdatesBanner />}
+              </React.Fragment>
+              );
+            })}
+          </div>
         </div>
-      </div>
+
+        {openShareModal && selectedShareHotel && (
+          <ShareTicketModal
+            closeModal={() => {
+              setOpenShareModal(false);
+              setSelectedShareHotel(null);
+            }}
+            mode="hotel"
+            showPrint={false}
+            shareUrl={buildHotelShareUrl(
+              selectedShareHotel?.hotelKey ?? "",
+              selectedShareHotel?.searchKey ?? "",
+              bookingParams ?? null
+            )}
+            title="Share this Hotel"
+            description="Send this hotel to family and friends. Share the property details and location instantly."
+            cardTitle={
+              selectedShareHotel?.propertyInfo?.hotelName || "Hotel details"
+            }
+            cardSubtitle={[
+              selectedShareHotel?.propertyInfo?.address,
+              selectedShareHotel?.propertyInfo?.location,
+            ]
+              .filter(Boolean)
+              .join(", ")}
+            passengerName={
+              selectedShareHotel?.propertyInfo?.hotelName || "Hotel details"
+            }
+          />
+        )}
+      </>
     );
   }
 );
