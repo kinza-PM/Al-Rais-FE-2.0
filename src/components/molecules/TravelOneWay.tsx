@@ -324,7 +324,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
                       <button
                         type="button"
-                        className="ow-card-btn ow-card-btn-primary"
+                        className="ow-card-btn ow-card-btn-primary ow-card-book-now--inrow"
                         onClick={() =>
                           handleOfferSelection(item?.offerId, item)
                         }
@@ -367,6 +367,18 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                     HIGH DEMAND
                   </div>
                 ) : null}
+              </div>
+
+              <div className="ow-card-mobile-book-now">
+                <button
+                  type="button"
+                  className="ow-card-btn ow-card-btn-primary ow-card-book-now--footer"
+                  onClick={() =>
+                    handleOfferSelection(item?.offerId, item)
+                  }
+                >
+                  Book Now
+                </button>
               </div>
             </div>
           </div>
