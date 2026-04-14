@@ -1,5 +1,10 @@
 import { create } from "zustand";
 import type { HotelViewType } from "../features/hotels/types";
+import {
+  createEmptyHotelListingFilters,
+  type HotelFilters,
+  type SortOption,
+} from "../utils/hotelFilters";
 
 export type HotelSearchState = {
   country: string;
@@ -26,12 +31,32 @@ type Store = {
   clearHotel: () => void;
   hotelView: HotelViewType;
   setHotelView: (view: HotelViewType) => void;
+  /** Landing page hero: Flights vs Hotels tab (survives navigate away / back) */
+  landingHeroSearchTab: "flights" | "hotels";
+  setLandingHeroSearchTab: (tab: "flights" | "hotels") => void;
+  /** Sidebar filters on /search-hotel (client-side) */
+  hotelListingFilters: HotelFilters;
+  setHotelListingFilters: (filters: HotelFilters) => void;
+  hotelListingSortOption: SortOption;
+  setHotelListingSortOption: (sort: SortOption) => void;
 };
 
 export const useHotelStore = create<Store>((set) => ({
   hotel: null,
   setHotel: (hotel) => set({ hotel }),
-  clearHotel: () => set({ hotel: null }),
+  clearHotel: () =>
+    set({
+      hotel: null,
+      hotelListingFilters: createEmptyHotelListingFilters(),
+      hotelListingSortOption: "",
+    }),
   hotelView: "listview",
   setHotelView: (hotelView) => set({ hotelView }),
+  landingHeroSearchTab: "flights",
+  setLandingHeroSearchTab: (landingHeroSearchTab) => set({ landingHeroSearchTab }),
+  hotelListingFilters: createEmptyHotelListingFilters(),
+  setHotelListingFilters: (hotelListingFilters) => set({ hotelListingFilters }),
+  hotelListingSortOption: "",
+  setHotelListingSortOption: (hotelListingSortOption) =>
+    set({ hotelListingSortOption }),
 }));

@@ -15,6 +15,10 @@ import {
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import { useHotelStore } from "../../store/UseHotelStore";
+import {
+  HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI,
+  HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET,
+} from "../../constants/hotelMapTiles";
 
 type HotelSearchMapViewProps = {
   hotels: Array<any>;
@@ -737,12 +741,12 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
                     zoom={12}
                     style={{ height: "100%", width: "100%" }}
                     zoomControl={false}
-                    attributionControl={false}
+                    attributionControl
                     ref={mapRef}
                   >
                     <TileLayer
-                      attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-                      url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png"
+                      attribution={HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI}
+                      url={HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET}
                     />
 
                     {validHotels.map((hotel) => {

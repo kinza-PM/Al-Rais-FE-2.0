@@ -3082,12 +3082,12 @@ img:hover {
 }
 
 .searchFilterBtn {
-  max-width: 137px !important;
-  width: 137px !important;
+  max-width: 120px !important;
+  width: 120px !important;
   border-radius: 100px !important;
   margin-left: auto;
   align-self: flex-end;
-  padding: 14px 40px !important;
+  padding: 14px 28px !important;
   color: #f2f2f3 !important;
   font-size: 16px !important;
   min-height: 47px !important;
@@ -3112,8 +3112,8 @@ img:hover {
 .hotel-search-btn-responsive {
   width: 100% !important;
   max-width: 100% !important;
-  height: 50px !important;
-  min-height: 50px !important;
+  height: 47px !important;
+  min-height: 47px !important;
 }
 
 .stopsOnSmall {

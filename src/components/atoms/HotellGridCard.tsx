@@ -16,7 +16,6 @@ import {
   getHotelGuestReviewMeta,
   getHotelListingDescription,
   resolveHotelListingReviewDisplay,
-  HOTEL_LISTING_REVIEW_FALLBACK,
 } from "../../utils/hotelHelper";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
@@ -72,7 +71,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       currency,
       price,
       totalOriginalPrice: originalPrice,
-      uniqueOfferNames,
       hasOffer,
       hasFreeCancellation,
       // availableRooms,
@@ -101,11 +99,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       reviewScore,
       reviewCount,
     );
-    const dealBadgeLabel =
-      uniqueOfferNames.length > 0
-        ? uniqueOfferNames[0]
-        : HOTEL_LISTING_REVIEW_FALLBACK.dealLabel;
-
     const roomTypeName = bestRoom?.roomTypeName || "";
     const bedType = bestRoom?.bedType || "";
 
@@ -379,20 +372,6 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                 </div>
               </div>
             )}
-            <span
-              className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
-              style={{
-                padding: "8px 15px",
-                minHeight: "31px",
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 600,
-                fontSize: "12px",
-                lineHeight: "100%",
-                color: "#FFFFFF",
-              }}
-            >
-              {dealBadgeLabel}
-            </span>
           </div>
 
           <div className="mb-2 text-left">
@@ -434,11 +413,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                     fontWeight: 700,
                     fontSize: "22px",
                     color: "#0A0C0F",
-                    lineHeight: "100%",
-                    maxWidth: "100%",
-                    overflowWrap: "anywhere",
+                    lineHeight: "1",
                     whiteSpace: "nowrap",
-                    display: "block",
                   }}
                 >
                   {currency} {price.toFixed(2)}

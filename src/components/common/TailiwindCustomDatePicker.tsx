@@ -60,7 +60,8 @@ function isSameDay(a: Date, b: Date) {
     a.getDate() === b.getDate()
   );
 }
-function fmtLong(d?: Date | null) {
+/** Compact label for narrow inputs: "Wed, 29 Apr 2026" */
+function fmtAbbreviated(d?: Date | null) {
   if (!d) return "";
   const parts = new Intl.DateTimeFormat("en-GB", {
     weekday: "short",
@@ -91,7 +92,7 @@ function fmtFull(d?: Date | null) {
   const month = parts.find((p) => p.type === "month")?.value ?? "";
   const year = parts.find((p) => p.type === "year")?.value ?? "";
 
-  return `${weekday}, ${Number(day)} ${month} ${year}`;
+  return `${weekday}, ${day} ${month} ${year}`;
 }
 
 function startOfDay(d: Date) {
@@ -257,7 +258,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
       <div className="group relative">
         <input
           readOnly
-          value={fmtLong(value) || ""}
+          value={fmtAbbreviated(value) || ""}
           placeholder={placeholder}
           onClick={() => {
             if (open) {

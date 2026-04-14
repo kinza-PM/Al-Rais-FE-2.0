@@ -2,6 +2,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import AlRaisLogo from "../../assets/images/alRaisLogo.jpg";
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
+import ChatBot from "../organisms/ChatBot";
 import AuthModal from "../organisms/AuthModal";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import RouteLoadingFallback from "../common/RouteLoadingFallback";
@@ -161,6 +162,7 @@ const AppLayout: React.FC = () => {
           </Suspense>
         </main>
         <Footer />
+        <ChatBot />
       </div>
     </>
   );

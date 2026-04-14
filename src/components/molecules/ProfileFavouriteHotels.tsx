@@ -145,7 +145,7 @@ const ProfileFavouriteHotels: React.FC = () => {
           items.length > 0,
       )
       .map(([key]) => key);
-      console.log(favouritesByCity);
+    console.log(favouritesByCity);
     return [
       { id: "all", value: "All", label: "All" },
       ...cityKeys.map((city) => ({ id: city, value: city, label: city })),
@@ -218,7 +218,7 @@ const ProfileFavouriteHotels: React.FC = () => {
       );
     });
   }, [normalizedHotels, searchText, selectedCity]);
-  
+
   const handleShareClick = useCallback((hotel: any) => {
     setSelectedShareHotel(hotel);
     setOpenShareModal(true);
