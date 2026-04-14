@@ -4,8 +4,6 @@ import GreenTick from "../../../src/assets/images/tik.png";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
-import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
-import { aggregateHotelTaxesFromRoomArray } from "../../utils/hotelBookingHelper";
 import { useNavigate } from "react-router-dom";
 import { useHotelStore } from "../../store/UseHotelStore";
 import {
@@ -22,12 +20,10 @@ import {
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import ShareTicketModal from "../atoms/ShareTicketModal";
-import { HotelProxiedImage } from "../atoms/HotelProxiedImage";
-import { useProgressiveList } from "../../hooks/useProgressiveList";
+import HotelSearchSignInUpdatesBanner from "./HotelSearchSignInUpdatesBanner";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
-  listResetKey?: number;
 };
 
 const buildHotelShareUrl = (
@@ -52,7 +48,7 @@ const buildHotelShareUrl = (
 };
 
 const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
-  ({ hotels, listResetKey = 0 }) => {
+  ({ hotels }) => {
     const navigate = useNavigate();
     const { hotel: bookingParams } = useHotelStore();
 
@@ -68,13 +64,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
       data: favouriteHotelsResponse,
       isLoading: isGetFavouritesLoading,
       refetch: refetchFavourites,
-    } = useGetHotelFavourites(hotels.length > 0);
-
-    const { visible, sentinelRef, hasMore } = useProgressiveList(
-      hotels,
-      24,
-      listResetKey,
-    );
+    } = useGetHotelFavourites();
 
     const [favorites, setFavorites] = useState<Record<string, boolean>>({});
 
@@ -280,10 +270,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
       return (
         <>
           <Loader
-            show={
-              isAddFavouritePending ||
-              (isGetFavouritesLoading && favouriteHotelsResponse == null)
-            }
+            show={isAddFavouritePending || isGetFavouritesLoading}
             label={
               isGetFavouritesLoading
                 ? "Loading favourites..."
@@ -300,10 +287,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
     return (
       <>
         <Loader
-          show={
-            isAddFavouritePending ||
-            (isGetFavouritesLoading && favouriteHotelsResponse == null)
-          }
+          show={isAddFavouritePending || isGetFavouritesLoading}
           label={
             isGetFavouritesLoading
               ? "Loading favourites..."
@@ -313,7 +297,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
 
         <div className="min-h-screen">
           <div className="w-full">
-            {visible.map((hotel, index) => {
+            {hotels.map((hotel, index) => {
               const {
                 hasRooms,
                 isAvailable,
@@ -323,17 +307,10 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 hasFreeCancellation,
                 totalOriginalPrice: originalPrice,
                 hasOffer,
-                // availableRooms,
+                availableRooms,
               } = processHotelSearchListingData(hotel);
 
-              const apiImages: string[] =
-                hotel?.propertyInfo?.images
-                  ?.map((img: any) => img?.url || img?.imageUrl || img)
-                  ?.filter(
-                    (u: any) => typeof u === "string" && u.length > 0,
-                  ) || [];
-              const imageUrl =
-                apiImages[0] || hotel.propertyInfo?.imageUrl || HotelImage;
+              const imageUrl = hotel.propertyInfo?.imageUrl || HotelImage;
               const hotelName = hotel.propertyInfo?.hotelName || "Hotel";
               const address = hotel.propertyInfo?.address || "";
               const locationText = hotel.propertyInfo?.location || "";
@@ -397,12 +374,14 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                     <div
                       className="relative h-[220px] w-full lg:w-[244px] lg:flex-shrink-0"
                     >
-                      <HotelProxiedImage
+                      <img
                         src={imageUrl}
                         alt="Hotel"
                         className="w-full h-full object-cover"
                         style={{ borderRadius: "16px" }}
-                        fallback={HotelImage}
+                        onError={(e) => {
+                          e.currentTarget.src = HotelImage;
+                        }}
                       />
 
                       <button
@@ -475,14 +454,14 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                             <h4 className="text-[16px] font-semibold leading-none text-[#0A0C0F]">
                               {bestRoom.roomTypeName || ""}
                             </h4>
-                            {/* {availableRooms.length > 0 &&
+                            {availableRooms.length > 0 &&
                               availableRooms.length <= 5 && (
                                 <span className="text-[12px] font-normal leading-none text-[#EA0029]">
                                   Only {availableRooms.length} room
                                   {availableRooms.length > 1 ? "s" : ""} left on
                                   {" "}Al Rais
                                 </span>
-                              )} */}
+                              )}
                           </div>
 
                           <p
@@ -541,8 +520,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                       style={{ width: "1px" }}
                     />
 
-                    <div className="flex w-[300px] flex-shrink-0 flex-col items-end text-right">
-                      {/* <div className="flex w-[272px] flex-shrink-0 flex-col items-end text-right"> */}
+                    <div className="flex w-[272px] flex-shrink-0 flex-col items-end text-right">
                       {/* Figma: guest score row + deal pill above price (right-aligned) */}
                       <div className="mb-[14px] flex w-full flex-col items-baseline gap-[10px]">
                         {/* Figma: score pill 71×49, #A7C0EC, gap 10px to copy */}
@@ -603,32 +581,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                         )}
                       </div>
 
-                      <div className="mb-[2px] flex w-full items-center justify-end gap-[8px]">
-                        <span
-                          style={{
-                            fontFamily: "Inter, sans-serif",
-                            fontWeight: 400,
-                            fontSize: "12px",
-                            color: "#3D495C",
-                            lineHeight: "100%",
-                          }}
-                        >
-                          Starting from (including VAT)
-                        </span>
-                        <HotelPriceSummaryTooltip
-                          totalPrice={price}
-                          currency={currency}
-                          taxes={aggregateHotelTaxesFromRoomArray(
-                            Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
-                              ? hotel.rooms
-                              : bestRoom
-                                ? [bestRoom]
-                                : [],
-                          )}
-                        />
-                      </div>
-
-                      <div className="mb-[22px] flex w-full flex-col items-start gap-[2px]">
+                      <div className="mb-[22px] flex w-full flex-wrap items-baseline justify-end gap-x-3 gap-y-1 text-right">
                         {hasOffer && originalPrice > price && (
                           <span
                             style={{
@@ -644,7 +597,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                             {currency} {originalPrice.toFixed(2)}
                           </span>
                         )}
-                        <div className="flex max-w-full flex-wrap items-end gap-y-[6px]">
+                        <div className="flex items-baseline gap-1">
                           <span
                             style={{
                               fontFamily: "Inter, sans-serif",
@@ -657,7 +610,10 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                           >
                             {currency} {price.toFixed(2)}
                           </span>
-                          <span className="text-[12px] font-bold leading-none text-[#3D495C]">
+                          <span
+                            className="text-[12px] font-normal leading-none text-[#3D495C]"
+                            style={{ fontFamily: "Inter, sans-serif" }}
+                          >
                             /Night
                           </span>
                         </div>
@@ -686,7 +642,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                           disabled={!isAvailable}
                           onClick={() => handleCheckAvailability(hotel)}
                         >
-                          Select Room
+                          Check availability
                         </button>
                       </div>
                     </div>
@@ -696,13 +652,6 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
               </React.Fragment>
               );
             })}
-            {hasMore ? (
-              <div
-                ref={sentinelRef}
-                className="h-10 w-full shrink-0"
-                aria-hidden
-              />
-            ) : null}
           </div>
         </div>
 

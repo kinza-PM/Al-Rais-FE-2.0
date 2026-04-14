@@ -9,7 +9,6 @@ import {
   resetPassword,
   confirmResetPassword,
 } from "aws-amplify/auth";
-import { VITE_USER_SERVICE_BASE_URL } from "../../../config/publicEnv";
 import type {
   LoginForm,
   SignupForm,
@@ -486,13 +485,16 @@ export class AuthService {
   ): Promise<RemoteUserCreationResult | null> {
     try {
       console.log("createRemoteUserRecord - Sending payload:", payload);
-      const response = await fetch(`${VITE_USER_SERVICE_BASE_URL}/users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        "https://yjz5d5q2i0.execute-api.eu-west-1.amazonaws.com/users",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         },
-        body: JSON.stringify(payload),
-      });
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -517,7 +519,7 @@ export class AuthService {
     try {
       const { userId, createdAt, ...body } = payload;
       const response = await fetch(
-        `${VITE_USER_SERVICE_BASE_URL}/users/${encodeURIComponent(
+        `https://yjz5d5q2i0.execute-api.eu-west-1.amazonaws.com/users/${encodeURIComponent(
           userId,
         )}/${encodeURIComponent(createdAt)}`,
         {

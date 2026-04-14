@@ -5,17 +5,6 @@ import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
 import { TokenService } from "./tokenService";
 import { StorageService } from "../utils/storage";
 import { fetchAuthSession } from "aws-amplify/auth";
-import {
-  VITE_API_BASE,
-  VITE_FLIGHT_ANCILLARY_API_BASE,
-  VITE_FLIGHT_API_BASE,
-  VITE_FLIGHT_CANCELLATION_API_BASE,
-  VITE_HOTEL_API_BASE,
-  VITE_HOTEL_FAVOURITE_API_BASE,
-  VITE_LOCATION_API_BASE,
-  VITE_PAYMENT_API_BASE,
-  VITE_TICKET_API_BASE,
-} from "../config/publicEnv";
 
 const flightApis = [
   "/flightSearch",
@@ -28,7 +17,6 @@ const flightApis = [
   "/myBooking",
   "/uploadImagePreSignedUrl",
   "/uploadTicket",
-  "/fetchAddPassengerCache",
 ];
 const paymentApis = ["/pay"];
 const flightAncillaryApis = ["/ancillarySearch", "/bookAncillary"];
@@ -43,100 +31,42 @@ const hotelApis = [
   "/getHotelCancellationCharges",
   "/hotelCancellation",
   "/myHotelBooking",
-  "/hotelRetrieve",
+  "/hotelRetrieve"
 ];
 const locationApis = ["/countries/cities", "/countries"];
 // const resonApis = ["/countries/cities", "/countries"];
 const ticketApis = ["/ticket"];
 const hotelFavouriteApis = ["/addHotelFavourites","/getHotelFavourites"];
 
-export const API_BASE = VITE_API_BASE;
+export const API_BASE =
+  import.meta.env.VITE_API_BASE ||
+  "https://ie7eaxnxpg.execute-api.eu-west-1.amazonaws.com/dev";
 
-/** Axios base for the main app gateway: in dev, same-origin proxy (see vite `server.proxy./api/app-proxy`). */
-const AXIOS_MAIN_API_CLIENT_BASE =
-  import.meta.env.DEV && import.meta.env.VITE_MAIN_API_PROXY !== "false"
-    ? "/api/app-proxy"
-    : API_BASE;
+export const FLIGHT_API_BASE =
+  "https://y0v4qcjjo5.execute-api.eu-west-1.amazonaws.com/dev2";
 
-export const FLIGHT_API_BASE = VITE_FLIGHT_API_BASE;
+export const PAYMENT_API_BASE =
+  "https://3cbnpbnuii.execute-api.eu-west-1.amazonaws.com/dev";
 
-export const PAYMENT_API_BASE = VITE_PAYMENT_API_BASE;
+export const FLIGHT_ANCILLARY_API_BASE =
+  "https://4wt7s595a8.execute-api.eu-west-1.amazonaws.com/dev";
 
-export const FLIGHT_ANCILLARY_API_BASE = VITE_FLIGHT_ANCILLARY_API_BASE;
+export const HOTEL_API_BASE =
+  "https://hfus5c7uw2.execute-api.eu-west-1.amazonaws.com/dev";
 
-export const HOTEL_API_BASE = VITE_HOTEL_API_BASE;
+export const LOCATION_API_BASE = "https://countriesnow.space/api/v0.1";
 
-export const LOCATION_API_BASE = VITE_LOCATION_API_BASE;
+export const TICKET_API_BASE =
+  "https://roj8jj0e3h.execute-api.eu-west-1.amazonaws.com/dev";
 
-export const TICKET_API_BASE = VITE_TICKET_API_BASE;
+export const HOTEL_FAVOURITE_API_BASE =
+  "https://iqgovf9bf7.execute-api.eu-west-1.amazonaws.com/dev";
 
-export const HOTEL_FAVOURITE_API_BASE = VITE_HOTEL_FAVOURITE_API_BASE;
-
-export const FLIGHT_CANCELLATION = VITE_FLIGHT_CANCELLATION_API_BASE;
-
-/** Hotel Beds activities — UAT/QA (override with `VITE_ACTIVITIES_API_BASE`). */
-export const ACTIVITIES_API_BASE =
-  import.meta.env.VITE_ACTIVITIES_API_BASE ||
-  "https://vfp63x1v88.execute-api.eu-west-1.amazonaws.com/qa";
-
-const activitiesApis = [
-  "/destinationByOurCountry",
-  "/getAvailability",
-  "/activitiesDetail",
-  "/preConfirmBooking",
-  "/confirmBooking",
-  "/cancelBooking",
-];
-
-/**
- * Stable path for prefix matching. Fixes missed routes when `url` is missing a leading `/` or is absolute.
- */
-function requestUrlPath(url: string | undefined): string {
-  if (!url) return "";
-  const noQuery = url.split("?")[0] ?? "";
-  if (
-    noQuery.startsWith("http://") ||
-    noQuery.startsWith("https://")
-  ) {
-    try {
-      const p = new URL(noQuery).pathname;
-      return p && p !== "" ? p : "/";
-    } catch {
-      return noQuery;
-    }
-  }
-  return noQuery.startsWith("/") ? noQuery : `/${noQuery}`;
-}
-
-/**
- * Hotel Beds activities API (execute-api, IAM SigV4 where enabled), unlike hotel search which accepts JWT.
- * Sending `Authorization: Bearer` produces IncompleteSignatureException. In dev, `/api/activities-proxy`
- * signs without this header; in prod you need IAM-capable access or a backend BFF.
- */
-function pathIsActivities(url: string | undefined): boolean {
-  const path = requestUrlPath(url);
-  return activitiesApis.some((prefix) => path.startsWith(prefix));
-}
-
-/** Requests that must not trigger JWT refresh / guest-token retry (IAM / SigV4 routes). */
-function pathSkipsJwtGuestRetry(url: string | undefined): boolean {
-  if (pathIsActivities(url)) return true;
-  const p = requestUrlPath(url);
-  if (p !== "/myActivityBooking" && !p.startsWith("/myActivityBooking/")) {
-    return false;
-  }
-  const target = (
-    import.meta.env.VITE_MY_ACTIVITY_BOOKING_API ??
-    (import.meta.env.DEV ? "activities" : "flight")
-  )
-    .toString()
-    .toLowerCase()
-    .trim();
-  return target === "activities";
-}
+  export const FLIGHT_CANCELLATION =
+  "https://orvmy7zbb5.execute-api.eu-west-1.amazonaws.com/dev";
 
 export const axiosClient = axios.create({
-  baseURL: AXIOS_MAIN_API_CLIENT_BASE,
+  baseURL: API_BASE,
   timeout: 120000,
   headers: { "Content-Type": "application/json" },
 });
@@ -160,86 +90,29 @@ async function refreshCognitoToken(): Promise<string | null> {
 }
 
 axiosClient.interceptors.request.use(async (config) => {
-  const path = requestUrlPath(config.url);
-  const isActivities = activitiesApis.some((prefix) => path.startsWith(prefix));
-
-  const myActivityPath =
-    path === "/myActivityBooking" || path.startsWith("/myActivityBooking/");
-  /**
-   * Sightseeing list: deployed on IAM-only activities API (`…/qa`) alongside `cancelBooking`.
-   * Sending `Authorization: Bearer` there causes IncompleteSignatureException.
-   * - `activities` — same host as `VITE_ACTIVITIES_API_BASE`; dev uses `/api/activities-proxy` (SigV4).
-   * - `flight` | `hotel` | `main` — stacks that accept Cognito JWT (legacy).
-   * Default: `activities` in dev, `flight` in production builds (JWT-capable flight API).
-   */
-  const myActivityTarget = (
-    import.meta.env.VITE_MY_ACTIVITY_BOOKING_API ??
-    (import.meta.env.DEV ? "activities" : "flight")
-  )
-    .toString()
-    .toLowerCase()
-    .trim();
-  const myActivityUsesActivitiesGateway = myActivityPath && myActivityTarget === "activities";
-
   const token = await TokenService.getToken();
-  if (token && !isActivities && !myActivityUsesActivitiesGateway) {
+  if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
-  if (myActivityPath) {
-    if (myActivityTarget === "activities") {
-      const activitiesBase = import.meta.env.DEV
-        ? "/api/activities-proxy"
-        : ACTIVITIES_API_BASE;
-      config.baseURL = `${activitiesBase.replace(/\/+$/, "")}/`;
-      config.headers.delete("Authorization");
-      const ak = import.meta.env.VITE_ACTIVITIES_API_KEY;
-      if (typeof ak === "string" && ak.trim() !== "") {
-        config.headers.set("x-api-key", ak.trim());
-      }
-    } else if (myActivityTarget === "hotel") {
-      config.baseURL =
-        import.meta.env.DEV ? "/api/hotel-proxy" : HOTEL_API_BASE;
-    } else if (myActivityTarget === "main") {
-      config.baseURL = AXIOS_MAIN_API_CLIENT_BASE;
-    } else {
-      config.baseURL =
-        import.meta.env.DEV ? "/api/flight-proxy" : FLIGHT_API_BASE;
-    }
-  } else if (flightApis.some((prefix) => path.startsWith(prefix))) {
+  if (flightApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = FLIGHT_API_BASE;
   } else if (
-    flightAncillaryApis.some((prefix) => path.startsWith(prefix))
+    flightAncillaryApis.some((prefix) => config.url?.startsWith(prefix))
   ) {
     config.baseURL = FLIGHT_ANCILLARY_API_BASE;
-  } else if (paymentApis.some((prefix) => path.startsWith(prefix))) {
+  } else if (paymentApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = PAYMENT_API_BASE;
-  } else if (hotelApis.some((prefix) => path.startsWith(prefix))) {
+  } else if (hotelApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL =
       import.meta.env.DEV ? "/api/hotel-proxy" : HOTEL_API_BASE;
-  } else if (locationApis.some((prefix) => path.startsWith(prefix))) {
+  } else if (locationApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = LOCATION_API_BASE;
-  } else if (ticketApis.some((prefix) => path.startsWith(prefix))) {
+  } else if (ticketApis.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = TICKET_API_BASE;
-  } else if (hotelFavouriteApis.some((prefix) => path.startsWith(prefix))) {
-    config.baseURL = HOTEL_FAVOURITE_API_BASE;
-  } else if (activitiesApis.some((prefix) => path.startsWith(prefix))) {
-    /**
-     * Must end with `/` and use relative paths like `activitiesDetail` (no leading `/`).
-     * Otherwise `new URL('/activitiesDetail', 'https://host/qa')` drops the stage → wrong API path.
-     */
-    const activitiesBase = import.meta.env.DEV
-      ? "/api/activities-proxy"
-      : ACTIVITIES_API_BASE;
-    config.baseURL = `${activitiesBase.replace(/\/+$/, "")}/`;
   }
-
-  if (isActivities) {
-    config.headers.delete("Authorization");
-    const ak = import.meta.env.VITE_ACTIVITIES_API_KEY;
-    if (typeof ak === "string" && ak.trim() !== "") {
-      config.headers.set("x-api-key", ak.trim());
-    }
+  else if (hotelFavouriteApis.some((prefix) => config.url?.startsWith(prefix))) {
+    config.baseURL = HOTEL_FAVOURITE_API_BASE;
   }
   else if (flightCancellation.some((prefix) => config.url?.startsWith(prefix))) {
     config.baseURL = FLIGHT_CANCELLATION;
@@ -252,9 +125,6 @@ axiosClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    if (pathSkipsJwtGuestRetry(originalRequest?.url)) {
-      return Promise.reject(error);
-    }
     const serverMsg =
       error.response?.data?.message ||
       (typeof error.response?.data === "string" ? error.response.data : "") ||

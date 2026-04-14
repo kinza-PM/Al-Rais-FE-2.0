@@ -8,47 +8,33 @@ import type {
 } from "../../types/GuestUserTypes";
 
 // -- Functional Methods --
-
-/** Coalesce concurrent guest creation — prevents request storms if init runs in parallel. */
-let createGuestUserInFlight: Promise<CreateUserResponse | null> | null = null;
-
 export async function createGuestUser(): Promise<CreateUserResponse | null> {
-  if (createGuestUserInFlight) {
-    return createGuestUserInFlight;
-  }
+  try {
+    const response = await ApiClient.post<CreateUserResponse>("/users");
 
-  createGuestUserInFlight = (async () => {
-    try {
-      const response = await ApiClient.post<CreateUserResponse>("/users");
+    if (response.success && response.data) {
+      const { user, session } = response.data;
 
-      if (response.success && response.data) {
-        const { user, session } = response.data;
+      LocalStorageService.setUserId(user.id);
 
-        LocalStorageService.setUserId(user.id);
+      const sessionId = session.session_id || session.id;
+      if (sessionId) LocalStorageService.setSessionId(sessionId);
 
-        const sessionId = session.session_id || session.id;
-        if (sessionId) LocalStorageService.setSessionId(sessionId);
+      LocalStorageService.setUserData(user);
+      LocalStorageService.setSessionData(session);
 
-        LocalStorageService.setUserData(user);
-        LocalStorageService.setSessionData(session);
-
-        return response.data;
-      } else {
-        console.error(
-          "GuestUserService: Failed to create guest user:",
-          response.error
-        );
-        return null;
-      }
-    } catch (error) {
-      console.error("GuestUserService: Error creating guest user:", error);
+      return response.data;
+    } else {
+      console.error(
+        "GuestUserService: Failed to create guest user:",
+        response.error
+      );
       return null;
-    } finally {
-      createGuestUserInFlight = null;
     }
-  })();
-
-  return createGuestUserInFlight;
+  } catch (error) {
+    console.error("GuestUserService: Error creating guest user:", error);
+    return null;
+  }
 }
 
 export function getGuestUser(): GuestUser | null {

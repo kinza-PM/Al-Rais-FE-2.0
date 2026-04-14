@@ -79,6 +79,12 @@ const PassengerCabinDropdown: React.FC<Props> = ({
     [pax],
   );
 
+  const toStrictPax = (p: Partial<Pax> | undefined): Pax => ({
+    adults: p?.adults ?? 0,
+    kids: p?.kids ?? 0,
+    infants: p?.infants ?? 0,
+    seniors: p?.seniors ?? undefined,
+  });
 
   const selectedCabinLabel =
     cabinClasses.find((c) => c.id === selectedCabinClassId)?.label ||
@@ -109,7 +115,7 @@ const PassengerCabinDropdown: React.FC<Props> = ({
   }, []); // Only on mount
 
   const handleInternalChange = (nextRaw: Partial<Pax> | undefined) => {
-    const next: any = nextRaw || {};
+    const next = toStrictPax(nextRaw);
     const prev = prevCountsRef.current; // use stable last counts
     const schemaKeys = (schema || []).map((s) => (s as any).key);
     const keys = Array.from(

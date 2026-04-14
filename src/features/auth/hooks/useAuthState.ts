@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import type { User, UserSession } from '../types';
 
 interface LoadingState {
@@ -29,46 +29,45 @@ export const useAuthState = () => {
   // Use ref to track if auth check has completed
   const authCheckCompleted = useRef(false);
 
-  // Stable identities — these are listed in useEffect deps across auth hooks; inline
-  // functions caused the session init effect to re-run every render and flood /users.
-  const updateLoading = useCallback((key: keyof LoadingState, value: boolean) => {
-    setLoading((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  // Helper functions to update state
+  const updateLoading = (key: keyof LoadingState, value: boolean) => {
+    setLoading(prev => ({ ...prev, [key]: value }));
+  };
 
-  const clearError = useCallback(() => setError(null), []);
+  const clearError = () => setError(null);
 
-  const setAuthenticatedState = useCallback((userData: User) => {
+  const setAuthenticatedState = (userData: User) => {
     setUser(userData);
     setIsAuthenticated(true);
     setIsGuest(false);
-  }, []);
+  };
 
-  const resetAuthState = useCallback(() => {
+  const resetAuthState = () => {
     setUser(null);
     setSession(null);
     setIsAuthenticated(false);
     setIsGuest(false);
     setError(null);
-  }, []);
+  };
 
-  const setGuestState = useCallback((userData: User, sessionData: UserSession) => {
+  const setGuestState = (userData: User, sessionData: UserSession) => {
     setUser(userData);
     setSession(sessionData);
     setIsGuest(true);
     setIsAuthenticated(false);
-  }, []);
+  };
 
-  const setInitializationComplete = useCallback(() => {
+  const setInitializationComplete = () => {
     setIsInitializing(false);
-  }, []);
+  };
 
-  const markAuthCheckCompleted = useCallback(() => {
+  const markAuthCheckCompleted = () => {
     authCheckCompleted.current = true;
-  }, []);
+  };
 
-  const resetAuthCheckCompleted = useCallback(() => {
+  const resetAuthCheckCompleted = () => {
     authCheckCompleted.current = false;
-  }, []);
+  };
 
   return {
     // State

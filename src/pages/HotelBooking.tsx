@@ -49,10 +49,8 @@ const HotelBooking = () => {
   const { data: countriesOptions } = useCountriesOptions();
   const progressPct =
     steps.length > 1 ? (currentStep / (steps.length - 1)) * 100 : 0;
-  // console.log("state", state);
+
   const { mutateAsync, isPending } = useHotelPreBooking();
-  const [isPassengerCacheSaving, setIsPassengerCacheSaving] = useState(false);
-  const [isPassengerCacheFetching, setIsPassengerCacheFetching] = useState(false);
   const bookingParams = state.bookingParams ?? hotelFromStore ?? null;
   const { user } = useAuth(); // isAuthenticated already use ho raha hai, user bhi lo
   const hasPrefilledRef = useRef(false);
@@ -447,12 +445,8 @@ const HotelBooking = () => {
     <>
       <div className="px-3 py-4 sm:px-6 sm:py-6 lg:px-12 lg:py-8">
         <Loader
-          show={isPending || isPassengerCacheSaving || isPassengerCacheFetching}
-          label={
-            isPassengerCacheFetching
-              ? "Please wait while we are fetching data"
-              : "Please wait while we complete your provisional booking"
-          }
+          show={isPending}
+          label="Please wait while we complete your provisional booking"
         />
         {/* <div className={`p-8 ${showTimerBanner ? "pt-8" : ""}`}> */}
         <div className="relative mx-auto max-w-[420px] md:max-w-[520px]">
@@ -511,8 +505,6 @@ const HotelBooking = () => {
             <HotelBookingBookSection
               hotelBookingPayload={hotelBookingPayload}
               onPassengerFieldChange={updatePassengerField}
-              onPassengerCacheSavingChange={setIsPassengerCacheSaving}
-              onPassengerCacheFetchLoadingChange={setIsPassengerCacheFetching}
               onNext={handleBookSectionContinue}
               childAgesPerRoom={childAgesPerRoom}
               checkInDate={effectiveCheckIn}

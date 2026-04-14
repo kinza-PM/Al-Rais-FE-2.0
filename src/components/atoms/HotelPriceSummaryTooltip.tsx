@@ -17,22 +17,10 @@ export default function HotelPriceSummaryTooltip({
   currency = "AED",
   taxes = [],
 }: Props) {
-  const mergedTaxes = taxes.reduce<TaxItem[]>((acc, tax) => {
-    const label = (tax.name || "Tax").trim() || "Tax";
-    const key = label.toLowerCase();
-    const add = typeof tax.amount === "number" ? tax.amount : 0;
-    const existing = acc.find(
-      (t) => (t.name || "").trim().toLowerCase() === key,
-    );
-    if (existing) {
-      existing.amount = (existing.amount ?? 0) + add;
-      if (tax.included) existing.included = true;
-    } else {
-      acc.push({
-        name: label,
-        amount: add,
-        included: !!tax.included,
-      });
+  const uniqueTaxes = taxes.reduce<TaxItem[]>((acc, tax) => {
+    const name = (tax.name || "Tax").trim().toLowerCase();
+    if (!acc.some((t) => (t.name || "").trim().toLowerCase() === name)) {
+      acc.push(tax);
     }
     return acc;
   }, []);
@@ -65,7 +53,7 @@ export default function HotelPriceSummaryTooltip({
                   {currency} {totalPrice?.toFixed(2)}
                 </td>
               </tr>
-              {mergedTaxes.map((tax, idx) => (
+              {uniqueTaxes.map((tax, idx) => (
                 <tr key={idx}>
                   <td className="text-[#3D495C] py-0.5 align-middle text-left">
                     {tax.name || "Tax"}

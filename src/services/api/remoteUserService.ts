@@ -1,5 +1,4 @@
 import { fetchAuthSession } from "aws-amplify/auth";
-import { VITE_USER_SERVICE_BASE_URL } from "../../config/publicEnv";
 
 export type RemoteUserRecord = {
   userId: string;
@@ -15,7 +14,9 @@ export type RemoteUserRecord = {
   avatarUpdatedAt?: string;
 };
 
-const BASE_URL = VITE_USER_SERVICE_BASE_URL;
+const BASE_URL =
+  (import.meta.env.VITE_USER_SVC_BASE_URL as string | undefined)?.trim() ||
+  "https://yjz5d5q2i0.execute-api.eu-west-1.amazonaws.com";
 
 async function getIdToken(): Promise<string | null> {
   try {

@@ -1,10 +1,6 @@
 // import React, { useState } from "react";
 import "../../assets/css/travel.css";
-import {
-  formatTime,
-  formatDate,
-  formatFlightDurationLabel,
-} from "../../utils/helpers";
+import { formatTime, formatDate } from "../../utils/helpers";
 
 type FlightTimingAndStopsProps = {
   passSome?: {
@@ -54,10 +50,6 @@ const FlightTimingAndStops: React.FC<FlightTimingAndStopsProps> = ({
   const layoverTime = secondSegment?.layoverTime ?? '';
   const stopAirport = secondSegment?.departureAirportCode ?? '';
 
-  const rawDuration =
-    firstSegment?.duration ?? passSome?.flight_detail?.duration ?? "";
-  const durationLabel = formatFlightDurationLabel(rawDuration);
-
   return (
     <div className="">
       <div className="flightTiming">
@@ -79,21 +71,17 @@ const FlightTimingAndStops: React.FC<FlightTimingAndStopsProps> = ({
               ))
             ) : hasMultipleSegments ? (
               <>
-                <span className="mb-5">
-                  {formatFlightDurationLabel(firstDuration) || firstDuration}
-                </span>
+                <span className="mb-5">{firstDuration}</span>
                 <div className="stopsDetail">
                   <span>{layoverTime}</span>
                   <div className="stopPoint stopDots"></div>
                   <span>{stopAirport}</span>
                 </div>
-                <span className="mb-5">
-                  {formatFlightDurationLabel(secondDuration) || secondDuration}
-                </span>
+                <span className="mb-5">{secondDuration}</span>
               </>
             ) : (
               <div className="stopsDetail">
-                <span>{durationLabel || rawDuration}</span>
+                <span>{passSome?.flight_detail?.duration}</span>
                 <div className=""></div>
                 <span>Direct</span>
               </div>

@@ -12,9 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Sightseeing dev: IAM keys for Vite SigV4 proxy (never commit)
-.activities-sigv4.credentials.json
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

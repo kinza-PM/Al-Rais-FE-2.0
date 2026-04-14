@@ -6,18 +6,6 @@ import SearchFlight from "../pages/SearchFlight";
 import SearchHotel from "../pages/SearchHotel";
 import HotellDetailListing from "../pages/HotellDetailListing";
 const LandingPage = lazy(() => import("../pages/LandingPage"));
-const SightseeingSearchPage = lazy(
-  () => import("../pages/SightseeingSearchPage"),
-);
-const SightseeingActivityDetailPage = lazy(
-  () => import("../pages/SightseeingActivityDetailPage"),
-);
-const SightseeingBookingPage = lazy(
-  () => import("../pages/SightseeingBookingPage"),
-);
-const SightseeingTravelersDetailsPage = lazy(
-  () => import("../pages/SightseeingTravelersDetailsPage"),
-);
 // const TravelPage = lazy(() => import("../pages/TravelPage"));
 const PackagesPage = lazy(() => import("../pages/PackagesPage"));
 const AboutPage = lazy(() => import("../pages/AboutPage"));
@@ -39,9 +27,6 @@ const FAQPage = lazy(() => import("../pages/FAQPage"));
 const PaymentsHelpPage = lazy(() => import("../pages/PaymentsHelpPage"));
 const RefundCancellationPolicyPage = lazy(() => import("../pages/RefundCancellationPolicyPage")); // New import
 const HotelCancellationPage = lazy(() => import("../pages/HotelCancellationPage"));
-const SightseeingCancellationPage = lazy(
-  () => import("../pages/SightseeingCancellationPage"),
-);
 const HotelBookingDetailPage = lazy(() => import("../pages/HotelBookingDetailPage"));
 const FlightCancellationPage = lazy(() => import("../pages/FlightCancellationPage"));
 
@@ -70,22 +55,6 @@ const router = createBrowserRouter([
       {
         path: "search-hotel",
         element: <SearchHotel />,
-      },
-      {
-        path: "search-sightseeing",
-        element: <SightseeingSearchPage />,
-      },
-      {
-        path: "sightseeing-detail/:activityCode",
-        element: <SightseeingActivityDetailPage />,
-      },
-      {
-        path: "sightseeing-booking/:activityCode",
-        element: <SightseeingBookingPage />,
-      },
-      {
-        path: "sightseeing-travelers/:activityCode",
-        element: <SightseeingTravelersDetailsPage />,
       },
       {
         path: "hotel-detail/:hotelKey",
@@ -174,14 +143,6 @@ const router = createBrowserRouter([
       {
         path: "hotel-cancellation", // New route added
         element: <HotelCancellationPage />,
-      },
-      {
-        path: "sightseeing-cancellation",
-        element: (
-          <ProtectedRoute>
-            <SightseeingCancellationPage />
-          </ProtectedRoute>
-        ),
       },
       {
         path: "hotel-booking-detail",

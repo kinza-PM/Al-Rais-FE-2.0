@@ -8,7 +8,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { VITE_NETWORK_PING_URL } from "../config/publicEnv";
 
 type NetworkStatusContextValue = {
   isOnline: boolean;
@@ -32,7 +31,7 @@ type Props = {
 
 export const NetworkStatusProvider: React.FC<Props> = ({
   children,
-  pingPath = VITE_NETWORK_PING_URL,
+  pingPath = "https://www.google.com/favicon.ico",
   timeoutMs = 3000,
   navOnLinePollMs = 1000,
   initialBackoffMs = 1000,

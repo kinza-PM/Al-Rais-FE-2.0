@@ -50,60 +50,6 @@ export function formatDate(dateStr: string) {
   });
 }
 
-/** Formats API duration strings (e.g. 3H5M, PT3H15M) to Figma-style labels like "03h 15min". */
-export function formatFlightDurationLabel(
-  raw: string | undefined | null,
-): string {
-  if (raw == null) return "";
-  const s = String(raw).trim();
-  if (!s) return "";
-
-  const iso = s.match(/^PT(?:(\d+)H)?(?:(\d+)M)?$/i);
-  if (iso) {
-    const h = parseInt(iso[1] || "0", 10);
-    const m = parseInt(iso[2] || "0", 10);
-    return formatHhMmDurationLabel(h, m);
-  }
-
-  const compact = s.match(/^(\d+)\s*[hH]\s*(\d+)\s*[mM]/);
-  if (compact) {
-    return formatHhMmDurationLabel(
-      parseInt(compact[1], 10),
-      parseInt(compact[2], 10),
-    );
-  }
-
-  const hm = s.match(/^(\d+)H(\d+)M$/i);
-  if (hm) {
-    return formatHhMmDurationLabel(parseInt(hm[1], 10), parseInt(hm[2], 10));
-  }
-
-  return s;
-}
-
-function formatHhMmDurationLabel(hours: number, minutes: number): string {
-  const hh = String(Math.max(0, hours)).padStart(2, "0");
-  const mm = String(Math.max(0, minutes)).padStart(2, "0");
-  return `${hh}h ${mm}min`;
-}
-
-/** Listing card price: whole currency units, no decimals (matches Figma). */
-export function formatListingStartingFare(
-  currencyCode: string | undefined,
-  rawAmount: number | string | undefined | null,
-): string {
-  const code = (currencyCode ?? "").trim();
-  if (rawAmount === undefined || rawAmount === null || rawAmount === "") {
-    return code;
-  }
-  const n =
-    typeof rawAmount === "number" ? rawAmount : parseFloat(String(rawAmount));
-  if (Number.isNaN(n)) {
-    return `${code}${rawAmount}`;
-  }
-  return `${code}${Math.round(n)}`;
-}
-
 export function buildFilterPreferenceForFlightSearchRequest(
   selectedMaxConnections?: number | null,
 ) {
@@ -475,20 +421,6 @@ export function parseLocalDateString(
   const [y, m, d] = dateStr.split("-");
   if (!y || !m || !d) return null;
   return new Date(Number(y), Number(m) - 1, Number(d)); // local midnight
-}
-
-/** Compare calendar day only (ignores time); for syncing controlled date pickers. */
-export function sameCalendarDate(
-  a: Date | null,
-  b: Date | null,
-): boolean {
-  if (a == null && b == null) return true;
-  if (a == null || b == null) return false;
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
 }
 
 export const formatMoney = (

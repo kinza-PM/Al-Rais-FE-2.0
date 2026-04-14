@@ -1,10 +1,8 @@
-import { VITE_NOMINATIM_BASE_URL } from "../config/publicEnv";
-
 export const getAirportCoords = async (airportCode: string) => {
     try {
         const query = `${airportCode} airport`;
         const response = await fetch(
-            `${VITE_NOMINATIM_BASE_URL}/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
+            `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`,
             {
                 headers: {
                     'User-Agent': 'FlightBookingApp/1.0' // Required by Nominatim

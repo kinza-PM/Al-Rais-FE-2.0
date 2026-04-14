@@ -1,16 +1,13 @@
 import React from "react";
 import FlightHeroSectionTab from "./FlightHeroSectionTab";
 import HotelHeroSectionTab from "./HotelHeroSectionTab";
-import SightseeingHeroSectionTab from "./SightseeingHeroSectionTab";
 import Celebration from "../../assets/svgs/celebration.svg";
 import CardBg25 from "../../assets/images/3rd-section-image1.png";
 import CardBgExplore from "../../assets/images/3rd-section-image 2.jpg";
 
-export type HeroSearchTab = "flights" | "hotels" | "sightseeing";
-
 type Props = {
-  activeTab?: HeroSearchTab;
-  onTabChange?: (tab: HeroSearchTab) => void;
+  activeTab?: "flights" | "hotels";
+  onTabChange?: (tab: "flights" | "hotels") => void;
 };
 
 const HeroSection: React.FC<Props> = ({ activeTab }) => {
@@ -30,7 +27,6 @@ const HeroSection: React.FC<Props> = ({ activeTab }) => {
           >
             {selectedTab === "flights" && <FlightHeroSectionTab />}
             {selectedTab === "hotels" && <HotelHeroSectionTab />}
-            {selectedTab === "sightseeing" && <SightseeingHeroSectionTab />}
           </div>
         </div>
       </div>

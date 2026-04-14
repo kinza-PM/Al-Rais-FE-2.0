@@ -9,7 +9,6 @@ import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import SearchableDropdown from "../common/SearchableDropdown";
 import Info from "../../assets/svgs/info-black.svg";
-import { sameCalendarDate } from "../../utils/helpers";
 
 type Props = {
   countries?: AirportOption[];
@@ -51,14 +50,14 @@ const OneWayForm: React.FC<Props> = ({
   fromCode = "",
   toCode = "",
   departDateValue = null,
-  onChangeFrom = () => { },
-  onChangeTo = () => { },
+  onChangeFrom = () => {},
+  onChangeTo = () => {},
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => { },
+  onChangeCabinClassId = () => {},
   onChangePassengers,
   onChangeDepartDate,
   fromError = "",
@@ -67,21 +66,13 @@ const OneWayForm: React.FC<Props> = ({
   passengersError = "",
   cabinClassError = "",
   countriesHasMore = false,
-  countriesFetchNext = () => { },
+  countriesFetchNext = () => {},
   countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   const [departDate, setDepartDate] = React.useState<Date | null>(
     departDateValue,
   );
-
-  // Keep local picker state in sync when parent restores from store (e.g. navigate back to home).
-  React.useEffect(() => {
-    const next = departDateValue ?? null;
-    setDepartDate((prev) =>
-      sameCalendarDate(prev, next) ? prev : next,
-    );
-  }, [departDateValue]);
 
   // track pax counts to compute order diffs like FlightDetailTemplate
   const [paxCounts, setPaxCounts] = React.useState<{ [k: string]: number }>({});
@@ -246,7 +237,7 @@ const OneWayForm: React.FC<Props> = ({
           errorMessage={
             passengersError ||
             (!loadingPassengers &&
-              (!passengerSchema || passengerSchema.length === 0)
+            (!passengerSchema || passengerSchema.length === 0)
               ? "Passenger types are not available right now. Please try again later."
               : null)
           }

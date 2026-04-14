@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import * as UserService from '../../../services/api/userService';
 import type { User, UserSession } from '../types';
 
@@ -10,11 +9,11 @@ interface GuestUserActions {
 export const useGuestUser = (actions: GuestUserActions) => {
   const { setGuestState, setError } = actions;
 
-  // Initialize guest user (stable ref — avoids invalidating useSessionManager.checkAuth every render)
-  const initializeGuestUser = useCallback(async () => {
+  // Initialize guest user
+  const initializeGuestUser = async () => {
     try {
       const guestData = await UserService.initializeGuestUser();
-
+      
       if (guestData) {
         const guestUser: User = {
           id: guestData.user.id,
@@ -26,15 +25,17 @@ export const useGuestUser = (actions: GuestUserActions) => {
           last_seen_at: guestData.user.last_seen_at,
           isGuest: true,
         };
-
+        
         setGuestState(guestUser, guestData.session);
       } else {
         console.error(' useGuestUser: Failed to initialize guest user');
+        // setError('Failed to initialize guest session');
       }
     } catch (error) {
       console.error(' useGuestUser: Error initializing guest user:', error);
+      // setError('Failed to initialize guest session');
     }
-  }, [setGuestState]);
+  };
 
   // Get current guest user data
   const getGuestUserData = () => {

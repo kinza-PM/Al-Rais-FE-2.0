@@ -18,12 +18,11 @@ import {
   useUploadTicket,
 } from "../../hooks/useFlightBooking";
 import Loader from "../atoms/Loader";
-import { VITE_S3_TICKET_PUBLIC_BASE } from "../../config/publicEnv";
 
 // import { uploadToS3 } from "../../utils/s3Helper";
 
 /** Base URL for uploaded ticket PDFs on S3 (bucket + region) */
-const S3_TICKET_BASE = VITE_S3_TICKET_PUBLIC_BASE;
+const S3_TICKET_BASE = "https://booked-ticket-dev2.s3.eu-west-1.amazonaws.com";
 
 type FlightBookingETicketSectionProps = {
   reservedFlightBooking?: any;

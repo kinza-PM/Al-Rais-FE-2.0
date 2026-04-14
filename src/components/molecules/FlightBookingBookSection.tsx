@@ -6,10 +6,10 @@ import baggageIcon from "../../assets/svgs/baggage.svg";
 // import wifiIcon from "../../assets/svgs/wifi.svg";
 // import arrownDownwardIcon from "../../assets/svgs/arrow-downwards.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
 import Button from "../atoms/Button";
-import CustomToggle from "../common/CustomToggle";
+// import CustomToggle from "../common/CustomToggle";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import TailwindCustomInput from "../common/TailwindCustomInput";
@@ -24,7 +24,7 @@ import {
 import { useFlightInitialBooking } from "../../hooks/useFlightBooking";
 import toast from "react-hot-toast";
 import {
-  // validatePassengersForFlightProvisionalBooking,
+  validatePassengersForFlightProvisionalBooking,
   validatePassengersForFlightProvisionalBookingFields,
 } from "../../utils/flightBookingHelper";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
@@ -40,14 +40,6 @@ import durationIcon from "../../assets/svgs/duration.svg";
 import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
-import SavedTravelersSection, { type SavedTraveler } from "./SavedTravelersSection";
-import { usePassengerCacheAdd, usePassengerCacheFetch } from "../../hooks/usePassengerCache";
-import {
-  buildPassengerCacheAddPayload,
-  extractPassengersFromCacheResponse,
-} from "../../utils/passengerCacheHelper";
-import ConfirmationModal from "../common/ConfirmationModal";
-import Loader from "../atoms/Loader";
 
 type FlightBookingBookSectionProps = {
   trip: any;
@@ -93,18 +85,10 @@ export default function FlightBookingBookSection({
   const [validationErrors, setValidationErrors] = useState<
     Record<number, Record<string, string>>
   >({});
-  const originalCacheKeyBySlotRef = useRef<Record<number, string>>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
-  const [saveTravelerByPassengerKey, setSaveTravelerByPassengerKey] = useState<
-    Record<string, boolean>
-  >({});
-  const [showBookingConfirm, setShowBookingConfirm] = useState(false);
-  const savedTravelerOffKeysRef = useRef<Set<string>>(new Set());
 
   const pRules = fareBookingSearchRules?.passengerRules?.[0] ?? {};
   const { mutateAsync, isPending } = useFlightInitialBooking();
-  const { mutateAsync: addPassengerCache, isPending: isAddingCache } = usePassengerCacheAdd();
-  const { data: passengerCacheResp } = usePassengerCacheFetch();
 
   // First ADT's phone for CHD/INF fallback
   const firstAdtPhone = useMemo(() => {
@@ -206,54 +190,27 @@ export default function FlightBookingBookSection({
     //     return;
     //   }
     // }
-    // setHasAttemptedValidation(true);
-    // const fieldErrors = validatePassengersForFlightProvisionalBookingFields(
-    //   fareBookingSearchRules,
-    //   flightBookingPayload,
-    // );
-    // setValidationErrors(fieldErrors);
-
-    // if (Object.keys(fieldErrors).length > 0) {
-    //   // Still check overall validation for backward compatibility
-    //   if (typeof validatePassengersForFlightProvisionalBooking === "function") {
-    //     const { valid } = validatePassengersForFlightProvisionalBooking(
-    //       fareBookingSearchRules,
-    //       flightBookingPayload,
-    //     );
-    //     if (!valid) {
-    //       return;
-    //     }
-    //   }
-    //   return;
-    // }
-
-    const selectedPassengersForCache = passengers.filter((p, idx) =>
-      saveToggleChecked(saveToggleKey(idx, p?.passengerKey)),
+    setHasAttemptedValidation(true);
+    const fieldErrors = validatePassengersForFlightProvisionalBookingFields(
+      fareBookingSearchRules,
+      flightBookingPayload,
     );
+    setValidationErrors(fieldErrors);
 
-    const addPassengerCachePayload =
-      selectedPassengersForCache.length > 0
-        ? buildPassengerCacheAddPayload(
-          selectedPassengersForCache,
-          extractPassengersFromCacheResponse(passengerCacheResp),
-          passengers.map((_, i) =>
-            saveToggleChecked(saveToggleKey(i, passengers[i]?.passengerKey))
-              ? (originalCacheKeyBySlotRef.current[i] ?? null)
-              : null
-          ),
-        )
-        : null;
-    // console.log('addPassengerCachePayload----', addPassengerCachePayload)
-    // console.log('selectedPassengersForCache----', selectedPassengersForCache)
-    try {
-      if (addPassengerCachePayload) {
-        try {
-          await addPassengerCache(addPassengerCachePayload);
-        } catch (e) {
-          // Do not block flight flow if cache save fails.
-          console.error("fetchAddPassengerCache(add) failed", e);
+    if (Object.keys(fieldErrors).length > 0) {
+      // Still check overall validation for backward compatibility
+      if (typeof validatePassengersForFlightProvisionalBooking === "function") {
+        const { valid } = validatePassengersForFlightProvisionalBooking(
+          fareBookingSearchRules,
+          flightBookingPayload,
+        );
+        if (!valid) {
+          return;
         }
       }
+      return;
+    }
+    try {
       const response = await mutateAsync(flightBookingPayload);
       if (
         response?.meta?.success &&
@@ -291,150 +248,14 @@ export default function FlightBookingBookSection({
     }
   };
 
-  const fillFromSavedTravelers = (selectedSlots: Array<SavedTraveler | undefined>) => {
-    const titleToUi = (t?: string) => {
-      const v = String(t ?? "").trim().toUpperCase();
-      if (v === "MR") return "MR";
-      if (v === "MS") return "MS";
-      if (v === "MRS") return "MRS";
-      return "";
-    };
-    const normalizeIdType = (v?: string) => {
-      const x = String(v ?? "").trim().toUpperCase();
-      if (x === "PT" || x === "PASSPORT") return "PT";
-      if (x === "NI" || x === "NATIONAL_ID") return "NI";
-      if (x === "DL" || x === "DRIVING_LICENSE") return "DL";
-      return "PT";
-    };
-    const genderToUi = (g?: string) => {
-      const v = String(g ?? "").trim().toUpperCase();
-      if (v === "M" || v === "MALE") return "M";
-      if (v === "F" || v === "FEMALE") return "F";
-      return "";
-    };
-
-    const apply = (idx: number, t?: SavedTraveler) => {
-      if (!passengers[idx]) return;
-
-      const clear = !t;
-      const givenName = clear ? "" : t.firstName ?? "";
-      const surname = clear ? "" : t.lastName ?? "";
-      const nameTitle = clear ? "" : titleToUi(t.nameTitle);
-      const gender = clear ? "" : genderToUi(t.gender);
-      const birthDate = clear ? null : (t.birthDate ?? null);
-      const passport = clear ? "" : (t.passport ?? "");
-      const idType = clear ? "PT" : normalizeIdType(t.idType);
-      const issuingCountryCode = clear ? "" : (t.issuingCountryCode ?? "");
-      const residenceCountryCode = clear ? "" : (t.residenceCountryCode ?? "");
-      const dateOfIssue = clear ? null : (t.dateOfIssueIso ?? null);
-      const expiryIso = clear ? null : (t.expiryIso ?? null);
-      const email = clear ? "" : (t.email ?? "");
-      const areaCode = clear
-        ? ""
-        : t.phoneAreaCode !== undefined &&
-          t.phoneAreaCode !== null &&
-          String(t.phoneAreaCode).trim() !== ""
-          ? `+${String(t.phoneAreaCode).replace(/^\+/, "")}`
-          : "";
-      const phoneNumber = clear ? "" : String(t.phoneNumber ?? "");
-
-      onPassengerFieldChange(idx, "passengerInfo.nameTitle", nameTitle);
-      onPassengerFieldChange(idx, "passengerInfo.gender", gender);
-      onPassengerFieldChange(idx, "passengerInfo.givenName", givenName);
-      onPassengerFieldChange(idx, "passengerInfo.surname", surname);
-      onPassengerFieldChange(idx, "passengerInfo.birthDate", birthDate);
-
-      onPassengerFieldChange(idx, "identityDocuments.0.idDocumentNumber", passport);
-      onPassengerFieldChange(idx, "identityDocuments.0.idType", idType);
-      onPassengerFieldChange(idx, "identityDocuments.0.issuingCountryCode", issuingCountryCode);
-      onPassengerFieldChange(
-        idx,
-        "identityDocuments.0.residenceCountryCode",
-        residenceCountryCode,
-      );
-      onPassengerFieldChange(idx, "identityDocuments.0.dateOfIssue", dateOfIssue);
-      onPassengerFieldChange(idx, "identityDocuments.0.expiryDate", expiryIso);
-
-      onPassengerFieldChange(idx, "contact.contactsProvided.0.emailAddress.0", email);
-      onPassengerFieldChange(idx, "contact.contactsProvided.0.phone.0.areaCode", areaCode);
-      onPassengerFieldChange(idx, "contact.contactsProvided.0.phone.0.phoneNumber", phoneNumber);
-      onPassengerFieldChange(idx, "isLead", idx === 0);
-    };
-
-    for (let i = 0; i < passengers.length; i++) {
-      apply(i, selectedSlots[i]);
-    }
-
-    setSaveTravelerByPassengerKey((prev) => {
-      const next = { ...prev };
-      const currentOffFromSaved = new Set<string>();
-      for (let i = 0; i < passengers.length; i++) {
-        const p = passengers[i];
-        const key = `${i}:${p?.passengerKey ?? ""}`;
-        if (selectedSlots[i]) {
-          next[key] = false;
-          currentOffFromSaved.add(key);
-        }
-      }
-      for (const key of savedTravelerOffKeysRef.current) {
-        if (!currentOffFromSaved.has(key)) {
-          delete next[key];
-        }
-      }
-      savedTravelerOffKeysRef.current = currentOffFromSaved;
-      return next;
-    });
-
-    for (let i = 0; i < passengers.length; i++) {
-      const t = selectedSlots[i];
-      if (t) {
-        const given = String(t.firstName ?? "").trim().toUpperCase();
-        const surname = String(t.lastName ?? "").trim().toUpperCase();
-        const dob = String(t.birthDate ?? "").trim();
-        const passport = String(t.passport ?? "").trim().toUpperCase();
-        originalCacheKeyBySlotRef.current[i] = `${passport}|${given}|${surname}|${dob}`;
-      } else {
-        delete originalCacheKeyBySlotRef.current[i];
-      }
-    }
-  };
-
-  const saveToggleKey = (index: number, passengerKey?: string) =>
-    `${index}:${passengerKey ?? ""}`;
-  const saveToggleChecked = (key: string) => {
-    const v = saveTravelerByPassengerKey[key];
-    return v !== false;
-  };
-  const toggleSaveTraveler = (key: string) => {
-    setSaveTravelerByPassengerKey((prev) => ({
-      ...prev,
-      [key]: !saveToggleChecked(key),
-    }));
-  };
-  const normalizeIdType = (v?: string) => {
-    const x = String(v ?? "").trim().toUpperCase();
-    if (x === "PT" || x === "PASSPORT") return "PT";
-    if (x === "NI" || x === "NATIONAL_ID") return "NI";
-    if (x === "DL" || x === "DRIVING_LICENSE") return "DL";
-    return "PT";
-  };
-
   // const countryOptions = useMemo(() => {
   //   return getUniqueCountries(cities);
   // }, [cities]);
 
   return (
     <section className="mx-auto max-w-full px-10 flight-booking-section">
-      <Loader
-        show={isPending || isAddingCache}
-        label="Please wait while we complete your provisional booking"
-      />
       <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
-          <SavedTravelersSection
-            onProceedSelection={fillFromSavedTravelers}
-            maxSelectable={passengers.length}
-          />
           {passengers.map((p, idx) => (
             <React.Fragment key={p.passengerKey || idx}>
               <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
@@ -442,6 +263,11 @@ export default function FlightBookingBookSection({
                   <h3 className="text-[15px] font-medium text-[#0A0C0F]">
                     Contact person {String(idx + 1).padStart(2, "0")} details
                   </h3>
+                  {/* <CustomToggle
+                                        label="I’m booking for someone else"
+                                        checked={bookingForOther}
+                                        onChange={() => setBookingForOther((v) => !v)}
+                                    /> */}
                 </div>
 
                 <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
@@ -576,13 +402,8 @@ export default function FlightBookingBookSection({
               <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
                 <div className="flex items-center justify-between px-4 py-2 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px]">
                   <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                    Traveler {String(idx + 1).padStart(2, "0")} details
+                    Passenger {String(idx + 1).padStart(2, "0")} details
                   </h3>
-                  <CustomToggle
-                    label="Save Traveler information in my profile"
-                    checked={saveToggleChecked(saveToggleKey(idx, p?.passengerKey))}
-                    onChange={() => toggleSaveTraveler(saveToggleKey(idx, p?.passengerKey))}
-                  />
                 </div>
 
                 <div className="px-4 py-4 rounded-b-[16px]">
@@ -609,7 +430,7 @@ export default function FlightBookingBookSection({
                               label: "Passport (PT)",
                             },
                           ]}
-                          value={normalizeIdType(p.identityDocuments?.[0]?.idType)}
+                          value={p.identityDocuments?.[0]?.idType ?? "PT"}
                           onChange={(value) => {
                             onPassengerFieldChange(
                               idx,
@@ -693,7 +514,7 @@ export default function FlightBookingBookSection({
                         options={
                           countries?.map((c) => ({
                             id: c.iso2,
-                            value: c.iso2,
+                            value: c.iso3,
                             label: c.label,
                           })) || []
                         }
@@ -824,7 +645,7 @@ export default function FlightBookingBookSection({
                         options={
                           countries?.map((c) => ({
                             id: c.iso2,
-                            value: c.iso2,
+                            value: c.iso3,
                             label: c.label,
                           })) || []
                         }
@@ -1273,20 +1094,8 @@ export default function FlightBookingBookSection({
           <Button
             type="button"
             overrideClasses
-            className="mt-6 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-[#2351A3] flex items-center justify-center gap-[10px]"
-            // onClick={() => handleFlightProvInitialBooking()}
-            onClick={async () => {
-              setHasAttemptedValidation(true);
-              const fieldErrors = validatePassengersForFlightProvisionalBookingFields(
-                fareBookingSearchRules,
-                flightBookingPayload,
-              );
-              setValidationErrors(fieldErrors);
-
-              if (Object.keys(fieldErrors).length > 0) return;
-
-              setShowBookingConfirm(true);
-            }}
+            className="mt-6 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-gradient-to-r from-[#5383DA] via-[#2351A3] to-[#081326] flex items-center justify-center gap-[10px]"
+            onClick={() => handleFlightProvInitialBooking()}
             disabled={isPending}
           >
             {isPending ? "Loading..." : "Continue"}
@@ -1295,21 +1104,6 @@ export default function FlightBookingBookSection({
 
         {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />}
       </div>
-
-      <ConfirmationModal
-        open={showBookingConfirm}
-        title="Confirm your booking"
-        description="You're about to submit your passenger details and proceed with the booking. Please make sure all information is correct before continuing."
-        note="This will reserve your flight. You can still view summary details before final payment."
-        confirmText="Proceed"
-        cancelText="Cancel"
-        loading={isPending}
-        onCancel={() => setShowBookingConfirm(false)}
-        onConfirm={() => {
-          setShowBookingConfirm(false);
-          handleFlightProvInitialBooking();
-        }}
-      />
     </section>
   );
 }

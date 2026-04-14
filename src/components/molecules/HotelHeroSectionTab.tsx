@@ -1,11 +1,4 @@
-import React, {
-  useState,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
+import React, { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { useCountriesOptions } from "../../hooks/masterListings/listing";
@@ -19,7 +12,6 @@ import { useHotelStore } from "../../store/UseHotelStore";
 import { createEmptyHotelListingFilters } from "../../utils/hotelFilters";
 import Info from "../../assets/svgs/info-black.svg";
 import Loader from "../atoms/Loader";
-import { parseLocalDateString } from "../../utils/helpers";
 
 const starRatingOptions = [
   { id: "0", value: "", label: "Clear rating", hideSelectionIcon: true },
@@ -82,53 +74,47 @@ const HotelHeroSectionTab: React.FC = () => {
     include: ["passengers"],
   });
   const navigate = useNavigate();
-  const { hotel, setHotel } = useHotelStore();
-  const lastHotelSnapshotRef = useRef<string | null>(null);
+  const hotelSnapshot = useHotelStore((s) => s.hotel);
+  const setHotel = useHotelStore((s) => s.setHotel);
+  const setLandingHeroSearchTab = useHotelStore((s) => s.setLandingHeroSearchTab);
+  const setHotelListingFilters = useHotelStore((s) => s.setHotelListingFilters);
+  const setHotelListingSortOption = useHotelStore((s) => s.setHotelListingSortOption);
+  const heroHydratedKeyRef = useRef<string | null>(null);
 
-  useLayoutEffect(() => {
-    if (!hotel) return;
-    const snap = JSON.stringify({
-      country: hotel.country,
-      city: hotel.city,
-      checkIn: hotel.checkIn,
-      checkOut: hotel.checkOut,
-      nat: hotel.travelerNationality,
-      pax: hotel.paxData,
-      ages: hotel.childAges,
-      stars: hotel.starRatings,
-      minStar: hotel.minStarRating,
-    });
-    if (lastHotelSnapshotRef.current === snap) return;
-    lastHotelSnapshotRef.current = snap;
+  useEffect(() => {
+    if (!hotelSnapshot) {
+      heroHydratedKeyRef.current = null;
+      return;
+    }
 
-    setCountry(hotel.country || "");
-    setCity(hotel.city || "");
-    setCheckInDate(parseLocalDateString(hotel.checkIn));
-    setCheckOutDate(parseLocalDateString(hotel.checkOut));
-    setNationality(hotel.travelerNationality || hotel.travelerCountryOfResidence || "");
-    setPaxData(
-      hotel.paxData && Object.keys(hotel.paxData).length
-        ? { ...hotel.paxData }
-        : { adults: 1, rooms: 1 },
+    const key = [
+      hotelSnapshot.country,
+      hotelSnapshot.city,
+      hotelSnapshot.checkIn,
+      hotelSnapshot.checkOut,
+      hotelSnapshot.travelerNationality,
+      JSON.stringify(hotelSnapshot.paxData ?? {}),
+      JSON.stringify(hotelSnapshot.childAges ?? []),
+      JSON.stringify(hotelSnapshot.starRatings ?? []),
+    ].join("|");
+
+    if (heroHydratedKeyRef.current === key) return;
+    heroHydratedKeyRef.current = key;
+
+    setCountry(hotelSnapshot.country ?? "");
+    setCity(hotelSnapshot.city ?? "");
+    setCheckInDate(parseIsoToDate(hotelSnapshot.checkIn));
+    setCheckOutDate(parseIsoToDate(hotelSnapshot.checkOut));
+    setNationality(
+      hotelSnapshot.travelerNationality ||
+        hotelSnapshot.travelerCountryOfResidence ||
+        "",
     );
-    setChildAges(
-      Array.isArray(hotel.childAges) ? [...hotel.childAges] : [],
-    );
-    setStarRatings(
-      hotel.starRatings?.length
-        ? hotel.starRatings.map(String)
-        : [],
-    );
-    setHasAttemptedValidation(false);
-    setValidationErrors({
-      country: "",
-      city: "",
-      checkIn: "",
-      checkOut: "",
-      nationality: "",
-      travellers: "",
-    });
-  }, [hotel]);
+    setPaxData(hotelSnapshot.paxData ?? { adults: 1, rooms: 1 });
+    setChildAges(hotelSnapshot.childAges ?? []);
+    setStarRatings((hotelSnapshot.starRatings ?? []).map((n) => String(n)));
+    setLandingHeroSearchTab("hotels");
+  }, [hotelSnapshot, setLandingHeroSearchTab]);
 
   const { data: countriesOptions } = useCountriesOptions();
   const selectedCountry = useMemo(

@@ -179,19 +179,11 @@ export function buildPriceSortOptions(
 }
 
 const STOPS_LABEL_MAP: Record<string, string> = {
-  "0": "0",
-  "01": "01",
-  "1": "01",
-  "02": "02",
-  "2": "02",
-  // API may return human-readable strings as category values
-  "Non-stop": "0",
-  "non-stop": "0",
-  "nonstop": "0",
-  "1 Stop": "01",
-  "1 stop": "01",
-  "2 Stops": "02",
-  "2 stops": "02",
+  "0": "Non-stop",
+  "01": "1 Stop",
+  "1": "1 Stop",
+  "02": "2 Stops",
+  "2": "2 Stops",
 };
 
 export function buildNumberStopsOptions(
@@ -204,14 +196,10 @@ export function buildNumberStopsOptions(
       const numVal = parseInt(val, 10);
       const label =
         STOPS_LABEL_MAP[val] ??
-        (Number.isNaN(numVal)
-          ? val
-          : numVal === 0
-            ? "0"
-            : String(numVal).padStart(2, "0"));
+        (numVal === 0 ? "Non-stop" : numVal === 1 ? "1 Stop" : `${numVal} Stops`);
       return { label, value: val };
     });
-  if (!opts.length) return [{ label: "0", value: "0" }];
+  if (!opts.length) return [{ label: "Non-stop", value: "0" }];
   return opts.sort((a, b) => parseInt(a.value, 10) - parseInt(b.value, 10));
 }
 

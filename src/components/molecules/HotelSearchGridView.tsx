@@ -9,11 +9,10 @@ import {
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import { useHotelStore } from "../../store/UseHotelStore";
-import { useProgressiveList } from "../../hooks/useProgressiveList";
+import HotelSearchSignInUpdatesBanner from "./HotelSearchSignInUpdatesBanner";
 
 type HotelSearchGridViewProps = {
   hotels: Array<any>;
-  listResetKey?: number;
 };
 
 const buildHotelShareUrl = (
@@ -39,7 +38,7 @@ const buildHotelShareUrl = (
 };
 
 const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
-  ({ hotels, listResetKey = 0 }) => {
+  ({ hotels }) => {
     const { hotel: bookingParams } = useHotelStore();
 
     const {
@@ -51,13 +50,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
       data: favouriteHotelsResponse,
       isLoading: isGetFavouritesLoading,
       refetch: refetchFavourites,
-    } = useGetHotelFavourites(hotels.length > 0);
-
-    const { visible, sentinelRef, hasMore } = useProgressiveList(
-      hotels,
-      24,
-      listResetKey,
-    );
+    } = useGetHotelFavourites();
 
     const [favorites, setFavorites] = useState<Record<string, boolean>>({});
     const [openShareModal, setOpenShareModal] = useState(false);
@@ -215,10 +208,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
       return (
         <>
           <Loader
-            show={
-              isAddFavouritePending ||
-              (isGetFavouritesLoading && favouriteHotelsResponse == null)
-            }
+            show={isAddFavouritePending || isGetFavouritesLoading}
             label={
               isGetFavouritesLoading
                 ? "Loading favourites..."
@@ -235,10 +225,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
     return (
       <>
         <Loader
-          show={
-            isAddFavouritePending ||
-            (isGetFavouritesLoading && favouriteHotelsResponse == null)
-          }
+          show={isAddFavouritePending || isGetFavouritesLoading}
           label={
             isGetFavouritesLoading
               ? "Loading favourites..."
@@ -249,23 +236,22 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
         <div className="min-h-screen">
           <div className="mx-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 lg:gap-x-8 lg:gap-y-8">
-              {visible.map((hotel, index) => (
-                <HotellGridCard
-                  key={hotel.hotelKey || index}
-                  hotel={hotel}
-                  isFavourite={!!favorites[hotel.hotelKey]}
-                  isFavouriteLoading={isAddFavouritePending}
-                  onToggleFavourite={() => handleToggleFavourite(hotel)}
-                  onShare={() => handleShareClick(hotel)}
-                />
+              {hotels.map((hotel, index) => (
+                <React.Fragment key={hotel.hotelKey || index}>
+                  <HotellGridCard
+                    hotel={hotel}
+                    isFavourite={!!favorites[hotel.hotelKey]}
+                    isFavouriteLoading={isAddFavouritePending}
+                    onToggleFavourite={() => handleToggleFavourite(hotel)}
+                    onShare={() => handleShareClick(hotel)}
+                  />
+                  {index === 1 && (
+                    <div className="col-span-full w-full">
+                      <HotelSearchSignInUpdatesBanner />
+                    </div>
+                  )}
+                </React.Fragment>
               ))}
-              {hasMore ? (
-                <div
-                  ref={sentinelRef}
-                  className="col-span-full h-10 w-full shrink-0"
-                  aria-hidden
-                />
-              ) : null}
             </div>
           </div>
         </div>

@@ -58,9 +58,8 @@ function buildFlightFromOffer(offerData: any) {
   const cabinMap: Record<string, string> = {
     Economy: "1",
     PremiumEconomy: "2",
-    First: "4",
     Business: "3",
-
+    First: "4",
   };
   const selectedCabinClassId = cabinMap[cabinClass] ?? "1";
   const fromOption = fromCode
@@ -84,11 +83,9 @@ function buildFlightFromOffer(offerData: any) {
 const FlightBooking = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const { setFlight } = useFlightStore();
   const hasPrefilledRef = useRef(false);
-  const didInitRef = useRef(false);
-  const ingestedOfferRef = useRef<string | number | null>(null);
   const initialOfferData =
     (location.state && (location.state as any)) ||
     (window.history.state && (window.history.state as any)) ||
@@ -107,9 +104,9 @@ const FlightBooking = () => {
   const [steps, setSteps] = useState<string[]>(() => {
     // Include Enhance step if enhanceAvailable
     if (enhanceAvailable) {
-      return ["Book", "Enhance", "Summary", "Pay", "E-ticket"];
+      return ["Book", "Enhance", "Review", "Pay", "E-ticket"];
     }
-    return ["Book", "Summary", "Pay", "E-ticket"];
+    return ["Book", "Review", "Pay", "E-ticket"];
   });
 
   // Check if this is a pending booking (skip to payment)
@@ -189,7 +186,7 @@ const FlightBooking = () => {
       passengers,
       reservationType: "TICKET",
       paymentDetails: {
-        paymentMode: "CR",
+        paymentMode: "CC",
       },
     };
   });
@@ -281,26 +278,10 @@ const FlightBooking = () => {
     }
   };
 
-  const getPassengerFieldValue = (obj: any, path: string) => {
-    const parts = path.split(".");
-    let cur = obj;
-    for (const key of parts) {
-      if (cur === undefined || cur === null) return undefined;
-      if (/^\d+$/.test(key)) {
-        cur = cur[Number(key)];
-      } else {
-        cur = cur[key];
-      }
-    }
-    return cur;
-  };
-
   const updatePassengerField = (index: number, path: string, value: any) => {
     setFlightBookingPayload((prev) => {
-      if (!prev?.passengers?.[index]) return prev;
-      const currentValue = getPassengerFieldValue(prev.passengers[index], path);
-      if (currentValue === value) return prev;
       const next = JSON.parse(JSON.stringify(prev)); // quick deep clone
+      if (!next.passengers[index]) return prev;
       setPassengerFlightInitialPayload(next.passengers[index], path, value);
       return next;
     });
@@ -356,8 +337,8 @@ const FlightBooking = () => {
   const handleFlightReservationBookingChange = (
     eOrPath:
       | React.ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >
+          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
       | string,
     maybeValue?: any,
   ) => {
@@ -402,7 +383,7 @@ const FlightBooking = () => {
     setFinalReservedFlightBookingData(payload);
   };
 
-  const reviewStepIndex = steps.indexOf("Summary");
+  const reviewStepIndex = steps.indexOf("Review");
   const payStepIndex = steps.indexOf("Pay");
   const eticketStepIndex = steps.indexOf("E-ticket");
   const enhanceStepIndex = steps.indexOf("Enhance");
@@ -530,13 +511,8 @@ const FlightBooking = () => {
     ancillarySearchData?.otherAncillaries;
 
   useEffect(() => {
-    // Do not call init APIs until user is authenticated
-    if (!isAuthenticated) return;
-    // React 18/19 StrictMode can mount effects twice in dev; guard to avoid duplicate API calls.
-    if (didInitRef.current) return;
-    didInitRef.current = true;
     init();
-  }, [isAuthenticated]);
+  }, []);
 
   useEffect(() => {
     if (offerData?.passengersForRequest && !isPendingBooking) {
@@ -556,7 +532,7 @@ const FlightBooking = () => {
     if (!steps.includes("Enhance")) {
       // Add Enhance step if not present
       const newSteps = [...steps];
-      const reviewIndex = newSteps.indexOf("Summary");
+      const reviewIndex = newSteps.indexOf("Review");
       if (reviewIndex >= 0) {
         newSteps.splice(reviewIndex, 0, "Enhance");
         setSteps(newSteps);
@@ -575,7 +551,7 @@ const FlightBooking = () => {
   const handleAncillaryCancel = () => {
     setShowAncillaryModal(false);
     // Skip to Review step
-    const reviewStep = steps.indexOf("Summary");
+    const reviewStep = steps.indexOf("Review");
     setCurrentStep(reviewStep >= 0 ? reviewStep : 1);
   };
 
@@ -590,9 +566,9 @@ const FlightBooking = () => {
         const userDetails =
           email || phoneNumber
             ? await RemoteUserService.getByIdentifier({
-              email: email || undefined,
-              phoneNumber: phoneNumber || undefined,
-            })
+                email: email || undefined,
+                phoneNumber: phoneNumber || undefined,
+              })
             : null;
 
         if (userDetails) {
@@ -608,13 +584,8 @@ const FlightBooking = () => {
   }, [user]);
 
   useEffect(() => {
-    // `user` object identity may change often; run at most once per offerId.
-    const offerId = offerData?.offerId;
-    if (isPendingBooking || !user || !offerId) return;
-    if (ingestedOfferRef.current === offerId) return;
-    ingestedOfferRef.current = offerId;
     ingestViewUserCountOnFlightOffer();
-  }, [isPendingBooking, offerData?.offerId, user?.email, user?.phone]);
+  }, [user]);
 
   return (
     <>
@@ -727,11 +698,11 @@ const FlightBooking = () => {
                   if (hasData) {
                     setShowAncillaryModal(true);
                   } else {
-                    const reviewStep = steps.indexOf("Summary");
+                    const reviewStep = steps.indexOf("Review");
                     setCurrentStep(reviewStep >= 0 ? reviewStep : 1);
                   }
                 } else {
-                  const reviewStep = steps.indexOf("Summary");
+                  const reviewStep = steps.indexOf("Review");
                   setCurrentStep(reviewStep >= 0 ? reviewStep : 1);
                 }
               }}

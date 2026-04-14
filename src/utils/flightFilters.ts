@@ -303,61 +303,6 @@ function applyTransitHoursFilter(oneWay: any[] = [], round: any[] = [], range?: 
     return { one: oneFiltered, round: roundFiltered };
 }
 
-/** Client-side filter for listings: `raw.detail.ancillaryDetailsAvailable` (see FlightBooking offer shape). */
-export type AncillaryFilterMode = "all" | "with" | "without";
-
-export function offerHasAncillaryDetailsAvailable(item: any): boolean {
-    if (!item) return false;
-    const d = item?.raw?.detail ?? item?.raw?.details;
-    return d?.ancillaryDetailsAvailable === true;
-}
-
-export function filterOffersByAncillaryMode<T extends any>(
-    list: T[] | undefined,
-    mode: AncillaryFilterMode,
-): T[] {
-    const arr = list || [];
-    if (mode === "all") return arr.slice();
-    if (mode === "with") return arr.filter((it) => offerHasAncillaryDetailsAvailable(it));
-    return arr.filter((it) => !offerHasAncillaryDetailsAvailable(it));
-}
-
-function segmentHasCheckedBaggage(seg: any): boolean {
-    const arr = seg?.baggageAllowance?.checkedInBaggage;
-    if (!Array.isArray(arr) || arr.length === 0) return false;
-    const first = arr[0];
-    if (!first) return false;
-    const v = first.value;
-    if (v === undefined || v === null) return false;
-    if (typeof v === "number") return v > 0;
-    const s = String(v).trim().toLowerCase();
-    if (s === "" || s === "0") return false;
-    return true;
-}
-
-/** True if any segment in `raw.journey` includes checked baggage allowance data. */
-export function offerHasCheckedBaggageIncluded(item: any): boolean {
-    const journeys = item?.raw?.journey;
-    if (!Array.isArray(journeys)) return false;
-    for (const j of journeys) {
-        const segs = j?.flightSegments;
-        if (!Array.isArray(segs)) continue;
-        for (const s of segs) {
-            if (segmentHasCheckedBaggage(s)) return true;
-        }
-    }
-    return false;
-}
-
-export function filterOffersByCheckedBaggage<T extends any>(
-    list: T[] | undefined,
-    onlyWithCheckedBaggage: boolean,
-): T[] {
-    const arr = list || [];
-    if (!onlyWithCheckedBaggage) return arr.slice();
-    return arr.filter((it) => offerHasCheckedBaggageIncluded(it));
-}
-
 export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 export async function callWithRetries<T>(
     fn: () => Promise<T>,

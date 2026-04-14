@@ -7,7 +7,6 @@ import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
 import { formatDate } from "../../utils/helpers";
 import { Checkbox } from "antd";
 import { useState } from "react";
-import LegalModal from "../common/LegalModal";
 
 const CardShell = ({
   title,
@@ -65,20 +64,8 @@ export default function HotelBookingReviewSection({
   currency = "AED",
   hotelBookingPayload,
 }: HotelBookingReviewSectionProps) {
-  const formatGuests = (count?: number) => {
-    if (!count || count <= 0) return "—";
-    return `${String(count).padStart(2, "0")} guest${count > 1 ? "s" : ""}`;
-  };
-
   const [isTermsChecked, setIsTermsChecked] = useState(false);
   const [showTermsError, setShowTermsError] = useState(false);
-  const [isCancellationChecked, setIsCancellationChecked] = useState(false);
-  const [showCancellationError, setShowCancellationError] = useState(false);
-  const [legalModal, setLegalModal] = useState<{
-    isOpen: boolean;
-    type: "terms" | "privacy" | "cancellation";
-  }>({ isOpen: false, type: "terms" });
-  const [openPrice, setOpenPrice] = useState(false);
 
   const roomsFromPayload = hotelBookingPayload?.rooms ?? [];
   const flatPassengers = roomsFromPayload.flatMap((room, roomIdx) =>
@@ -103,24 +90,6 @@ export default function HotelBookingReviewSection({
     if (date) return formatDate(date);
     return time || "—";
   })();
-
-  const continueToPayment = () => {
-    let hasError = false;
-
-    if (!isTermsChecked) {
-      setShowTermsError(true);
-      hasError = true;
-    }
-    if (!isCancellationChecked) {
-      setShowCancellationError(true);
-      hasError = true;
-    }
-    if (hasError) return;
-
-    if (typeof onNext === "function") {
-      onNext();
-    }
-  }
 
   return (
     <section className="mx-auto max-w-full px-10 flight-booking-section">
@@ -241,9 +210,8 @@ export default function HotelBookingReviewSection({
                       ).toFixed(2)}`
                       : "Free cancellation";
 
-                  const adults = Number(bookingInfo?.adults ?? 0) || 0;
-                  const children = Number(bookingInfo?.children ?? 0) || 0;
-                  const totalGuests = adults + children;
+                  const totalGuests =
+                    (bookingInfo?.adults ?? 0) + (bookingInfo?.children ?? 0);
 
                   return (
                     <div
@@ -274,7 +242,12 @@ export default function HotelBookingReviewSection({
                             Max no. of guests/room
                           </div>
                           <div className="text-[#0A0C0F] text-sm font-medium">
-                            {formatGuests(totalGuests)}
+                            {totalGuests > 0
+                              ? `${totalGuests
+                                .toString()
+                                .padStart(2, "0")} guest${totalGuests > 1 ? "s" : ""
+                              }`
+                              : "—"}
                           </div>
                         </div>
 
@@ -364,13 +337,7 @@ export default function HotelBookingReviewSection({
             currency={currency}
             hotelDetail={hotelDetail}
           />
-          <HotelPriceBreakdown
-            open={openPrice}
-            onToggleOpen={() => setOpenPrice((v) => !v)}
-            totalPrice={totalPrice}
-            currency={currency}
-            selectedRooms={selectedRooms}
-          />
+          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
           <div className="mt-2">
             <Checkbox
               checked={isTermsChecked}
@@ -383,55 +350,12 @@ export default function HotelBookingReviewSection({
               className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
             >
               <span className="font-medium text-sm leading-none tracking-normal align-middle">
-                I agree to the{" "}
-                <span
-                  className="text-[#5383DA] cursor-pointer hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setLegalModal({ isOpen: true, type: "terms" });
-                  }}
-                >
-                  Terms & Conditions
-                </span>{" "}
-                and Payment Rules and Regulations.
+                I agree to the Terms & Conditions and Payment Rules and Regulations.
               </span>
             </Checkbox>
             {showTermsError && (
               <p className="text-red-500 text-xs mt-1">
                 You must agree to the Terms & Conditions to proceed.
-              </p>
-            )}
-          </div>
-
-          <div className="mt-2">
-            <Checkbox
-              checked={isCancellationChecked}
-              onChange={(e) => {
-                setIsCancellationChecked(e.target.checked);
-                if (e.target.checked) {
-                  setShowCancellationError(false);
-                }
-              }}
-              className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
-            >
-              <span className="font-medium text-sm leading-none tracking-normal align-middle">
-                I have read and agree to the{" "}
-                <span
-                  className="text-[#5383DA] cursor-pointer hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setLegalModal({ isOpen: true, type: "cancellation" });
-                  }}
-                >
-                  Cancellation Policy
-                </span>.
-              </span>
-            </Checkbox>
-            {showCancellationError && (
-              <p className="text-red-500 text-xs mt-1">
-                You must agree to the Cancellation Policy to proceed.
               </p>
             )}
           </div>
@@ -446,17 +370,19 @@ export default function HotelBookingReviewSection({
           style={{
             background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
           }}
-          onClick={() => continueToPayment()}
+          onClick={() => {
+            if (!isTermsChecked) {
+              setShowTermsError(true);
+              return;
+            }
+            if (typeof onNext === "function") {
+              onNext();
+            }
+          }}
         >
           Continue to payment
         </Button>
       </div>
-
-      <LegalModal
-        isOpen={legalModal.isOpen}
-        onClose={() => setLegalModal((prev) => ({ ...prev, isOpen: false }))}
-        type={legalModal.type}
-      />
     </section>
   );
 }

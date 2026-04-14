@@ -5,7 +5,6 @@ import type { HotelFilters, SortOption } from "../../utils/hotelFilters";
 import {
   getActiveFilterCount,
   PROPERTY_TYPE_MAPPINGS,
-  canonicalRoomTypeLabel,
 } from "../../utils/hotelFilters";
 
 const { Panel } = Collapse;
@@ -31,7 +30,7 @@ const CountBadge: React.FC<{ count: number }> = ({ count }) => (
       color: "#3D495C",
       fontFamily: "Inter, sans-serif",
       fontSize: "12px",
-      fontWeight: 300,
+      fontWeight: 500,
       lineHeight: "100%",
       padding: "0 8px",
       flexShrink: 0,
@@ -40,10 +39,6 @@ const CountBadge: React.FC<{ count: number }> = ({ count }) => (
     {count.toLocaleString()}
   </span>
 );
-
-/** Long checkbox lists: cap height and show a vertical scrollbar when needed. */
-const FILTER_CHECKLIST_SCROLL =
-  "flex max-h-[min(280px,45vh)] flex-col gap-2 overflow-y-auto overscroll-y-contain pr-1 [-webkit-overflow-scrolling:touch]";
 
 const FilterCheckboxRow: React.FC<{
   label: string;
@@ -79,13 +74,13 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
   hotels = [],
 }) => {
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const [pointOfInterest, setPointOfInterest] = useState("");
 
   const activeFilterCount = getActiveFilterCount(filters);
 
   const {
     propertyFacilities,
     roomFacilities,
-    roomTypes,
     meals,
     propertyTypes,
     cancellationPolicies,
@@ -97,9 +92,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     const propertyFacCountMap: Record<string, number> = {};
     const roomFacCountMap: Record<string, number> = {};
     const mealCountMap: Record<string, number> = {};
-    const roomTypeCountMap: Record<string, number> = {};
-    /** Lowercase key → display label (first seen spelling from API). */
-    const roomTypeLabelByKey: Record<string, string> = {};
     const propertyTypeCountMap: Record<string, number> = {};
     const cancellationCountMap: Record<string, number> = {};
 
@@ -125,15 +117,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       }
 
       if (hotel?.rooms) {
-        const roomTypesSeenThisHotel = new Set<string>();
         hotel.rooms.forEach((room: any) => {
-          const rType = canonicalRoomTypeLabel(room?.roomTypeName || "");
-          if (rType) {
-            const k = rType.toLowerCase();
-            if (!roomTypeLabelByKey[k]) roomTypeLabelByKey[k] = rType;
-            roomTypesSeenThisHotel.add(k);
-          }
-
           if (room?.roomFacilities) {
             room.roomFacilities.forEach((facility: any) => {
               const name = facility?.name || facility;
@@ -192,11 +176,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
             }
           }
         });
-
-        roomTypesSeenThisHotel.forEach((k) => {
-          const label = roomTypeLabelByKey[k];
-          roomTypeCountMap[label] = (roomTypeCountMap[label] ?? 0) + 1;
-        });
       }
     });
 
@@ -211,9 +190,6 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       roomFacilities: roomFacilitiesArray
         .sort()
         .map((name) => ({ name, count: roomFacCountMap[name] ?? 0 })),
-      roomTypes: Object.entries(roomTypeCountMap)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([name, count]) => ({ name, count })),
       meals: Array.from(mealsSet)
         .sort()
         .map((name) => ({ name, count: mealCountMap[name] ?? 0 })),
@@ -266,11 +242,11 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
       ratings: [],
       propertyFacilities: [],
       roomFacilities: [],
-      roomTypes: [],
       bedPreferences: [],
       meals: [],
       cancellationPolicy: [],
     });
+    setPointOfInterest("");
   }, [onFiltersChange]);
 
   const sortOptions = [
@@ -292,7 +268,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     "Please Select";
 
   return (
-    <div className="filterSectionStyle hotel-search-filter-root">
+    <div className="filterSectionStyle">
       <div className="relative">
         <button
           onClick={() => setIsSortOpen(!isSortOpen)}
@@ -308,7 +284,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
             style={{
               fontFamily: "Inter, sans-serif",
               fontSize: "12px",
-              fontWeight: 300,
+              fontWeight: 400,
               color: "#3D495C",
               lineHeight: "100%",
               marginBottom: "6px",
@@ -321,7 +297,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               style={{
                 fontFamily: "Inter, sans-serif",
                 fontSize: "14px",
-                fontWeight: 300,
+                fontWeight: 500,
                 color: "#0A0C0F",
                 lineHeight: "100%",
               }}
@@ -360,7 +336,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                   }`}
               >
                 <span
-                  style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 300 }}
+                  style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 400 }}
                 >
                   {option.label}
                 </span>
@@ -384,7 +360,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         )}
       </div>
 
-      <div className="filterStyle max-h-[calc(100vh-40vh)] overflow-y-auto overflow-x-hidden overscroll-y-contain pr-1 pb-14 [scrollbar-gutter:stable]">
+      <div className="filterStyle max-h-[calc(100vh-40vh)] overflow-y-auto overflow-x-hidden scrollbar-none [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         <div className="filterHeading">
           <div>
             <h4>
@@ -439,7 +415,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                 borderRadius: "16px",
                 border: "1px solid #C2CAD6",
                 fontFamily: "Inter, sans-serif",
-                fontWeight: 300,
+                fontWeight: 500,
                 fontSize: "16px",
                 color: "#0A0C0F",
                 width: "100%",
@@ -450,7 +426,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           </Panel>
         </CustomCollapse>
 
-        {/* <CustomCollapse>
+        <CustomCollapse>
           <Panel header="Point of interest" key="point_interest">
             <Input
               allowClear={{
@@ -492,8 +468,8 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               }}
             />
           </Panel>
-        </CustomCollapse> */}
-{/* 
+        </CustomCollapse>
+
         <CustomCollapse>
           <Panel header="Previously used filters" key="previously">
             <div className="flex flex-col gap-[10px]">
@@ -504,12 +480,12 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               </Checkbox>
             </div>
           </Panel>
-        </CustomCollapse> */}
+        </CustomCollapse>
 
         {propertyTypes.length > 0 && (
           <CustomCollapse>
             <Panel header="Property type" key="property">
-              <div className={FILTER_CHECKLIST_SCROLL}>
+              <div className="flex flex-col gap-2">
                 {propertyTypes.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -529,7 +505,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {propertyFacilities.length > 0 && (
           <CustomCollapse>
             <Panel header="Property facilities" key="facilities">
-              <div className={FILTER_CHECKLIST_SCROLL}>
+              <div className="flex flex-col gap-2">
                 {propertyFacilities.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -549,7 +525,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {roomFacilities.length > 0 && (
           <CustomCollapse>
             <Panel header="Room facilities" key="room_facilities">
-              <div className={FILTER_CHECKLIST_SCROLL}>
+              <div className="flex flex-col gap-2">
                 {roomFacilities.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -566,30 +542,10 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           </CustomCollapse>
         )}
 
-        {roomTypes.length > 0 && (
-          <CustomCollapse>
-            <Panel header="Room type" key="room_type">
-              <div className={FILTER_CHECKLIST_SCROLL}>
-                {roomTypes.map(({ name, count }) => (
-                  <FilterCheckboxRow
-                    key={name}
-                    label={name}
-                    count={count}
-                    checked={filters.roomTypes.includes(name)}
-                    onChange={(checked) =>
-                      handleFilterChange("roomTypes", name, checked)
-                    }
-                  />
-                ))}
-              </div>
-            </Panel>
-          </CustomCollapse>
-        )}
-
         {meals.length > 0 && (
           <CustomCollapse>
             <Panel header="Meals" key="meals">
-              <div className={FILTER_CHECKLIST_SCROLL}>
+              <div className="flex flex-col gap-2">
                 {meals.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}
@@ -609,7 +565,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         {cancellationPolicies.length > 0 && (
           <CustomCollapse>
             <Panel header="Cancellation policy" key="cancellation">
-              <div className={FILTER_CHECKLIST_SCROLL}>
+              <div className="flex flex-col gap-2">
                 {cancellationPolicies.map(({ name, count }) => (
                   <FilterCheckboxRow
                     key={name}

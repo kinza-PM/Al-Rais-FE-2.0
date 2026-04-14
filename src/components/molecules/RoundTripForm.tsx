@@ -8,7 +8,6 @@ import type {
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
 import PassengerCabinDropdown from "../atoms/PassengerCabinDropdown";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
-import { sameCalendarDate } from "../../utils/helpers";
 
 type Props = {
   countries?: AirportOption[];
@@ -65,14 +64,14 @@ const RoundTripForm: React.FC<Props> = ({
   toCode = "",
   departDateValue = null,
   arrivalDateValue = null,
-  onChangeFrom = () => { },
-  onChangeTo = () => { },
+  onChangeFrom = () => {},
+  onChangeTo = () => {},
   passengerSchema,
   loadingPassengers = false,
   cabinClasses = [],
   loadingCabinClasses = false,
   selectedCabinClassId = "",
-  onChangeCabinClassId = () => { },
+  onChangeCabinClassId = () => {},
   onChangePassengers,
   onChangeDepartDate,
   onChangeArrivalDate,
@@ -83,7 +82,7 @@ const RoundTripForm: React.FC<Props> = ({
   passengersError = "",
   cabinClassError = "",
   countriesHasMore = false,
-  countriesFetchNext = () => { },
+  countriesFetchNext = () => {},
   countriesLoadingMore = false,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
@@ -94,21 +93,6 @@ const RoundTripForm: React.FC<Props> = ({
   const [arrivalDate, setArrivalDate] = React.useState<Date | null>(
     arrivalDateValue,
   );
-
-  React.useEffect(() => {
-    const next = departDateValue ?? null;
-    setDepartDate((prev) =>
-      sameCalendarDate(prev, next) ? prev : next,
-    );
-  }, [departDateValue]);
-
-  React.useEffect(() => {
-    const next = arrivalDateValue ?? null;
-    setArrivalDate((prev) =>
-      sameCalendarDate(prev, next) ? prev : next,
-    );
-  }, [arrivalDateValue]);
-
   const [, setPaxCounts] = React.useState<{ [k: string]: number }>({});
   const passengerRequestOrder = React.useRef<string[]>(
     ((passengerSchema as any[]) || []).map((s: any) => s.key),
@@ -124,6 +108,7 @@ const RoundTripForm: React.FC<Props> = ({
     },
     [onChangePassengers],
   );
+  console.log(passengersError, cabinClassError);
   return (
     <div className="flex flex-col md:flex-row items-stretch md:items-end gap-4">
       <TravelRoutePicker
@@ -255,8 +240,9 @@ const RoundTripForm: React.FC<Props> = ({
         )}
         {cabinClassError && (
           <p
-            className={`absolute top-full left-0 text-[12px] text-[#E65959] ${passengersError ? "mt-6" : "mt-1"
-              }`}
+            className={`absolute top-full left-0 text-[12px] text-[#E65959] ${
+              passengersError ? "mt-6" : "mt-1"
+            }`}
           >
             {cabinClassError}
           </p>

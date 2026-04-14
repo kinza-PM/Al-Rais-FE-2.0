@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PayFortUtils } from "../utils/payfort";
 import payfortConfig from "../payfort-export";
-import { VITE_PAYFORT_PAYMENT_PAGE_URL } from "../config/publicEnv";
 
 type TokenPayload = any;
 
@@ -16,7 +15,7 @@ type InitiateOptions = {
 
 export function usePayFortTokenization() {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
-  const listenerRef = useRef<((e: MessageEvent) => void) | null>(null);
+  const listenerRef = useRef<(e: MessageEvent) => void | null>(null);
   const cleanupTimerRef = useRef<number | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -54,32 +53,13 @@ export function usePayFortTokenization() {
 
       return new Promise<TokenPayload>((resolve, reject) => {
         try {
-          const access_code = payfortConfig.access_code ?? "";
-          const merchant_identifier = payfortConfig.merchant_identifier ?? "";
-          const sha_request_phrase = payfortConfig.sha_request_phrase ?? "";
-          const sha_response_phrase = payfortConfig.sha_response_phrase ?? "";
-
-          if (
-            !access_code ||
-            !merchant_identifier ||
-            !sha_request_phrase ||
-            !sha_response_phrase
-          ) {
-            const msg =
-              "PayFort is not configured (missing VITE_PAYFORT_* env vars).";
-            setError(msg);
-            setIsLoading(false);
-            reject(new Error(msg));
-            return;
-          }
-
           const merchant_reference = PayFortUtils.generateMerchantReference();
           const expectedMerchantReference = merchant_reference;
           let resolved = false;
           const params: Record<string, string> = {
             service_command: "TOKENIZATION",
-            access_code,
-            merchant_identifier,
+            access_code: payfortConfig.access_code,
+            merchant_identifier: payfortConfig.merchant_identifier,
             merchant_reference,
             language: "en",
             return_url: opts.returnUrl ?? (payfortConfig.RETURN_URL as string),
@@ -87,7 +67,7 @@ export function usePayFortTokenization() {
 
           const signature = PayFortUtils.generateSignature(
             params,
-            sha_request_phrase,
+            payfortConfig.sha_request_phrase
           );
 
           const fields: Record<string, string> = {
@@ -118,7 +98,7 @@ export function usePayFortTokenization() {
           // create form
           const form = document.createElement("form");
           form.method = "POST";
-          form.action = VITE_PAYFORT_PAYMENT_PAGE_URL;
+          form.action = "https://sbcheckout.payfort.com/FortAPI/paymentPage";
           form.target = "payfortHiddenFrame";
 
           Object.keys(fields).forEach((k) => {
@@ -143,12 +123,12 @@ export function usePayFortTokenization() {
               ) {
                 return;
               }
-              // console.log("payload", payload);
+
               // Verify signature if provided in payload
               if (payload && payload.signature) {
                 const ok = PayFortUtils.verifyResponseSignature(
                   payload,
-                  sha_response_phrase,
+                  payfortConfig.sha_response_phrase
                 );
                 if (!ok) {
                   const msg = "PayFort response signature verification failed.";

@@ -7,14 +7,12 @@ type HotelSummaryCardProps = {
   paymentPage?: boolean;
   hotelDetail?: any;
   bookingInfo?: any;
-  selectedRooms?: any[];
 };
 
 export default function HotelSummaryCard({
   paymentPage = false,
   hotelDetail,
   bookingInfo,
-  selectedRooms = [],
 }: HotelSummaryCardProps) {
   // Get first 5 images from hotel detail, fallback to default images
   const displayImages = hotelDetail?.images
@@ -36,50 +34,6 @@ export default function HotelSummaryCard({
     : hotelDetail?.city && hotelDetail?.country
       ? `${hotelDetail.city}, ${hotelDetail.country}`
       : "";
-
-  // const formatGuests = (count?: number) => {
-  //   if (!count || count <= 0) return "—";
-  //   return `${String(count).padStart(2, "0")} guest${count > 1 ? "s" : ""}`;
-  // };
-
-  const adults = Number(bookingInfo?.adults ?? 0) || 0;
-  const children = Number(bookingInfo?.children ?? 0) || 0;
-  const totalGuests = adults + children;
-  const occupancyText =
-    totalGuests > 0
-      ? children > 0
-        ? `${String(adults).padStart(2, "0")} adult${
-            adults === 1 ? "" : "s"
-          }, ${String(children).padStart(2, "0")} child${
-            children === 1 ? "" : "ren"
-          }`
-        : `${String(adults).padStart(2, "0")} adult${adults === 1 ? "" : "s"}`
-      : "—";
-
-  const roomSummaries = (selectedRooms ?? [])
-    .filter(Boolean)
-    .map((sr: any, idx: number) => {
-      const room = sr?.room ?? {};
-      const ratePlan = room?.ratePlan ?? {};
-      const roomType = room?.roomTypeName || room?.name || `Room ${idx + 1}`;
-      const meal = ratePlan?.meal || ratePlan?.boardType || "";
-      const refundability = ratePlan?.cancelPolicyIndicator || "";
-      const maxGuests =
-        room?.maxGuests ??
-        room?.occupancy?.max ??
-        room?.occupancy?.maxGuests ??
-        undefined;
-      const count = sr?.count ?? 1;
-
-      return {
-        key: sr?.roomKey || `${idx}`,
-        title: roomType,
-        meal,
-        refundability,
-        maxGuests,
-        count,
-      };
-    });
 
   return (
     <div>
@@ -139,84 +93,6 @@ export default function HotelSummaryCard({
               borderClass="-mx-2"
               bookingInfo={bookingInfo}
             />
-
-            {roomSummaries.length > 0 && (
-              <>
-                <div className="border-t border-[#E4E4E7] mt-4 -mx-2"></div>
-                <div className="px-2 pt-4 pb-2">
-                  <p className="text-xs text-[#3D495C]">Room details</p>
-                  <div className="mt-2 space-y-3">
-                    {roomSummaries.map((r: any, i: number) => {
-                      const mealText = r.meal ? String(r.meal) : "—";
-                      const refundText = r.refundability
-                        ? String(r.refundability)
-                        : "—";
-                      // const maxGuestsText =
-                      //   r.maxGuests !== undefined && r.maxGuests !== null && r.maxGuests !== ""
-                      //     ? formatGuests(Number(r.maxGuests))
-                      //     : "—";
-                      const roomsQtyText =
-                        r.count && Number(r.count) > 0
-                          ? `${String(Number(r.count)).padStart(2, "0")} room${
-                              Number(r.count) > 1 ? "s" : ""
-                            }`
-                          : "—";
-
-                      return (
-                        <div
-                          key={r.key ?? i}
-                          className=""
-                        >
-                          <p className="text-sm font-semibold text-[#0A0C0F]">
-                            {r.title || "Room"}
-                          </p>
-                          <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-2">
-                            <div>
-                              <p className="text-[11px] text-[#3D495C]">Rooms</p>
-                              <p className="text-sm font-medium text-[#0A0C0F]">
-                                {roomsQtyText}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] text-[#3D495C]">
-                                Meal plan
-                              </p>
-                              <p className="text-sm font-medium text-[#0A0C0F]">
-                                {mealText}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-[11px] text-[#3D495C]">
-                                Refundability
-                              </p>
-                              <p className="text-sm font-medium text-[#0A0C0F]">
-                                {refundText}
-                              </p>
-                            </div>
-                            {/* <div>
-                              <p className="text-[11px] text-[#3D495C]">
-                                Max guests
-                              </p>
-                              <p className="text-sm font-medium text-[#0A0C0F]">
-                                {maxGuestsText}
-                              </p>
-                            </div> */}
-                            <div>
-                              <p className="text-[11px] text-[#3D495C]">
-                                Occupancy
-                              </p>
-                              <p className="text-sm font-medium text-[#0A0C0F]">
-                                {occupancyText}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            )}
           </>
         )}
       </div>

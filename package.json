@@ -4,11 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --mode development",
-    "qa": "vite --mode qa",
-    "build": "tsc -b && vite build --mode qa",
-    "build:dev": "tsc -b && vite build --mode dev",
-    "build:qa": "tsc -b && vite build --mode qa",
+    "dev": "vite",
+    "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -41,17 +38,13 @@
     "zustand": "^5.0.7"
   },
   "devDependencies": {
-    "@aws-sdk/credential-providers": "^3.1018.0",
     "@eslint/js": "^9.29.0",
-    "@types/aws4": "^1.11.6",
     "@types/crypto-js": "^4.2.2",
     "@types/jspdf": "^1.3.3",
     "@types/leaflet": "^1.9.20",
-    "@types/node": "^25.5.2",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",
-    "aws4": "^1.13.2",
     "eslint": "^9.29.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",

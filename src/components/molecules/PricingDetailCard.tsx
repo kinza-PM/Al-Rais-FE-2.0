@@ -90,11 +90,6 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
   const rowHeightClass = getHeightClass(maxSegs);
   const fixedHeightClass = "min-h-[72.8px] flex items-center";
 
-  const displayOrNoDetail = (v: any) => {
-    const s = (v ?? "").toString().trim();
-    return s && s !== "—" ? s : "No detail available";
-  };
-
   const renderFeature = (plan: any, featureKey: string) => {
     const segs = Array.isArray(plan?.segments) ? plan.segments : null;
     const showRouteLabel = segs && segs.length > 1;
@@ -127,7 +122,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                     : "not-included"
                 }
               />
-              <p style={{ margin: 0 }}>{displayOrNoDetail(s?.[featureKey])}</p>
+              <p style={{ margin: 0 }}>{s[featureKey] ?? "—"}</p>
             </div>
           ))}
         </div>
@@ -144,7 +139,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
           }
           alt=""
         />
-        <p>{displayOrNoDetail(plan?.[featureKey])}</p>
+        <p>{plan?.[featureKey] ?? "—"}</p>
       </div>
     );
 
@@ -233,9 +228,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                           }}
                         >
                           <p>
-                            {plan.price != null
-                              ? `AED ${Number(plan.price).toLocaleString()}`
-                              : "No detail available"}
+                            {plan.price != null ? `$${plan.price}` : "—"}
                             <span>/per person</span>
                           </p>
 

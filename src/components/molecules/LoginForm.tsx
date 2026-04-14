@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Input from "../atoms/Input";
 import { useAuth } from "../../features/auth/hooks/useAuth";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useNetworkStatus } from "../../context/NetworkStatusContext";
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
@@ -24,7 +24,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onLoginFailed,
   onClose,
 }) => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -484,27 +483,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
 
         <p className="mt-6 text-xs text-center text-[#3D495C]">
           By continuing, you agree to our{" "}
-          <button
-            type="button"
-            className="underline text-[#5383DA] font-medium hover:no-underline"
-            onClick={() => {
-              onClose?.();
-              navigate("/terms-of-services");
-            }}
-          >
+          <a href="#" className="underline text-[#5383DA] font-medium">
             Terms
-          </button>{" "}
+          </a>{" "}
           and{" "}
-          <button
-            type="button"
-            className="underline text-[#5383DA] font-medium hover:no-underline"
-            onClick={() => {
-              onClose?.();
-              navigate("/privacy-policy");
-            }}
-          >
+          <a href="#" className="underline text-[#5383DA] font-medium">
             Privacy policy
-          </button>
+          </a>
         </p>
       </div>
     </div>

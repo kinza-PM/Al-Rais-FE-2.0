@@ -1020,10 +1020,6 @@ const SignupForm: React.FC<SignupFormProps> = ({
                   type="button"
                   className="hover:underline font-medium"
                   style={{ color: "#5383DA" }}
-                  onClick={() => {
-                    if (onClose) onClose();
-                    navigate("/terms-of-services");
-                  }}
                 >
                   Terms
                 </button>{" "}
@@ -1031,10 +1027,6 @@ const SignupForm: React.FC<SignupFormProps> = ({
                 <button
                   type="button"
                   className="hover:underline font-medium"
-                  onClick={() => {
-                    if (onClose) onClose();
-                    navigate("/privacy-policy");
-                  }}
                   style={{ color: "#5383DA" }}
                 >
                   Privacy policy
