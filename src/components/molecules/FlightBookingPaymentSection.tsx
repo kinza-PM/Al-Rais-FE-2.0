@@ -51,6 +51,7 @@ import CardOverlaySearchableDropdown from "../common/CardOverlaySearchableDropdo
 import type { CountryOption } from "../../features/flights/types";
 import Loader from "../atoms/Loader";
 import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
+import LegalModal from "../common/LegalModal";
 
 type PaymentMethod = "card" | "apple" | "google";
 
@@ -99,6 +100,10 @@ export default function FlightBookingPaymentSection({
   //retrieve flight booking
   const [isPolling, setIsPolling] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [legalModal, setLegalModal] = useState<{
+    isOpen: boolean;
+    type: "terms" | "privacy";
+  }>({ isOpen: false, type: "terms" });
 
   const [cardDetails, setCardDetails] = useState({
     number: "",
@@ -969,10 +974,28 @@ export default function FlightBookingPaymentSection({
           </Button>
 
           <div className="mt-6 text-center text-[12px] text-[#3D495C]">
-            Secure payments by Al Rais • Terms • Privacy
+            Secure payments by Al Rais •{" "}
+            <span
+              className="cursor-pointer hover:text-[#2351A3] hover:underline"
+              onClick={() => setLegalModal({ isOpen: true, type: "terms" })}
+            >
+              Terms
+            </span>{" "}
+            •{" "}
+            <span
+              className="cursor-pointer hover:text-[#2351A3] hover:underline"
+              onClick={() => setLegalModal({ isOpen: true, type: "privacy" })}
+            >
+              Privacy
+            </span>
           </div>
         </div>
       </div>
+      <LegalModal
+        isOpen={legalModal.isOpen}
+        onClose={() => setLegalModal((prev) => ({ ...prev, isOpen: false }))}
+        type={legalModal.type}
+      />
     </section>
   );
 }

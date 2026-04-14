@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { User, UserSession } from '../types';
 
 interface LoadingState {
@@ -29,45 +29,46 @@ export const useAuthState = () => {
   // Use ref to track if auth check has completed
   const authCheckCompleted = useRef(false);
 
-  // Helper functions to update state
-  const updateLoading = (key: keyof LoadingState, value: boolean) => {
-    setLoading(prev => ({ ...prev, [key]: value }));
-  };
+  // Stable identities — these are listed in useEffect deps across auth hooks; inline
+  // functions caused the session init effect to re-run every render and flood /users.
+  const updateLoading = useCallback((key: keyof LoadingState, value: boolean) => {
+    setLoading((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
-  const clearError = () => setError(null);
+  const clearError = useCallback(() => setError(null), []);
 
-  const setAuthenticatedState = (userData: User) => {
+  const setAuthenticatedState = useCallback((userData: User) => {
     setUser(userData);
     setIsAuthenticated(true);
     setIsGuest(false);
-  };
+  }, []);
 
-  const resetAuthState = () => {
+  const resetAuthState = useCallback(() => {
     setUser(null);
     setSession(null);
     setIsAuthenticated(false);
     setIsGuest(false);
     setError(null);
-  };
+  }, []);
 
-  const setGuestState = (userData: User, sessionData: UserSession) => {
+  const setGuestState = useCallback((userData: User, sessionData: UserSession) => {
     setUser(userData);
     setSession(sessionData);
     setIsGuest(true);
     setIsAuthenticated(false);
-  };
+  }, []);
 
-  const setInitializationComplete = () => {
+  const setInitializationComplete = useCallback(() => {
     setIsInitializing(false);
-  };
+  }, []);
 
-  const markAuthCheckCompleted = () => {
+  const markAuthCheckCompleted = useCallback(() => {
     authCheckCompleted.current = true;
-  };
+  }, []);
 
-  const resetAuthCheckCompleted = () => {
+  const resetAuthCheckCompleted = useCallback(() => {
     authCheckCompleted.current = false;
-  };
+  }, []);
 
   return {
     // State

@@ -1,11 +1,16 @@
-import React, { useMemo, useEffect, useRef } from "react";
+import React, {
+  useMemo,
+  useEffect,
+  useRef,
+  useLayoutEffect,
+  useState,
+  useCallback,
+} from "react";
 
 import "../../assets/css/travel.css";
 import Info from "../../assets/svgs/info-black.svg";
 import { Grid, Drawer, Button } from "antd";
 import CustomButton from "../common/CustomButton";
-
-import { useState, useCallback } from "react";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 
 import type { PassengerSchema } from "../../features/flights/types";
@@ -76,14 +81,25 @@ const HotelSearchListing: React.FC = () => {
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
 
-  const {
-    hotel,
-    setHotel,
-    hotelView,
-    setHotelView,
-    setHotelListingFilters,
-    setHotelListingSortOption,
-  } = useHotelStore();
+  const hotelPageWrapRef = useRef<HTMLDivElement>(null);
+  const hotelSearchFormStickyRef = useRef<HTMLDivElement>(null);
+
+  /** Keeps sidebar `position: sticky` below the sticky search card (same idea as flight search). */
+  useLayoutEffect(() => {
+    const form = hotelSearchFormStickyRef.current;
+    const wrap = hotelPageWrapRef.current;
+    if (!form || !wrap) return;
+    const syncHeight = () => {
+      const h = Math.ceil(form.getBoundingClientRect().height);
+      wrap.style.setProperty("--hotel-search-sticky-h", `${h}px`);
+    };
+    syncHeight();
+    const ro = new ResizeObserver(syncHeight);
+    ro.observe(form);
+    return () => ro.disconnect();
+  }, []);
+
+  const { hotel, setHotel, hotelView, setHotelView } = useHotelStore();
 
   const { passengers } = useMasterListings({
     include: ["passengers"],
@@ -126,23 +142,22 @@ const HotelSearchListing: React.FC = () => {
   const [validationError, setValidationError] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
   const [hotelSearchResults, setHotelSearchResults] = useState<any[]>([]);
+  const [hotelResultsSerial, setHotelResultsSerial] = useState(0);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Filter and sort state (persist across home ↔ listing via store)
-  const [filters, setFilters] = useState<HotelFilters>(() =>
-    cloneHotelListingFilters(useHotelStore.getState().hotelListingFilters),
-  );
-  const [sortOption, setSortOption] = useState<SortOption>(
-    () => useHotelStore.getState().hotelListingSortOption,
-  );
-
-  useEffect(() => {
-    setHotelListingFilters(cloneHotelListingFilters(filters));
-  }, [filters, setHotelListingFilters]);
-
-  useEffect(() => {
-    setHotelListingSortOption(sortOption);
-  }, [sortOption, setHotelListingSortOption]);
+  // Filter and sort state
+  const [filters, setFilters] = useState<HotelFilters>({
+    hotelName: "",
+    propertyTypes: [],
+    ratings: [],
+    propertyFacilities: [],
+    roomFacilities: [],
+    roomTypes: [],
+    bedPreferences: [],
+    meals: [],
+    cancellationPolicy: [],
+  });
+  const [sortOption, setSortOption] = useState<SortOption>("");
 
   const { data: countriesOptions, isLoading: isCountriesLoading } =
     useCountriesOptions();
@@ -336,6 +351,7 @@ const HotelSearchListing: React.FC = () => {
         }));
 
         setHotelSearchResults(formattedHotels);
+        setHotelResultsSerial((s) => s + 1);
 
         // Sync store with current search params so ListView passes correct pax when navigating
         setHotel({
@@ -352,12 +368,14 @@ const HotelSearchListing: React.FC = () => {
         });
       } else {
         setHotelSearchResults([]);
+        setHotelResultsSerial((s) => s + 1);
       }
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       // console.log("hotel search api error------------", err);
       setApiError(err);
       setHotelSearchResults([]);
+      setHotelResultsSerial((s) => s + 1);
     }
   }, [searchState, validateForm, mutateAsync, paxData, childAges, setHotel]);
 
@@ -429,8 +447,14 @@ const HotelSearchListing: React.FC = () => {
       />
       <div className="topHeaderSetting"></div>
 
-      <div className="flightDetailTemplateWrap hotel-search-listing-page">
-        <div className="bottomHeaderSetting hotelSearchFilterCard">
+      <div
+        ref={hotelPageWrapRef}
+        className="flightDetailTemplateWrap hotel-search-listing-page"
+      >
+        <div
+          ref={hotelSearchFormStickyRef}
+          className="bottomHeaderSetting hotelSearchFilterCard hotel-search-form-sticky"
+        >
           {/* Grid: Row 1 (View, Country, City, Dates) | Row 2 (Nationality, Travellers, Star Rating, Search) - widths aligned */}
           <div className="hotel-filter-grid">
             <div className="hotel-filter-view w-full min-w-0">
@@ -622,6 +646,7 @@ const HotelSearchListing: React.FC = () => {
               </CustomButton>
             </div>
           </div>
+          <div className="hotel-search-divider" />
         </div>
 
         {!screens.lg && (
@@ -703,12 +728,14 @@ const HotelSearchListing: React.FC = () => {
                     <HotelSearchListView
                       key="listview"
                       hotels={filteredAndSortedHotels}
+                      listResetKey={hotelResultsSerial}
                     />
                   )}
                   {hotelView === "gridview" && (
                     <HotelSearchGridView
                       key="gridview"
                       hotels={filteredAndSortedHotels}
+                      listResetKey={hotelResultsSerial}
                     />
                   )}
                   {hotelView === "mapview" && (

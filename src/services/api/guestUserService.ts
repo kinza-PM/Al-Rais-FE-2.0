@@ -8,33 +8,47 @@ import type {
 } from "../../types/GuestUserTypes";
 
 // -- Functional Methods --
+
+/** Coalesce concurrent guest creation — prevents request storms if init runs in parallel. */
+let createGuestUserInFlight: Promise<CreateUserResponse | null> | null = null;
+
 export async function createGuestUser(): Promise<CreateUserResponse | null> {
-  try {
-    const response = await ApiClient.post<CreateUserResponse>("/users");
-
-    if (response.success && response.data) {
-      const { user, session } = response.data;
-
-      LocalStorageService.setUserId(user.id);
-
-      const sessionId = session.session_id || session.id;
-      if (sessionId) LocalStorageService.setSessionId(sessionId);
-
-      LocalStorageService.setUserData(user);
-      LocalStorageService.setSessionData(session);
-
-      return response.data;
-    } else {
-      console.error(
-        "GuestUserService: Failed to create guest user:",
-        response.error
-      );
-      return null;
-    }
-  } catch (error) {
-    console.error("GuestUserService: Error creating guest user:", error);
-    return null;
+  if (createGuestUserInFlight) {
+    return createGuestUserInFlight;
   }
+
+  createGuestUserInFlight = (async () => {
+    try {
+      const response = await ApiClient.post<CreateUserResponse>("/users");
+
+      if (response.success && response.data) {
+        const { user, session } = response.data;
+
+        LocalStorageService.setUserId(user.id);
+
+        const sessionId = session.session_id || session.id;
+        if (sessionId) LocalStorageService.setSessionId(sessionId);
+
+        LocalStorageService.setUserData(user);
+        LocalStorageService.setSessionData(session);
+
+        return response.data;
+      } else {
+        console.error(
+          "GuestUserService: Failed to create guest user:",
+          response.error
+        );
+        return null;
+      }
+    } catch (error) {
+      console.error("GuestUserService: Error creating guest user:", error);
+      return null;
+    } finally {
+      createGuestUserInFlight = null;
+    }
+  })();
+
+  return createGuestUserInFlight;
 }
 
 export function getGuestUser(): GuestUser | null {

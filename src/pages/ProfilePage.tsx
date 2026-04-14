@@ -5,11 +5,13 @@ import LoyaltyPrograms from "../components/molecules/LoyaltyPrograms";
 import ProfileFavouriteHotels from "../components/molecules/ProfileFavouriteHotels";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import toast from "react-hot-toast";
-import { Form, Input, Modal } from "antd";
+import { DatePicker, Form, Input, Modal, Select } from "antd";
 import * as RemoteUserService from "../services/api/remoteUserService";
 import { useUserProfileStore } from "../store/userProfileStore";
+import ProfileBasicsTab from "../components/molecules/ProfileBasicsTab";
+import ProfileSavedTravelersTab from "../components/molecules/ProfileSavedTravelersTab";
 
-const tabs = ["Basics", "Favorites", "Air miles", "Payments", "Account"] as const;
+const tabs = ["Basics", "Favorites", "Air miles", "Payments", "Account", "Saved Travelers"] as const;
 
 const ProfilePage: React.FC = () => {
   const [active, setActive] = useState<(typeof tabs)[number]>("Favorites");
@@ -31,10 +33,23 @@ const ProfilePage: React.FC = () => {
   const displayPhone = remoteUser?.phoneNumber || user?.phone || "";
 
   const openEdit = () => {
+    const fullName = remoteUser?.name || user?.full_name || user?.name || "";
+    const parts = fullName.split(/\s+/).filter(Boolean);
+    const firstName = parts[0] ?? "";
+    const lastName = parts.slice(1).join(" ");
+    const genderRaw = String((remoteUser as any)?.gender ?? "")
+      .trim()
+      .toUpperCase();
     editForm.setFieldsValue({
-      name: remoteUser?.name || user?.full_name || user?.name || "",
+      firstName,
+      lastName,
+      dob: null,
       email: remoteUser?.email || user?.email || "",
       phoneNumber: remoteUser?.phoneNumber || user?.phone || "",
+      gender: genderRaw === "F" ? "female" : "male",
+      passportNumber: "",
+      issuingCountry: "United Arab Emirates",
+      expiryDate: null,
     });
     setEditOpen(true);
   };
@@ -153,7 +168,7 @@ const ProfilePage: React.FC = () => {
         <div
           role="tablist"
           aria-label="Profile sections"
-          className="flex w-full items-center rounded-2xl ring-1 ring-[#C2CAD6] bg-white p-1 shadow-sm max-[625px]:p-1 max-[625px]:gap-1"
+          className="flex w-full items-center rounded-2xl ring-1 ring-[#C2CAD6] bg-white p-1 shadow-sm max-[625px]:p-1 max-[625px]:gap-1 overflow-x-auto"
         >
           {tabs.map((t) => {
             const selected = active === t;
@@ -164,7 +179,7 @@ const ProfilePage: React.FC = () => {
                 aria-selected={selected}
                 onClick={() => setActive(t)}
                 className={[
-                  "flex-1 rounded-xl px-6 py-2 text-[14px] font-medium transition-colors max-[625px]:px-3 max-[625px]:py-2 max-[625px]:text-[13px]",
+                  "flex-1 rounded-xl px-6 py-2 text-[14px] font-medium transition-colors whitespace-nowrap max-[625px]:px-3 max-[625px]:py-2 max-[625px]:text-[13px]",
                   selected ? "bg-[#2351A3] text-white shadow-sm" : "text-[#3D495C]"
                 ].join(" ")}
                 overrideClasses
@@ -178,7 +193,7 @@ const ProfilePage: React.FC = () => {
 
       <div className="mt-8 w-full">
         {active === "Basics" && (
-          <div className="text-sm text-[#3D495C]">Basics content…</div>
+          <ProfileBasicsTab />
         )}
 
         {active === "Favorites" && <ProfileFavouriteHotels />}
@@ -199,6 +214,7 @@ const ProfilePage: React.FC = () => {
         {active === "Account" && (
           <div className="text-sm text-[#3D495C]">Account content…</div>
         )}
+        {active === "Saved Travelers" && <ProfileSavedTravelersTab />}
       </div>
 
       <Modal
@@ -216,7 +232,9 @@ const ProfilePage: React.FC = () => {
               remoteUser.userId,
               remoteUser.createdAt,
               {
-                name: v.name?.trim() || null,
+                name:
+                  `${String(v.firstName ?? "").trim()} ${String(v.lastName ?? "").trim()}`.trim() ||
+                  null,
                 email: v.email?.trim() || null,
                 phoneNumber: v.phoneNumber?.trim() || null,
               } as any
@@ -233,11 +251,19 @@ const ProfilePage: React.FC = () => {
       >
         <Form form={editForm} layout="vertical">
           <Form.Item
-            name="name"
-            label="Name"
-            rules={[{ required: true, message: "Name is required" }]}
+            name="firstName"
+            label="First Name"
+            rules={[{ required: true, message: "First name is required" }]}
           >
-            <Input placeholder="Your name" />
+            <Input placeholder="First name" />
+          </Form.Item>
+
+          <Form.Item name="lastName" label="Last Name">
+            <Input placeholder="Last name" />
+          </Form.Item>
+
+          <Form.Item name="dob" label="Date of birth">
+            <DatePicker style={{ width: "100%" }} format="DD-MM-YYYY" />
           </Form.Item>
 
           <Form.Item name="email" label="Email">
@@ -246,6 +272,34 @@ const ProfilePage: React.FC = () => {
 
           <Form.Item name="phoneNumber" label="Phone number">
             <Input placeholder="+9715xxxxxxx" />
+          </Form.Item>
+
+          <Form.Item name="gender" label="Gender">
+            <Select
+              options={[
+                { value: "male", label: "Male" },
+                { value: "female", label: "Female" },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item name="passportNumber" label="Passport Number">
+            <Input placeholder="Passport number" />
+          </Form.Item>
+
+          <Form.Item name="issuingCountry" label="Issuing Country">
+            <Select
+              options={[
+                { value: "United Arab Emirates", label: "United Arab Emirates" },
+                { value: "Saudi Arabia", label: "Saudi Arabia" },
+                { value: "Pakistan", label: "Pakistan" },
+                { value: "India", label: "India" },
+              ]}
+            />
+          </Form.Item>
+
+          <Form.Item name="expiryDate" label="Expiry Date">
+            <DatePicker style={{ width: "100%" }} format="DD-MM-YYYY" />
           </Form.Item>
         </Form>
       </Modal>

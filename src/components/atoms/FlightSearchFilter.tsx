@@ -1,6 +1,5 @@
-import React from "react";
-import { Radio, Checkbox, Slider, Collapse } from "antd";
-import type { CheckboxProps } from "antd";
+import React, { useEffect, useState, useCallback } from "react";
+import { Radio, Checkbox, Collapse } from "antd";
 import CustomCollapse from "../common/CustomCollapse";
 
 const { Panel } = Collapse;
@@ -21,7 +20,9 @@ export type FlightSearchFilterProps = {
 
     // baggage
     baggage: { label: string; value: string }[];
-    baggageHandler?: CheckboxProps["onChange"];
+    /** When true, list only offers with checked baggage on at least one segment */
+    baggageIncludedOnly: boolean;
+    onBaggageIncludedChange: (checked: boolean) => void;
 
     // transit
     transitHours: { label: string; value: string }[];
@@ -40,6 +41,9 @@ export type FlightSearchFilterProps = {
     airline: { id: string | number; label: string; code: string }[];
     selectedAirlineIds: string[];
     onAirlineToggle: (code: string, checked: boolean) => void;
+    /** When true, list only offers with `detail.ancillaryDetailsAvailable` */
+    ancillaryAddOnsOnly: boolean;
+    onAncillaryAddOnsOnlyChange: (checked: boolean) => void;
     onReset?: () => void;
 };
 
@@ -48,7 +52,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     headerContent,
     priceRangeBounds,
     selectedPriceRange,
-    priceStep,
+    priceStep: _priceStep,
     onPriceRangeChange,
 
     numberStops,
@@ -56,9 +60,10 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     onMaxConnectionsChange,
 
     baggage,
-    baggageHandler,
+    baggageIncludedOnly,
+    onBaggageIncludedChange,
 
-    transitHours,
+    transitHours: _transitHours,
     selectedTransitRange,
     onTransitRangeChange,
 
@@ -66,18 +71,112 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     arrivalFlightRange,
     onDepartureRangeChange,
     onArrivalRangeChange,
+    openTimePicker,
+    timeRefs,
 
     airline,
     selectedAirlineIds,
     onAirlineToggle,
+    ancillaryAddOnsOnly,
+    onAncillaryAddOnsOnlyChange,
     onReset,
 }) => {
-    const timeToSliderValue = (time: string | undefined, roundUp = false): number => {
-        if (!time) return roundUp ? 1440 : 0;
-        const [h, m] = time.split(':').map(Number);
-        const mins = (h || 0) * 60 + (m || 0);
-        const step = roundUp ? Math.ceil(mins / 30) * 30 : Math.floor(mins / 30) * 30;
-        return Math.min(1440, Math.max(0, step));
+    const [minStr, setMinStr] = useState(() => String(selectedPriceRange[0]));
+    const [maxStr, setMaxStr] = useState(() => String(selectedPriceRange[1]));
+
+    useEffect(() => {
+        setMinStr(String(selectedPriceRange[0]));
+        setMaxStr(String(selectedPriceRange[1]));
+    }, [selectedPriceRange[0], selectedPriceRange[1]]);
+
+    const clamp = useCallback((n: number, lo: number, hi: number) => {
+        if (Number.isNaN(n) || !Number.isFinite(n)) return lo;
+        return Math.min(hi, Math.max(lo, n));
+    }, []);
+
+    const parseAmount = (s: string): number | null => {
+        const t = s.trim().replace(/,/g, "");
+        if (t === "" || t === ".") return null;
+        const n = Number(t);
+        return Number.isFinite(n) ? n : null;
+    };
+
+    const commitMinMax = useCallback(
+        (nextMinStr: string, nextMaxStr: string) => {
+            const [boundLo, boundHi] = priceRangeBounds;
+            let nMin = parseAmount(nextMinStr);
+            let nMax = parseAmount(nextMaxStr);
+            if (nMin === null) nMin = selectedPriceRange[0];
+            if (nMax === null) nMax = selectedPriceRange[1];
+            nMin = clamp(nMin, boundLo, boundHi);
+            nMax = clamp(nMax, boundLo, boundHi);
+            if (nMin > nMax) [nMin, nMax] = [nMax, nMin];
+            setMinStr(String(nMin));
+            setMaxStr(String(nMax));
+            onPriceRangeChange([nMin, nMax]);
+        },
+        [priceRangeBounds, selectedPriceRange, clamp, onPriceRangeChange],
+    );
+
+    const sanitizeDecimal = (raw: string) => {
+        let v = raw.replace(/[^0-9.]/g, "");
+        const firstDot = v.indexOf(".");
+        if (firstDot !== -1) {
+            v =
+                v.slice(0, firstDot + 1) +
+                v.slice(firstDot + 1).replace(/\./g, "");
+        }
+        return v;
+    };
+
+    const fullWidth: React.CSSProperties = {
+        width: "100%",
+        maxWidth: "100%",
+        minWidth: 0,
+        boxSizing: "border-box",
+    };
+
+    const priceFieldStyle: React.CSSProperties = {
+        display: "flex",
+        alignItems: "center",
+        gap: "6px",
+        border: "1.5px solid #E4E4E7",
+        borderRadius: "12px",
+        padding: "10px 12px",
+        background: "#FFFFFF",
+        minWidth: 0,
+        maxWidth: "100%",
+        boxSizing: "border-box",
+    };
+
+    const aedLabelStyle: React.CSSProperties = {
+        fontSize: "10px",
+        fontWeight: 300,
+        color: "#2351A3",
+        flexShrink: 0,
+        letterSpacing: "0.04em",
+        lineHeight: 1,
+    };
+
+    const priceInputStyle: React.CSSProperties = {
+        flex: 1,
+        minWidth: 0,
+        border: "none",
+        outline: "none",
+        fontSize: "14px",
+        fontWeight: 300,
+        color: "#0F172A",
+        background: "transparent",
+    };
+
+    const toDisplayTime = (v?: string) => {
+        if (!v) return "--:--";
+        const [hh, mm] = String(v).split(":").map(Number);
+        const h = Number.isFinite(hh) ? hh : 0;
+        const m = Number.isFinite(mm) ? mm : 0;
+        const ampm = h >= 12 ? "PM" : "AM";
+        const twelve = h % 12 === 0 ? 12 : h % 12;
+        return `${String(twelve).padStart(2, "0")}:${String(m).padStart(2, "0")} ${ampm}`;
     };
 
     const activeCount = (() => {
@@ -87,25 +186,42 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             selectedPriceRange[1] !== priceRangeBounds[1]
         ) cnt++;
         if (Number(selectedMaxConnections || 0) > 0) cnt++;
+        if (selectedTransitRange) cnt++;
         if ((departureFlightRange?.start || "") || (departureFlightRange?.end || "")) cnt++;
         if ((arrivalFlightRange?.start || "") || (arrivalFlightRange?.end || "")) cnt++;
         if ((selectedAirlineIds || []).length > 0) cnt++;
+        if (baggageIncludedOnly) cnt++;
+        if (ancillaryAddOnsOnly) cnt++;
         return cnt;
     })();
 
+    const transitHourOptions = [
+        { label: "0-3h", value: "0-3h" },
+        { label: "3-6h", value: "3-6h" },
+        { label: "6-12h", value: "6-12h" },
+        { label: "12-24h", value: "12-24h" },
+        { label: "24h+", value: "24h+" },
+    ];
+
     return (
-        <div className="filterSectionStyle" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '280px' }}>
+        <div
+            className="filterSectionStyle flight-search-filter-root"
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px",
+                ...fullWidth,
+            }}
+        >
             {/* Sort by - Direct render without extra wrapper */}
-            <div style={{ width: '280px' }}>
-                {headerContent}
-            </div>
+            <div style={fullWidth}>{headerContent}</div>
 
             {/* Filters Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
-                <h4 style={{ fontSize: '16px', fontWeight: 600, color: '#0F172A', margin: 0 }}>
+                <h4 style={{ fontSize: '16px', fontWeight: 300, color: '#0F172A', margin: 0 }}>
                     Filters
                     <span style={{ margin: '0 8px', color: '#64748B' }}>•</span>
-                    <span style={{ fontSize: '14px', fontWeight: 400, color: '#64748B' }}>{activeCount} Active</span>
+                    <span style={{ fontSize: '14px', fontWeight: 300, color: '#64748B' }}>{activeCount} Active</span>
                 </h4>
                 <button 
                     onClick={onReset}
@@ -114,7 +230,7 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                         border: 'none', 
                         color: '#2351A3', 
                         fontSize: '14px',
-                        fontWeight: 500,
+                        fontWeight: 300,
                         cursor: 'pointer',
                         padding: 0
                     }}
@@ -124,191 +240,316 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Number of stops - Collapsible */}
-            <div className="stopsCollapse" style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                background: '#F2F2F3',
-                overflow: 'hidden',
-                border: '1.5px solid #E4E4E7'
-            }}>
+            <div
+                className="stopsCollapse"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
                 <CustomCollapse>
                     <Panel 
                         header="Number of stops" 
                         key="stops"
-                        style={{ border: 'none', background: '#F2F2F3' }}
-                    >
-                        <div style={{ padding: '14px 16px 18px', background: '#F2F2F3' }}>
-                            <Radio.Group
-                                options={numberStops && numberStops.length ? numberStops : []}
-                                value={String(selectedMaxConnections)}
-                                optionType="button"
-                                buttonStyle="solid"
-                                className="stopsRadioStyle"
-                                disabled={loading && !numberStops.length}
-                                onChange={(e) => onMaxConnectionsChange(e?.target?.value ?? e)}
-                            />
-                        </div>
-                    </Panel>
-                </CustomCollapse>
-            </div>
-
-            {/* Price per person - Collapsible */}
-            <div style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                overflow: 'hidden'
-            }}>
-                <CustomCollapse>
-                    <Panel 
-                        header="Price per person" 
-                        key="price"
                         style={{ border: 'none' }}
                     >
-                        <div style={{ padding: '0 16px 16px 16px' }}>
-                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
-                                <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: '12px', color: '#64748B', display: 'block', marginBottom: '6px' }}>Min</label>
-                                    <div style={{ 
-                                        border: '1.5px solid #C2CAD6',
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        background: '#FFFFFF',
-                                        fontSize: '14px',
-                                        fontWeight: 500,
-                                        color: '#0F172A'
-                                    }}>
-                                        ${selectedPriceRange[0]}
+                        <div style={{ padding: '14px 16px 18px' }}>
+                            <div
+                                className="flight-stops-pills"
+                                role="radiogroup"
+                                aria-label="Number of stops"
+                            >
+                                {(numberStops?.length ? numberStops : []).map((opt) => {
+                                    const n = parseInt(String(opt.value), 10);
+                                    const isActive =
+                                        !Number.isNaN(n) &&
+                                        selectedMaxConnections === n;
+                                    return (
+                                        <button
+                                            key={String(opt.value)}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={isActive}
+                                            disabled={loading && !numberStops.length}
+                                            className={
+                                                isActive
+                                                    ? "flight-stops-pill flight-stops-pill--active"
+                                                    : "flight-stops-pill"
+                                            }
+                                            onClick={() =>
+                                                onMaxConnectionsChange(
+                                                    Number.isNaN(n) ? 0 : n,
+                                                )
+                                            }
+                                        >
+                                            {opt.label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </Panel>
+                </CustomCollapse>
+            </div>
+
+            {/* Price per seat — Min/Max only (Figma) */}
+            <div
+                className="pricePerSeatCollapse"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
+                <CustomCollapse>
+                    <Panel
+                        header="Price per seat"
+                        key="price"
+                        style={{ border: "none" }}
+                    >
+                        <div
+                            style={{
+                                padding: "0 16px 18px",
+                                ...fullWidth,
+                            }}
+                        >
+                            <div
+                                style={{
+                                    display: "flex",
+                                    gap: "12px",
+                                    alignItems: "flex-end",
+                                    ...fullWidth,
+                                }}
+                            >
+                                <div style={{ flex: "1 1 0%", minWidth: 0 }}>
+                                    <label
+                                        style={{
+                                            fontSize: "12px",
+                                            fontWeight: 300,
+                                            color: "#64748B",
+                                            display: "block",
+                                            marginBottom: "6px",
+                                        }}
+                                    >
+                                        Min
+                                    </label>
+                                    <div style={priceFieldStyle}>
+                                        <span style={aedLabelStyle} aria-hidden>
+                                            AED
+                                        </span>
+                                        <input
+                                            type="text"
+                                            inputMode="decimal"
+                                            autoComplete="off"
+                                            aria-label="Minimum price per seat"
+                                            style={priceInputStyle}
+                                            value={minStr}
+                                            onChange={(e) =>
+                                                setMinStr(
+                                                    sanitizeDecimal(
+                                                        e.target.value,
+                                                    ),
+                                                )
+                                            }
+                                            onBlur={() =>
+                                                commitMinMax(minStr, maxStr)
+                                            }
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    (
+                                                        e.target as HTMLInputElement
+                                                    ).blur();
+                                                }
+                                            }}
+                                        />
                                     </div>
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                    <label style={{ fontSize: '12px', color: '#64748B', display: 'block', marginBottom: '6px' }}>Max</label>
-                                    <div style={{ 
-                                        border: '1.5px solid #C2CAD6',
-                                        borderRadius: '8px',
-                                        padding: '8px 12px',
-                                        background: '#FFFFFF',
-                                        fontSize: '14px',
-                                        fontWeight: 500,
-                                        color: '#0F172A'
-                                    }}>
-                                        ${selectedPriceRange[1]}
+                                <div style={{ flex: "1 1 0%", minWidth: 0 }}>
+                                    <label
+                                        style={{
+                                            fontSize: "12px",
+                                            fontWeight: 300,
+                                            color: "#64748B",
+                                            display: "block",
+                                            marginBottom: "6px",
+                                        }}
+                                    >
+                                        Max
+                                    </label>
+                                    <div style={priceFieldStyle}>
+                                        <span style={aedLabelStyle} aria-hidden>
+                                            AED
+                                        </span>
+                                        <input
+                                            type="text"
+                                            inputMode="decimal"
+                                            autoComplete="off"
+                                            aria-label="Maximum price per seat"
+                                            style={priceInputStyle}
+                                            value={maxStr}
+                                            onChange={(e) =>
+                                                setMaxStr(
+                                                    sanitizeDecimal(
+                                                        e.target.value,
+                                                    ),
+                                                )
+                                            }
+                                            onBlur={() =>
+                                                commitMinMax(minStr, maxStr)
+                                            }
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                    (
+                                                        e.target as HTMLInputElement
+                                                    ).blur();
+                                                }
+                                            }}
+                                        />
                                     </div>
                                 </div>
                             </div>
-                            <Slider
-                                range
-                                defaultValue={[priceRangeBounds[0], priceRangeBounds[1]]}
-                                aria-label="price-range-slider"
-                                min={priceRangeBounds[0]}
-                                max={priceRangeBounds[1]}
-                                step={priceStep}
-                                value={selectedPriceRange}
-                                onChange={(val) => onPriceRangeChange(val as [number, number])}
-                                styles={{
-                                    track: { background: '#2351A3' },
-                                    tracks: { background: '#2351A3' }
-                                }}
+                        </div>
+                    </Panel>
+                </CustomCollapse>
+            </div>
+
+            {/* Transit hours - Collapsible */}
+            <div
+                className="timeCollapse"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
+                <CustomCollapse>
+                    <Panel
+                        header="Transit hours"
+                        key="transit"
+                        style={{ border: "none" }}
+                    >
+                        <div style={{ padding: "0 16px 16px 16px" }}>
+                            <Radio.Group
+                                block
+                                options={transitHourOptions}
+                                value={selectedTransitRange ?? undefined}
+                                optionType="button"
+                                buttonStyle="solid"
+                                className="transitHours"
+                                onChange={(e) =>
+                                    onTransitRangeChange?.(e?.target?.value ?? null)
+                                }
                             />
                         </div>
                     </Panel>
                 </CustomCollapse>
             </div>
 
-            {/* Transit hours - Collapsible (conditional) */}
-            {Number(selectedMaxConnections || 0) > 0 && (
-                <div className="timeCollapse" style={{ 
-                    width: '280px',
-                    borderRadius: '16px',
-                    overflow: 'hidden'
-                }}>
-                    <CustomCollapse>
-                        <Panel 
-                            header="Transit hours" 
-                            key="transit"
-                            style={{ border: 'none' }}
-                        >
-                            <div style={{ padding: '0 16px 16px 16px' }}>
-                                <Radio.Group
-                                    block
-                                    options={transitHours && transitHours.length ? transitHours : []}
-                                    value={selectedTransitRange ?? undefined}
-                                    optionType="button"
-                                    buttonStyle="solid"
-                                    className="transitHours"
-                                    disabled={loading && !transitHours.length}
-                                    onChange={(e) => onTransitRangeChange?.(e?.target?.value ?? null)}
-                                />
-                            </div>
-                        </Panel>
-                    </CustomCollapse>
-                </div>
-            )}
-
-            {/* Flight time - Collapsible (FL201: Slider + time inputs for preferred departure/arrival) */}
-            <div className="flightTimeFilter" style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                background: '#F2F2F3',
-                border: '1.5px solid #E4E4E7'
-            }}>
+            {/* Flight time - Collapsible */}
+            <div
+                className="flightTimeFilter"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
                 <CustomCollapse>
                     <Panel 
-                        header="Preferred departure & arrival time" 
+                        header="Flight time" 
                         key="time"
-                        style={{ border: 'none', background: '#F2F2F3' }}
+                        style={{ border: 'none' }}
                     >
-                        <div style={{ padding: '14px 16px 18px', background: '#F2F2F3' }}>
-                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, marginBottom: '10px', marginTop: 0 }}>
-                                Departure time range
+                        <div style={{ padding: '12px 16px 18px' }}>
+                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 300, marginBottom: '8px', marginTop: 0 }}>
+                                Departure
                             </p>
-                            <div style={{ marginBottom: '16px' }}>
-                                <Slider
-                                    range
-                                    min={0}
-                                    max={1440}
-                                    step={30}
-                                    value={[
-                                        timeToSliderValue(departureFlightRange.start, false),
-                                        timeToSliderValue(departureFlightRange.end, true)
-                                    ]}
-                                    onChange={([a, b]) => {
-                                        const toTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-                                        onDepartureRangeChange({ start: toTime(a), end: toTime(b) });
+                            <div className="departureArrival" style={{ marginBottom: '14px' }}>
+                                <button
+                                    type="button"
+                                    className="timeBox"
+                                    onClick={() => openTimePicker("depStart")}
+                                    style={{ textAlign: "left", background: "#FFFFFF" }}
+                                >
+                                    {toDisplayTime(departureFlightRange.start)}
+                                </button>
+                                <span style={{ fontSize: "24px", color: "#0F172A", lineHeight: 1 }}>→</span>
+                                <button
+                                    type="button"
+                                    className="timeBox"
+                                    onClick={() => openTimePicker("depEnd")}
+                                    style={{ textAlign: "left", background: "#FFFFFF" }}
+                                >
+                                    {toDisplayTime(departureFlightRange.end)}
+                                </button>
+                                <input
+                                    ref={(el) => {
+                                        timeRefs.current.depStart = el;
                                     }}
-                                    tooltip={{ formatter: (v) => `${String(Math.floor(Number(v) / 60)).padStart(2, '0')}:${String(Number(v) % 60).padStart(2, '0')}` }}
-                                    style={{ marginBottom: 8 }}
+                                    type="time"
+                                    value={departureFlightRange.start || ""}
+                                    onChange={(e) =>
+                                        onDepartureRangeChange({ start: e.target.value || "" })
+                                    }
+                                    style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }}
                                 />
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B' }}>
-                                    <span>{departureFlightRange.start || '00:00'}</span>
-                                    <span>{departureFlightRange.end || '24:00'}</span>
-                                </div>
+                                <input
+                                    ref={(el) => {
+                                        timeRefs.current.depEnd = el;
+                                    }}
+                                    type="time"
+                                    value={departureFlightRange.end || ""}
+                                    onChange={(e) =>
+                                        onDepartureRangeChange({ end: e.target.value || "" })
+                                    }
+                                    style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }}
+                                />
                             </div>
 
-                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 600, marginBottom: '10px', marginTop: 0 }}>
-                                Arrival time range
+                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 300, marginBottom: '8px', marginTop: 0 }}>
+                                Arrival
                             </p>
-                            <div>
-                                <Slider
-                                    range
-                                    min={0}
-                                    max={1440}
-                                    step={30}
-                                    value={[
-                                        timeToSliderValue(arrivalFlightRange.start, false),
-                                        timeToSliderValue(arrivalFlightRange.end, true)
-                                    ]}
-                                    onChange={([a, b]) => {
-                                        const toTime = (m: number) => `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
-                                        onArrivalRangeChange({ start: toTime(a), end: toTime(b) });
+                            <div className="departureArrival">
+                                <button
+                                    type="button"
+                                    className="timeBox"
+                                    onClick={() => openTimePicker("arrStart")}
+                                    style={{ textAlign: "left", background: "#FFFFFF" }}
+                                >
+                                    {toDisplayTime(arrivalFlightRange.start)}
+                                </button>
+                                <span style={{ fontSize: "24px", color: "#0F172A", lineHeight: 1 }}>→</span>
+                                <button
+                                    type="button"
+                                    className="timeBox"
+                                    onClick={() => openTimePicker("arrEnd")}
+                                    style={{ textAlign: "left", background: "#FFFFFF" }}
+                                >
+                                    {toDisplayTime(arrivalFlightRange.end)}
+                                </button>
+                                <input
+                                    ref={(el) => {
+                                        timeRefs.current.arrStart = el;
                                     }}
-                                    tooltip={{ formatter: (v) => `${String(Math.floor(Number(v) / 60)).padStart(2, '0')}:${String(Number(v) % 60).padStart(2, '0')}` }}
-                                    style={{ marginBottom: 8 }}
+                                    type="time"
+                                    value={arrivalFlightRange.start || ""}
+                                    onChange={(e) =>
+                                        onArrivalRangeChange({ start: e.target.value || "" })
+                                    }
+                                    style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }}
                                 />
-                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#64748B' }}>
-                                    <span>{arrivalFlightRange.start || '00:00'}</span>
-                                    <span>{arrivalFlightRange.end || '24:00'}</span>
-                                </div>
+                                <input
+                                    ref={(el) => {
+                                        timeRefs.current.arrEnd = el;
+                                    }}
+                                    type="time"
+                                    value={arrivalFlightRange.end || ""}
+                                    onChange={(e) =>
+                                        onArrivalRangeChange({ end: e.target.value || "" })
+                                    }
+                                    style={{ position: "absolute", opacity: 0, pointerEvents: "none", width: 0, height: 0 }}
+                                />
                             </div>
                         </div>
                     </Panel>
@@ -316,11 +557,14 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Airlines - Collapsible */}
-            <div className="timeCollapse" style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                overflow: 'hidden'
-            }}>
+            <div
+                className="timeCollapse"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
                 <CustomCollapse>
                     <Panel 
                         header="Airlines" 
@@ -347,11 +591,13 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div>
 
             {/* Baggage - Collapsible */}
-            <div style={{ 
-                width: '280px',
-                borderRadius: '16px',
-                overflow: 'hidden'
-            }}>
+            <div
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
                 <CustomCollapse>
                     <Panel 
                         header="Baggage" 
@@ -359,8 +605,40 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                         style={{ border: 'none' }}
                     >
                         <div style={{ padding: '0 16px 16px 16px' }}>
-                            <Checkbox className="baggageCheckbox" onChange={baggageHandler} disabled={loading && !baggage.length}>
+                            <Checkbox
+                                className="baggageCheckbox"
+                                checked={baggageIncludedOnly}
+                                onChange={(e) =>
+                                    onBaggageIncludedChange(e.target.checked)
+                                }
+                                disabled={loading && !baggage.length}
+                            >
                                 {(baggage && baggage[0]?.label) || "Checked baggage included"}
+                            </Checkbox>
+                        </div>
+                    </Panel>
+                </CustomCollapse>
+            </div>
+
+            {/* Ancillaries — same pattern as Baggage */}
+            <div
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
+                <CustomCollapse>
+                    <Panel header="Ancillaries" key="ancillaries" style={{ border: "none" }}>
+                        <div style={{ padding: "0 16px 16px 16px" }}>
+                            <Checkbox
+                                className="baggageCheckbox"
+                                checked={ancillaryAddOnsOnly}
+                                onChange={(e) =>
+                                    onAncillaryAddOnsOnlyChange(e.target.checked)
+                                }
+                            >
+                                Add-ons available
                             </Checkbox>
                         </div>
                     </Panel>

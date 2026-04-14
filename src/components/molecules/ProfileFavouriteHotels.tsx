@@ -7,6 +7,8 @@ import FilledStar from "../../assets/svgs/filled_star.svg";
 import EmptyStar from "../../assets/svgs/empty_star.svg";
 import Share from "../../assets/svgs/share-icon.svg";
 
+import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
+import { aggregateHotelTaxesFromRoomArray } from "../../utils/hotelBookingHelper";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import {
   useAddHotelFavourite,
@@ -597,6 +599,33 @@ const ProfileFavouriteHotels: React.FC = () => {
                     </span>
                   </div>
 
+                  <div className="text-[12px] text-[#3D495C] mb-1">
+                    Starting from (including VAT)
+                  </div>
+
+                  <div className="mb-4 flex items-start gap-2">
+                    <div className="min-w-0">
+                      <span className="block text-[14px] font-bold text-[#0A0C0F] [overflow-wrap:anywhere]">
+                        {currency} {nightPrice.toFixed(2)}
+                      </span>
+                      <span className="mt-1 block text-[12px] font-semibold text-[#0A0C0F]">
+                        /Night
+                      </span>
+                    </div>
+
+                    <HotelPriceSummaryTooltip
+                      totalPrice={Number(totalPrice)}
+                      currency={currency}
+                      taxes={aggregateHotelTaxesFromRoomArray(
+                        roomDetails.length > 0
+                          ? roomDetails
+                          : bestRoom
+                            ? [bestRoom]
+                            : [],
+                      )}
+                    />
+                  </div>
+
                   <div className="flex items-center gap-3">
                     <button
                       className="p-1 flex-shrink-0"
@@ -618,7 +647,7 @@ const ProfileFavouriteHotels: React.FC = () => {
                       }}
                       onClick={() => handleCheckAvailability(hotel)}
                     >
-                      Check availability
+                      Select Room
                     </button>
                   </div>
                 </div>

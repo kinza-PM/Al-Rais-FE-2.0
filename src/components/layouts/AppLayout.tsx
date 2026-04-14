@@ -4,7 +4,8 @@ import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
 import ChatBot from "../organisms/ChatBot";
 import AuthModal from "../organisms/AuthModal";
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import RouteLoadingFallback from "../common/RouteLoadingFallback";
 import SessionExpiryWarning from "../../features/auth/components/SessionExpiryWarning";
 import { AuthService } from "../../features/auth/services/authService";
 import type { AuthMode } from "../../types/AuthTypes";
@@ -150,13 +151,15 @@ const AppLayout: React.FC = () => {
         {isAuthenticated && <SessionExpiryWarning warningSeconds={120} />}
 
         <main className="min-h-screen">
-          <Outlet
-            context={{
-              onLoginClick: openLogin,
-              onSignupClick: openSignup,
-              setHideHeader,
-            }}
-          />
+          <Suspense fallback={<RouteLoadingFallback />}>
+            <Outlet
+              context={{
+                onLoginClick: openLogin,
+                onSignupClick: openSignup,
+                setHideHeader,
+              }}
+            />
+          </Suspense>
         </main>
         <Footer />
         <ChatBot />

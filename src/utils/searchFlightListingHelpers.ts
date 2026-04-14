@@ -281,4 +281,17 @@ export const extractFlightFeatures = (
   return visibleFeatures;
 };
 
+/**
+ * Prefer API `marketingAirlineLogo`, then `/airlines/{marketingAirline}.png`.
+ * Same resolution as FlightDetailTemplate / listing mapping.
+ */
+export const resolveAirlineLogoFromSegment = (seg: any): string => {
+  if (!seg) return "";
+  const apiLogo = String(seg?.marketingAirlineLogo ?? "").trim();
+  if (apiLogo) return apiLogo;
+  const marketingCode = String(seg?.marketingAirline ?? "").trim();
+  if (marketingCode) return `/airlines/${marketingCode}.png`;
+  return "";
+};
+
 

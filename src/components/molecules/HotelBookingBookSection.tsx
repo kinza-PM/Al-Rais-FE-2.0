@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import TailwindCustomInput from "../common/TailwindCustomInput";
 import SearchableDropdown from "../common/SearchableDropdown";
 import Button from "../atoms/Button";
@@ -7,6 +7,9 @@ import HotelSummaryCard from "../atoms/HotelSummaryCard";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelFareRule from "../atoms/HotelFareRule";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
+import SavedTravelersSection, {
+  type SavedTraveler,
+} from "./SavedTravelersSection";
 import {
   formatDateToLocalISO,
   parseLocalDateString,
@@ -19,6 +22,12 @@ import {
 import { PhoneInput } from "react-international-phone";
 import "react-international-phone/style.css";
 import type { CountryOption } from "../../features/flights/types";
+import CustomToggle from "../common/CustomToggle";
+import { usePassengerCacheAdd, usePassengerCacheFetch } from "../../hooks/usePassengerCache";
+import {
+  buildPassengerCacheAddPayload,
+  extractPassengersFromCacheResponse,
+} from "../../utils/passengerCacheHelper";
 // import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 // import toast from "react-hot-toast";
 // import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
@@ -32,6 +41,8 @@ type HotelBookingBookSectionProps = {
     value: any,
   ) => void;
   onNext?: () => void;
+  onPassengerCacheSavingChange?: (saving: boolean) => void;
+  onPassengerCacheFetchLoadingChange?: (loading: boolean) => void;
   countries?: CountryOption[];
   hotelDetail?: any;
   bookingInfo?: any;
@@ -53,6 +64,8 @@ export default function HotelBookingBookSection({
   hotelBookingPayload,
   onPassengerFieldChange,
   onNext,
+  onPassengerCacheSavingChange,
+  onPassengerCacheFetchLoadingChange,
   countries = [],
   hotelDetail = {},
   bookingInfo = {},
@@ -65,6 +78,16 @@ export default function HotelBookingBookSection({
   const [validationErrors, setValidationErrors] =
     useState<HotelPassengerFieldErrors>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+  const [openPrice, setOpenPrice] = useState(false);
+  const [saveTravelerByPassengerKey, setSaveTravelerByPassengerKey] = useState<
+    Record<string, boolean>
+  >({});
+  const originalCacheKeyBySlotRef = useRef<Record<number, string>>({});
+  /** Keys forced OFF by saved-traveler selection only — clear when that selection is removed to restore default ON. */
+  const savedTravelerOffKeysRef = useRef<Set<string>>(new Set());
+
+  const { mutateAsync: addPassengerCache } = usePassengerCacheAdd();
+  const { data: passengerCacheResp } = usePassengerCacheFetch();
 
   // const { mutateAsync, isPending } = useHotelReservationBooking();
   const rooms = hotelBookingPayload?.rooms ?? [];
@@ -75,6 +98,7 @@ export default function HotelBookingBookSection({
       passenger,
     })),
   );
+
   const roomOptions = rooms.map((_, i) => {
     const sel = selectedRooms[i];
     const roomName = sel?.room?.roomTypeName || `Room ${i + 1}`;
@@ -86,6 +110,156 @@ export default function HotelBookingBookSection({
       label,
     };
   });
+
+  const fillFromSavedTravelers = (selectedSlots: Array<SavedTraveler | undefined>) => {
+    const titleToUi = (t?: string) => {
+      const v = String(t ?? "").trim().toUpperCase();
+      if (v === "MR") return "mr";
+      if (v === "MS") return "ms";
+      if (v === "MRS") return "mrs";
+      return "";
+    };
+    const normalizeIdType = (v?: string) => {
+      const x = String(v ?? "").trim().toUpperCase();
+      if (x === "PT" || x === "PASSPORT") return "PASSPORT";
+      if (x === "NI" || x === "NATIONAL_ID") return "NATIONAL_ID";
+      if (x === "DL" || x === "DRIVING_LICENSE") return "DRIVING_LICENSE";
+      return "PASSPORT";
+    };
+    const genderToUi = (g?: string) => {
+      const v = String(g ?? "").trim().toUpperCase();
+      if (v === "M" || v === "MALE") return "male";
+      if (v === "F" || v === "FEMALE") return "female";
+      return "";
+    };
+
+    const apply = (idx: number, t?: SavedTraveler) => {
+      const target = flatPassengers[idx];
+      if (!target) return;
+      const { roomIndex, passengerIndex } = target;
+
+      const clear = !t;
+      const givenName = clear ? "" : t.firstName ?? "";
+      const surname = clear ? "" : t.lastName ?? "";
+      const nameTitle = clear ? "" : titleToUi(t.nameTitle);
+      const gender = clear ? "" : genderToUi(t.gender);
+      const birthDate = clear ? null : (t.birthDate ?? null);
+      const passport = clear ? "" : (t.passport ?? "");
+      const idType = clear ? "PASSPORT" : normalizeIdType(t.idType);
+      const issuingCountryCode = clear ? "" : (t.issuingCountryCode ?? "");
+      const residenceCountryCode = clear ? "" : (t.residenceCountryCode ?? "");
+      const dateOfIssue = clear ? null : (t.dateOfIssueIso ?? null);
+      const expiryIso = clear ? null : (t.expiryIso ?? null);
+      const email = clear ? "" : (t.email ?? "");
+      const areaCode = clear
+        ? ""
+        : t.phoneAreaCode !== undefined && t.phoneAreaCode !== null && String(t.phoneAreaCode).trim() !== ""
+          ? `+${String(t.phoneAreaCode).replace(/^\+/, "")}`
+          : "";
+      const phoneNumber = clear ? "" : String(t.phoneNumber ?? "");
+
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.nameTitle", nameTitle);
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.gender", gender);
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.givenName", givenName);
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.surname", surname);
+      onPassengerFieldChange(roomIndex, passengerIndex, "passengerInfo.birthDate", birthDate);
+
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.idDocumentNumber", passport);
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.idType", idType);
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.issuingCountryCode", issuingCountryCode);
+      onPassengerFieldChange(
+        roomIndex,
+        passengerIndex,
+        "identityDocuments.0.residenceCountryCode",
+        residenceCountryCode,
+      );
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.dateOfIssue", dateOfIssue);
+      onPassengerFieldChange(roomIndex, passengerIndex, "identityDocuments.0.expiryDate", expiryIso);
+
+      onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.emailAddress.0", email);
+      onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.phone.0.areaCode", areaCode);
+      onPassengerFieldChange(roomIndex, passengerIndex, "contact.contactsProvided.0.phone.0.phoneNumber", phoneNumber);
+      // Lead guest is always the first passenger in each room (matches buildInitialHotelBookingPayload).
+      onPassengerFieldChange(roomIndex, passengerIndex, "isLead", passengerIndex === 0);
+    };
+
+    // Fill/clear sequentially based on current passenger slots.
+    for (let i = 0; i < flatPassengers.length; i++) {
+      apply(i, selectedSlots[i]);
+    }
+
+    // Default save toggle is ON; saved-traveler fill sets OFF. Deselecting saved traveler restores default ON.
+    setSaveTravelerByPassengerKey((prev) => {
+      const next = { ...prev };
+      const currentOffFromSaved = new Set<string>();
+      for (let i = 0; i < flatPassengers.length; i++) {
+        const fp = flatPassengers[i];
+        const key = `${fp.roomIndex}:${fp.passengerIndex}:${fp.passenger?.passengerKey ?? ""}`;
+        if (selectedSlots[i]) {
+          next[key] = false;
+          currentOffFromSaved.add(key);
+        }
+      }
+      for (const key of savedTravelerOffKeysRef.current) {
+        if (!currentOffFromSaved.has(key)) {
+          delete next[key];
+        }
+      }
+      savedTravelerOffKeysRef.current = currentOffFromSaved;
+      return next;
+    });
+
+    for (let i = 0; i < flatPassengers.length; i++) {
+      const t = selectedSlots[i];
+      if (t) {
+        const given = String(t.firstName ?? "").trim().toUpperCase();
+        const surname = String(t.lastName ?? "").trim().toUpperCase();
+        const dob = String(t.birthDate ?? "").trim();
+        const passport = String(t.passport ?? "").trim().toUpperCase();
+        originalCacheKeyBySlotRef.current[i] = `${passport}|${given}|${surname}|${dob}`;
+      } else {
+        delete originalCacheKeyBySlotRef.current[i];
+      }
+    }
+  };
+
+  const saveToggleKey = (
+    roomIndex: number,
+    passengerIndex: number,
+    passengerKey: string | undefined,
+  ) => `${roomIndex}:${passengerIndex}:${passengerKey ?? ""}`;
+
+  const saveToggleChecked = (key: string) => {
+    const v = saveTravelerByPassengerKey[key];
+    // default ON (unless explicitly set to false)
+    return v !== false;
+  };
+
+  const toggleSaveTraveler = (key: string) => {
+    setSaveTravelerByPassengerKey((prev) => ({
+      ...prev,
+      [key]: !saveToggleChecked(key),
+    }));
+  };
+
+  const addPassengerCachePayload = useMemo(() => {
+    const selectedPassengers = flatPassengers
+      .filter(({ roomIndex, passengerIndex, passenger }) =>
+        saveToggleChecked(saveToggleKey(roomIndex, passengerIndex, passenger?.passengerKey)),
+      )
+      .map(({ passenger }) => passenger);
+
+    if (selectedPassengers.length === 0) return null;
+
+    const originalCacheKeys = flatPassengers.map((_, i) =>
+      saveToggleChecked(saveToggleKey(flatPassengers[i].roomIndex, flatPassengers[i].passengerIndex, flatPassengers[i].passenger?.passengerKey))
+        ? (originalCacheKeyBySlotRef.current[i] ?? null)
+        : null
+    );
+
+    const existingSavedPassengers = extractPassengersFromCacheResponse(passengerCacheResp);
+    return buildPassengerCacheAddPayload(selectedPassengers, existingSavedPassengers, originalCacheKeys);
+  }, [flatPassengers, saveTravelerByPassengerKey, passengerCacheResp]);
 
   const clearFieldError = (
     roomIdx: number,
@@ -129,6 +303,18 @@ export default function HotelBookingBookSection({
       return;
     }
 
+    if (addPassengerCachePayload) {
+      try {
+        onPassengerCacheSavingChange?.(true);
+        await addPassengerCache(addPassengerCachePayload);
+      } catch (e) {
+        // Don't block the booking flow if cache save fails
+        console.error("fetchAddPassengerCache(add) failed", e);
+      } finally {
+        onPassengerCacheSavingChange?.(false);
+      }
+    }
+
     if (typeof onNext === "function") {
       onNext();
     }
@@ -155,6 +341,11 @@ export default function HotelBookingBookSection({
     <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
+          <SavedTravelersSection
+            onProceedSelection={fillFromSavedTravelers}
+            maxSelectable={flatPassengers.length}
+            onInitialFetchLoadingChange={onPassengerCacheFetchLoadingChange}
+          />
           {flatPassengers.map(
             ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
               <React.Fragment key={p.passengerKey || flatIdx}>
@@ -327,8 +518,23 @@ export default function HotelBookingBookSection({
                 <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm mt-4">
                   <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7] rounded-t-2xl">
                     <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                      Passenger {String(flatIdx + 1).padStart(2, "0")} details
+                      Traveler {String(flatIdx + 1).padStart(2, "0")} details
                     </h3>
+                    <CustomToggle
+                      label="Save Traveler information in my profile"
+                      checked={saveToggleChecked(
+                        saveToggleKey(roomIndex, passengerIndex, p.passengerKey),
+                      )}
+                      onChange={() =>
+                        toggleSaveTraveler(
+                          saveToggleKey(
+                            roomIndex,
+                            passengerIndex,
+                            p.passengerKey,
+                          ),
+                        )
+                      }
+                    />
                   </div>
                   <div className="px-4 py-4 rounded-b-2xl">
                     <div className="grid grid-cols-1 gap-x-4 gap-y-4 min-w-0 md:grid-cols-2">
@@ -716,32 +922,50 @@ export default function HotelBookingBookSection({
                   const roomFacilities = room?.roomFacilities ?? [];
                   const allFacilities = [...hotelFacilities, ...roomFacilities];
                   const facilityNames = allFacilities.map((f: any) =>
-                    (typeof f === "string" ? f : f?.name ?? "").toLowerCase()
+                    (typeof f === "string" ? f : (f?.name ?? "")).toLowerCase(),
                   );
                   const hasNonSmoking = facilityNames.some(
-                    (n: string) => n.includes("non-smoking") || n.includes("no smoking") || n.includes("smoke free")
+                    (n: string) =>
+                      n.includes("non-smoking") ||
+                      n.includes("no smoking") ||
+                      n.includes("smoke free"),
                   );
                   const hasPetsAllowed = facilityNames.some(
-                    (n: string) => n.includes("pets allowed") || n.includes("pet friendly")
+                    (n: string) =>
+                      n.includes("pets allowed") || n.includes("pet friendly"),
                   );
                   const hasPetsNotAllowed = facilityNames.some(
-                    (n: string) => n.includes("pets not") || n.includes("no pets")
+                    (n: string) =>
+                      n.includes("pets not") || n.includes("no pets"),
                   );
                   const hasCleanliness = facilityNames.some(
                     (n: string) =>
                       n.includes("housekeeping") ||
                       n.includes("clean") ||
-                      n.includes("cleaning")
+                      n.includes("cleaning"),
                   );
-                  const smokingText = hasNonSmoking ? "Not allowed" : "Not allowed";
-                  const petsText = hasPetsAllowed ? "Allowed" : hasPetsNotAllowed ? "Not allowed" : "Not allowed";
-                  const cleanlinessText = hasCleanliness ? "Exceptionally clean" : "Exceptionally clean";
+                  const smokingText = hasNonSmoking
+                    ? "Not allowed"
+                    : "Not allowed";
+                  const petsText = hasPetsAllowed
+                    ? "Allowed"
+                    : hasPetsNotAllowed
+                      ? "Not allowed"
+                      : "Not allowed";
+                  const cleanlinessText = hasCleanliness
+                    ? "Exceptionally clean"
+                    : "Exceptionally clean";
 
                   // Max guests: from room.maxOccupancy, or passengers count, or bookingInfo
                   const adultsInRoom = roomPassengers.length;
-                  const maxGuests = room?.maxOccupancy ?? (adultsInRoom > 0 ? adultsInRoom : 2);
+                  const maxGuests =
+                    room?.maxOccupancy && room?.maxOccupancy > 0
+                      ? room?.maxOccupancy
+                      : adultsInRoom > 0
+                        ? adultsInRoom
+                        : 2;
                   const maxGuestsText = `${String(maxGuests).padStart(2, "0")} Adults`;
-
+                  // console.log("room?.maxOccupancy", room?.maxOccupancy);
                   // Room title with Non-Refundable suffix when applicable
                   const roomTitle = [
                     room?.roomTypeName || "Room",
@@ -806,13 +1030,17 @@ export default function HotelBookingBookSection({
                         {/* Key-value pairs */}
                         <div className="space-y-4 text-xs leading-relaxed">
                           <div className="flex justify-between gap-2 py-1">
-                            <span className="text-[#3D495C]">Max no. of guests/room</span>
+                            <span className="text-[#3D495C]">
+                              Max no. of guests/room
+                            </span>
                             <span className="text-[#0A0C0F] font-medium text-right">
                               {maxGuestsText}
                             </span>
                           </div>
                           <div className="flex justify-between gap-2 py-1">
-                            <span className="text-[#3D495C]">Rooms cleanliness</span>
+                            <span className="text-[#3D495C]">
+                              Rooms cleanliness
+                            </span>
                             <span className="text-[#0A0C0F] font-medium text-right">
                               {cleanlinessText}
                             </span>
@@ -830,7 +1058,9 @@ export default function HotelBookingBookSection({
                             </span>
                           </div>
                           <div className="flex justify-between gap-2 py-1">
-                            <span className="text-[#3D495C]">Cancellation cost</span>
+                            <span className="text-[#3D495C]">
+                              Cancellation cost
+                            </span>
                             <p
                               className={`font-medium text-right break-words ${isNonRefundable
                                 ? "text-[#0A0C0F]"
@@ -861,7 +1091,13 @@ export default function HotelBookingBookSection({
             currency={currency}
             hotelDetail={hotelDetail}
           />
-          <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
+          <HotelPriceBreakdown
+            open={openPrice}
+            onToggleOpen={() => setOpenPrice((v) => !v)}
+            totalPrice={totalPrice}
+            currency={currency}
+            selectedRooms={selectedRooms}
+          />
 
           <div className="mt-6 flex justify-center">
             <Button
@@ -869,7 +1105,8 @@ export default function HotelBookingBookSection({
               overrideClasses
               className="h-[47px] w-full sm:w-[155px] rounded-[100px] px-6 sm:px-10 py-[14px] text-[16px] font-semibold text-white hover:opacity-95 active:opacity-90 transition-opacity flex items-center justify-center gap-2.5"
               style={{
-                background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                background:
+                  "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               }}
               onClick={handleContinue}
             >

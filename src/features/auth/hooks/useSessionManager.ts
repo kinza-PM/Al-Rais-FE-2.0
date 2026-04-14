@@ -30,31 +30,14 @@ export const useSessionManager = (
     resetAuthCheckCompleted
   } = actions;
 
-  // Initialize auth state on mount
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        if (state.authCheckCompleted) return;
-        
-        await checkAuth();
-        markAuthCheckCompleted();
-      } catch (error) {
-        console.error('🚨 useSessionManager: Error during auth initialization:', error);
-        setInitializationComplete();
-      }
-    };
-
-    initializeAuth();
-  }, [state.authCheckCompleted, markAuthCheckCompleted, setInitializationComplete]);
-
-  // Check authentication status
+  // Check authentication status (declared before mount effect so deps and closures are valid)
   const checkAuth = useCallback(async () => {
     try {
       const isAuth = await AuthService.isAuthenticated();
-      
+
       if (isAuth) {
         const currentUser = await AuthService.getCurrentUser();
-        
+
         if (currentUser) {
           setAuthenticatedState(currentUser);
           StorageService.saveUser(currentUser);
@@ -79,6 +62,25 @@ export const useSessionManager = (
   const resetAuthCheckCompletedRef = useRef(resetAuthCheckCompleted);
   const initializeGuestUserRef = useRef(initializeGuestUser);
   const checkAuthRef = useRef(checkAuth);
+
+  // Initialize auth state once per "not yet completed" cycle. Dependencies must stay
+  // referentially stable (useAuthState/useGuestUser useCallback); otherwise this effect
+  // re-ran every render and spammed POST /users for guest creation.
+  useEffect(() => {
+    if (state.authCheckCompleted) return;
+
+    const initializeAuth = async () => {
+      try {
+        await checkAuth();
+        markAuthCheckCompleted();
+      } catch (error) {
+        console.error('🚨 useSessionManager: Error during auth initialization:', error);
+        setInitializationComplete();
+      }
+    };
+
+    void initializeAuth();
+  }, [state.authCheckCompleted, checkAuth, markAuthCheckCompleted, setInitializationComplete]);
 
   // Update refs when functions change
   useEffect(() => {

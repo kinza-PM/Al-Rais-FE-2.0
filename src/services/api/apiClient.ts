@@ -1,10 +1,9 @@
 import type { ApiResponse, RequestOptions } from "../../types/ApiClientTypes";
 import { TokenService } from "../tokenService";
+import { VITE_GUEST_REST_API_BASE } from "../../config/publicEnv";
 
-// apiClient.ts
-const API_BASE_URL =
-  import.meta.env.VITE_API_URL ||
-  "https://aj8e5f03b6.execute-api.eu-west-1.amazonaws.com/dev";
+// apiClient.ts — guest user/session REST (`/users`, `/sessions`)
+const API_BASE_URL = VITE_GUEST_REST_API_BASE;
 
 let baseUrl = API_BASE_URL;
 

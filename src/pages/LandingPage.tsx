@@ -14,6 +14,7 @@ import ArrowLeft from "../assets/images/arrow-left-s-line 1.png";
 import ArrowRight from "../assets/images/arrow-right-s-line 2.png";
 import PopularDestinationSection from "../components/molecules/PopularDestinationSection";
 import RecentSearchesSection from "../components/molecules/RecentSearchesSection";
+import { useLandingHeroStore } from "../store/useLandingHeroStore";
 import BestDealsSection from "../components/molecules/BestDealsSection";
 import CustomersFeedbackSection from "../components/molecules/CustomersFeedbackSection";
 
@@ -34,18 +35,11 @@ const LandingPage: React.FC = () => {
     useOutletContext<LandingPageContext>();
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const landingHeroSearchTab = useHotelStore((s) => s.landingHeroSearchTab);
-  const setLandingHeroSearchTab = useHotelStore((s) => s.setLandingHeroSearchTab);
+  const heroSearchTab = useLandingHeroStore((s) => s.heroTab);
+  const setHeroSearchTab = useLandingHeroStore((s) => s.setHeroTab);
 
-  /* Returning from hotel results (or footer → search): open Hotels tab if we still have search state */
-  useLayoutEffect(() => {
-    if (useHotelStore.getState().hotel) {
-      setLandingHeroSearchTab("hotels");
-    }
-  }, [setLandingHeroSearchTab]);
-
-  const handleHeroTopTabClick = (tab: "flights" | "hotels") => {
-    setLandingHeroSearchTab(tab);
+  const handleHeroTopTabClick = (tab: "flights" | "hotels" | "sightseeing") => {
+    setHeroSearchTab(tab);
     // scroll the hero search form into view
     const el = document.getElementById("hero-search-form");
     if (el) {
@@ -113,7 +107,7 @@ const LandingPage: React.FC = () => {
                 className="rounded-[25px] object-cover"
                 style={{
                   width: 1177,
-                  height: 475,
+                  height: 390,
                   borderRadius: 25,
                   opacity: 1,
                   marginLeft: 68,
@@ -134,13 +128,13 @@ const LandingPage: React.FC = () => {
                     alt="Polygon background"
                     className="w-full h-full absolute inset-0 rounded-l-[20px]"
                     style={{
-                      marginLeft: '-40px',
+                      marginLeft: "-40px",
                     }}
                   />
-                  
+
                   {/* Text overlay on polygon */}
-                  <div className="relative flex items-center h-full px-6 sm:px-8 z-10">
-                    <p className="text-white font-semibold text-xl sm:text-2xl md:text-[28px] lg:text-[32px] leading-snug sm:leading-snug md:leading-9 lg:leading-[40px] max-w-xs sm:max-w-sm whitespace-pre-line">
+                  <div className="relative flex items-end h-full z-10 pb-20">
+                    <p className="text-white text-[42px] leading-[110%] font-normal whitespace-pre-line" style={{ fontFamily: "Inter, sans-serif", letterSpacing: "0%" }}>
                       {currentSlide.text}
                     </p>
                   </div>
@@ -153,7 +147,7 @@ const LandingPage: React.FC = () => {
                   className="bg-white shadow-[0_10px_30px_rgba(0,0,0,0.15)] flex items-center justify-center"
                   style={{
                     width: 131,
-                    height: 57,
+                    height: 45,
                     borderBottomRightRadius: 30,
                     borderBottomLeftRadius: 30,
                     opacity: 1,
@@ -174,7 +168,7 @@ const LandingPage: React.FC = () => {
             <div className="absolute inset-0 flex items-center justify-between pointer-events-none px-2">
               <button
                 type="button"
-                className="pointer-events-auto -translate-x-8 sm:-translate-x-10 md:-translate-x-12 lg:-translate-x-14 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors duration-150"
+                className="pointer-events-auto -translate-x-8 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors duration-150"
                 onClick={prevSlide}
                 aria-label="Previous slide"
                 style={{ background: "transparent" }}
@@ -184,7 +178,7 @@ const LandingPage: React.FC = () => {
 
               <button
                 type="button"
-                className="pointer-events-auto translate-x-8 sm:translate-x-10 md:translate-x-12 lg:translate-x-14 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors duration-150"
+                className="pointer-events-auto translate-x-7 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors duration-150"
                 onClick={nextSlide}
                 aria-label="Next slide"
                 style={{ background: "transparent" }}
@@ -193,20 +187,19 @@ const LandingPage: React.FC = () => {
               </button>
             </div>
 
-            {/* Bottom tabs: Flights / Hotels / Packages (now control hero search tab) */}
+            {/* Bottom tabs: Flights / Hotels / Sightseeing / Packages */}
             <div
-              className="absolute left-1/2 flex gap-[10px] z-10"
+              className="absolute left-1/2 flex flex-wrap justify-center gap-[8px] sm:gap-[10px] z-10 max-w-[95vw]"
               style={{ transform: "translateX(-50%)", bottom: "-0.01rem" }}
             >
-              {/* Active tab – Flights */}
               <button
                 type="button"
                 onClick={() => handleHeroTopTabClick("flights")}
-                className={`flex items-center justify-center text-[16px] font-medium leading-[1] ${landingHeroSearchTab === "flights" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
+                className={`flex items-center justify-center whitespace-nowrap text-[13px] sm:text-[16px] font-medium leading-[1] ${heroSearchTab === "flights" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
                 style={{
-                  width: 108,
+                  minWidth: 96,
                   height: 39,
-                  padding: "10px 20px",
+                  padding: "10px 14px",
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                 }}
@@ -214,15 +207,14 @@ const LandingPage: React.FC = () => {
                 FLIGHTS
               </button>
 
-              {/* Inactive tab – Hotels */}
               <button
                 type="button"
                 onClick={() => handleHeroTopTabClick("hotels")}
-                className={`flex items-center justify-center text-[16px] font-medium leading-[1] ${landingHeroSearchTab === "hotels" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
+                className={`flex items-center justify-center whitespace-nowrap text-[13px] sm:text-[16px] font-medium leading-[1] ${heroSearchTab === "hotels" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
                 style={{
-                  width: 108,
+                  minWidth: 96,
                   height: 39,
-                  padding: "10px 20px",
+                  padding: "10px 14px",
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                 }}
@@ -230,15 +222,28 @@ const LandingPage: React.FC = () => {
                 HOTELS
               </button>
 
-              {/* Inactive tab – Packages */}
               <button
                 type="button"
-                // Packages remains independent for now
-                className="flex items-center justify-center text-[16px] font-medium leading-[1] text-[#081326] bg-[#E5E7EB]"
+                onClick={() => handleHeroTopTabClick("sightseeing")}
+                className={`flex items-center justify-center whitespace-nowrap text-[13px] sm:text-[16px] font-medium leading-[1] ${heroSearchTab === "sightseeing" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
                 style={{
-                  width: 108,
+                  minWidth: 96,
                   height: 39,
-                  padding: "10px 20px",
+                  padding: "10px 14px",
+                  borderTopLeftRadius: 16,
+                  borderTopRightRadius: 16,
+                }}
+              >
+                SIGHTSEEING
+              </button>
+
+              <button
+                type="button"
+                className="flex items-center justify-center whitespace-nowrap text-[13px] sm:text-[16px] font-medium leading-[1] text-[#081326] bg-[#E5E7EB]"
+                style={{
+                  minWidth: 96,
+                  height: 39,
+                  padding: "10px 14px",
                   borderTopLeftRadius: 16,
                   borderTopRightRadius: 16,
                 }}
@@ -250,11 +255,8 @@ const LandingPage: React.FC = () => {
         </div>
 
         {/* Spacing below hero form so calendar can fully show */}
-        <div className="mt-12 sm:mt-16 mb-24">
-          <HeroSection
-            activeTab={landingHeroSearchTab}
-            onTabChange={setLandingHeroSearchTab}
-          />
+        <div className="mt-8 sm:mt-12 mb-24">
+          <HeroSection activeTab={heroSearchTab} />
         </div>
       </div>
 

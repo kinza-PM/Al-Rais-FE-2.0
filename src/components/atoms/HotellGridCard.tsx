@@ -6,6 +6,9 @@ import GreenTick from "../../../src/assets/images/tik.png";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
+import HotelPriceSummaryTooltip from "./HotelPriceSummaryTooltip";
+import { HotelProxiedImage } from "./HotelProxiedImage";
+import { aggregateHotelTaxesFromRoomArray } from "../../utils/hotelBookingHelper";
 import {
   processHotelSearchListingData,
   getHotelGuestReviewMeta,
@@ -56,19 +59,19 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             searchKey: hotel.searchKey,
             bookingParams: bookingParams ?? undefined,
           },
-        }
+        },
       );
     };
 
     const {
-      isAvailable,
+      // isAvailable,
       bestRoom,
       currency,
       price,
       totalOriginalPrice: originalPrice,
       hasOffer,
       hasFreeCancellation,
-      availableRooms,
+      // availableRooms,
     } = processHotelSearchListingData(hotel);
 
     const apiImages: string[] =
@@ -170,36 +173,30 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             aria-label={`View ${hotelName} details`}
           >
             <div className="flex-1 min-w-0 overflow-hidden rounded-2xl">
-              <img
+              <HotelProxiedImage
                 src={imageUrl}
                 alt={hotelName}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = HotelImage;
-                }}
+                fallback={HotelImage}
               />
             </div>
 
             <div className="flex flex-col flex-[0_0_42%] min-w-0 gap-1.5">
               <div className="overflow-hidden flex-1 min-h-0 rounded-2xl">
-                <img
+                <HotelProxiedImage
                   src={imageUrl2}
                   alt={hotelName}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = HotelImage2;
-                  }}
+                  fallback={HotelImage2}
                 />
               </div>
 
               <div className="overflow-hidden flex-1 min-h-0 rounded-2xl">
-                <img
+                <HotelProxiedImage
                   src={imageUrl3}
                   alt={hotelName}
                   className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.currentTarget.src = HotelImage3;
-                  }}
+                  fallback={HotelImage3}
                 />
               </div>
             </div>
@@ -370,25 +367,40 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             )}
           </div>
 
-          <div className="mb-2 text-right">
-            <div className="flex flex-wrap items-baseline justify-end gap-x-3 gap-y-1">
-              {hasOffer && originalPrice > price && (
-                <span
-                  style={{
-                    fontFamily: "Inter, sans-serif",
-                    fontWeight: 700,
-                    fontSize: "22px",
-                    color: "#EA0029",
-                    textDecoration: "line-through",
-                    lineHeight: "1",
-                    whiteSpace: "nowrap",
-                  }}
-                >
-                  {currency} {originalPrice.toFixed(2)}
-                </span>
-              )}
-              <div className="flex items-baseline gap-1">
-                <span
+          <div className="mb-2 text-left">
+            <div
+              style={{
+                fontFamily: "Inter, sans-serif",
+                fontWeight: 400,
+                fontSize: "11px",
+                color: "#3D495C",
+                lineHeight: "100%",
+                marginBottom: "4px",
+              }}
+            >
+              Starting from (including VAT)
+            </div>
+            <div className="flex items-start justify-end gap-1.5">
+              <div className="min-w-0 text-left mt-1">
+                {hasOffer && originalPrice > price && (
+                  <span
+                    style={{
+                      fontFamily: "Inter, sans-serif",
+                      fontWeight: 700,
+                      fontSize: "22px",
+                      color: "#EA0029",
+                      textDecoration: "line-through",
+                      lineHeight: "100%",
+                      maxWidth: "100%",
+                      overflowWrap: "anywhere",
+                      whiteSpace: "nowrap",
+                      display: "block",
+                    }}
+                  >
+                    {currency} {originalPrice.toFixed(2)}
+                  </span>
+                )}
+                {/* <span
                   style={{
                     fontFamily: "Inter, sans-serif",
                     fontWeight: 700,
@@ -400,13 +412,40 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                 >
                   {currency} {price.toFixed(2)}
                 </span>
-                <span
-                  className="text-[12px] font-normal leading-none text-[#3D495C]"
-                  style={{ fontFamily: "Inter, sans-serif" }}
-                >
+                <span className="text-[12px] font-bold leading-none text-[#3D495C]">
                   /Night
-                </span>
+                </span> */}
+                <div className="flex max-w-full flex-wrap items-end gap-y-[6px]">
+                  <span
+                    style={{
+                      fontFamily: "Inter, sans-serif",
+                      fontWeight: 700,
+                      fontSize: "32px",
+                      lineHeight: "100%",
+                      color: "#0A0C0F",
+                      maxWidth: "100%",
+                      wordBreak: "break-word",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {currency} {price.toFixed(2)}
+                  </span>
+                  <span className="text-[12px] font-bold leading-none text-[#3D495C]">
+                    /Night
+                  </span>
+                </div>
               </div>
+              <HotelPriceSummaryTooltip
+                totalPrice={price}
+                currency={currency}
+                taxes={aggregateHotelTaxesFromRoomArray(
+                  Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
+                    ? hotel.rooms
+                    : bestRoom
+                      ? [bestRoom]
+                      : [],
+                )}
+              />
             </div>
           </div>
 
@@ -424,7 +463,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             >
               {roomTypeName}
             </span>
-            {isAvailable &&
+            {/* {isAvailable &&
               availableRooms.length > 0 &&
               availableRooms.length <= 5 && (
                 <span
@@ -439,7 +478,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                   Only {availableRooms.length} room
                   {availableRooms.length > 1 ? "s" : ""} left on Al Rais
                 </span>
-              )}
+              )} */}
           </div>
 
           <p

@@ -5,10 +5,33 @@ import ShareTicketModal from "../atoms/ShareTicketModal";
 import { transformBookingToFlightBookingFormat } from "../../utils/transformBookingData";
 import airlineDefault from "../../assets/images/emirates.png";
 
-export type BookingStatus = "Confirmed" | "Pending" | "Expired";
+export type BookingStatus =
+  | "Confirmed"
+  | "Pending"
+  | "Expired"
+  | "Cancelled";
 export type TripMode = "Flights" | "Hotels";
 
 function StatusPill({ status }: { status: BookingStatus }) {
+  if (status === "Cancelled") {
+    return (
+      <span
+        className="inline-flex items-center justify-center text-[12px] font-medium text-[#9A3412]"
+        style={{
+          background: "#FFEDD5",
+          lineHeight: "15px",
+          minWidth: "90px",
+          height: "31px",
+          borderRadius: "100px",
+          padding: "8px 15px",
+          gap: "10px",
+        }}
+      >
+        Cancelled
+      </span>
+    );
+  }
+
   if (status === "Confirmed") {
     return (
       <span

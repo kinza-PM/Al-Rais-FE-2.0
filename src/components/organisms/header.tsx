@@ -169,19 +169,32 @@ const AppHeader: React.FC<HeaderProps> = ({
 
   // Navigation links
   const navItems = [
-    { key: "home", label: <Link to="/">Home</Link> },
+    {
+      key: "home",
+      label: (
+        <Link
+          to="/"
+          onClick={(e) => {
+            if (window.location.pathname === "/") {
+              e.preventDefault();
+              window.location.reload();
+            }
+          }}
+        >
+          Home
+        </Link>
+      ),
+    },
     { key: "travel", label: <Link to="/travel">Travel</Link> },
     { key: "packages", label: <Link to="/packages">Packages</Link> },
     { key: "about", label: <Link to="/about">About</Link> },
     ...(isAuthenticated
       ? [
-          {
-            key: "my-bookings",
-            label: (
-              <Link to={buildMyBookingsUrl()}>My bookings</Link>
-            ),
-          },
-        ]
+        {
+          key: "my-bookings",
+          label: <Link to={buildMyBookingsUrl()}>My bookings</Link>,
+        },
+      ]
       : []),
   ];
 
@@ -190,7 +203,7 @@ const AppHeader: React.FC<HeaderProps> = ({
       className="bg-white"
       style={{
         background: "#FFFFFF",
-        padding: isMobile ? "12px 16px" : isTablet ? "14px 24px" : "16px 134px",
+        padding: isMobile ? "12px 16px" : isTablet ? "14px 24px" : "16px 180px",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -207,6 +220,12 @@ const AppHeader: React.FC<HeaderProps> = ({
           to="/"
           aria-label="Go to home page"
           className="cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          onClick={(e) => {
+            if (window.location.pathname === "/") {
+              e.preventDefault();
+              window.location.reload();
+            }
+          }}
         >
           <Logo src={logoSrc} alt="Al Rais Travel logo" size="small" />
         </Link>
@@ -214,7 +233,13 @@ const AppHeader: React.FC<HeaderProps> = ({
 
       {/* Desktop right controls (Figma-style header) */}
       {!isMobile && (
-        <div style={{ display: "flex", alignItems: "center", gap: isTablet ? "8px" : "12px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: isTablet ? "8px" : "12px",
+          }}
+        >
           {/* Hamburger Menu Button */}
           <button
             onClick={() => setDrawerVisible(true)}
@@ -240,214 +265,257 @@ const AppHeader: React.FC<HeaderProps> = ({
             <MenuOutlined style={{ fontSize: "16px", color: "#3D495C" }} />
           </button>
 
-          {/* USD Currency Selector */}
-          <Dropdown
-            menu={{
-              items: [
-                {
-                  key: "usd",
-                  label: (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "4px 0",
-                      }}
-                    >
-                      <FlagIcon src={FlagUSA} size={20} />
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 500,
-                          color: "#0A0C0F",
-                        }}
-                      >
-                        USD - US Dollar
-                      </span>
-                    </div>
-                  ),
-                },
-                {
-                  key: "aed",
-                  label: (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "4px 0",
-                      }}
-                    >
-                      <FlagIcon src={FlagUAE} size={20} />
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 500,
-                          color: "#0A0C0F",
-                        }}
-                      >
-                        AED - UAE Dirham
-                      </span>
-                    </div>
-                  ),
-                },
-                {
-                  key: "inr",
-                  label: (
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                        padding: "4px 0",
-                      }}
-                    >
-                      <FlagIcon src={FlagIND} size={20} />
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          fontWeight: 500,
-                          color: "#0A0C0F",
-                        }}
-                      >
-                        INR - Indian Rupee
-                      </span>
-                    </div>
-                  ),
-                },
-              ],
-            }}
-            placement="bottomRight"
-          >
-            <button
-              style={{
-                width: isTablet ? "96px" : "110px",
-                height: isTablet ? "44px" : "50px",
-                padding: isTablet ? "0 12px" : "0 16px",
-                border: "1.5px solid #5383DA",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-                backgroundColor: "#FFFFFF",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#F0F7FF";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#FFFFFF";
-              }}
-            >
-              <FlagIcon src={FlagUSCircle} size={isTablet ? 20 : 24} />
-              <span
-                style={{
-                  fontSize: isTablet ? "12px" : "13px",
-                  fontWeight: 500,
-                  color: "#0A0C0F",
+          {/* Hide duplicated header controls while drawer is open */}
+          {!drawerVisible && (
+            <>
+              {/* USD Currency Selector */}
+              <Dropdown
+                disabled
+                menu={{
+                  items: [
+                    {
+                      key: "usd",
+                      label: (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "4px 0",
+                          }}
+                        >
+                          <FlagIcon src={FlagUSA} size={20} />
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: 500,
+                              color: "#0A0C0F",
+                            }}
+                          >
+                            USD - US Dollar
+                          </span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "aed",
+                      label: (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "4px 0",
+                          }}
+                        >
+                          <FlagIcon src={FlagUAE} size={20} />
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: 500,
+                              color: "#0A0C0F",
+                            }}
+                          >
+                            AED - UAE Dirham
+                          </span>
+                        </div>
+                      ),
+                    },
+                    {
+                      key: "inr",
+                      label: (
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            padding: "4px 0",
+                          }}
+                        >
+                          <FlagIcon src={FlagIND} size={20} />
+                          <span
+                            style={{
+                              fontSize: "13px",
+                              fontWeight: 500,
+                              color: "#0A0C0F",
+                            }}
+                          >
+                            INR - Indian Rupee
+                          </span>
+                        </div>
+                      ),
+                    },
+                  ],
                 }}
+                placement="bottomRight"
               >
-                USD
-              </span>
-              <img
-                src={CurrencyChevronIcon}
-                alt="Open currency dropdown"
-                style={{
-                  width: "16px",
-                  height: "16px",
-                  objectFit: "contain",
-                  marginLeft: "2px",
-                }}
-              />
-            </button>
-          </Dropdown>
-
-          {/* EN Language Selector — removed from header per request */}
-
-          {/* Auth area: avatar when logged in, Login/Sign up when not */}
-          {isAuthenticated && user ? (
-            <Dropdown menu={userMenu} placement="bottomRight" arrow>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  cursor: "pointer",
-                  padding: "4px 10px",
-                  borderRadius: "8px",
-                  transition: "background-color 0.2s",
-                  marginLeft: "2px",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#F9FAFB";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "transparent";
-                }}
-              >
-                {avatarUrl ? (
-                  <img
-                    src={avatarUrl}
-                    alt="User avatar"
+                <button
+                  disabled
+                  style={{
+                    width: isTablet ? "96px" : "110px",
+                    height: isTablet ? "44px" : "50px",
+                    padding: isTablet ? "0 12px" : "0 16px",
+                    border: "1.5px solid #C2CAD6",
+                    // border: "1.5px solid #5383DA",
+                    borderRadius: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    // backgroundColor: "#FFFFFF",
+                    backgroundColor: "#F3F4F6",
+                    cursor: "not-allowed",
+                    transition: "all 0.2s",
+                  }}
+                // onMouseEnter={(e) => {
+                //   e.currentTarget.style.backgroundColor = "#F0F7FF";
+                // }}
+                // onMouseLeave={(e) => {
+                //   e.currentTarget.style.backgroundColor = "#FFFFFF";
+                // }}
+                >
+                  <FlagIcon src={FlagUSCircle} size={isTablet ? 20 : 24} />
+                  <span
                     style={{
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "50%",
-                      objectFit: "cover",
-                      border: "2px solid #E4E4E7",
-                    }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: "40px",
-                      height: "40px",
-                      borderRadius: "50%",
-                      backgroundColor: "#2351A3",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      border: "1px solid #E4E4E7",
+                      fontSize: isTablet ? "12px" : "13px",
+                      fontWeight: 500,
+                      color: "#0A0C0F",
                     }}
                   >
+                    USD
+                  </span>
+                  <img
+                    src={CurrencyChevronIcon}
+                    alt="Open currency dropdown"
+                    style={{
+                      width: "16px",
+                      height: "16px",
+                      objectFit: "contain",
+                      marginLeft: "2px",
+                    }}
+                  />
+                </button>
+              </Dropdown>
+
+              {/* EN Language Selector — removed from header per request */}
+
+              {/* Basket icon after Sign up */}
+              <button
+                onClick={() => navigate("/cart")}
+                disabled
+                style={{
+                  width: isTablet ? "44px" : "50px",
+                  height: isTablet ? "44px" : "50px",
+                  border: "1.5px solid #C2CAD6",
+                  // border: "1.5px solid #5383DA",
+                  borderRadius: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#F3F4F6",
+                  // backgroundColor: "#FFFFFF",
+                  cursor: "not-allowed",
+                  transition: "all 0.2s",
+                }}
+              // onMouseEnter={(e) => {
+              //   e.currentTarget.style.backgroundColor = "#F0F7FF";
+              // }}
+              // onMouseLeave={(e) => {
+              //   e.currentTarget.style.backgroundColor = "#FFFFFF";
+              // }}
+              >
+                <img
+                  src={BasketIcon}
+                  alt="Cart"
+                  style={{
+                    width: "24px",
+                    height: "24px",
+                    objectFit: "contain",
+                  }}
+                />
+              </button>
+
+              {/* Auth area: avatar when logged in, Login/Sign up when not */}
+              {isAuthenticated && user ? (
+                <Dropdown menu={userMenu} placement="bottomRight" arrow>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                      padding: "4px 10px",
+                      borderRadius: "8px",
+                      transition: "background-color 0.2s",
+                      marginLeft: "2px",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = "#F9FAFB";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent";
+                    }}
+                  >
+                    {avatarUrl ? (
+                      <img
+                        src={avatarUrl}
+                        alt="User avatar"
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          border: "2px solid #E4E4E7",
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          borderRadius: "50%",
+                          backgroundColor: "#2351A3",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          border: "1px solid #E4E4E7",
+                        }}
+                      >
+                        <span
+                          style={{
+                            color: "#fff",
+                            fontWeight: 600,
+                            fontSize: "14px",
+                          }}
+                        >
+                          {initials}
+                        </span>
+                      </div>
+                    )}
                     <span
                       style={{
-                        color: "#fff",
-                        fontWeight: 600,
                         fontSize: "14px",
+                        fontWeight: 500,
+                        color: "#0A0C0F",
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      {initials}
+                      Welcome, {displayName.split("@")[0]}
                     </span>
                   </div>
-                )}
-                <span
+                </Dropdown>
+              ) : (
+                <div
                   style={{
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: "#0A0C0F",
-                    whiteSpace: "nowrap",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: isTablet ? "6px" : "8px",
+                    marginLeft: "8px",
                   }}
                 >
-                  Welcome, {displayName.split("@")[0]}
-                </span>
-              </div>
-            </Dropdown>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: isTablet ? "6px" : "8px",
-                marginLeft: "8px",
-              }}
-            >
-              <Button
-                onClick={onLoginClick}
-                overrideClasses
-                className="
+                  <Button
+                    onClick={onLoginClick}
+                    overrideClasses
+                    className="
                   h-[47px]
                   px-[20px] xl:px-[40px]
                   rounded-[16px]
@@ -459,13 +527,13 @@ const AppHeader: React.FC<HeaderProps> = ({
                   flex items-center justify-center gap-[10px]
                   bg-white
                 "
-              >
-                Login
-              </Button>
-              <Button
-                onClick={onSignupClick}
-                overrideClasses
-                className="
+                  >
+                    Login
+                  </Button>
+                  <Button
+                    onClick={onSignupClick}
+                    overrideClasses
+                    className="
                   h-[47px]
                   px-[20px] xl:px-[40px]
                   rounded-[16px]
@@ -477,40 +545,13 @@ const AppHeader: React.FC<HeaderProps> = ({
                   flex items-center justify-center gap-[10px]
                   bg-white
                 "
-              >
-                Sign up
-              </Button>
-            </div>
+                  >
+                    Sign up
+                  </Button>
+                </div>
+              )}
+            </>
           )}
-
-          {/* Basket icon after Sign up */}
-          <button
-            onClick={() => navigate("/cart")}
-            style={{
-              width: isTablet ? "44px" : "50px",
-              height: isTablet ? "44px" : "50px",
-              border: "1.5px solid #5383DA",
-              borderRadius: "16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#FFFFFF",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#F0F7FF";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "#FFFFFF";
-            }}
-          >
-            <img
-              src={BasketIcon}
-              alt="Cart"
-              style={{ width: "24px", height: "24px", objectFit: "contain" }}
-            />
-          </button>
         </div>
       )}
 
@@ -605,45 +646,50 @@ const AppHeader: React.FC<HeaderProps> = ({
       {isMobile && isAuthenticated && user && (
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           {/* Shopping Cart */}
-          <button
-            onClick={() => navigate("/cart")}
-            style={{
-              width: "40px",
-              height: "40px",
-              border: "2px solid #5383DA",
-              borderRadius: "16px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              backgroundColor: "#FFFFFF",
-              cursor: "pointer",
-              position: "relative",
-            }}
-          >
-            <ShoppingCartOutlined
-              style={{ fontSize: "16px", color: "#3D495C" }}
-            />
-            <div
+          {!drawerVisible && (
+            <button
+              disabled
+              onClick={() => navigate("/cart")}
               style={{
-                position: "absolute",
-                top: "-6px",
-                right: "-6px",
-                backgroundColor: "#EA0029",
-                color: "#FFFFFF",
-                fontSize: "10px",
-                fontWeight: 700,
-                borderRadius: "50%",
-                width: "18px",
-                height: "18px",
+                width: "40px",
+                height: "40px",
+                border: "2px solid #C2CAD6",
+                // border: "2px solid #5383DA",
+                borderRadius: "16px",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "2px solid #FFFFFF",
+                backgroundColor: "#F3F4F6",
+                // backgroundColor: "#FFFFFF",
+                cursor: "not-allowed",
+                position: "relative",
               }}
             >
-              02
-            </div>
-          </button>
+              <ShoppingCartOutlined
+                style={{ fontSize: "16px", color: "#3D495C" }}
+              />
+              <div
+                style={{
+                  position: "absolute",
+                  top: "-6px",
+                  right: "-6px",
+                  backgroundColor: "#EA0029",
+                  color: "#FFFFFF",
+                  fontSize: "10px",
+                  fontWeight: 700,
+                  borderRadius: "50%",
+                  width: "18px",
+                  height: "18px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  border: "2px solid #FFFFFF",
+                }}
+              >
+                02
+              </div>
+            </button>
+          )}
 
           {/* Hamburger Menu */}
           <button
@@ -668,20 +714,24 @@ const AppHeader: React.FC<HeaderProps> = ({
       {/* Mobile View - Not Logged In */}
       {isMobile && !isAuthenticated && (
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <Button
-            onClick={onLoginClick}
-            overrideClasses
-            className="h-[40px] px-3 rounded-[12px] border-[1.5px] border-[#5383DA] bg-[#2351A3] text-[#FFFFFF] text-xs font-semibold"
-          >
-            Login
-          </Button>
-          <Button
-            onClick={onSignupClick}
-            overrideClasses
-            className="h-[40px] px-3 rounded-[12px] border-[1.5px] border-[#5383DA] bg-[#FFFFFF] text-[#2351A3] text-xs font-semibold"
-          >
-            Sign up
-          </Button>
+          {!drawerVisible && (
+            <>
+              <Button
+                onClick={onLoginClick}
+                overrideClasses
+                className="h-[40px] px-3 rounded-[12px] border-[1.5px] border-[#5383DA] bg-[#2351A3] text-[#FFFFFF] text-xs font-semibold"
+              >
+                Login
+              </Button>
+              <Button
+                onClick={onSignupClick}
+                overrideClasses
+                className="h-[40px] px-3 rounded-[12px] border-[1.5px] border-[#5383DA] bg-[#FFFFFF] text-[#2351A3] text-xs font-semibold"
+              >
+                Sign up
+              </Button>
+            </>
+          )}
           <button
             onClick={() => setDrawerVisible(true)}
             style={{
@@ -709,7 +759,6 @@ const AppHeader: React.FC<HeaderProps> = ({
         open={drawerVisible}
         width={280}
       >
-
         {/* User Profile in Drawer */}
         {isAuthenticated && user && (
           <div
@@ -782,19 +831,23 @@ const AppHeader: React.FC<HeaderProps> = ({
                     { key: "aed", label: "🇦🇪 AED - UAE Dirham" },
                   ],
                 }}
+                disabled
               >
                 <button
+                  disabled
                   style={{
                     flex: 1,
                     height: "40px",
-                    border: "2px solid #5383DA",
+                    // border: "2px solid #5383DA",
+                    border: "2px solid #C2CAD6",
                     borderRadius: "16px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: "6px",
-                    backgroundColor: "#FFFFFF",
-                    cursor: "pointer",
+                    // backgroundColor: "#FFFFFF",
+                    backgroundColor: "#F3F4F6",
+                    cursor: "not-allowed",
                   }}
                 >
                   <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
@@ -811,6 +864,7 @@ const AppHeader: React.FC<HeaderProps> = ({
               </Dropdown>
 
               <Dropdown
+                disabled
                 menu={{
                   items: [
                     { key: "en", label: "🇺🇸 English" },
@@ -820,17 +874,20 @@ const AppHeader: React.FC<HeaderProps> = ({
                 }}
               >
                 <button
+                  disabled
                   style={{
                     flex: 1,
                     height: "40px",
-                    border: "2px solid #5383DA",
+                    // border: "2px solid #5383DA",
+                    border: "2px solid #C2CAD6",
                     borderRadius: "16px",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     gap: "6px",
-                    backgroundColor: "#FFFFFF",
-                    cursor: "pointer",
+                    // backgroundColor: "#FFFFFF",
+                    backgroundColor: "#F3F4F6",
+                    cursor: "not-allowed",
                   }}
                 >
                   <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
@@ -902,17 +959,20 @@ const AppHeader: React.FC<HeaderProps> = ({
               Sign up
             </button>
             <button
+              disabled
               onClick={() => {
                 setDrawerVisible(false);
                 navigate("/cart");
               }}
               style={{
                 padding: "12px 16px",
-                border: "1.5px solid #E4E4E7",
+                border: "1.5px solid #C2CAD6",
+                // border: "1.5px solid #E4E4E7",
                 borderRadius: "14px",
-                backgroundColor: "#FFFFFF",
+                // backgroundColor: "#FFFFFF",
+                backgroundColor: "#F3F4F6",
                 color: "#0A0C0F",
-                cursor: "pointer",
+                cursor: "not-allowed",
                 fontSize: "14px",
                 fontWeight: 500,
                 display: "flex",

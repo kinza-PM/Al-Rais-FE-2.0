@@ -1,10 +1,16 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   useLocation,
   useNavigationType,
   useSearchParams,
 } from "react-router-dom";
-import { Button } from "../components";
 import UserBookingsListing, {
   type TripMode,
 } from "../components/molecules/UserBookingsListing";
@@ -12,12 +18,18 @@ import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useMyBooking } from "../hooks/useUserProfileBooking";
 import { useMyHotelBooking } from "../hooks/useMyHotelBooking";
+import { useMyActivityBookingsQuery } from "../hooks/useMyActivityBooking";
 import Loader from "../components/atoms/Loader";
 import {
+  mergeSightseeingBookingLists,
   transformBookingsResponse,
   transformHotelBookingsResponse,
+  transformSightseeingBookingsResponse,
+  type SightseeingBookingCardItem,
 } from "../utils/transformBookingData";
 import UserHotelBookingsListing from "../components/molecules/UserHotelBookingsListing";
+import UserSightseeingBookingsListing from "../components/molecules/UserSightseeingBookingsListing";
+import { getLocalSightseeingBookings } from "../utils/sightseeingLocalBookings";
 import {
   MY_BOOKINGS_LAST_QS_SESSION_KEY,
   MY_BOOKINGS_RESTORE_FLAG_SESSION_KEY,
@@ -25,7 +37,7 @@ import {
 } from "../utils/myBookingsUrl";
 
 const tabs = ["All", "Pending", "Confirmed", "Expired"] as const;
-const modeTabs = ["Flights", "Hotels"] as const;
+const modeTabs = ["Flights", "Hotels", "Sightseeing"] as const;
 
 type StatusTab = (typeof tabs)[number];
 
@@ -42,21 +54,47 @@ function statusToParam(t: StatusTab): MyBookingsStatusParam {
   return t.toLowerCase() as MyBookingsStatusParam;
 }
 
+/** Figma category row — full pill, 108×39, radius 16 */
+function categoryTabClass(selected: boolean): string {
+  return [
+    "box-border flex h-[39px] w-[108px] shrink-0 cursor-pointer items-center justify-center rounded-[16px] border-0 px-[20px] py-[10px] text-[14px] font-medium uppercase leading-none tracking-normal transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2351A3] focus-visible:ring-offset-2",
+    selected
+      ? "bg-[#2351A3] text-white"
+      : "bg-[#E4E4E7] text-[#0A0C0F]",
+  ].join(" ");
+}
+
+/** Figma status row — rounded top only */
+function statusTabClass(selected: boolean): string {
+  return [
+    "box-border flex h-[39px] w-[108px] shrink-0 cursor-pointer items-center justify-center rounded-tl-[16px] rounded-tr-[16px] rounded-bl-none rounded-br-none border-0 px-[20px] py-[10px] text-[14px] font-medium uppercase leading-none tracking-normal transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2351A3] focus-visible:ring-offset-2",
+    selected
+      ? "bg-[#2351A3] text-white"
+      : "bg-[#E4E4E7] text-[#0A0C0F]",
+  ].join(" ");
+}
+
 const MyBookingsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const navigationType = useNavigationType();
   const [userMyFlightBooking, setUserMyFlightBookings] = useState<any>([]);
   const [userMyHotelBookings, setUserMyHotelBookings] = useState<any[]>([]);
+  const [userSightseeingBookings, setUserSightseeingBookings] = useState<
+    SightseeingBookingCardItem[]
+  >([]);
+  const sightseeingErrorToastKey = useRef<string | null>(null);
 
   const active = useMemo(
     () => parseStatusParam(searchParams.get("status")),
     [searchParams],
   );
-  const mode = useMemo<(typeof modeTabs)[number]>(
-    () => (searchParams.get("mode") === "hotels" ? "Hotels" : "Flights"),
-    [searchParams],
-  );
+  const mode = useMemo<(typeof modeTabs)[number]>(() => {
+    const m = searchParams.get("mode");
+    if (m === "hotels") return "Hotels";
+    if (m === "sightseeing") return "Sightseeing";
+    return "Flights";
+  }, [searchParams]);
 
   const setActiveTab = useCallback(
     (t: StatusTab) => {
@@ -78,7 +116,13 @@ const MyBookingsPage = () => {
       setSearchParams(
         (prev) => {
           const p = new URLSearchParams(prev);
-          p.set("mode", m === "Hotels" ? "hotels" : "flights");
+          const modeVal =
+            m === "Hotels"
+              ? "hotels"
+              : m === "Sightseeing"
+                ? "sightseeing"
+                : "flights";
+          p.set("mode", modeVal);
           if (!p.get("status")) p.set("status", "all");
           return p;
         },
@@ -88,9 +132,35 @@ const MyBookingsPage = () => {
     [setSearchParams],
   );
 
+  /** e.g. navigate from sightseeing confirmation with `state: { mode: "Sightseeing" }` */
+  useEffect(() => {
+    const m = (location.state as { mode?: string } | null)?.mode;
+    if (m === "Sightseeing" || m === "Hotels" || m === "Flights") {
+      setModeTab(m);
+    }
+  }, [location.state, setModeTab]);
+
   const { mutateAsync, isPending } = useMyBooking();
   const { mutateAsync: fetchHotelBookings, isPending: isHotelPending } =
     useMyHotelBooking();
+  const sightFilters =
+    mode === "Sightseeing"
+      ? {
+          status:
+            active === "Confirmed" ? "confirmed" : active.toLowerCase(),
+        }
+      : null;
+  const {
+    data: activityBookingsData,
+    isLoading: isSightLoading,
+    isError: isSightError,
+    error: sightQueryError,
+  } = useMyActivityBookingsQuery(sightFilters);
+
+  const showBookingsLoader =
+    (mode === "Flights" && isPending) ||
+    (mode === "Hotels" && isHotelPending) ||
+    (mode === "Sightseeing" && isSightLoading && !isSightError);
 
   const init = async () => {
     try {
@@ -131,22 +201,17 @@ const MyBookingsPage = () => {
     }
   }, [active, mode]);
 
-  /** Remember last tab/status query so browser Back can re-apply it if the URL is stripped. */
   useEffect(() => {
     const qs = searchParams.toString();
     if (qs) {
       try {
         sessionStorage.setItem(MY_BOOKINGS_LAST_QS_SESSION_KEY, qs);
       } catch {
-        /* ignore quota / private mode */
+        /* ignore */
       }
     }
   }, [searchParams]);
 
-  /**
-   * When opening hotel detail/cancel from My Bookings we set a short-lived session flag.
-   * If browser Back lands on `/my-bookings` with no query (Hotels → Flight bug), restore last ?mode=&status=.
-   */
   useLayoutEffect(() => {
     if (navigationType !== "POP") return;
     if (location.search) return;
@@ -166,76 +231,108 @@ const MyBookingsPage = () => {
     setSearchParams(new URLSearchParams(saved), { replace: true });
   }, [navigationType, location.search, setSearchParams]);
 
+  useEffect(() => {
+    if (!isSightError) sightseeingErrorToastKey.current = null;
+  }, [isSightError]);
+
+  useEffect(() => {
+    if (mode !== "Sightseeing") return;
+    const local = getLocalSightseeingBookings();
+    const transformed = transformSightseeingBookingsResponse(
+      activityBookingsData ?? {},
+    );
+    const merged = mergeSightseeingBookingLists(
+      Array.isArray(transformed) ? transformed : [],
+      local,
+    );
+    setUserSightseeingBookings(merged);
+  }, [mode, activityBookingsData, active]);
+
+  useEffect(() => {
+    if (!isSightError || mode !== "Sightseeing") {
+      if (mode !== "Sightseeing") sightseeingErrorToastKey.current = null;
+      return;
+    }
+    const local = getLocalSightseeingBookings();
+    setUserSightseeingBookings(mergeSightseeingBookingLists([], local));
+    const err = extractErrorFromAxiosApiError(sightQueryError);
+    if (local.length === 0) {
+      const dedupe = `${sightFilters?.status ?? ""}:${err}`;
+      if (sightseeingErrorToastKey.current !== dedupe) {
+        sightseeingErrorToastKey.current = dedupe;
+        toast.error(
+          err ||
+            "Unable to load sightseeing bookings from the server. Confirm the /myActivityBooking route exists.",
+        );
+      }
+    }
+  }, [isSightError, mode, sightQueryError, sightFilters?.status]);
+
   return (
     <div className="py-6">
       <Loader
-        show={isPending || isHotelPending}
+        show={showBookingsLoader}
         label="Please wait while we are fetching your bookings"
       />
-      <div className="flex flex-col items-center px-6">
+      <div className="mx-auto flex w-full max-w-[1168px] flex-col items-stretch px-6">
         <div
           role="tablist"
-          aria-label="Booking status tabs"
-          className="flex items-center justify-center gap-[10px]"
+          aria-label="Booking type"
+          className="flex flex-wrap items-center justify-center gap-[10px]"
         >
-          {tabs.map((t) => {
-            const selected = active === t;
+          {modeTabs.map((m) => {
+            const selected = mode === m;
             return (
-              <Button
-                key={t}
+              <button
+                key={m}
                 type="button"
+                role="tab"
                 aria-selected={selected}
-                onClick={() => setActiveTab(t)}
-                className={[
-                  "flex items-center justify-center w-[108px] h-[39px] rounded-tl-[16px] rounded-tr-[16px] px-[20px] py-[10px] text-[14px] font-medium transition-colors",
-                  selected
-                    ? "bg-[#2351A3] text-white shadow-sm"
-                    : "bg-[#E4E4E7] text-[#3D495C]",
-                ].join(" ")}
-                overrideClasses
+                onClick={() => setModeTab(m)}
+                className={categoryTabClass(selected)}
               >
-                {t}
-              </Button>
+                {m}
+              </button>
             );
           })}
         </div>
 
-        <div className="mt-3 flex justify-center w-full">
+        <div className="mt-6 flex w-full justify-center">
+          <div
+            role="tablist"
+            aria-label="Booking status"
+            className="flex flex-wrap items-center justify-center gap-[10px]"
+          >
+            {tabs.map((t) => {
+              const selected = active === t;
+              return (
+                <button
+                  key={t}
+                  type="button"
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setActiveTab(t)}
+                  className={statusTabClass(selected)}
+                >
+                  {t}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-0 flex w-full justify-center">
           <div
             aria-hidden="true"
             className="rounded-tl-[16px] rounded-tr-[16px]"
             style={{
-              width: 1168,
-              maxWidth: "100%",
+              width: "100%",
+              maxWidth: 1168,
               height: 10,
               background: "linear-gradient(180deg, #C4CFE1 0%, #DEF7FE 100%)",
               backdropFilter: "blur(10px)",
             }}
           />
-        </div>
-
-        <div className="mt-4">
-          <div className="flex justify-center gap-2 text-[16px]">
-            {modeTabs.map((m) => {
-              const selected = mode === m;
-              return (
-                <Button
-                  key={m}
-                  type="button"
-                  onClick={() => setModeTab(m)}
-                  className={[
-                    "flex items-center justify-center w-[108px] h-[39px] rounded-tl-[16px] rounded-tr-[16px] px-[20px] py-[10px] text-[14px] font-medium transition-colors",
-                    selected
-                      ? "bg-[#2351A3] text-white shadow-sm"
-                      : "bg-[#E4E4E7] text-[#3D495C]",
-                  ].join(" ")}
-                  overrideClasses
-                >
-                  {m}
-                </Button>
-              );
-            })}
-          </div>
         </div>
       </div>
 
@@ -248,10 +345,15 @@ const MyBookingsPage = () => {
             filterStatus={active}
             mode={mode as TripMode}
           />
-        ) : (
+        ) : mode === "Hotels" ? (
           <UserHotelBookingsListing
             filterStatus={active}
             bookings={userMyHotelBookings}
+          />
+        ) : (
+          <UserSightseeingBookingsListing
+            filterStatus={active}
+            bookings={userSightseeingBookings}
           />
         )}
       </div>

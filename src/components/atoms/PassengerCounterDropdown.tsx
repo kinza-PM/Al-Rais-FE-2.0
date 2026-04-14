@@ -39,11 +39,10 @@ const IconBtn: React.FC<{
     aria-label={label}
     onClick={onClick}
     disabled={disabled}
-    className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-[14px] ${
-      disabled
+    className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-[14px] ${disabled
         ? "bg-[#E6EEFF] text-[#9BB3E8] cursor-not-allowed"
         : "bg-[#2351A3]"
-    }`}
+      }`}
   >
     <span className="block leading-none transform -translate-y-px">
       {children}

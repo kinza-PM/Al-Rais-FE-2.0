@@ -28,6 +28,7 @@ import {
 import { usePayfortPayment } from "../../hooks/usePayment";
 import { usePayFortTokenization } from "../../hooks/usePayFortTokenization";
 import Loader from "../atoms/Loader";
+import LegalModal from "../common/LegalModal";
 
 /**
  * TESTING BYPASS: Set to true to skip payment and go directly to receipt.
@@ -84,6 +85,11 @@ export default function HotelBookingPaymentSection({
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showMinimumLoading, setShowMinimumLoading] = useState(false);
+  const [legalModal, setLegalModal] = useState<{
+    isOpen: boolean;
+    type: "terms" | "privacy";
+  }>({ isOpen: false, type: "terms" });
+  const [openPrice, setOpenPrice] = useState(false);
 
   const { mutateAsync, isPending } = useHotelReservationBooking();
   const { mutateAsync: paymentMutateAsync, isPending: paymentPending } =
@@ -220,14 +226,14 @@ export default function HotelBookingPaymentSection({
       const expiry = cardDetails.expiry || ""; // YYMM
       const cvv = cardDetails.cvv || "";
       const cardHolder = cardDetails.holderName || "Customer";
-
+      // console.log("cleanCardNumber", cleanCardNumber);
       const payload = await initiateTokenization({
         cardNumber: cleanCardNumber,
         expiry,
         cvv,
         cardHolder,
       });
-
+      // console.log("payload", payload);
       if (payload?.response_message === "Success") {
         const token = payload?.token_name;
         await handlePayfortHotelPayment(token, reservation);
@@ -430,6 +436,7 @@ export default function HotelBookingPaymentSection({
           paymentPage={true}
           hotelDetail={hotelDetail}
           bookingInfo={bookingInfo}
+          selectedRooms={selectedRooms}
         />
 
         <div className="mt-6">
@@ -778,7 +785,13 @@ export default function HotelBookingPaymentSection({
           </div>
         )}
 
-        <HotelPriceBreakdown totalPrice={totalPrice} currency={currency} taxes={selectedRooms?.[0]?.room?.roomRate?.taxes || []} />
+        <HotelPriceBreakdown
+          open={openPrice}
+          onToggleOpen={() => setOpenPrice((v) => !v)}
+          totalPrice={totalPrice}
+          currency={currency}
+          selectedRooms={selectedRooms}
+        />
 
         <div className="mt-16 flex flex-col items-center">
           <Button
@@ -818,10 +831,29 @@ export default function HotelBookingPaymentSection({
           </Button>
 
           <div className="mt-6 text-center text-[12px] text-[#3D495C]">
-            Secure payments by Al Rais • Terms • Privacy
+            Secure payments by Al Rais •{" "}
+            <span
+              className="cursor-pointer hover:text-[#2351A3] hover:underline"
+              onClick={() => setLegalModal({ isOpen: true, type: "terms" })}
+            >
+              Terms
+            </span>{" "}
+            •{" "}
+            <span
+              className="cursor-pointer hover:text-[#2351A3] hover:underline"
+              onClick={() => setLegalModal({ isOpen: true, type: "privacy" })}
+            >
+              Privacy
+            </span>
           </div>
         </div>
       </div>
+
+      <LegalModal
+        isOpen={legalModal.isOpen}
+        onClose={() => setLegalModal((prev) => ({ ...prev, isOpen: false }))}
+        type={legalModal.type}
+      />
     </section>
   );
 }
