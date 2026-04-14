@@ -1,5 +1,4 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import Calendar from "../../assets/svgs/calendar.svg";
 
 const POPUP_WIDTH = 300;
@@ -122,7 +121,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   });
   const rootRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
-  const [popupPosition, setPopupPosition] = useState({ top: 0, left: 0, openAbove: false });
+  const [popupPosition, setPopupPosition] = useState<{ openAbove: boolean; leftOffset: number }>({ openAbove: false, leftOffset: 0 });
 
   // Compute popup position (viewport-aware) when open
   useLayoutEffect(() => {
@@ -132,21 +131,14 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
     const spaceAbove = rect.top;
     const openAbove = spaceBelow < POPUP_HEIGHT + GAP && spaceAbove >= POPUP_HEIGHT + GAP;
 
-    let top: number;
-    if (openAbove) {
-      top = rect.top - POPUP_HEIGHT - GAP;
-    } else {
-      top = rect.bottom + GAP;
+    let leftOffset = 0;
+    if (rect.left + POPUP_WIDTH > window.innerWidth - VIEWPORT_PADDING) {
+      leftOffset = window.innerWidth - VIEWPORT_PADDING - (rect.left + POPUP_WIDTH);
+    } else if (rect.left < VIEWPORT_PADDING) {
+      leftOffset = VIEWPORT_PADDING - rect.left;
     }
 
-    let left = rect.left;
-    if (left + POPUP_WIDTH > window.innerWidth - VIEWPORT_PADDING) {
-      left = window.innerWidth - POPUP_WIDTH - VIEWPORT_PADDING;
-    } else if (left < VIEWPORT_PADDING) {
-      left = VIEWPORT_PADDING;
-    }
-
-    setPopupPosition({ top, left, openAbove });
+    setPopupPosition({ openAbove, leftOffset });
   }, [open]);
 
   // Close on outside click (including when popup is in portal)
@@ -267,7 +259,13 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
           readOnly
           value={fmtLong(value) || ""}
           placeholder={placeholder}
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            if (open) {
+              setOpen(false);
+            } else {
+              setOpen(true);
+            }
+          }}
           //   className={`${
           //     overridesClass
           //       ? inputClass
@@ -328,17 +326,20 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
         </p>
       )}
 
-      {/* Popup calendar - rendered via portal for viewport-aware positioning */}
-      {open && (createPortal(
+      {/* Popup calendar */}
+      {open && (
         <div
           ref={panelRef}
           role="dialog"
           aria-modal="true"
           aria-label="Calendar"
           style={{
-            position: "fixed",
-            top: popupPosition.top,
-            left: popupPosition.left,
+            position: "absolute",
+            top: popupPosition.openAbove ? "auto" : "100%",
+            bottom: popupPosition.openAbove ? "100%" : "auto",
+            marginTop: popupPosition.openAbove ? 0 : GAP,
+            marginBottom: popupPosition.openAbove ? GAP : 0,
+            left: popupPosition.leftOffset,
             width: POPUP_WIDTH,
             zIndex: 99999,
           }}
@@ -589,9 +590,8 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
               })}
             </div>
           )}
-        </div>,
-        document.body
-      ))}
+        </div>
+      )}
     </div>
   );
 };

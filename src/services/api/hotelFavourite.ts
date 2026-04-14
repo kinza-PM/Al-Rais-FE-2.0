@@ -62,6 +62,7 @@ export type AddHotelFavouriteRequest = {
   rooms: FavouriteRoom[];
   totalPrice: number;
   searchKey: string;
+  city?: string;
   flag: boolean;
 };
 
@@ -84,10 +85,12 @@ export async function postAddHotelFavouriteData<TResp = any>(
   }
 }
 
-export async function getHotelFavouritesData<TResp = GetHotelFavouriteItem[]>() {
+export async function getHotelFavouritesData<TResp = GetHotelFavouriteItem[]>(
+  city?: string
+) {
   const source = "getHotelFavouritesData";
   try {
-    return await api.get<TResp>("/getHotelFavourites");
+    return await api.get<TResp>("/getHotelFavourites", city ? { city } : undefined);
   } catch (err) {
     throw toApiError(source, err);
   }

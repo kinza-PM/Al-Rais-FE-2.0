@@ -1,14 +1,6 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
-import HotelImage from "../../assets/images/Hotel Image.png";
-import FilledStar from "../../assets/svgs/filled_star.svg";
-import EmptyStar from "../../assets/svgs/empty_star.svg";
-import Share from "../../assets/svgs/share-icon.svg";
-
-import HotelPriceSummaryTooltip from "../atoms/HotelPriceSummaryTooltip";
-import { aggregateHotelTaxesFromRoomArray } from "../../utils/hotelBookingHelper";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import {
   useAddHotelFavourite,
@@ -16,6 +8,11 @@ import {
 } from "../../hooks/useHotelSearch";
 import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import { useHotelStore } from "../../store/UseHotelStore";
+import TailwindCustomInput from "../common/TailwindCustomInput";
+import SearchableDropdown from "../common/SearchableDropdown";
+import type { DropdownOption } from "../common/SearchableDropdown";
+import HotelListCard from "./HotelListCard";
+import Loader from "../atoms/Loader";
 
 type ParsedPropertyInfo = {
   providerHotelId?: string;
@@ -30,7 +27,6 @@ type ParsedPropertyInfo = {
   propertyType?: string;
   starRating?: string;
 };
-
 type ParsedRoomRate = {
   currency?: string;
   netAmount?: number;
@@ -41,13 +37,8 @@ type ParsedRoomRate = {
     rateIndex?: string;
     to?: string;
   }>;
-  taxes?: Array<{
-    name?: string;
-    amount?: number;
-    included?: boolean;
-  }>;
+  taxes?: Array<{ name?: string; amount?: number; included?: boolean }>;
 };
-
 type ParsedRatePlan = {
   supplierCode?: string;
   meal?: string;
@@ -59,7 +50,6 @@ type ParsedRatePlan = {
   gstAssured?: boolean;
   lastCancellationDate?: string;
 };
-
 type ParsedRoomDetails = {
   roomIndex?: number;
   roomKey?: string;
@@ -71,30 +61,20 @@ type ParsedRoomDetails = {
   ratePlan?: ParsedRatePlan;
   roomRate?: ParsedRoomRate;
   rateNotes?: string;
-  financialInfo?: {
-    tmc?: string;
-    supplier?: string;
-  };
+  financialInfo?: { tmc?: string; supplier?: string };
   isAllPaxInfoMandatory?: boolean;
 };
-
 type FavouriteApiItem = {
-  userType?: string;
   searchKey?: string;
   propertyInfo?: string | ParsedPropertyInfo;
-  roomKey?: string;
-  updatedAt?: string;
   roomDetails?: string | ParsedRoomDetails[];
   hotelKey?: string;
-  userId?: string;
   totalPrice?: string | number;
-  createdAt?: string;
 };
 
 const safeJsonParse = <T,>(value: unknown, fallback: T): T => {
   if (!value) return fallback;
   if (typeof value !== "string") return value as T;
-
   try {
     return JSON.parse(value) as T;
   } catch {
@@ -105,64 +85,103 @@ const safeJsonParse = <T,>(value: unknown, fallback: T): T => {
 const buildHotelShareUrl = (
   hotelKey: string,
   searchKey: string,
-  bookingParams?: object | null
+  bookingParams?: object | null,
 ) => {
   const params = new URLSearchParams();
-
-  if (searchKey) {
-    params.set("searchKey", searchKey);
-  }
-
-  if (bookingParams) {
-    params.set("bookingParams", JSON.stringify(bookingParams));
-  }
-
-  const queryString = params.toString();
-
-  return `${window.location.origin}/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""
-    }`;
+  if (searchKey) params.set("searchKey", searchKey);
+  if (bookingParams) params.set("bookingParams", JSON.stringify(bookingParams));
+  const qs = params.toString();
+  return `${window.location.origin}/hotel-detail/${hotelKey}${qs ? `?${qs}` : ""}`;
 };
 
 const ProfileFavouriteHotels: React.FC = () => {
   const navigate = useNavigate();
   const { hotel: bookingParams } = useHotelStore();
+  const [searchText, setSearchText] = useState("");
+  const [selectedCity, setSelectedCity] = useState("All");
+  const [openShareModal, setOpenShareModal] = useState(false);
+  const [selectedShareHotel, setSelectedShareHotel] = useState<any>(null);
 
   const {
     data,
     isLoading,
+    isFetching: isFetchingFavourites,
     isError,
     error,
     refetch: refetchFavourites,
-  } = useGetHotelFavourites(true);
-
+  } = useGetHotelFavourites(true, selectedCity === "All" ? "" : selectedCity);
   const {
     mutateAsync: addHotelFavouriteAsync,
     isPending: isUpdatingFavourite,
   } = useAddHotelFavourite();
 
-  const [openShareModal, setOpenShareModal] = useState(false);
-  const [selectedShareHotel, setSelectedShareHotel] = useState<any>(null);
+  const favouritesByCity = useMemo<Record<string, FavouriteApiItem[]>>(() => {
+    const payload = (data as any)?.data ?? data;
+
+    if (Array.isArray(payload)) {
+      return { undefined: payload as FavouriteApiItem[] };
+    }
+
+    if (payload && typeof payload === "object") {
+      return Object.entries(payload).reduce(
+        (acc, [cityKey, items]) => {
+          acc[cityKey] = Array.isArray(items) ? (items as FavouriteApiItem[]) : [];
+          return acc;
+        },
+        {} as Record<string, FavouriteApiItem[]>,
+      );
+    }
+
+    return {};
+  }, [data]);
+
+  const cityOptions = useMemo<DropdownOption[]>(() => {
+    const cityKeys = Object.entries(favouritesByCity)
+      .filter(
+        ([key, items]) =>
+          key &&
+          key !== "undefined" &&
+          Array.isArray(items) &&
+          items.length > 0,
+      )
+      .map(([key]) => key);
+      console.log(favouritesByCity);
+    return [
+      { id: "all", value: "All", label: "All" },
+      ...cityKeys.map((city) => ({ id: city, value: city, label: city })),
+    ];
+  }, [favouritesByCity]);
+
+  useEffect(() => {
+    if (selectedCity === "All") return;
+    const hasSelectedCity = cityOptions.some((option) => option.value === selectedCity);
+    if (!hasSelectedCity) {
+      setSelectedCity("All");
+    }
+  }, [selectedCity, cityOptions]);
 
   const favourites = useMemo(() => {
-    if (!data) return [];
+    return Object.entries(favouritesByCity).flatMap(([cityKey, items]) =>
+      items.map((item: FavouriteApiItem) => {
+        const normalizedCity = cityKey === "undefined" ? "" : cityKey;
+        return {
+          ...item,
+          city: (item as any)?.city || normalizedCity,
+        };
+      }),
+    );
+  }, [favouritesByCity]);
 
-    const raw = Array.isArray(data)
-      ? data
-      : Array.isArray((data as any)?.data)
-        ? (data as any).data
-        : [];
-
-    return raw.map((item: FavouriteApiItem) => {
+  const parsedFavourites = useMemo(() => {
+    return favourites.map((item: FavouriteApiItem & { city?: string }) => {
       const propertyInfo = safeJsonParse<ParsedPropertyInfo>(
         item.propertyInfo,
-        {}
+        {},
       );
-
       const roomDetails = safeJsonParse<ParsedRoomDetails[]>(
         item.roomDetails,
-        []
+        [],
       );
-
       return {
         ...item,
         propertyInfoParsed: propertyInfo,
@@ -173,82 +192,41 @@ const ProfileFavouriteHotels: React.FC = () => {
             : Number(item.totalPrice || 0),
       };
     });
-  }, [data]);
+  }, [favourites]);
 
-  const renderStars = (rating: string | undefined) => {
-    const numRating = rating ? parseFloat(rating) : 0;
-    const fullStars = Math.floor(numRating);
-    const totalStars = 7;
+  const normalizedHotels = useMemo(
+    () =>
+      parsedFavourites.map((item: any) => ({
+        ...item,
+        propertyInfo: item.propertyInfoParsed || {},
+        rooms: item.roomDetailsParsed || [],
+        totalPrice: Number(item.totalPriceParsed || 0),
+        searchKey: item.searchKey || "",
+        city: item.city || "",
+      })),
+    [parsedFavourites],
+  );
 
-    return (
-      <div className="flex items-center gap-1 mb-3">
-        {Array.from({ length: fullStars }).map((_, i) => (
-          <img
-            key={`filled-${i}`}
-            className="w-[15px] h-[15px]"
-            src={FilledStar}
-            alt="filled"
-          />
-        ))}
-        {Array.from({ length: totalStars - fullStars }).map((_, i) => (
-          <img
-            key={`empty-${i}`}
-            className="w-[15px] h-[15px]"
-            src={EmptyStar}
-            alt="empty"
-          />
-        ))}
-      </div>
-    );
-  };
-
+  const filteredHotels = useMemo(() => {
+    const q = searchText.trim().toLowerCase();
+    return normalizedHotels.filter((hotel: any) => {
+      const name = (hotel?.propertyInfo?.hotelName || "").toLowerCase();
+      const city = (hotel?.city || "").trim();
+      return (
+        (!q || name.includes(q)) &&
+        (selectedCity === "All" || city === selectedCity)
+      );
+    });
+  }, [normalizedHotels, searchText, selectedCity]);
+  
   const handleShareClick = useCallback((hotel: any) => {
     setSelectedShareHotel(hotel);
     setOpenShareModal(true);
   }, []);
 
-  const formatDateShort = (date?: string) => {
-    if (!date) return "";
-    const d = new Date(date);
-    if (Number.isNaN(d.getTime())) return date;
-
-    return d.toLocaleDateString("en-GB", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-    });
-  };
-
-  const getNightPrice = (room: ParsedRoomDetails | null, totalPrice: number) => {
-    const rates = room?.roomRate?.rates || [];
-    if (rates.length > 0) return rates[0]?.amount || 0;
-
-    const checkinRatesCount = rates.length;
-    if (checkinRatesCount > 0) return totalPrice / checkinRatesCount;
-
-    return totalPrice;
-  };
-
-  const getDealLabel = (room: ParsedRoomDetails | null) => {
-    const meal = room?.ratePlan?.meal?.toLowerCase() || "";
-    const cancel = room?.ratePlan?.cancelPolicyIndicator?.toLowerCase() || "";
-
-    if (meal.includes("breakfast")) return "Breakfast included";
-    if (cancel.includes("refundable")) return "Flexible deal";
-    if (cancel.includes("non-refundable")) return "Best value";
-    return "Saved deal";
-  };
-
-  const getAvailabilityMessage = (room: ParsedRoomDetails | null) => {
-    const status = room?.ratePlan?.availableStatus?.toLowerCase() || "";
-    if (status === "available") return null;
-    return "No rooms are available on the dates you selected!";
-  };
-
   const buildFavouritePayload = useCallback((hotel: any, flag: boolean) => {
     const propertyInfo: ParsedPropertyInfo = hotel?.propertyInfoParsed || {};
     const roomDetails: ParsedRoomDetails[] = hotel?.roomDetailsParsed || [];
-
     const rooms = roomDetails.map((room: ParsedRoomDetails) => ({
       roomIndex: room?.roomIndex ?? 1,
       roomKey: room?.roomKey ?? "",
@@ -310,6 +288,7 @@ const ProfileFavouriteHotels: React.FC = () => {
       rooms,
       totalPrice: Number(hotel?.totalPriceParsed || 0),
       searchKey: hotel?.searchKey ?? "",
+      city: hotel?.city || propertyInfo?.location || "",
       flag,
     };
   }, []);
@@ -317,39 +296,32 @@ const ProfileFavouriteHotels: React.FC = () => {
   const handleRemoveFavourite = useCallback(
     async (hotel: any) => {
       if (!hotel?.hotelKey) return;
-
       try {
-        const payload = buildFavouritePayload(hotel, false);
-        await addHotelFavouriteAsync(payload);
+        await addHotelFavouriteAsync(buildFavouritePayload(hotel, false));
         toast.success("Hotel removed from favourites");
         await refetchFavourites();
       } catch (err) {
-        const errorMessage = extractErrorFromAxiosApiError(err);
-        toast.error(errorMessage || "Failed to remove favourite");
+        toast.error(
+          extractErrorFromAxiosApiError(err) || "Failed to remove favourite",
+        );
       }
     },
-    [buildFavouritePayload, addHotelFavouriteAsync, refetchFavourites]
+    [addHotelFavouriteAsync, buildFavouritePayload, refetchFavourites],
   );
 
   const handleCheckAvailability = useCallback(
     (hotel: any) => {
-      if (!hotel?.hotelKey) {
-        toast.error("Hotel Id not found");
-        return;
-      }
-
-      if (!hotel?.searchKey) {
-        toast.error("Search session expired. Please search hotels again.");
-        return;
-      }
-
-      const shareUrl = buildHotelShareUrl(
+      if (!hotel?.hotelKey) return toast.error("Hotel Id not found");
+      if (!hotel?.searchKey)
+        return toast.error(
+          "Search session expired. Please search hotels again.",
+        );
+      const detailUrl = buildHotelShareUrl(
         hotel.hotelKey,
         hotel.searchKey,
-        bookingParams ?? null
+        bookingParams ?? null,
       );
-
-      const url = new URL(shareUrl);
+      const url = new URL(detailUrl);
       navigate(`${url.pathname}${url.search}`, {
         state: {
           searchKey: hotel?.searchKey ?? "",
@@ -357,18 +329,16 @@ const ProfileFavouriteHotels: React.FC = () => {
         },
       });
     },
-    [navigate, bookingParams]
+    [bookingParams, navigate],
   );
 
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="w-full py-16 flex items-center justify-center">
         <p className="text-sm text-[#3D495C]">Loading favourite hotels...</p>
       </div>
     );
-  }
-
-  if (isError) {
+  if (isError)
     return (
       <div className="w-full py-16 flex items-center justify-center">
         <p className="text-sm text-[#EA0029]">
@@ -376,289 +346,63 @@ const ProfileFavouriteHotels: React.FC = () => {
         </p>
       </div>
     );
-  }
-
-  if (!favourites.length) {
-    return (
-      <div className="w-full py-16 flex flex-col items-center justify-center text-center">
-        <p className="text-base font-semibold text-[#0A0C0F]">
-          No favourite hotels found
-        </p>
-        <p className="mt-2 text-sm text-[#3D495C]">
-          Hotels you add to favourites will appear here.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <>
-      <div className="w-full">
-        {favourites.map((hotel: any, index: number) => {
-          const propertyInfo: ParsedPropertyInfo = hotel.propertyInfoParsed || {};
-          const roomDetails: ParsedRoomDetails[] = hotel.roomDetailsParsed || [];
-          const bestRoom = roomDetails[0] || null;
+      <Loader
+        show={isUpdatingFavourite || (!isLoading && isFetchingFavourites)}
+        label={isUpdatingFavourite ? "Updating favourites..." : "Loading favourites..."}
+      />
 
-          const imageUrl = propertyInfo?.imageUrl || HotelImage;
-          const hotelName = propertyInfo?.hotelName || "Hotel";
-          const address = propertyInfo?.address || "";
-          const locationText = propertyInfo?.location || "";
-          const starRating = propertyInfo?.starRating || "0";
+      <div className="mx-auto w-full max-w-[1368px]">
+        <div className="mb-16 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+          <div className="w-full md:max-w-[400px]">
+            <TailwindCustomInput
+              label="Search"
+              placeholder="Search in your favorites"
+              value={searchText}
+              className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+              onChange={(e) => setSearchText(e.target.value)}
+            />
+          </div>
+          <div className="w-full md:max-w-[220px]">
+            <SearchableDropdown
+              label="Cities"
+              options={cityOptions}
+              value={selectedCity}
+              onChange={setSelectedCity}
+              placeholder="Select city"
+            />
+          </div>
+        </div>
 
-          const currency = bestRoom?.roomRate?.currency || "AED";
-          const totalPrice =
-            hotel.totalPriceParsed > 0
-              ? hotel.totalPriceParsed
-              : bestRoom?.roomRate?.netAmount || 0;
-
-          const nightPrice = getNightPrice(bestRoom, totalPrice);
-          const rates = bestRoom?.roomRate?.rates || [];
-          const previewRates = rates.slice(0, 3);
-          const dealLabel = getDealLabel(bestRoom);
-          const availabilityMessage = getAvailabilityMessage(bestRoom);
-
-          return (
-            <div
-              className="bg-[#FFFFFF] rounded-2xl overflow-visible mb-5"
-              key={`${hotel.hotelKey}-${index}`}
-            >
-              <div className="flex px-3 py-3">
-                <div
-                  className="relative flex-shrink-0 mr-3"
-                  style={{ width: "182px", height: "162px" }}
-                >
-                  <img
-                    src={imageUrl}
-                    alt={hotelName}
-                    className="w-full h-full object-cover rounded-2xl"
-                    onError={(e) => {
-                      e.currentTarget.src = HotelImage;
-                    }}
-                  />
-
-                  <button
-                    type="button"
-                    className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform disabled:opacity-60"
-                    style={{
-                      top: "10px",
-                      left: "10px",
-                      width: "30px",
-                      height: "30px",
-                      background: "#FFFFFFCC",
-                    }}
-                    aria-label="Remove from favourites"
-                    disabled={isUpdatingFavourite}
-                    onClick={() => handleRemoveFavourite(hotel)}
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="#EA0029"
-                      stroke="#EA0029"
-                      strokeWidth="2"
-                    >
-                      <path d="M12 21s-6.716-4.35-9.193-7.146C.894 11.692 1.163 8.24 3.514 6.56c1.925-1.376 4.48-1.072 6.104.64L12 9.09l2.382-1.89c1.624-1.712 4.179-2.016 6.104-.64 2.351 1.68 2.62 5.132.707 7.294C18.716 16.65 12 21 12 21z" />
-                    </svg>
-                  </button>
-                </div>
-
-                <div className="flex-1 min-w-0 pr-4">
-                  <h3 className="text-[15px] font-semibold text-[#0A0C0F] mb-1">
-                    {hotelName}
-                  </h3>
-
-                  <p className="text-[11px] text-[#3D495C] mb-2 leading-[15px]">
-                    {address} {locationText && ` • ${locationText}`}
-                  </p>
-
-                  {renderStars(starRating)}
-
-                  {bestRoom?.roomTypeDesc && (
-                    <p className="text-[11px] text-[#3D495C] leading-[16px] mb-3 line-clamp-3">
-                      {bestRoom.roomTypeDesc}
-                    </p>
-                  )}
-
-                  <div className="flex items-end justify-between gap-3">
-                    <div className="text-[11px] leading-[16px]">
-                      {availabilityMessage ? (
-                        <>
-                          <p className="text-[#EA0029] font-medium">
-                            {availabilityMessage}
-                          </p>
-                          <p className="text-[#0A0C0F] mt-1">
-                            Please select other dates
-                          </p>
-                        </>
-                      ) : (
-                        <>
-                          <p className="text-[#00B868] font-medium">
-                            {bestRoom?.ratePlan?.availableStatus || "Available"}
-                          </p>
-                          <p className="text-[#3D495C] mt-1">
-                            {bestRoom?.ratePlan?.meal || "Room only"}
-                          </p>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="flex items-center border border-[#C2CAD6] rounded-[16px] px-3 py-2 min-w-[340px]">
-                      <button className="w-8 h-8 rounded-full border border-[#C2CAD6] flex items-center justify-center text-[#3D495C] text-sm flex-shrink-0">
-                        ←
-                      </button>
-
-                      <div className="flex-1 flex items-stretch justify-center px-3">
-                        {previewRates.length > 0 ? (
-                          previewRates.map((rate: any, idx: number) => (
-                            <React.Fragment key={idx}>
-                              <div
-                                className={`min-w-[74px] px-3 text-center ${idx === 0 ? "relative" : ""
-                                  }`}
-                              >
-                                <div
-                                  className={`text-[11px] mb-1 ${idx === 0
-                                    ? "text-[#2351A3]"
-                                    : "text-[#3D495C]"
-                                    }`}
-                                >
-                                  {formatDateShort(rate?.from)}
-                                </div>
-
-                                <div
-                                  className={`text-[11px] font-semibold ${idx === 0 && availabilityMessage
-                                    ? "text-[#EA0029]"
-                                    : "text-[#0A0C0F]"
-                                    }`}
-                                >
-                                  {idx === 0 && availabilityMessage
-                                    ? "No rooms"
-                                    : `${currency} ${Number(
-                                      rate?.amount || 0
-                                    ).toFixed(2)}`}
-                                </div>
-
-                                {idx === 0 && (
-                                  <div className="absolute left-2 right-2 -bottom-[10px] h-[4px] bg-[#5383DA] rounded-full blur-[0.2px]" />
-                                )}
-                              </div>
-
-                              {idx < previewRates.length - 1 && (
-                                <span className="inline-block w-px bg-[#E4E4E7] self-stretch" />
-                              )}
-                            </React.Fragment>
-                          ))
-                        ) : (
-                          <div className="min-w-[120px] px-3 text-center">
-                            <div className="text-[11px] mb-1 text-[#3D495C]">
-                              No daily rates
-                            </div>
-                            <div className="text-[11px] font-semibold text-[#0A0C0F]">
-                              {currency} {nightPrice.toFixed(2)}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      <button className="w-8 h-8 rounded-full border border-[#C2CAD6] flex items-center justify-center text-[#3D495C] text-sm flex-shrink-0">
-                        →
-                      </button>
-
-                      <button className="ml-2 w-8 h-8 rounded-full border border-[#C2CAD6] flex items-center justify-center text-[#2351A3] text-sm flex-shrink-0">
-                        📅
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="w-[235px] flex-shrink-0 pl-4 border-l border-[#E4E4E7]">
-                  <div className="flex items-start gap-3 mb-3">
-                    {/* <div className="bg-[#A7C0EC] rounded-full min-w-[58px] h-[38px] flex items-center justify-center">
-                      <span className="text-[#2351A3] text-[15px] font-semibold">
-                        {propertyInfo?.starRating || "0"}
-                      </span>
-                    </div>
-
-                    <div>
-                      <p className="text-[13px] font-semibold text-[#00B868] leading-none">
-                        {Number(propertyInfo?.starRating || 0) >= 4
-                          ? "Excellent"
-                          : Number(propertyInfo?.starRating || 0) >= 3
-                            ? "Very good"
-                            : "Good"}
-                      </p>
-                      <p className="text-[12px] text-[#3D495C] mt-1">
-                        {bestRoom?.maxOccupancy && bestRoom.maxOccupancy > 0
-                          ? `Up to ${bestRoom.maxOccupancy} guests`
-                          : "Saved favourite"}
-                      </p>
-                    </div> */}
-                  </div>
-
-                  <div className="mb-3">
-                    <span className="bg-[#00B868] text-[#FFFFFF] text-[11px] font-semibold px-3 py-1 rounded-full inline-block">
-                      {dealLabel}
-                    </span>
-                  </div>
-
-                  <div className="text-[12px] text-[#3D495C] mb-1">
-                    Starting from (including VAT)
-                  </div>
-
-                  <div className="mb-4 flex items-start gap-2">
-                    <div className="min-w-0">
-                      <span className="block text-[14px] font-bold text-[#0A0C0F] [overflow-wrap:anywhere]">
-                        {currency} {nightPrice.toFixed(2)}
-                      </span>
-                      <span className="mt-1 block text-[12px] font-semibold text-[#0A0C0F]">
-                        /Night
-                      </span>
-                    </div>
-
-                    <HotelPriceSummaryTooltip
-                      totalPrice={Number(totalPrice)}
-                      currency={currency}
-                      taxes={aggregateHotelTaxesFromRoomArray(
-                        roomDetails.length > 0
-                          ? roomDetails
-                          : bestRoom
-                            ? [bestRoom]
-                            : [],
-                      )}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-3">
-                    <button
-                      className="p-1 flex-shrink-0"
-                      aria-label="Share"
-                      onClick={() => handleShareClick(hotel)}
-                    >
-                      <img src={Share} alt="share" className="w-4 h-4" />
-                    </button>
-
-                    <button
-                      className="flex-1 text-[#F2F2F3] font-semibold rounded-[100px] transition-all"
-                      style={{
-                        fontFamily: "Inter, sans-serif",
-                        fontSize: "14px",
-                        fontWeight: 600,
-                        padding: "12px 18px",
-                        background:
-                          "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                      }}
-                      onClick={() => handleCheckAvailability(hotel)}
-                    >
-                      Select Room
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mx-3 h-px bg-[#AFC3EE]" />
+        <div className="px-16">
+          {filteredHotels.length > 0 ? (
+            filteredHotels.map((hotel: any, index: number) => (
+              <HotelListCard
+                key={`${hotel.hotelKey}-${index}`}
+                hotel={hotel}
+                isFavourite
+                isAddFavouritePending={isUpdatingFavourite}
+                onToggleFavourite={handleRemoveFavourite}
+                onShare={handleShareClick}
+                onCheckAvailability={handleCheckAvailability}
+              />
+            ))
+          ) : (
+            <div className="w-full py-14 flex flex-col items-center justify-center text-center">
+              <p className="text-base font-semibold text-[#0A0C0F]">
+                {normalizedHotels.length === 0
+                  ? "No favourite hotels found"
+                  : "No hotels match your filters"}
+              </p>
+              <p className="mt-2 text-sm text-[#3D495C]">
+                {normalizedHotels.length === 0
+                  ? "Hotels you add to favourites will appear here."
+                  : "Try changing hotel name search or city selection."}
+              </p>
             </div>
-          );
-        })}
+          )}
+        </div>
       </div>
 
       {openShareModal && selectedShareHotel && (
@@ -672,21 +416,21 @@ const ProfileFavouriteHotels: React.FC = () => {
           shareUrl={buildHotelShareUrl(
             selectedShareHotel?.hotelKey ?? "",
             selectedShareHotel?.searchKey ?? "",
-            bookingParams ?? null
+            bookingParams ?? null,
           )}
           title="Share this Hotel"
           description="Send this hotel to family and friends. Share the property details and location instantly."
           cardTitle={
-            selectedShareHotel?.propertyInfoParsed?.hotelName || "Hotel details"
+            selectedShareHotel?.propertyInfo?.hotelName || "Hotel details"
           }
           cardSubtitle={[
-            selectedShareHotel?.propertyInfoParsed?.address,
-            selectedShareHotel?.propertyInfoParsed?.location,
+            selectedShareHotel?.propertyInfo?.address,
+            selectedShareHotel?.propertyInfo?.location,
           ]
             .filter(Boolean)
             .join(", ")}
           passengerName={
-            selectedShareHotel?.propertyInfoParsed?.hotelName || "Hotel details"
+            selectedShareHotel?.propertyInfo?.hotelName || "Hotel details"
           }
         />
       )}

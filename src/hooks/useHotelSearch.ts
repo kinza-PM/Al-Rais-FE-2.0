@@ -45,10 +45,10 @@ export const useAddHotelFavourite = () => {
   });
 };
 
-export function useGetHotelFavourites(enabled: boolean = true) {
+export function useGetHotelFavourites(enabled: boolean = true, city?: string) {
   return useQuery({
-    queryKey: ["hotel-favourites"],
-    queryFn: () => getHotelFavouritesData(),
+    queryKey: ["hotel-favourites", city || ""],
+    queryFn: () => getHotelFavouritesData(city),
     enabled,
     staleTime: 5 * 60 * 1000,
     placeholderData: keepPreviousData,

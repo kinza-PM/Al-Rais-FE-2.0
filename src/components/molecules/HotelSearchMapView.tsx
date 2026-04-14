@@ -447,14 +447,13 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
     } = useGetHotelFavourites();
 
     const favouriteItems = useMemo(() => {
-      if (Array.isArray(favouriteHotelsResponse)) {
-        return favouriteHotelsResponse;
+      const payload = (favouriteHotelsResponse as any)?.data ?? favouriteHotelsResponse;
+      if (Array.isArray(payload)) return payload;
+      if (payload && typeof payload === "object") {
+        return Object.values(payload).flatMap((items: any) =>
+          Array.isArray(items) ? items : []
+        );
       }
-
-      if (Array.isArray((favouriteHotelsResponse as any)?.data)) {
-        return (favouriteHotelsResponse as any).data;
-      }
-
       return [];
     }, [favouriteHotelsResponse]);
 
@@ -561,9 +560,10 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
         rooms,
         totalPrice,
         searchKey: hotel?.searchKey ?? "",
+        city: bookingParams?.city || hotel?.propertyInfo?.location || "",
         flag,
       };
-    }, []);
+    }, [bookingParams?.city]);
 
     const handleToggleFavourite = useCallback(
       async (hotel: any) => {

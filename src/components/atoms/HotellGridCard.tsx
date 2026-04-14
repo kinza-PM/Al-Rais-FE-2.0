@@ -5,6 +5,8 @@ import HotelImage3 from "../../../src/assets/images/hotel-detail-room-2.png";
 import GreenTick from "../../../src/assets/images/tik.png";
 import FilledStar from "../../../src/assets/svgs/filled_star.svg";
 import EmptyStar from "../../../src/assets/svgs/empty_star.svg";
+import Heart from "../../../src/assets/svgs/heart.svg";
+import RedHeart from "../../../src/assets/svgs/red-heart.svg";
 import Share from "../../../src/assets/svgs/share-icon.svg";
 import HotelPriceSummaryTooltip from "./HotelPriceSummaryTooltip";
 import { HotelProxiedImage } from "./HotelProxiedImage";
@@ -213,8 +215,8 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
             type="button"
             className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform disabled:opacity-60"
             style={{
-              top: "22px",
-              left: "22px",
+              top: "16px",
+              left: "15px",
               width: "36px",
               height: "36px",
               background: "rgba(255,255,255,0.6)",
@@ -226,7 +228,12 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               onToggleFavourite?.();
             }}
           >
-            <svg
+            {isFavourite ? (
+              <img src={RedHeart} alt="Heart" />
+            ) : (
+              <img src={Heart} alt="Heart" />
+            )}
+            {/* <svg
               width="20"
               height="20"
               viewBox="0 0 24 24"
@@ -235,15 +242,15 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
               strokeWidth="2"
             >
               <path d="M12 21s-6.716-4.35-9.193-7.146C.894 11.692 1.163 8.24 3.514 6.56c1.925-1.376 4.48-1.072 6.104.64L12 9.09l2.382-1.89c1.624-1.712 4.179-2.016 6.104-.64 2.351 1.68 2.62 5.132.707 7.294C18.716 16.65 12 21 12 21z" />
-            </svg>
+            </svg> */}
           </button>
 
           <button
             type="button"
             className="absolute flex items-center justify-center rounded-full shadow-sm hover:scale-110 transition-transform"
             style={{
-              top: "22px",
-              left: "64px",
+              top: "16px",
+              left: "54px",
               width: "36px",
               height: "36px",
               background: "rgba(255,255,255,0.6)",
