@@ -16,6 +16,7 @@ import TravellersAndRoomDropdown from "../atoms/TravellersAndRoomDropdown";
 import CheckableDropdown from "../common/CheckableDropdown";
 import type { PassengerSchema } from "../../features/flights/types";
 import { useHotelStore } from "../../store/UseHotelStore";
+import { createEmptyHotelListingFilters } from "../../utils/hotelFilters";
 import Info from "../../assets/svgs/info-black.svg";
 import Loader from "../atoms/Loader";
 import { parseLocalDateString } from "../../utils/helpers";
@@ -37,6 +38,19 @@ const convertDateToString = (date: Date | null): string => {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+};
+
+const parseIsoToDate = (value: string): Date | null => {
+  if (!value?.trim()) return null;
+  const parts = value.split("-");
+  if (parts.length !== 3) return null;
+  const y = Number(parts[0]);
+  const m = Number(parts[1]);
+  const d = Number(parts[2]);
+  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+    return null;
+  }
+  return new Date(y, m - 1, d);
 };
 
 const HotelHeroSectionTab: React.FC = () => {
@@ -287,6 +301,19 @@ const HotelHeroSectionTab: React.FC = () => {
       return [...new Set(nums)].sort((a, b) => a - b);
     })();
 
+    const prev = useHotelStore.getState().hotel;
+    const isNewTrip =
+      !prev ||
+      prev.country !== country ||
+      prev.city !== city ||
+      prev.checkIn !== checkInStr ||
+      prev.checkOut !== checkOutStr;
+
+    if (isNewTrip) {
+      setHotelListingFilters(createEmptyHotelListingFilters());
+      setHotelListingSortOption("");
+    }
+
     setHotel({
       country,
       city,
@@ -302,6 +329,7 @@ const HotelHeroSectionTab: React.FC = () => {
         : 0,
     });
 
+    setLandingHeroSearchTab("hotels");
     navigate("/search-hotel");
   }, [
     country,
@@ -315,6 +343,9 @@ const HotelHeroSectionTab: React.FC = () => {
     validateForm,
     setHotel,
     navigate,
+    setLandingHeroSearchTab,
+    setHotelListingFilters,
+    setHotelListingSortOption,
   ]);
 
   const countryError = hasAttemptedValidation ? validationErrors.country : "";
@@ -506,7 +537,8 @@ const HotelHeroSectionTab: React.FC = () => {
 
           <div className="hero-search">
             <button
-              className="w-full xl:w-[137px] h-[47px] text-[14px] sm:text-[16px] font-medium text-white whitespace-nowrap rounded-[100px] px-6 xl:px-10 hotel-search-btn-responsive"
+              type="button"
+              className="hotel-search-btn-responsive h-[47px] w-full rounded-[100px] px-6 text-[14px] font-semibold text-white whitespace-nowrap sm:text-[16px] xl:w-[120px] xl:px-8"
               style={{
                 background:
                   "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",

@@ -26,6 +26,32 @@ export type SortOption =
   | "discounts"
   | "beach";
 
+export function createEmptyHotelListingFilters(): HotelFilters {
+  return {
+    hotelName: "",
+    propertyTypes: [],
+    ratings: [],
+    propertyFacilities: [],
+    roomFacilities: [],
+    bedPreferences: [],
+    meals: [],
+    cancellationPolicy: [],
+  };
+}
+
+export function cloneHotelListingFilters(f: HotelFilters): HotelFilters {
+  return {
+    hotelName: f.hotelName,
+    propertyTypes: [...f.propertyTypes],
+    ratings: [...f.ratings],
+    propertyFacilities: [...f.propertyFacilities],
+    roomFacilities: [...f.roomFacilities],
+    bedPreferences: [...f.bedPreferences],
+    meals: [...f.meals],
+    cancellationPolicy: [...f.cancellationPolicy],
+  };
+}
+
 export const PROPERTY_TYPE_MAPPINGS: Record<string, string> = {
   H: "Hotel",
   P: "Pension / Guesthouse",

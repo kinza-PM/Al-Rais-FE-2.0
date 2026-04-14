@@ -13,7 +13,6 @@ import {
   getHotelGuestReviewMeta,
   getHotelListingDescription,
   resolveHotelListingReviewDisplay,
-  HOTEL_LISTING_REVIEW_FALLBACK,
 } from "../../utils/hotelHelper";
 import Loader from "../atoms/Loader";
 import toast from "react-hot-toast";
@@ -323,7 +322,6 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 price,
                 hasFreeCancellation,
                 totalOriginalPrice: originalPrice,
-                uniqueOfferNames,
                 hasOffer,
                 // availableRooms,
               } = processHotelSearchListingData(hotel);
@@ -388,16 +386,12 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 reviewScore,
                 reviewCount,
               );
-              const dealBadgeLabel =
-                uniqueOfferNames.length > 0
-                  ? uniqueOfferNames[0]
-                  : HOTEL_LISTING_REVIEW_FALLBACK.dealLabel;
 
               return (
+                <React.Fragment key={hotel.hotelKey || index}>
                 <div
                   className="mb-4 bg-transparent relative"
                   style={{ borderBottom: "2px solid var(--black-100, #C2CAD6)" }}
-                  key={hotel.hotelKey || index}
                 >
                   <div className="flex flex-col lg:flex-row gap-4 p-[10px]">
                     <div
@@ -607,21 +601,6 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                             </div>
                           </div>
                         )}
-                        <span
-                          className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
-                          style={{
-                            padding: "8px 15px",
-                            minHeight: "31px",
-                            fontFamily: "Inter, sans-serif",
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            lineHeight: "100%",
-                            color: "#FFFFFF",
-                            verticalAlign: "middle",
-                          }}
-                        >
-                          {dealBadgeLabel}
-                        </span>
                       </div>
 
                       <div className="mb-[2px] flex w-full items-center justify-end gap-[8px]">
@@ -656,11 +635,9 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               fontFamily: "Inter, sans-serif",
                               fontWeight: 700,
                               fontSize: "32px",
-                              lineHeight: "100%",
+                              lineHeight: "1",
                               color: "#EA0029",
                               textDecoration: "line-through",
-                              maxWidth: "100%",
-                              wordBreak: "break-word",
                               whiteSpace: "nowrap",
                             }}
                           >
@@ -673,10 +650,8 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                               fontFamily: "Inter, sans-serif",
                               fontWeight: 700,
                               fontSize: "32px",
-                              lineHeight: "100%",
+                              lineHeight: "1",
                               color: "#0A0C0F",
-                              maxWidth: "100%",
-                              wordBreak: "break-word",
                               whiteSpace: "nowrap",
                             }}
                           >
@@ -717,6 +692,8 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                     </div>
                   </div>
                 </div>
+                {index === 1 && <HotelSearchSignInUpdatesBanner />}
+              </React.Fragment>
               );
             })}
             {hasMore ? (
