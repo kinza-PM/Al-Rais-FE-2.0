@@ -178,10 +178,10 @@ export const validatePassengersForFlightProvisionalBookingFields = (
       passengerErrors["identityDocuments.0.issuingCountryCode"] =
         "Issuing country is required.";
     }
-    if (isEmpty(id.residenceCountryCode)) {
-      passengerErrors["identityDocuments.0.residenceCountryCode"] =
-        "Residence country is required.";
-    }
+    // if (isEmpty(id.residenceCountryCode)) {
+    //   passengerErrors["identityDocuments.0.residenceCountryCode"] =
+    //     "Residence country is required.";
+    // }
     if (pRules.isDateOfIssueMandatory && isEmpty(id.dateOfIssue)) {
       passengerErrors["identityDocuments.0.dateOfIssue"] =
         "Date of issue is required.";
