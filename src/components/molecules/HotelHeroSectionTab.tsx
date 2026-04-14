@@ -40,18 +40,18 @@ const convertDateToString = (date: Date | null): string => {
   return `${year}-${month}-${day}`;
 };
 
-const parseIsoToDate = (value: string): Date | null => {
-  if (!value?.trim()) return null;
-  const parts = value.split("-");
-  if (parts.length !== 3) return null;
-  const y = Number(parts[0]);
-  const m = Number(parts[1]);
-  const d = Number(parts[2]);
-  if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
-    return null;
-  }
-  return new Date(y, m - 1, d);
-};
+// const parseIsoToDate = (value: string): Date | null => {
+//   if (!value?.trim()) return null;
+//   const parts = value.split("-");
+//   if (parts.length !== 3) return null;
+//   const y = Number(parts[0]);
+//   const m = Number(parts[1]);
+//   const d = Number(parts[2]);
+//   if (!Number.isFinite(y) || !Number.isFinite(m) || !Number.isFinite(d)) {
+//     return null;
+//   }
+//   return new Date(y, m - 1, d);
+// };
 
 const HotelHeroSectionTab: React.FC = () => {
   const [country, setCountry] = useState("");
@@ -82,7 +82,7 @@ const HotelHeroSectionTab: React.FC = () => {
     include: ["passengers"],
   });
   const navigate = useNavigate();
-  const { hotel, setHotel } = useHotelStore();
+  const { hotel, setHotel, setHotelListingFilters, setHotelListingSortOption, setLandingHeroSearchTab } = useHotelStore();
   const lastHotelSnapshotRef = useRef<string | null>(null);
 
   useLayoutEffect(() => {

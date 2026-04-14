@@ -1,4 +1,8 @@
-import React, { useState, useEffect, useLayoutEffect } from "react";
+import React, { 
+  useState, 
+  useEffect, 
+  // useLayoutEffect
+ } from "react";
 import { useOutletContext } from "react-router-dom";
 import { MainLayout } from "../components";
 import HeroSection from "../components/molecules/HeroSection";
@@ -6,7 +10,7 @@ import HeroSection from "../components/molecules/HeroSection";
 // import PartnersSection from "../components/molecules/PartnersSection";
 import WhyChooseUs from "../components/molecules/WhyChooseUsSection";
 import ReadyToFlySection from "../components/molecules/ReadyToFlySection";
-import { useHotelStore } from "../store/UseHotelStore";
+// import { useHotelStore } from "../store/UseHotelStore";
 import SliderMainPic from "../assets/images/Slider-main-Pic.jpg";
 import SliderTopRight from "../assets/images/Slider-top-right.png";
 import PolygonShape from "../assets/images/Polygon 1.png";

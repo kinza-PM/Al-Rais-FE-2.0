@@ -24,6 +24,7 @@ import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { HotelProxiedImage } from "../atoms/HotelProxiedImage";
 import { useProgressiveList } from "../../hooks/useProgressiveList";
+import HotelSearchSignInUpdatesBanner from "./HotelSearchSignInUpdatesBanner";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
