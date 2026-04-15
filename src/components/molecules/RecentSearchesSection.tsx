@@ -27,11 +27,11 @@ const RecentSearchesSection: React.FC = () => {
         <h2 className="mt-3 text-3xl sm:text-4xl font-medium text-[rgba(10,12,15,1)]">Your recent searches</h2>
       </div>
 
-      <div className="mt-6 flex gap-4 py-2 flex-nowrap items-stretch">
+      <div className="mt-6 flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap gap-4 py-2 items-stretch">
         {RECENT_SEARCHES.map((s) => (
           <div
             key={s.id}
-            className="flex items-center gap-4 p-4 rounded-[12px] border border-[#2351A3] bg-white w-1/4"
+            className="flex items-center gap-4 p-4 rounded-[12px] border border-[#2351A3] bg-white w-full sm:w-[calc(50%-0.5rem)] lg:w-1/4"
             style={{ boxShadow: "0 1px 4px rgba(12,40,86,0.08)" }}
           >
             <div className="w-[72px] h-[72px] overflow-hidden rounded-[8px] flex-shrink-0 bg-gray-100">
