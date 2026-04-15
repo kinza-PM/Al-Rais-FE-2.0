@@ -35,18 +35,17 @@ const Footer: React.FC = () => {
     <footer className="w-full">
       {/* Main footer content */}
       <div
-        className="mx-auto w-full max-w-[1920px] px-6 py-12 sm:px-8 md:px-12 lg:px-16"
+        className="mx-auto w-full max-w-[1920px] px-4 py-10 sm:px-8 sm:py-12 md:px-12 lg:px-16"
         style={{
           minHeight: FOOTER_MAIN_HEIGHT,
           background: "var(--white-100, #F2F2F3)",
         }}
       >
         <div
-          className="flex flex-row flex-wrap items-start justify-between gap-x-10 gap-y-10 lg:gap-x-12"
-          style={{ display: "flex" }}
+          className="flex flex-col items-center gap-y-10 text-center sm:items-start sm:text-left lg:flex-row lg:flex-wrap lg:items-start lg:justify-between lg:gap-x-12"
         >
           {/* Left column: Brand */}
-          <div className="flex min-w-0 flex-1 flex-col md:max-w-[280px] lg:max-w-[320px]">
+          <div className="flex min-w-0 w-full max-w-[420px] flex-col items-center sm:items-start lg:flex-1 lg:max-w-[320px]">
             <img
               src={footerLogo}
               alt="Al Rais Travel Logo"
@@ -62,7 +61,7 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Column 2: Company */}
-          <div className="min-w-0">
+          <div className="min-w-0 w-full sm:w-auto">
             <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
               Company
             </h3>
@@ -81,7 +80,7 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Column 3: Services */}
-          <div className="min-w-0">
+          <div className="min-w-0 w-full sm:w-auto">
             <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
               Services
             </h3>
@@ -108,7 +107,7 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Column 4: Help */}
-          <div className="min-w-0">
+          <div className="min-w-0 w-full sm:w-auto">
             <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
               Help
             </h3>
@@ -127,7 +126,7 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Social icons */}
-          <div className="flex min-w-0 flex-shrink-0 flex-row items-end justify-end gap-4">
+          <div className="flex min-w-0 flex-shrink-0 flex-row items-center justify-center gap-4 w-full sm:w-auto sm:justify-start lg:justify-end">
             <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="Twitter">
               <TwitterIcon />
             </a>

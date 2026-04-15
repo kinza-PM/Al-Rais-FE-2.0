@@ -75,8 +75,8 @@ const PopularDestinationsFlexRow: React.FC = () => {
 
   return (
     <div className="mx-auto max-w-[1464px] px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 md:pt-8 pb-8">
-      {/* Title aligned with card start */}
-      <div className="ml-[68px] sm:ml-[64px] lg:ml-[72px]">
+      {/* Title aligned with card start on large screens; centered on mobile */}
+      <div className="text-center lg:text-left lg:ml-[72px]">
         <p className="text-sm text-[rgba(61,73,92,1)]">Popular destinations</p>
         <h2 className="mt-3 text-3xl sm:text-5xl font-medium text-[rgba(10,12,15,1)]">Find your next adventure</h2>
       </div>
@@ -87,7 +87,7 @@ const PopularDestinationsFlexRow: React.FC = () => {
           type="button"
           aria-label="Previous destinations"
           onClick={goPrev}
-          className="pointer-events-auto -translate-x-2 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors"
+          className="hidden sm:flex pointer-events-auto -translate-x-2 items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors"
         >
           <img src={ArrowLeft} alt="Previous" className="custom-arrow" />
         </button>
@@ -122,7 +122,27 @@ const PopularDestinationsFlexRow: React.FC = () => {
           type="button"
           aria-label="Next destinations"
           onClick={goNext}
-          className="pointer-events-auto translate-x-2 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors"
+          className="hidden sm:flex pointer-events-auto translate-x-2 items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors"
+        >
+          <img src={ArrowRight} alt="Next" className="custom-arrow" />
+        </button>
+      </div>
+
+      {/* Mobile navigation centered below slider */}
+      <div className="mt-3 flex items-center justify-center gap-6 sm:hidden">
+        <button
+          type="button"
+          aria-label="Previous destinations"
+          onClick={goPrev}
+          className="pointer-events-auto flex items-center justify-center w-10 h-10 bg-transparent transition-colors"
+        >
+          <img src={ArrowLeft} alt="Previous" className="custom-arrow" />
+        </button>
+        <button
+          type="button"
+          aria-label="Next destinations"
+          onClick={goNext}
+          className="pointer-events-auto flex items-center justify-center w-10 h-10 bg-transparent transition-colors"
         >
           <img src={ArrowRight} alt="Next" className="custom-arrow" />
         </button>

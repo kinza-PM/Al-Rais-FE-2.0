@@ -1,28 +1,27 @@
 const WhyChooseUsSection: React.FC = () => {
   return (
     <section
-      className="w-full"
+      className="w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-12"
       style={{
         background:
           "linear-gradient(90deg, rgb(210, 244, 254) 0%, rgb(255, 255, 255) 100%)",
-        padding: "2rem",
       }}
     >
-      <div className="w-full w-full max-w-[1261px] !mt-20 m-auto">
-        <h6 className="text-[12px] font-medium text-[#3D495C] opacity-80">
+      <div className="w-full max-w-[1261px] mx-auto">
+        <h6 className="text-[12px] font-medium text-[#3D495C] opacity-80 text-center lg:text-left">
           Why choose us?
         </h6>
-        <div className="flex flex-row gap-[70px]">
-          <div className="base-1/3">
+        <div className="mt-3 flex flex-col lg:flex-row gap-6 lg:gap-[70px]">
+          <div className="w-full lg:w-1/3">
             <div>
               <h2
-                className="mt-1 mb-4 text-[40px] font-bold leading-[100%] text-[rgba(10,12,15,1)]"
+                className="mt-1 mb-4 text-[30px] sm:text-[36px] lg:text-[40px] font-bold leading-[100%] text-[rgba(10,12,15,1)] text-center lg:text-left"
                 style={{ boxSizing: "border-box" }}
               >
                 Passion-driven services
               </h2>
 
-              <p className="text-[12px] text-[#3D495C] opacity-80">
+              <p className="text-[13px] sm:text-[14px] leading-6 text-[#3D495C] opacity-80 text-center lg:text-left">
                 We prioritize user experience, offering a seamless interface
                 that saves you time and money. Al Rais guarantees the best
                 prices and quick access to a wide range of travel options,
@@ -30,8 +29,8 @@ const WhyChooseUsSection: React.FC = () => {
               </p>
             </div>
           </div>
-          <div className="base-2/3">
-            <div className="grid grid-cols-2 gap-2">
+          <div className="w-full lg:w-2/3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-2">
               <div className="rounded-[8px] border-2 border-[#E4E4E7] bg-white p-3">
                 <div className="">
                   <svg
@@ -47,10 +46,10 @@ const WhyChooseUsSection: React.FC = () => {
                     />
                   </svg>
 
-                  <h6 className="text-[14px] text-[#000000] mt-2 mb-2">
+                  <h6 className="text-[15px] text-[#000000] mt-2 mb-2">
                     Convenience & efficiency
                   </h6>
-                  <p className="text-[12px] text-[#3D495C] opacity-80">
+                  <p className="text-[13px] leading-6 text-[#3D495C] opacity-80">
                     Our travel booking platform is designed with your
                     convenience in mind, streamlining the entire process from
                     start to finish. With just a few clicks, you can compare
@@ -74,10 +73,10 @@ const WhyChooseUsSection: React.FC = () => {
                     />
                   </svg>
 
-                  <h6 className="text-[14px] text-[#000000] mt-2 mb-2">
+                  <h6 className="text-[15px] text-[#000000] mt-2 mb-2">
                     Competitive prices
                   </h6>
-                  <p className="text-[12px] text-[#3D495C] opacity-80">
+                  <p className="text-[13px] leading-6 text-[#3D495C] opacity-80">
                     Discover unbeatable prices with Al Rais, where we prioritize
                     your budget without compromising quality. Our advanced AI
                     continuously scan the market to ensure you receive the most
@@ -100,10 +99,10 @@ const WhyChooseUsSection: React.FC = () => {
                     />
                   </svg>
 
-                  <h6 className="text-[14px] text-[#000000] mt-2 mb-2">
+                  <h6 className="text-[15px] text-[#000000] mt-2 mb-2">
                     Customer support
                   </h6>
-                  <p className="text-[12px] text-[#3D495C] opacity-80">
+                  <p className="text-[13px] leading-6 text-[#3D495C] opacity-80">
                     At Al Rais, we prioritize exceptional customer support to
                     enhance your travel experience. Our dedicated team is
                     available around the clock to assist you with any inquiries
@@ -112,9 +111,9 @@ const WhyChooseUsSection: React.FC = () => {
                   </p>
                 </div>
               </div>
-              <div className="flex items-center justify-center rounded-[8px] p-3">
+              <div className="flex items-center justify-center rounded-[8px] p-3 sm:col-span-2">
                 <div className="">
-                  <p className="text-[12px] text-[#3D495C] opacity-80">
+                  <p className="text-[13px] text-[#3D495C] opacity-80">
                     and much more...
                   </p>
                 </div>
