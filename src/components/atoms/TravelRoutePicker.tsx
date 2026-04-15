@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import DoubledArrow from "../../assets/svgs/doubled-arrow.svg";
 import type { AirportOption } from "../../features/flights/types";
 import SearchableDropdown from "../common/SearchableDropdown";
@@ -93,25 +93,42 @@ const TravelRoutePicker: React.FC<Props> = ({
   };
 
   // Convert CountryOption to DropdownOption format
-  const dropdownOptions = options.map((option) => ({
-    id: option.id,
-    value: option.code,
-    label: option.label,
-    subLabel: option.airportName ?? "",
-    searchText: airportSearchText(option),
-    disabled: false,
-  }));
+  const dropdownOptions = useMemo(
+    () =>
+      options.map((option) => ({
+        id: option.id,
+        value: option.code,
+        label: option.label,
+        subLabel: option.airportName ?? "",
+        searchText: airportSearchText(option),
+        disabled: false,
+      })),
+    [options],
+  );
+
+  const optionsByCode = useMemo(
+    () => new Map(options.map((o) => [o.code, o])),
+    [options],
+  );
 
   // Filter options based on disableSameSelection
-  const fromOptions = dropdownOptions.map((option) => ({
-    ...option,
-    disabled: disableSameSelection && option.value === toCode,
-  }));
+  const fromOptions = useMemo(
+    () =>
+      dropdownOptions.map((option) => ({
+        ...option,
+        disabled: disableSameSelection && option.value === toCode,
+      })),
+    [dropdownOptions, disableSameSelection, toCode],
+  );
 
-  const toOptions = dropdownOptions.map((option) => ({
-    ...option,
-    disabled: disableSameSelection && option.value === fromCode,
-  }));
+  const toOptions = useMemo(
+    () =>
+      dropdownOptions.map((option) => ({
+        ...option,
+        disabled: disableSameSelection && option.value === fromCode,
+      })),
+    [dropdownOptions, disableSameSelection, fromCode],
+  );
 
   return (
     <>
@@ -121,7 +138,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           value={fromCode}
           onChange={(code) => handleFrom(code)}
           onOptionSelect={(code, opt) => {
-            const full = options.find((o) => o.code === code) ?? {
+            const full = optionsByCode.get(code) ?? {
               id: opt.id,
               code: opt.value,
               label: opt.label,
@@ -177,7 +194,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           value={toCode}
           onChange={(code) => handleTo(code)}
           onOptionSelect={(code, opt) => {
-            const full = options.find((o) => o.code === code) ?? {
+            const full = optionsByCode.get(code) ?? {
               id: opt.id,
               code: opt.value,
               label: opt.label,

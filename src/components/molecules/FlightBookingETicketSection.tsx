@@ -28,11 +28,24 @@ const S3_TICKET_BASE = VITE_S3_TICKET_PUBLIC_BASE;
 type FlightBookingETicketSectionProps = {
   reservedFlightBooking?: any;
   offerId?: string | number;
+  ancillarySummary?: {
+    totalAmount: number;
+    currency: string;
+    selectedCount: number;
+    breakdown?: Array<{
+      category: "baggage" | "meals" | "seats" | "other";
+      label: string;
+      amount: number;
+      currency: string;
+      ancillaryOfferId: string;
+    }>;
+  };
 };
 
 export default function FlightBookingETicketSection({
   reservedFlightBooking,
   offerId,
+  ancillarySummary,
 }: FlightBookingETicketSectionProps) {
   const [openShareModal, setOpenShareModal] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -668,6 +681,42 @@ export default function FlightBookingETicketSection({
           </div>
         );
       })}
+
+      {Array.isArray(ancillarySummary?.breakdown) &&
+        ancillarySummary!.breakdown!.length > 0 && (
+          <>
+            <NotchDivider />
+            <div className="mt-3">
+              <div className="text-[13px] text-[#3D495C]">Ancillaries</div>
+              <div className="mt-2 space-y-2 [font-variant-numeric:tabular-nums]">
+                {ancillarySummary!.breakdown!.map((item, idx) => (
+                  <div
+                    key={`${item.ancillaryOfferId}-${idx}`}
+                    className="grid grid-cols-[1fr_auto] items-start gap-6"
+                  >
+                    <div className="text-[12px] font-medium text-[#0A0C0F]">
+                      {item.category.toUpperCase()} • {item.label}
+                    </div>
+                    {/* <div className="text-[12px] font-semibold text-[#0A0C0F] text-right">
+                      {item.currency} {Number(item.amount || 0).toFixed(2)}
+                    </div> */}
+                  </div>
+                ))}
+
+                {/* <div className="pt-2 border-t border-[#E4E4E7] grid grid-cols-[1fr_auto] items-center gap-6">
+                  <div className="text-[13px] font-semibold text-[#3D495C]">
+                    Total ancillaries
+                  </div>
+                  <div className="text-[15px] font-bold text-[#0A0C0F] text-right">
+                    {(ancillarySummary?.currency || "USD") +
+                      " " +
+                      Number(ancillarySummary?.totalAmount || 0).toFixed(2)}
+                  </div>
+                </div> */}
+              </div>
+            </div>
+          </>
+        )}
 
       <div className="pdf-hide">
         <NotchDivider />

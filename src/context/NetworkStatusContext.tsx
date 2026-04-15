@@ -47,6 +47,7 @@ export const NetworkStatusProvider: React.FC<Props> = ({
   const debounceTimerRef = useRef<number | null>(null);
   const retryTimerRef = useRef<number | null>(null);
   const backoffRef = useRef<number>(initialBackoffMs);
+  const consecutiveFailRef = useRef<number>(0);
   const lastNavigatorOnlineRef = useRef<boolean>(navigator.onLine);
 
   const suspendedRef = useRef<boolean>(!navigator.onLine);
@@ -138,6 +139,7 @@ export const NetworkStatusProvider: React.FC<Props> = ({
       }
       clearAbort();
       backoffRef.current = initialBackoffMs;
+      consecutiveFailRef.current = 0;
       setIsOnline(false);
       setLastChecked(new Date());
       return;
@@ -160,7 +162,16 @@ export const NetworkStatusProvider: React.FC<Props> = ({
     const ok = await verifyConnection();
     if (!mountedRef.current) return;
 
-    setIsOnline(ok);
+    if (ok) {
+      consecutiveFailRef.current = 0;
+      setIsOnline(true);
+    } else {
+      consecutiveFailRef.current += 1;
+      // Avoid false offline flicker from transient ping failures (e.g. favicon hiccups).
+      if (!navigator.onLine || consecutiveFailRef.current >= 2) {
+        setIsOnline(false);
+      }
+    }
     setLastChecked(new Date());
 
     if (ok) {
@@ -200,6 +211,7 @@ export const NetworkStatusProvider: React.FC<Props> = ({
       }
       clearAbort();
       backoffRef.current = initialBackoffMs;
+      consecutiveFailRef.current = 0;
       setIsOnline(false);
       setLastChecked(new Date());
     };
@@ -249,6 +261,7 @@ export const NetworkStatusProvider: React.FC<Props> = ({
           }
           clearAbort();
           backoffRef.current = initialBackoffMs;
+          consecutiveFailRef.current = 0;
           setIsOnline(false);
           setLastChecked(new Date());
         } else {
@@ -261,6 +274,7 @@ export const NetworkStatusProvider: React.FC<Props> = ({
     (async () => {
       if (!navigator.onLine) {
         suspendedRef.current = true;
+        consecutiveFailRef.current = 0;
         setIsOnline(false);
         setLastChecked(new Date());
       } else {

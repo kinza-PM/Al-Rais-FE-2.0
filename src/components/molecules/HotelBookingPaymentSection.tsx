@@ -168,14 +168,20 @@ export default function HotelBookingPaymentSection({
     // TESTING BYPASS: Skip payment, show receipt immediately. REVERT: Set HOTEL_PAYMENT_BYPASS_FOR_TESTING to false.
     if (HOTEL_PAYMENT_BYPASS_FOR_TESTING) {
       const rooms = selectedRooms.map((sr) => sr?.room).filter(Boolean);
-      const passengers = hotelBookingPayload.rooms?.flatMap((r: any) => r.passengers ?? []) ?? [];
+      const passengers =
+        hotelBookingPayload.rooms?.flatMap((r: any) => r.passengers ?? []) ??
+        [];
       const mockResponse = {
         data: [
           {
             hotel: {
               rooms,
-              checkInDate: bookingInfo?.checkIn ?? hotelBookingPayload?.stayDateRange?.checkIn,
-              checkOutDate: bookingInfo?.checkOut ?? hotelBookingPayload?.stayDateRange?.checkOut,
+              checkInDate:
+                bookingInfo?.checkIn ??
+                hotelBookingPayload?.stayDateRange?.checkIn,
+              checkOutDate:
+                bookingInfo?.checkOut ??
+                hotelBookingPayload?.stayDateRange?.checkOut,
               currency: currency ?? "AED",
               totalNet: totalPrice ?? 0,
             },
@@ -309,7 +315,10 @@ export default function HotelBookingPaymentSection({
           threeDsResult?.acquirer_response_message || "",
         ).toLowerCase();
 
-        if (respMsg.includes("success") && acqMsg.includes("success")) {
+        if (
+          respMsg.includes("success") &&
+          (acqMsg.includes("success") || acqMsg.includes("approved"))
+        ) {
           toast.success("Payment successful!");
           await handleHotelReservationBooking(tokenization, reservation);
         } else {
@@ -335,7 +344,7 @@ export default function HotelBookingPaymentSection({
     } finally {
       try {
         if (popup && !popup.closed) popup.close();
-      } catch (_) { }
+      } catch (_) {}
       setIsProcessing(false);
     }
   };
@@ -418,7 +427,11 @@ export default function HotelBookingPaymentSection({
   }, [showMinimumLoading]);
 
   const isPayButtonLoading =
-    isPending || isProcessing || isTokenizing || paymentPending || showMinimumLoading;
+    isPending ||
+    isProcessing ||
+    isTokenizing ||
+    paymentPending ||
+    showMinimumLoading;
 
   const getPayButtonText = () => {
     if (isTokenizing || showMinimumLoading) return "Preparing secure payment";
@@ -560,11 +573,12 @@ export default function HotelBookingPaymentSection({
                   <TailwindCustomInput
                     type="email"
                     placeholder="Enter an email"
-                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none ${hasAttemptedValidation &&
+                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none ${
+                      hasAttemptedValidation &&
                       validationErrors["customerInfo.emailAddress"]
-                      ? "border-[#E65959]"
-                      : "border-[#C2CAD6]"
-                      }`}
+                        ? "border-[#E65959]"
+                        : "border-[#C2CAD6]"
+                    }`}
                     label="Email"
                     name="customerInfo.emailAddress"
                     value={email}
@@ -587,11 +601,12 @@ export default function HotelBookingPaymentSection({
                       <TailwindCustomInput
                         type="text"
                         placeholder="0000 0000 0000 0000"
-                        className={`h-12 w-full rounded-2xl border px-4 pr-20 text-[14px] ${hasAttemptedValidation &&
+                        className={`h-12 w-full rounded-2xl border px-4 pr-20 text-[14px] ${
+                          hasAttemptedValidation &&
                           validationErrors["card.number"]
-                          ? "border-[#E65959]"
-                          : "border-[#C2CAD6]"
-                          }`}
+                            ? "border-[#E65959]"
+                            : "border-[#C2CAD6]"
+                        }`}
                         name="number"
                         value={cardDetails.number}
                         onChange={handleCardFieldChange}
@@ -620,11 +635,12 @@ export default function HotelBookingPaymentSection({
                     <TailwindCustomInput
                       type="text"
                       placeholder="MM/YY"
-                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation &&
+                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
+                        hasAttemptedValidation &&
                         validationErrors["card.expiry"]
-                        ? "border-[#E65959]"
-                        : "border-[#C2CAD6]"
-                        }`}
+                          ? "border-[#E65959]"
+                          : "border-[#C2CAD6]"
+                      }`}
                       name="expiry"
                       value={cardDetails.expiryDisplay}
                       onChange={handleCardFieldChange}
@@ -637,10 +653,11 @@ export default function HotelBookingPaymentSection({
                     <TailwindCustomInput
                       type="text"
                       placeholder="000"
-                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation && validationErrors["card.cvv"]
-                        ? "border-[#E65959]"
-                        : "border-[#C2CAD6]"
-                        }`}
+                      className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
+                        hasAttemptedValidation && validationErrors["card.cvv"]
+                          ? "border-[#E65959]"
+                          : "border-[#C2CAD6]"
+                      }`}
                       name="cvv"
                       value={cardDetails.cvv}
                       onChange={handleCardFieldChange}
@@ -655,11 +672,12 @@ export default function HotelBookingPaymentSection({
                   <TailwindCustomInput
                     type="text"
                     placeholder="Enter cardholder name"
-                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${hasAttemptedValidation &&
+                    className={`h-12 w-full rounded-2xl border px-4 text-[14px] ${
+                      hasAttemptedValidation &&
                       validationErrors["card.holderName"]
-                      ? "border-[#E65959]"
-                      : "border-[#C2CAD6]"
-                      }`}
+                        ? "border-[#E65959]"
+                        : "border-[#C2CAD6]"
+                    }`}
                     label="Cardholder name"
                     name="holderName"
                     value={cardDetails.holderName}
@@ -797,10 +815,14 @@ export default function HotelBookingPaymentSection({
           <Button
             type="button"
             overrideClasses
-            className={`min-w-[200px] h-[48px] rounded-[100px] px-8 py-[14px] text-[15px] font-semibold text-white flex items-center justify-center gap-3 transition-all duration-200 ${isPayButtonLoading ? "opacity-95 cursor-not-allowed" : "hover:opacity-95 active:opacity-90"
-              }`}
+            className={`min-w-[200px] h-[48px] rounded-[100px] px-8 py-[14px] text-[15px] font-semibold text-white flex items-center justify-center gap-3 transition-all duration-200 ${
+              isPayButtonLoading
+                ? "opacity-95 cursor-not-allowed"
+                : "hover:opacity-95 active:opacity-90"
+            }`}
             style={{
-              background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+              background:
+                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
             }}
             onClick={generatePayfortPaymentTokenization}
             disabled={isPayButtonLoading}

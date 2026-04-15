@@ -97,10 +97,12 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   renderOption,
   panelClassName = "",
 }) => {
+  const OPTIONS_CHUNK_SIZE = 150;
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [showError, setShowError] = useState(false);
   const [searchPending, setSearchPending] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(OPTIONS_CHUNK_SIZE);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchBaseRef = useRef<DropdownOption[]>([]);
@@ -284,9 +286,18 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const el = e.currentTarget;
-    if (!onLoadMore || !hasMore || loadingMore) return;
+    const nearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    if (!nearBottom) return;
 
-    if (el.scrollHeight - el.scrollTop - el.clientHeight < 60) {
+    if (!noInnerOptionsScroll && visibleCount < filteredOptions.length) {
+      setVisibleCount((prev) =>
+        Math.min(prev + OPTIONS_CHUNK_SIZE, filteredOptions.length),
+      );
+      return;
+    }
+
+    if (!onLoadMore || !hasMore || loadingMore) return;
+    if (nearBottom) {
       onLoadMore();
     }
   };
@@ -303,8 +314,19 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     if (!isOpen) {
       searchBaseRef.current = [];
       setSearchTerm("");
+      setVisibleCount(OPTIONS_CHUNK_SIZE);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setVisibleCount(OPTIONS_CHUNK_SIZE);
+  }, [isOpen, searchTerm, options.length]);
+
+  const renderedOptions = useMemo(() => {
+    if (noInnerOptionsScroll) return filteredOptions;
+    return filteredOptions.slice(0, visibleCount);
+  }, [filteredOptions, noInnerOptionsScroll, visibleCount]);
 
   // Notify parent of search term changes for remote/API search.
   useEffect(() => {
@@ -444,7 +466,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               onScroll={handleScroll}
             >
               {filteredOptions.length > 0 ? (
-                filteredOptions.map((option) => {
+                renderedOptions.map((option) => {
                   const isSelected = option.value === value;
                   return (
                     <button
@@ -491,6 +513,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                   Loading more...
                 </div>
               )}
+
+              {!noInnerOptionsScroll &&
+                renderedOptions.length < filteredOptions.length && (
+                  <div className="px-4 py-2 text-center text-xs text-[#98A4B3]">
+                    Scroll to load more options...
+                  </div>
+                )}
             </div>
           </div>
         )}

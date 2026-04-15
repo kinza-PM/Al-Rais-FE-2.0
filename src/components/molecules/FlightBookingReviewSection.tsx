@@ -62,6 +62,18 @@ type FlightBookingReviewSectionProps = {
     onNext?: () => void;
     onEditDetails?: () => void;
     onChangeFlight?: () => void;
+    ancillarySummary?: {
+        totalAmount: number;
+        currency: string;
+        selectedCount: number;
+        breakdown?: Array<{
+            category: "baggage" | "meals" | "seats" | "other";
+            label: string;
+            amount: number;
+            currency: string;
+            ancillaryOfferId: string;
+        }>;
+    };
 };
 
 export default function FlightBookingReviewSection({
@@ -71,6 +83,7 @@ export default function FlightBookingReviewSection({
     onNext,
     // onEditDetails,
     onChangeFlight,
+    ancillarySummary,
 }: FlightBookingReviewSectionProps) {
     const [openPrice, setOpenPrice] = useState(false);
     const passengers = flightBookingPayload?.passengers || [];
@@ -421,6 +434,7 @@ export default function FlightBookingReviewSection({
                         open={openPrice}
                         onToggleOpen={() => setOpenPrice((v) => !v)}
                         trip={trip.raw}
+                        ancillarySummary={ancillarySummary}
                     />
                 </div>
             </div>

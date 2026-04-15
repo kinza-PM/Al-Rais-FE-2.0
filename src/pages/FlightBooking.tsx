@@ -29,6 +29,19 @@ import { useAuth } from "../features/auth/hooks/useAuth";
 import * as RemoteUserService from "../services/api/remoteUserService";
 import { useFlightStore } from "../store/UseFlightStore";
 
+type AncillarySummary = {
+  totalAmount: number;
+  currency: string;
+  selectedCount: number;
+  breakdown?: Array<{
+    category: "baggage" | "meals" | "seats" | "other";
+    label: string;
+    amount: number;
+    currency: string;
+    ancillaryOfferId: string;
+  }>;
+};
+
 /** BK209: Extract flight search params from offerData for "Change" - prefill search without restarting */
 function buildFlightFromOffer(offerData: any) {
   if (!offerData?.flightDetail?.raw?.journey) return null;
@@ -101,6 +114,11 @@ const FlightBooking = () => {
   const [fareBookingSearchRules, setFareBookingSearchRules] =
     useState<any>(null);
   const [showAncillaryModal, setShowAncillaryModal] = useState(false);
+  const [ancillarySummary, setAncillarySummary] = useState<AncillarySummary>({
+    totalAmount: 0,
+    currency: "USD",
+    selectedCount: 0,
+  });
   const enhanceAvailable =
     !!initialOfferData?.flightDetail?.raw?.detail?.ancillaryDetailsAvailable;
   // const steps = ["Book", "Enhance", "Review", "Pay", "E-ticket"];
@@ -244,7 +262,7 @@ const FlightBooking = () => {
   // const { data: cityOptions, isLoading: isCountryLoading } =
   //   useAiprortOptions(true);
   const { data: countriesOptions, isLoading: isCountriesLoading } =
-    useCountriesOptions();
+    useCountriesOptions(isAuthenticated);
 
   const { mutateAsync, isPending } = useFlightFareRuleSearch();
   const { mutateAsync: mutateIngestViewAsync, isPending: isIngestViewPending } =
@@ -750,6 +768,9 @@ const FlightBooking = () => {
                 offerId={offerData?.offerId}
                 searchKey={offerData?.searchKey}
                 onChangeFlight={handleChangeFlight}
+                onAncillarySelectionResolved={(summary) => {
+                  setAncillarySummary(summary);
+                }}
               />
             )}
           {currentStep === reviewStepIndex && (
@@ -761,6 +782,7 @@ const FlightBooking = () => {
               onNext={() => setCurrentStep(enhanceAvailable ? 3 : 2)}
               onEditDetails={() => setCurrentStep(0)}
               onChangeFlight={handleChangeFlight}
+              ancillarySummary={ancillarySummary}
             />
           )}
           {currentStep === payStepIndex && (
@@ -774,12 +796,14 @@ const FlightBooking = () => {
               onFinalReservationFlightBookingSuccess={
                 onFinalReservationFlightBookingSuccess
               }
+              ancillarySummary={ancillarySummary}
             />
           )}
           {currentStep === eticketStepIndex && (
             <FlightBookingETicketSection
               reservedFlightBooking={finalReservedFlightBookingData}
               offerId={offerData?.offerId}
+              ancillarySummary={ancillarySummary}
             />
           )}
         </div>

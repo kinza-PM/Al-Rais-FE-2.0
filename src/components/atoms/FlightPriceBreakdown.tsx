@@ -6,6 +6,18 @@ type Props = {
     open: boolean;
     onToggleOpen: () => void;
     trip?: any;
+    ancillarySummary?: {
+        totalAmount: number;
+        currency: string;
+        selectedCount: number;
+        breakdown?: Array<{
+            category: "baggage" | "meals" | "seats" | "other";
+            label: string;
+            amount: number;
+            currency: string;
+            ancillaryOfferId: string;
+        }>;
+    };
 };
 
 const PAX_LABEL: Record<string, string> = {
@@ -16,7 +28,7 @@ const PAX_LABEL: Record<string, string> = {
 
 
 
-export default function FLightPriceBreakdown({ open, onToggleOpen, trip }: Props) {
+export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancillarySummary }: Props) {
     const fare = trip?.fare ?? trip?.financials?.fare ?? null;
     const fareBreakdown = Array.isArray(fare?.fareBreakdown) ? fare.fareBreakdown : fare?.fareBreakdown ?? [];
     const currency = fare?.currencyCode ?? fare?.currency ?? "USD";
@@ -43,7 +55,14 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip }: Props
         });
     }, [fareBreakdown]);
 
-    const total = fare?.totalFare ?? fare?.total ?? null;
+    const baseTotalRaw = fare?.totalFare ?? fare?.total ?? null;
+    const baseTotal = typeof baseTotalRaw === "number" ? baseTotalRaw : 0;
+    const ancillaryTotal = Number(ancillarySummary?.totalAmount || 0);
+    const breakdown = Array.isArray(ancillarySummary?.breakdown)
+        ? ancillarySummary!.breakdown!
+        : [];
+    const hasAncillary = ancillaryTotal > 0 || breakdown.length > 0;
+    const total = baseTotal + ancillaryTotal;
 
     return (
         <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm max-w-[576px]">
@@ -158,6 +177,41 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip }: Props
                                     </div>
                                 );
                             })
+                        )}
+
+                        {hasAncillary && (
+                            <div className="mt-4">
+                                <div className="text-[13px] font-semibold text-[#0A0C0F]">Enhancements</div>
+                                <ul className="mt-1 space-y-1 text-[12px] pl-3">
+                                    {breakdown.length > 0 ? (
+                                        breakdown.map((item, idx) => (
+                                            <li key={`${item.ancillaryOfferId}-${idx}`} className="flex items-start justify-between gap-6">
+                                                <span className="text-[#3D495C]">
+                                                    {item.category.toUpperCase()} • {item.label}
+                                                </span>
+                                                <span className="font-semibold text-[#0A0C0F] shrink-0">
+                                                    {formatMoney(
+                                                        Number(item.amount || 0),
+                                                        item.currency || ancillarySummary?.currency || currency
+                                                    )}
+                                                </span>
+                                            </li>
+                                        ))
+                                    ) : (
+                                        <li className="flex items-center justify-between">
+                                            <span className="text-[#3D495C]">
+                                                Ancillary selections ({ancillarySummary?.selectedCount || 0})
+                                            </span>
+                                            <span className="font-semibold text-[#0A0C0F]">
+                                                {formatMoney(
+                                                    ancillaryTotal,
+                                                    ancillarySummary?.currency || currency
+                                                )}
+                                            </span>
+                                        </li>
+                                    )}
+                                </ul>
+                            </div>
                         )}
                     </div>
                 </div>

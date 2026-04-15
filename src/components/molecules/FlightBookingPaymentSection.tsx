@@ -63,8 +63,8 @@ type FlightBookingPaymentSectionProps = {
   onReservationChange: (
     eOrPath:
       | React.ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >
+          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
       | string,
     maybeValue?: any,
   ) => void;
@@ -72,6 +72,18 @@ type FlightBookingPaymentSectionProps = {
   onFinalReservationFlightBookingSuccess?: (
     data: FlightFinalReservedBooking,
   ) => void;
+  ancillarySummary?: {
+    totalAmount: number;
+    currency: string;
+    selectedCount: number;
+    breakdown?: Array<{
+      category: "baggage" | "meals" | "seats" | "other";
+      label: string;
+      amount: number;
+      currency: string;
+      ancillaryOfferId: string;
+    }>;
+  };
 };
 
 // function ChevronDown() {
@@ -92,6 +104,7 @@ export default function FlightBookingPaymentSection({
   onReservationChange,
   onNext,
   onFinalReservationFlightBookingSuccess,
+  ancillarySummary,
 }: FlightBookingPaymentSectionProps) {
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
   const [openAddress, setOpenAddress] = useState(true);
@@ -144,7 +157,10 @@ export default function FlightBookingPaymentSection({
 
   const fare = trip?.raw?.fare ?? trip?.raw?.financials?.fare ?? null;
   const currency = fare?.currencyCode ?? fare?.currency ?? "USD";
-  const total = fare?.totalFare ?? fare?.total ?? null;
+  const baseTotalRaw = fare?.totalFare ?? fare?.total ?? null;
+  const baseTotal = typeof baseTotalRaw === "number" ? baseTotalRaw : 0;
+  const ancillaryTotal = Number(ancillarySummary?.totalAmount || 0);
+  const total = baseTotal + ancillaryTotal;
 
   const priceFareFamily = {
     label: "Fare family",
@@ -312,6 +328,7 @@ export default function FlightBookingPaymentSection({
       const response = await paymentMutateAsync(paymentPayload);
 
       const threeDsUrl = response?.["3ds_url"];
+
       if (threeDsUrl) {
         try {
           popup!.location.href = threeDsUrl;
@@ -324,7 +341,7 @@ export default function FlightBookingPaymentSection({
         }
 
         const threeDsResult = await threeDsMessagePromise;
-
+        // console.log("threeDsResult", threeDsResult);
         const respMsg = String(
           threeDsResult?.response_message || "",
         ).toLowerCase();
@@ -332,7 +349,10 @@ export default function FlightBookingPaymentSection({
           threeDsResult?.acquirer_response_message || "",
         ).toLowerCase();
 
-        if (respMsg.includes("success") && acqMsg.includes("success")) {
+        if (
+          respMsg.includes("success") &&
+          (acqMsg.includes("success") || acqMsg.includes("approved"))
+        ) {
           toast.success("Payment successful!");
           await handleReservationFlightBooking(tokenization);
         } else {
@@ -360,7 +380,7 @@ export default function FlightBookingPaymentSection({
       // always cleanup/close popup if still open
       try {
         if (popup && !popup.closed) popup.close();
-      } catch (_) { }
+      } catch (_) {}
       setIsProcessing(false);
     }
   };
@@ -398,7 +418,8 @@ export default function FlightBookingPaymentSection({
               reservationWithToken.offerId,
               reservationWithToken.searchKey,
             );
-          }, 110000);
+          }, 15000);
+          // }, 110000);
           break;
 
         default:
@@ -457,7 +478,7 @@ export default function FlightBookingPaymentSection({
   };
 
   useEffect(() => {
-    if (total === null) return;
+    if (!Number.isFinite(total)) return;
     const existing = reservation?.paymentDetails?.transactionAmount;
     if (existing !== total) {
       onReservationChange?.("paymentDetails.transactionAmount", total);
@@ -779,7 +800,7 @@ export default function FlightBookingPaymentSection({
 
                       <CardCollapseToggle
                         open={openAddress}
-                        onClick={() => { }}
+                        onClick={() => {}}
                         className="pointer-events-none"
                       />
                     </div>
@@ -922,6 +943,7 @@ export default function FlightBookingPaymentSection({
           open={openPrice}
           onToggleOpen={() => setOpenPrice((v) => !v)}
           trip={trip.raw}
+          ancillarySummary={ancillarySummary}
         />
 
         <div className="mt-16 px-5 flex flex-col items-center">

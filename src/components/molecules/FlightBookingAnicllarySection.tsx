@@ -45,6 +45,18 @@ type FlightBookingAnicllarySectionProps = {
   offerId?: string;
   searchKey?: string;
   onChangeFlight?: () => void;
+  onAncillarySelectionResolved?: (summary: {
+    totalAmount: number;
+    currency: string;
+    selectedCount: number;
+    breakdown?: Array<{
+      category: "baggage" | "meals" | "seats" | "other";
+      label: string;
+      amount: number;
+      currency: string;
+      ancillaryOfferId: string;
+    }>;
+  }) => void;
 };
 
 export default function FlightBookingAnicllarySection({
@@ -55,6 +67,7 @@ export default function FlightBookingAnicllarySection({
   offerId,
   searchKey,
   onChangeFlight,
+  onAncillarySelectionResolved,
 }: FlightBookingAnicllarySectionProps) {
   const { isAuthenticated } = useAuth();
   const { getAllSelections, clearAll } = useAncillaryStore();
@@ -99,11 +112,134 @@ export default function FlightBookingAnicllarySection({
 
   const handleClearAllAncillaries = () => {
     clearAll();
+    onAncillarySelectionResolved?.({
+      totalAmount: 0,
+      currency:
+        trip?.raw?.fare?.currencyCode ??
+        trip?.raw?.fare?.currency ??
+        "USD",
+      selectedCount: 0,
+      breakdown: [],
+    });
   };
+
+  const buildOfferIdToDescriptionMap = () => {
+    const map = new Map<string, string>();
+
+    const pushFromList = (list: any[]) => {
+      list.forEach((item: any) => {
+        const id = item?.ancillary?.ancillaryOfferId;
+        const desc =
+          item?.ancillary?.ancillaryDescription ||
+          item?.ancillary?.ancillaryCode ||
+          "";
+        if (id && desc && !map.has(id)) {
+          map.set(id, desc);
+        }
+      });
+    };
+
+    if (Array.isArray(flightAncillarySearch?.baggages)) {
+      pushFromList(flightAncillarySearch.baggages);
+    }
+    if (Array.isArray(flightAncillarySearch?.meals)) {
+      pushFromList(flightAncillarySearch.meals);
+    }
+    if (Array.isArray(flightAncillarySearch?.otherAncillaries)) {
+      pushFromList(flightAncillarySearch.otherAncillaries);
+    }
+
+    return map;
+  };
+
+  const buildSelectedOfferIdContext = () => {
+    const all = getAllSelections() as AllSelections;
+    const context = new Map<
+      string,
+      { category: "baggage" | "meals" | "seats" | "other"; seatNumber?: string }
+    >();
+
+    // baggage: segment -> passenger -> offerId
+    Object.values(all?.baggage ?? {}).forEach((passengers: any) => {
+      Object.values(passengers ?? {}).forEach((offerId: any) => {
+        if (offerId) context.set(String(offerId), { category: "baggage" });
+      });
+    });
+
+    // meals: segment -> passenger -> mealTypeKey -> offerId -> qty
+    Object.values(all?.meals ?? {}).forEach((passengers: any) => {
+      Object.values(passengers ?? {}).forEach((mealTypes: any) => {
+        Object.values(mealTypes ?? {}).forEach((ancillaryMap: any) => {
+          Object.entries(ancillaryMap ?? {}).forEach(([offerId, qty]) => {
+            const q = Number(qty) || 0;
+            for (let i = 0; i < q; i++) {
+              // if qty>1, it will appear multiple times in payload; breakdown can just show once (API returns per item)
+              if (offerId) context.set(String(offerId), { category: "meals" });
+            }
+          });
+        });
+      });
+    });
+
+    // seats: segment -> passenger -> { seatNumber, ancillaryOfferId }
+    Object.entries(all?.seats ?? {}).forEach(([_, passengers]: any) => {
+      Object.values(passengers ?? {}).forEach((seatInfo: any) => {
+        const offerId = seatInfo?.ancillaryOfferId;
+        if (offerId) {
+          context.set(String(offerId), {
+            category: "seats",
+            seatNumber: seatInfo?.seatNumber,
+          });
+        }
+      });
+    });
+
+    // other: segment -> passenger -> offerId -> boolean
+    Object.values(all?.otherAncillaries ?? {}).forEach((passengers: any) => {
+      Object.values(passengers ?? {}).forEach((services: any) => {
+        Object.entries(services ?? {}).forEach(([offerId, selected]) => {
+          if (selected && offerId) {
+            context.set(String(offerId), { category: "other" });
+          }
+        });
+      });
+    });
+
+    return context;
+  };
+
+  const liveAncillarySummary = useMemo(() => {
+    const all = getAllSelections() as AllSelections;
+    const payload = buildAncillaryPayload(all, offerId, searchKey);
+    const selected = payload?.data?.selectedAncillaries || [];
+    const fallbackCurrency =
+      trip?.raw?.fare?.currencyCode ?? trip?.raw?.fare?.currency ?? "USD";
+    return {
+      totalAmount: 0,
+      currency: fallbackCurrency,
+      selectedCount: selected.length,
+    };
+  }, [getAllSelections, offerId, searchKey, trip]);
 
   const handleFlightAncillaryProvBooking = async () => {
     const all = getAllSelections() as AllSelections;
     const payload = buildAncillaryPayload(all, offerId, searchKey);
+    const selectedAncillaries = payload?.data?.selectedAncillaries || [];
+    if (!selectedAncillaries.length) {
+      onAncillarySelectionResolved?.({
+        totalAmount: 0,
+        currency:
+          trip?.raw?.fare?.currencyCode ??
+          trip?.raw?.fare?.currency ??
+          "USD",
+        selectedCount: 0,
+        breakdown: [],
+      });
+      if (typeof onNext === "function") {
+        onNext();
+      }
+      return;
+    }
 
     try {
       const response = await mutateAsync(payload);
@@ -111,6 +247,48 @@ export default function FlightBookingAnicllarySection({
         response?.meta?.success &&
         response?.meta?.statusMessage == "SUCCESS"
       ) {
+        const offerIdToDesc = buildOfferIdToDescriptionMap();
+        const selectedCtx = buildSelectedOfferIdContext();
+        const booked = Array.isArray(response?.data) ? response.data : [];
+
+        const breakdown = booked
+          .filter((b: any) => !!b?.ancillaryOfferId && !!b?.fare)
+          .map((b: any) => {
+            const id = String(b.ancillaryOfferId);
+            const ctx = selectedCtx.get(id);
+            const category = ctx?.category ?? "other";
+            const seatNumber = ctx?.seatNumber;
+            const label =
+              category === "seats" && seatNumber
+                ? `Seat ${seatNumber}`
+                : offerIdToDesc.get(id) || id;
+            const amount = Number(b?.fare?.sellingAmount || 0);
+            const currency = b?.fare?.sellingCurrency || "USD";
+            return {
+              category,
+              label,
+              amount,
+              currency,
+              ancillaryOfferId: id,
+            };
+          });
+
+        const fallbackCurrency =
+          trip?.raw?.fare?.currencyCode ?? trip?.raw?.fare?.currency ?? "USD";
+        const currency =
+          breakdown?.[0]?.currency || fallbackCurrency;
+        const totalAmount = breakdown.reduce(
+          (sum: number, item: { amount: number }) => sum + Number(item.amount || 0),
+          0,
+        );
+
+        onAncillarySelectionResolved?.({
+          totalAmount,
+          currency,
+          selectedCount: breakdown.length,
+          breakdown,
+        });
+
         toast.success(response?.meta?.actionType);
         if (typeof onNext === "function") {
           onNext();
@@ -205,6 +383,7 @@ export default function FlightBookingAnicllarySection({
             open={openPrice}
             onToggleOpen={() => setOpenPrice((v) => !v)}
             trip={trip.raw}
+            ancillarySummary={liveAncillarySummary}
           />
 
           <Button
