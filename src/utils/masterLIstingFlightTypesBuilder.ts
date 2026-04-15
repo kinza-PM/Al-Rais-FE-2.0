@@ -90,14 +90,12 @@ export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
       // .filter(i => i.status === 1)
       .map((i, key) => ({
         id: `${key}`,
-        // label: `${i.city}, ${i.country}`,
-        label: `${i.airportName || i.city} – ${i.iataCode}`,
-        // label: `${i.airportName}`,
-        // label: `${i.city} (${i.cityCode}), ${i.country}`,
+        label: `${i.city}, ${i.country} (${i.iataCode})`,
         code: i.iataCode,
         // code: i.cityCode,
         city: i.city,
         country: i.country,
+        airportName: i.airportName || undefined,
         countryCode: i.countryCode,
       }))
     // optional: stable sort by city

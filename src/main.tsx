@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App";
 import "./amplify";
+import { ensureBrowserId } from "./utils/browserId";
 import { ConsoleLogger } from 'aws-amplify/utils';
 import type { ThemeConfig } from "antd";
 import { ConfigProvider } from "antd";
@@ -40,6 +41,7 @@ const theme: ThemeConfig = {
 };
 
 ConsoleLogger.LOG_LEVEL = 'ERROR';
+ensureBrowserId();
 const queryClient = new QueryClient();
 
 createRoot(document.getElementById("root")!).render(

@@ -8,9 +8,9 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
-import { useCountriesOptions } from "../../hooks/masterListings/listing";
-import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
+import { useAiprortOptions, useCountriesOptions } from "../../hooks/masterListings/listing";
 import SearchableDropdown from "../common/SearchableDropdown";
+import HotelDestinationAirportDropdown from "../atoms/HotelDestinationAirportDropdown";
 import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
 import TravellersAndRoomDropdown from "../atoms/TravellersAndRoomDropdown";
 import CheckableDropdown from "../common/CheckableDropdown";
@@ -18,7 +18,6 @@ import type { PassengerSchema } from "../../features/flights/types";
 import { useHotelStore } from "../../store/UseHotelStore";
 import { createEmptyHotelListingFilters } from "../../utils/hotelFilters";
 import Info from "../../assets/svgs/info-black.svg";
-import Loader from "../atoms/Loader";
 import { parseLocalDateString } from "../../utils/helpers";
 
 const starRatingOptions = [
@@ -85,6 +84,10 @@ const HotelHeroSectionTab: React.FC = () => {
   const { hotel, setHotel, setHotelListingFilters, setHotelListingSortOption, setLandingHeroSearchTab } = useHotelStore();
   const lastHotelSnapshotRef = useRef<string | null>(null);
 
+  const [airportSearchTerm, setAirportSearchTerm] = useState("");
+  const qAirports = useAiprortOptions(true, airportSearchTerm);
+  const { data: countriesOptions } = useCountriesOptions();
+
   useLayoutEffect(() => {
     if (!hotel) return;
     const snap = JSON.stringify({
@@ -130,17 +133,7 @@ const HotelHeroSectionTab: React.FC = () => {
     });
   }, [hotel]);
 
-  const { data: countriesOptions } = useCountriesOptions();
-  const selectedCountry = useMemo(
-    () => countriesOptions?.find((c) => c.label === country),
-    [countriesOptions, country],
-  );
-  const {
-    data: citiesData,
-    isLoading: isCitiesLoading,
-    isFetching: isCitiesFetching,
-  } = useCitiesOptions(selectedCountry?.label || "", !!selectedCountry?.label);
-  const isCityOptionsLoading = isCitiesLoading || isCitiesFetching;
+  // `countriesOptions` is already loaded above (used for nationality + country of residence).
 
   const handlePaxChange = useCallback(
     (pax: {
@@ -370,113 +363,30 @@ const HotelHeroSectionTab: React.FC = () => {
 
   return (
     <div className="px-4 sm:px-6 lg:px-10 pt-5 pb-5">
-      <Loader show={isCityOptionsLoading} label="Loading cities..." />
       <div className="hotelSearchFilterCard">
         <div className={`hotel-filter-grid-hero ${hasErrorRow1 || hasErrorRow2 ? "pb-4" : ""}`}>
           <div className="hero-country w-full min-w-0">
-            <label className={labelBaseClass}>Country</label>
-            <SearchableDropdown
-              options={
-                countriesOptions?.map((c) => ({
-                  id: c.iso2,
-                  value: c.label,
-                  label: c.label,
-                })) || []
-              }
-              value={country}
-              onChange={(value) => {
-                setCountry(value);
-                setCity("");
+            <HotelDestinationAirportDropdown
+              airports={qAirports.data || []}
+              isLoading={qAirports.isLoading}
+              isFetching={qAirports.isFetching}
+              onSearchAirports={setAirportSearchTerm}
+              onLoadMore={() => {
+                if (qAirports.hasNextPage) qAirports.fetchNextPage();
               }}
+              hasMore={!!qAirports.hasNextPage}
+              loadingMore={!!qAirports.isFetchingNextPage}
+              valueCountry={country}
+              valueCity={city}
+              onChange={({ country: c, city: ct }) => {
+                setCountry(c);
+                setCity(ct);
+              }}
+              label="Destination"
               placeholder="Where are you traveling to?"
-              label={undefined}
+              tooltip="Select destination"
+              error={(countryError || cityError) || null}
               widthClass="w-full"
-              searchPlaceholder="Search"
-              tooltip="Select country where you want to stay"
-              error={countryError || null}
-            />
-          </div>
-
-          <div className="hero-city w-full min-w-0">
-            <label className={labelBaseClass}>City</label>
-            <SearchableDropdown
-              options={
-                citiesData?.map((c, index) => ({
-                  id: `${index}-${c.value}`,
-                  value: c.value,
-                  label: c.label,
-                })) || []
-              }
-              value={city}
-              onChange={setCity}
-              placeholder="Where are you traveling to?"
-              label={undefined}
-              widthClass="w-full"
-              searchPlaceholder="Search"
-              tooltip="Select your destination city to view hotels"
-              error={cityError || null}
-            />
-          </div>
-
-          <div className="hero-dates w-full min-w-0">
-            <label className={labelBaseClass}>Dates</label>
-            <div
-              className={`h-[50px] w-full rounded-[16px] px-2 flex items-center ${datesContainerError
-                ? "border-2 border-[#E65959]"
-                : "border border-[#C2CAD6]"
-                }`}
-            >
-              <div className="flex-1 min-w-0">
-                <TailiwindCustomDatePicker
-                  value={checkInDate}
-                  onChange={setCheckInDate}
-                  placeholder="Check-in date"
-                  buttonIconSrc={true}
-                  overridesClass={true}
-                  showCalendarIconRight={false}
-                  inputClass="h-[50px] w-full min-w-0 rounded-[16px] border-none outline-none pl-10 pr-1 text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
-                  disablePastDates={true}
-                  tooltip="Select check-in date"
-                  error={checkInError || null}
-                />
-              </div>
-              <span className="text-[#94A3B8] select-none px-1 flex-shrink-0">—</span>
-              <div className="flex-1 min-w-0">
-                <TailiwindCustomDatePicker
-                  value={checkOutDate}
-                  onChange={setCheckOutDate}
-                  placeholder="Check-out date"
-                  buttonIconSrc={true}
-                  overridesClass={true}
-                  showCalendarIconRight={false}
-                  inputClass="h-[50px] w-full min-w-0 rounded-[16px] border-none pl-10 pr-2 outline-none text-[14px] text-[#0F172A] bg-transparent cursor-pointer"
-                  disablePastDates={true}
-                  minDate={checkInDate}
-                  tooltip="Select check-out date"
-                  error={checkOutError || null}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="hero-nationality w-full min-w-0">
-            <label className={labelBaseClass}>Nationality</label>
-            <SearchableDropdown
-              options={
-                countriesOptions?.map((c) => ({
-                  id: c.iso2,
-                  value: `${c.label},${c.iso2}`,
-                  label: c.label,
-                })) || []
-              }
-              value={nationality}
-              onChange={setNationality}
-              placeholder="Country of residence?"
-              label={undefined}
-              widthClass="w-full"
-              searchPlaceholder="Search"
-              tooltip="Select your country of residence"
-              error={nationalityError || null}
             />
           </div>
 
@@ -521,6 +431,68 @@ const HotelHeroSectionTab: React.FC = () => {
             </div>
           </div>
 
+          <div className="hero-dates w-full min-w-0">
+            <label className={labelBaseClass}>Dates</label>
+            <div
+              className={`hotel-date-range-row flex w-full items-center gap-0.5 ${datesContainerError
+                ? "!border-2 !border-[#E65959]"
+                : ""
+                }`}
+            >
+              <div className="min-w-0 flex-1">
+                <TailiwindCustomDatePicker
+                  value={checkInDate}
+                  onChange={setCheckInDate}
+                  placeholder="Check-in date"
+                  buttonIconSrc={true}
+                  overridesClass={true}
+                  showCalendarIconRight={false}
+                  inputClass="hotel-date-range-input w-full min-w-0 cursor-pointer border-none bg-transparent pl-9 pr-0.5 text-left text-[14px] leading-tight text-[#0F172A] outline-none sm:text-[14px]"
+                  disablePastDates={true}
+                  tooltip="Select check-in date"
+                  error={checkInError || null}
+                />
+              </div>
+              <span className="flex-shrink-0 select-none px-0.5 text-[#94A3B8]">—</span>
+              <div className="min-w-0 flex-1">
+                <TailiwindCustomDatePicker
+                  value={checkOutDate}
+                  onChange={setCheckOutDate}
+                  placeholder="Check-out date"
+                  buttonIconSrc={true}
+                  overridesClass={true}
+                  showCalendarIconRight={false}
+                  inputClass="hotel-date-range-input w-full min-w-0 cursor-pointer border-none bg-transparent pl-9 pr-1 text-left text-[14px] leading-tight text-[#0F172A] outline-none sm:text-[14px]"
+                  disablePastDates={true}
+                  minDate={checkInDate}
+                  tooltip="Select check-out date"
+                  error={checkOutError || null}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="hero-nationality w-full min-w-0">
+            <label className={labelBaseClass}>Nationality</label>
+            <SearchableDropdown
+              options={
+                countriesOptions?.map((c) => ({
+                  id: c.iso2,
+                  value: `${c.label},${c.iso2}`,
+                  label: c.label,
+                })) || []
+              }
+              value={nationality}
+              onChange={setNationality}
+              placeholder="Country of residence?"
+              label={undefined}
+              widthClass="w-full"
+              searchPlaceholder="Search"
+              tooltip="Select your country of residence"
+              error={nationalityError || null}
+            />
+          </div>
+
           <div className="hero-star w-full min-w-0">
             <CheckableDropdown
               options={starRatingOptions}
@@ -538,7 +510,7 @@ const HotelHeroSectionTab: React.FC = () => {
           <div className="hero-search">
             <button
               type="button"
-              className="hotel-search-btn-responsive h-[47px] w-full rounded-[100px] px-6 text-[14px] font-semibold text-white whitespace-nowrap sm:text-[16px] xl:w-[120px] xl:px-8"
+              className="hotel-search-btn-responsive h-[47px] max-xl:w-full rounded-[100px] px-6 text-[14px] font-semibold text-white whitespace-nowrap sm:text-[16px] xl:px-8"
               style={{
                 background:
                   "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",

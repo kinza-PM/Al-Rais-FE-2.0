@@ -1683,6 +1683,76 @@ const FlightDetailTemplate: React.FC = () => {
     timeRefs.current[key]?.showPicker?.() || timeRefs.current[key]?.click();
   };
 
+  const flightResultsSummaryLine = useMemo(() => {
+    if (!hasSearched || isSearching || searchError) return null;
+
+    let routeLabel = "Flights";
+    if (trip === "multicity") {
+      const legs = multicityLegs || [];
+      if (legs.length > 0) {
+        const leg = legs[0] as FlightLeg & {
+          fromOption?: { city?: string } | null;
+          toOption?: { city?: string } | null;
+        };
+        const fromL =
+          leg.fromOption?.city?.trim() || leg.fromCode?.trim() || "";
+        const toL = leg.toOption?.city?.trim() || leg.toCode?.trim() || "";
+        if (fromL && toL) {
+          routeLabel =
+            legs.length > 1
+              ? `${fromL} → ${toL} (+${legs.length - 1} more)`
+              : `${fromL} → ${toL}`;
+        } else {
+          routeLabel = "Multi-city";
+        }
+      } else {
+        routeLabel = "Multi-city";
+      }
+    } else {
+      const fromCity = fromOption?.city?.trim() || fromCode?.trim() || "";
+      const toCity = toOption?.city?.trim() || toCode?.trim() || "";
+      if (fromCity && toCity) {
+        routeLabel = `${fromCity} → ${toCity}`;
+      } else if (fromCode?.trim() && toCode?.trim()) {
+        routeLabel = `${fromCode.trim()} → ${toCode.trim()}`;
+      }
+    }
+
+    let n = 0;
+    let total = 0;
+    if (trip === "oneway") {
+      n = responseData?.length ?? 0;
+      total = (originalResponseRef.current || []).length;
+    } else if (trip === "roundtrip") {
+      n = roundResponseData?.length ?? 0;
+      total = (originalRoundResponseRef.current || []).length;
+    } else {
+      n = multicityResponseData?.length ?? 0;
+      total = (originalMulticityResponseRef.current || []).length;
+    }
+
+    if (total === 0 && n === 0) {
+      return `${routeLabel}: 0 flights found`;
+    }
+    if (n < total) {
+      return `${routeLabel}: ${n} of ${total} flights found`;
+    }
+    return `${routeLabel}: ${n} flights found`;
+  }, [
+    hasSearched,
+    isSearching,
+    searchError,
+    trip,
+    multicityLegs,
+    fromOption,
+    toOption,
+    fromCode,
+    toCode,
+    responseData.length,
+    roundResponseData.length,
+    multicityResponseData.length,
+  ]);
+
   return (
     <div className="">
       <Loader show={isInitialLoading} />
@@ -2451,6 +2521,16 @@ const FlightDetailTemplate: React.FC = () => {
                 </div>
               </>
             )}
+
+            {flightResultsSummaryLine ? (
+              <p
+                className="flight-search-results-summary"
+                role="status"
+                aria-live="polite"
+              >
+                {flightResultsSummaryLine}
+              </p>
+            ) : null}
 
             {!screens.lg && (
               <Button

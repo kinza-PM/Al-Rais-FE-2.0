@@ -3,6 +3,18 @@ import DoubledArrow from "../../assets/svgs/doubled-arrow.svg";
 import type { AirportOption } from "../../features/flights/types";
 import SearchableDropdown from "../common/SearchableDropdown";
 
+const airportSearchText = (o: AirportOption) => {
+  return [
+    o.city,
+    o.country,
+    o.code,
+    o.airportName,
+    o.label,
+  ]
+    .filter(Boolean)
+    .join(" ");
+};
+
 type Value = {
   fromCode: string;
   toCode: string;
@@ -85,6 +97,8 @@ const TravelRoutePicker: React.FC<Props> = ({
     id: option.id,
     value: option.code,
     label: option.label,
+    subLabel: option.airportName ?? "",
+    searchText: airportSearchText(option),
     disabled: false,
   }));
 
@@ -113,6 +127,7 @@ const TravelRoutePicker: React.FC<Props> = ({
               label: opt.label,
               city: "",
               country: "",
+              airportName: (opt as any)?.subLabel || "",
             };
             handleFrom(code, full);
           }}
@@ -128,6 +143,20 @@ const TravelRoutePicker: React.FC<Props> = ({
           hasMore={hasMore}
           loadingMore={loadingMore}
           tooltip="Select where you're flying from"
+          cacheKey="airport"
+          panelClassName="airport-dropdown-panel"
+          renderOption={(o) => (
+            <div className="min-w-0">
+              <div className="truncate text-[14px] font-semibold text-[#0F172A]">
+                {o.label}
+              </div>
+              {o.subLabel ? (
+                <div className="truncate text-[12px] font-normal text-[#64748B]">
+                  {o.subLabel}
+                </div>
+              ) : null}
+            </div>
+          )}
         />
       </div>
 
@@ -154,6 +183,7 @@ const TravelRoutePicker: React.FC<Props> = ({
               label: opt.label,
               city: "",
               country: "",
+              airportName: (opt as any)?.subLabel || "",
             };
             handleTo(code, full);
           }}
@@ -169,6 +199,20 @@ const TravelRoutePicker: React.FC<Props> = ({
           hasMore={hasMore}
           loadingMore={loadingMore}
           tooltip="Select where you're flying to"
+          cacheKey="airport"
+          panelClassName="airport-dropdown-panel"
+          renderOption={(o) => (
+            <div className="min-w-0">
+              <div className="truncate text-[14px] font-semibold text-[#0F172A]">
+                {o.label}
+              </div>
+              {o.subLabel ? (
+                <div className="truncate text-[12px] font-normal text-[#64748B]">
+                  {o.subLabel}
+                </div>
+              ) : null}
+            </div>
+          )}
         />
       </div>
     </>

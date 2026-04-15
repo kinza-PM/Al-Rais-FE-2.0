@@ -4,6 +4,7 @@ import CustomCollapse from "../common/CustomCollapse";
 import type { HotelFilters, SortOption } from "../../utils/hotelFilters";
 import {
   getActiveFilterCount,
+  getHotelPropertyFacilitiesList,
   PROPERTY_TYPE_MAPPINGS,
   canonicalRoomTypeLabel,
 } from "../../utils/hotelFilters";
@@ -24,16 +25,16 @@ const CountBadge: React.FC<{ count: number }> = ({ count }) => (
       display: "inline-flex",
       alignItems: "center",
       justifyContent: "center",
-      minWidth: "36px",
-      height: "22px",
-      borderRadius: "20px",
-      backgroundColor: "#F0F2F5",
+      minWidth: "26px",
+      minHeight: "23px",
+      borderRadius: "100px",
+      backgroundColor: "#F2F2F3",
       color: "#3D495C",
       fontFamily: "Inter, sans-serif",
-      fontSize: "12px",
+      fontSize: "11px",
       fontWeight: 300,
       lineHeight: "100%",
-      padding: "0 8px",
+      padding: "5px 10px",
       flexShrink: 0,
     }}
   >
@@ -91,6 +92,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     cancellationPolicies,
   } = React.useMemo(() => {
     const propertyFacSet = new Set<string>();
+    const propertyFacLcSet = new Set<string>();
     const roomFacSet = new Set<string>();
     const mealsSet = new Set<string>();
 
@@ -114,15 +116,17 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           (propertyTypeCountMap[readableLabel] ?? 0) + 1;
       }
 
-      if (hotel?.propertyInfo?.facilities) {
-        hotel.propertyInfo.facilities.forEach((facility: any) => {
-          const name = facility?.name || facility;
-          if (name && typeof name === "string") {
-            propertyFacSet.add(name);
-            propertyFacCountMap[name] = (propertyFacCountMap[name] ?? 0) + 1;
-          }
-        });
-      }
+      getHotelPropertyFacilitiesList(hotel).forEach((facility: any) => {
+        const name = facility?.name || facility;
+        if (name && typeof name === "string") {
+          const trimmed = name.trim();
+          if (!trimmed) return;
+          propertyFacSet.add(trimmed);
+          propertyFacLcSet.add(trimmed.toLowerCase());
+          propertyFacCountMap[trimmed] =
+            (propertyFacCountMap[trimmed] ?? 0) + 1;
+        }
+      });
 
       if (hotel?.rooms) {
         const roomTypesSeenThisHotel = new Set<string>();
@@ -201,7 +205,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     });
 
     const roomFacilitiesArray = Array.from(roomFacSet).filter(
-      (f) => !propertyFacSet.has(f)
+      (f) => !propertyFacLcSet.has(f.toLowerCase())
     );
 
     return {
@@ -307,7 +311,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
           <div
             style={{
               fontFamily: "Inter, sans-serif",
-              fontSize: "12px",
+              fontSize: "13px",
               fontWeight: 300,
               color: "#3D495C",
               lineHeight: "100%",
@@ -360,7 +364,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                   }`}
               >
                 <span
-                  style={{ color: "#0A0C0F", fontSize: 14, fontWeight: 300 }}
+                  style={{ color: "#0A0C0F", fontSize: 13, fontWeight: 300 }}
                 >
                   {option.label}
                 </span>
@@ -388,9 +392,17 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
         <div className="filterHeading">
           <div>
             <h4>
-              Filters
-              <span className="smallDot">•</span>
-              <span className="lightActiveText">{activeFilterCount} Active</span>
+              <span className="hotelFilterHeadingTitle">Filters</span>
+              {activeFilterCount > 0 && (
+                <>
+                  <span className="smallDot" aria-hidden>
+                    •
+                  </span>
+                  <span className="lightActiveText">
+                    {activeFilterCount} Active
+                  </span>
+                </>
+              )}
             </h4>
           </div>
           <div className="resetAllBtn">
@@ -440,7 +452,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                 border: "1px solid #C2CAD6",
                 fontFamily: "Inter, sans-serif",
                 fontWeight: 300,
-                fontSize: "16px",
+                fontSize: "14px",
                 color: "#0A0C0F",
                 width: "100%",
                 paddingLeft: "16px",

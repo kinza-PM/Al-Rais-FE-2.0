@@ -43,10 +43,13 @@ export interface AirportsResponse {
 
 export interface AirportOption {
   id: string;
-  label: string; // e.g. "Dubai (DXB), UAE"
+  label: string; // e.g. "Dubai, United Arab Emirates (DXB)"
   code: string; // "DXB"
   city: string; // "Dubai"
-  country: string; // "UAE"
+  country: string; // e.g. "United Arab Emirates"
+  /** Optional airport/terminal name for 2-line dropdown rows. */
+  airportName?: string;
+  countryCode?: string; // e.g. "AE"
 }
 
 export interface PassengerItem {

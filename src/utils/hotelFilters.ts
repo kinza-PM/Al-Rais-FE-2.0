@@ -77,7 +77,7 @@ const FACILITY_MAPPINGS: Record<string, string[]> = {
     "airport transfer",
     "transfer service",
   ],
-  "Swimming pool": ["swimming pool", "pool"],
+  "Swimming pool": ["swimming pool", "swiimming pool", "pool"],
   "Private pool": ["private pool"],
   "Sea view": ["sea view", "ocean view"],
   Balcony: ["balcony"],
@@ -94,6 +94,16 @@ const FACILITY_MAPPINGS: Record<string, string[]> = {
 //   Hotels: ["H"],
 //   "Pension/Property": ["P"],
 // };
+
+/** Property-level facilities from listing API (`propertyInfo.facilities` and root `facilities`). */
+export function getHotelPropertyFacilitiesList(hotel: any): any[] {
+  const fromInfo = hotel?.propertyInfo?.facilities;
+  const fromRoot = hotel?.facilities;
+  const out: any[] = [];
+  if (Array.isArray(fromInfo)) out.push(...fromInfo);
+  if (Array.isArray(fromRoot)) out.push(...fromRoot);
+  return out;
+}
 
 // Check if facility exists (case-insensitive)
 const hasFacility = (facilities: any[], searchTerm: string): boolean => {
@@ -249,7 +259,7 @@ export const filterHotels = (hotels: any[], filters: HotelFilters): any[] => {
 
     // Property facilities filter
     if (filters.propertyFacilities.length > 0) {
-      const hotelFacilities = hotel?.propertyInfo?.facilities || [];
+      const hotelFacilities = getHotelPropertyFacilitiesList(hotel);
       const allMatch = filters.propertyFacilities.some((facility) =>
         hasFacility(hotelFacilities, facility)
       );
@@ -258,15 +268,18 @@ export const filterHotels = (hotels: any[], filters: HotelFilters): any[] => {
       }
     }
 
-    // Room facilities filter
+    // Room facilities filter (`rooms[].roomFacilities`); also match root `facilities[]` when rooms omit them
     if (filters.roomFacilities.length > 0) {
       const allRooms = hotel?.rooms || [];
-      const allMatch = filters.roomFacilities.some((facility) => {
-        return allRooms.some((room: any) =>
+      const rootFacilities = hotel?.facilities || [];
+      const hotelMatchesRoomFacility = (facility: string) => {
+        const inAnyRoom = allRooms.some((room: any) =>
           hasFacility(room?.roomFacilities || [], facility)
         );
-      });
-      if (!allMatch) {
+        if (inAnyRoom) return true;
+        return hasFacility(rootFacilities, facility);
+      };
+      if (!filters.roomFacilities.every(hotelMatchesRoomFacility)) {
         return false;
       }
     }

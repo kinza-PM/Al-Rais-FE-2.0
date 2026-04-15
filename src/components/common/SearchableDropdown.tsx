@@ -7,6 +7,10 @@ export interface DropdownOption {
   value: string;
   label: string;
   disabled?: boolean;
+  /** Optional extra searchable content (airport name, city, country, etc.). */
+  searchText?: string;
+  /** Optional second line shown by custom renderers. */
+  subLabel?: string;
 }
 
 /** Global label cache: persists selected labels across mounts/navigations when options list changes. */
@@ -62,6 +66,8 @@ interface SearchableDropdownProps {
   }) => React.ReactNode;
   /** Custom row in the options list. Add `sr-only` text if the visual omits searchable words. */
   renderOption?: (option: DropdownOption, isSelected: boolean) => React.ReactNode;
+  /** Optional extra classes for the dropdown panel container. */
+  panelClassName?: string;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -89,6 +95,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   noInnerOptionsScroll = false,
   renderSelectedContent,
   renderOption,
+  panelClassName = "",
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -100,6 +107,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   const optionCacheRef = useRef<Map<string, DropdownOption>>(new Map());
 
   const remoteSearch = !!onSearchChange;
+
+  const normalizeForSearch = (s: string) =>
+    (s || "")
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
   const hasGoodLabel = (o: DropdownOption) =>
     o.label && o.label.trim().length > (o.value?.length ?? 0);
@@ -123,21 +137,28 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
   // Filter options based on search term
   const filteredOptions = useMemo(() => {
-    // In remote/API search mode, we trust the caller to provide
-    // already-filtered options, so we skip local filtering.
-    if (remoteSearch) {
-      return options;
-    }
-
-    const baseOptions = searchTerm.trim() ? searchBaseRef.current : options;
+    // In remote search mode, always filter the current `options` list.
+    // `searchBaseRef` is only maintained for local filtering mode.
+    const baseOptions = remoteSearch
+      ? options
+      : searchTerm.trim()
+        ? searchBaseRef.current
+        : options;
 
     if (!searchTerm.trim()) return baseOptions;
 
-    return baseOptions.filter(
-      (option) =>
-        option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        option.value.toLowerCase().includes(searchTerm.toLowerCase()),
-    );
+    // Always filter locally for instant feedback, even in remote mode.
+    // (Remote results will update options; this still refines them.)
+    const q = normalizeForSearch(searchTerm);
+    const parts = q.split(" ").filter(Boolean);
+    if (!parts.length) return baseOptions;
+
+    return baseOptions.filter((option) => {
+      const hay = normalizeForSearch(
+        `${option.label || ""} ${option.value || ""} ${option.searchText || ""} ${option.subLabel || ""}`,
+      );
+      return parts.every((p) => hay.includes(p));
+    });
   }, [options, searchTerm, remoteSearch]);
 
   // Get selected option label (displayLabel > global cache > option/cache > code)
@@ -289,6 +310,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   useEffect(() => {
     if (!remoteSearch || !onSearchChange) return;
 
+    // Avoid spamming the API for 0-1 chars; local filtering still works.
+    const shouldQuery = searchTerm.trim().length >= 2;
+
     // Avoid showing "No results" immediately while user is typing.
     if (searchTerm.trim()) {
       setSearchPending(true);
@@ -297,9 +321,9 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
     }
 
     const handle = setTimeout(() => {
-      onSearchChange(searchTerm);
+      onSearchChange(shouldQuery ? searchTerm : "");
       setSearchPending(false);
-    }, 300);
+    }, 220);
 
     return () => clearTimeout(handle);
   }, [searchTerm, remoteSearch, onSearchChange]);
@@ -391,7 +415,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
 
         {isOpen && (
           <div
-            className={`absolute z-[9999] mt-2 w-full rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] ${
+            className={`absolute z-[9999] mt-2 w-full rounded-2xl bg-white border border-[#E7EEF7] shadow-[0_8px_22px_rgba(12,40,86,0.08)] ${panelClassName} ${
               noInnerOptionsScroll ? "overflow-visible" : "overflow-hidden"
             }`}
           >
@@ -429,7 +453,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                       onClick={() => handleOptionSelect(option.value)}
                       disabled={option.disabled}
                       className={`
-                      w-full px-4 py-3 text-left text-sm hover:bg-[#F8FAFC] 
+                      w-full px-4 py-2.5 text-left text-sm hover:bg-[#F8FAFC] 
                       ${
                         option.disabled
                           ? "opacity-50 cursor-not-allowed"
@@ -445,7 +469,10 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
                       {renderOption ? (
                         <>
                           {renderOption(option, isSelected)}
-                          <span className="sr-only">{option.label}</span>
+                          <span className="sr-only">
+                            {option.label}
+                            {option.subLabel ? `, ${option.subLabel}` : ""}
+                          </span>
                         </>
                       ) : (
                         option.label
