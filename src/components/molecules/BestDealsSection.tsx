@@ -158,7 +158,7 @@ const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
         <button
           type="button"
           onClick={handleBookNow}
-          className="text-white bg-[#2351A3] hover:bg-[#1E4690] active:bg-[#1A3C7E] transition-colors shadow-sm ring-1 ring-black/5 font-medium text-[13px]"
+          className="text-white bg-[#2351A3] hover:bg-[#1E4690] active:bg-[#1A3C7E] transition-colors shadow-none ring-0 sm:shadow-sm sm:ring-1 sm:ring-black/5 font-medium text-[13px]"
           style={{
             width: 119,
             height: 41,
@@ -211,6 +211,7 @@ const BestDealsSection: React.FC = () => {
   const deals = useMemo(() => DEALS, []);
   const [visibleCount, setVisibleCount] = useState(4);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isMobileView, setIsMobileView] = useState(false);
 
   useEffect(() => {
     const compute = () => {
@@ -227,13 +228,20 @@ const BestDealsSection: React.FC = () => {
     return () => window.removeEventListener("resize", update);
   }, []);
 
+  useEffect(() => {
+    const update = () => setIsMobileView(window.innerWidth < 768);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
   return (
     <div
       className="mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 md:pt-16 pb-12"
       style={{ maxWidth: MAIN_MAX_WIDTH }}
     >
       {/* Heading aligned with cards — margin-left: 67px */}
-      <div className="ml-[67px] sm:ml-[67px]">
+      <div className="text-center lg:text-left lg:ml-[67px]">
         <p className="text-sm text-[#3D495C]">Best deals</p>
         <h2 className="mt-2 text-3xl sm:text-5xl font-medium text-[#0A0C0F]">
           No one can beat these prices
@@ -241,11 +249,11 @@ const BestDealsSection: React.FC = () => {
       </div>
 
       {/* Single line: price buttons + dropdown */}
-      <div className="relative z-50 mt-4 ml-[67px] sm:ml-[67px]">
-        <div className="flex flex-row flex-nowrap items-center justify-between gap-3 sm:gap-4">
+      <div className="relative z-50 mt-4 lg:ml-[67px]">
+        <div className="flex flex-col sm:flex-row sm:flex-nowrap items-center justify-center sm:justify-between gap-3 sm:gap-4">
           {/* Price list container: 428×50, 16px radius, Figma colors — no vertical scrollbar */}
           <div
-            className="flex shrink-0 items-center justify-center p-[5px] overflow-x-auto overflow-y-hidden"
+            className="flex w-full sm:w-auto shrink-0 items-center justify-center p-[5px] overflow-x-auto overflow-y-hidden"
             style={{
               width: "min(428px, 100%)",
               height: 50,
@@ -276,8 +284,8 @@ const BestDealsSection: React.FC = () => {
 
           {/* Umrah packages dropdown — right-aligned, 178×50, custom UI */}
           <div
-            className="relative shrink-0 mr-6 sm:mr-8"
-            style={{ width: 178, height: 50 }}
+            className="relative shrink-0 w-full sm:w-auto sm:mr-8"
+            style={{ width: "min(178px, 100%)", height: 50 }}
           >
             <button
               onClick={() => setIsCategoryOpen(!isCategoryOpen)}
@@ -346,7 +354,7 @@ const BestDealsSection: React.FC = () => {
           type="button"
           aria-label="Previous deals"
           onClick={goPrev}
-          className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-transparent text-[#A1A1AA] hover:text-[#71717A] transition-colors flex items-center justify-center"
+          className="hidden sm:flex flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-transparent text-[#A1A1AA] hover:text-[#71717A] transition-colors items-center justify-center"
         >
           <img src={ArrowLeftIcon} alt="Prev" className="custom-arrow" />
         </button>
@@ -354,12 +362,12 @@ const BestDealsSection: React.FC = () => {
         <div
           className={[
             "flex-1 min-w-0 relative",
-            "[&_.splide__track]:overflow-visible",
+            isMobileView ? "[&_.splide__track]:overflow-hidden" : "[&_.splide__track]:overflow-visible",
           ].join(" ")}
         >
           {/* Figma: right-edge fade — linear-gradient(90deg, transparent 0%, white 67.71%) */}
           <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-48 sm:w-56"
+            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-48 sm:w-56 hidden md:block"
             style={{
               background: "linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, #FFFFFF 67.71%)",
             }}
@@ -393,10 +401,17 @@ const BestDealsSection: React.FC = () => {
                   fixedWidth: "320px",
                   padding: { right: "60px" },
                 },
+                640: {
+                  fixedWidth: `${DEAL_CARD_WIDTH}px`,
+                  padding: { right: "0px", left: "0px" },
+                  gap: "12px",
+                  trimSpace: true,
+                },
                 480: {
-                  fixedWidth: "280px",
-                  padding: { right: "48px" },
-                  gap: "16px",
+                  fixedWidth: `${DEAL_CARD_WIDTH}px`,
+                  padding: { right: "0px", left: "0px" },
+                  gap: "12px",
+                  trimSpace: true,
                 },
               },
             }}
@@ -409,7 +424,7 @@ const BestDealsSection: React.FC = () => {
             {deals.map((d, idx) => {
               const isFullyVisible =
                 idx >= activeIndex && idx < activeIndex + visibleCount;
-              const opacity = isFullyVisible ? 1 : 0.25;
+              const opacity = isMobileView ? 1 : isFullyVisible ? 1 : 0.25;
               return (
                 <SplideSlide key={d.id}>
                   <div style={{ opacity, transition: "opacity 220ms ease" }}>
@@ -426,7 +441,27 @@ const BestDealsSection: React.FC = () => {
           type="button"
           aria-label="Next deals"
           onClick={goNext}
-          className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-transparent text-[#2351A3] hover:text-[#1E4690] transition-colors flex items-center justify-center"
+          className="hidden sm:flex flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-transparent text-[#2351A3] hover:text-[#1E4690] transition-colors items-center justify-center"
+        >
+          <img src={ArrowRightIcon} alt="Next" className="custom-arrow" />
+        </button>
+      </div>
+
+      {/* Mobile navigation centered below slider */}
+      <div className="mt-3 flex items-center justify-center gap-6 sm:hidden">
+        <button
+          type="button"
+          aria-label="Previous deals"
+          onClick={goPrev}
+          className="flex items-center justify-center w-10 h-10 bg-transparent text-[#A1A1AA] transition-colors"
+        >
+          <img src={ArrowLeftIcon} alt="Prev" className="custom-arrow" />
+        </button>
+        <button
+          type="button"
+          aria-label="Next deals"
+          onClick={goNext}
+          className="flex items-center justify-center w-10 h-10 bg-transparent text-[#2351A3] transition-colors"
         >
           <img src={ArrowRightIcon} alt="Next" className="custom-arrow" />
         </button>
