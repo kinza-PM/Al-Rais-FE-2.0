@@ -619,7 +619,13 @@ const HotelSearchListing: React.FC = () => {
                 options={starRatingOptions}
                 value={(searchState.filters.starRatings ?? []).map(String)}
                 onChange={(values) => {
-                  const nums = (values ?? [])
+                  const list =
+                    values == null
+                      ? []
+                      : Array.isArray(values)
+                        ? values
+                        : [values];
+                  const nums = list
                     .map((v) => Number(v))
                     .filter((n) => !Number.isNaN(n) && n > 0);
 
