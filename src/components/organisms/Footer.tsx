@@ -62,16 +62,18 @@ const Footer: React.FC = () => {
 
           {/* Column 2: Company */}
           <div className="min-w-0 w-full sm:w-auto">
-            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
+            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F] relative inline-block
+              after:block after:h-[2px] after:w-6 after:rounded-full after:bg-[#2351A3] after:mt-1">
               Company
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {COMPANY_LINKS.map((item) => (
                 <li key={item.label}>
                   <Link
                     to={item.link}
-                    className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
+                    className="group flex items-center gap-1.5 py-0.5 text-sm text-[#3D495C] transition-all duration-200 ease-out hover:text-[#2351A3] hover:translate-x-1"
                   >
+                    <span className="inline-block w-1 h-1 rounded-full bg-[#2351A3] opacity-0 scale-0 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 shrink-0" />
                     {item.label}
                   </Link>
                 </li>
@@ -81,23 +83,26 @@ const Footer: React.FC = () => {
 
           {/* Column 3: Services */}
           <div className="min-w-0 w-full sm:w-auto">
-            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
+            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F] relative inline-block
+              after:block after:h-[2px] after:w-6 after:rounded-full after:bg-[#2351A3] after:mt-1">
               Services
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {SERVICES_LINKS.map((item) =>
                 item.link ? (
                   <li key={item.label}>
                     <Link
                       to={item.link}
-                      className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
+                      className="group flex items-center gap-1.5 py-0.5 text-sm text-[#3D495C] transition-all duration-200 ease-out hover:text-[#2351A3] hover:translate-x-1"
                     >
+                      <span className="inline-block w-1 h-1 rounded-full bg-[#2351A3] opacity-0 scale-0 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 shrink-0" />
                       {item.label}
                     </Link>
                   </li>
                 ) : (
                   <li key={item.label}>
-                    <span className="text-sm text-[#A4A9AD] cursor-not-allowed">
+                    <span className="flex items-center gap-1.5 py-0.5 text-sm text-[#A4A9AD] cursor-not-allowed">
+                      <span className="inline-block w-1 h-1 rounded-full shrink-0 opacity-0" />
                       {item.label}
                     </span>
                   </li>
@@ -108,16 +113,18 @@ const Footer: React.FC = () => {
 
           {/* Column 4: Help */}
           <div className="min-w-0 w-full sm:w-auto">
-            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
+            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F] relative inline-block
+              after:block after:h-[2px] after:w-6 after:rounded-full after:bg-[#2351A3] after:mt-1">
               Help
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {HELP_LINKS.map((item) => (
                 <li key={item.label}>
                   <Link
                     to={item.link}
-                    className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
+                    className="group flex items-center gap-1.5 py-0.5 text-sm text-[#3D495C] transition-all duration-200 ease-out hover:text-[#2351A3] hover:translate-x-1"
                   >
+                    <span className="inline-block w-1 h-1 rounded-full bg-[#2351A3] opacity-0 scale-0 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 shrink-0" />
                     {item.label}
                   </Link>
                 </li>
@@ -126,19 +133,40 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Social icons */}
-          <div className="flex min-w-0 flex-shrink-0 flex-row items-center justify-center gap-4 w-full sm:w-auto sm:justify-start lg:justify-end">
-            <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="Twitter">
-              <TwitterIcon />
-            </a>
-            <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="Instagram">
-              <InstagramIcon />
-            </a>
-            <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="LinkedIn">
-              <LinkedInIcon />
-            </a>
-            <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="Facebook">
-              <FacebookIcon />
-            </a>
+          <div className="flex min-w-0 flex-shrink-0 flex-row items-center justify-center gap-3 w-full sm:w-auto sm:justify-start lg:justify-end">
+            {[
+              { label: "Twitter",   icon: <TwitterIcon /> },
+              { label: "Instagram", icon: <InstagramIcon /> },
+              { label: "LinkedIn",  icon: <LinkedInIcon /> },
+              { label: "Facebook",  icon: <FacebookIcon /> },
+            ].map(({ label, icon }) => (
+              <a
+                key={label}
+                href="#"
+                aria-label={label}
+                className={[
+                  "group relative flex items-center justify-center overflow-hidden",
+                  "w-11 h-11 rounded-2xl",
+                  // base: clean light pill
+                  "bg-[#E8EDF8] text-[#2351A3]",
+                  "transition-all duration-300 ease-out",
+                  "hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(35,81,163,0.30)]",
+                  "active:scale-95 active:translate-y-0",
+                ].join(" ")}
+              >
+                {/* Sliding blue fill on hover */}
+                <span
+                  className="absolute inset-0 translate-y-full rounded-2xl transition-transform duration-300 ease-out group-hover:translate-y-0"
+                  style={{
+                    background: "linear-gradient(160deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                  }}
+                />
+                {/* Icon sits above the fill */}
+                <span className="relative z-10 flex items-center justify-center transition-colors duration-300 group-hover:text-white [&_svg]:w-[18px] [&_svg]:h-[18px]">
+                  {icon}
+                </span>
+              </a>
+            ))}
           </div>
         </div>
       </div>
