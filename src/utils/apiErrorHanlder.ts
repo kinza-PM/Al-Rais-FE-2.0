@@ -261,6 +261,43 @@ export function extractAxiosErrorDetailsSource(
   return null;
 }
 
+/**
+ * Extracts a user-facing error message from a successful (non-exception) API response
+ * whose `meta.success` is false or `meta.statusMessage` is not "SUCCESS".
+ * Returns null when no meaningful message can be found.
+ */
+export function extractMessageFromApiResponseBody(response: unknown): string | null {
+  if (!response || typeof response !== "object") return null;
+  const r = response as Record<string, any>;
+  const candidates = [
+    r?.meta?.errorDetails?.message,
+    r?.meta?.errorDetails?.title,
+    r?.data?.[0]?.errorMessage,
+    r?.data?.[0]?.message,
+    r?.message?.errorDetails?.message,
+    r?.error?.errorDetails?.message,
+    r?.errorDetails?.message,
+    r?.errorDetails?.title,
+  ];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) {
+      const cleaned = stripTagsSafe(c);
+      if (cleaned) return cleaned;
+    }
+  }
+  // Use statusMessage only if it is not a known success/control value
+  const sm: unknown = r?.meta?.statusMessage;
+  if (
+    typeof sm === "string" &&
+    sm.trim() &&
+    sm !== "SUCCESS" &&
+    sm !== "FETCH LATER"
+  ) {
+    return stripTagsSafe(sm);
+  }
+  return null;
+}
+
 export function extractErrorFromAxiosApiError(err: unknown): string {
   const strip = stripTagsSafe;
   if (axios.isAxiosError(err)) {

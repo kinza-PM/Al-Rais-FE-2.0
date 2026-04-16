@@ -13,7 +13,10 @@ import TailwindCustomInput from "../common/TailwindCustomInput";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelSummaryCard from "../atoms/HotelSummaryCard";
 import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
-import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import {
+  extractErrorFromAxiosApiError,
+  extractMessageFromApiResponseBody,
+} from "../../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
 import {
@@ -386,9 +389,12 @@ export default function HotelBookingPaymentSection({
           onNext(response);
         }
       } else {
+        const failMsg =
+          extractMessageFromApiResponseBody(response) ||
+          "Booking failed. Please try again.";
         toast.error((t) => (
           <div>
-            <p>Booking failed. Please try again.</p>
+            <p>{failMsg}</p>
             <button
               onClick={() => {
                 toast.dismiss(t.id);

@@ -37,7 +37,10 @@ import {
   useRetrieveFlightBooking,
 } from "../../hooks/useFlightBooking";
 import toast from "react-hot-toast";
-import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import {
+  extractErrorFromAxiosApiError,
+  extractMessageFromApiResponseBody,
+} from "../../utils/apiErrorHanlder";
 import {
   openBlankPopupAndCheckWebisteAllowPopup,
   // validateReservationFlightBookingData,
@@ -400,7 +403,9 @@ export default function FlightBookingPaymentSection({
       const response = await mutateAsync(reservationWithToken);
 
       if (!response?.meta?.success) {
-        toast.error("Booking failed");
+        const msg =
+          extractMessageFromApiResponseBody(response) || "Booking failed";
+        toast.error(msg);
         return;
       }
 
@@ -422,8 +427,12 @@ export default function FlightBookingPaymentSection({
           // }, 110000);
           break;
 
-        default:
-          toast.error("Unknown response status");
+        default: {
+          const fallbackMsg =
+            extractMessageFromApiResponseBody(response) ||
+            `Unexpected booking status: ${statusMessage}`;
+          toast.error(fallbackMsg);
+        }
       }
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
@@ -448,7 +457,10 @@ export default function FlightBookingPaymentSection({
           "Flight booked successfully",
         );
       } else {
-        toast.error("Failed to retrieve flight booking");
+        const msg =
+          extractMessageFromApiResponseBody(retrieveFlightResponse) ||
+          "Failed to retrieve flight booking";
+        toast.error(msg);
       }
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);

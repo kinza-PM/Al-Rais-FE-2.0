@@ -29,6 +29,7 @@ import {
   validatePassengersForFlightProvisionalBookingFields,
   withDefaultResidenceCountryFromIssuing,
 } from "../../utils/flightBookingHelper";
+import axios from "axios";
 import {
   extractAxiosErrorDetailsSource,
   extractErrorFromAxiosApiError,
@@ -298,11 +299,10 @@ export default function FlightBookingBookSection({
       }
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
-      if (
-        err == "Unable to perform air booking step" ||
-        err ==
-        "PNR has not been created successfully, see remaining messages for details"
-      ) {
+      const status = axios.isAxiosError(error)
+        ? (error.response?.status ?? 0)
+        : 0;
+      if (status === 404 || status === 410 || status === 409) {
         navigate("/search_flight");
       }
     }

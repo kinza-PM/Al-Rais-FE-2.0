@@ -22,6 +22,7 @@ import {
   useFlightIngestView,
 } from "../hooks/useFlightBooking";
 import toast from "react-hot-toast";
+import axios from "axios";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import FlightBookingAnicllarySection from "../components/molecules/FlightBookingAnicllarySection";
 import AncillaryConfirmationModal from "../components/common/AncillaryConfirmationModal";
@@ -447,9 +448,11 @@ const FlightBooking = () => {
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
-      if (err == "Offer Id Invalid or Expired") {
+      const status = axios.isAxiosError(error)
+        ? (error.response?.status ?? 0)
+        : 0;
+      if (status === 404 || status === 410 || status === 409) {
         navigate("/search_flight");
-        // return
       }
     }
   };
