@@ -1,5 +1,9 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+<<<<<<< HEAD
 import AlRaisLogo from "../../assets/images/alRaisLogo-figma.png";
+=======
+import AlRaisLogo from "../../assets/images/Clear-al-rais-logo.png";
+>>>>>>> 8acfd38 (Bugs are fixed)
 import AppHeader from "../organisms/header";
 import Footer from "../organisms/Footer";
 import ChatBot from "../organisms/ChatBot";
