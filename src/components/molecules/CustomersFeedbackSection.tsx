@@ -90,7 +90,7 @@ function FeedbackCard({
       </div>
 
       {/* Testimonial text - with top padding so it doesn't overlap the icon */}
-      <p className="mt-12 flex-1 text-left text-sm leading-relaxed text-[#0A0C0F] sm:mt-14 sm:text-base">
+      <p className="mt-12 flex-1 text-left text-sm font-normal leading-relaxed text-[#0A0C0F] sm:mt-14 sm:text-base">
         {testimonial.text}
       </p>
 
@@ -106,7 +106,7 @@ function FeedbackCard({
           <p className="truncate text-sm font-semibold text-[#0A0C0F] sm:text-base">
             {testimonial.name}
           </p>
-          <p className="truncate text-xs text-[#3D495C] opacity-80 sm:text-sm">
+          <p className="truncate text-xs font-medium text-[#3D495C] sm:text-sm">
             {testimonial.role}
           </p>
         </div>
@@ -125,8 +125,8 @@ const CustomersFeedbackSection: React.FC = () => {
       <div className="mx-auto max-w-[1464px] px-4 sm:px-6 lg:px-8">
         {/* Section header (centered) */}
         <div className="w-full text-center">
-          <p className="text-sm text-[#3D495C]">Customers feedback</p>
-          <h2 className="mt-2 text-2xl font-bold text-[#0A0C0F] sm:text-3xl lg:text-4xl">
+          <p className="text-sm font-medium text-[#3D495C]">Customers feedback</p>
+          <h2 className="mt-2 text-2xl font-extrabold text-[#0A0C0F] sm:text-3xl lg:text-4xl">
             See what travelers think about us
           </h2>
         </div>
