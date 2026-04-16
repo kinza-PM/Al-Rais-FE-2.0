@@ -27,6 +27,7 @@ import TravelMultiCity from "./TravelMultiCity";
 
 // import type { TabsProps } from "antd";
 import { useState } from "react";
+import { useAiprortOptions } from "../../hooks/masterListings/listing";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { FilterOutlined } from "@ant-design/icons";
 
@@ -744,11 +745,13 @@ const FlightDetailTemplate: React.FC = () => {
     }
   };
 
-  const [countriesSearchTerm, setCountriesSearchTerm] = useState<string>("");
+  const [fromCountriesSearchTerm, setFromCountriesSearchTerm] =
+    useState<string>("");
+  const [toCountriesSearchTerm, setToCountriesSearchTerm] =
+    useState<string>("");
 
   const {
     flightTypes,
-    countries,
     passengers,
     cabinClasses,
     // priceSort,
@@ -757,14 +760,9 @@ const FlightDetailTemplate: React.FC = () => {
     baggage,
     airline,
     loading,
-    loadingMap,
-    countriesHasMore,
-    countriesFetchNext,
-    countriesIsFetchingNext,
   } = useMasterListings({
     include: [
       "flightTypes",
-      "countries",
       "passengers",
       "cabinClasses",
       "priceSort",
@@ -773,14 +771,26 @@ const FlightDetailTemplate: React.FC = () => {
       "baggage",
       "airline",
     ],
-    countriesSearchTerm,
   });
 
+  const qFromAirports = useAiprortOptions(
+    true,
+    fromCountriesSearchTerm,
+    "from",
+  );
+  const qToAirports = useAiprortOptions(true, toCountriesSearchTerm, "to");
+
   const isInitialLoading =
-    !countriesSearchTerm.trim() &&
+    !fromCountriesSearchTerm.trim() &&
+    !toCountriesSearchTerm.trim() &&
     loading &&
-    (!countries || countries.length === 0);
-  const countriesLoading = loadingMap?.countries ?? isInitialLoading;
+    (qFromAirports.data.length === 0 || qToAirports.data.length === 0);
+  const countriesLoading =
+    qFromAirports.isLoading ||
+    qFromAirports.isFetching ||
+    qToAirports.isLoading ||
+    qToAirports.isFetching ||
+    isInitialLoading;
 
   // Preserve full airport options (with labels) for display after clearFlight()
   const [preservedFromOption, setPreservedFromOption] =
@@ -788,35 +798,35 @@ const FlightDetailTemplate: React.FC = () => {
   const [preservedToOption, setPreservedToOption] =
     useState<AirportOption | null>(null);
 
-  const countriesForPicker = useMemo(() => {
-    const base = (countries as AirportOption[]) || [];
-
-    // When user is searching, show only API search results (e.g. "duba" → only Dubai options)
-    if (countriesSearchTerm.trim()) {
-      return base;
-    }
-
+  const fromCountriesForPicker = useMemo(() => {
+    const base = (qFromAirports.data as AirportOption[]) || [];
     const merged: AirportOption[] = [];
     const addUnique = (opt: AirportOption | null | undefined) => {
       if (!opt?.code) return;
       if (merged.some((x) => x.code === opt.code)) return;
       merged.push(opt);
     };
-
-    // No search: keep hero/store or preserved options so they stay in the list
     addUnique((flight?.fromOption ?? preservedFromOption) as AirportOption);
-    addUnique((flight?.toOption ?? preservedToOption) as AirportOption);
-
     for (const c of base) addUnique(c);
     return merged;
   }, [
-    countries,
-    countriesSearchTerm,
+    qFromAirports.data,
     flight?.fromOption,
-    flight?.toOption,
     preservedFromOption,
-    preservedToOption,
   ]);
+
+  const toCountriesForPicker = useMemo(() => {
+    const base = (qToAirports.data as AirportOption[]) || [];
+    const merged: AirportOption[] = [];
+    const addUnique = (opt: AirportOption | null | undefined) => {
+      if (!opt?.code) return;
+      if (merged.some((x) => x.code === opt.code)) return;
+      merged.push(opt);
+    };
+    addUnique((flight?.toOption ?? preservedToOption) as AirportOption);
+    for (const c of base) addUnique(c);
+    return merged;
+  }, [qToAirports.data, flight?.toOption, preservedToOption]);
 
   // Show only airlines that exist in the current flight-search response (frontend-side).
   const availableAirlineOptions = useMemo(() => {
@@ -1929,9 +1939,18 @@ const FlightDetailTemplate: React.FC = () => {
                   <div className="flight-search-multicity-legrow">
                     <div className="flight-search-multicity-route">
                       <TravelRoutePicker
-                        options={countriesForPicker as AirportOption[]}
+                        options={[]}
                         loading={countriesLoading}
-                        onSearchChange={setCountriesSearchTerm}
+                        fromOptions={fromCountriesForPicker as AirportOption[]}
+                        toOptions={toCountriesForPicker as AirportOption[]}
+                        fromLoading={
+                          qFromAirports.isLoading || qFromAirports.isFetching
+                        }
+                        toLoading={
+                          qToAirports.isLoading || qToAirports.isFetching
+                        }
+                        onFromSearchChange={setFromCountriesSearchTerm}
+                        onToSearchChange={setToCountriesSearchTerm}
                         value={{
                           fromCode: leg.fromCode,
                           toCode: leg.toCode,
@@ -2144,9 +2163,16 @@ const FlightDetailTemplate: React.FC = () => {
 
               <div className="flight-search-field flight-search-field--route">
                 <TravelRoutePicker
-                  options={countriesForPicker as AirportOption[]}
+                  options={[]}
                   loading={countriesLoading}
-                  onSearchChange={setCountriesSearchTerm}
+                  fromOptions={fromCountriesForPicker as AirportOption[]}
+                  toOptions={toCountriesForPicker as AirportOption[]}
+                  fromLoading={
+                    qFromAirports.isLoading || qFromAirports.isFetching
+                  }
+                  toLoading={qToAirports.isLoading || qToAirports.isFetching}
+                  onFromSearchChange={setFromCountriesSearchTerm}
+                  onToSearchChange={setToCountriesSearchTerm}
                   value={{
                     fromCode,
                     toCode,
@@ -2170,22 +2196,23 @@ const FlightDetailTemplate: React.FC = () => {
                   disableSameSelection
                   widthClass="fromToSelectWidth"
                   fromError={
-                    !loading && countries.length === 0
+                    !loading &&
+                    fromCountriesForPicker.length === 0
                       ? "Please try a different search."
                       : undefined
                   }
                   toError={
-                    !loading && countries.length === 0
+                    !loading &&
+                    toCountriesForPicker.length === 0
                       ? "Please try a different search."
                       : undefined
                   }
-                  onLoadMore={() => {
-                    if (countriesHasMore) {
-                      countriesFetchNext?.();
-                    }
-                  }}
-                  hasMore={countriesHasMore}
-                  loadingMore={countriesIsFetchingNext}
+                  fromOnLoadMore={qFromAirports.fetchNextPage}
+                  toOnLoadMore={qToAirports.fetchNextPage}
+                  fromHasMore={qFromAirports.hasNextPage}
+                  toHasMore={qToAirports.hasNextPage}
+                  fromLoadingMore={qFromAirports.isFetchingNextPage}
+                  toLoadingMore={qToAirports.isFetchingNextPage}
                 />
               </div>
 

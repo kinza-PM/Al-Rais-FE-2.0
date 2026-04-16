@@ -38,6 +38,18 @@ type Props = {
   countriesHasMore?: boolean;
   countriesFetchNext?: () => void;
   countriesLoadingMore?: boolean;
+  fromCountries?: AirportOption[];
+  toCountries?: AirportOption[];
+  loadingFromCountries?: boolean;
+  loadingToCountries?: boolean;
+  onSearchFromCountries?: (term: string) => void;
+  onSearchToCountries?: (term: string) => void;
+  fromCountriesHasMore?: boolean;
+  toCountriesHasMore?: boolean;
+  fromCountriesFetchNext?: () => void;
+  toCountriesFetchNext?: () => void;
+  fromCountriesLoadingMore?: boolean;
+  toCountriesLoadingMore?: boolean;
 };
 
 const DEFAULT_CABIN_ID = "5";
@@ -67,6 +79,18 @@ const MultiCityForm: React.FC<Props> = ({
   countriesHasMore = false,
   countriesFetchNext = () => { },
   countriesLoadingMore = false,
+  fromCountries,
+  toCountries,
+  loadingFromCountries,
+  loadingToCountries,
+  onSearchFromCountries,
+  onSearchToCountries,
+  fromCountriesHasMore,
+  toCountriesHasMore,
+  fromCountriesFetchNext,
+  toCountriesFetchNext,
+  fromCountriesLoadingMore,
+  toCountriesLoadingMore,
 }) => {
   const [internalLegs, setInternalLegs] = useState<MultiCityLeg[]>([
     { ...INITIAL_LEG },
@@ -227,6 +251,12 @@ const MultiCityForm: React.FC<Props> = ({
               options={countries}
               loading={loadingCountries}
               onSearchChange={onSearchCountries}
+              fromOptions={fromCountries}
+              toOptions={toCountries}
+              fromLoading={loadingFromCountries}
+              toLoading={loadingToCountries}
+              onFromSearchChange={onSearchFromCountries}
+              onToSearchChange={onSearchToCountries}
               value={{
                 fromCode: leg.fromCode,
                 toCode: leg.toCode,
@@ -253,6 +283,12 @@ const MultiCityForm: React.FC<Props> = ({
               }}
               hasMore={countriesHasMore}
               loadingMore={countriesLoadingMore}
+              fromOnLoadMore={fromCountriesFetchNext}
+              toOnLoadMore={toCountriesFetchNext}
+              fromHasMore={fromCountriesHasMore}
+              toHasMore={toCountriesHasMore}
+              fromLoadingMore={fromCountriesLoadingMore}
+              toLoadingMore={toCountriesLoadingMore}
             />
 
             <div className="w-full md:w-[230px]">

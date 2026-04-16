@@ -224,6 +224,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
       "required",
       "Please complete",
       "flying",
+      "cannot be blank",
+      "blank",
     ];
     return validationKeywords.some((keyword) =>
       error.toLowerCase().includes(keyword.toLowerCase()),

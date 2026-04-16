@@ -34,6 +34,7 @@ import type {
 } from "../../features/flights/types";
 
 import { listingTables } from "../../config/apiRoute";
+import { getListingDefaultCountry } from "../../utils/listingUserCountry";
 import { useCountriesOptionsListing, useListing } from "./useQueryListing";
 import { useInfiniteListing } from "./useInfiniteListing";
 
@@ -50,14 +51,24 @@ export const useFlightTypesOptions = (enabled = true) =>
 //         buildCountryOptions,
 //         enabled
 //     );
-export const useAiprortOptions = (enabled = true, searchTerm?: string) =>
-  useInfiniteListing<AirportsResponse, AirportItem, AirportOption>(
+export const useAiprortOptions = (
+  enabled = true,
+  searchTerm?: string,
+  type?: "from" | "to",
+) => {
+  const trimmed = searchTerm?.trim() ?? "";
+  const search =
+    trimmed.length > 0 ? trimmed : getListingDefaultCountry();
+  return useInfiniteListing<AirportsResponse, AirportItem, AirportOption>(
     listingTables.airports,
     buildAirportOptions,
     enabled,
-    // Backend expects: country=<term>
-    searchTerm?.trim() ? { search: searchTerm.trim() } : undefined,
+    {
+      search,
+      ...(type ? { type } : {}),
+    },
   );
+};
 
 export const usePassengerSchema = (enabled = true) =>
   useListing<PassengersResponse, any, PassengerSchema[number]>(

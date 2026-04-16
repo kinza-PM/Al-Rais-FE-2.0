@@ -21,6 +21,8 @@ import RecentSearchesSection from "../components/molecules/RecentSearchesSection
 import { useLandingHeroStore } from "../store/useLandingHeroStore";
 import BestDealsSection from "../components/molecules/BestDealsSection";
 import CustomersFeedbackSection from "../components/molecules/CustomersFeedbackSection";
+import { getCountryFromBrowserLocation } from "../utils/geolocationHelper";
+import { setListingUserCountryFromLocation } from "../utils/listingUserCountry";
 
 interface LandingPageContext {
   onLoginClick: () => void;
@@ -81,6 +83,23 @@ const LandingPage: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [slides.length]);
+
+  useEffect(() => {
+    void getCountryFromBrowserLocation().then((result) => {
+      if (result) {
+        setListingUserCountryFromLocation(result.country);
+        console.log(
+          "[LandingPage] User country from location:",
+          result.country,
+          `(${result.countryCode})`,
+        );
+      } else {
+        console.log(
+          "[LandingPage] User country from location: unavailable (permission, timeout, unsupported, or geocode failed)",
+        );
+      }
+    });
+  }, []);
 
   const prevSlide = () => {
     setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));

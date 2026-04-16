@@ -42,6 +42,18 @@ type Props = {
   countriesHasMore?: boolean;
   countriesFetchNext?: () => void;
   countriesLoadingMore?: boolean;
+  fromCountries?: AirportOption[];
+  toCountries?: AirportOption[];
+  loadingFromCountries?: boolean;
+  loadingToCountries?: boolean;
+  onSearchFromCountries?: (term: string) => void;
+  onSearchToCountries?: (term: string) => void;
+  fromCountriesHasMore?: boolean;
+  toCountriesHasMore?: boolean;
+  fromCountriesFetchNext?: () => void;
+  toCountriesFetchNext?: () => void;
+  fromCountriesLoadingMore?: boolean;
+  toCountriesLoadingMore?: boolean;
 };
 
 const OneWayForm: React.FC<Props> = ({
@@ -69,6 +81,18 @@ const OneWayForm: React.FC<Props> = ({
   countriesHasMore = false,
   countriesFetchNext = () => { },
   countriesLoadingMore = false,
+  fromCountries,
+  toCountries,
+  loadingFromCountries,
+  loadingToCountries,
+  onSearchFromCountries,
+  onSearchToCountries,
+  fromCountriesHasMore,
+  toCountriesHasMore,
+  fromCountriesFetchNext,
+  toCountriesFetchNext,
+  fromCountriesLoadingMore,
+  toCountriesLoadingMore,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   const [departDate, setDepartDate] = React.useState<Date | null>(
@@ -159,6 +183,12 @@ const OneWayForm: React.FC<Props> = ({
         options={countries}
         loading={loadingCountries}
         onSearchChange={onSearchCountries}
+        fromOptions={fromCountries}
+        toOptions={toCountries}
+        fromLoading={loadingFromCountries}
+        toLoading={loadingToCountries}
+        onFromSearchChange={onSearchFromCountries}
+        onToSearchChange={onSearchToCountries}
         value={{ fromCode, toCode }}
         onChange={({ fromCode: f, toCode: t }) => {
           onChangeFrom(f);
@@ -178,6 +208,12 @@ const OneWayForm: React.FC<Props> = ({
         }}
         hasMore={countriesHasMore}
         loadingMore={countriesLoadingMore}
+        fromOnLoadMore={fromCountriesFetchNext}
+        toOnLoadMore={toCountriesFetchNext}
+        fromHasMore={fromCountriesHasMore}
+        toHasMore={toCountriesHasMore}
+        fromLoadingMore={fromCountriesLoadingMore}
+        toLoadingMore={toCountriesLoadingMore}
       />
 
       {/* Departure date */}

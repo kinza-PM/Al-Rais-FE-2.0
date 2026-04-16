@@ -25,9 +25,14 @@ import { useFlightInitialBooking } from "../../hooks/useFlightBooking";
 import toast from "react-hot-toast";
 import {
   // validatePassengersForFlightProvisionalBooking,
+  mapFlightProvBookingApiErrorsToPassengerFields,
   validatePassengersForFlightProvisionalBookingFields,
+  withDefaultResidenceCountryFromIssuing,
 } from "../../utils/flightBookingHelper";
-import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
+import {
+  extractAxiosErrorDetailsSource,
+  extractErrorFromAxiosApiError,
+} from "../../utils/apiErrorHanlder";
 import LoginModal from "../common/LoginModal";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -254,7 +259,9 @@ export default function FlightBookingBookSection({
           console.error("fetchAddPassengerCache(add) failed", e);
         }
       }
-      const response = await mutateAsync(flightBookingPayload);
+      const response = await mutateAsync(
+        withDefaultResidenceCountryFromIssuing(flightBookingPayload),
+      );
       if (
         response?.meta?.success &&
         response?.meta?.statusMessage == "SUCCESS"
@@ -279,6 +286,16 @@ export default function FlightBookingBookSection({
       }
     } catch (error) {
       console.log("error", error);
+      const source = extractAxiosErrorDetailsSource(error);
+      const fieldErrors = mapFlightProvBookingApiErrorsToPassengerFields(source);
+      const hasMapped = Object.values(fieldErrors).some(
+        (obj) => obj && Object.keys(obj).length > 0,
+      );
+      if (hasMapped) {
+        setValidationErrors(fieldErrors);
+        setHasAttemptedValidation(true);
+        return;
+      }
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
       if (
@@ -843,7 +860,7 @@ export default function FlightBookingBookSection({
                           );
                         }}
                         placeholder="Select residence country"
-                        label="Residence Country"
+                        label="Residence Country (optional)"
                         widthClass="w-full"
                         searchPlaceholder="Search countries..."
                         error={

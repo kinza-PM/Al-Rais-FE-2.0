@@ -1,4 +1,5 @@
 import type { CitiesResponse, CountriesResponse } from "../../features/flights/types";
+import { ensureBrowserId } from "../../utils/browserId";
 import { api, toApiError } from "../axios";
 
 export async function getMasterListingData<TResp = any>(
@@ -16,6 +17,7 @@ export async function getMasterListingData<TResp = any>(
         tableName,
         ...(nextToken ? { nextToken } : {}),
         ...(extraParams ?? {}),
+        browserId: ensureBrowserId(),
       },
       signal,
     );

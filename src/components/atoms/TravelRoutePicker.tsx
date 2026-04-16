@@ -23,7 +23,7 @@ type Value = {
 };
 
 type Props = {
-  options: AirportOption[];
+  options?: AirportOption[];
   loading?: boolean;
   /**
    * Optional callback to perform API-based searching.
@@ -43,10 +43,22 @@ type Props = {
   onLoadMore?: () => void;
   hasMore?: boolean;
   loadingMore?: boolean;
+  fromOptions?: AirportOption[];
+  toOptions?: AirportOption[];
+  fromLoading?: boolean;
+  toLoading?: boolean;
+  onFromSearchChange?: (term: string) => void;
+  onToSearchChange?: (term: string) => void;
+  fromOnLoadMore?: () => void;
+  toOnLoadMore?: () => void;
+  fromHasMore?: boolean;
+  toHasMore?: boolean;
+  fromLoadingMore?: boolean;
+  toLoadingMore?: boolean;
 };
 
 const TravelRoutePicker: React.FC<Props> = ({
-  options,
+  options = [],
   loading,
   onSearchChange,
   value,
@@ -61,6 +73,18 @@ const TravelRoutePicker: React.FC<Props> = ({
   onLoadMore = () => { },
   hasMore = false,
   loadingMore = false,
+  fromOptions,
+  toOptions,
+  fromLoading,
+  toLoading,
+  onFromSearchChange,
+  onToSearchChange,
+  fromOnLoadMore,
+  toOnLoadMore,
+  fromHasMore,
+  toHasMore,
+  fromLoadingMore,
+  toLoadingMore,
 }) => {
   const { fromCode, toCode, fromOption, toOption } = value;
 
@@ -92,10 +116,9 @@ const TravelRoutePicker: React.FC<Props> = ({
     });
   };
 
-  // Convert CountryOption to DropdownOption format
-  const dropdownOptions = useMemo(
-    () =>
-      options.map((option) => ({
+  const buildDropdownOptions = useMemo(
+    () => (airportOptions: AirportOption[]) =>
+      airportOptions.map((option) => ({
         id: option.id,
         value: option.code,
         label: option.label,
@@ -103,42 +126,61 @@ const TravelRoutePicker: React.FC<Props> = ({
         searchText: airportSearchText(option),
         disabled: false,
       })),
-    [options],
+    [],
   );
 
-  const optionsByCode = useMemo(
-    () => new Map(options.map((o) => [o.code, o])),
-    [options],
+  const sourceFromOptions = fromOptions ?? options;
+  const sourceToOptions = toOptions ?? options;
+
+  const fromDropdownOptions = useMemo(
+    () =>
+      buildDropdownOptions(sourceFromOptions),
+    [buildDropdownOptions, sourceFromOptions],
+  );
+
+  const toDropdownOptions = useMemo(
+    () =>
+      buildDropdownOptions(sourceToOptions),
+    [buildDropdownOptions, sourceToOptions],
+  );
+
+  const fromOptionsByCode = useMemo(
+    () => new Map(sourceFromOptions.map((o) => [o.code, o])),
+    [sourceFromOptions],
+  );
+  const toOptionsByCode = useMemo(
+    () => new Map(sourceToOptions.map((o) => [o.code, o])),
+    [sourceToOptions],
   );
 
   // Filter options based on disableSameSelection
-  const fromOptions = useMemo(
+  const fromDropdownSelectableOptions = useMemo(
     () =>
-      dropdownOptions.map((option) => ({
+      fromDropdownOptions.map((option) => ({
         ...option,
         disabled: disableSameSelection && option.value === toCode,
       })),
-    [dropdownOptions, disableSameSelection, toCode],
+    [fromDropdownOptions, disableSameSelection, toCode],
   );
 
-  const toOptions = useMemo(
+  const toDropdownSelectableOptions = useMemo(
     () =>
-      dropdownOptions.map((option) => ({
+      toDropdownOptions.map((option) => ({
         ...option,
         disabled: disableSameSelection && option.value === fromCode,
       })),
-    [dropdownOptions, disableSameSelection, fromCode],
+    [toDropdownOptions, disableSameSelection, fromCode],
   );
 
   return (
     <>
       <div className={widthClass}>
         <SearchableDropdown
-          options={fromOptions}
+          options={fromDropdownSelectableOptions}
           value={fromCode}
           onChange={(code) => handleFrom(code)}
           onOptionSelect={(code, opt) => {
-            const full = optionsByCode.get(code) ?? {
+            const full = fromOptionsByCode.get(code) ?? {
               id: opt.id,
               code: opt.value,
               label: opt.label,
@@ -149,16 +191,16 @@ const TravelRoutePicker: React.FC<Props> = ({
             handleFrom(code, full);
           }}
           displayLabel={fromOption?.label ?? undefined}
-          onSearchChange={onSearchChange}
+          onSearchChange={onFromSearchChange ?? onSearchChange}
           placeholder={placeholders.from}
           label={labels.from}
-          loading={!!loading}
+          loading={fromLoading ?? loading ?? false}
           error={fromError}
           widthClass="w-full"
           searchPlaceholder="Search destinations..."
-          onLoadMore={onLoadMore}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
+          onLoadMore={fromOnLoadMore ?? onLoadMore}
+          hasMore={fromHasMore ?? hasMore}
+          loadingMore={fromLoadingMore ?? loadingMore}
           tooltip="Select where you're flying from"
           cacheKey="airport"
           panelClassName="airport-dropdown-panel"
@@ -190,11 +232,11 @@ const TravelRoutePicker: React.FC<Props> = ({
 
       <div className={widthClass}>
         <SearchableDropdown
-          options={toOptions}
+          options={toDropdownSelectableOptions}
           value={toCode}
           onChange={(code) => handleTo(code)}
           onOptionSelect={(code, opt) => {
-            const full = optionsByCode.get(code) ?? {
+            const full = toOptionsByCode.get(code) ?? {
               id: opt.id,
               code: opt.value,
               label: opt.label,
@@ -205,16 +247,16 @@ const TravelRoutePicker: React.FC<Props> = ({
             handleTo(code, full);
           }}
           displayLabel={toOption?.label ?? undefined}
-          onSearchChange={onSearchChange}
+          onSearchChange={onToSearchChange ?? onSearchChange}
           placeholder={placeholders.to}
           label={labels.to}
-          loading={!!loading}
+          loading={toLoading ?? loading ?? false}
           error={toError}
           widthClass="w-full"
           searchPlaceholder="Search destinations..."
-          onLoadMore={onLoadMore}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
+          onLoadMore={toOnLoadMore ?? onLoadMore}
+          hasMore={toHasMore ?? hasMore}
+          loadingMore={toLoadingMore ?? loadingMore}
           tooltip="Select where you're flying to"
           cacheKey="airport"
           panelClassName="airport-dropdown-panel"

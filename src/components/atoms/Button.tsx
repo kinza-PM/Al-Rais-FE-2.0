@@ -32,7 +32,7 @@ const Button: React.FC<ButtonProps> = ({
       : "bg-primary text-white hover:bg-opacity-90",
     secondary: disabled
       ? "bg-gray-100 text-gray-400 border border-gray-300 cursor-not-allowed"
-      : "bg-none text-primary border border-primary hover:bg-primary hover:text-white",
+      : "bg-white text-primary border border-primary hover:bg-slate-100 hover:text-primary hover:border-primary",
   };
 
   return (

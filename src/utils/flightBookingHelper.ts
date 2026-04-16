@@ -355,6 +355,70 @@ export const validatePassengersForFlightProvisionalBooking = (
   return { valid: true };
 };
 
+/**
+ * If residence country is empty, set it to issuing country so provisional booking APIs
+ * that still require a value succeed without forcing the user to pick residence.
+ */
+export function withDefaultResidenceCountryFromIssuing(
+  payload: FlightInitialBooking,
+): FlightInitialBooking {
+  const passengers = (payload.passengers ?? []).map((p: any) => {
+    const docs = p?.identityDocuments;
+    if (!Array.isArray(docs) || !docs[0]) return p;
+    const id0 = docs[0];
+    const res = String(id0.residenceCountryCode ?? "").trim();
+    const iss = String(id0.issuingCountryCode ?? "").trim();
+    if (res || !iss) return p;
+    const nextId0 = { ...id0, residenceCountryCode: iss };
+    return {
+      ...p,
+      identityDocuments: [nextId0, ...docs.slice(1)],
+    };
+  });
+  return { ...payload, passengers };
+};
+
+/** Map API `errorDetails.source` keys to `validatePassengersForFlightProvisionalBookingFields` paths. */
+export function mapFlightProvBookingApiErrorsToPassengerFields(
+  source: Record<string, string> | null | undefined,
+): Record<number, Record<string, string>> {
+  if (!source || typeof source !== "object") return {};
+  const out: Record<number, Record<string, string>> = {};
+
+  const normalizePath = (suffix: string): string => {
+    let s = suffix.replace(/identityDocuments\[0\]/gi, "identityDocuments.0");
+    s = s.replace(
+      /contact\.contactsProvided\[0\]/gi,
+      "contact.contactsProvided.0",
+    );
+    s = s.replace(/phone\[0\]/gi, "phone.0");
+    s = s.replace(/emailAddress\[0\]/gi, "emailAddress.0");
+    return s;
+  };
+
+  for (const [rawKey, message] of Object.entries(source)) {
+    if (typeof message !== "string" || !message.trim()) continue;
+    let idx = 0;
+    let rest = rawKey;
+    const air = rawKey.match(/^airPassengers\[(\d+)\]\.(.+)$/i);
+    if (air) {
+      idx = Number(air[1]);
+      rest = air[2];
+    } else {
+      const pass = rawKey.match(/^passengers\[(\d+)\]\.(.+)$/i);
+      if (pass) {
+        idx = Number(pass[1]);
+        rest = pass[2];
+      }
+    }
+    const pathSuffix = normalizePath(rest);
+    if (!pathSuffix) continue;
+    if (!out[idx]) out[idx] = {};
+    out[idx][pathSuffix] = message.trim();
+  }
+  return out;
+}
+
 // Field-level validation for payment
 export const validateReservationFlightBookingDataFields = (
   reservation: any,
