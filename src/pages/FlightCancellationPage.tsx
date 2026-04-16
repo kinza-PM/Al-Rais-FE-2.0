@@ -75,6 +75,7 @@ function CancelItemCard({
 const FlightCancellationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const myBookingsSearch = location.state?.myBookingsSearch as string | undefined;
 
   const bookingReferenceId = location.state?.bookingReferenceId || "";
   const supplierLocator = location.state?.supplierLocator || "";
@@ -181,6 +182,20 @@ const FlightCancellationPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
       <div className="mx-auto max-w-[650px]">
+        <Button
+          type="button"
+          onClick={() =>
+            navigate(
+              myBookingsSearch
+                ? `/my-bookings${myBookingsSearch}`
+                : buildMyBookingsUrl({ mode: "flights", status: "all" }),
+            )
+          }
+          className="mb-5 bg-transparent border-none p-0 text-[14px] font-semibold text-[#5383DA] hover:underline"
+          overrideClasses
+        >
+          ← Back to My Bookings
+        </Button>
         <SectionCard
           title="Select Items to Cancel"
           subtitle="You can cancel the entire trip or specific segments/passengers."
