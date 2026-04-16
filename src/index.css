@@ -2,6 +2,41 @@
 
 @theme {
   --color-primary: #2351A3;
+
+  /* Search form tab-switch fade + slide-up */
+  --animate-fadeSlideUp: fadeSlideUp 220ms ease-out both;
+
+  /* Ready-to-fly map float */
+  --animate-mapFloat: mapFloat 5s ease-in-out infinite;
+}
+
+@keyframes fadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mapFloat {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes ripple {
+  0%   { transform: translate(-50%, -50%) scale(1);  opacity: 0.5; }
+  100% { transform: translate(-50%, -50%) scale(22); opacity: 0; }
+}
+
+@keyframes searchProgress {
+  0%   { width: 0%; }
+  40%  { width: 55%; }
+  70%  { width: 78%; }
+  90%  { width: 92%; }
+  100% { width: 100%; }
 }
 
 * {

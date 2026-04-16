@@ -182,36 +182,46 @@ const LandingPage: React.FC = () => {
             {/* Bottom tabs: Flights / Hotels / Sightseeing / Packages */}
             <div className="absolute inset-x-0 z-10 bottom-0 flex justify-center px-2 sm:px-3 xl:px-0" style={{ bottom: "-0.01rem" }}>
               <div className="flex w-full max-w-[95vw] flex-wrap justify-center gap-1.5 sm:gap-2 xl:w-auto xl:max-w-none xl:flex-nowrap xl:gap-[10px]">
-                <button
-                  type="button"
-                  onClick={() => handleHeroTopTabClick("flights")}
-                  className={`flex items-center justify-center whitespace-nowrap w-[calc(50%-0.2rem)] max-w-[170px] min-w-[126px] sm:w-auto shrink-0 xl:min-w-[96px] px-3 xl:px-[14px] h-[39px] text-[11px] min-[400px]:text-[12px] sm:text-[13px] xl:text-[16px] font-medium leading-[1] rounded-t-2xl ${heroSearchTab === "flights" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
-                >
-                  FLIGHTS
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleHeroTopTabClick("hotels")}
-                  className={`flex items-center justify-center whitespace-nowrap w-[calc(50%-0.2rem)] max-w-[170px] min-w-[126px] sm:w-auto shrink-0 xl:min-w-[96px] px-3 xl:px-[14px] h-[39px] text-[11px] min-[400px]:text-[12px] sm:text-[13px] xl:text-[16px] font-medium leading-[1] rounded-t-2xl ${heroSearchTab === "hotels" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
-                >
-                  HOTELS
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleHeroTopTabClick("sightseeing")}
-                  className={`flex items-center justify-center whitespace-nowrap w-[calc(50%-0.2rem)] max-w-[170px] min-w-[126px] sm:w-auto shrink-0 xl:min-w-[96px] px-3 xl:px-[14px] h-[39px] text-[11px] min-[400px]:text-[12px] sm:text-[13px] xl:text-[16px] font-medium leading-[1] rounded-t-2xl ${heroSearchTab === "sightseeing" ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]" : "text-[#081326] bg-[#E5E7EB]"}`}
-                >
-                  SIGHTSEEING
-                </button>
-
-                <button
-                  type="button"
-                  className="flex items-center justify-center whitespace-nowrap w-[calc(50%-0.2rem)] max-w-[170px] min-w-[126px] sm:w-auto shrink-0 xl:min-w-[96px] px-3 xl:px-[14px] h-[39px] text-[11px] min-[400px]:text-[12px] sm:text-[13px] xl:text-[16px] font-medium leading-[1] rounded-t-2xl text-[#081326] bg-[#E5E7EB]"
-                >
-                  PACKAGES
-                </button>
+                {(
+                  [
+                    { key: "flights",     label: "FLIGHTS"     },
+                    { key: "hotels",      label: "HOTELS"      },
+                    { key: "sightseeing", label: "SIGHTSEEING" },
+                    { key: "packages",    label: "PACKAGES"    },
+                  ] as const
+                ).map(({ key, label }) => {
+                  const isActive = heroSearchTab === key;
+                  const isClickable = key !== "packages";
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={isClickable ? () => handleHeroTopTabClick(key as "flights" | "hotels" | "sightseeing") : undefined}
+                      className={[
+                        // base layout
+                        "flex items-center justify-center whitespace-nowrap",
+                        "w-[calc(50%-0.2rem)] max-w-[170px] min-w-[126px] sm:w-auto shrink-0 xl:min-w-[96px]",
+                        "px-3 xl:px-[14px] h-[39px] pb-0",
+                        "text-[11px] min-[400px]:text-[12px] sm:text-[13px] xl:text-[16px]",
+                        "font-medium leading-[1] rounded-tl-2xl rounded-tr-2xl rounded-bl-none rounded-br-none",
+                        // smooth transitions: background, color, shadow, transform
+                        "transition-all duration-200 ease-out",
+                        // active lift — tab rises 2px to "pop forward"
+                        isActive ? "-translate-y-[2px]" : "translate-y-0",
+                        // active vs idle colours + shadow
+                        isActive
+                          ? "text-white bg-[#2351A3] shadow-[0_6px_18px_rgba(2,6,23,0.35)]"
+                          : "text-[#081326] bg-[#E5E7EB] hover:bg-[#D1D9E6] hover:text-[#2351A3]",
+                        // press-down feedback
+                        isClickable ? "active:scale-95 cursor-pointer" : "cursor-default",
+                        // focus ring for accessibility
+                        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2351A3] focus-visible:ring-offset-1",
+                      ].join(" ")}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
