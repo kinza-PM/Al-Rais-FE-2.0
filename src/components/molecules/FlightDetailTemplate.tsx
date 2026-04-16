@@ -871,7 +871,15 @@ const FlightDetailTemplate: React.FC = () => {
 
   useEffect(() => {
     const allowed = new Set(availableAirlineOptions.map((a) => a.code));
-    setSelectedAirlineIds((prev) => prev.filter((code) => allowed.has(code)));
+    setSelectedAirlineIds((prev) => {
+      const next = prev.filter((code) => allowed.has(code));
+      const isSame =
+        next.length === prev.length &&
+        next.every((code, idx) => code === prev[idx]);
+
+      // Avoid needless state updates (prevents "Maximum update depth" loops).
+      return isSame ? prev : next;
+    });
   }, [availableAirlineOptions]);
 
   const { useBreakpoint } = Grid;

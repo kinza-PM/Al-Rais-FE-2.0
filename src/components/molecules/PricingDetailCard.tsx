@@ -64,13 +64,13 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
     }
   }, [headers, selectedPlan]);
 
-  if (!passSome || passSome.length === 0) return null;
+  const isEmpty = !passSome || passSome.length === 0;
 
   const colSpan = Math.max(6, Math.floor(24 / Math.max(1, headers.length)));
 
   const maxSegs = useMemo(() => {
     let max = 0;
-    passSome.forEach((item) => {
+    (passSome ?? []).forEach((item) => {
       const p = item?.price ?? {};
       Object.values(p).forEach((plan: any) => {
         const len = Array.isArray(plan?.segments) ? plan.segments.length : 0;
@@ -79,6 +79,8 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
     });
     return max;
   }, [passSome]);
+
+  if (isEmpty) return null;
 
   const getHeightClass = (segs: number) => {
     if (segs <= 1) return "min-h-[72.8px]";
@@ -95,6 +97,15 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
     return s && s !== "—" ? s : "No detail available";
   };
 
+  const isFeatureIncluded = (value: any, featureKey: string) => {
+    if (featureKey === "Refundable") return value === "Refundable";
+    if (featureKey === "Changes") {
+      // flightPriceOptionsUtils defaults this to "Not changeable"
+      return Boolean(value) && value !== "—" && value !== "Not changeable";
+    }
+    return Boolean(value) && value !== "—";
+  };
+
   const renderFeature = (plan: any, featureKey: string) => {
     const segs = Array.isArray(plan?.segments) ? plan.segments : null;
     const showRouteLabel = segs && segs.length > 1;
@@ -103,9 +114,8 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
     if (segs && segs.length > 1) {
       return (
         <div
-          className={`parahAlign ${
-            segs && segs.length > 1 ? "parahAlignMultiSeg" : ""
-          }`}
+          className={`parahAlign ${segs && segs.length > 1 ? "parahAlignMultiSeg" : ""
+            }`}
         >
           {segs.map((s: any, i: number) => (
             <div
@@ -115,18 +125,18 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
               style={isBaggage ? { cursor: "pointer" } : undefined}
             >
               {showRouteLabel && <span>{s.label}</span>}
-              <img
-                src={
-                  s[featureKey] && s[featureKey] !== "—"
-                    ? OkCheckIcon
-                    : CrossIcon
-                }
-                alt={
-                  s[featureKey] && s[featureKey] !== "—"
-                    ? "included"
-                    : "not-included"
-                }
-              />
+              {(() => {
+                const included = isFeatureIncluded(s?.[featureKey], featureKey);
+
+                return (
+                  <>
+                    <img
+                      src={included ? OkCheckIcon : CrossIcon}
+                      alt={included ? "included" : "not-included"}
+                    />
+                  </>
+                );
+              })()}
               <p style={{ margin: 0 }}>{displayOrNoDetail(s?.[featureKey])}</p>
             </div>
           ))}
@@ -138,7 +148,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
       <div className="parahAlign">
         <img
           src={
-            plan?.[featureKey] && plan[featureKey] !== "—"
+            isFeatureIncluded(plan?.[featureKey], featureKey)
               ? OkCheckIcon
               : CrossIcon
           }
@@ -240,9 +250,8 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
                           </p>
 
                           <Radio
-                            className={`baggageRadio ${
-                              selectedPlan === hk ? "active" : ""
-                            }`}
+                            className={`baggageRadio ${selectedPlan === hk ? "active" : ""
+                              }`}
                             checked={selectedPlan === hk}
                             onChange={() => setSelectedPlan(hk)}
                           >

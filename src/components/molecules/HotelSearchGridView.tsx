@@ -33,9 +33,8 @@ const buildHotelShareUrl = (
 
   const queryString = params.toString();
 
-  return `${window.location.origin}/hotel-detail/${hotelKey}${
-    queryString ? `?${queryString}` : ""
-  }`;
+  return `${window.location.origin}/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""
+    }`;
 };
 
 const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
@@ -95,39 +94,39 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
       const rooms =
         Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
           ? hotel.rooms.map((room: any) => ({
-              roomIndex: room?.roomIndex ?? 1,
-              roomKey: room?.roomKey ?? "",
-              roomId: room?.roomId ?? "",
-              roomTypeName: room?.roomTypeName ?? "",
-              roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
-              maxOccupancy: room?.maxOccupancy ?? -1,
-              roomFacilities: room?.roomFacilities ?? [],
-              ratePlan: {
-                supplierCode: room?.ratePlan?.supplierCode ?? "",
-                meal: room?.ratePlan?.meal ?? "",
-                availableStatus: room?.ratePlan?.availableStatus ?? "",
-                cancelPolicyIndicator:
-                  room?.ratePlan?.cancelPolicyIndicator ?? "",
-                code: room?.ratePlan?.code ?? "",
-                isPackage: room?.ratePlan?.isPackage ?? false,
-                fixedCombo: room?.ratePlan?.fixedCombo ?? false,
-                gstAssured: room?.ratePlan?.gstAssured ?? false,
-                lastCancellationDate:
-                  room?.ratePlan?.lastCancellationDate ?? "",
-              },
-              roomRate: {
-                currency: room?.roomRate?.currency ?? "AED",
-                netAmount: room?.roomRate?.netAmount ?? 0,
-                rates: room?.roomRate?.rates ?? [],
-                taxes: room?.roomRate?.taxes ?? [],
-              },
-              rateNotes: room?.rateNotes ?? "",
-              financialInfo: {
-                tmc: room?.financialInfo?.tmc ?? "",
-                supplier: room?.financialInfo?.supplier ?? "",
-              },
-              isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
-            }))
+            roomIndex: room?.roomIndex ?? 1,
+            roomKey: room?.roomKey ?? "",
+            roomId: room?.roomId ?? "",
+            roomTypeName: room?.roomTypeName ?? "",
+            roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+            maxOccupancy: room?.maxOccupancy ?? -1,
+            roomFacilities: room?.roomFacilities ?? [],
+            ratePlan: {
+              supplierCode: room?.ratePlan?.supplierCode ?? "",
+              meal: room?.ratePlan?.meal ?? "",
+              availableStatus: room?.ratePlan?.availableStatus ?? "",
+              cancelPolicyIndicator:
+                room?.ratePlan?.cancelPolicyIndicator ?? "",
+              code: room?.ratePlan?.code ?? "",
+              isPackage: room?.ratePlan?.isPackage ?? false,
+              fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+              gstAssured: room?.ratePlan?.gstAssured ?? false,
+              lastCancellationDate:
+                room?.ratePlan?.lastCancellationDate ?? "",
+            },
+            roomRate: {
+              currency: room?.roomRate?.currency ?? "AED",
+              netAmount: room?.roomRate?.netAmount ?? 0,
+              rates: room?.roomRate?.rates ?? [],
+              taxes: room?.roomRate?.taxes ?? [],
+            },
+            rateNotes: room?.rateNotes ?? "",
+            financialInfo: {
+              tmc: room?.financialInfo?.tmc ?? "",
+              supplier: room?.financialInfo?.supplier ?? "",
+            },
+            isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+          }))
           : [];
 
       const rawFacilities = hotel?.propertyInfo?.facilities || [];
@@ -221,7 +220,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
             }
             label={
               isGetFavouritesLoading
-                ? "Loading favourites..."
+                ? "Loading..."
                 : "Updating favourites..."
             }
           />
@@ -241,7 +240,7 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
           }
           label={
             isGetFavouritesLoading
-              ? "Loading favourites..."
+              ? "Loading..."
               : "Updating favourites..."
           }
         />

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal } from "antd";
 import { fetchAuthSession } from "aws-amplify/auth";
 import { TokenService } from "../../../services/tokenService";
@@ -16,27 +16,35 @@ export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
   const timersRef = useRef<number[]>([]);
   const expMsRef = useRef<number | null>(null);
   const { isAuthenticated } = useAuth();
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  const scheduleVersionRef = useRef(0);
 
   const warningMs = useMemo(() => warningSeconds * 1000, [warningSeconds]);
+  // Keep ref in sync immediately to avoid timer callbacks using stale auth state.
+  isAuthenticatedRef.current = isAuthenticated;
 
-  const clearTimers = () => {
+  const clearTimers = useCallback(() => {
     timersRef.current.forEach((id) => window.clearTimeout(id));
     timersRef.current = [];
-  };
+  }, []);
 
-  const schedule = async () => {
+  const schedule = useCallback(async () => {
+    const version = scheduleVersionRef.current;
     clearTimers();
     setOpen(false);
+    setSecondsLeft(0);
     expMsRef.current = null;
 
     try {
       // Guard: Never show or schedule warnings for guests
-      if (!isAuthenticated) return;
+      if (!isAuthenticatedRef.current) return;
       const session = await fetchAuthSession();
+      if (version !== scheduleVersionRef.current) return;
+      if (!isAuthenticatedRef.current) return;
       const exp =
         (session.tokens?.idToken?.payload?.exp as number | undefined) ??
         (session.tokens?.accessToken?.payload?.exp as number | undefined);
-
+      // console.log("exp", exp);
       if (!exp) return; // no session
       const expMs = exp * 1000;
       expMsRef.current = expMs;
@@ -44,14 +52,19 @@ export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
       const now = Date.now();
       const msLeft = expMs - now;
       if (msLeft <= 0) {
-        await authServiceSingleton.signOut();
-        window.location.href = "/auth";
+        if (version !== scheduleVersionRef.current) return;
+        if (isAuthenticatedRef.current) {
+          await authServiceSingleton.signOut();
+          window.location.href = "/auth";
+        }
         return;
       }
 
       // open warning
       const warnIn = Math.max(msLeft - warningMs, 0);
       const warnTimer = window.setTimeout(() => {
+        if (version !== scheduleVersionRef.current) return;
+        if (!isAuthenticatedRef.current) return;
         const expNow = expMsRef.current;
         if (!expNow) return;
         const left = Math.max(Math.floor((expNow - Date.now()) / 1000), 0);
@@ -60,6 +73,8 @@ export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
 
         // update countdown every second while modal open
         const tick = () => {
+          if (version !== scheduleVersionRef.current) return;
+          if (!isAuthenticatedRef.current) return;
           const e = expMsRef.current;
           if (!e) return;
           const s = Math.max(Math.floor((e - Date.now()) / 1000), 0);
@@ -73,6 +88,8 @@ export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
 
       // hard logout at expiry
       const hardTimer = window.setTimeout(async () => {
+        if (version !== scheduleVersionRef.current) return;
+        if (!isAuthenticatedRef.current) return;
         try {
           await authServiceSingleton.signOut();
         } finally {
@@ -83,26 +100,37 @@ export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
     } catch {
       // ignore
     }
-  };
+  }, [clearTimers, warningMs]);
 
   useEffect(() => {
+    // When auth status changes (login/logout), invalidate any in-flight schedule and
+    // clear timers so stale callbacks cannot show the modal later.
+    scheduleVersionRef.current += 1;
+    clearTimers();
+    setOpen(false);
+    setSecondsLeft(0);
+    expMsRef.current = null;
+
+    if (!isAuthenticated) return () => {};
+
     void schedule();
     return () => clearTimers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [clearTimers, isAuthenticated, schedule]);
 
   const handleStaySignedIn = async () => {
     try {
       await fetchAuthSession({ forceRefresh: true });
       // persist refreshed token snapshot so other parts of the app don’t hold stale values
       await TokenService.getCognitoToken();
-    } catch {
+    } catch (err) {
+      console.log("err", err);
       // if refresh fails, fall back to logout
       await authServiceSingleton.signOut();
       window.location.href = "/auth";
       return;
     }
 
+    scheduleVersionRef.current += 1;
     setOpen(false);
     void schedule();
   };
@@ -155,10 +183,9 @@ export default function SessionExpiryWarning({ warningSeconds = 120 }: Props) {
       )}
     >
       <div style={{ color: "#374151", lineHeight: 1.6 }}>
-        You’ll be logged out in <b>{secondsLeft}s</b>. If you’re in the middle of a
-        booking, choose <b>Stay signed in</b> to avoid losing progress.
+        You’ll be logged out in <b>{secondsLeft}s</b>. If you’re in the middle
+        of a booking, choose <b>Stay signed in</b> to avoid losing progress.
       </div>
     </Modal>
   );
 }
-

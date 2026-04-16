@@ -102,7 +102,7 @@ export default function FlightBookingAnicllarySection({
   const priceFareFamily = {
     label: "Fare family",
     value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
-    changeText: "Change",
+    changeText: "Modify search",
     onChangeClick: () => {
       if (typeof onChangeFlight === "function") {
         onChangeFlight();

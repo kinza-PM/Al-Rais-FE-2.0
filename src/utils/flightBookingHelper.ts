@@ -138,6 +138,19 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     }
 
     // Date of birth
+    // if (pRules.isDateOfBirthMandatory) {
+    //   const bd = pi.birthDate ?? null;
+    //   if (!bd) {
+    //     passengerErrors["passengerInfo.birthDate"] = "Birth date is required.";
+    //   } else {
+    //     const bdDate = new Date(`${bd}T00:00:00`);
+    //     bdDate.setHours(0, 0, 0, 0);
+    //     if (bdDate > today) {
+    //       passengerErrors["passengerInfo.birthDate"] =
+    //         "Birth date cannot be in the future.";
+    //     }
+    //   }
+    // }
     if (pRules.isDateOfBirthMandatory) {
       const bd = pi.birthDate ?? null;
       if (!bd) {
@@ -148,6 +161,26 @@ export const validatePassengersForFlightProvisionalBookingFields = (
         if (bdDate > today) {
           passengerErrors["passengerInfo.birthDate"] =
             "Birth date cannot be in the future.";
+        } else {
+          const ageYears =
+            (today.getTime() - bdDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+          const ptc = (p?.ptc ?? "ADT").toUpperCase();
+          if (ptc === "ADT") {
+            if (ageYears < 12 || ageYears > 150) {
+              passengerErrors["passengerInfo.birthDate"] =
+                "Adult must be between 12 and 150 years old.";
+            }
+          } else if (ptc === "CHD") {
+            if (ageYears < 2 || ageYears > 11) {
+              passengerErrors["passengerInfo.birthDate"] =
+                "Child must be between 2 and 11 years old.";
+            }
+          } else if (ptc === "INF") {
+            if (ageYears < 0 || ageYears >= 2) {
+              passengerErrors["passengerInfo.birthDate"] =
+                "Infant must be under 2 years old.";
+            }
+          }
         }
       }
     }
