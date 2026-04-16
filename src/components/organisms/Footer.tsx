@@ -148,7 +148,7 @@ const Footer: React.FC = () => {
         className="w-full py-4 text-center text-sm text-white/90"
         style={{ background: "#3D495C" }}
       >
-        © Al Rais Travel. All rights reserved.
+      AL RAIS TRAVEL AGENCIES (L.L.C.)       
       </div>
 
       <style>{`
