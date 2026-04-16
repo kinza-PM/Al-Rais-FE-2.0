@@ -236,8 +236,8 @@ const LandingPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Spacing below hero form so calendar can fully show */}
-        <div className="mt-8 sm:mt-12 mb-24">
+        {/* Keep hero/search tighter on desktop so banner stays visible above the fold */}
+        <div className="mt-8 sm:mt-10 lg:mt-7 xl:mt-6 mb-16 lg:mb-20">
           <HeroSection activeTab={heroSearchTab} />
         </div>
       </div>

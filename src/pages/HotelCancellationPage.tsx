@@ -204,6 +204,20 @@ const HotelCancellationPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
       <div className="mx-auto max-w-[650px]">
+        <Button
+          type="button"
+          onClick={() =>
+            navigate(
+              state.myBookingsSearch
+                ? `/my-bookings${state.myBookingsSearch}`
+                : buildMyBookingsUrl({ mode: "hotels", status: "all" }),
+            )
+          }
+          className="mb-5 bg-transparent border-none p-0 text-[14px] font-semibold text-[#5383DA] hover:underline"
+          overrideClasses
+        >
+          ← Back to My Bookings
+        </Button>
         <SectionCard
           title="Select items to cancel"
           subtitle="You can cancel the entire stay for this reservation."
