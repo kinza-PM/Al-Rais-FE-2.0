@@ -36,21 +36,86 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
     const passengerGroups = useMemo(() => {
         if (!Array.isArray(fareBreakdown) || fareBreakdown.length === 0) return [];
 
-        return fareBreakdown.map((fb: any) => {
+        // Aggregate by paxType so Adult/Child/Infant are shown once each.
+        const byType = new Map<
+            string,
+            {
+                paxType: string;
+                paxLabel: string;
+                paxCount: number;
+                baseFareSum: number;
+                taxesSum: number;
+                transactionFeeSum: number;
+                discountSum: number;
+                officialSubtotalSum: number;
+                taxLines: Array<{ taxCode?: string; amount?: number }>;
+            }
+        >();
+
+        for (const fb of fareBreakdown) {
             const paxType = fb?.paxType ?? "ADT";
             const paxCount = Array.isArray(fb?.passengerKeys) ? fb.passengerKeys.length : 1;
             const pr = fb?.paxRate ?? {};
-            const baseFare = typeof pr?.baseFare === "number" ? pr.baseFare : pr?.baseFare ?? 0;
-            const taxes = typeof pr?.totalTax === "number" ? pr.totalTax : pr?.totalTax ?? pr?.taxes?.reduce?.((a: any, b: any) => a + (b?.amount || 0), 0) ?? 0;
-            const subtotal = typeof pr?.totalFare === "number" ? pr.totalFare : pr?.totalFare ?? (baseFare + taxes);
+            const custInfo = pr?.customerAdditionalFareInfo ?? {};
+
+            const baseFareEach = Number(pr?.baseFare ?? 0) || 0;
+            const taxesEach =
+                Number(pr?.totalTax ?? 0) ||
+                Number(pr?.taxes?.reduce?.((a: any, b: any) => a + (Number(b?.amount) || 0), 0) ?? 0) ||
+                0;
+            const transactionFeeEach = Number(custInfo?.transactionFeeEarned ?? 0) || 0;
+            const discountEach = Number(custInfo?.discount ?? 0) || 0;
+            const officialSubtotalEach = Number(pr?.totalFare ?? (baseFareEach + taxesEach)) || 0;
+
+            const existing =
+                byType.get(paxType) ??
+                ({
+                    paxType,
+                    paxLabel: PAX_LABEL[paxType] ?? paxType,
+                    paxCount: 0,
+                    baseFareSum: 0,
+                    taxesSum: 0,
+                    transactionFeeSum: 0,
+                    discountSum: 0,
+                    officialSubtotalSum: 0,
+                    taxLines: [],
+                } as const);
+
+            const next = {
+                ...existing,
+                paxCount: existing.paxCount + paxCount,
+                baseFareSum: existing.baseFareSum + baseFareEach * paxCount,
+                taxesSum: existing.taxesSum + taxesEach * paxCount,
+                transactionFeeSum: existing.transactionFeeSum + transactionFeeEach * paxCount,
+                discountSum: existing.discountSum + discountEach * paxCount,
+                officialSubtotalSum: existing.officialSubtotalSum + officialSubtotalEach * paxCount,
+                taxLines: Array.isArray(pr?.taxes) && pr.taxes.length ? pr.taxes : existing.taxLines,
+            };
+
+            byType.set(paxType, next);
+        }
+
+        return Array.from(byType.values()).map((g) => {
+            const count = g.paxCount || 1;
+            const baseFareEach = g.baseFareSum / count;
+            const taxesEach = g.taxesSum / count;
+            const transactionFeeEach = g.transactionFeeSum / count;
+            const discountEach = g.discountSum / count;
+            const officialSubtotalEach = g.officialSubtotalSum / count;
+            const computedSubtotalEach = baseFareEach + taxesEach + transactionFeeEach - discountEach;
 
             return {
-                paxType,
-                paxLabel: PAX_LABEL[paxType] ?? paxType,
-                paxCount,
-                baseFare,
-                taxes,
-                subtotal,
+                paxType: g.paxType,
+                paxLabel: g.paxLabel,
+                paxCount: g.paxCount,
+                baseFareEach,
+                taxesEach,
+                transactionFeeEach,
+                discountEach,
+                computedSubtotalEach,
+                officialSubtotalEach,
+                groupTotal: g.officialSubtotalSum || computedSubtotalEach * g.paxCount,
+                taxLines: g.taxLines,
             };
         });
     }, [fareBreakdown]);
@@ -85,19 +150,6 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                             <div className="mt-2 text-[12px] text-[#3D495C]">No passenger fare breakdown available.</div>
                         ) : (
                             passengerGroups.map((pg, idx) => {
-                                // raw paxRate object from fareBreakdown (per-pax values)
-                                const rawPaxRate = fareBreakdown[idx]?.paxRate ?? {};
-                                const custInfo = rawPaxRate?.customerAdditionalFareInfo ?? {};
-
-                                const baseFare = Number.isFinite(pg.baseFare) ? pg.baseFare : 0;
-                                const taxes = Number.isFinite(pg.taxes) ? pg.taxes : 0;
-                                const transactionFee = Number.isFinite(custInfo.transactionFeeEarned) ? custInfo.transactionFeeEarned : 0;
-                                const discount = Number.isFinite(custInfo.discount) ? custInfo.discount : 0;
-
-                                const computedSubtotal = baseFare + taxes + transactionFee - discount;
-
-                                const officialSubtotal = rawPaxRate?.totalFare ?? pg.subtotal;
-
                                 return (
                                     <div className="mt-3" key={idx}>
                                         <div className="text-[12px] font-medium text-[#0A0C0F]">
@@ -106,19 +158,26 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
 
                                         <ul className="mt-1 space-y-1 text-[12px] pl-3">
                                             <li className="flex items-center justify-between">
-                                                <span className="text-[#3D495C]">Base fare each</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(baseFare, currency)}</span>
+                                                <span className="text-[#3D495C]">Price per person</span>
+                                                <span className="font-semibold text-[#0A0C0F]">
+                                                    {formatMoney(pg.officialSubtotalEach || pg.computedSubtotalEach, currency)}
+                                                </span>
                                             </li>
 
                                             <li className="flex items-center justify-between">
-                                                <span className="text-[#3D495C]">Taxes and fees each</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(taxes, currency)}</span>
+                                                <span className="text-[#3D495C]">Base fare per person</span>
+                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.baseFareEach, currency)}</span>
                                             </li>
 
-                                            {Array.isArray(rawPaxRate?.taxes) && rawPaxRate.taxes.length > 0 && (
+                                            <li className="flex items-center justify-between">
+                                                <span className="text-[#3D495C]">Taxes and fees per person</span>
+                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.taxesEach, currency)}</span>
+                                            </li>
+
+                                            {Array.isArray(pg.taxLines) && pg.taxLines.length > 0 && (
                                                 <>
                                                     <li className="pt-1 text-[12px] text-[#3D495C]">Tax breakdown:</li>
-                                                    {rawPaxRate.taxes.map((t: any, ti: number) => (
+                                                    {pg.taxLines.map((t: any, ti: number) => (
                                                         <li key={ti} className="flex items-center justify-between pl-3">
                                                             <span className="text-[#3D495C]">{t.taxCode ?? "Tax"}</span>
                                                             <span className="font-semibold text-[#0A0C0F]">{formatMoney(t.amount ?? 0, currency)}</span>
@@ -129,50 +188,29 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
 
                                             <li className="flex items-center justify-between pt-1">
                                                 <span className="text-[#3D495C]">Transaction fee</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(transactionFee, currency)}</span>
+                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.transactionFeeEach, currency)}</span>
                                             </li>
 
                                             {/* discount (shown negative) */}
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Discount</span>
-                                                <span className="font-semibold text-[#0A0C0F]">-{formatMoney(discount, currency)}</span>
+                                                <span className="font-semibold text-[#0A0C0F]">-{formatMoney(pg.discountEach, currency)}</span>
                                             </li>
-
-                                            {custInfo.plbearned != null && (
-                                                <li className="flex items-center justify-between">
-                                                    <span className="text-[#3D495C]">PLB earned (info)</span>
-                                                    <span className="font-semibold text-[#0A0C0F]">{custInfo.plbearned}</span>
-                                                </li>
-                                            )}
-                                            {custInfo.incentiveEarned != null && (
-                                                <li className="flex items-center justify-between">
-                                                    <span className="text-[#3D495C]">Incentive earned (info)</span>
-                                                    <span className="font-semibold text-[#0A0C0F]">{custInfo.incentiveEarned}</span>
-                                                </li>
-                                            )}
-                                            {custInfo.tdsOnIncentive != null && (
-                                                <li className="flex items-center justify-between">
-                                                    <span className="text-[#3D495C]">TDS on incentive</span>
-                                                    <span className="font-semibold text-[#0A0C0F]">{formatMoney(custInfo.tdsOnIncentive, currency)}</span>
-                                                </li>
-                                            )}
 
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Subtotal (computed)</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(computedSubtotal, currency)}</span>
+                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.computedSubtotalEach, currency)}</span>
                                             </li>
 
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Subtotal (official)</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(officialSubtotal, currency)}</span>
+                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.officialSubtotalEach, currency)}</span>
                                             </li>
 
-                                            {pg.paxCount > 1 && (
-                                                <li className="flex items-center justify-between pt-1">
-                                                    <span className="text-[#3D495C]">Group total</span>
-                                                    <span className="font-semibold text-[#0A0C0F]">{formatMoney((officialSubtotal || computedSubtotal) * pg.paxCount, currency)}</span>
-                                                </li>
-                                            )}
+                                            <li className="flex items-center justify-between pt-1">
+                                                <span className="text-[#3D495C]">Group total</span>
+                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.groupTotal, currency)}</span>
+                                            </li>
                                         </ul>
                                     </div>
                                 );

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import BookingPlane from "../../assets/images/flight-booking-plane.png";
 // import EmirateLogo from "../../assets/images/emirates.png";
 import INFO_ICON from "../../assets/svgs/info.svg";
@@ -76,7 +76,8 @@ export default function FlightBookingSeatSection({
       string,
       Record<string, { seatNumber: string; ancillaryOfferId?: string }>
     >
-  >({});
+  >(() => seatSelections || {});
+  const syncingFromStoreRef = useRef(false);
 
   // Currently focused passenger for current segment
   const [selectedPassengerKey, setSelectedPassengerKey] = useState<
@@ -647,24 +648,43 @@ export default function FlightBookingSeatSection({
   //     setSeatSelections(seatSelections);
   //   }
   // }, [seatSelections]);
+  // Hydrate local UI from store when navigating back to Enhance.
   useEffect(() => {
-    const localSeatsJSON = JSON.stringify(selectedSeats);
-    const storeSeatsJSON = JSON.stringify(seatSelections);
+    const storeHas = Object.keys(seatSelections || {}).length > 0;
+    const localHas = Object.keys(selectedSeats || {}).length > 0;
+    const storeJSON = JSON.stringify(seatSelections || {});
+    const localJSON = JSON.stringify(selectedSeats || {});
 
-    if (localSeatsJSON !== storeSeatsJSON) {
-      setSeatSelections(selectedSeats);
+    if (storeHas && storeJSON !== localJSON) {
+      syncingFromStoreRef.current = true;
+      setSelectedSeats(seatSelections || {});
+      // allow one render to pass before re-enabling store writes
+      queueMicrotask(() => {
+        syncingFromStoreRef.current = false;
+      });
+      return;
     }
-  }, [selectedSeats]);
 
-  useEffect(() => {
-    if (
-      Object.keys(seatSelections).length === 0 &&
-      Object.keys(selectedSeats).length > 0
-    ) {
+    // If store is cleared explicitly, reflect that in UI.
+    if (!storeHas && localHas) {
+      syncingFromStoreRef.current = true;
       setSelectedSeats({});
       setCurrentSegmentIndex(0);
+      queueMicrotask(() => {
+        syncingFromStoreRef.current = false;
+      });
     }
   }, [seatSelections]);
+
+  // Persist local UI changes to store (guarded to avoid loops).
+  useEffect(() => {
+    if (syncingFromStoreRef.current) return;
+    const storeJSON = JSON.stringify(seatSelections || {});
+    const localJSON = JSON.stringify(selectedSeats || {});
+    if (storeJSON !== localJSON) {
+      setSeatSelections(selectedSeats);
+    }
+  }, [selectedSeats, seatSelections, setSeatSelections]);
 
   return (
     <div className="px-3 pb-3 mt-3">
