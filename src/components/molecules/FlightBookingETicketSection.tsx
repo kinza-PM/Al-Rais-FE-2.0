@@ -7,7 +7,11 @@ import tripImageCard3 from "../../assets/images/tripimagecard3.jpg";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import INFO_ICON from "../../assets/svgs/info.svg";
 import Button from "../atoms/Button";
-import { formatDate, formatTime } from "../../utils/helpers";
+import {
+  formatDate,
+  formatFlightDurationLabel,
+  formatTime,
+} from "../../utils/helpers";
 import {
   generateFlightTicketPDF,
   generateFlightTicketPDFBlob,
@@ -118,10 +122,12 @@ export default function FlightBookingETicketSection({
         else if (isRoundtripTrip)
           heading = i === 0 ? "Outbound Flight" : "Return Flight";
         else heading = `Flight ${String(i + 1).padStart(2, "0")}`;
-        const duration =
-          seg?.duration ||
-          journey?.flight?.flightInfo?.duration ||
-          "N/A";
+        // Journey-level duration from API (total leg); avoid first-segment-only duration on multi-stop
+        const rawDuration =
+          journey?.flight?.flightInfo?.duration || seg?.duration || "";
+        const duration = rawDuration
+          ? formatFlightDurationLabel(rawDuration)
+          : "N/A";
         const stopQuantity =
           seg?.stopQuantity ??
           (Array.isArray(allSegments) ? Math.max(0, allSegments.length - 1) : 0);
