@@ -124,6 +124,28 @@ export default function FlightBookingReviewSection({
         }
     }
 
+    const cabinClassLabel = (() => {
+        const journeys = trip?.raw?.journey ?? trip?.journey ?? [];
+        const firstSeg = journeys?.[0]?.flightSegments?.[0];
+        return firstSeg?.cabinClass ?? firstSeg?.cabin ?? "—";
+    })();
+
+    const seatLabelsFromAncillaries =
+        (ancillarySummary?.breakdown || [])
+            .filter((b) => b?.category === "seats" && String(b?.label || "").trim())
+            .map((b) => String(b.label).trim());
+
+    const seatLabelsFromPassengers =
+        (passengers || [])
+            .map((p: any) => String(p?.seat || "").trim())
+            .filter(Boolean)
+            .map((s: string) => (s.toLowerCase().startsWith("seat ") ? s : `Seat ${s}`));
+
+    const seatLabel =
+        seatLabelsFromAncillaries.length
+            ? seatLabelsFromAncillaries.join(", ")
+            : (seatLabelsFromPassengers.length ? seatLabelsFromPassengers.join(", ") : "—");
+
     return (
         <section className="mx-auto max-w-full px-10">
             <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
@@ -266,79 +288,27 @@ export default function FlightBookingReviewSection({
                         </React.Fragment>
                     ))}
 
-                    {/* <CardShell
+                    <CardShell
                         title="Seat"
-                        right={
-                            <HeaderActions
-                                editing={isEditing.seat}
-                                onEdit={() => startEdit("seat")}
-                                onCancel={() => cancelEdit("seat")}
-                                onSave={() => saveEdit("seat")}
-                                editLabel="Change"
-                            />
-                        }
                     >
                         <div className="px-5 py-4">
                             <dl className="grid grid-cols-2 gap-y-2">
                                 <dt className="text-[12px] text-[#3D495C]">Cabin class</dt>
                                 <dd className="text-right">
-                                    {!isEditing.seat ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.seat.cabinClass || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px] relative">
-                                            <select
-                                                value={draft.seat.cabinClass}
-                                                onChange={(e) =>
-                                                    setDraft((d) => ({ ...d, seat: { ...d.seat, cabinClass: e.target.value } }))
-                                                }
-                                                className="h-10 w-full appearance-none rounded-lg border border-[#C2CAD6] bg-white px-3 pr-8 text-sm text-left text-[#0A0C0F] focus:outline-none"
-                                            >
-                                                <option value="">Select type</option>
-                                                <option>Economy</option>
-                                                <option>Economy Lite</option>
-                                                <option>Business</option>
-                                            </select>
-                                            <svg
-                                                width="12"
-                                                height="7"
-                                                viewBox="0 0 12 7"
-                                                fill="none"
-                                                className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2"
-                                            >
-                                                <path
-                                                    d="M11.354 1.354L6.354 6.354a1 1 0 0 1-1.414 0L0.646 1.354"
-                                                    stroke="#3D495C"
-                                                    strokeWidth="1"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                />
-                                            </svg>
-                                        </div>
-                                    )}
+                                    <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                        {cabinClassLabel || "—"}
+                                    </span>
                                 </dd>
 
                                 <dt className="text-[12px] text-[#3D495C]">Seat no.</dt>
                                 <dd className="text-right">
-                                    {!isEditing.seat ? (
-                                        <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                            {values.seat.seatNo || "—"}
-                                        </span>
-                                    ) : (
-                                        <div className="inline-block w-full max-w-[320px]">
-                                            <TailwindCustomInput
-                                                type="text"
-                                                placeholder="Enter passport number"
-                                                value={draft.seat.seatNo}
-                                                onChange={(e) => setDraft((d) => ({ ...d, seat: { ...d.seat, seatNo: e.target.value } }))}
-                                            />
-                                        </div>
-                                    )}
+                                    <span className="text-[14px] text-[#0A0C0F] font-medium">
+                                        {seatLabel}
+                                    </span>
                                 </dd>
                             </dl>
                         </div>
-                    </CardShell> */}
+                    </CardShell>
 
                     {/* <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
                         <div className="px-4 py-3 border-b border-[#E4E4E7]">
@@ -417,7 +387,7 @@ export default function FlightBookingReviewSection({
                 </div>
 
                 {/* RIGHT: Trip details */}
-                <div>
+                <div className="md:sticky md:top-6 self-start md:max-h-[calc(100vh-3rem)] md:overflow-auto">
                     <FlightSummaryCard
                         title="Flight details"
                         headerActionText="Change"

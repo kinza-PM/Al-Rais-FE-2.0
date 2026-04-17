@@ -55,6 +55,7 @@ import type { CountryOption } from "../../features/flights/types";
 import Loader from "../atoms/Loader";
 import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
 import LegalModal from "../common/LegalModal";
+import FlightBookingReviewModal from "../common/FlightBookingReviewModal";
 
 type PaymentMethod = "card" | "apple" | "google";
 
@@ -113,6 +114,7 @@ export default function FlightBookingPaymentSection({
   const [openAddress, setOpenAddress] = useState(true);
   const [openPrice, setOpenPrice] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
   //retrieve flight booking
   const [isPolling, setIsPolling] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -550,8 +552,18 @@ export default function FlightBookingPaymentSection({
       <div className="w-full max-w-[550px]">
         <FlightSummaryCard
           title="Flight details"
+          headerActionText="Review"
+          onHeaderActionClick={() => setReviewOpen(true)}
           segments={segments}
           fare={priceFareFamily}
+        />
+
+        <FlightBookingReviewModal
+          open={reviewOpen}
+          onClose={() => setReviewOpen(false)}
+          trip={trip}
+          passengers={reservation?.passengers || []}
+          countries={countries}
         />
 
         <div className="mt-6">

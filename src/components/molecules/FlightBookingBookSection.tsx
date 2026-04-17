@@ -1270,7 +1270,7 @@ export default function FlightBookingBookSection({
         </div>
 
         {/* RIGHT: Trip details */}
-        <div>
+        <div className="md:sticky md:top-6 self-start md:max-h-[calc(100vh-3rem)] md:overflow-auto">
           <FlightSummaryCard
             title="Trip details"
             // headerActionText="View all"
