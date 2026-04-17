@@ -171,60 +171,79 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
     }
 
     return rows;
-  }, [details, fd, airport, seg]);
+  }, [details]);
 
   React.useEffect(() => {
+    let cancelled = false;
+
     const fetchCoordinates = async () => {
-      const locations = await Promise.all(
-        displayRows.map(async (row) => {
-          const allAirports: string[] = [];
-
-          if (row.segments && row.segments.length > 1) {
-            row.segments.forEach((segment: any, idx: number) => {
-              const depAirport = segment?.departureAirportCode;
-              if (depAirport && !allAirports.includes(depAirport)) {
-                allAirports.push(depAirport);
-              }
-
-              if (idx === row.segments.length - 1) {
-                const arrAirport = segment?.arrivalAirportCode;
-                if (arrAirport && !allAirports.includes(arrAirport)) {
-                  allAirports.push(arrAirport);
-                }
-              }
-            });
-          } else {
-            if (row.startAirport) allAirports.push(row.startAirport);
-            if (row.endAirport && !allAirports.includes(row.endAirport)) {
-              allAirports.push(row.endAirport);
+      const allCodes = new Set<string>();
+      const rowAirportCodes = displayRows.map((row) => {
+        const codes: string[] = [];
+        if (row.segments && row.segments.length > 1) {
+          row.segments.forEach((segment: any, idx: number) => {
+            const depAirport = segment?.departureAirportCode;
+            if (depAirport && !codes.includes(depAirport)) {
+              codes.push(depAirport);
             }
+            if (idx === row.segments.length - 1) {
+              const arrAirport = segment?.arrivalAirportCode;
+              if (arrAirport && !codes.includes(arrAirport)) {
+                codes.push(arrAirport);
+              }
+            }
+          });
+        } else {
+          if (row.startAirport) codes.push(row.startAirport);
+          if (row.endAirport && !codes.includes(row.endAirport)) {
+            codes.push(row.endAirport);
           }
+        }
+        codes.forEach((code) => allCodes.add(code));
+        return codes;
+      });
 
-          await new Promise((resolve) => setTimeout(resolve, 250));
-
-          const airportCoords = await Promise.all(
-            allAirports.map(async (airportCode) => {
-              const coords = await getAirportCoords(airportCode);
-              return {
-                lat: coords.lat,
-                lng: coords.lng,
-                destinationName: airportCode,
-              };
-            }),
-          );
-
-          return airportCoords;
+      const coordEntries = await Promise.all(
+        Array.from(allCodes).map(async (airportCode) => {
+          const coords = await getAirportCoords(airportCode);
+          return [airportCode, coords] as const;
         }),
       );
+      const coordMap = new Map(coordEntries);
 
-      setMapLocations(locations);
+      const locations = rowAirportCodes.map((codes) =>
+        codes
+          .map((code) => {
+            const coords = coordMap.get(code);
+            if (!coords) return null;
+            return {
+              lat: coords.lat,
+              lng: coords.lng,
+              destinationName: code,
+            };
+          })
+          .filter(Boolean),
+      );
+
+      if (cancelled) return;
+      setMapLocations((prev) => {
+        const prevStr = JSON.stringify(prev);
+        const nextStr = JSON.stringify(locations);
+        return prevStr === nextStr ? prev : locations;
+      });
     };
 
     if (displayRows.length > 0) {
       fetchCoordinates();
+    } else {
+      setMapLocations((prev) => (prev.length ? [] : prev));
     }
-  }, [displayRows]);
 
+    return () => {
+      cancelled = true;
+    };
+  }, [displayRows]);
+  // console.log(mapLocations, "mapLocations");
   return (
     <>
       <div
@@ -641,14 +660,14 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
               <div
                 style={{
                   width: "100%",
-                  minHeight: "240px",
+                  height: "240px",
                   borderRadius: "16px",
                   overflow: "hidden",
                   border: "1px solid #E5E7EB",
                 }}
               >
                 {mapLocations[idx] ? (
-                  <MapInfo locations={mapLocations[idx]} />
+                  <MapInfo key={row.key ?? idx} locations={mapLocations[idx]} />
                 ) : (
                   <div className="flex items-center justify-center text-[#2351a3] h-full">
                     Loading map...

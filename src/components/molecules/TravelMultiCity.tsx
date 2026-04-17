@@ -398,6 +398,7 @@ import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
+import Loader from "../atoms/Loader";
 import { useNavigate } from "react-router-dom";
 import { formatListingStartingFare } from "../../utils/helpers";
 import {
@@ -408,6 +409,8 @@ import {
   resolveAirlineLogoFromSegment,
 } from "../../utils/searchFlightListingHelpers";
 import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
+import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
+import { useFlightFareRuleSearch } from "../../hooks/useFlightBooking";
 
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
 const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
@@ -453,6 +456,11 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   const [filterDetail, setFilterDetail] = useState<any[]>([]);
   const [active, setActive] = useState({ name: "", id: 0 });
   const [showTabs, setShowTabs] = useState<{ [key: number]: boolean }>({});
+  const [fareRulePriceByOfferId, setFareRulePriceByOfferId] = useState<
+    Record<string, any>
+  >({});
+  const [fareRuleLoadingOfferId, setFareRuleLoadingOfferId] = useState<string | null>(null);
+  const { mutateAsync: fetchFareRules } = useFlightFareRuleSearch();
 
   const navigate = useNavigate();
 
@@ -465,18 +473,54 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   const detailById = useMemo(() => {
     const lookup: Record<string | number, any[]> = {};
     (passData || []).forEach((it) => {
-      if (it?.id !== undefined) lookup[it.id] = [it];
+      if (it?.id !== undefined) {
+        const key = String(it?.offerId ?? "").trim();
+        const mergedPrice = key ? fareRulePriceByOfferId[key] : null;
+        lookup[it.id] = [
+          mergedPrice
+            ? {
+                ...it,
+                price: mergedPrice,
+              }
+            : it,
+        ];
+      }
     });
     return lookup;
-  }, [passData]);
+  }, [passData, fareRulePriceByOfferId]);
+
+  const hydrateFareRulesForItem = useCallback(
+    async (item: any) => {
+      const offerId = String(item?.offerId ?? "").trim();
+      const searchKey = String(item?.searchKey ?? "").trim();
+      if (!offerId || !searchKey || fareRulePriceByOfferId[offerId]) return;
+      try {
+        setFareRuleLoadingOfferId(offerId);
+        const response = await fetchFareRules({ offerId, searchKey });
+        const fareRuleItem = response?.data?.[0];
+        if (!fareRuleItem) return;
+        const nextPrice = buildFlightSearchPriceOptions(item?.raw, fareRuleItem);
+        setFareRulePriceByOfferId((prev) => ({ ...prev, [offerId]: nextPrice }));
+      } catch {
+        // Keep base listing data if fare-rule fetch fails.
+      } finally {
+        setFareRuleLoadingOfferId((prev) => (prev === offerId ? null : prev));
+      }
+    },
+    [fareRulePriceByOfferId, fetchFareRules],
+  );
 
   const HandlePriceOption = useCallback(
     ({ id }: { id: number | undefined }) => {
       const filtered = (id !== undefined && detailById[id]) || [];
       setFilterDetail(filtered);
       setFilterData([]);
+      const target = filtered?.[0];
+      if (target) {
+        hydrateFareRulesForItem(target);
+      }
     },
-    [detailById],
+    [detailById, hydrateFareRulesForItem],
   );
 
   const highDemandBySegment = useMemo(() => {
@@ -684,6 +728,10 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
 
   return (
     <div className="flex flex-col gap-0" style={{ background: "transparent" }}>
+      <Loader
+        show={!!fareRuleLoadingOfferId}
+        label="Loading fare rules..."
+      />
       {passData?.map((item: any, index: number) => {
         const segments = item?.segments ?? [];
 
@@ -910,7 +958,9 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                     }
                   >
                     {active?.name === "price" && active?.id === item.id ? (
-                      <PricingDetailCard passSome={filterDetail} />
+                      <>
+                        <PricingDetailCard passSome={filterDetail} />
+                      </>
                     ) : active?.name === "flight" && active?.id === item.id ? (
                       <FlightDetailsCard details={item} />
                     ) : active?.name === "compare" && active?.id === item.id ? (

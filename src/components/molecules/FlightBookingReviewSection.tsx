@@ -57,6 +57,7 @@ const CardShell = ({
 type FlightBookingReviewSectionProps = {
     trip: any;
     fareBookingSearchRules?: any;
+    fareRuleData?: any;
     flightBookingPayload?: any;
     countries: CountryOption[];
     onNext?: () => void;
@@ -78,6 +79,7 @@ type FlightBookingReviewSectionProps = {
 
 export default function FlightBookingReviewSection({
     trip,
+    fareRuleData,
     flightBookingPayload,
     countries = [],
     onNext,
@@ -428,7 +430,7 @@ export default function FlightBookingReviewSection({
                         fare={priceFareFamily}
                     />
 
-                    <FLightFareRule trip={trip.raw} />
+                    <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
 
                     <FLightPriceBreakdown
                         open={openPrice}

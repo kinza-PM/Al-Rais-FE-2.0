@@ -30,6 +30,7 @@ interface SearchableDropdownProps {
   onSearchChange?: (term: string) => void;
   placeholder?: string;
   label?: string;
+  required?: boolean;
   disabled?: boolean;
   error?: string | null;
   className?: string;
@@ -77,6 +78,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   onSearchChange,
   placeholder = "Please select",
   label,
+  required = false,
   disabled = false,
   error = null,
   className = "",
@@ -368,6 +370,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           }
         >
           {label}
+          {required && <span className="text-red-600"> *</span>}
         </label>
       )}
 

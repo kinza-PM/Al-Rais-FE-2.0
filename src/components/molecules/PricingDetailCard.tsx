@@ -98,10 +98,18 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
   };
 
   const isFeatureIncluded = (value: any, featureKey: string) => {
-    if (featureKey === "Refundable") return value === "Refundable";
+    if (featureKey === "Refundable") {
+      const s = String(value ?? "").toLowerCase();
+      return s.startsWith("refundable");
+    }
     if (featureKey === "Changes") {
-      // flightPriceOptionsUtils defaults this to "Not changeable"
-      return Boolean(value) && value !== "—" && value !== "Not changeable";
+      const s = String(value ?? "").toLowerCase();
+      if (!s || s === "—") return false;
+      return !(
+        s.includes("not changeable") ||
+        s.includes("not allowed") ||
+        s.includes("policy not available")
+      );
     }
     return Boolean(value) && value !== "—";
   };

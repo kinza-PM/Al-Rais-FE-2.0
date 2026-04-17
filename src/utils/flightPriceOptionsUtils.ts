@@ -31,7 +31,69 @@ const titleFromKey = (key: string) => {
   );
 };
 
-const extractFeaturesFromSegment = (seg: any) => {
+const isFiniteNonNegative = (n: unknown): n is number =>
+  typeof n === "number" && Number.isFinite(n) && n >= 0;
+
+const findPenaltySummary = (fareRuleItem: any, type: "Reissue" | "Cancellation") => {
+  const miniFareRules = Array.isArray(fareRuleItem?.miniFareRules)
+    ? fareRuleItem.miniFareRules
+    : [];
+  const penalties = miniFareRules.flatMap((r: any) =>
+    Array.isArray(r?.penalties) ? r.penalties : [],
+  );
+  const selected = penalties.find(
+    (p: any) => String(p?.type ?? "").toLowerCase() === type.toLowerCase(),
+  );
+  if (!selected) return null;
+
+  const amounts = (Array.isArray(selected?.penaltyInfo) ? selected.penaltyInfo : []).flatMap(
+    (pi: any) => (Array.isArray(pi?.amounts) ? pi.amounts : []),
+  );
+  const allowed = amounts.some((a: any) => isFiniteNonNegative(a?.amount));
+  const nonNegative = amounts
+    .map((a: any) => ({ amount: Number(a?.amount), currency: String(a?.currency ?? "").trim() }))
+    .filter((a: any) => isFiniteNonNegative(a.amount));
+
+  if (!allowed) {
+    return {
+      allowed: false,
+      label: type === "Reissue" ? "Changes not allowed" : "Non-refundable",
+    };
+  }
+
+  const minAmount = nonNegative.reduce(
+    (min: number, cur: any) => (cur.amount < min ? cur.amount : min),
+    nonNegative[0]?.amount ?? 0,
+  );
+  const currency = nonNegative.find((x: any) => x.currency)?.currency ?? "";
+  const feePart = `${currency ? `${currency} ` : ""}${minAmount}`;
+
+  if (type === "Reissue") {
+    return {
+      allowed: true,
+      label: minAmount === 0 ? "Changes allowed (no fee)" : `Changes allowed (fee from ${feePart})`,
+    };
+  }
+
+  return {
+    allowed: true,
+    label: minAmount === 0 ? "Refundable (no fee)" : `Refundable (fee from ${feePart})`,
+  };
+};
+
+const getFareRuleFeatureLabels = (fareRuleItem?: any) => {
+  if (!fareRuleItem) {
+    return null;
+  }
+  const changeSummary = findPenaltySummary(fareRuleItem, "Reissue");
+  const cancelSummary = findPenaltySummary(fareRuleItem, "Cancellation");
+  return {
+    changes: changeSummary?.label ?? "No change policy found",
+    refundable: cancelSummary?.label ?? "Refund policy not available",
+  };
+};
+
+const extractFeaturesFromSegment = (seg: any, rawOffer?: any) => {
   if (!seg) return {};
   const paxTypeToLabel = (ptc?: string) => {
     const s = (ptc ?? "").toString().trim().toUpperCase();
@@ -81,9 +143,14 @@ const extractFeaturesFromSegment = (seg: any) => {
   const seatService = flightServicesArray.find((s) =>
     /pre[-_\s]?reserved|pre reserved|prereserved|seat/i.test(s?.name || ""),
   );
-  let seatSelection = "Assigned at check-in";
+  const ancillaryAvailable = Boolean(rawOffer?.detail?.ancillaryDetailsAvailable);
+  let seatSelection = ancillaryAvailable
+    ? "Seat selection available as add-on"
+    : "Assigned at check-in";
   if (seatService) {
     seatSelection = `Pre-reserved / Assigned ${isIncluded(seatService) ? "(Included)" : "(Not included)"}`;
+  } else if (ancillaryAvailable) {
+    seatSelection = "Select seat from add-ons";
   }
   const changeService = flightServicesArray.find((s) =>
     /changeable|change|modifiable|ticket change/i.test(s?.name || ""),
@@ -115,7 +182,7 @@ const findFareForClass = (fare: any, className?: string) => {
   return fare.totalFare ?? null;
 };
 
-export function buildFlightSearchPriceOptions(raw: any) {
+export function buildFlightSearchPriceOptions(raw: any, fareRuleItem?: any) {
   const priceObj: Record<string, any> = {};
   const journeys = raw?.journey || [];
   const firstSegOfJourney = (j: any) => j?.flightSegments?.[0] ?? null;
@@ -154,13 +221,14 @@ export function buildFlightSearchPriceOptions(raw: any) {
       raw?.fare?.totalFare ??
       0,
   );
+  const fareRuleFeatures = getFareRuleFeatureLabels(fareRuleItem);
 
   // build segments array: include ALL flightSegments across journeys
   let segCounter = 0;
   const segments: any[] = (journeys || []).flatMap((j: any, jIdx: number) => {
     const fs: any[] = j?.flightSegments || [];
     return fs.map((seg: any, sIdx: number) => {
-      const features = extractFeaturesFromSegment(seg);
+      const features = extractFeaturesFromSegment(seg, raw);
       // For per-segment rows, always use the segment's own endpoints
       const on =
         seg?.departureAirportCode ?? j?.flight?.segmentReference?.onPoint ?? "";
@@ -180,11 +248,10 @@ export function buildFlightSearchPriceOptions(raw: any) {
         personalItem: features?.baggageCarry ?? "—",
         baggage: features?.baggageChecked ?? "—",
         seatSelection: features?.seatSelection ?? "—",
-        Changes: features?.changes ?? "—",
+        Changes: fareRuleFeatures?.changes ?? (features?.changes ?? "—"),
         Refundable:
-          raw?.fare?.fareType?.refundable === true
-            ? "Refundable"
-            : "Non Refundable",
+          fareRuleFeatures?.refundable ??
+          (raw?.fare?.fareType?.refundable === true ? "Refundable" : "Non Refundable"),
       };
     });
   });
@@ -197,14 +264,13 @@ export function buildFlightSearchPriceOptions(raw: any) {
   // single plan per offer (planKey)
   priceObj[planKey] = {
     label: topLabel,
-    personalItem: extractFeaturesFromSegment(seg0)?.baggageCarry ?? "—",
-    baggage: extractFeaturesFromSegment(seg0)?.baggageChecked ?? "—",
-    seatSelection: extractFeaturesFromSegment(seg0)?.seatSelection ?? "—",
-    Changes: extractFeaturesFromSegment(seg0)?.changes ?? "—",
+    personalItem: extractFeaturesFromSegment(seg0, raw)?.baggageCarry ?? "—",
+    baggage: extractFeaturesFromSegment(seg0, raw)?.baggageChecked ?? "—",
+    seatSelection: extractFeaturesFromSegment(seg0, raw)?.seatSelection ?? "—",
+    Changes: fareRuleFeatures?.changes ?? (extractFeaturesFromSegment(seg0, raw)?.changes ?? "—"),
     Refundable:
-      raw?.fare?.fareType?.refundable === true
-        ? "Refundable"
-        : "Non Refundable",
+      fareRuleFeatures?.refundable ??
+      (raw?.fare?.fareType?.refundable === true ? "Refundable" : "Non Refundable"),
     price: planPrice,
     segments,
     _priceClasses: uniqueClasses, // debug/meta

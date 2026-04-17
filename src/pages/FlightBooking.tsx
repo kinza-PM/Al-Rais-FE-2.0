@@ -114,6 +114,7 @@ const FlightBooking = () => {
   // const [currentStep, setCurrentStep] = useState(0);
   const [fareBookingSearchRules, setFareBookingSearchRules] =
     useState<any>(null);
+  const [fareRuleDetails, setFareRuleDetails] = useState<any>(null);
   const [showAncillaryModal, setShowAncillaryModal] = useState(false);
   const [ancillarySummary, setAncillarySummary] = useState<AncillarySummary>({
     totalAmount: 0,
@@ -443,8 +444,10 @@ const FlightBooking = () => {
         offerId: offerData?.offerId,
         searchKey: offerData?.searchKey,
       });
+      const fareRuleItem = response?.data?.[0] ?? null;
       const rules = response?.data?.[0]?.bookingRules ?? null;
       setFareBookingSearchRules(rules);
+      setFareRuleDetails(fareRuleItem);
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
@@ -734,6 +737,7 @@ const FlightBooking = () => {
               onPassengerFieldChange={updatePassengerField}
               countries={countriesOptions}
               fareBookingSearchRules={fareBookingSearchRules}
+              fareRuleData={fareRuleDetails}
               // onNext={() => setCurrentStep(hasAncillaries ? 1 : 2)}
               onNext={async (newOfferId?: string) => {
                 const usedOfferId = newOfferId ?? offerData.offerId;
@@ -765,6 +769,7 @@ const FlightBooking = () => {
             hasAncillaries && (
               <FlightBookingAnicllarySection
                 trip={offerData.flightDetail}
+                fareRuleData={fareRuleDetails}
                 passengers={flightBookingPayload.passengers}
                 flightAncillarySearch={ancillarySearchData}
                 onNext={() => setCurrentStep(2)}
@@ -780,6 +785,7 @@ const FlightBooking = () => {
             <FlightBookingReviewSection
               trip={offerData.flightDetail}
               fareBookingSearchRules={fareBookingSearchRules}
+              fareRuleData={fareRuleDetails}
               flightBookingPayload={flightBookingPayload}
               countries={countriesOptions}
               onNext={() => setCurrentStep(enhanceAvailable ? 3 : 2)}

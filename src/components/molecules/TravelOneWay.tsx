@@ -16,6 +16,7 @@ import { useNavigate } from "react-router-dom";
 import { travelData } from "../../utils/mockData";
 import { formatListingStartingFare } from "../../utils/helpers";
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
+import Loader from "../atoms/Loader";
 import {
   buildPerSegmentFlightDetail,
   mapOfferForCompareOneWay,
@@ -23,6 +24,8 @@ import {
   extractFlightFeatures,
   resolveAirlineLogoFromSegment,
 } from "../../utils/searchFlightListingHelpers";
+import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
+import { useFlightFareRuleSearch } from "../../hooks/useFlightBooking";
 import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
 
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
@@ -75,6 +78,11 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     "price",
   );
   const [, setFilterDetail] = useState<any[]>([]);
+  const [fareRulePriceByOfferId, setFareRulePriceByOfferId] = useState<
+    Record<string, any>
+  >({});
+  const [fareRuleLoadingOfferId, setFareRuleLoadingOfferId] = useState<string | null>(null);
+  const { mutateAsync: fetchFareRules } = useFlightFareRuleSearch();
 
   const navigate = useNavigate();
 
@@ -88,11 +96,41 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
     const lookup: Record<string | number, any[]> = {};
     (passData || []).forEach((it) => {
       if (it?.id !== undefined) {
-        lookup[it.id] = [it];
+        const key = String(it?.offerId ?? "");
+        const mergedPrice = key ? fareRulePriceByOfferId[key] : null;
+        lookup[it.id] = [
+          mergedPrice
+            ? {
+                ...it,
+                price: mergedPrice,
+              }
+            : it,
+        ];
       }
     });
     return lookup;
-  }, [passData]);
+  }, [passData, fareRulePriceByOfferId]);
+
+  const hydrateFareRulesForItem = useCallback(
+    async (item: any) => {
+      const offerId = String(item?.offerId ?? "").trim();
+      const searchKey = String(item?.searchKey ?? "").trim();
+      if (!offerId || !searchKey || fareRulePriceByOfferId[offerId]) return;
+      try {
+        setFareRuleLoadingOfferId(offerId);
+        const response = await fetchFareRules({ offerId, searchKey });
+        const fareRuleItem = response?.data?.[0];
+        if (!fareRuleItem) return;
+        const nextPrice = buildFlightSearchPriceOptions(item?.raw, fareRuleItem);
+        setFareRulePriceByOfferId((prev) => ({ ...prev, [offerId]: nextPrice }));
+      } catch {
+        // Keep base listing data if fare-rule fetch fails.
+      } finally {
+        setFareRuleLoadingOfferId((prev) => (prev === offerId ? null : prev));
+      }
+    },
+    [fareRulePriceByOfferId, fetchFareRules],
+  );
 
   const highDemandLookup = useMemo(() => {
     if (!highDemandIndicators || highDemandIndicators.length === 0) {
@@ -127,6 +165,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
       if (tab === "price") {
         const filtered = (item?.id !== undefined && detailById[item.id]) || [];
         setFilterDetail(filtered);
+        hydrateFareRulesForItem(item);
       }
 
       if (tab === "compare") {
@@ -141,7 +180,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
       setIsDetailsModalOpen(true);
     },
-    [detailById, passData],
+    [detailById, passData, hydrateFareRulesForItem],
   );
 
   const handleTabChange = useCallback(
@@ -154,6 +193,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
         const filtered =
           (selectedItem?.id !== undefined && detailById[selectedItem.id]) || [];
         setFilterDetail(filtered);
+        hydrateFareRulesForItem(selectedItem);
       }
 
       if (tab === "compare") {
@@ -166,7 +206,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
         setFilterDetail(compareList);
       }
     },
-    [selectedItem, detailById, passData],
+    [selectedItem, detailById, passData, hydrateFareRulesForItem],
   );
 
   const handleCancelCompare = () => {
@@ -440,6 +480,13 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
           </div>
         }
       >
+        <Loader
+          show={
+            activeTab === "price" &&
+            fareRuleLoadingOfferId === String(selectedItem?.offerId ?? "").trim()
+          }
+          label="Loading fare rules..."
+        />
         {selectedItem && (
           <>
             <div
@@ -511,7 +558,9 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
             <React.Suspense fallback={<div>Loading…</div>}>
               {activeTab === "price" ? (
-                <PricingDetailCard passSome={detailById[selectedItem.id] || []} />
+                <>
+                  <PricingDetailCard passSome={detailById[selectedItem.id] || []} />
+                </>
               ) : activeTab === "flight" ? (
                 <FlightDetailsCard details={selectedItem} />
               ) : (

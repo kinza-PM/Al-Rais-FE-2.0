@@ -20,6 +20,7 @@ import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
+import Loader from "../atoms/Loader";
 
 import {
   buildPerSegmentFlightDetail,
@@ -29,6 +30,8 @@ import {
   resolveAirlineLogoFromSegment,
 } from "../../utils/searchFlightListingHelpers";
 import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
+import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
+import { useFlightFareRuleSearch } from "../../hooks/useFlightBooking";
 
 type TravelRoundTripProps = {
   passData: any[];
@@ -72,6 +75,11 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   const [activeTab, setActiveTab] = useState<"price" | "flight" | "compare">(
     "price",
   );
+  const [fareRulePriceByOfferId, setFareRulePriceByOfferId] = useState<
+    Record<string, any>
+  >({});
+  const [fareRuleLoadingOfferId, setFareRuleLoadingOfferId] = useState<string | null>(null);
+  const { mutateAsync: fetchFareRules } = useFlightFareRuleSearch();
 
   const navigate = useNavigate();
 
@@ -85,11 +93,41 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     const lookup: Record<string | number, any[]> = {};
     (passData || []).forEach((it) => {
       if (it?.id !== undefined) {
-        lookup[it.id] = [it];
+        const key = String(it?.offerId ?? "").trim();
+        const mergedPrice = key ? fareRulePriceByOfferId[key] : null;
+        lookup[it.id] = [
+          mergedPrice
+            ? {
+                ...it,
+                price: mergedPrice,
+              }
+            : it,
+        ];
       }
     });
     return lookup;
-  }, [passData]);
+  }, [passData, fareRulePriceByOfferId]);
+
+  const hydrateFareRulesForItem = useCallback(
+    async (item: any) => {
+      const offerId = String(item?.offerId ?? "").trim();
+      const searchKey = String(item?.searchKey ?? "").trim();
+      if (!offerId || !searchKey || fareRulePriceByOfferId[offerId]) return;
+      try {
+        setFareRuleLoadingOfferId(offerId);
+        const response = await fetchFareRules({ offerId, searchKey });
+        const fareRuleItem = response?.data?.[0];
+        if (!fareRuleItem) return;
+        const nextPrice = buildFlightSearchPriceOptions(item?.raw, fareRuleItem);
+        setFareRulePriceByOfferId((prev) => ({ ...prev, [offerId]: nextPrice }));
+      } catch {
+        // Keep base listing data if fare-rule fetch fails.
+      } finally {
+        setFareRuleLoadingOfferId((prev) => (prev === offerId ? null : prev));
+      }
+    },
+    [fareRulePriceByOfferId, fetchFareRules],
+  );
 
   const highDemandLookup = useMemo(() => {
     if (!highDemandIndicators || highDemandIndicators.length === 0) return null;
@@ -136,6 +174,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       if (tab === "price") {
         const filtered = (item?.id !== undefined && detailById[item.id]) || [];
         setFilterDetail(filtered);
+        hydrateFareRulesForItem(item);
       }
 
       if (tab === "compare") {
@@ -150,7 +189,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
       setIsDetailsModalOpen(true);
     },
-    [detailById, passData],
+    [detailById, passData, hydrateFareRulesForItem],
   );
 
   const handleTabChange = useCallback(
@@ -163,6 +202,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         const filtered =
           (selectedItem?.id !== undefined && detailById[selectedItem.id]) || [];
         setFilterDetail(filtered);
+        hydrateFareRulesForItem(selectedItem);
       }
 
       if (tab === "compare") {
@@ -175,7 +215,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         setFilterDetail(compareList);
       }
     },
-    [selectedItem, detailById, passData],
+    [selectedItem, detailById, passData, hydrateFareRulesForItem],
   );
 
   const handleCancelCompare = () => {
@@ -488,6 +528,13 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
           </div>
         }
       >
+        <Loader
+          show={
+            activeTab === "price" &&
+            fareRuleLoadingOfferId === String(selectedItem?.offerId ?? "").trim()
+          }
+          label="Loading fare rules..."
+        />
         {selectedItem && (
           <>
             <div
@@ -559,7 +606,9 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
             <React.Suspense fallback={<div>Loading…</div>}>
               {activeTab === "price" ? (
-                <PricingDetailCard passSome={detailById[selectedItem.id] || []} />
+                <>
+                  <PricingDetailCard passSome={detailById[selectedItem.id] || []} />
+                </>
               ) : activeTab === "flight" ? (
                 <FlightDetailsCard details={selectedItem} />
               ) : (

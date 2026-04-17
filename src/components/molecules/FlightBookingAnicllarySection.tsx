@@ -39,6 +39,7 @@ import PLANE_ICON from "../../assets/svgs/plane.svg";
 
 type FlightBookingAnicllarySectionProps = {
   trip: any;
+  fareRuleData?: any;
   passengers: Array<any>;
   flightAncillarySearch?: any;
   onNext?: () => void;
@@ -61,6 +62,7 @@ type FlightBookingAnicllarySectionProps = {
 
 export default function FlightBookingAnicllarySection({
   trip,
+  fareRuleData,
   passengers = [],
   flightAncillarySearch,
   onNext,
@@ -377,7 +379,7 @@ export default function FlightBookingAnicllarySection({
             fare={priceFareFamily}
           />
 
-          <FLightFareRule trip={trip.raw} />
+          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
 
           <FLightPriceBreakdown
             open={openPrice}

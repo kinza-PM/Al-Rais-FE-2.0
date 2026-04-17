@@ -62,6 +62,7 @@ type FlightBookingBookSectionProps = {
   flightBookingPayload: any;
   onPassengerFieldChange: (index: number, path: string, value: any) => void;
   fareBookingSearchRules?: any;
+  fareRuleData?: any;
   onNext?: (offerId?: string) => void;
   onUpdateFlightRaw?: (newRaw: {
     detail?: any;
@@ -89,6 +90,7 @@ export default function FlightBookingBookSection({
   flightBookingPayload,
   onPassengerFieldChange,
   fareBookingSearchRules,
+  fareRuleData,
   onNext,
   onUpdateFlightRaw,
   onChangeFlight,
@@ -1279,7 +1281,7 @@ export default function FlightBookingBookSection({
             fare={priceFareFamily}
           />
 
-          <FLightFareRule trip={trip.raw} />
+          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
 
           <FLightPriceBreakdown
             open={openPrice}
