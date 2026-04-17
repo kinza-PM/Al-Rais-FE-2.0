@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../assets/css/travel.css";
 
 import offerViewIcon from "../../assets/svgs/offer-view-icon.svg";
@@ -79,6 +79,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     Record<string, any>
   >({});
   const [fareRuleLoadingOfferId, setFareRuleLoadingOfferId] = useState<string | null>(null);
+  const fareRuleInFlightRef = useRef<Record<string, boolean>>({});
   const { mutateAsync: fetchFareRules } = useFlightFareRuleSearch();
 
   const navigate = useNavigate();
@@ -112,8 +113,16 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     async (item: any) => {
       const offerId = String(item?.offerId ?? "").trim();
       const searchKey = String(item?.searchKey ?? "").trim();
-      if (!offerId || !searchKey || fareRulePriceByOfferId[offerId]) return;
+      if (
+        !offerId ||
+        !searchKey ||
+        fareRulePriceByOfferId[offerId] ||
+        fareRuleInFlightRef.current[offerId]
+      ) {
+        return;
+      }
       try {
+        fareRuleInFlightRef.current[offerId] = true;
         setFareRuleLoadingOfferId(offerId);
         const response = await fetchFareRules({ offerId, searchKey });
         const fareRuleItem = response?.data?.[0];
@@ -123,6 +132,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       } catch {
         // Keep base listing data if fare-rule fetch fails.
       } finally {
+        delete fareRuleInFlightRef.current[offerId];
         setFareRuleLoadingOfferId((prev) => (prev === offerId ? null : prev));
       }
     },
@@ -168,26 +178,25 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
   const openDetailsModal = useCallback(
     (item: any, tab: "price" | "flight" | "compare" = "price") => {
-      setSelectedItem(item);
       setActiveTab(tab);
-
-      if (tab === "price") {
-        const filtered = (item?.id !== undefined && detailById[item.id]) || [];
-        setFilterDetail(filtered);
-        hydrateFareRulesForItem(item);
-      }
-
-      if (tab === "compare") {
-        const compareList = pickRandomFlightsForCompare(
-          passData || [],
-          item?.id,
-          4,
-          mapOfferForCompareRoundTrip,
-        );
-        setFilterDetail(compareList);
-      }
-
       setIsDetailsModalOpen(true);
+      // Open modal first, then mount heavy content/fetches.
+      window.setTimeout(() => {
+        setSelectedItem(item);
+        if (tab === "price") {
+          const filtered = (item?.id !== undefined && detailById[item.id]) || [];
+          setFilterDetail(filtered);
+          void hydrateFareRulesForItem(item);
+        } else if (tab === "compare") {
+          const compareList = pickRandomFlightsForCompare(
+            passData || [],
+            item?.id,
+            4,
+            mapOfferForCompareRoundTrip,
+          );
+          setFilterDetail(compareList);
+        }
+      }, 0);
     },
     [detailById, passData, hydrateFareRulesForItem],
   );
@@ -202,7 +211,9 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         const filtered =
           (selectedItem?.id !== undefined && detailById[selectedItem.id]) || [];
         setFilterDetail(filtered);
-        hydrateFareRulesForItem(selectedItem);
+        window.setTimeout(() => {
+          void hydrateFareRulesForItem(selectedItem);
+        }, 0);
       }
 
       if (tab === "compare") {
@@ -512,9 +523,9 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
         className="flight-details-popup"
         styles={{
           body: {
-            maxHeight: "80vh",
+            maxHeight: "92vh",
             overflowY: "auto",
-            padding: "20px 24px 24px",
+            padding: "16px 24px 20px",
           },
         }}
         title={

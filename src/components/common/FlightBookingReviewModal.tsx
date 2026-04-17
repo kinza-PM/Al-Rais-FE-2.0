@@ -16,6 +16,7 @@ type FlightBookingReviewModalProps = {
   open: boolean;
   onClose: () => void;
   trip: any;
+  fareRuleData?: any;
   passengers: any[];
   countries: CountryOption[];
   onChangeFlight?: () => void;
@@ -25,6 +26,7 @@ export default function FlightBookingReviewModal({
   open,
   onClose,
   trip,
+  fareRuleData,
   passengers,
   countries,
   onChangeFlight,
@@ -131,7 +133,7 @@ export default function FlightBookingReviewModal({
 
   const baggageTab = (
     <div className="space-y-4">
-      <FLightFareRule trip={trip?.raw} />
+      <FLightFareRule trip={trip?.raw} ruleData={fareRuleData} />
     </div>
   );
 

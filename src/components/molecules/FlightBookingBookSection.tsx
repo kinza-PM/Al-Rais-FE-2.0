@@ -1272,27 +1272,29 @@ export default function FlightBookingBookSection({
         </div>
 
         {/* RIGHT: Trip details */}
-        <div className="md:sticky md:top-6 self-start md:max-h-[calc(100vh-3rem)] md:overflow-auto">
-          <FlightSummaryCard
-            title="Trip details"
-            // headerActionText="View all"
-            // onHeaderActionClick={() => {/* handle view all */ }}
-            segments={segments}
-            fare={priceFareFamily}
-          />
+        <div className="md:sticky md:top-6 self-start">
+          <div className="md:max-h-[calc(100vh-12rem)] md:overflow-auto pr-1">
+            <FlightSummaryCard
+              title="Trip details"
+              // headerActionText="View all"
+              // onHeaderActionClick={() => {/* handle view all */ }}
+              segments={segments}
+              fare={priceFareFamily}
+            />
 
-          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
+            <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
 
-          <FLightPriceBreakdown
-            open={openPrice}
-            onToggleOpen={() => setOpenPrice((v) => !v)}
-            trip={trip.raw}
-          />
+            <FLightPriceBreakdown
+              open={openPrice}
+              onToggleOpen={() => setOpenPrice((v) => !v)}
+              trip={trip.raw}
+            />
+          </div>
 
           <Button
             type="button"
             overrideClasses
-            className="mt-6 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-[#2351A3] flex items-center justify-center gap-[10px]"
+            className="mt-4 mx-auto h-[47px] min-w-[155px] rounded-[100px] py-[14px] px-[40px] text-[16px] font-semibold text-white hover:brightness-95 active:brightness-90 bg-[#2351A3] flex items-center justify-center gap-[10px]"
             // onClick={() => handleFlightProvInitialBooking()}
             onClick={async () => {
               setHasAttemptedValidation(true);

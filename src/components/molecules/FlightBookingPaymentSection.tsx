@@ -61,6 +61,7 @@ type PaymentMethod = "card" | "apple" | "google";
 
 type FlightBookingPaymentSectionProps = {
   trip: any;
+  fareRuleData?: any;
   // cities: Array<{ id: string; code: string; label: string; city: string }>;
   countries: CountryOption[];
   reservation?: any;
@@ -102,6 +103,7 @@ type FlightBookingPaymentSectionProps = {
 
 export default function FlightBookingPaymentSection({
   trip,
+  fareRuleData,
   // cities,
   countries = [],
   reservation,
@@ -562,6 +564,7 @@ export default function FlightBookingPaymentSection({
           open={reviewOpen}
           onClose={() => setReviewOpen(false)}
           trip={trip}
+          fareRuleData={fareRuleData}
           passengers={reservation?.passengers || []}
           countries={countries}
         />

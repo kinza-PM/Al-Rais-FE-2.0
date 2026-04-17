@@ -797,6 +797,7 @@ const FlightBooking = () => {
           {currentStep === payStepIndex && (
             <FlightBookingPaymentSection
               trip={offerData.flightDetail}
+              fareRuleData={fareRuleDetails}
               // cities={cityOptions}
               countries={countriesOptions}
               reservation={flightReservationBookingPayload}
