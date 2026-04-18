@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { Radio, Checkbox, Collapse } from "antd";
 import CustomCollapse from "../common/CustomCollapse";
+import type { RefundableFilterMode } from "../../utils/flightFilters";
 
 const { Panel } = Collapse;
 
@@ -44,6 +45,11 @@ export type FlightSearchFilterProps = {
     /** When true, list only offers with `detail.ancillaryDetailsAvailable` */
     ancillaryAddOnsOnly: boolean;
     onAncillaryAddOnsOnlyChange: (checked: boolean) => void;
+
+    /** Filter by `fare.fareType.refundable` on each offer */
+    refundableFilterMode: RefundableFilterMode;
+    onRefundableFilterChange: (mode: RefundableFilterMode) => void;
+
     onReset?: () => void;
 };
 
@@ -79,6 +85,10 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
     onAirlineToggle,
     ancillaryAddOnsOnly,
     onAncillaryAddOnsOnlyChange,
+
+    refundableFilterMode,
+    onRefundableFilterChange,
+
     onReset,
 }) => {
     const [minStr, setMinStr] = useState(() => String(selectedPriceRange[0]));
@@ -192,8 +202,15 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
         if ((selectedAirlineIds || []).length > 0) cnt++;
         if (baggageIncludedOnly) cnt++;
         if (ancillaryAddOnsOnly) cnt++;
+        if (refundableFilterMode !== "all") cnt++;
         return cnt;
     })();
+
+    const refundableRadioOptions = [
+        { label: "All", value: "all" as const },
+        { label: "Refundable", value: "refundable" as const },
+        { label: "Non-refundable", value: "non_refundable" as const },
+    ];
 
     const transitHourOptions = [
         { label: "0-3h", value: "0-3h" },
@@ -220,8 +237,20 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
                 <h4 style={{ fontSize: '16px', fontWeight: 300, color: '#0F172A', margin: 0 }}>
                     Filters
-                    <span style={{ margin: '0 8px', color: '#64748B' }}>•</span>
-                    <span style={{ fontSize: '14px', fontWeight: 300, color: '#64748B' }}>{activeCount} Active</span>
+                    {activeCount > 0 ? (
+                        <>
+                            <span style={{ margin: '0 8px', color: '#64748B' }}>•</span>
+                            <span
+                                style={{
+                                    fontSize: '14px',
+                                    fontWeight: 300,
+                                    color: '#64748B',
+                                }}
+                            >
+                                {activeCount} Active
+                            </span>
+                        </>
+                    ) : null}
                 </h4>
                 <button 
                     onClick={onReset}
@@ -409,6 +438,40 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </Panel>
+                </CustomCollapse>
+            </div>
+
+            {/* Refundability — matches `raw.fare.fareType.refundable` */}
+            <div
+                className="refundableFilterCollapse"
+                style={{
+                    ...fullWidth,
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                }}
+            >
+                <CustomCollapse>
+                    <Panel
+                        header="Refund type"
+                        key="refundable"
+                        style={{ border: "none" }}
+                    >
+                        <div style={{ padding: "0 16px 16px 16px" }}>
+                            <Radio.Group
+                                options={refundableRadioOptions}
+                                value={refundableFilterMode}
+                                optionType="button"
+                                buttonStyle="solid"
+                                className="transitHours refundableFilterRadio"
+                                onChange={(e) =>
+                                    onRefundableFilterChange(
+                                        (e?.target?.value ??
+                                            "all") as RefundableFilterMode,
+                                    )
+                                }
+                            />
                         </div>
                     </Panel>
                 </CustomCollapse>
