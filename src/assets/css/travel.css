@@ -3500,6 +3500,7 @@ img:hover {
 /* Flight filter cards: single border look (no double-line) */
 .stopsCollapse,
 .pricePerSeatCollapse,
+.refundableFilterCollapse,
 .flightTimeFilter,
 .timeCollapse {
   background: transparent !important;
@@ -3508,6 +3509,7 @@ img:hover {
 
 .stopsCollapse .collapseStyle,
 .pricePerSeatCollapse .collapseStyle,
+.refundableFilterCollapse .collapseStyle,
 .flightTimeFilter .collapseStyle,
 .timeCollapse .collapseStyle {
   border: 1px solid #e4e4e7 !important;
@@ -3517,6 +3519,7 @@ img:hover {
 
 .stopsCollapse .ant-collapse .ant-collapse-header,
 .pricePerSeatCollapse .ant-collapse .ant-collapse-header,
+.refundableFilterCollapse .ant-collapse .ant-collapse-header,
 .flightTimeFilter .ant-collapse .ant-collapse-header,
 .timeCollapse .ant-collapse .ant-collapse-header {
   background: #ffffff !important;
@@ -3526,11 +3529,66 @@ img:hover {
 .stopsCollapse .ant-collapse .ant-collapse-content-box,
 .pricePerSeatCollapse .ant-collapse .ant-collapse-content,
 .pricePerSeatCollapse .ant-collapse .ant-collapse-content-box,
+.refundableFilterCollapse .ant-collapse .ant-collapse-content,
+.refundableFilterCollapse .ant-collapse .ant-collapse-content-box,
 .flightTimeFilter .ant-collapse .ant-collapse-content,
 .flightTimeFilter .ant-collapse .ant-collapse-content-box,
 .timeCollapse .ant-collapse .ant-collapse-content,
 .timeCollapse .ant-collapse .ant-collapse-content-box {
   background: #ffffff !important;
+}
+
+/* Refund type filter — compact header; pills always 2 + 1 rows (like narrow sidebar) */
+.refundableFilterCollapse .ant-collapse-header-text,
+.refundableFilterCollapse .ant-collapse .ant-collapse-header {
+  font-size: 14px !important;
+  font-weight: 400 !important;
+}
+
+/* Force All | Refundable on row 1, Non-refundable full width row 2 (all breakpoints) */
+.flight-search-filter-root .refundableFilterRadio.transitHours.ant-radio-group,
+.refundableFilterRadio.transitHours.ant-radio-group {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+.flight-search-filter-root .refundableFilterRadio.transitHours .ant-radio-button-wrapper,
+.refundableFilterRadio.transitHours .ant-radio-button-wrapper {
+  flex: 1 1 calc(50% - 5px) !important;
+  max-width: calc(50% - 5px) !important;
+  min-width: 0 !important;
+  width: auto !important;
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 12px !important;
+}
+
+.flight-search-filter-root
+  .refundableFilterRadio.transitHours
+  .ant-radio-button-wrapper:nth-child(3),
+.refundableFilterRadio.transitHours .ant-radio-button-wrapper:nth-child(3) {
+  flex: 1 1 100% !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.refundableFilterRadio.ant-radio-group.transitHours
+  .ant-radio-button-wrapper
+  .ant-radio-button-label,
+.refundableFilterRadio.transitHours .ant-radio-button-wrapper .ant-radio-button-label,
+.refundableFilterRadio .ant-radio-button-label {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+}
+
+.flight-search-filter-root
+  .refundableFilterRadio.transitHours
+  .ant-radio-button-wrapper
+  .ant-radio-button-label {
+  font-size: 13px !important;
+  font-weight: 300 !important;
 }
 
 .searchFilterBtn {
