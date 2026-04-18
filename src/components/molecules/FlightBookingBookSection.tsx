@@ -18,6 +18,7 @@ import FLightFareRule from "../atoms/FlightFareRule";
 import {
   buildFlightSegmentFromTrip,
   formatDateToLocalISO,
+  formatMoney,
   getPriceCabinClassForFlightSummary,
   parseLocalDateString,
 } from "../../utils/helpers";
@@ -46,8 +47,13 @@ import durationIcon from "../../assets/svgs/duration.svg";
 import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
-import SavedTravelersSection, { type SavedTraveler } from "./SavedTravelersSection";
-import { usePassengerCacheAdd, usePassengerCacheFetch } from "../../hooks/usePassengerCache";
+import SavedTravelersSection, {
+  type SavedTraveler,
+} from "./SavedTravelersSection";
+import {
+  usePassengerCacheAdd,
+  usePassengerCacheFetch,
+} from "../../hooks/usePassengerCache";
 import {
   buildPassengerCacheAddPayload,
   extractPassengersFromCacheResponse,
@@ -107,11 +113,28 @@ export default function FlightBookingBookSection({
     Record<string, boolean>
   >({});
   const [showBookingConfirm, setShowBookingConfirm] = useState(false);
+  const [showFareChangeModal, setShowFareChangeModal] = useState(false);
+  const [provisionalFareChange, setProvisionalFareChange] = useState<{
+    newRaw: {
+      detail?: any;
+      fare?: any;
+      financialInfo?: any;
+      journey?: any;
+      offerId?: string | number;
+    };
+    offerId: string | undefined;
+    oldAmount: number;
+    newAmount: number;
+    oldCurrency: string;
+    newCurrency: string;
+    successToast: string | undefined;
+  } | null>(null);
   const savedTravelerOffKeysRef = useRef<Set<string>>(new Set());
 
   const pRules = fareBookingSearchRules?.passengerRules?.[0] ?? {};
   const { mutateAsync, isPending } = useFlightInitialBooking();
-  const { mutateAsync: addPassengerCache, isPending: isAddingCache } = usePassengerCacheAdd();
+  const { mutateAsync: addPassengerCache, isPending: isAddingCache } =
+    usePassengerCacheAdd();
   const { data: passengerCacheResp } = usePassengerCacheFetch();
 
   // First ADT's phone for CHD/INF fallback
@@ -242,14 +265,14 @@ export default function FlightBookingBookSection({
     const addPassengerCachePayload =
       selectedPassengersForCache.length > 0
         ? buildPassengerCacheAddPayload(
-          selectedPassengersForCache,
-          extractPassengersFromCacheResponse(passengerCacheResp),
-          passengers.map((_, i) =>
-            saveToggleChecked(saveToggleKey(i, passengers[i]?.passengerKey))
-              ? (originalCacheKeyBySlotRef.current[i] ?? null)
-              : null
-          ),
-        )
+            selectedPassengersForCache,
+            extractPassengersFromCacheResponse(passengerCacheResp),
+            passengers.map((_, i) =>
+              saveToggleChecked(saveToggleKey(i, passengers[i]?.passengerKey))
+                ? (originalCacheKeyBySlotRef.current[i] ?? null)
+                : null,
+            ),
+          )
         : null;
     // console.log('addPassengerCachePayload----', addPassengerCachePayload)
     // console.log('selectedPassengersForCache----', selectedPassengersForCache)
@@ -269,19 +292,56 @@ export default function FlightBookingBookSection({
         response?.meta?.success &&
         response?.meta?.statusMessage == "SUCCESS"
       ) {
-        toast.success(response?.meta?.actionType);
+        const successMsg = response?.meta?.actionType;
         const updated = response?.data?.[0];
+        if (!updated) {
+          if (successMsg) toast.success(successMsg);
+          return;
+        }
         const { detail, fare, financialInfo, journey, offerId } = updated;
-        if (updated && typeof onUpdateFlightRaw === "function") {
-          const newRaw: any = {};
-          if (detail !== undefined) newRaw.detail = detail;
-          if (fare !== undefined) newRaw.fare = fare;
-          if (financialInfo !== undefined) newRaw.financialInfo = financialInfo;
-          if (journey !== undefined) newRaw.journey = journey;
-          if (offerId !== undefined) newRaw.offerId = offerId;
-          if (Object.keys(newRaw).length) {
-            onUpdateFlightRaw(newRaw);
-          }
+        const newRaw: {
+          detail?: any;
+          fare?: any;
+          financialInfo?: any;
+          journey?: any;
+          offerId?: string | number;
+        } = {};
+        if (detail !== undefined) newRaw.detail = detail;
+        if (fare !== undefined) newRaw.fare = fare;
+        if (financialInfo !== undefined) newRaw.financialInfo = financialInfo;
+        if (journey !== undefined) newRaw.journey = journey;
+        if (offerId !== undefined) newRaw.offerId = offerId;
+
+        const prov = updated as { oldFare?: number; newFare?: number };
+        const oldN = Number(prov.oldFare);
+        const newN = Number(prov.newFare);
+        const currencyCode =
+          (fare?.currencyCode as string) ??
+          (fare?.currency as string) ??
+          (trip?.raw?.fare?.currencyCode as string) ??
+          (trip?.raw?.fare?.currency as string) ??
+          "USD";
+        if (
+          !Number.isNaN(oldN) &&
+          !Number.isNaN(newN) &&
+          Math.abs(oldN - newN) >= 0.01
+        ) {
+          setProvisionalFareChange({
+            newRaw,
+            offerId: offerId as string | undefined,
+            oldAmount: oldN,
+            newAmount: newN,
+            oldCurrency: currencyCode,
+            newCurrency: currencyCode,
+            successToast: successMsg,
+          });
+          setShowFareChangeModal(true);
+          return;
+        }
+
+        if (successMsg) toast.success(successMsg);
+        if (Object.keys(newRaw).length > 0 && onUpdateFlightRaw) {
+          onUpdateFlightRaw(newRaw);
         }
         if (typeof onNext === "function") {
           onNext(offerId);
@@ -290,7 +350,8 @@ export default function FlightBookingBookSection({
     } catch (error) {
       console.log("error", error);
       const source = extractAxiosErrorDetailsSource(error);
-      const fieldErrors = mapFlightProvBookingApiErrorsToPassengerFields(source);
+      const fieldErrors =
+        mapFlightProvBookingApiErrorsToPassengerFields(source);
       const hasMapped = Object.values(fieldErrors).some(
         (obj) => obj && Object.keys(obj).length > 0,
       );
@@ -310,23 +371,31 @@ export default function FlightBookingBookSection({
     }
   };
 
-  const fillFromSavedTravelers = (selectedSlots: Array<SavedTraveler | undefined>) => {
+  const fillFromSavedTravelers = (
+    selectedSlots: Array<SavedTraveler | undefined>,
+  ) => {
     const titleToUi = (t?: string) => {
-      const v = String(t ?? "").trim().toUpperCase();
+      const v = String(t ?? "")
+        .trim()
+        .toUpperCase();
       if (v === "MR") return "MR";
       if (v === "MS") return "MS";
       if (v === "MRS") return "MRS";
       return "";
     };
     const normalizeIdType = (v?: string) => {
-      const x = String(v ?? "").trim().toUpperCase();
+      const x = String(v ?? "")
+        .trim()
+        .toUpperCase();
       if (x === "PT" || x === "PASSPORT") return "PT";
       if (x === "NI" || x === "NATIONAL_ID") return "NI";
       if (x === "DL" || x === "DRIVING_LICENSE") return "DL";
       return "PT";
     };
     const genderToUi = (g?: string) => {
-      const v = String(g ?? "").trim().toUpperCase();
+      const v = String(g ?? "")
+        .trim()
+        .toUpperCase();
       if (v === "M" || v === "MALE") return "M";
       if (v === "F" || v === "FEMALE") return "F";
       return "";
@@ -336,8 +405,8 @@ export default function FlightBookingBookSection({
       if (!passengers[idx]) return;
 
       const clear = !t;
-      const givenName = clear ? "" : t.firstName ?? "";
-      const surname = clear ? "" : t.lastName ?? "";
+      const givenName = clear ? "" : (t.firstName ?? "");
+      const surname = clear ? "" : (t.lastName ?? "");
       const nameTitle = clear ? "" : titleToUi(t.nameTitle);
       const gender = clear ? "" : genderToUi(t.gender);
       const birthDate = clear ? null : (t.birthDate ?? null);
@@ -351,8 +420,8 @@ export default function FlightBookingBookSection({
       const areaCode = clear
         ? ""
         : t.phoneAreaCode !== undefined &&
-          t.phoneAreaCode !== null &&
-          String(t.phoneAreaCode).trim() !== ""
+            t.phoneAreaCode !== null &&
+            String(t.phoneAreaCode).trim() !== ""
           ? `+${String(t.phoneAreaCode).replace(/^\+/, "")}`
           : "";
       const phoneNumber = clear ? "" : String(t.phoneNumber ?? "");
@@ -363,20 +432,44 @@ export default function FlightBookingBookSection({
       onPassengerFieldChange(idx, "passengerInfo.surname", surname);
       onPassengerFieldChange(idx, "passengerInfo.birthDate", birthDate);
 
-      onPassengerFieldChange(idx, "identityDocuments.0.idDocumentNumber", passport);
+      onPassengerFieldChange(
+        idx,
+        "identityDocuments.0.idDocumentNumber",
+        passport,
+      );
       onPassengerFieldChange(idx, "identityDocuments.0.idType", idType);
-      onPassengerFieldChange(idx, "identityDocuments.0.issuingCountryCode", issuingCountryCode);
+      onPassengerFieldChange(
+        idx,
+        "identityDocuments.0.issuingCountryCode",
+        issuingCountryCode,
+      );
       onPassengerFieldChange(
         idx,
         "identityDocuments.0.residenceCountryCode",
         residenceCountryCode,
       );
-      onPassengerFieldChange(idx, "identityDocuments.0.dateOfIssue", dateOfIssue);
+      onPassengerFieldChange(
+        idx,
+        "identityDocuments.0.dateOfIssue",
+        dateOfIssue,
+      );
       onPassengerFieldChange(idx, "identityDocuments.0.expiryDate", expiryIso);
 
-      onPassengerFieldChange(idx, "contact.contactsProvided.0.emailAddress.0", email);
-      onPassengerFieldChange(idx, "contact.contactsProvided.0.phone.0.areaCode", areaCode);
-      onPassengerFieldChange(idx, "contact.contactsProvided.0.phone.0.phoneNumber", phoneNumber);
+      onPassengerFieldChange(
+        idx,
+        "contact.contactsProvided.0.emailAddress.0",
+        email,
+      );
+      onPassengerFieldChange(
+        idx,
+        "contact.contactsProvided.0.phone.0.areaCode",
+        areaCode,
+      );
+      onPassengerFieldChange(
+        idx,
+        "contact.contactsProvided.0.phone.0.phoneNumber",
+        phoneNumber,
+      );
       onPassengerFieldChange(idx, "isLead", idx === 0);
     };
 
@@ -407,11 +500,18 @@ export default function FlightBookingBookSection({
     for (let i = 0; i < passengers.length; i++) {
       const t = selectedSlots[i];
       if (t) {
-        const given = String(t.firstName ?? "").trim().toUpperCase();
-        const surname = String(t.lastName ?? "").trim().toUpperCase();
+        const given = String(t.firstName ?? "")
+          .trim()
+          .toUpperCase();
+        const surname = String(t.lastName ?? "")
+          .trim()
+          .toUpperCase();
         const dob = String(t.birthDate ?? "").trim();
-        const passport = String(t.passport ?? "").trim().toUpperCase();
-        originalCacheKeyBySlotRef.current[i] = `${passport}|${given}|${surname}|${dob}`;
+        const passport = String(t.passport ?? "")
+          .trim()
+          .toUpperCase();
+        originalCacheKeyBySlotRef.current[i] =
+          `${passport}|${given}|${surname}|${dob}`;
       } else {
         delete originalCacheKeyBySlotRef.current[i];
       }
@@ -431,7 +531,9 @@ export default function FlightBookingBookSection({
     }));
   };
   const normalizeIdType = (v?: string) => {
-    const x = String(v ?? "").trim().toUpperCase();
+    const x = String(v ?? "")
+      .trim()
+      .toUpperCase();
     if (x === "PT" || x === "PASSPORT") return "PT";
     if (x === "NI" || x === "NATIONAL_ID") return "NI";
     if (x === "DL" || x === "DRIVING_LICENSE") return "DL";
@@ -599,8 +701,12 @@ export default function FlightBookingBookSection({
                   </h3>
                   <CustomToggle
                     label="Save Traveler information in my profile"
-                    checked={saveToggleChecked(saveToggleKey(idx, p?.passengerKey))}
-                    onChange={() => toggleSaveTraveler(saveToggleKey(idx, p?.passengerKey))}
+                    checked={saveToggleChecked(
+                      saveToggleKey(idx, p?.passengerKey),
+                    )}
+                    onChange={() =>
+                      toggleSaveTraveler(saveToggleKey(idx, p?.passengerKey))
+                    }
                   />
                 </div>
 
@@ -628,7 +734,9 @@ export default function FlightBookingBookSection({
                               label: "Passport (PT)",
                             },
                           ]}
-                          value={normalizeIdType(p.identityDocuments?.[0]?.idType)}
+                          value={normalizeIdType(
+                            p.identityDocuments?.[0]?.idType,
+                          )}
                           onChange={(value) => {
                             onPassengerFieldChange(
                               idx,
@@ -643,8 +751,8 @@ export default function FlightBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[idx]?.[
-                              "identityDocuments.0.idType"
-                              ]
+                                  "identityDocuments.0.idType"
+                                ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -658,18 +766,20 @@ export default function FlightBookingBookSection({
                     >
                       <TailwindCustomInput
                         type="text"
-                        placeholder={`Enter ${p.identityDocuments?.[0]?.idType === "PT"
-                          ? "Passport number"
-                          : p.identityDocuments?.[0]?.idType === "DL"
-                            ? "Driving licence"
-                            : "National ID"
-                          }`}
-                        label={`${p.identityDocuments?.[0]?.idType === "PT"
-                          ? "Passport number"
-                          : p.identityDocuments?.[0]?.idType === "DL"
-                            ? "Driving licence"
-                            : "National ID"
-                          } *`}
+                        placeholder={`Enter ${
+                          p.identityDocuments?.[0]?.idType === "PT"
+                            ? "Passport number"
+                            : p.identityDocuments?.[0]?.idType === "DL"
+                              ? "Driving licence"
+                              : "National ID"
+                        }`}
+                        label={`${
+                          p.identityDocuments?.[0]?.idType === "PT"
+                            ? "Passport number"
+                            : p.identityDocuments?.[0]?.idType === "DL"
+                              ? "Driving licence"
+                              : "National ID"
+                        } *`}
                         value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
                         onChange={(evOrVal) => {
                           const v =
@@ -689,8 +799,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                            "identityDocuments.0.idDocumentNumber"
-                            ]
+                                "identityDocuments.0.idDocumentNumber"
+                              ]
                             : null
                         }
                       />
@@ -737,8 +847,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                            "identityDocuments.0.issuingCountryCode"
-                            ]
+                                "identityDocuments.0.issuingCountryCode"
+                              ]
                             : null
                         }
                         className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -746,46 +856,46 @@ export default function FlightBookingBookSection({
                     </div>
                     {/* )} */}
 
-                    {pRules.isDateOfIssueMandatory && (
-                      <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
-                      >
-                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Date of issue *
-                        </label>
-                        <TailiwindCustomDatePicker
-                          value={
-                            p.identityDocuments?.[0]?.dateOfIssue
-                              ? parseLocalDateString(
+                    {/* {pRules.isDateOfIssueMandatory && ( */}
+                    <div
+                      className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
+                    >
+                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                        Date of issue *
+                      </label>
+                      <TailiwindCustomDatePicker
+                        value={
+                          p.identityDocuments?.[0]?.dateOfIssue
+                            ? parseLocalDateString(
                                 p.identityDocuments?.[0]?.dateOfIssue,
                               )
-                              : null
-                          }
-                          onChange={(date) => {
-                            const iso = formatDateToLocalISO(date);
-                            onPassengerFieldChange(
-                              idx,
-                              "identityDocuments.0.dateOfIssue",
-                              iso,
-                            );
-                            clearFieldError(
-                              idx,
-                              "identityDocuments.0.dateOfIssue",
-                            );
-                          }}
-                          placeholder="Please select"
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[idx]?.[
-                              "identityDocuments.0.dateOfIssue"
+                            : null
+                        }
+                        onChange={(date) => {
+                          const iso = formatDateToLocalISO(date);
+                          onPassengerFieldChange(
+                            idx,
+                            "identityDocuments.0.dateOfIssue",
+                            iso,
+                          );
+                          clearFieldError(
+                            idx,
+                            "identityDocuments.0.dateOfIssue",
+                          );
+                        }}
+                        placeholder="Please select"
+                        error={
+                          hasAttemptedValidation
+                            ? validationErrors[idx]?.[
+                                "identityDocuments.0.dateOfIssue"
                               ]
-                              : null
-                          }
-                          overridesClass
-                          inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-                        />
-                      </div>
-                    )}
+                            : null
+                        }
+                        overridesClass
+                        inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                      />
+                    </div>
+                    {/* )} */}
 
                     {/* {pRules.isExpiryDateMandatory && ( */}
                     <div
@@ -798,8 +908,8 @@ export default function FlightBookingBookSection({
                         value={
                           p.identityDocuments?.[0]?.expiryDate
                             ? parseLocalDateString(
-                              p.identityDocuments?.[0]?.expiryDate,
-                            )
+                                p.identityDocuments?.[0]?.expiryDate,
+                              )
                             : null
                         }
                         onChange={(date) => {
@@ -818,8 +928,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                            "identityDocuments.0.expiryDate"
-                            ]
+                                "identityDocuments.0.expiryDate"
+                              ]
                             : null
                         }
                         overridesClass
@@ -868,8 +978,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                            "identityDocuments.0.residenceCountryCode"
-                            ]
+                                "identityDocuments.0.residenceCountryCode"
+                              ]
                             : null
                         }
                         className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
@@ -907,8 +1017,8 @@ export default function FlightBookingBookSection({
                         error={
                           hasAttemptedValidation
                             ? validationErrors[idx]?.[
-                            "contact.contactsProvided.0.emailAddress.0"
-                            ]
+                                "contact.contactsProvided.0.emailAddress.0"
+                              ]
                             : null
                         }
                       />
@@ -941,8 +1051,8 @@ export default function FlightBookingBookSection({
                           error={
                             hasAttemptedValidation
                               ? validationErrors[idx]?.[
-                              "passengerInfo.birthDate"
-                              ]
+                                  "passengerInfo.birthDate"
+                                ]
                               : null
                           }
                           overridesClass
@@ -1183,9 +1293,9 @@ export default function FlightBookingBookSection({
                       <div
                         className={
                           hasAttemptedValidation &&
-                            validationErrors[idx]?.[
+                          validationErrors[idx]?.[
                             "contact.contactsProvided.0.phone.0"
-                            ]
+                          ]
                             ? "phone-input-error"
                             : ""
                         }
@@ -1252,12 +1362,12 @@ export default function FlightBookingBookSection({
                       </div>
                       {hasAttemptedValidation &&
                         validationErrors[idx]?.[
-                        "contact.contactsProvided.0.phone.0"
+                          "contact.contactsProvided.0.phone.0"
                         ] && (
                           <p className="absolute left-0 text-[12px] mt-1 text-[#E65959] whitespace-nowrap">
                             {
                               validationErrors[idx][
-                              "contact.contactsProvided.0.phone.0"
+                                "contact.contactsProvided.0.phone.0"
                               ]
                             }
                           </p>
@@ -1298,10 +1408,11 @@ export default function FlightBookingBookSection({
             // onClick={() => handleFlightProvInitialBooking()}
             onClick={async () => {
               setHasAttemptedValidation(true);
-              const fieldErrors = validatePassengersForFlightProvisionalBookingFields(
-                fareBookingSearchRules,
-                flightBookingPayload,
-              );
+              const fieldErrors =
+                validatePassengersForFlightProvisionalBookingFields(
+                  fareBookingSearchRules,
+                  flightBookingPayload,
+                );
               setValidationErrors(fieldErrors);
 
               if (Object.keys(fieldErrors).length > 0) return;
@@ -1329,6 +1440,100 @@ export default function FlightBookingBookSection({
         onConfirm={() => {
           setShowBookingConfirm(false);
           handleFlightProvInitialBooking();
+        }}
+      />
+
+      <ConfirmationModal
+        open={showFareChangeModal}
+        title="Price has changed"
+        description={
+          provisionalFareChange ? (
+            <div>
+              <p
+                style={{
+                  margin: 0,
+                  marginBottom: 14,
+                  color: "#374151",
+                  lineHeight: 1.65,
+                  fontSize: 14,
+                }}
+              >
+                The total fare is different from the price you saw when you
+                selected this flight. You can go back to search, or continue
+                with the updated amount.
+              </p>
+              <div
+                style={{
+                  background: "#F0F6FF",
+                  borderRadius: 10,
+                  padding: "12px 14px",
+                  fontSize: 14,
+                  color: "#4B5563",
+                  lineHeight: 1.6,
+                  borderLeft: "3px solid #2351A3",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    gap: 12,
+                  }}
+                >
+                  <span>Previous price</span>
+                  <span style={{ fontWeight: 600, color: "#0A0C0F" }}>
+                    {formatMoney(
+                      provisionalFareChange.oldAmount,
+                      provisionalFareChange.oldCurrency,
+                    )}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    gap: 12,
+                  }}
+                >
+                  <span>New price</span>
+                  <span style={{ fontWeight: 600, color: "#2351A3" }}>
+                    {formatMoney(
+                      provisionalFareChange.newAmount,
+                      provisionalFareChange.newCurrency,
+                    )}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            ""
+          )
+        }
+        confirmText="Proceed"
+        cancelText="Cancel"
+        onCancel={() => {
+          setShowFareChangeModal(false);
+          setProvisionalFareChange(null);
+          navigate("/search_flight");
+        }}
+        onConfirm={() => {
+          const p = provisionalFareChange;
+          if (!p) {
+            setShowFareChangeModal(false);
+            return;
+          }
+          if (p.successToast) toast.success(p.successToast);
+          if (Object.keys(p.newRaw).length > 0 && onUpdateFlightRaw) {
+            onUpdateFlightRaw(p.newRaw);
+          }
+          if (typeof onNext === "function") {
+            onNext(p.offerId);
+          }
+          setProvisionalFareChange(null);
+          setShowFareChangeModal(false);
         }}
       />
     </section>
