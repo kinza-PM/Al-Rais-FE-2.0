@@ -1,3 +1,8 @@
+import {
+  formatCarryOnAllowanceList,
+  formatCheckedAllowanceList,
+} from "./baggageAllowanceDisplay";
+
 // helpers (put near top of file)
 const normalizeClassKey = (raw?: string) => {
   if (!raw) return "economyStandard";
@@ -95,58 +100,31 @@ const getFareRuleFeatureLabels = (fareRuleItem?: any) => {
 
 const extractFeaturesFromSegment = (seg: any, rawOffer?: any) => {
   if (!seg) return {};
-  const paxTypeToLabel = (ptc?: string) => {
-    const s = (ptc ?? "").toString().trim().toUpperCase();
-    if (s === "ADT") return "Adult";
-    if (s === "CHD") return "Child";
-    if (s === "INF") return "Infant";
-    return ptc ?? "PAX";
-  };
 
-  const formatAllowance = (arr: any[] | undefined) => {
-    const list = Array.isArray(arr) ? arr : [];
-    if (list.length === 0) return "—";
-
-    const parts = list
-      .map((n: any) => {
-        const label = paxTypeToLabel(n?.paxType);
-        const value = n?.value;
-        const unit = n?.unit ?? "";
-        if (value === undefined || value === null || value === "")
-          return `${label}`;
-        return `${label}: ${value}${unit}`;
-      })
-      .filter(Boolean);
-
-    return parts.length ? parts.join(", ") : "—";
-  };
-
-  const checkedBaggageRaw = formatAllowance(
+  const checkedBaggage = formatCheckedAllowanceList(
     seg?.baggageAllowance?.checkedInBaggage,
   );
-  const carryBaggageRaw = formatAllowance(
+  const carryBaggage = formatCarryOnAllowanceList(
     seg?.baggageAllowance?.carryOnBaggage,
   );
-  
-  const checkedBaggage =
-    checkedBaggageRaw !== "—" ? `Checked Baggage: ${checkedBaggageRaw}` : "—";
-  const carryBaggage =
-    carryBaggageRaw !== "—" ? `Carry-on (Hand Bag): ${carryBaggageRaw}` : "—";
-
-  // const services = (seg?.flightServices?.flightService || []).map((s: any) => (s.name || "").toLowerCase());
-  // const seatSelection = services.some((n: string) => n.includes("pre reserved") || n.includes("seat")) ? "Pre-reserved / Assigned" : "Assigned at check-in";
-  // const changes = services.some((n: string) => n.includes("changeable") || n.includes("change")) ? "Changeable (fees may apply)" : "Not changeable";
 
   const flightServicesArray: any[] = seg?.flightServices?.flightService ?? [];
   const isIncluded = (s: any) =>
     (s?.status || "").toString().toLowerCase() === "included";
+  const statusLower = (s: any) =>
+    (s?.status || "").toString().toLowerCase().trim();
+
+  /** Avoid matching unrelated strings that only contain "seat" as a substring. */
+  const seatAssignmentPattern =
+    /pre[-_\s]*reserved|advance\s+seat|seat\s*selection|seat\s*assignment|assigned\s*seat|choice\s+of\s+seat|reserved\s*seat|pre[-_\s]*assigned|pre\s*assigned/i;
+
   const seatService = flightServicesArray.find((s) =>
-    /pre[-_\s]?reserved|pre reserved|prereserved|seat/i.test(s?.name || ""),
+    seatAssignmentPattern.test(String(s?.name || "")),
   );
   const ancillaryAvailable = Boolean(rawOffer?.detail?.ancillaryDetailsAvailable);
   let seatSelection = ancillaryAvailable
     ? "Seat selection available as add-on"
-    : "Assigned at check-in";
+    : "No, assigned at check-in";
   if (seatService) {
     seatSelection = `Pre-reserved / Assigned ${isIncluded(seatService) ? "(Included)" : "(Not included)"}`;
   } else if (ancillaryAvailable) {
@@ -161,11 +139,50 @@ const extractFeaturesFromSegment = (seg: any, rawOffer?: any) => {
       ? "Ticket changes: Included"
       : "Ticket changes: May apply (fees)";
   }
+
+  const mealNamePattern =
+    /meal|snack|food|dining|refreshment|catering|breakfast|lunch|dinner/i;
+  const beverageNamePattern = /\b(beverages?|drinks?)\b/i;
+
+  const mealService = flightServicesArray.find((s) =>
+    mealNamePattern.test(String(s?.name || "")),
+  );
+  const beverageOnlyService =
+    !mealService &&
+    flightServicesArray.find((s) => beverageNamePattern.test(String(s?.name || "")));
+
+  const mealFromService = mealService || beverageOnlyService;
+
+  let meal = "—";
+  if (mealFromService) {
+    const name = String(mealFromService.name || "").trim() || "In-flight service";
+    const st = statusLower(mealFromService);
+    if (st === "included" || st === "complimentary" || st === "free") {
+      meal = `${name} (Included)`;
+    } else if (
+      st.includes("charge") ||
+      st.includes("paid") ||
+      st.includes("purchase") ||
+      st.includes("optional")
+    ) {
+      meal = `${name} (Paid / optional)`;
+    } else if (st.includes("not") && st.includes("available")) {
+      meal = "Not offered on this fare";
+    } else if (name) {
+      meal = `${name} (${mealFromService.status || "See airline"})`;
+    }
+  } else if (ancillaryAvailable) {
+    meal = "Meals may be available as add-on";
+  } else {
+    meal = "No meal details on fare";
+  }
+
   return {
     baggageChecked: checkedBaggage,
     baggageCarry: carryBaggage,
     seatSelection,
     changes,
+    meal,
   };
 };
 
@@ -247,6 +264,7 @@ export function buildFlightSearchPriceOptions(raw: any, fareRuleItem?: any) {
         priceClassName: segPriceClass,
         personalItem: features?.baggageCarry ?? "—",
         baggage: features?.baggageChecked ?? "—",
+        meal: features?.meal ?? "—",
         seatSelection: features?.seatSelection ?? "—",
         Changes: fareRuleFeatures?.changes ?? (features?.changes ?? "—"),
         Refundable:
@@ -266,6 +284,7 @@ export function buildFlightSearchPriceOptions(raw: any, fareRuleItem?: any) {
     label: topLabel,
     personalItem: extractFeaturesFromSegment(seg0, raw)?.baggageCarry ?? "—",
     baggage: extractFeaturesFromSegment(seg0, raw)?.baggageChecked ?? "—",
+    meal: extractFeaturesFromSegment(seg0, raw)?.meal ?? "—",
     seatSelection: extractFeaturesFromSegment(seg0, raw)?.seatSelection ?? "—",
     Changes: fareRuleFeatures?.changes ?? (extractFeaturesFromSegment(seg0, raw)?.changes ?? "—"),
     Refundable:

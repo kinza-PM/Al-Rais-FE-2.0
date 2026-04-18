@@ -2988,6 +2988,108 @@ input[type="number"] {
   text-align: left;
 }
 
+/* Pricing detail: each label row aligns with its feature row (synced grid) */
+.pricingCardsWrap .pricingDetailSyncRow.ant-row {
+  align-items: stretch !important;
+}
+
+.pricingCardsWrap .pricingDetailSyncRow .parahAlign {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pricingCardsWrap .pricingDetailSyncRow .priceCardHeadings,
+.pricingCardsWrap .pricingDetailSyncRow .cardPrice {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pricingDetailLabelCell {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+
+.pricingDetailLabelCell p {
+  text-align: center !important;
+  line-height: 1.25 !important;
+  margin: 0;
+}
+
+.pricingDetailMultiBlock {
+  margin-bottom: 20px;
+}
+
+.pricingDetailMultiBlock:last-child {
+  margin-bottom: 0;
+}
+
+.pricingDetailStatusIcon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.pricingDetailPaxType {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.pricingDetailPaxSep {
+  display: inline;
+  margin: 0 2px;
+  padding: 0;
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 11px;
+}
+
+/* BaggageInfoModal: long GDS text + label alignment */
+.baggageInfoModalRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px 16px;
+  font-size: 14px;
+}
+
+.baggageInfoModalLabel {
+  flex: 0 1 auto;
+  min-width: min(132px, 42%);
+  color: #64748b;
+}
+
+.baggageInfoModalValue {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: right;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+@media (max-width: 420px) {
+  .baggageInfoModalValue {
+    flex-basis: 100%;
+    text-align: left;
+  }
+}
+
+p.pricingDetailFeatureP {
+  /* Default: don't stretch, keep icon+text centered as a group */
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
+  color: #3d495c !important;
+}
+
 /* Price Card Radio Style */
 
 /* Card base style */

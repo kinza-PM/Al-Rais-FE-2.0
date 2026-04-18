@@ -5,11 +5,7 @@ import ShareTicketModal from "../atoms/ShareTicketModal";
 import { transformBookingToFlightBookingFormat } from "../../utils/transformBookingData";
 import airlineDefault from "../../assets/images/emirates.png";
 
-export type BookingStatus =
-  | "Confirmed"
-  | "Pending"
-  | "Expired"
-  | "Cancelled";
+export type BookingStatus = "Confirmed" | "Pending" | "Expired" | "Cancelled";
 export type TripMode = "Flights" | "Hotels";
 
 function StatusPill({ status }: { status: BookingStatus }) {
@@ -322,21 +318,26 @@ function BookingCard({ booking }: { booking: any }) {
         height: "229px",
         width: "1168px",
         borderRadius: "16px",
-        borderWidth: "1.5px"
+        borderWidth: "1.5px",
       }}
     >
       {/* Gradient bar at the top of the card */}
-      <div className="flex justify-center w-full absolute top-0 left-0" style={{ marginTop: "0px" }}>
+      <div
+        className="flex justify-center w-full absolute top-0 left-0"
+        style={{ marginTop: "0px" }}
+      >
         <div
           className="rounded-tl-[16px] rounded-tr-[16px]"
           aria-hidden="true"
-          style={{
-            // width: "1168px", 
-            // maxWidth: "100%", 
-            // height: "10px", 
-            // background: "linear-gradient(rgb(196, 207, 225) 0%, rgb(222, 247, 254) 100%)", 
-            // backdropFilter: "blur(10px)" 
-          }}
+          style={
+            {
+              // width: "1168px",
+              // maxWidth: "100%",
+              // height: "10px",
+              // background: "linear-gradient(rgb(196, 207, 225) 0%, rgb(222, 247, 254) 100%)",
+              // backdropFilter: "blur(10px)"
+            }
+          }
         />
       </div>
 
@@ -425,7 +426,8 @@ function BookingCard({ booking }: { booking: any }) {
             onClick={handlePayNow}
             className="text-[#F2F2F3] text-[15px] font-semibold"
             style={{
-              background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+              background:
+                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               width: "148px",
               height: "47px",
               borderRadius: "100px",
@@ -456,7 +458,6 @@ function BookingCard({ booking }: { booking: any }) {
               // padding: "14px 40px",
               gap: "10px",
             }}
-
             overrideClasses
           >
             Pay now
@@ -466,7 +467,7 @@ function BookingCard({ booking }: { booking: any }) {
 
       <CardDivider />
 
-       <div className="mt-6 flex items-center text-[15px] font-medium">
+      <div className="mt-6 flex items-center text-[15px] font-medium">
         <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7]">
           {status === "Confirmed" && (
             <>
@@ -499,49 +500,51 @@ function BookingCard({ booking }: { booking: any }) {
 
               <div className="px-4">
                 <Button
-  type="button"
-  className="text-[#EA0029] hover:underline"
-  overrideClasses
-  onClick={() => {
-    debugger;
-    const firstJourney = booking?.journeys?.[0];
+                  type="button"
+                  className="text-[#EA0029] hover:underline"
+                  overrideClasses
+                  onClick={() => {
+                    const firstJourney = booking?.journeys?.[0];
 
-    const rawIssueDate = booking?.createdAt || "";
-    let formattedIssueDate = "";
+                    const rawIssueDate = booking?.createdAt || "";
+                    let formattedIssueDate = "";
 
-    if (rawIssueDate) {
-      const d = new Date(rawIssueDate);
-      formattedIssueDate = Number.isNaN(d.getTime())
-        ? rawIssueDate
-        : d.toLocaleDateString("en-GB");
-    }
+                    if (rawIssueDate) {
+                      const d = new Date(rawIssueDate);
+                      formattedIssueDate = Number.isNaN(d.getTime())
+                        ? rawIssueDate
+                        : d.toLocaleDateString("en-GB");
+                    }
 
-    const passengersCount = booking?.request?.passengers?.length || 0;
-    const passengersLabel =
-      passengersCount > 0
-        ? `${passengersCount.toString().padStart(2, "0")} ${
-            passengersCount === 1 ? "Adult" : "Adults"
-          }`
-        : booking?.passengersLabel || "";
+                    const passengersCount =
+                      booking?.request?.passengers?.length || 0;
+                    const passengersLabel =
+                      passengersCount > 0
+                        ? `${passengersCount.toString().padStart(2, "0")} ${
+                            passengersCount === 1 ? "Adult" : "Adults"
+                          }`
+                        : booking?.passengersLabel || "";
 
-    navigate("/flight-cancellation", {
-      state: {
-        bookingReferenceId: booking?.bookingRef || "",
-        supplierLocator: booking?.originalApiItem?.detail?.supplierLocator || "",
-        issueDate: formattedIssueDate,
-        bookingId: booking?.offerId || booking?.id || "",
-        airlineName: firstJourney?.airline?.name || "Airline",
-        routeLabel: firstJourney
-          ? `${firstJourney?.from?.code || ""} → ${firstJourney?.to?.code || ""}`
-          : "Flight booking",
-        passengersLabel,
-        totalAmount: Number(booking?.price?.totalFare || 0),
-      },
-    });
-  }}
->
-  Cancel booking
-</Button>
+                    navigate("/flight-cancellation", {
+                      state: {
+                        bookingReferenceId: booking?.bookingRef || "",
+                        supplierLocator:
+                          booking?.originalApiItem?.detail?.supplierLocator ||
+                          "",
+                        issueDate: formattedIssueDate,
+                        bookingId: booking?.offerId || booking?.id || "",
+                        airlineName: firstJourney?.airline?.name || "Airline",
+                        routeLabel: firstJourney
+                          ? `${firstJourney?.from?.code || ""} → ${firstJourney?.to?.code || ""}`
+                          : "Flight booking",
+                        passengersLabel,
+                        totalAmount: Number(booking?.price?.totalFare || 0),
+                      },
+                    });
+                  }}
+                >
+                  Cancel booking
+                </Button>
               </div>
             </>
           )}

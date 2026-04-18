@@ -15,56 +15,26 @@ export default function FLightFareRule({
   const fare = trip?.fare ?? sourceRule?.fare;
 
   const journeys: any[] = trip?.raw?.journey ?? trip?.journey ?? [];
-  const segments: any[] =
+  const segmentsFromJourneys =
     Array.isArray(journeys) && journeys.length > 0
       ? journeys.flatMap((j: any) =>
           Array.isArray(j?.flightSegments) ? j.flightSegments : [],
         )
-      : (trip?.journey?.[0]?.flightSegments ?? []);
+      : [];
+  const segmentsFallback =
+    trip?.raw?.journey?.[0]?.flightSegments ??
+    trip?.journey?.[0]?.flightSegments ??
+    [];
+  const segments: any[] =
+    segmentsFromJourneys.length > 0 ? segmentsFromJourneys : segmentsFallback;
 
-  const formatWeight = (b: any) => {
-    if (!b) return null;
-    const value = b.value ?? b.amount ?? "";
-    const unit = b.unit ?? "";
-    return `${value} ${unit}`.trim();
-  };
-
-  const entries = (segments || []).map((seg: any) => {
-    const route =
-      `${seg?.departureAirportCode ?? ""} → ${seg?.arrivalAirportCode ?? ""}`.trim();
-    const checked = seg?.baggageAllowance?.checkedInBaggage?.[0] ?? null;
-    const carryOn = seg?.baggageAllowance?.carryOnBaggage?.[0] ?? null;
-    return { route, checked, carryOn };
+  const hasBaggageInfo = segments.some((seg: any) => {
+    const a = seg?.baggageAllowance;
+    return (
+      (Array.isArray(a?.checkedInBaggage) && a.checkedInBaggage.length > 0) ||
+      (Array.isArray(a?.carryOnBaggage) && a.carryOnBaggage.length > 0)
+    );
   });
-
-  const singleSegment = !entries.length
-    ? (trip?.journey?.[0]?.flightSegments?.[0] ?? null)
-    : null;
-  const singleEntry = singleSegment
-    ? {
-        route:
-          `${singleSegment?.departureAirportCode ?? ""} → ${singleSegment?.arrivalAirportCode ?? ""}`.trim(),
-        checked: singleSegment?.baggageAllowance?.checkedInBaggage?.[0] ?? null,
-        carryOn: singleSegment?.baggageAllowance?.carryOnBaggage?.[0] ?? null,
-      }
-    : null;
-
-  const list = entries.length ? entries : singleEntry ? [singleEntry] : [];
-
-  const baggageModalSegments = list.map((e) => {
-    const parts = (e.route || "")
-      .split("→")
-      .map((s) => s?.trim())
-      .filter(Boolean);
-    return {
-      fromCode: parts[0] || undefined,
-      toCode: parts[1] || undefined,
-      baggageChecked: e.checked ? formatWeight(e.checked) : null,
-      baggageCarry: e.carryOn ? formatWeight(e.carryOn) : null,
-    };
-  });
-
-  const hasBaggageInfo = list.some((e) => e.checked || e.carryOn);
 
   const miniFarePenaltySummaries = useMemo(() => {
     const miniFareRules = Array.isArray(sourceRule?.miniFareRules)
@@ -253,7 +223,7 @@ export default function FLightFareRule({
       <BaggageInfoModal
         open={baggageModalOpen}
         onClose={() => setBaggageModalOpen(false)}
-        segments={baggageModalSegments}
+        segments={segments}
       />
 
       <Modal

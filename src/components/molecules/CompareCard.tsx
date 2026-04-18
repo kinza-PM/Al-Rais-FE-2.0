@@ -18,6 +18,7 @@ import PLANE_ICON from "../../assets/svgs/plane.svg";
 
 import circlePlus from "../../assets/svgs/plus-circle.svg";
 import { formatDate, formatTime } from "../../utils/helpers";
+import { attachBaggageAllowanceFromOffer } from "../../utils/baggageAllowanceDisplay";
 type CompareCardProps = {
   availableFlights?: any[];
   currentFlight?: any;
@@ -32,7 +33,7 @@ const CompareCard: React.FC<CompareCardProps> = ({
   const [localAvailable, setLocalAvailable] = useState<any[]>([]);
   const [isCurrentPinned, setIsCurrentPinned] = useState(false);
   const [baggageModalOpen, setBaggageModalOpen] = useState(false);
-  const [baggageModalSegments, setBaggageModalSegments] = useState<any[]>([]);
+  const [baggageModalSegments, _] = useState<any[]>([]);
   // console.log("available->", availableFlights);
   const normalize = (x: any) => (x == null ? x : String(x));
 
@@ -54,13 +55,24 @@ const CompareCard: React.FC<CompareCardProps> = ({
   }, [availableFlights, currentFlight]);
 
   // Normalize any leg (outbound/inbound) into an array of segment-shaped items compatible with renderSegmentSummary
-  const normalizeLegSegments = (leg: any): any[] => {
+  const normalizeLegSegments = (leg: any, offerFallback?: any): any[] => {
     if (!leg) return [];
-    if (Array.isArray(leg.segments) && leg.segments.length > 0)
-      return leg.segments;
+    const journeyHost =
+      leg?.raw?.journey?.length ||
+      (Array.isArray(leg?.journey) && leg.journey.length)
+        ? leg
+        : offerFallback?.raw?.journey?.length ||
+            (Array.isArray(offerFallback?.journey) &&
+              offerFallback.journey.length)
+          ? offerFallback
+          : leg;
+
+    if (Array.isArray(leg.segments) && leg.segments.length > 0) {
+      return attachBaggageAllowanceFromOffer(leg.segments, journeyHost);
+    }
     const rawSegs = leg?.raw?.journey?.[0]?.flightSegments;
     if (Array.isArray(rawSegs) && rawSegs.length > 0) {
-      return rawSegs.map((s: any) => ({
+      const mapped = rawSegs.map((s: any) => ({
         name: leg.name,
         logo: leg.logo,
         stop: [],
@@ -101,19 +113,22 @@ const CompareCard: React.FC<CompareCardProps> = ({
               s?.baggageAllowance?.carryOnBaggage?.[0]?.unit ?? ""
             }`
           : null,
+        baggageAllowance: s?.baggageAllowance,
       }));
+      return attachBaggageAllowanceFromOffer(mapped, journeyHost);
     }
-    return [leg];
+    return attachBaggageAllowanceFromOffer([leg], journeyHost);
   };
 
   // Normalize a one-way item into segments
   const normalizeOneWaySegments = (it: any): any[] => {
     if (!it) return [];
-    if (Array.isArray(it.segments) && it.segments.length > 0)
-      return it.segments;
+    if (Array.isArray(it.segments) && it.segments.length > 0) {
+      return attachBaggageAllowanceFromOffer(it.segments, it);
+    }
     const rawSegs = it?.raw?.journey?.[0]?.flightSegments;
     if (Array.isArray(rawSegs) && rawSegs.length > 0) {
-      return rawSegs.map((s: any) => ({
+      const mapped = rawSegs.map((s: any) => ({
         name: it.name,
         logo: it.logo,
         stop: [],
@@ -154,7 +169,9 @@ const CompareCard: React.FC<CompareCardProps> = ({
               s?.baggageAllowance?.carryOnBaggage?.[0]?.unit ?? ""
             }`
           : null,
+        baggageAllowance: s?.baggageAllowance,
       }));
+      return attachBaggageAllowanceFromOffer(mapped, it);
     }
     return [];
   };
@@ -261,12 +278,12 @@ const CompareCard: React.FC<CompareCardProps> = ({
   ) => {
     if (!seg) return null;
     const showIcons = !!opts?.showIcons;
-    const segmentsForBaggage = opts?.allSegmentsForBaggage ?? [seg];
+    // const segmentsForBaggage = opts?.allSegmentsForBaggage ?? [seg];
 
-    const openBaggageModal = () => {
-      setBaggageModalSegments(segmentsForBaggage);
-      setBaggageModalOpen(true);
-    };
+    // const openBaggageModal = () => {
+    //   setBaggageModalSegments(segmentsForBaggage);
+    //   setBaggageModalOpen(true);
+    // };
     const fd = seg.flight_detail ?? {};
     const flightNum = fd.flight_number ?? fd.flightNumber ?? "...";
     const flightClass = fd.flight_class ?? fd.cabinClass ?? "—";
@@ -285,6 +302,13 @@ const CompareCard: React.FC<CompareCardProps> = ({
       `/airlines/${fd.marketingAirline || seg.name || "default"}.png`;
     const route =
       seg.fromCode && seg.toCode ? `${seg.fromCode} → ${seg.toCode}` : null;
+
+    const showBaggageDetail =
+      Boolean(seg.baggageChecked || seg.baggageCarry) ||
+      (Array.isArray(seg?.baggageAllowance?.checkedInBaggage) &&
+        seg.baggageAllowance.checkedInBaggage.length > 0) ||
+      (Array.isArray(seg?.baggageAllowance?.carryOnBaggage) &&
+        seg.baggageAllowance.carryOnBaggage.length > 0);
 
     return (
       <div className="RoundTripCardDetail" style={{ marginBottom: 8 }}>
@@ -307,15 +331,15 @@ const CompareCard: React.FC<CompareCardProps> = ({
                 <img src={cabinIcon} alt="cabin" />
                 <span className="tooltip">Cabin: {flightClass}</span>
               </span>
-              {(seg.baggageChecked || seg.baggageCarry) && (
+              {showBaggageDetail && (
                 <span
                   className="featureIconTooltipWrap"
                   role="button"
                   tabIndex={0}
-                  onClick={openBaggageModal}
-                  onKeyDown={(e) =>
-                    e.key === "Enter" && openBaggageModal()
-                  }
+                  // onClick={openBaggageModal}
+                  // onKeyDown={(e) =>
+                  //   e.key === "Enter" && openBaggageModal()
+                  // }
                   style={{ cursor: "pointer" }}
                 >
                   <img src={baggageIcon} alt="baggage" />
@@ -550,8 +574,8 @@ const CompareCard: React.FC<CompareCardProps> = ({
       // const duration = segDuration(repSeg);
       // const equipment = segEquipment(repSeg);
 
-      const outboundSegs = normalizeLegSegments(outbound);
-      const inboundSegs = normalizeLegSegments(inbound);
+      const outboundSegs = normalizeLegSegments(outbound, item);
+      const inboundSegs = normalizeLegSegments(inbound, item);
 
       return (
         <Col xs={24} sm={24} md={24} lg={12} xl={8} key={idKey} className="mb-5 compareCardCol">
@@ -685,21 +709,27 @@ const CompareCard: React.FC<CompareCardProps> = ({
             </div>
 
             <div className="cardBody">
-              {segmentGroups.map((group: any[], groupIdx: number) => (
+              {segmentGroups.map((group: any[], groupIdx: number) => {
+                const groupEnriched = attachBaggageAllowanceFromOffer(
+                  group,
+                  item,
+                );
+                return (
                 <div key={`mc-group-${groupIdx}`}>
                   <div className="compareLegDivider cardHeader">
                     Flight {String(groupIdx + 1).padStart(2, "0")} Group
                   </div>
-                  {group.map((seg, i) => (
+                  {groupEnriched.map((seg, i) => (
                     <div key={`mc-${groupIdx}-${i}`}>
                       {renderSegmentSummary(seg, {
                         showIcons: true,
-                        allSegmentsForBaggage: group,
+                        allSegmentsForBaggage: groupEnriched,
                       })}
                     </div>
                   ))}
                 </div>
-              ))}
+                );
+              })}
 
               <div className="StartingPrice mt-5">
                 <span>Start from</span>
@@ -946,8 +976,14 @@ const CompareCard: React.FC<CompareCardProps> = ({
                       ? (() => {
                           const outbound = (item as any).outbound ?? null;
                           const inbound = (item as any).inbound ?? null;
-                          const outboundSegs = normalizeLegSegments(outbound);
-                          const inboundSegs = normalizeLegSegments(inbound);
+                          const outboundSegs = normalizeLegSegments(
+                            outbound,
+                            item,
+                          );
+                          const inboundSegs = normalizeLegSegments(
+                            inbound,
+                            item,
+                          );
                           const outBlock =
                             renderTimingAndStops(outbound, `out-${index}`) ??
                             (outboundSegs[0]
@@ -1068,12 +1104,7 @@ const CompareCard: React.FC<CompareCardProps> = ({
       <BaggageInfoModal
         open={baggageModalOpen}
         onClose={() => setBaggageModalOpen(false)}
-        segments={baggageModalSegments.map((s) => ({
-          fromCode: s.fromCode ?? s.departureAirportCode,
-          toCode: s.toCode ?? s.arrivalAirportCode,
-          baggageChecked: s.baggageChecked ?? null,
-          baggageCarry: s.baggageCarry ?? null,
-        }))}
+        segments={baggageModalSegments}
       />
     </div>
   );

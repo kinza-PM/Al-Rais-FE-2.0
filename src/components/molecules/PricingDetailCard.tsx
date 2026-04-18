@@ -9,6 +9,92 @@ type PricingDetailCardProps = {
   passSome: any[];
 };
 
+const PRICING_FEATURE_ROWS: readonly { key: string; label: string }[] = [
+  { key: "personalItem", label: "Personal Items" },
+  { key: "baggage", label: "Baggage" },
+  { key: "meal", label: "Meal" },
+  { key: "seatSelection", label: "Seat Selection" },
+  { key: "Changes", label: "Changes" },
+  { key: "Refundable", label: "Refundable" },
+];
+
+const PAX_TYPE_LEAD = /^(Adult|Child|Infant|Passenger)(\s*:\s*)/i;
+
+function lineClampLinesForFeature(featureKey: string): number | undefined {
+  if (featureKey === "personalItem" || featureKey === "baggage") return 4;
+  if (featureKey === "meal" || featureKey === "seatSelection") return 2;
+  if (featureKey === "Changes" || featureKey === "Refundable") return 3;
+  return 3;
+}
+
+function PaxBoldChunk({ text }: { text: string }) {
+  const m = text.match(PAX_TYPE_LEAD);
+  if (!m) {
+    return <>{text}</>;
+  }
+  return (
+    <>
+      <strong className="pricingDetailPaxType">
+        {m[1]}
+        {m[2]}
+      </strong>
+      {text.slice(m[0].length)}
+    </>
+  );
+}
+
+function PricingFeatureParagraph({
+  value,
+  featureKey,
+}: {
+  value: any;
+  featureKey: string;
+}) {
+  const raw = (value ?? "").toString().trim();
+  const display = raw && raw !== "—" ? raw : "No detail available";
+  const lines = lineClampLinesForFeature(featureKey);
+  const shouldClamp = Boolean(lines && display !== "No detail available");
+
+  const pStyle: React.CSSProperties = {
+    margin: 0,
+    fontSize: 13,
+    lineHeight: 1.45,
+    wordBreak: "break-word",
+    textAlign: "center",
+    ...(shouldClamp && lines
+      ? {
+          display: "-webkit-box",
+          WebkitLineClamp: lines,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }
+      : {}),
+  };
+
+  const partsRaw = display.includes("·")
+    ? display
+        .split(/\s*·\s*/)
+        .map((c: string) => c.trim())
+        .filter(Boolean)
+    : [display];
+  const parts = partsRaw.length ? partsRaw : [display];
+
+  return (
+    <p
+      style={pStyle}
+      className="pricingDetailFeatureP"
+      title={display !== "No detail available" ? display : undefined}
+    >
+      {parts.map((chunk: string, i: number) => (
+        <React.Fragment key={i}>
+          {i > 0 ? <React.Fragment key={i}> &nbsp; . &nbsp; </React.Fragment> : null}
+          <PaxBoldChunk text={chunk.trim()} />
+        </React.Fragment>
+      ))}
+    </p>
+  );
+}
+
 const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
   const headers = useMemo(() => {
     const set = new Set<string>();
@@ -68,48 +154,45 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
 
   const colSpan = Math.max(6, Math.floor(24 / Math.max(1, headers.length)));
 
-  const maxSegs = useMemo(() => {
-    let max = 0;
-    (passSome ?? []).forEach((item) => {
-      const p = item?.price ?? {};
-      Object.values(p).forEach((plan: any) => {
-        const len = Array.isArray(plan?.segments) ? plan.segments.length : 0;
-        if (len > max) max = len;
-      });
-    });
-    return max;
-  }, [passSome]);
-
   if (isEmpty) return null;
 
-  const getHeightClass = (segs: number) => {
-    if (segs <= 1) return "min-h-[72.8px]";
-    if (segs === 2) return "min-h-[100px]";
-    if (segs === 3) return "min-h-[130px]";
-    return "min-h-[160px]";
-  };
-
-  const rowHeightClass = getHeightClass(maxSegs);
-  const fixedHeightClass = "min-h-[72.8px] flex items-center";
-
-  const displayOrNoDetail = (v: any) => {
-    const s = (v ?? "").toString().trim();
-    return s && s !== "—" ? s : "No detail available";
-  };
-
   const isFeatureIncluded = (value: any, featureKey: string) => {
+    const raw = String(value ?? "").trim();
+    const s = raw.toLowerCase();
+
     if (featureKey === "Refundable") {
-      const s = String(value ?? "").toLowerCase();
       return s.startsWith("refundable");
     }
     if (featureKey === "Changes") {
-      const s = String(value ?? "").toLowerCase();
       if (!s || s === "—") return false;
       return !(
         s.includes("not changeable") ||
         s.includes("not allowed") ||
         s.includes("policy not available")
       );
+    }
+    if (featureKey === "seatSelection") {
+      if (!s || s === "—") return false;
+      if (s.includes("assigned at check-in")) return false;
+      if (s.includes("(not included)")) return false;
+      if (
+        s.includes("pre-reserved") ||
+        s.includes("pre reserved") ||
+        s.includes("preassigned")
+      ) {
+        return true;
+      }
+      if (s.includes("add-on") || s.includes("select seat")) return true;
+      return false;
+    }
+    if (featureKey === "meal") {
+      if (!s || s === "—") return false;
+      if (s.includes("not offered")) return false;
+      if (s.includes("no meal details")) return false;
+      if (s.includes("(paid / optional)")) return false;
+      if (s.includes("(included)") || s.includes("complimentary")) return true;
+      if (s.includes("may be available as add-on")) return true;
+      return false;
     }
     return Boolean(value) && value !== "—";
   };
@@ -122,8 +205,9 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
     if (segs && segs.length > 1) {
       return (
         <div
-          className={`parahAlign ${segs && segs.length > 1 ? "parahAlignMultiSeg" : ""
-            }`}
+          className={`parahAlign ${
+            segs && segs.length > 1 ? "parahAlignMultiSeg" : ""
+          }`}
         >
           {segs.map((s: any, i: number) => (
             <div
@@ -132,20 +216,24 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
               onClick={isBaggage ? () => openBaggageModal(plan) : undefined}
               style={isBaggage ? { cursor: "pointer" } : undefined}
             >
-              {showRouteLabel && <span>{s.label}</span>}
+              {showRouteLabel && (
+                <span className="pricingDetailRouteLbl">{s.label}</span>
+              )}
               {(() => {
                 const included = isFeatureIncluded(s?.[featureKey], featureKey);
 
                 return (
-                  <>
-                    <img
-                      src={included ? OkCheckIcon : CrossIcon}
-                      alt={included ? "included" : "not-included"}
-                    />
-                  </>
+                  <img
+                    className="pricingDetailStatusIcon"
+                    src={included ? OkCheckIcon : CrossIcon}
+                    alt={included ? "included" : "not-included"}
+                  />
                 );
               })()}
-              <p style={{ margin: 0 }}>{displayOrNoDetail(s?.[featureKey])}</p>
+              <PricingFeatureParagraph
+                value={s?.[featureKey]}
+                featureKey={featureKey}
+              />
             </div>
           ))}
         </div>
@@ -155,6 +243,7 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
     const content = (
       <div className="parahAlign">
         <img
+          className="pricingDetailStatusIcon"
           src={
             isFeatureIncluded(plan?.[featureKey], featureKey)
               ? OkCheckIcon
@@ -162,7 +251,10 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
           }
           alt=""
         />
-        <p>{displayOrNoDetail(plan?.[featureKey])}</p>
+        <PricingFeatureParagraph
+          value={plan?.[featureKey]}
+          featureKey={featureKey}
+        />
       </div>
     );
 
@@ -190,91 +282,116 @@ const PricingDetailCard: React.FC<PricingDetailCardProps> = ({ passSome }) => {
         }}
       >
         <div className="pricingCardsWrap" style={{ minWidth: "860px" }}>
-          <Row gutter={0}>
-            <Col span={3}>
-              <div className={`emptyLabel ${fixedHeightClass}`}>
-                <p>&nbsp;</p>
-              </div>
-
-              <div className={`priceCardLabel ${rowHeightClass}`}>
-                <p>Personal Items</p>
-              </div>
-
-              <div className={`priceCardLabel ${rowHeightClass}`}>
-                <p>Baggage</p>
-              </div>
-
-              <div className={`priceCardLabel ${rowHeightClass}`}>
-                <p>Seat Selection</p>
-              </div>
-
-              <div className={`priceCardLabel ${rowHeightClass}`}>
-                <p>Changes</p>
-              </div>
-
-              <div className={`priceCardLabel ${rowHeightClass}`}>
-                <p>Refundable</p>
-              </div>
-
-              <div className={`emptyLabel ${fixedHeightClass}`}>
-                <p>&nbsp;</p>
-              </div>
-            </Col>
-
-            <Col span={21}>
-              {passSome.map((item, idx) => (
-                <Row key={`${item?.id ?? item?.offerId ?? idx}`} gutter={0}>
-                  {headers.map((hk) => {
-                    const plan = item.price?.[hk] ?? {};
-
-                    return (
-                      <Col
-                        key={`${idx}-${hk}`}
-                        span={colSpan}
-                        className={selectedPlan === hk ? "activeCard" : ""}
-                      >
-                        <div className="priceCardHeadings">
-                          <p>{plan.label ?? hk}</p>
-                        </div>
-
-                        {renderFeature(plan, "personalItem")}
-                        {renderFeature(plan, "baggage")}
-                        {renderFeature(plan, "seatSelection")}
-                        {renderFeature(plan, "Changes")}
-                        {renderFeature(plan, "Refundable")}
-
-                        <div
-                          className="cardPrice"
-                          style={{
-                            paddingTop: "14px",
-                            paddingBottom: "14px",
-                          }}
+          {passSome.map((item, blockIdx) => (
+            <div
+              key={`${item?.id ?? item?.offerId ?? blockIdx}-pricing-block`}
+              className={
+                passSome.length > 1 ? "pricingDetailMultiBlock" : undefined
+              }
+            >
+              <Row gutter={0} className="pricingDetailSyncRow">
+                <Col span={3} className="emptyLabel">
+                  <p>&nbsp;</p>
+                </Col>
+                <Col span={21}>
+                  <Row gutter={0}>
+                    {headers.map((hk) => {
+                      const plan = item.price?.[hk] ?? {};
+                      return (
+                        <Col
+                          key={`head-${blockIdx}-${hk}`}
+                          span={colSpan}
+                          className={selectedPlan === hk ? "activeCard" : ""}
                         >
-                          <p>
-                            {plan.price != null
-                              ? `AED ${Number(plan.price).toLocaleString()}`
-                              : "No detail available"}
-                            <span>/per person</span>
-                          </p>
+                          <div className="priceCardHeadings">
+                            <p>{plan.label ?? hk}</p>
+                          </div>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                </Col>
+              </Row>
 
-                          <Radio
-                            className={`baggageRadio ${selectedPlan === hk ? "active" : ""
-                              }`}
-                            checked={selectedPlan === hk}
-                            onChange={() => setSelectedPlan(hk)}
+              {PRICING_FEATURE_ROWS.map(({ key, label }) => (
+                <Row
+                  gutter={0}
+                  key={`${blockIdx}-${key}`}
+                  className="pricingDetailSyncRow"
+                >
+                  <Col
+                    span={3}
+                    className="priceCardLabel pricingDetailLabelCell"
+                  >
+                    <p>{label}</p>
+                  </Col>
+                  <Col span={21}>
+                    <Row gutter={0}>
+                      {headers.map((hk) => {
+                        const plan = item.price?.[hk] ?? {};
+                        return (
+                          <Col
+                            key={`${blockIdx}-${hk}-${key}`}
+                            span={colSpan}
+                            className={selectedPlan === hk ? "activeCard" : ""}
                           >
-                            {selectedPlan === hk
-                              ? "This option is selected"
-                              : "Select this option"}
-                          </Radio>
-                        </div>
-                      </Col>
-                    );
-                  })}
+                            {renderFeature(plan, key)}
+                          </Col>
+                        );
+                      })}
+                    </Row>
+                  </Col>
                 </Row>
               ))}
-            </Col>
-          </Row>
+
+              <Row gutter={0} className="pricingDetailSyncRow">
+                <Col span={3} className="emptyLabel">
+                  <p>&nbsp;</p>
+                </Col>
+                <Col span={21}>
+                  <Row gutter={0}>
+                    {headers.map((hk) => {
+                      const plan = item.price?.[hk] ?? {};
+                      return (
+                        <Col
+                          key={`foot-${blockIdx}-${hk}`}
+                          span={colSpan}
+                          className={selectedPlan === hk ? "activeCard" : ""}
+                        >
+                          <div
+                            className="cardPrice"
+                            style={{
+                              paddingTop: "14px",
+                              paddingBottom: "14px",
+                            }}
+                          >
+                            <p>
+                              {plan.price != null
+                                ? `AED ${Number(plan.price).toLocaleString()}`
+                                : "No detail available"}
+                              <span>/per person</span>
+                            </p>
+
+                            <Radio
+                              className={`baggageRadio ${
+                                selectedPlan === hk ? "active" : ""
+                              }`}
+                              checked={selectedPlan === hk}
+                              onChange={() => setSelectedPlan(hk)}
+                            >
+                              {selectedPlan === hk
+                                ? "This option is selected"
+                                : "Select this option"}
+                            </Radio>
+                          </div>
+                        </Col>
+                      );
+                    })}
+                  </Row>
+                </Col>
+              </Row>
+            </div>
+          ))}
         </div>
       </div>
 

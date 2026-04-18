@@ -12,6 +12,7 @@ import {
   formatFlightDurationLabel,
   formatTime,
 } from "../../utils/helpers";
+import { formatQuantityUnit } from "../../utils/baggageAllowanceDisplay";
 import {
   generateFlightTicketPDF,
   generateFlightTicketPDFBlob,
@@ -214,10 +215,10 @@ export default function FlightBookingETicketSection({
 
     return {
       carryOn: carryOnForPax
-        ? `${carryOnForPax.value}${carryOnForPax.unit}`
+        ? formatQuantityUnit(carryOnForPax.value, carryOnForPax.unit) || "None"
         : "None",
       checkedIn: checkedInForPax
-        ? `${checkedInForPax.value}${checkedInForPax.unit}`
+        ? formatQuantityUnit(checkedInForPax.value, checkedInForPax.unit) || "None"
         : "None",
     };
   };

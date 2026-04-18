@@ -369,23 +369,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
 
                       const openBaggage = () => {
                         const rawSegs = row?.segments ?? [];
-                        const mapped = rawSegs.map((s: any) => {
-                          const checked =
-                            s?.baggageAllowance?.checkedInBaggage?.[0];
-                          const carry =
-                            s?.baggageAllowance?.carryOnBaggage?.[0];
-                          return {
-                            fromCode: s?.departureAirportCode,
-                            toCode: s?.arrivalAirportCode,
-                            baggageChecked: checked
-                              ? `${checked.value}${checked.unit ?? ""}`
-                              : null,
-                            baggageCarry: carry
-                              ? `${carry.value}${carry.unit ?? ""}`
-                              : null,
-                          };
-                        });
-                        setBaggageModalSegments(mapped);
+                        setBaggageModalSegments(rawSegs);
                         setBaggageModalOpen(true);
                       };
 
