@@ -249,11 +249,47 @@ function getPassengerNameFromBooking(booking: any): string {
   return name || "Valued Customer";
 }
 
+function getFlightCancellationNavigationState(booking: any) {
+  const api = booking?.originalApiItem;
+  const bookingReferenceId = String(api?.bookingReferenceId ?? "").trim();
+  const supplierLocator = String(api?.detail?.supplierLocator ?? "").trim();
+  const rawIssueDate = booking?.createdAt || "";
+  let issueDate = "";
+  if (rawIssueDate) {
+    const d = new Date(rawIssueDate);
+    issueDate = Number.isNaN(d.getTime())
+      ? ""
+      : d.toLocaleDateString("en-GB");
+  }
+  const hasRequiredCancellationFields =
+    !!bookingReferenceId && !!supplierLocator && !!issueDate;
+
+  const currencyCode =
+    api?.fare?.currencyCode ?? booking?.price?.currencyCode ?? "USD";
+  const totalAmount = Number(
+    api?.fare?.totalFare ?? booking?.price?.totalFare ?? 0,
+  );
+
+  return {
+    bookingReferenceId,
+    supplierLocator,
+    issueDate,
+    hasRequiredCancellationFields,
+    currencyCode,
+    totalAmount,
+    bookingPassengers: api?.request?.passengers ?? [],
+  };
+}
+
 function BookingCard({ booking }: { booking: any }) {
   const status = booking.status;
   const isExpired = status === "Expired";
   const isPending = status === "Pending";
   const journeys = booking.journeys || [];
+  const cancellationNav = useMemo(
+    () => getFlightCancellationNavigationState(booking),
+    [booking],
+  );
   const [countdown, setCountdown] = useState(booking.countdown);
   const [openShareModal, setOpenShareModal] = useState(false);
   const navigate = useNavigate();
@@ -498,54 +534,47 @@ function BookingCard({ booking }: { booking: any }) {
                 </Button>
               </div>
 
-              <div className="px-4">
-                <Button
-                  type="button"
-                  className="text-[#EA0029] hover:underline"
-                  overrideClasses
-                  onClick={() => {
-                    const firstJourney = booking?.journeys?.[0];
+              {cancellationNav.hasRequiredCancellationFields && (
+                <div className="px-4">
+                  <Button
+                    type="button"
+                    className="text-[#EA0029] hover:underline"
+                    overrideClasses
+                    onClick={() => {
+                      const firstJourney = booking?.journeys?.[0];
 
-                    const rawIssueDate = booking?.createdAt || "";
-                    let formattedIssueDate = "";
+                      const passengersCount =
+                        booking?.originalApiItem?.request?.passengers
+                          ?.length || 0;
+                      const passengersLabel =
+                        passengersCount > 0
+                          ? `${passengersCount.toString().padStart(2, "0")} ${
+                              passengersCount === 1 ? "Adult" : "Adults"
+                            }`
+                          : booking?.passengersLabel || "";
 
-                    if (rawIssueDate) {
-                      const d = new Date(rawIssueDate);
-                      formattedIssueDate = Number.isNaN(d.getTime())
-                        ? rawIssueDate
-                        : d.toLocaleDateString("en-GB");
-                    }
-
-                    const passengersCount =
-                      booking?.request?.passengers?.length || 0;
-                    const passengersLabel =
-                      passengersCount > 0
-                        ? `${passengersCount.toString().padStart(2, "0")} ${
-                            passengersCount === 1 ? "Adult" : "Adults"
-                          }`
-                        : booking?.passengersLabel || "";
-
-                    navigate("/flight-cancellation", {
-                      state: {
-                        bookingReferenceId: booking?.bookingRef || "",
-                        supplierLocator:
-                          booking?.originalApiItem?.detail?.supplierLocator ||
-                          "",
-                        issueDate: formattedIssueDate,
-                        bookingId: booking?.offerId || booking?.id || "",
-                        airlineName: firstJourney?.airline?.name || "Airline",
-                        routeLabel: firstJourney
-                          ? `${firstJourney?.from?.code || ""} → ${firstJourney?.to?.code || ""}`
-                          : "Flight booking",
-                        passengersLabel,
-                        totalAmount: Number(booking?.price?.totalFare || 0),
-                      },
-                    });
-                  }}
-                >
-                  Cancel booking
-                </Button>
-              </div>
+                      navigate("/flight-cancellation", {
+                        state: {
+                          bookingReferenceId: cancellationNav.bookingReferenceId,
+                          supplierLocator: cancellationNav.supplierLocator,
+                          issueDate: cancellationNav.issueDate,
+                          bookingId: booking?.offerId || booking?.id || "",
+                          airlineName: firstJourney?.airline?.name || "Airline",
+                          routeLabel: firstJourney
+                            ? `${firstJourney?.from?.code || ""} → ${firstJourney?.to?.code || ""}`
+                            : "Flight booking",
+                          passengersLabel,
+                          totalAmount: cancellationNav.totalAmount,
+                          currencyCode: cancellationNav.currencyCode,
+                          bookingPassengers: cancellationNav.bookingPassengers,
+                        },
+                      });
+                    }}
+                  >
+                    Cancel booking
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>

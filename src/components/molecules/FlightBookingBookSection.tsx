@@ -30,6 +30,7 @@ import {
   validatePassengersForFlightProvisionalBookingFields,
   withDefaultResidenceCountryFromIssuing,
 } from "../../utils/flightBookingHelper";
+import { getPassportIssuePickerBounds } from "../../utils/travelerFieldValidation";
 import axios from "axios";
 import {
   extractAxiosErrorDetailsSource,
@@ -556,502 +557,356 @@ export default function FlightBookingBookSection({
             onProceedSelection={fillFromSavedTravelers}
             maxSelectable={passengers.length}
           />
-          {passengers.map((p, idx) => (
-            <React.Fragment key={p.passengerKey || idx}>
-              <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
-                <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px] bg-[#F2F2F3]">
-                  <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                    Contact person {String(idx + 1).padStart(2, "0")} details
-                  </h3>
-                </div>
-
-                <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
-                  <div className="grid gap-x-1 gap-y-3 md:grid-cols-[1.2fr_1.8fr] pr-4">
-                    <div
-                      className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
-                    >
-                      <SearchableDropdown
-                        options={[
-                          { id: "mr", value: "MR", label: "Mr" },
-                          { id: "ms", value: "MS", label: "Ms" },
-                          { id: "mrs", value: "MRS", label: "Mrs" },
-                        ]}
-                        value={p.passengerInfo?.nameTitle ?? ""}
-                        onChange={(value) => {
-                          onPassengerFieldChange(
-                            idx,
-                            "passengerInfo.nameTitle",
-                            value,
-                          );
-                          onPassengerFieldChange(
-                            idx,
-                            "passengerInfo.gender",
-                            value === "MR" ? "M" : "F",
-                          );
-                          clearFieldError(idx, "passengerInfo.nameTitle");
-                          clearFieldError(idx, "passengerInfo.gender");
-                        }}
-                        placeholder="Select title"
-                        label="Title *"
-                        widthClass="w-full"
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["passengerInfo.nameTitle"]
-                            : null
-                        }
-                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
-                      />
-                    </div>
-                    <div
-                      className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
-                    >
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Enter your full name"
-                        label="Full name (Filled based on ID/Passport/Driver’s license) *"
-                        value={p.passengerInfo?.givenName ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "passengerInfo.givenName",
-                            v ?? "",
-                          );
-                          clearFieldError(idx, "passengerInfo.givenName");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["passengerInfo.givenName"]
-                            : null
-                        }
-                        className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                      />
-                    </div>
-
-                    <div
-                      className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
-                    >
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Enter your surname"
-                        label="Surname *"
-                        value={p.passengerInfo?.surname ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "passengerInfo.surname",
-                            v ?? "",
-                          );
-                          clearFieldError(idx, "passengerInfo.surname");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["passengerInfo.surname"]
-                            : null
-                        }
-                        className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                      />
-                    </div>
-
-                    <div
-                      className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
-                    >
-                      <SearchableDropdown
-                        options={[
-                          { id: "male", value: "M", label: "Male" },
-                          { id: "female", value: "F", label: "Female" },
-                        ]}
-                        value={p.passengerInfo?.gender ?? ""}
-                        onChange={(value) => {
-                          onPassengerFieldChange(
-                            idx,
-                            "passengerInfo.gender",
-                            value,
-                          );
-                          clearFieldError(idx, "passengerInfo.gender");
-                        }}
-                        placeholder="Select gender"
-                        label="Gender *"
-                        widthClass="w-full"
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["passengerInfo.gender"]
-                            : null
-                        }
-                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-                      />
-                    </div>
+          {passengers.map((p, idx) => {
+            const issuePickerBounds = getPassportIssuePickerBounds({
+              birthDateIso: p.passengerInfo?.birthDate ?? null,
+              expiryDateIso: p.identityDocuments?.[0]?.expiryDate ?? null,
+            });
+            return (
+              <React.Fragment key={p.passengerKey || idx}>
+                <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
+                  <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px] bg-[#F2F2F3]">
+                    <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                      Contact person {String(idx + 1).padStart(2, "0")} details
+                    </h3>
                   </div>
-                </div>
-              </div>
 
-              {/* Passenger details (separate card) */}
-
-              <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
-                <div className="flex items-center justify-between px-4 py-2 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px]">
-                  <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                    Traveler {String(idx + 1).padStart(2, "0")} details
-                  </h3>
-                  <CustomToggle
-                    label="Save Traveler information in my profile"
-                    checked={saveToggleChecked(
-                      saveToggleKey(idx, p?.passengerKey),
-                    )}
-                    onChange={() =>
-                      toggleSaveTraveler(saveToggleKey(idx, p?.passengerKey))
-                    }
-                  />
-                </div>
-
-                <div className="px-4 py-4 rounded-b-[16px]">
-                  <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
-                    <div className="relative w-full">
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Select Pax Type"
-                        label="Pax type"
-                        value={p.ptc || ""}
-                        disabled
-                      />
-                    </div>
-
-                    {pRules.isIdTypeMandatory && (
+                  <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
+                    <div className="grid gap-x-1 gap-y-3 md:grid-cols-[1.2fr_1.8fr] pr-4">
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idType"] ? "pb-4" : ""}`}
+                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
                           options={[
-                            {
-                              id: "passport",
-                              value: "PT",
-                              label: "Passport (PT)",
-                            },
+                            { id: "mr", value: "MR", label: "Mr" },
+                            { id: "ms", value: "MS", label: "Ms" },
+                            { id: "mrs", value: "MRS", label: "Mrs" },
                           ]}
-                          value={normalizeIdType(
-                            p.identityDocuments?.[0]?.idType,
-                          )}
+                          value={p.passengerInfo?.nameTitle ?? ""}
                           onChange={(value) => {
                             onPassengerFieldChange(
                               idx,
-                              "identityDocuments.0.idType",
+                              "passengerInfo.nameTitle",
                               value,
                             );
-                            clearFieldError(idx, "identityDocuments.0.idType");
+                            onPassengerFieldChange(
+                              idx,
+                              "passengerInfo.gender",
+                              value === "MR" ? "M" : "F",
+                            );
+                            clearFieldError(idx, "passengerInfo.nameTitle");
+                            clearFieldError(idx, "passengerInfo.gender");
                           }}
-                          placeholder="Select ID type"
-                          label="ID type"
+                          placeholder="Select title"
+                          label="Title *"
                           widthClass="w-full"
                           error={
                             hasAttemptedValidation
                               ? validationErrors[idx]?.[
-                                  "identityDocuments.0.idType"
+                                  "passengerInfo.nameTitle"
+                                ]
+                              : null
+                          }
+                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
+                        />
+                      </div>
+                      <div
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
+                      >
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Enter your full name"
+                          label="Full name (Filled based on ID/Passport/Driver’s license) *"
+                          value={p.passengerInfo?.givenName ?? ""}
+                          onChange={(evOrVal) => {
+                            const v =
+                              evOrVal && evOrVal.target
+                                ? evOrVal.target.value
+                                : evOrVal;
+                            onPassengerFieldChange(
+                              idx,
+                              "passengerInfo.givenName",
+                              v ?? "",
+                            );
+                            clearFieldError(idx, "passengerInfo.givenName");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.[
+                                  "passengerInfo.givenName"
+                                ]
+                              : null
+                          }
+                          className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+                        />
+                      </div>
+
+                      <div
+                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-7" : ""}`}
+                      >
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Enter your surname"
+                          label="Surname *"
+                          maxLength={80}
+                          value={p.passengerInfo?.surname ?? ""}
+                          onChange={(evOrVal) => {
+                            const v =
+                              evOrVal && evOrVal.target
+                                ? evOrVal.target.value
+                                : evOrVal;
+                            onPassengerFieldChange(
+                              idx,
+                              "passengerInfo.surname",
+                              v ?? "",
+                            );
+                            clearFieldError(idx, "passengerInfo.surname");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["passengerInfo.surname"]
+                              : null
+                          }
+                          className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+                        />
+                      </div>
+
+                      <div
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
+                      >
+                        <SearchableDropdown
+                          options={[
+                            { id: "male", value: "M", label: "Male" },
+                            { id: "female", value: "F", label: "Female" },
+                          ]}
+                          value={p.passengerInfo?.gender ?? ""}
+                          onChange={(value) => {
+                            onPassengerFieldChange(
+                              idx,
+                              "passengerInfo.gender",
+                              value,
+                            );
+                            clearFieldError(idx, "passengerInfo.gender");
+                          }}
+                          placeholder="Select gender"
+                          label="Gender *"
+                          widthClass="w-full"
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["passengerInfo.gender"]
+                              : null
+                          }
+                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Passenger details (separate card) */}
+
+                <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
+                  <div className="flex items-center justify-between px-4 py-2 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px]">
+                    <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                      Traveler {String(idx + 1).padStart(2, "0")} details
+                    </h3>
+                    <CustomToggle
+                      label="Save Traveler information in my profile"
+                      checked={saveToggleChecked(
+                        saveToggleKey(idx, p?.passengerKey),
+                      )}
+                      onChange={() =>
+                        toggleSaveTraveler(saveToggleKey(idx, p?.passengerKey))
+                      }
+                    />
+                  </div>
+
+                  <div className="px-4 py-4 rounded-b-[16px]">
+                    <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
+                      <div className="relative w-full">
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Select Pax Type"
+                          label="Pax type"
+                          value={p.ptc || ""}
+                          disabled
+                        />
+                      </div>
+
+                      {pRules.isIdTypeMandatory && (
+                        <div
+                          className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idType"] ? "pb-4" : ""}`}
+                        >
+                          <SearchableDropdown
+                            options={[
+                              {
+                                id: "passport",
+                                value: "PT",
+                                label: "Passport (PT)",
+                              },
+                            ]}
+                            value={normalizeIdType(
+                              p.identityDocuments?.[0]?.idType,
+                            )}
+                            onChange={(value) => {
+                              onPassengerFieldChange(
+                                idx,
+                                "identityDocuments.0.idType",
+                                value,
+                              );
+                              clearFieldError(
+                                idx,
+                                "identityDocuments.0.idType",
+                              );
+                            }}
+                            placeholder="Select ID type"
+                            label="ID type"
+                            widthClass="w-full"
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[idx]?.[
+                                    "identityDocuments.0.idType"
+                                  ]
+                                : null
+                            }
+                            className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                          />
+                        </div>
+                      )}
+
+                      {/* {pRules.isDocumentNumberMandatory && ( */}
+                      <div
+                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
+                      >
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder={`Enter ${
+                            p.identityDocuments?.[0]?.idType === "PT"
+                              ? "Passport number"
+                              : p.identityDocuments?.[0]?.idType === "DL"
+                                ? "Driving licence"
+                                : "National ID"
+                          }`}
+                          label={`${
+                            p.identityDocuments?.[0]?.idType === "PT"
+                              ? "Passport number"
+                              : p.identityDocuments?.[0]?.idType === "DL"
+                                ? "Driving licence"
+                                : "National ID"
+                          } *`}
+                          maxLength={20}
+                          value={
+                            p.identityDocuments?.[0]?.idDocumentNumber ?? ""
+                          }
+                          onChange={(evOrVal) => {
+                            const v =
+                              evOrVal && evOrVal.target
+                                ? evOrVal.target.value
+                                : evOrVal;
+                            onPassengerFieldChange(
+                              idx,
+                              "identityDocuments.0.idDocumentNumber",
+                              v ?? "",
+                            );
+                            clearFieldError(
+                              idx,
+                              "identityDocuments.0.idDocumentNumber",
+                            );
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.[
+                                  "identityDocuments.0.idDocumentNumber"
+                                ]
+                              : null
+                          }
+                        />
+                      </div>
+                      {/* )} */}
+
+                      {/* {pRules.isIssuingCountryCodeMandatory && ( */}
+                      <div
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
+                      >
+                        <SearchableDropdown
+                          // options={
+                          //   cities?.map((c) => ({
+                          //     id: c.id,
+                          //     value: c.code,
+                          //     label: c.city,
+                          //   })) || []
+                          // }
+                          options={
+                            countries?.map((c) => ({
+                              id: c.iso2,
+                              value: c.iso2,
+                              label: c.label,
+                            })) || []
+                          }
+                          value={
+                            p.identityDocuments?.[0]?.issuingCountryCode ?? ""
+                          }
+                          onChange={(value) => {
+                            onPassengerFieldChange(
+                              idx,
+                              "identityDocuments.0.issuingCountryCode",
+                              value,
+                            );
+                            clearFieldError(
+                              idx,
+                              "identityDocuments.0.issuingCountryCode",
+                            );
+                          }}
+                          placeholder="Select issuing country"
+                          label="Issuing country *"
+                          widthClass="w-full"
+                          searchPlaceholder="Search countries..."
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.[
+                                  "identityDocuments.0.issuingCountryCode"
                                 ]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                         />
                       </div>
-                    )}
+                      {/* )} */}
 
-                    {/* {pRules.isDocumentNumberMandatory && ( */}
-                    <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
-                    >
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder={`Enter ${
-                          p.identityDocuments?.[0]?.idType === "PT"
-                            ? "Passport number"
-                            : p.identityDocuments?.[0]?.idType === "DL"
-                              ? "Driving licence"
-                              : "National ID"
-                        }`}
-                        label={`${
-                          p.identityDocuments?.[0]?.idType === "PT"
-                            ? "Passport number"
-                            : p.identityDocuments?.[0]?.idType === "DL"
-                              ? "Driving licence"
-                              : "National ID"
-                        } *`}
-                        value={p.identityDocuments?.[0]?.idDocumentNumber ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "identityDocuments.0.idDocumentNumber",
-                            v ?? "",
-                          );
-                          clearFieldError(
-                            idx,
-                            "identityDocuments.0.idDocumentNumber",
-                          );
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.[
-                                "identityDocuments.0.idDocumentNumber"
-                              ]
-                            : null
-                        }
-                      />
-                    </div>
-                    {/* )} */}
-
-                    {/* {pRules.isIssuingCountryCodeMandatory && ( */}
-                    <div
-                      className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
-                    >
-                      <SearchableDropdown
-                        // options={
-                        //   cities?.map((c) => ({
-                        //     id: c.id,
-                        //     value: c.code,
-                        //     label: c.city,
-                        //   })) || []
-                        // }
-                        options={
-                          countries?.map((c) => ({
-                            id: c.iso2,
-                            value: c.iso2,
-                            label: c.label,
-                          })) || []
-                        }
-                        value={
-                          p.identityDocuments?.[0]?.issuingCountryCode ?? ""
-                        }
-                        onChange={(value) => {
-                          onPassengerFieldChange(
-                            idx,
-                            "identityDocuments.0.issuingCountryCode",
-                            value,
-                          );
-                          clearFieldError(
-                            idx,
-                            "identityDocuments.0.issuingCountryCode",
-                          );
-                        }}
-                        placeholder="Select issuing country"
-                        label="Issuing country *"
-                        widthClass="w-full"
-                        searchPlaceholder="Search countries..."
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.[
-                                "identityDocuments.0.issuingCountryCode"
-                              ]
-                            : null
-                        }
-                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-                      />
-                    </div>
-                    {/* )} */}
-
-                    {/* {pRules.isDateOfIssueMandatory && ( */}
-                    <div
-                      className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
-                    >
-                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                        Date of issue *
-                      </label>
-                      <TailiwindCustomDatePicker
-                        value={
-                          p.identityDocuments?.[0]?.dateOfIssue
-                            ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.dateOfIssue,
-                              )
-                            : null
-                        }
-                        onChange={(date) => {
-                          const iso = formatDateToLocalISO(date);
-                          onPassengerFieldChange(
-                            idx,
-                            "identityDocuments.0.dateOfIssue",
-                            iso,
-                          );
-                          clearFieldError(
-                            idx,
-                            "identityDocuments.0.dateOfIssue",
-                          );
-                        }}
-                        placeholder="Please select"
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.[
-                                "identityDocuments.0.dateOfIssue"
-                              ]
-                            : null
-                        }
-                        overridesClass
-                        inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-                      />
-                    </div>
-                    {/* )} */}
-
-                    {/* {pRules.isExpiryDateMandatory && ( */}
-                    <div
-                      className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
-                    >
-                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                        Expiry date *
-                      </label>
-                      <TailiwindCustomDatePicker
-                        value={
-                          p.identityDocuments?.[0]?.expiryDate
-                            ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.expiryDate,
-                              )
-                            : null
-                        }
-                        onChange={(date) => {
-                          const iso = formatDateToLocalISO(date);
-                          onPassengerFieldChange(
-                            idx,
-                            "identityDocuments.0.expiryDate",
-                            iso,
-                          );
-                          clearFieldError(
-                            idx,
-                            "identityDocuments.0.expiryDate",
-                          );
-                        }}
-                        placeholder="Please select"
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.[
-                                "identityDocuments.0.expiryDate"
-                              ]
-                            : null
-                        }
-                        overridesClass
-                        inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-                      />
-                    </div>
-                    {/* )} */}
-
-                    {/* {pRules.isResidenceCountryCodeMandatory && ( */}
-                    <div
-                      className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "pb-4" : ""}`}
-                    >
-                      <SearchableDropdown
-                        // options={
-                        //   cities?.map((c) => ({
-                        //     id: c.id,
-                        //     value: c.code,
-                        //     label: c.city,
-                        //   })) || []
-                        // }
-                        options={
-                          countries?.map((c) => ({
-                            id: c.iso2,
-                            value: c.iso2,
-                            label: c.label,
-                          })) || []
-                        }
-                        value={
-                          p.identityDocuments?.[0]?.residenceCountryCode ?? ""
-                        }
-                        onChange={(value) => {
-                          onPassengerFieldChange(
-                            idx,
-                            "identityDocuments.0.residenceCountryCode",
-                            value,
-                          );
-                          clearFieldError(
-                            idx,
-                            "identityDocuments.0.residenceCountryCode",
-                          );
-                        }}
-                        placeholder="Select residence country"
-                        label="Residence Country (optional)"
-                        widthClass="w-full"
-                        searchPlaceholder="Search countries..."
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.[
-                                "identityDocuments.0.residenceCountryCode"
-                              ]
-                            : null
-                        }
-                        className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-                      />
-                    </div>
-                    {/* )} */}
-
-                    {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
-                    <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
-                    >
-                      <TailwindCustomInput
-                        type="email"
-                        placeholder="Enter an email"
-                        label="Email *"
-                        value={
-                          p.contact?.contactsProvided?.[0]?.emailAddress?.[0] ??
-                          ""
-                        }
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "contact.contactsProvided.0.emailAddress.0",
-                            v ?? "",
-                          );
-                          clearFieldError(
-                            idx,
-                            "contact.contactsProvided.0.emailAddress.0",
-                          );
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.[
-                                "contact.contactsProvided.0.emailAddress.0"
-                              ]
-                            : null
-                        }
-                      />
-                    </div>
-                    {/* )} */}
-
-                    {pRules.isDateOfBirthMandatory && (
+                      {/* {pRules.isDateOfIssueMandatory && ( */}
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
+                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Birth date *
+                          Date of issue *
                         </label>
                         <TailiwindCustomDatePicker
-                          placeholder="Please select"
                           value={
-                            p.passengerInfo?.birthDate
-                              ? parseLocalDateString(p.passengerInfo?.birthDate)
+                            p.identityDocuments?.[0]?.dateOfIssue
+                              ? parseLocalDateString(
+                                  p.identityDocuments?.[0]?.dateOfIssue,
+                                )
                               : null
                           }
                           onChange={(date) => {
                             const iso = formatDateToLocalISO(date);
                             onPassengerFieldChange(
                               idx,
-                              "passengerInfo.birthDate",
+                              "identityDocuments.0.dateOfIssue",
                               iso,
                             );
-                            clearFieldError(idx, "passengerInfo.birthDate");
+                            clearFieldError(
+                              idx,
+                              "identityDocuments.0.dateOfIssue",
+                            );
                           }}
+                          minDate={issuePickerBounds.minDate}
+                          maxDate={issuePickerBounds.maxDate}
+                          placeholder="Please select"
                           error={
                             hasAttemptedValidation
                               ? validationErrors[idx]?.[
-                                  "passengerInfo.birthDate"
+                                  "identityDocuments.0.dateOfIssue"
                                 ]
                               : null
                           }
@@ -1059,177 +914,343 @@ export default function FlightBookingBookSection({
                           inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
                         />
                       </div>
-                    )}
+                      {/* )} */}
 
-                    {pRules.isPANMandatory && (
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Enter PAN"
-                        label="PAN"
-                        value={p.passengerInfo?.PAN ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "passengerInfo.PAN",
-                            v ?? "",
-                          );
-                          clearFieldError(idx, "passengerInfo.PAN");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["passengerInfo.PAN"]
-                            : null
-                        }
-                      />
-                    )}
+                      {/* {pRules.isExpiryDateMandatory && ( */}
+                      <div
+                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
+                      >
+                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                          Expiry date *
+                        </label>
+                        <TailiwindCustomDatePicker
+                          value={
+                            p.identityDocuments?.[0]?.expiryDate
+                              ? parseLocalDateString(
+                                  p.identityDocuments?.[0]?.expiryDate,
+                                )
+                              : null
+                          }
+                          onChange={(date) => {
+                            const iso = formatDateToLocalISO(date);
+                            onPassengerFieldChange(
+                              idx,
+                              "identityDocuments.0.expiryDate",
+                              iso,
+                            );
+                            clearFieldError(
+                              idx,
+                              "identityDocuments.0.expiryDate",
+                            );
+                          }}
+                          placeholder="Please select"
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.[
+                                  "identityDocuments.0.expiryDate"
+                                ]
+                              : null
+                          }
+                          overridesClass
+                          inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                        />
+                      </div>
+                      {/* )} */}
 
-                    {pRules.isAdditionalIdTypeMandatory && (
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Additional ID type"
-                        label="Additional ID type"
-                        value={p.additionalId?.type ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "additionalId.type",
-                            v ?? "",
-                          );
-                          clearFieldError(idx, "additionalId.type");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["additionalId.type"]
-                            : null
-                        }
-                      />
-                    )}
+                      {/* {pRules.isResidenceCountryCodeMandatory && ( */}
+                      <div
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "pb-4" : ""}`}
+                      >
+                        <SearchableDropdown
+                          // options={
+                          //   cities?.map((c) => ({
+                          //     id: c.id,
+                          //     value: c.code,
+                          //     label: c.city,
+                          //   })) || []
+                          // }
+                          options={
+                            countries?.map((c) => ({
+                              id: c.iso2,
+                              value: c.iso2,
+                              label: c.label,
+                            })) || []
+                          }
+                          value={
+                            p.identityDocuments?.[0]?.residenceCountryCode ?? ""
+                          }
+                          onChange={(value) => {
+                            onPassengerFieldChange(
+                              idx,
+                              "identityDocuments.0.residenceCountryCode",
+                              value,
+                            );
+                            clearFieldError(
+                              idx,
+                              "identityDocuments.0.residenceCountryCode",
+                            );
+                          }}
+                          placeholder="Select residence country"
+                          label="Residence Country (optional)"
+                          widthClass="w-full"
+                          searchPlaceholder="Search countries..."
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.[
+                                  "identityDocuments.0.residenceCountryCode"
+                                ]
+                              : null
+                          }
+                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                        />
+                      </div>
+                      {/* )} */}
 
-                    {pRules.isAdditionalDocumentNumberMandatory && (
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Additional document number"
-                        label="Additional document number"
-                        value={p.additionalId?.number ?? ""}
-                        onChange={(evOrVal) => {
-                          const v =
-                            evOrVal && evOrVal.target
-                              ? evOrVal.target.value
-                              : evOrVal;
-                          onPassengerFieldChange(
-                            idx,
-                            "additionalId.number",
-                            v ?? "",
-                          );
-                          clearFieldError(idx, "additionalId.number");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["additionalId.number"]
-                            : null
-                        }
-                      />
-                    )}
+                      {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
+                      <div
+                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
+                      >
+                        <TailwindCustomInput
+                          type="email"
+                          placeholder="Enter an email"
+                          label="Email *"
+                          value={
+                            p.contact?.contactsProvided?.[0]
+                              ?.emailAddress?.[0] ?? ""
+                          }
+                          onChange={(evOrVal) => {
+                            const v =
+                              evOrVal && evOrVal.target
+                                ? evOrVal.target.value
+                                : evOrVal;
+                            onPassengerFieldChange(
+                              idx,
+                              "contact.contactsProvided.0.emailAddress.0",
+                              v ?? "",
+                            );
+                            clearFieldError(
+                              idx,
+                              "contact.contactsProvided.0.emailAddress.0",
+                            );
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.[
+                                  "contact.contactsProvided.0.emailAddress.0"
+                                ]
+                              : null
+                          }
+                        />
+                      </div>
+                      {/* )} */}
 
-                    {/* Seat, Meal, Baggage, OtherAncillary (only show if mandatory) */}
-                    {pRules.isSeatMandatory && (
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Preferred seat (if any)"
-                        label="Seat"
-                        value={p.seat ?? ""}
-                        onChange={(evOrVal) => {
-                          onPassengerFieldChange(
-                            idx,
-                            "seat",
-                            evOrVal.target?.value ?? evOrVal,
-                          );
-                          clearFieldError(idx, "seat");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["seat"]
-                            : null
-                        }
-                      />
-                    )}
+                      {pRules.isDateOfBirthMandatory && (
+                        <div
+                          className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
+                        >
+                          <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                            Birth date *
+                          </label>
+                          <TailiwindCustomDatePicker
+                            placeholder="Please select"
+                            value={
+                              p.passengerInfo?.birthDate
+                                ? parseLocalDateString(
+                                    p.passengerInfo?.birthDate,
+                                  )
+                                : null
+                            }
+                            onChange={(date) => {
+                              const iso = formatDateToLocalISO(date);
+                              onPassengerFieldChange(
+                                idx,
+                                "passengerInfo.birthDate",
+                                iso,
+                              );
+                              clearFieldError(idx, "passengerInfo.birthDate");
+                            }}
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[idx]?.[
+                                    "passengerInfo.birthDate"
+                                  ]
+                                : null
+                            }
+                            overridesClass
+                            inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                          />
+                        </div>
+                      )}
 
-                    {pRules.isMealMandatory && (
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Meal preference"
-                        label="Meal"
-                        value={p.meal ?? ""}
-                        onChange={(evOrVal) => {
-                          onPassengerFieldChange(
-                            idx,
-                            "meal",
-                            evOrVal.target?.value ?? evOrVal,
-                          );
-                          clearFieldError(idx, "meal");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["meal"]
-                            : null
-                        }
-                      />
-                    )}
+                      {pRules.isPANMandatory && (
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Enter PAN"
+                          label="PAN"
+                          value={p.passengerInfo?.PAN ?? ""}
+                          onChange={(evOrVal) => {
+                            const v =
+                              evOrVal && evOrVal.target
+                                ? evOrVal.target.value
+                                : evOrVal;
+                            onPassengerFieldChange(
+                              idx,
+                              "passengerInfo.PAN",
+                              v ?? "",
+                            );
+                            clearFieldError(idx, "passengerInfo.PAN");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["passengerInfo.PAN"]
+                              : null
+                          }
+                        />
+                      )}
 
-                    {pRules.isBaggageMandatory && (
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Baggage"
-                        label="Baggage"
-                        value={p.baggage ?? ""}
-                        onChange={(evOrVal) => {
-                          onPassengerFieldChange(
-                            idx,
-                            "baggage",
-                            evOrVal.target?.value ?? evOrVal,
-                          );
-                          clearFieldError(idx, "baggage");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["baggage"]
-                            : null
-                        }
-                      />
-                    )}
+                      {pRules.isAdditionalIdTypeMandatory && (
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Additional ID type"
+                          label="Additional ID type"
+                          value={p.additionalId?.type ?? ""}
+                          onChange={(evOrVal) => {
+                            const v =
+                              evOrVal && evOrVal.target
+                                ? evOrVal.target.value
+                                : evOrVal;
+                            onPassengerFieldChange(
+                              idx,
+                              "additionalId.type",
+                              v ?? "",
+                            );
+                            clearFieldError(idx, "additionalId.type");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["additionalId.type"]
+                              : null
+                          }
+                        />
+                      )}
 
-                    {pRules.isOtherAncillaryMandatory && (
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="Other ancillaries"
-                        label="Other ancillaries"
-                        value={p.otherAncillary ?? ""}
-                        onChange={(evOrVal) => {
-                          onPassengerFieldChange(
-                            idx,
-                            "otherAncillary",
-                            evOrVal.target?.value ?? evOrVal,
-                          );
-                          clearFieldError(idx, "otherAncillary");
-                        }}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors[idx]?.["otherAncillary"]
-                            : null
-                        }
-                      />
-                    )}
+                      {pRules.isAdditionalDocumentNumberMandatory && (
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Additional document number"
+                          label="Additional document number"
+                          value={p.additionalId?.number ?? ""}
+                          onChange={(evOrVal) => {
+                            const v =
+                              evOrVal && evOrVal.target
+                                ? evOrVal.target.value
+                                : evOrVal;
+                            onPassengerFieldChange(
+                              idx,
+                              "additionalId.number",
+                              v ?? "",
+                            );
+                            clearFieldError(idx, "additionalId.number");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["additionalId.number"]
+                              : null
+                          }
+                        />
+                      )}
 
-                    {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
-                    {/* <div className="w-full">
+                      {/* Seat, Meal, Baggage, OtherAncillary (only show if mandatory) */}
+                      {pRules.isSeatMandatory && (
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Preferred seat (if any)"
+                          label="Seat"
+                          value={p.seat ?? ""}
+                          onChange={(evOrVal) => {
+                            onPassengerFieldChange(
+                              idx,
+                              "seat",
+                              evOrVal.target?.value ?? evOrVal,
+                            );
+                            clearFieldError(idx, "seat");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["seat"]
+                              : null
+                          }
+                        />
+                      )}
+
+                      {pRules.isMealMandatory && (
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Meal preference"
+                          label="Meal"
+                          value={p.meal ?? ""}
+                          onChange={(evOrVal) => {
+                            onPassengerFieldChange(
+                              idx,
+                              "meal",
+                              evOrVal.target?.value ?? evOrVal,
+                            );
+                            clearFieldError(idx, "meal");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["meal"]
+                              : null
+                          }
+                        />
+                      )}
+
+                      {pRules.isBaggageMandatory && (
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Baggage"
+                          label="Baggage"
+                          value={p.baggage ?? ""}
+                          onChange={(evOrVal) => {
+                            onPassengerFieldChange(
+                              idx,
+                              "baggage",
+                              evOrVal.target?.value ?? evOrVal,
+                            );
+                            clearFieldError(idx, "baggage");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["baggage"]
+                              : null
+                          }
+                        />
+                      )}
+
+                      {pRules.isOtherAncillaryMandatory && (
+                        <TailwindCustomInput
+                          type="text"
+                          placeholder="Other ancillaries"
+                          label="Other ancillaries"
+                          value={p.otherAncillary ?? ""}
+                          onChange={(evOrVal) => {
+                            onPassengerFieldChange(
+                              idx,
+                              "otherAncillary",
+                              evOrVal.target?.value ?? evOrVal,
+                            );
+                            clearFieldError(idx, "otherAncillary");
+                          }}
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors[idx]?.["otherAncillary"]
+                              : null
+                          }
+                        />
+                      )}
+
+                      {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
+                      {/* <div className="w-full">
                       <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                         Phone
                       </label>
@@ -1286,99 +1307,101 @@ export default function FlightBookingBookSection({
                         />
                       </div>
                     </div> */}
-                    <div className="relative w-full max-w-[561px]">
-                      <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                        Phone *
-                      </label>
-                      <div
-                        className={
-                          hasAttemptedValidation &&
+                      <div className="relative w-full max-w-[561px]">
+                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                          Phone *
+                        </label>
+                        <div
+                          className={
+                            hasAttemptedValidation &&
+                            validationErrors[idx]?.[
+                              "contact.contactsProvided.0.phone.0"
+                            ]
+                              ? "phone-input-error"
+                              : ""
+                          }
+                        >
+                          <PhoneInput
+                            defaultCountry="us"
+                            value={(() => {
+                              const ownAreaCode =
+                                p.contact?.contactsProvided?.[0]?.phone?.[0]
+                                  ?.areaCode ?? "";
+                              const ownPhoneNumber =
+                                p.contact?.contactsProvided?.[0]?.phone?.[0]
+                                  ?.phoneNumber ?? "";
+                              const ownPhone = ownAreaCode + ownPhoneNumber;
+                              if (ownAreaCode && ownPhoneNumber)
+                                return ownPhone;
+                              // if (ownPhone !== "+1") return ownPhone;
+                              const ptc = (p.ptc || "").toUpperCase();
+                              if (
+                                (ptc === "CHD" || ptc === "INF") &&
+                                firstAdtPhone
+                              ) {
+                                return (
+                                  firstAdtPhone.areaCode +
+                                  firstAdtPhone.phoneNumber
+                                );
+                              }
+                              return "";
+                            })()}
+                            // value={
+                            //   (p.contact?.contactsProvided?.[0]?.phone?.[0]
+                            //     ?.areaCode || "") +
+                            //   (p.contact?.contactsProvided?.[0]?.phone?.[0]
+                            //     ?.phoneNumber || "")
+                            // }
+                            onChange={(phone, meta) => {
+                              const dialCode = `+${meta.country.dialCode}`;
+                              const phoneNumber = phone.replace(dialCode, "");
+                              onPassengerFieldChange(
+                                idx,
+                                "contact.contactsProvided.0.phone.0.areaCode",
+                                dialCode,
+                              );
+                              onPassengerFieldChange(
+                                idx,
+                                "contact.contactsProvided.0.phone.0.phoneNumber",
+                                phoneNumber,
+                              );
+                              clearFieldError(
+                                idx,
+                                "contact.contactsProvided.0.phone.0",
+                              );
+                            }}
+                            forceDialCode={true}
+                            hideDropdown={false}
+                            disableCountryGuess={false}
+                            className="custom-phone-wrapper"
+                            countrySelectorStyleProps={{
+                              buttonClassName: "country-selector-btn",
+                            }}
+                            inputProps={{
+                              placeholder: "Phone",
+                            }}
+                          />
+                        </div>
+                        {hasAttemptedValidation &&
                           validationErrors[idx]?.[
                             "contact.contactsProvided.0.phone.0"
-                          ]
-                            ? "phone-input-error"
-                            : ""
-                        }
-                      >
-                        <PhoneInput
-                          defaultCountry="us"
-                          value={(() => {
-                            const ownAreaCode =
-                              p.contact?.contactsProvided?.[0]?.phone?.[0]
-                                ?.areaCode ?? "";
-                            const ownPhoneNumber =
-                              p.contact?.contactsProvided?.[0]?.phone?.[0]
-                                ?.phoneNumber ?? "";
-                            const ownPhone = ownAreaCode + ownPhoneNumber;
-                            if (ownAreaCode && ownPhoneNumber) return ownPhone;
-                            // if (ownPhone !== "+1") return ownPhone;
-                            const ptc = (p.ptc || "").toUpperCase();
-                            if (
-                              (ptc === "CHD" || ptc === "INF") &&
-                              firstAdtPhone
-                            ) {
-                              return (
-                                firstAdtPhone.areaCode +
-                                firstAdtPhone.phoneNumber
-                              );
-                            }
-                            return "";
-                          })()}
-                          // value={
-                          //   (p.contact?.contactsProvided?.[0]?.phone?.[0]
-                          //     ?.areaCode || "") +
-                          //   (p.contact?.contactsProvided?.[0]?.phone?.[0]
-                          //     ?.phoneNumber || "")
-                          // }
-                          onChange={(phone, meta) => {
-                            const dialCode = `+${meta.country.dialCode}`;
-                            const phoneNumber = phone.replace(dialCode, "");
-                            onPassengerFieldChange(
-                              idx,
-                              "contact.contactsProvided.0.phone.0.areaCode",
-                              dialCode,
-                            );
-                            onPassengerFieldChange(
-                              idx,
-                              "contact.contactsProvided.0.phone.0.phoneNumber",
-                              phoneNumber,
-                            );
-                            clearFieldError(
-                              idx,
-                              "contact.contactsProvided.0.phone.0",
-                            );
-                          }}
-                          forceDialCode={true}
-                          hideDropdown={false}
-                          disableCountryGuess={false}
-                          className="custom-phone-wrapper"
-                          countrySelectorStyleProps={{
-                            buttonClassName: "country-selector-btn",
-                          }}
-                          inputProps={{
-                            placeholder: "Phone",
-                          }}
-                        />
+                          ] && (
+                            <p className="absolute left-0 text-[12px] mt-1 text-[#E65959] whitespace-nowrap">
+                              {
+                                validationErrors[idx][
+                                  "contact.contactsProvided.0.phone.0"
+                                ]
+                              }
+                            </p>
+                          )}
                       </div>
-                      {hasAttemptedValidation &&
-                        validationErrors[idx]?.[
-                          "contact.contactsProvided.0.phone.0"
-                        ] && (
-                          <p className="absolute left-0 text-[12px] mt-1 text-[#E65959] whitespace-nowrap">
-                            {
-                              validationErrors[idx][
-                                "contact.contactsProvided.0.phone.0"
-                              ]
-                            }
-                          </p>
-                        )}
+                      {/* )} */}
                     </div>
-                    {/* )} */}
                   </div>
                 </div>
-              </div>
-            </React.Fragment>
-          ))}
+              </React.Fragment>
+            );
+          })}
         </div>
 
         {/* RIGHT: Trip details */}

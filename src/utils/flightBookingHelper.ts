@@ -1,6 +1,12 @@
 import type { FlightInitialBooking } from "../services/api/flightBooking";
 import type { AllSelections, AncillaryEntry } from "../store/useAncillaryStore";
 import { generateUUID } from "./helpers";
+import {
+  validateIdentityDocumentNumberForType,
+  validateInternationalPhoneParts,
+  validatePassportDateOfIssue,
+  validateTravelerSurname,
+} from "./travelerFieldValidation";
 
 export type FlightFinalReservedBooking = {
   bookingStatus: string;
@@ -112,6 +118,11 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     }
     if (isEmpty(pi.surname)) {
       passengerErrors["passengerInfo.surname"] = "Surname is required.";
+    } else {
+      const surnameFmt = validateTravelerSurname(pi.surname);
+      if (surnameFmt) {
+        passengerErrors["passengerInfo.surname"] = surnameFmt;
+      }
     }
     // API requires gender (VAL-004) - backend validates airPassengers[0].passengerInfo.gender
     if (isEmpty(pi.gender)) {
@@ -135,6 +146,14 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     if (isEmpty(phoneValue)) {
       passengerErrors["contact.contactsProvided.0.phone.0"] =
         "Phone (country code and number) is required.";
+    } else {
+      const phoneFmt = validateInternationalPhoneParts(
+        phone.areaCode,
+        phone.phoneNumber,
+      );
+      if (phoneFmt) {
+        passengerErrors["contact.contactsProvided.0.phone.0"] = phoneFmt;
+      }
     }
 
     // Date of birth
@@ -206,6 +225,14 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     if (isEmpty(id.idDocumentNumber)) {
       passengerErrors["identityDocuments.0.idDocumentNumber"] =
         "Document number is required.";
+    } else {
+      const docFmt = validateIdentityDocumentNumberForType(
+        id.idDocumentNumber,
+        id.idType,
+      );
+      if (docFmt) {
+        passengerErrors["identityDocuments.0.idDocumentNumber"] = docFmt;
+      }
     }
     if (isEmpty(id.issuingCountryCode)) {
       passengerErrors["identityDocuments.0.issuingCountryCode"] =
@@ -218,6 +245,16 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     if (pRules.isDateOfIssueMandatory && isEmpty(id.dateOfIssue)) {
       passengerErrors["identityDocuments.0.dateOfIssue"] =
         "Date of issue is required.";
+    } else if (!isEmpty(id.dateOfIssue)) {
+      const issueFmt = validatePassportDateOfIssue(
+        id.dateOfIssue,
+        pi.birthDate ?? null,
+        id.expiryDate ?? null,
+        today,
+      );
+      if (issueFmt) {
+        passengerErrors["identityDocuments.0.dateOfIssue"] = issueFmt;
+      }
     }
     // BK212: Residence country is not mandatory
     if (pRules.isPANMandatory && isEmpty(pi.PAN)) {
@@ -293,6 +330,17 @@ export const validatePassengersForFlightProvisionalBooking = (
     for (const r of alwaysRequired) {
       if (isEmpty(r.value)) return { valid: false, error: prefixFor(i, r.msg) };
     }
+
+    const surnameFmt = validateTravelerSurname(pi.surname);
+    if (surnameFmt)
+      return { valid: false, error: prefixFor(i, surnameFmt) };
+
+    const phoneFmt = validateInternationalPhoneParts(
+      phone.areaCode,
+      phone.phoneNumber,
+    );
+    if (phoneFmt)
+      return { valid: false, error: prefixFor(i, phoneFmt) };
 
     if (pRules.isDateOfBirthMandatory) {
       const bd = pi.birthDate ?? null;
@@ -382,6 +430,24 @@ export const validatePassengersForFlightProvisionalBooking = (
     for (const [flag, value, msg] of ruleChecks) {
       if (flag && isEmpty(value))
         return { valid: false, error: prefixFor(i, msg) };
+    }
+
+    if (!isEmpty(id.idDocumentNumber)) {
+      const docFmt = validateIdentityDocumentNumberForType(
+        id.idDocumentNumber,
+        id.idType,
+      );
+      if (docFmt) return { valid: false, error: prefixFor(i, docFmt) };
+    }
+
+    if (!isEmpty(id.dateOfIssue)) {
+      const issueFmt = validatePassportDateOfIssue(
+        id.dateOfIssue,
+        pi.birthDate ?? null,
+        id.expiryDate ?? null,
+        today,
+      );
+      if (issueFmt) return { valid: false, error: prefixFor(i, issueFmt) };
     }
   }
 
