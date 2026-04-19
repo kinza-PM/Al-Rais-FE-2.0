@@ -8,4 +8,5 @@ export const listingTables = {
   transitHours: "transit-hours",
   baggage: "baggage",
   airlines: "airline-codes",
+  flightCancelReason: "flight-cancel-reason",
 } as const;

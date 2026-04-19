@@ -20,6 +20,8 @@ const normalizeUnitWord = (unit: string) => {
   const u = unit.toUpperCase();
   if (u === "PIECE" || u === "PIECES" || u === "PC" || u === "PCS") return "piece";
   if (u === "KG" || u === "KGS") return "kg";
+  /** GDS / supplier payloads sometimes send "K" as kilograms shorthand (not Kelvin). */
+  if (u === "K") return "kg";
   if (u === "LB" || u === "LBS") return "lb";
   return unit || "";
 };

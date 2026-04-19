@@ -281,9 +281,21 @@ function getFlightCancellationNavigationState(booking: any) {
   };
 }
 
+function normalizeFlightBookingStatus(raw: unknown): BookingStatus {
+  if (typeof raw !== "string") return raw as BookingStatus;
+  const s = raw.trim().toLowerCase();
+  if (s === "cancelled" || s === "canceled") return "Cancelled";
+  if (s === "confirmed" || s === "completed" || s === "active")
+    return "Confirmed";
+  if (s === "pending") return "Pending";
+  if (s === "expired") return "Expired";
+  return raw as BookingStatus;
+}
+
 function BookingCard({ booking }: { booking: any }) {
-  const status = booking.status;
+  const status = normalizeFlightBookingStatus(booking.status);
   const isExpired = status === "Expired";
+  const isCancelled = status === "Cancelled";
   const isPending = status === "Pending";
   const journeys = booking.journeys || [];
   const cancellationNav = useMemo(
@@ -346,7 +358,9 @@ function BookingCard({ booking }: { booking: any }) {
     <div
       className={[
         "relative rounded-[16px] border-[1.5px] px-6 pb-4 pt-6 shadow-sm transition max-w-[1168px] w-full",
-        isExpired ? "opacity-50 [filter:grayscale(100%)]" : "",
+        isExpired || isCancelled
+          ? "opacity-50 [filter:grayscale(100%)]"
+          : "",
         isPending ? "bg-white" : "bg-[#F2F2F3]",
       ].join(" ")}
       style={{
@@ -378,7 +392,7 @@ function BookingCard({ booking }: { booking: any }) {
       </div>
 
       <div className="absolute right-4 top-2">
-        <StatusPill status={status} />
+        <StatusPill status={status as BookingStatus} />
       </div>
 
       {/* Render all journeys in the same card */}
@@ -501,11 +515,19 @@ function BookingCard({ booking }: { booking: any }) {
         </div>
       )}
 
+      {isCancelled && (
+        <div className="mt-4 mb-4 flex flex-wrap items-center gap-4">
+          <div className="text-[14px] font-medium text-[#3D495C]">
+            This booking has been cancelled.
+          </div>
+        </div>
+      )}
+
       <CardDivider />
 
       <div className="mt-6 flex items-center text-[15px] font-medium">
         <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7]">
-          {status === "Confirmed" && (
+          {status === "Confirmed" && !isCancelled && (
             <>
               <div className="pr-4">
                 <Button
@@ -579,7 +601,7 @@ function BookingCard({ booking }: { booking: any }) {
           )}
         </div>
 
-        {status === "Confirmed" && (
+        {status === "Confirmed" && !isCancelled && (
           <div className="ml-auto flex items-center pl-4">
             <Button
               type="button"
@@ -616,9 +638,10 @@ export default function UserBookingsListing({
   mode: TripMode;
 }) {
   const list = useMemo(() => {
-    // Filter by status
     if (filterStatus === "All") return bookings;
-    return bookings.filter((b) => b.status === filterStatus);
+    return bookings.filter(
+      (b) => normalizeFlightBookingStatus(b.status) === filterStatus,
+    );
   }, [bookings, filterStatus, mode]);
 
   if (!list.length || mode === "Hotels") {

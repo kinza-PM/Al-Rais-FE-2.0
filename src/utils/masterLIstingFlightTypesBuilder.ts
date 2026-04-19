@@ -22,6 +22,8 @@ import type {
   CountryItem,
   CountryOption,
   CityOption,
+  FlightCancelReasonItem,
+  FlightCancelReasonSelectOption,
 } from "../features/flights/types/index";
 
 export function normalizeTripKey(name: string): TripType | null {
@@ -266,4 +268,25 @@ export function buildCityOptions(cities: string[]): CityOption[] {
       label: city,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export function buildFlightCancelReasonOptions(
+  items: FlightCancelReasonItem[],
+): FlightCancelReasonSelectOption[] {
+  const labels = (items || [])
+    .filter((it) => it.status === 1)
+    .map((it) => String(it.reason ?? "").trim())
+    .filter(Boolean);
+  const unique = [...new Set(labels)];
+  const isOther = (s: string) => s.trim().toLowerCase() === "other";
+  const nonOther = unique.filter((s) => !isOther(s));
+  const otherLabels = unique.filter(isOther);
+  nonOther.sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
+  otherLabels.sort((a, b) =>
+    a.localeCompare(b, undefined, { sensitivity: "base" }),
+  );
+  const ordered = [...nonOther, ...otherLabels];
+  return ordered.map((reason) => ({ value: reason, label: reason }));
 }

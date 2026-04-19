@@ -4,6 +4,7 @@ import {
   buildBaggageOptions,
   buildCabinClassOptions,
   buildAirportOptions,
+  buildFlightCancelReasonOptions,
   buildFlightTypeOptions,
   buildNumberStopsOptions,
   buildPassengerSchema,
@@ -16,6 +17,9 @@ import type {
   BaggageOption,
   CabinClassesResponse,
   CabinClassOption,
+  FlightCancelReasonItem,
+  FlightCancelReasonSelectOption,
+  FlightCancelReasonsResponse,
   FlightTypesResponse,
   FlightTypeOption,
   NumberStopsResponse,
@@ -119,6 +123,17 @@ export const useAirlineOptions = (enabled = true) =>
   useListing<AirlinesResponse, any, AirlineOption>(
     listingTables.airlines,
     buildAirlineOptions,
+    enabled,
+  );
+
+export const useFlightCancelReasonOptions = (enabled = true) =>
+  useListing<
+    FlightCancelReasonsResponse,
+    FlightCancelReasonItem,
+    FlightCancelReasonSelectOption
+  >(
+    listingTables.flightCancelReason,
+    buildFlightCancelReasonOptions,
     enabled,
   );
 

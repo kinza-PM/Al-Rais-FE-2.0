@@ -181,6 +181,25 @@ export interface AirlineOption {
   code: string;
 }
 
+/** Master listing `flight-cancel-reason` via `/getListingData`. */
+export interface FlightCancelReasonItem {
+  id: string;
+  reason: string;
+  status: number;
+  createdAt?: number;
+  updatedAt?: number;
+}
+
+export interface FlightCancelReasonsResponse {
+  items: FlightCancelReasonItem[];
+  nextToken: string | null;
+}
+
+export interface FlightCancelReasonSelectOption {
+  value: string;
+  label: string;
+}
+
 export interface CountryItem {
   iso2: string;
   iso3: string;

@@ -478,13 +478,13 @@ export const validatePassengersForFlightProvisionalBooking = (
 };
 
 /**
- * If residence country is empty, set it to issuing country so provisional booking APIs
- * that still require a value succeed without forcing the user to pick residence.
+ * If residence country is empty, copy issuing country (same behaviour as provisional booking).
  */
-export function withDefaultResidenceCountryFromIssuing(
-  payload: FlightInitialBooking,
-): FlightInitialBooking {
-  const passengers = (payload.passengers ?? []).map((p: any) => {
+export function applyPassengersDefaultResidenceFromIssuing(
+  passengers: unknown,
+): any[] {
+  const list = Array.isArray(passengers) ? passengers : [];
+  return list.map((p: any) => {
     const docs = p?.identityDocuments;
     if (!Array.isArray(docs) || !docs[0]) return p;
     const id0 = docs[0];
@@ -497,6 +497,18 @@ export function withDefaultResidenceCountryFromIssuing(
       identityDocuments: [nextId0, ...docs.slice(1)],
     };
   });
+}
+
+/**
+ * If residence country is empty, set it to issuing country so provisional booking APIs
+ * that still require a value succeed without forcing the user to pick residence.
+ */
+export function withDefaultResidenceCountryFromIssuing(
+  payload: FlightInitialBooking,
+): FlightInitialBooking {
+  const passengers = applyPassengersDefaultResidenceFromIssuing(
+    payload.passengers,
+  );
   return { ...payload, passengers };
 };
 

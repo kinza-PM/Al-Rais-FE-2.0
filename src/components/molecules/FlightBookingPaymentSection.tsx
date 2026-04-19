@@ -42,6 +42,7 @@ import {
   extractMessageFromApiResponseBody,
 } from "../../utils/apiErrorHanlder";
 import {
+  applyPassengersDefaultResidenceFromIssuing,
   openBlankPopupAndCheckWebisteAllowPopup,
   // validateReservationFlightBookingData,
   validateReservationFlightBookingDataFields,
@@ -64,6 +65,8 @@ type FlightBookingPaymentSectionProps = {
   fareRuleData?: any;
   // cities: Array<{ id: string; code: string; label: string; city: string }>;
   countries: CountryOption[];
+  /** Latest passengers from book step — reservation state can lag; merge before POST. */
+  bookingPassengers?: any[];
   reservation?: any;
   onReservationChange: (
     eOrPath:
@@ -106,6 +109,7 @@ export default function FlightBookingPaymentSection({
   fareRuleData,
   // cities,
   countries = [],
+  bookingPassengers,
   reservation,
   onReservationChange,
   onNext,
@@ -397,8 +401,13 @@ export default function FlightBookingPaymentSection({
       setTimeout(() => {
         warningToast("Initializing reservation booking request...");
       }, 500);
+      const basePassengers =
+        bookingPassengers ??
+        reservation?.passengers ??
+        [];
       const reservationWithToken = {
         ...reservation,
+        passengers: applyPassengersDefaultResidenceFromIssuing(basePassengers),
         paymentDetails: {
           ...(reservation?.paymentDetails || {}),
           cardInfo: tokenization,

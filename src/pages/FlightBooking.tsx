@@ -640,6 +640,23 @@ const FlightBooking = () => {
     ingestViewUserCountOnFlightOffer();
   }, [isPendingBooking, offerData?.offerId, user?.email, user?.phone]);
 
+  /** Reservation payload is initialised once; mirror book-step passengers so Pay uses current identity docs. */
+  useEffect(() => {
+    if (payStepIndex < 0 || currentStep !== payStepIndex) return;
+    setFlightReservationBookingPayload((prev) => ({
+      ...prev,
+      offerId: flightBookingPayload.offerId ?? prev.offerId,
+      searchKey: flightBookingPayload.searchKey ?? prev.searchKey,
+      passengers: flightBookingPayload.passengers,
+    }));
+  }, [
+    currentStep,
+    payStepIndex,
+    flightBookingPayload.offerId,
+    flightBookingPayload.searchKey,
+    flightBookingPayload.passengers,
+  ]);
+
   return (
     <>
       <AncillaryConfirmationModal
@@ -800,6 +817,7 @@ const FlightBooking = () => {
               fareRuleData={fareRuleDetails}
               // cities={cityOptions}
               countries={countriesOptions}
+              bookingPassengers={flightBookingPayload.passengers}
               reservation={flightReservationBookingPayload}
               onReservationChange={handleFlightReservationBookingChange}
               onNext={() => setCurrentStep(eticketStepIndex)}

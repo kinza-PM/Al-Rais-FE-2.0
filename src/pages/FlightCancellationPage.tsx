@@ -6,6 +6,7 @@ import {
   useFlightCancellation,
   useFlightCancellationCharges,
 } from "../hooks/useFlightCancellation";
+import { useFlightCancelReasonOptions } from "../hooks/masterListings/listing";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { buildMyBookingsUrl } from "../utils/myBookingsUrl";
@@ -13,15 +14,6 @@ import {
   parseFlightCancellationChargesResponse,
   type FlightCancellationRequest,
 } from "../services/api/flightCancellation";
-
-const cancelReasonOptions = [
-  { value: "change_of_plans", label: "Change of plans" },
-  { value: "found_better_price", label: "Found a better price" },
-  { value: "visa_issue", label: "Visa issue" },
-  { value: "medical_reason", label: "Medical reason" },
-  { value: "schedule_change", label: "Schedule change" },
-  { value: "other", label: "Other" },
-];
 
 function SectionCard({
   title,
@@ -119,6 +111,12 @@ const FlightCancellationPage: React.FC = () => {
 
   const { mutateAsync: cancelFlightAsync, isPending: isCancelling } =
     useFlightCancellation();
+
+  const {
+    data: cancelReasonOptions,
+    isLoading: cancelReasonsLoading,
+    isFetching: cancelReasonsFetching,
+  } = useFlightCancelReasonOptions();
 
   const [cancelReason, setCancelReason] = useState<string | undefined>();
   const [ack1, setAck1] = useState(false);
@@ -350,6 +348,7 @@ const FlightCancellationPage: React.FC = () => {
               placeholder="What’s your reason for cancellation?"
               className="w-full"
               options={cancelReasonOptions}
+              loading={cancelReasonsLoading || cancelReasonsFetching}
               size="large"
             />
           </div>
