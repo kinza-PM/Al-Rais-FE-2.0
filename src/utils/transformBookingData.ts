@@ -80,15 +80,18 @@ export function transformBookingItem(apiItem: any): any {
       ? `${passengerCount} Passenger`
       : `${passengerCount} Passenges`;
 
-  // Get booking reference - only show if status is Confirmed (active)
+  /** Pending: no confirmed PNR yet — hide ref on the card. Cancelled / expired still show locator when API sends it. */
+  const bookingRefResolved =
+    apiItem.bookingReferenceId ||
+    apiItem.detail?.supplierLocator ||
+    apiItem.detail?.airlineLocators?.[0]?.airlineLocator ||
+    apiItem.offerId?.split("-")[0] ||
+    null;
+
   const bookingRef =
-    status === "Confirmed"
-      ? apiItem.bookingReferenceId ||
-      apiItem.detail?.supplierLocator ||
-      apiItem.detail?.airlineLocators?.[0]?.airlineLocator ||
-      apiItem.offerId?.split("-")[0] ||
-      "N/A"
-      : null;
+    status === "Pending" || status === "Expired"
+      ? null
+      : (bookingRefResolved ?? "N/A");
 
   // Calculate countdown for pending bookings
   const countdown =
@@ -153,7 +156,7 @@ export function transformBookingItem(apiItem: any): any {
 
   // Get ticket PDF URL for confirmed bookings (from completed flight)
   const ticketImage =
-    status === "Confirmed" ? apiItem.ticketImage ?? null : null;
+    status === "Confirmed" ? (apiItem.ticketImage ?? null) : null;
 
   // Return single booking object with all journeys
   return {
@@ -264,10 +267,18 @@ function formatDateForHotel(dateStr: string): string {
 
 function formatTimeForHotel(dateStr: string, defaultTime: string): string {
   if (!dateStr) return defaultTime;
-  if (!dateStr.includes("T") && !dateStr.includes(" ") && !dateStr.includes(":")) {
+  if (
+    !dateStr.includes("T") &&
+    !dateStr.includes(" ") &&
+    !dateStr.includes(":")
+  ) {
     return defaultTime;
   }
-  if (dateStr.endsWith("T00:00:00Z") || dateStr.endsWith("T00:00:00.000Z") || dateStr.endsWith("T00:00:00+00:00")) {
+  if (
+    dateStr.endsWith("T00:00:00Z") ||
+    dateStr.endsWith("T00:00:00.000Z") ||
+    dateStr.endsWith("T00:00:00+00:00")
+  ) {
     return defaultTime;
   }
   try {
@@ -314,15 +325,23 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     "Hotel";
 
   const address = apiItem?.verifiedPropertyInfo?.address
-    ? `${apiItem.verifiedPropertyInfo.address}${apiItem.verifiedPropertyInfo.city ? `, ${apiItem.verifiedPropertyInfo.city}` : ""
-    }${apiItem.verifiedPropertyInfo.country ? `, ${apiItem.verifiedPropertyInfo.country}` : ""}`
-    : ""
+    ? `${apiItem.verifiedPropertyInfo.address}${
+        apiItem.verifiedPropertyInfo.city
+          ? `, ${apiItem.verifiedPropertyInfo.city}`
+          : ""
+      }${apiItem.verifiedPropertyInfo.country ? `, ${apiItem.verifiedPropertyInfo.country}` : ""}`
+    : "";
 
-  let imageUrl = hotel.imageUrl || hotel.image || hotel.thumbnail || apiItem.heroImage || "";
+  let imageUrl =
+    hotel.imageUrl || hotel.image || hotel.thumbnail || apiItem.heroImage || "";
   if (!imageUrl && hotel.images && hotel.images.length > 0) {
-    imageUrl = typeof hotel.images[0] === "string" ? hotel.images[0] : hotel.images[0]?.url || hotel.images[0]?.path || "";
+    imageUrl =
+      typeof hotel.images[0] === "string"
+        ? hotel.images[0]
+        : hotel.images[0]?.url || hotel.images[0]?.path || "";
   }
-  const starRating = Number(hotel.starRating || hotel.rating || apiItem.starRating) || 0;
+  const starRating =
+    Number(hotel.starRating || hotel.rating || apiItem.starRating) || 0;
 
   const checkIn =
     apiItem.checkInDate ||
@@ -342,9 +361,9 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     apiItem.nights ??
     (checkIn && checkOut
       ? Math.ceil(
-        (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
-        (1000 * 60 * 60 * 24)
-      )
+          (new Date(checkOut).getTime() - new Date(checkIn).getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
       : 1);
   const totalStay = `Total stay: ${totalNights} ${totalNights === 1 ? "night" : "nights"}`;
 
@@ -365,13 +384,11 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     apiItem.id ||
     "N/A";
 
-  const id = apiItem.id || apiItem.bookingKey || bookingRef || `hotel-${Date.now()}`;
+  const id =
+    apiItem.id || apiItem.bookingKey || bookingRef || `hotel-${Date.now()}`;
 
   const searchKey =
-    apiItem.searchKey ||
-    apiItem.search_key ||
-    apiItem.detail?.searchKey ||
-    "";
+    apiItem.searchKey || apiItem.search_key || apiItem.detail?.searchKey || "";
   const bookingKey = apiItem.bookingKey || apiItem.booking_key || id || "";
 
   const rawTotal =
@@ -385,9 +402,7 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     hotel?.totalPrice ??
     hotel?.totalAmount;
   const totalNum =
-    rawTotal != null && rawTotal !== ""
-      ? Number(rawTotal)
-      : Number.NaN;
+    rawTotal != null && rawTotal !== "" ? Number(rawTotal) : Number.NaN;
   const totalPaid =
     Number.isFinite(totalNum) && totalNum > 0 ? totalNum : undefined;
   const currency =
@@ -412,18 +427,21 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
   const countdown =
     status === "Pending" && createdAt
       ? (() => {
-        const createdTime = new Date(createdAt).getTime();
-        const currentTime = Date.now();
-        const totalMs = 15 * 60 * 1000;
-        const remainingMs = Math.max(0, totalMs - (currentTime - createdTime));
-        const mins = Math.floor(remainingMs / 60000);
-        const secs = Math.floor((remainingMs % 60000) / 1000);
-        return {
-          hours: String(Math.floor(mins / 60)).padStart(2, "0"),
-          mins: String(mins % 60).padStart(2, "0"),
-          secs: String(secs).padStart(2, "0"),
-        };
-      })()
+          const createdTime = new Date(createdAt).getTime();
+          const currentTime = Date.now();
+          const totalMs = 15 * 60 * 1000;
+          const remainingMs = Math.max(
+            0,
+            totalMs - (currentTime - createdTime),
+          );
+          const mins = Math.floor(remainingMs / 60000);
+          const secs = Math.floor((remainingMs % 60000) / 1000);
+          return {
+            hours: String(Math.floor(mins / 60)).padStart(2, "0"),
+            mins: String(mins % 60).padStart(2, "0"),
+            secs: String(secs).padStart(2, "0"),
+          };
+        })()
       : undefined;
 
   return {
@@ -450,7 +468,9 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
   };
 }
 
-export function transformHotelBookingsResponse(apiResponse: any): HotelBookingCardItem[] {
+export function transformHotelBookingsResponse(
+  apiResponse: any,
+): HotelBookingCardItem[] {
   if (apiResponse == null) return [];
   const raw =
     apiResponse?.data?.items ??
@@ -502,7 +522,9 @@ export type SightseeingBookingCardItem = {
   sortTimestamp?: number;
 };
 
-function pickSightseeingNonNegativeAmount(...vals: unknown[]): number | undefined {
+function pickSightseeingNonNegativeAmount(
+  ...vals: unknown[]
+): number | undefined {
   for (const v of vals) {
     if (v == null || v === "") continue;
     const n = typeof v === "number" ? v : Number(String(v));
@@ -517,7 +539,10 @@ export function inferSightseeingCountryFromLocationLine(
 ): string | undefined {
   const s = line?.trim();
   if (!s) return undefined;
-  const parts = s.split(",").map((p) => p.trim()).filter(Boolean);
+  const parts = s
+    .split(",")
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (parts.length >= 2) return parts[parts.length - 1];
   if (parts.length === 1) return parts[0];
   return undefined;
@@ -633,9 +658,7 @@ export function transformSightseeingBookingItem(
     apiItem.date ||
     apiItem.serviceDate ||
     "";
-  const tourDateDisplay = tourDateRaw
-    ? formatDateForHotel(tourDateRaw)
-    : "—";
+  const tourDateDisplay = tourDateRaw ? formatDateForHotel(tourDateRaw) : "—";
 
   const pickupTimeDisplay =
     apiItem.pickupTime ||
@@ -647,13 +670,12 @@ export function transformSightseeingBookingItem(
     apiItem.travellersSummary ||
     apiItem.paxSummary ||
     apiItem.travelersLabel ||
-    (typeof apiItem.paxCount === "number" ? `${apiItem.paxCount} travellers` : "—");
+    (typeof apiItem.paxCount === "number"
+      ? `${apiItem.paxCount} travellers`
+      : "—");
 
   const packageSummary =
-    apiItem.packageSummary ||
-    apiItem.modalityName ||
-    apiItem.rateName ||
-    "";
+    apiItem.packageSummary || apiItem.modalityName || apiItem.rateName || "";
 
   const locationLabelRaw =
     apiItem.destinationLabel ||
@@ -671,8 +693,10 @@ export function transformSightseeingBookingItem(
       : undefined;
 
   let countryLabel =
-    extractSightseeingCountryLabel(activityRec, apiItem as Record<string, unknown>) ||
-    undefined;
+    extractSightseeingCountryLabel(
+      activityRec,
+      apiItem as Record<string, unknown>,
+    ) || undefined;
   if (!countryLabel && nestedBooking) {
     countryLabel =
       extractSightseeingCountryLabel(
@@ -684,7 +708,9 @@ export function transformSightseeingBookingItem(
     countryLabel =
       inferSightseeingCountryFromLocationLine(locationLabel) ||
       inferSightseeingCountryFromLocationLine(
-        typeof apiItem.cityCountry === "string" ? apiItem.cityCountry : undefined,
+        typeof apiItem.cityCountry === "string"
+          ? apiItem.cityCountry
+          : undefined,
       );
   }
 
@@ -693,7 +719,9 @@ export function transformSightseeingBookingItem(
     const apiDur =
       apiItem.durationLabel ??
       (typeof nb?.durationLabel === "string" ? nb.durationLabel : undefined) ??
-      (typeof nb?.activityDuration === "string" ? nb.activityDuration : undefined);
+      (typeof nb?.activityDuration === "string"
+        ? nb.activityDuration
+        : undefined);
     if (typeof apiDur === "string" && apiDur.trim()) return apiDur.trim();
     const act = activity as { durationLabel?: string; duration?: string };
     if (typeof act.durationLabel === "string" && act.durationLabel.trim()) {
@@ -854,7 +882,10 @@ export function transformSightseeingBookingItem(
           const createdTime = new Date(createdAt).getTime();
           const currentTime = Date.now();
           const totalMs = 15 * 60 * 1000;
-          const remainingMs = Math.max(0, totalMs - (currentTime - createdTime));
+          const remainingMs = Math.max(
+            0,
+            totalMs - (currentTime - createdTime),
+          );
           const mins = Math.floor(remainingMs / 60000);
           const secs = Math.floor((remainingMs % 60000) / 1000);
           return {
@@ -880,7 +911,10 @@ export function transformSightseeingBookingItem(
     bookingRef,
     clientReference:
       typeof clientReference === "string" ? clientReference : undefined,
-    bookingKey: typeof bookingKey === "string" && bookingKey.trim() ? bookingKey.trim() : undefined,
+    bookingKey:
+      typeof bookingKey === "string" && bookingKey.trim()
+        ? bookingKey.trim()
+        : undefined,
     cancellationDeadline,
     cancellationDeadlineDate: cancellationDeadlineRaw
       ? String(cancellationDeadlineRaw)

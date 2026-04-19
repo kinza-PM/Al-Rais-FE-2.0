@@ -273,20 +273,27 @@ export function buildCityOptions(cities: string[]): CityOption[] {
 export function buildFlightCancelReasonOptions(
   items: FlightCancelReasonItem[],
 ): FlightCancelReasonSelectOption[] {
-  const labels = (items || [])
-    .filter((it) => it.status === 1)
-    .map((it) => String(it.reason ?? "").trim())
-    .filter(Boolean);
-  const unique = [...new Set(labels)];
+  const active = (items || []).filter((it) => it.status === 1);
+  /** One option per distinct reason label; first row wins when labels duplicate (same id sent for that label). */
+  const byReasonKey = new Map<string, FlightCancelReasonItem>();
+  for (const it of active) {
+    const label = String(it.reason ?? "").trim();
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (!byReasonKey.has(key)) byReasonKey.set(key, it);
+  }
+  const list = [...byReasonKey.values()];
   const isOther = (s: string) => s.trim().toLowerCase() === "other";
-  const nonOther = unique.filter((s) => !isOther(s));
-  const otherLabels = unique.filter(isOther);
-  nonOther.sort((a, b) =>
-    a.localeCompare(b, undefined, { sensitivity: "base" }),
-  );
-  otherLabels.sort((a, b) =>
-    a.localeCompare(b, undefined, { sensitivity: "base" }),
-  );
-  const ordered = [...nonOther, ...otherLabels];
-  return ordered.map((reason) => ({ value: reason, label: reason }));
+  list.sort((a, b) => {
+    const ra = String(a.reason ?? "").trim();
+    const rb = String(b.reason ?? "").trim();
+    const oa = isOther(ra);
+    const ob = isOther(rb);
+    if (oa !== ob) return oa ? 1 : -1;
+    return ra.localeCompare(rb, undefined, { sensitivity: "base" });
+  });
+  return list.map((it) => ({
+    value: String(it.id ?? "").trim(),
+    label: String(it.reason ?? "").trim(),
+  }));
 }

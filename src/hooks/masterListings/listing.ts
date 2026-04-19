@@ -37,7 +37,7 @@ import type {
   AirportOption,
 } from "../../features/flights/types";
 
-import { listingTables } from "../../config/apiRoute";
+import { listingExtraParams, listingTables } from "../../config/apiRoute";
 import { getListingDefaultCountry } from "../../utils/listingUserCountry";
 import { useCountriesOptionsListing, useListing } from "./useQueryListing";
 import { useInfiniteListing } from "./useInfiniteListing";
@@ -89,6 +89,9 @@ export const useCabinClassOptions = (enabled = true) =>
     listingTables.cabinClasses,
     buildCabinClassOptions,
     enabled,
+    {
+      listingParams: listingExtraParams.cabinClasses,
+    },
   );
 
 export const usePriceSortOptions = (enabled = true) =>

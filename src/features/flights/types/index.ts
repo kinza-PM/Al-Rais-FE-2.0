@@ -195,6 +195,7 @@ export interface FlightCancelReasonsResponse {
   nextToken: string | null;
 }
 
+/** `value` = master listing row id; `label` = reason text shown in UI. */
 export interface FlightCancelReasonSelectOption {
   value: string;
   label: string;

@@ -365,7 +365,7 @@ function BookingCard({ booking }: { booking: any }) {
       ].join(" ")}
       style={{
         borderColor: "#E4E4E7",
-        height: "229px",
+        minHeight: "229px",
         width: "1168px",
         borderRadius: "16px",
         borderWidth: "1.5px",
@@ -581,6 +581,13 @@ function BookingCard({ booking }: { booking: any }) {
                           supplierLocator: cancellationNav.supplierLocator,
                           issueDate: cancellationNav.issueDate,
                           bookingId: booking?.offerId || booking?.id || "",
+                          offerId:
+                            booking?.originalApiItem?.offerId ??
+                            booking?.offerId ??
+                            "",
+                          fareRulesDetails:
+                            booking?.originalApiItem?.fareRulesDetails ??
+                            null,
                           airlineName: firstJourney?.airline?.name || "Airline",
                           routeLabel: firstJourney
                             ? `${firstJourney?.from?.code || ""} → ${firstJourney?.to?.code || ""}`

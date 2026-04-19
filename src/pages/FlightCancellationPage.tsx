@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Checkbox, Select } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/atoms/Button";
+import Loader from "../components/atoms/Loader";
 import {
   useFlightCancellation,
   useFlightCancellationCharges,
@@ -11,9 +12,16 @@ import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { buildMyBookingsUrl } from "../utils/myBookingsUrl";
 import {
+  isApiCancellationChargesPayloadUsable,
   parseFlightCancellationChargesResponse,
   type FlightCancellationRequest,
 } from "../services/api/flightCancellation";
+import {
+  buildFareRulesCancellationFeeModel,
+  sumCancellationFeesForPassengers,
+} from "../utils/flightCancellationFareRulesEstimate";
+
+type ChargeDisplaySource = "api" | "fareRules" | "none";
 
 function SectionCard({
   title,
@@ -102,6 +110,11 @@ const FlightCancellationPage: React.FC = () => {
     ? location.state.bookingPassengers
     : [];
 
+  const fareRulesDetails = location.state?.fareRulesDetails ?? null;
+  const offerId = String(
+    location.state?.offerId ?? location.state?.bookingId ?? "",
+  ).trim();
+
   const allowPartialCancellation = bookingPassengers.length > 1;
 
   const {
@@ -118,7 +131,8 @@ const FlightCancellationPage: React.FC = () => {
     isFetching: cancelReasonsFetching,
   } = useFlightCancelReasonOptions();
 
-  const [cancelReason, setCancelReason] = useState<string | undefined>();
+  /** Selected master-listing row id (`flight-cancel-reason`); Select option `value`. */
+  const [cancelReasonId, setCancelReasonId] = useState<string | undefined>();
   const [ack1, setAck1] = useState(false);
   const [ack2, setAck2] = useState(false);
 
@@ -135,49 +149,199 @@ const FlightCancellationPage: React.FC = () => {
   const [isSupplierRefundApplicable, setIsSupplierRefundApplicable] =
     useState(true);
 
-  useEffect(() => {
-    const applyCharges = (response: any) => {
-      const parsed = parseFlightCancellationChargesResponse(
-        response,
+  const [chargeDisplaySource, setChargeDisplaySource] =
+    useState<ChargeDisplaySource>("none");
+  const [refundDetailNotes, setRefundDetailNotes] = useState<string[]>([]);
+  const [chargesResolved, setChargesResolved] = useState(false);
+
+  const fareRulesFeeModel = useMemo(
+    () =>
+      buildFareRulesCancellationFeeModel(
+        fareRulesDetails,
         fareCurrencyFallback,
+      ),
+    [fareRulesDetails, fareCurrencyFallback],
+  );
+
+  const cancellingPassengers = useMemo(() => {
+    if (bookingPassengers.length === 0) {
+      return cancelAllPassengers ? [{ ptc: "ADT" }] : [];
+    }
+    if (cancelAllPassengers) return bookingPassengers;
+    return bookingPassengers.filter((p, idx) =>
+      selectedPassengerKeys.includes(passengerRowKey(p, idx)),
+    );
+  }, [
+    bookingPassengers,
+    cancelAllPassengers,
+    selectedPassengerKeys,
+  ]);
+
+  const displayedCharges = useMemo(() => {
+    if (!chargesResolved || isChargesLoading) {
+      return {
+        supplier: 0,
+        admin: 0,
+        total: 0,
+        currency: fareCurrencyFallback,
+        refundApplicable: true,
+      };
+    }
+
+    if (chargeDisplaySource === "fareRules") {
+      const total = sumCancellationFeesForPassengers(
+        cancellingPassengers,
+        fareRulesFeeModel,
       );
+      const hasNumeric = Object.values(fareRulesFeeModel.feeByPtc).some(
+        (v) => typeof v === "number" && v > 0,
+      );
+      const refundApplicable =
+        total > 0 || fareRulesFeeModel.hasNegOne || hasNumeric;
+      return {
+        supplier: total,
+        admin: 0,
+        total,
+        currency: fareRulesFeeModel.currency,
+        refundApplicable,
+      };
+    }
+
+    if (chargeDisplaySource === "api") {
+      let ratio = 1;
+      if (!cancelAllPassengers && bookingPassengers.length > 1) {
+        ratio = cancellingPassengers.length / bookingPassengers.length;
+      }
+      return {
+        supplier: supplierCancellationCharge * ratio,
+        admin: adminCancellationCharge * ratio,
+        total: totalCancellationCharges * ratio,
+        currency,
+        refundApplicable: isSupplierRefundApplicable,
+      };
+    }
+
+    return {
+      supplier: 0,
+      admin: 0,
+      total: 0,
+      currency: fareCurrencyFallback,
+      refundApplicable: true,
+    };
+  }, [
+    chargesResolved,
+    isChargesLoading,
+    chargeDisplaySource,
+    cancellingPassengers,
+    fareRulesFeeModel,
+    cancelAllPassengers,
+    bookingPassengers.length,
+    supplierCancellationCharge,
+    adminCancellationCharge,
+    totalCancellationCharges,
+    currency,
+    isSupplierRefundApplicable,
+    fareCurrencyFallback,
+  ]);
+
+  const ticketValueForCancellation = useMemo(() => {
+    const nTotal = Math.max(bookingPassengers.length, 1);
+    const nCancel = cancelAllPassengers
+      ? bookingPassengers.length > 0
+        ? bookingPassengers.length
+        : 1
+      : cancellingPassengers.length;
+    return originalTicketPrice * (nCancel / nTotal);
+  }, [
+    originalTicketPrice,
+    bookingPassengers.length,
+    cancelAllPassengers,
+    cancellingPassengers.length,
+  ]);
+
+  useEffect(() => {
+    let alive = true;
+
+    const applyParsed = (
+      parsed: ReturnType<typeof parseFlightCancellationChargesResponse>,
+      source: ChargeDisplaySource,
+      notes: string[] = [],
+    ) => {
       setCurrency(parsed.currency);
       setSupplierCancellationCharge(parsed.supplierCancellationCharge);
       setAdminCancellationCharge(parsed.adminCancellationCharge);
       setTotalCancellationCharges(parsed.totalCancellationCharges);
       setIsSupplierRefundApplicable(parsed.isSupplierRefundApplicable);
+      setChargeDisplaySource(source);
+      setRefundDetailNotes(notes);
     };
 
-    const resetCharges = () => {
-      setCurrency(fareCurrencyFallback);
+    const applyFareRulesFallback = () => {
+      const model = fareRulesFeeModel;
+      const hasNumeric = Object.values(model.feeByPtc).some(
+        (v) => typeof v === "number" && v > 0,
+      );
+      setCurrency(model.currency);
+      setRefundDetailNotes(model.notes);
+      setChargeDisplaySource(
+        hasNumeric || model.hasNegOne || model.notes.length > 0
+          ? "fareRules"
+          : "none",
+      );
       setSupplierCancellationCharge(0);
       setAdminCancellationCharge(0);
       setTotalCancellationCharges(0);
-      setIsSupplierRefundApplicable(true);
+      setIsSupplierRefundApplicable(hasNumeric || model.hasNegOne);
     };
 
-    const init = async () => {
-      if (!bookingReferenceId || !supplierLocator || !issueDate) return;
+    const finish = () => {
+      if (alive) setChargesResolved(true);
+    };
 
+    if (!bookingReferenceId || !supplierLocator || !issueDate) {
+      applyFareRulesFallback();
+      finish();
+      return () => {
+        alive = false;
+      };
+    }
+
+    (async () => {
       try {
         const response = await getFlightCancellationChargesAsync({
           bookingReferenceId,
           supplierLocator,
           issueDate,
         });
-        applyCharges(response);
+        if (!alive) return;
+        const parsed = parseFlightCancellationChargesResponse(
+          response,
+          fareCurrencyFallback,
+        );
+        if (isApiCancellationChargesPayloadUsable(response, parsed)) {
+          applyParsed(parsed, "api");
+          finish();
+          return;
+        }
       } catch {
-        resetCharges();
+        /* fall back to fare rules */
       }
-    };
+      if (!alive) return;
+      applyFareRulesFallback();
+      finish();
+    })();
 
-    init();
+    return () => {
+      alive = false;
+    };
   }, [
     bookingReferenceId,
     supplierLocator,
     issueDate,
     getFlightCancellationChargesAsync,
     fareCurrencyFallback,
+    fareRulesDetails,
+    fareRulesFeeModel,
   ]);
 
   useEffect(() => {
@@ -186,10 +350,10 @@ const FlightCancellationPage: React.FC = () => {
     }
   }, [allowPartialCancellation]);
 
-  /** Total ticket price minus total cancellation charges (never negative). */
+  /** Ticket value for the passenger(s) being cancelled minus charges (never negative). */
   const estimatedRefund = useMemo(
-    () => Math.max(0, originalTicketPrice - totalCancellationCharges),
-    [originalTicketPrice, totalCancellationCharges],
+    () => Math.max(0, ticketValueForCancellation - displayedCharges.total),
+    [ticketValueForCancellation, displayedCharges.total],
   );
 
   const partialSelectionOk =
@@ -199,7 +363,7 @@ const FlightCancellationPage: React.FC = () => {
     selectedPassengerKeys.length < bookingPassengers.length;
 
   const canSubmit =
-    !!cancelReason &&
+    !!cancelReasonId &&
     ack1 &&
     ack2 &&
     (cancelAllPassengers || partialSelectionOk);
@@ -224,6 +388,10 @@ const FlightCancellationPage: React.FC = () => {
 
     const flightSegments: unknown[] = [];
 
+    const reasonLabel =
+      (cancelReasonOptions ?? []).find((o) => o.value === cancelReasonId)
+        ?.label ?? "";
+
     const body: FlightCancellationRequest = {
       bookingReferenceId,
       supplierLocator,
@@ -232,7 +400,9 @@ const FlightCancellationPage: React.FC = () => {
       voidOnly: !cancelAllPassengers,
       doSupplierRefund: true,
       flightSegments,
-      cancelReason: cancelReason || "",
+      cancelreason: reasonLabel,
+      ...(offerId ? { offerId } : {}),
+      ...(cancelReasonId ? { cancelId: cancelReasonId } : {}),
     };
 
     if (!cancelAllPassengers) {
@@ -269,6 +439,12 @@ const FlightCancellationPage: React.FC = () => {
     }
   };
 
+  const showDetailsLoader =
+    !chargesResolved ||
+    isChargesLoading ||
+    cancelReasonsLoading ||
+    cancelReasonsFetching;
+
   const passengerCheckboxOptions = useMemo(
     () =>
       bookingPassengers.map((p, idx) => {
@@ -288,192 +464,244 @@ const FlightCancellationPage: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
-      <div className="mx-auto max-w-[650px]">
-        <SectionCard
-          title="Select Items to Cancel"
-          subtitle={
-            allowPartialCancellation
-              ? "Cancel the entire trip or only specific passengers."
-              : "Cancel this booking."
-          }
-        >
-          <div className="space-y-3">
-            <CancelItemCard
-              title="Cancel Entire Trip"
-              subtitle={`${airlineName} • ${routeLabel}`}
-              selected={cancelAllPassengers}
-              onClick={() => setCancelAllPassengers(true)}
-            />
-            {allowPartialCancellation && (
-              <CancelItemCard
-                title="Cancel Selected Passengers"
-                subtitle="Choose who to remove from this booking"
-                selected={!cancelAllPassengers}
-                onClick={() => setCancelAllPassengers(false)}
-              />
-            )}
-          </div>
-
-          {!cancelAllPassengers &&
-            allowPartialCancellation &&
-            passengerCheckboxOptions.length > 0 && (
-            <div className="mt-5 space-y-2">
-              <span className="block text-[12px] text-[#3D495C] mb-2">
-                Passengers to cancel
-              </span>
-              <Checkbox.Group
-                className="flex flex-col gap-2 [&_.ant-checkbox-wrapper]:items-start [&_.ant-checkbox-wrapper]:mb-2"
-                options={passengerCheckboxOptions}
-                value={selectedPassengerKeys}
-                onChange={(vals) =>
-                  setSelectedPassengerKeys(vals.map(String))
-                }
-              />
-              <p className="text-[11px] text-[#3D495C] mt-2">
-                You cannot cancel every passenger here — use “Cancel Entire Trip”
-                to void the whole booking, or leave at least one passenger
-                active.
-              </p>
-            </div>
-          )}
-
-          <div className="mt-5">
-            <label className="block text-[12px] text-[#3D495C] mb-2">
-              Select a reason
-            </label>
-            <Select
-              value={cancelReason}
-              onChange={setCancelReason}
-              placeholder="What’s your reason for cancellation?"
-              className="w-full"
-              options={cancelReasonOptions}
-              loading={cancelReasonsLoading || cancelReasonsFetching}
-              size="large"
-            />
-          </div>
-        </SectionCard>
-
-        <div className="mt-5">
+    <>
+      <Loader
+        show={showDetailsLoader}
+        label="Please wait while we fetch your details"
+      />
+      <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
+        <div className="mx-auto max-w-[650px]">
           <SectionCard
-            title="Refund Calculation"
-            subtitle={`Based on your fare rules (${airlineName}), here is your breakdown:`}
+            title="Select Items to Cancel"
+            subtitle={
+              allowPartialCancellation
+                ? "Cancel the entire trip or only specific passengers."
+                : "Cancel this booking."
+            }
           >
-            <div className="rounded-[12px] border border-[#E4E4E7] bg-[#F8FAFC] px-4 py-4 space-y-3">
-              <div className="flex items-center justify-between text-[14px]">
-                <span className="text-[#3D495C]">Original ticket price</span>
-                <span className="font-medium text-[#0A0C0F]">
-                  {currency} {originalTicketPrice.toFixed(2)}
-                </span>
-              </div>
+            <div className="space-y-3">
+              <CancelItemCard
+                title="Cancel Entire Trip"
+                subtitle={`${airlineName} • ${routeLabel}`}
+                selected={cancelAllPassengers}
+                onClick={() => setCancelAllPassengers(true)}
+              />
+              {allowPartialCancellation && (
+                <CancelItemCard
+                  title="Cancel Selected Passengers"
+                  subtitle="Choose who to remove from this booking"
+                  selected={!cancelAllPassengers}
+                  onClick={() => setCancelAllPassengers(false)}
+                />
+              )}
+            </div>
 
-              <div className="flex items-center justify-between text-[14px]">
-                <span className="text-[#EA0029]">Supplier cancellation charge</span>
-                <span className="font-medium text-[#EA0029]">
-                  - {currency}{" "}
-                  {isChargesLoading
-                    ? "Loading..."
-                    : supplierCancellationCharge.toFixed(2)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-[14px]">
-                <span className="text-[#EA0029]">Admin cancellation charge</span>
-                <span className="font-medium text-[#EA0029]">
-                  - {currency}{" "}
-                  {isChargesLoading
-                    ? "Loading..."
-                    : adminCancellationCharge.toFixed(2)}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between text-[14px]">
-                <span className="text-[#3D495C]">Total cancellation charges</span>
-                <span className="font-medium text-[#0A0C0F]">
-                  {currency}{" "}
-                  {isChargesLoading
-                    ? "Loading..."
-                    : totalCancellationCharges.toFixed(2)}
-                </span>
-              </div>
-
-              {!isSupplierRefundApplicable && (
-                <p className="text-[12px] text-[#9A3412]">
-                  Supplier refund may not apply for this fare; confirm with support
-                  if unsure.
-                </p>
+            {!cancelAllPassengers &&
+              allowPartialCancellation &&
+              passengerCheckboxOptions.length > 0 && (
+                <div className="mt-5 space-y-2">
+                  <span className="block text-[12px] text-[#3D495C] mb-2">
+                    Passengers to cancel
+                  </span>
+                  <Checkbox.Group
+                    className="flex flex-col gap-2 [&_.ant-checkbox-wrapper]:items-start [&_.ant-checkbox-wrapper]:mb-2"
+                    options={passengerCheckboxOptions}
+                    value={selectedPassengerKeys}
+                    onChange={(vals) =>
+                      setSelectedPassengerKeys(vals.map(String))
+                    }
+                  />
+                  <p className="text-[11px] text-[#3D495C] mt-2">
+                    You cannot cancel every passenger here — use “Cancel Entire
+                    Trip” to void the whole booking, or leave at least one
+                    passenger active.
+                  </p>
+                </div>
               )}
 
-              <div className="h-px bg-[#E4E4E7]" />
-
-              <div className="flex items-center justify-between text-[14px]">
-                <span className="text-[#3D495C]">Total estimated refund</span>
-                <span className="text-[18px] font-semibold text-[#0A0C0F]">
-                  {currency} {estimatedRefund.toFixed(2)}
-                </span>
-              </div>
+            <div className="mt-5">
+              <label className="block text-[12px] text-[#3D495C] mb-2">
+                Select a reason
+              </label>
+              <Select
+                value={cancelReasonId}
+                onChange={(v) => setCancelReasonId(v)}
+                placeholder="What’s your reason for cancellation?"
+                className="w-full"
+                options={cancelReasonOptions}
+                loading={cancelReasonsLoading || cancelReasonsFetching}
+                size="large"
+              />
             </div>
           </SectionCard>
-        </div>
 
-        <div className="mt-6 flex items-start gap-2 text-[12px] text-[#3D495C]">
-          <span className="mt-[2px] text-[#2351A3]">ⓘ</span>
-          <p>
-            This action is irreversible. Once you click “Confirm Cancellation,”
-            your seats will be released immediately and cannot be reclaimed at
-            the same price.
-          </p>
-        </div>
+          <div className="mt-5">
+            <SectionCard
+              title="Refund Calculation"
+              subtitle={
+                chargeDisplaySource === "api"
+                  ? `Live cancellation quote for ${airlineName}.`
+                  : chargeDisplaySource === "fareRules"
+                    ? `Estimate from fare rules (${airlineName}) — used when no live quote is available.`
+                    : `Breakdown for ${airlineName}.`
+              }
+            >
+              <div className="rounded-[12px] border border-[#E4E4E7] bg-[#F8FAFC] px-4 py-4 space-y-3">
+                {/* {chargeDisplaySource === "fareRules" && (
+                <p className="text-[12px] text-[#92400E] bg-[#FFFBEB] border border-[#FDE68A] rounded-lg px-3 py-2">
+                  Showing penalty amounts parsed from your ticket&apos;s fare
+                  rules. Times and conditions (e.g. hours before departure) may
+                  change the actual fee; −1 in rule data means the airline sets
+                  the amount outside automated pricing.
+                </p>
+              )} */}
 
-        <div className="mt-6 space-y-5">
-          <Checkbox checked={ack1} onChange={(e) => setAck1(e.target.checked)}>
-            <span className="text-[14px] text-[#3D495C]">
-              I confirm that I am the lead passenger or have the authority to
-              cancel this booking.
-            </span>
-          </Checkbox>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-[#3D495C]">
+                    {allowPartialCancellation &&
+                    !cancelAllPassengers &&
+                    bookingPassengers.length > 1
+                      ? "Ticket value (passengers you cancel)"
+                      : "Original ticket price"}
+                  </span>
+                  <span className="font-medium text-[#0A0C0F]">
+                    {displayedCharges.currency}{" "}
+                    {!chargesResolved || isChargesLoading
+                      ? "…"
+                      : ticketValueForCancellation.toFixed(2)}
+                  </span>
+                </div>
 
-          <Checkbox checked={ack2} onChange={(e) => setAck2(e.target.checked)}>
-            <span className="text-[14px] text-[#3D495C]">
-              I have read and agree to the{" "}
-              <Link
-                to="/refund-cancellation-policy"
-                className="text-[#2351A3] hover:underline"
-                onClick={(e) => e.stopPropagation()}
-              >
-                Cancellation & Refund Policy
-              </Link>
-            </span>
-          </Checkbox>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-[#EA0029]">
+                    Supplier cancellation charge
+                  </span>
+                  <span className="font-medium text-[#EA0029]">
+                    - {displayedCharges.currency}{" "}
+                    {!chargesResolved || isChargesLoading
+                      ? "Loading..."
+                      : displayedCharges.supplier.toFixed(2)}
+                  </span>
+                </div>
 
-        </div>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-[#EA0029]">
+                    Admin cancellation charge
+                  </span>
+                  <span className="font-medium text-[#EA0029]">
+                    - {displayedCharges.currency}{" "}
+                    {!chargesResolved || isChargesLoading
+                      ? "Loading..."
+                      : displayedCharges.admin.toFixed(2)}
+                  </span>
+                </div>
 
-        <div className="mt-10 flex justify-center">
-          <Button
-            type="button"
-            disabled={!canSubmit || isCancelling}
-            className={`text-white text-[15px] font-semibold ${
-              !canSubmit ? "opacity-50 cursor-not-allowed" : ""
-            }`}
-            style={{
-              background:
-                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-              width: "320px",
-              height: "47px",
-              borderRadius: "100px",
-            }}
-            overrideClasses
-            onClick={handleConfirmCancellation}
-          >
-            {isCancelling ? "Cancelling..." : "Confirm Cancellation"}
-          </Button>
-        </div>
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-[#3D495C]">
+                    Total cancellation charges
+                  </span>
+                  <span className="font-medium text-[#0A0C0F]">
+                    {displayedCharges.currency}{" "}
+                    {!chargesResolved || isChargesLoading
+                      ? "Loading..."
+                      : displayedCharges.total.toFixed(2)}
+                  </span>
+                </div>
 
-        <div className="mt-4 text-center text-[12px] text-[#3D495C]">
-          {passengersLabel ? `Passengers: ${passengersLabel}` : ""}
+                {!displayedCharges.refundApplicable && (
+                  <p className="text-[12px] text-[#9A3412]">
+                    Supplier refund may not apply for this fare; confirm with
+                    support if unsure.
+                  </p>
+                )}
+
+                <div className="h-px bg-[#E4E4E7]" />
+
+                <div className="flex items-center justify-between text-[14px]">
+                  <span className="text-[#3D495C]">Total estimated refund</span>
+                  <span className="text-[18px] font-semibold text-[#0A0C0F]">
+                    {displayedCharges.currency}{" "}
+                    {!chargesResolved || isChargesLoading
+                      ? "…"
+                      : estimatedRefund.toFixed(2)}
+                  </span>
+                </div>
+
+                {refundDetailNotes.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-[11px] text-[#64748B] list-disc pl-4">
+                    {refundDetailNotes.map((line, i) => (
+                      <li key={i}>{line}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </SectionCard>
+          </div>
+
+          <div className="mt-6 flex items-start gap-2 text-[12px] text-[#3D495C]">
+            <span className="mt-[2px] text-[#2351A3]">ⓘ</span>
+            <p>
+              This action is irreversible. Once you click “Confirm
+              Cancellation,” your seats will be released immediately and cannot
+              be reclaimed at the same price.
+            </p>
+          </div>
+
+          <div className="mt-6 space-y-5">
+            <Checkbox
+              checked={ack1}
+              onChange={(e) => setAck1(e.target.checked)}
+            >
+              <span className="text-[14px] text-[#3D495C]">
+                I confirm that I am the lead passenger or have the authority to
+                cancel this booking.
+              </span>
+            </Checkbox>
+
+            <Checkbox
+              checked={ack2}
+              onChange={(e) => setAck2(e.target.checked)}
+            >
+              <span className="text-[14px] text-[#3D495C]">
+                I have read and agree to the{" "}
+                <Link
+                  to="/refund-cancellation-policy"
+                  className="text-[#2351A3] hover:underline"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Cancellation & Refund Policy
+                </Link>
+              </span>
+            </Checkbox>
+          </div>
+
+          <div className="mt-10 flex justify-center">
+            <Button
+              type="button"
+              disabled={!canSubmit || isCancelling}
+              className={`text-white text-[15px] font-semibold ${
+                !canSubmit ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+              style={{
+                background:
+                  "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                width: "320px",
+                height: "47px",
+                borderRadius: "100px",
+              }}
+              overrideClasses
+              onClick={handleConfirmCancellation}
+            >
+              {isCancelling ? "Cancelling..." : "Confirm Cancellation"}
+            </Button>
+          </div>
+
+          <div className="mt-4 text-center text-[12px] text-[#3D495C]">
+            {passengersLabel ? `Passengers: ${passengersLabel}` : ""}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

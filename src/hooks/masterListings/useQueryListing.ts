@@ -16,11 +16,18 @@ export function useListing<TResp extends { items?: any[] }, TItem, TOut>(
   tableName: string,
   builder: Builder<TItem, TOut>,
   enabled = true,
-  opts?: { staleTime?: number; gcTime?: number },
+  opts?: {
+    staleTime?: number;
+    gcTime?: number;
+    /** Appended to `/getListingData` query (e.g. `sortBy`, `sortOrder`). */
+    listingParams?: Record<string, string>;
+  },
 ) {
+  const listingParams = opts?.listingParams;
   const q = useQuery({
-    queryKey: ["listing", tableName],
-    queryFn: ({ signal }) => getMasterListingData<TResp>(tableName, signal),
+    queryKey: ["listing", tableName, listingParams],
+    queryFn: ({ signal }) =>
+      getMasterListingData<TResp>(tableName, signal, null, listingParams),
     select: (resp) => builder((resp?.items ?? []) as TItem[]),
     enabled,
     placeholderData: keepPreviousData,

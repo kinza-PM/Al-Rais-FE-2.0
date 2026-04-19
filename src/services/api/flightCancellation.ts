@@ -26,7 +26,11 @@ export type FlightCancellationRequest = {
   doSupplierRefund: boolean;
   flightSegments: unknown[];
   passengers?: FlightCancellationPassengerPayload[];
-  cancelReason?: string;
+  cancelreason?: string;
+  /** Offer id from booking (passed through for downstream supplier routing). */
+  offerId?: string;
+  /** Master listing id for the selected cancellation reason (`flight-cancel-reason`). */
+  cancelId?: string;
 };
 
 /**
@@ -37,7 +41,16 @@ export function parseFlightCancellationChargesResponse(
   response: any,
   currencyFallback: string,
 ) {
-  const raw = response?.data;
+  let raw = response?.data ?? response;
+  if (
+    raw &&
+    typeof raw === "object" &&
+    !Array.isArray((raw as any).cancellationCharge) &&
+    (raw as any).data &&
+    typeof (raw as any).data === "object"
+  ) {
+    raw = (raw as any).data;
+  }
   if (raw == null) {
     return {
       currency: currencyFallback,
@@ -99,6 +112,35 @@ export function parseFlightCancellationChargesResponse(
     totalCancellationCharges: 0,
     isSupplierRefundApplicable: true,
   };
+}
+
+/** True when we should trust the charges API numerically / structurally vs falling back to fare rules. */
+export function isApiCancellationChargesPayloadUsable(
+  apiResponse: any,
+  parsed: ReturnType<typeof parseFlightCancellationChargesResponse>,
+): boolean {
+  let inner = apiResponse?.data ?? apiResponse;
+  if (
+    inner &&
+    typeof inner === "object" &&
+    !Array.isArray((inner as any).cancellationCharge) &&
+    (inner as any).data &&
+    typeof (inner as any).data === "object"
+  ) {
+    inner = (inner as any).data;
+  }
+  if (
+    Array.isArray(inner?.cancellationCharge) &&
+    inner.cancellationCharge.length > 0
+  ) {
+    return true;
+  }
+  if (Array.isArray(inner) && inner.length > 0) return true;
+  return (
+    parsed.totalCancellationCharges > 0 ||
+    parsed.supplierCancellationCharge > 0 ||
+    parsed.adminCancellationCharge > 0
+  );
 }
 
 export async function postFlightCancellationChargesData(
