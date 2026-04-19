@@ -26,12 +26,56 @@ const PAX_LABEL: Record<string, string> = {
     INF: "Infant",
 };
 
+const PAX_ORDER = ["ADT", "CHD", "INF"];
 
+function sortPassengerGroups<T extends { paxType: string }>(groups: T[]): T[] {
+    return [...groups].sort(
+        (a, b) => PAX_ORDER.indexOf(a.paxType) - PAX_ORDER.indexOf(b.paxType),
+    );
+}
+
+/** Collapsed summary label: "2 X Adults", "1 X Child", … */
+function collapsedPaxLabel(paxType: string, count: number, fallbackLabel: string): string {
+    if (paxType === "ADT") return `${count} X ${count > 1 ? "Adults" : "Adult"}`;
+    if (paxType === "CHD") return `${count} X ${count > 1 ? "Children" : "Child"}`;
+    if (paxType === "INF") return `${count} X ${count > 1 ? "Infants" : "Infant"}`;
+    return `${count} X ${fallbackLabel}${count > 1 ? "s" : ""}`;
+}
+
+function groupBaseFareTotal(pg: {
+    baseFareEach: number;
+    paxCount: number;
+}): number {
+    return pg.baseFareEach * pg.paxCount;
+}
+
+function groupTaxesFeesNet(pg: {
+    taxesEach: number;
+    transactionFeeEach: number;
+    discountEach: number;
+    paxCount: number;
+}): number {
+    return (
+        pg.taxesEach * pg.paxCount +
+        pg.transactionFeeEach * pg.paxCount -
+        pg.discountEach * pg.paxCount
+    );
+}
 
 export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancillarySummary }: Props) {
     const fare = trip?.fare ?? trip?.financials?.fare ?? null;
     const fareBreakdown = Array.isArray(fare?.fareBreakdown) ? fare.fareBreakdown : fare?.fareBreakdown ?? [];
     const currency = fare?.currencyCode ?? fare?.currency ?? "USD";
+
+    /** Trip-level fare totals from the API (same as sum of fareBreakdown when data is consistent). */
+    const fareBaseRoot =
+        typeof fare?.baseFare === "number" && Number.isFinite(fare.baseFare)
+            ? fare.baseFare
+            : null;
+    const fareTaxRoot =
+        typeof fare?.totalTax === "number" && Number.isFinite(fare.totalTax)
+            ? fare.totalTax
+            : null;
 
     const passengerGroups = useMemo(() => {
         if (!Array.isArray(fareBreakdown) || fareBreakdown.length === 0) return [];
@@ -59,10 +103,17 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
             const custInfo = pr?.customerAdditionalFareInfo ?? {};
 
             const baseFareEach = Number(pr?.baseFare ?? 0) || 0;
+            // Prefer paxRate.totalTax when present; only sum taxes[] if totalTax is absent.
+            const prTotalTax = pr?.totalTax;
             const taxesEach =
-                Number(pr?.totalTax ?? 0) ||
-                Number(pr?.taxes?.reduce?.((a: any, b: any) => a + (Number(b?.amount) || 0), 0) ?? 0) ||
-                0;
+                prTotalTax != null && prTotalTax !== ""
+                    ? Number(prTotalTax) || 0
+                    : Number(
+                          pr?.taxes?.reduce?.(
+                              (a: number, b: any) => a + (Number(b?.amount) || 0),
+                              0,
+                          ) ?? 0,
+                      ) || 0;
             const transactionFeeEach = Number(custInfo?.transactionFeeEarned ?? 0) || 0;
             const discountEach = Number(custInfo?.discount ?? 0) || 0;
             const officialSubtotalEach = Number(pr?.totalFare ?? (baseFareEach + taxesEach)) || 0;
@@ -120,6 +171,53 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
         });
     }, [fareBreakdown]);
 
+    const sortedPassengerGroups = useMemo(
+        () => sortPassengerGroups(passengerGroups),
+        [passengerGroups],
+    );
+
+    const adtGroup = sortedPassengerGroups.find((g) => g.paxType === "ADT");
+    const hasChd = sortedPassengerGroups.some((g) => g.paxType === "CHD");
+    const hasInf = sortedPassengerGroups.some((g) => g.paxType === "INF");
+
+    const isSingleAdultOnly =
+        sortedPassengerGroups.length === 1 &&
+        !!adtGroup &&
+        adtGroup.paxCount === 1 &&
+        !hasChd &&
+        !hasInf;
+
+    const hasOnlyMultipleAdults =
+        sortedPassengerGroups.length === 1 &&
+        !!adtGroup &&
+        adtGroup.paxCount > 1 &&
+        !hasChd &&
+        !hasInf;
+
+    const airportTaxAndSurchargeTotal = useMemo(
+        () =>
+            sortedPassengerGroups.reduce(
+                (sum, pg) => sum + groupTaxesFeesNet(pg),
+                0,
+            ),
+        [sortedPassengerGroups],
+    );
+
+    /** Collapsed "Airport Tax & Surcharge": use trip fare.totalTax when API sends it so it matches totalFare. */
+    const collapsedTaxLineAmount =
+        fareTaxRoot != null ? fareTaxRoot : airportTaxAndSurchargeTotal;
+
+    /** Collapsed "N X Adults" row for adults-only multi-pax: use fare.baseFare when present. */
+    const collapsedMultiAdultBaseAmount =
+        hasOnlyMultipleAdults && adtGroup
+            ? fareBaseRoot ?? groupBaseFareTotal(adtGroup)
+            : null;
+
+    const showCollapsedFareSummary =
+        !open &&
+        sortedPassengerGroups.length > 0 &&
+        !isSingleAdultOnly;
+
     const baseTotalRaw = fare?.totalFare ?? fare?.total ?? null;
     const baseTotal = typeof baseTotalRaw === "number" ? baseTotalRaw : 0;
     const ancillaryTotal = Number(ancillarySummary?.totalAmount || 0);
@@ -135,6 +233,77 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                 <div className="text-[16px] font-semibold text-[#0A0C0F]">Price breakdown</div>
                 <CardCollapseToggle open={open} onClick={onToggleOpen} />
             </div>
+
+            {showCollapsedFareSummary && (
+                <div className="space-y-2 px-4 py-3 border-b-[1.5px] border-[#E4E4E7] text-[12px] leading-5">
+                    {hasOnlyMultipleAdults && adtGroup ? (
+                        <>
+                            <div className="flex items-center justify-between gap-4">
+                                <span className="text-[#3D495C]">
+                                    {adtGroup.paxCount} X Adults
+                                </span>
+                                <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                    {formatMoney(
+                                        collapsedMultiAdultBaseAmount ?? 0,
+                                        currency,
+                                    )}
+                                </span>
+                            </div>
+                            <div className="flex items-center justify-between gap-4">
+                                <span className="text-[#3D495C]">
+                                    Airport Tax &amp; Surcharge
+                                </span>
+                                <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                    {formatMoney(collapsedTaxLineAmount, currency)}
+                                </span>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {sortedPassengerGroups.map((pg, idx) => (
+                                <div
+                                    key={`${pg.paxType}-${idx}`}
+                                    className="flex items-center justify-between gap-4"
+                                >
+                                    <span className="text-[#3D495C]">
+                                        {collapsedPaxLabel(
+                                            pg.paxType,
+                                            pg.paxCount,
+                                            pg.paxLabel,
+                                        )}
+                                    </span>
+                                    <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                        {formatMoney(
+                                            groupBaseFareTotal(pg),
+                                            currency,
+                                        )}
+                                    </span>
+                                </div>
+                            ))}
+                            <div className="flex items-center justify-between gap-4">
+                                <span className="text-[#3D495C]">
+                                    Airport Tax &amp; Surcharge
+                                </span>
+                                <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                    {formatMoney(collapsedTaxLineAmount, currency)}
+                                </span>
+                            </div>
+                        </>
+                    )}
+
+                    {hasAncillary && (
+                        <div className="flex items-center justify-between gap-4">
+                            <span className="text-[#3D495C]">Enhancements</span>
+                            <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                {formatMoney(
+                                    ancillaryTotal,
+                                    ancillarySummary?.currency || currency,
+                                )}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
 
             <div
                 className={[
@@ -173,18 +342,6 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                                                 <span className="text-[#3D495C]">Taxes and fees per person</span>
                                                 <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.taxesEach, currency)}</span>
                                             </li>
-
-                                            {Array.isArray(pg.taxLines) && pg.taxLines.length > 0 && (
-                                                <>
-                                                    <li className="pt-1 text-[12px] text-[#3D495C]">Tax breakdown:</li>
-                                                    {pg.taxLines.map((t: any, ti: number) => (
-                                                        <li key={ti} className="flex items-center justify-between pl-3">
-                                                            <span className="text-[#3D495C]">{t.taxCode ?? "Tax"}</span>
-                                                            <span className="font-semibold text-[#0A0C0F]">{formatMoney(t.amount ?? 0, currency)}</span>
-                                                        </li>
-                                                    ))}
-                                                </>
-                                            )}
 
                                             <li className="flex items-center justify-between pt-1">
                                                 <span className="text-[#3D495C]">Transaction fee</span>
@@ -257,152 +414,25 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
 
             {open && <div className="h-[1.5px] bg-[#E4E4E7]" />}
 
-            <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-[12px] text-[#3D495C]">Total</span>
-                <span className="text-[14px] font-semibold text-[#0A0C0F]">
+            <div
+                className={[
+                    "flex items-center justify-between px-4 py-2",
+                    showCollapsedFareSummary ? "pt-3" : "",
+                ].join(" ")}
+            >
+                <span
+                    className={
+                        showCollapsedFareSummary
+                            ? "text-[12px] font-semibold text-[#0A0C0F]"
+                            : "text-[12px] text-[#3D495C]"
+                    }
+                >
+                    {showCollapsedFareSummary ? "Total all inclusive" : "Total"}
+                </span>
+                <span className="text-[14px] font-semibold text-[#0A0C0F] tabular-nums">
                     {total != null ? formatMoney(total, currency) : "—"}
                 </span>
             </div>
         </div>
-
-        // <div className="mt-4 rounded-xl border border-[#E4E4E7] bg-white">
-        //     <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
-        //         <div className="text-[16px] font-semibold text-[#0A0C0F]">Price breakdown</div>
-        //         <CardCollapseToggle open={open} onClick={onToggleOpen} />
-        //     </div>
-
-        //     <div
-        //         className={[
-        //             "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-        //             open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-        //         ].join(" ")}
-        //     >
-        //         <div className="overflow-hidden">
-        //             <div className="px-4 py-3 text-[13px] leading-6">
-        //                 <div className="text-[14px] font-semibold text-[#0A0C0F]">Passengers fares</div>
-
-        //                 <div className="mt-1">
-        //                     <div className="text-[12px] font-medium text-[#0A0C0F]">2 Adults</div>
-        //                     <ul className="mt-1 space-y-1 text-[12px] pl-3">
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">Base fare each</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$300</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">taxes and fees each</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$100</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between pt-1">
-        //                             <span className="text-[#3D495C]">Subtotal</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$800</span>
-        //                         </li>
-        //                     </ul>
-        //                 </div>
-
-        //                 <div className="mt-3">
-        //                     <div className="text-[12px] font-medium text-[#0A0C0F]">1 Child</div>
-        //                     <ul className="mt-1 space-y-1 text-[12px] pl-3">
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">Base fare</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$250</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">taxes and fees</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$80</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between pt-1">
-        //                             <span className="text-[#3D495C]">Subtotal</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$330</span>
-        //                         </li>
-        //                     </ul>
-        //                 </div>
-
-        //                 <div className="mt-3">
-        //                     <div className="text-[12px] font-medium text-[#0A0C0F]">1 Infant</div>
-        //                     <ul className="mt-1 space-y-1 text-[12px] pl-3">
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">Base fare</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$25</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">taxes and fees</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$10</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between pt-1">
-        //                             <span className="text-[#3D495C]">Subtotal</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$35</span>
-        //                         </li>
-        //                     </ul>
-        //                 </div>
-
-        //                 <div className="mt-5 text-[13px] font-semibold text-[#0A0C0F]">Enhancements</div>
-
-        //                 <div className="mt-1">
-        //                     <div className="text-[12px] font-medium text-[#0A0C0F]">Baggage</div>
-        //                     <ul className="mt-1 space-y-1 text-[12px] pl-3">
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">01 - 20 KGs checked bag</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$32</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between pt-1">
-        //                             <span className="text-[#3D495C]">Subtotal</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$32</span>
-        //                         </li>
-        //                     </ul>
-        //                 </div>
-
-        //                 <div className="mt-3">
-        //                     <div className="text-[12px] font-medium text-[#0A0C0F]">Meals &amp; drinks</div>
-        //                     <ul className="mt-1 space-y-1 text-[12px] pl-3">
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">(1x) Vegan burger</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$15.75</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">Iced green tea</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$4.50</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between pt-1">
-        //                             <span className="text-[#3D495C]">Subtotal</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$20.25</span>
-        //                         </li>
-        //                     </ul>
-        //                 </div>
-
-        //                 <div className="mt-3">
-        //                     <div className="text-[12px] font-medium text-[#0A0C0F]">Comfort &amp; entertainment</div>
-        //                     <ul className="mt-1 space-y-1 text-[12px] pl-3">
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">Faster wi-fi (10 MBPs)</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$22.50</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">Newly released movies selection</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$50</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between">
-        //                             <span className="text-[#3D495C]">Spotify trending music selection</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$40</span>
-        //                         </li>
-        //                         <li className="flex items-center justify-between pt-1">
-        //                             <span className="text-[#3D495C]">Subtotal</span>
-        //                             <span className="font-semibold text-[#0A0C0F]">$112.50</span>
-        //                         </li>
-        //                     </ul>
-        //                 </div>
-
-
-        //             </div>
-
-        //         </div>
-        //     </div>
-
-        //     {open && (<div className="h-px bg-[#E4E4E7]" />)}
-
-        //     <div className="flex items-center justify-between px-4 py-2">
-        //         <span className="text-[12px] text-[#3D495C]">Total</span>
-        //         <span className="text-[14px] font-semibold text-[#0A0C0F]">$1,329.75</span>
-        //     </div>
-        // </div>
     );
 }

@@ -401,7 +401,10 @@ import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 import Loader from "../atoms/Loader";
 import { Modal } from "antd";
 import { useNavigate } from "react-router-dom";
-import { formatListingStartingFare } from "../../utils/helpers";
+import {
+  formatListingStartingFare,
+  getMarketingAirlineDisplayName,
+} from "../../utils/helpers";
 import {
   buildPerSegmentFlightDetail,
   mapOfferForCompareMultiCity,
@@ -431,16 +434,8 @@ type TravelMultiCityProps = {
   highDemandIndicators?: any[];
 };
 
-const getAirlineDisplayName = (item: any, seg?: any) => {
-  return (
-    item?.airlineName ||
-    seg?.marketingAirlineName ||
-    seg?.operatingAirlineName ||
-    item?.name ||
-    seg?.marketingAirline ||
-    "Airline"
-  );
-};
+const getAirlineDisplayName = (item: any, seg?: any) =>
+  getMarketingAirlineDisplayName(seg, item);
 
 const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   passData,

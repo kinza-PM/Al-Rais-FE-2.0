@@ -970,6 +970,7 @@ const SightseeingActivityDetailPage: React.FC = () => {
                           value={pickupTime24}
                           onChange={(hhmm) => setPickupTime24(hhmm)}
                           placeholder="Pick-up time"
+                          panelTitle="Pick-up time"
                           overridesClass
                           inputClass="h-[50px] w-full min-w-0 cursor-pointer rounded-none border-none bg-transparent pl-3 pr-10 text-[14px] text-[#0A0C0F] outline-none placeholder:text-[#98A4B3] sm:rounded-[16px]"
                         />

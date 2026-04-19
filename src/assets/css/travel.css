@@ -1652,21 +1652,26 @@ input[type="number"] {
   }
 }
 
-/* Number of stops â€” equal-width pill buttons (Figma: 0 / 01 / 02) */
+/* Number of stops — row1: non-stop + one-stop; row2: two-stop full width (3 options) */
 .flight-stops-pills {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   width: 100%;
+}
+
+.flight-stops-pill:nth-child(3) {
+  grid-column: 1 / -1;
 }
 
 .flight-stops-pill {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
+  min-height: 44px;
+  height: auto;
   margin: 0;
-  padding: 0 8px;
+  padding: 8px 6px;
   border-radius: 999px;
   border: 1.5px solid #c2cad6;
   background: #ffffff;
@@ -1674,9 +1679,11 @@ input[type="number"] {
   font-weight: 600;
   font-family: Inter, sans-serif;
   color: #0a0c0f;
-  line-height: 1;
+  line-height: 1.25;
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  word-break: break-word;
   transition:
     background 0.15s ease,
     color 0.15s ease,
@@ -3640,57 +3647,11 @@ img:hover {
   background: #ffffff !important;
 }
 
-/* Refund type filter — compact header; pills always 2 + 1 rows (like narrow sidebar) */
+/* Refund type filter — panel title; body uses `.baggageCheckbox` like Baggage */
 .refundableFilterCollapse .ant-collapse-header-text,
 .refundableFilterCollapse .ant-collapse .ant-collapse-header {
   font-size: 14px !important;
   font-weight: 400 !important;
-}
-
-/* Force All | Refundable on row 1, Non-refundable full width row 2 (all breakpoints) */
-.flight-search-filter-root .refundableFilterRadio.transitHours.ant-radio-group,
-.refundableFilterRadio.transitHours.ant-radio-group {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 10px !important;
-  width: 100% !important;
-}
-
-.flight-search-filter-root .refundableFilterRadio.transitHours .ant-radio-button-wrapper,
-.refundableFilterRadio.transitHours .ant-radio-button-wrapper {
-  flex: 1 1 calc(50% - 5px) !important;
-  max-width: calc(50% - 5px) !important;
-  min-width: 0 !important;
-  width: auto !important;
-  min-height: 38px !important;
-  height: 38px !important;
-  padding: 0 12px !important;
-}
-
-.flight-search-filter-root
-  .refundableFilterRadio.transitHours
-  .ant-radio-button-wrapper:nth-child(3),
-.refundableFilterRadio.transitHours .ant-radio-button-wrapper:nth-child(3) {
-  flex: 1 1 100% !important;
-  max-width: 100% !important;
-  width: 100% !important;
-}
-
-.refundableFilterRadio.ant-radio-group.transitHours
-  .ant-radio-button-wrapper
-  .ant-radio-button-label,
-.refundableFilterRadio.transitHours .ant-radio-button-wrapper .ant-radio-button-label,
-.refundableFilterRadio .ant-radio-button-label {
-  font-size: 13px !important;
-  font-weight: 500 !important;
-}
-
-.flight-search-filter-root
-  .refundableFilterRadio.transitHours
-  .ant-radio-button-wrapper
-  .ant-radio-button-label {
-  font-size: 13px !important;
-  font-weight: 300 !important;
 }
 
 .searchFilterBtn {

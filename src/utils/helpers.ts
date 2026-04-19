@@ -113,6 +113,30 @@ export function buildFilterPreferenceForFlightSearchRequest(
   return { maxConnections };
 }
 
+/**
+ * Prefer API `marketingAirlineFullName`, then legacy name fields, then IATA code.
+ */
+export function getMarketingAirlineDisplayName(
+  seg?: any,
+  item?: any,
+): string {
+  const full = String(seg?.marketingAirlineFullName ?? "").trim();
+  if (full) return full;
+  const named = String(seg?.marketingAirlineName ?? "").trim();
+  if (named) return named;
+  const itemName = String(item?.name ?? "").trim();
+  if (itemName) return itemName;
+  const airlineName = String(item?.airlineName ?? "").trim();
+  if (airlineName) return airlineName;
+  const op = String(seg?.operatingAirlineName ?? "").trim();
+  if (op) return op;
+  const outboundName = String(item?.outbound?.name ?? "").trim();
+  if (outboundName) return outboundName;
+  const code = String(seg?.marketingAirline ?? "").trim();
+  if (code) return code;
+  return "Airline";
+}
+
 export function mapFlightSegment(
   item: any,
   assets: AssetBundle = {},
@@ -248,12 +272,13 @@ export function mapFlightSegment(
     fd?.arr_date ??
     "—";
 
+  const primarySeg = singleSeg ?? firstSeg;
+
   return {
     heading: defaultHeading,
     route,
     airlineLogo: item?.logo ?? item?.outbound?.logo ?? assets.EmirateLogo ?? "",
-    airlineName:
-      item?.name ?? item?.airlineName ?? item?.outbound?.name ?? "Airline",
+    airlineName: getMarketingAirlineDisplayName(primarySeg, item),
     flightMeta: `${flightNumber} – ${flightClass}`,
     amenities: [
       {

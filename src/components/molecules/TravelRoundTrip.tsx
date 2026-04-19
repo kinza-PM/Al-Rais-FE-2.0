@@ -7,7 +7,10 @@ import defaultAirlineLogo from "../../assets/images/emirates.png";
 import { Modal } from "antd";
 import { useNavigate } from "react-router-dom";
 import { travelData } from "../../utils/mockData";
-import { formatListingStartingFare } from "../../utils/helpers";
+import {
+  formatListingStartingFare,
+  getMarketingAirlineDisplayName,
+} from "../../utils/helpers";
 
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
 const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
@@ -47,16 +50,8 @@ type TravelRoundTripProps = {
   highDemandIndicators?: any[];
 };
 
-const getAirlineDisplayName = (item: any, seg?: any) => {
-  return (
-    item?.airlineName ||
-    seg?.marketingAirlineName ||
-    seg?.operatingAirlineName ||
-    item?.name ||
-    seg?.marketingAirline ||
-    "Airline"
-  );
-};
+const getAirlineDisplayName = (item: any, seg?: any) =>
+  getMarketingAirlineDisplayName(seg, item);
 
 const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   passData,

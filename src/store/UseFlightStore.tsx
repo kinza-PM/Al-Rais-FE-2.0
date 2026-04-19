@@ -76,7 +76,10 @@ export type FlightSearchState = {
   selectedTransitRange: string | null;
   baggageIncludedOnly: boolean;
   ancillaryAddOnsOnly: boolean;
-  /** Client filter: all fares, refundable only, or non-refundable only */
+  /** Refund type filter (checkboxes); both false or both true = show all */
+  refundFilterRefundable?: boolean;
+  refundFilterNonRefundable?: boolean;
+  /** @deprecated use refundFilterRefundable / refundFilterNonRefundable */
   refundableFilterMode?: "all" | "refundable" | "non_refundable";
   priceRangeBounds: [number, number];
   selectedPriceRange: [number, number];

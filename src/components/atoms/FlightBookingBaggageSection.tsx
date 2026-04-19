@@ -4,6 +4,7 @@ import CustomToggle from "../common/CustomToggle";
 import CollapsibleCard from "./CollapsibleCard";
 import CardFeaturingRow from "./CardFeaturingRow";
 import type { SegmentSummary } from "../../utils/flightBookingHelper";
+import { getMarketingAirlineDisplayName } from "../../utils/helpers";
 import { useAncillaryStore } from "../../store/useAncillaryStore";
 
 type FlightBookingBaggageSectionProps = {
@@ -425,7 +426,7 @@ export default function FlightBookingBaggageSection({
                     key={baggageId}
                     airline={{
                       logo: `/airlines/${currentSegment.marketingAirline}.png`,
-                      name: `${currentSegment.marketingAirline} Airlines`,
+                      name: getMarketingAirlineDisplayName(currentSegment),
                       flight: `${currentSegment.flightNumber} – ${currentSegment.cabinClass}`,
                     }}
                     blocks={[

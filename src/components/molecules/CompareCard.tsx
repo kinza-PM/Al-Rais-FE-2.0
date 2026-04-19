@@ -17,7 +17,11 @@ import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
 
 import circlePlus from "../../assets/svgs/plus-circle.svg";
-import { formatDate, formatTime } from "../../utils/helpers";
+import {
+  formatDate,
+  formatTime,
+  getMarketingAirlineDisplayName,
+} from "../../utils/helpers";
 import { attachBaggageAllowanceFromOffer } from "../../utils/baggageAllowanceDisplay";
 type CompareCardProps = {
   availableFlights?: any[];
@@ -318,7 +322,7 @@ const CompareCard: React.FC<CompareCardProps> = ({
           </div>
           <div className="nameAndDetails">
             <h5>
-              {seg.name ?? fd.marketingAirline ?? "Airline"}
+              {getMarketingAirlineDisplayName(fd, seg)}
               {route ? ` - (${route})` : ""}
             </h5>
             <p>
@@ -446,26 +450,31 @@ const CompareCard: React.FC<CompareCardProps> = ({
     const layoverTime = secondSegment?.layoverTime ?? "";
     const stopAirport = secondSegment?.departureAirportCode ?? secondSegment?.fromCode ?? "";
 
-    const marketingAirline =
-      passSome?.flight_detail?.marketingAirline ??
-      firstSegment?.marketingAirline ??
-      passSome?.name ??
-      "Airline";
+    const primaryForName = firstSegment ?? passSome?.flight_detail ?? {};
+    const marketingDisplay = getMarketingAirlineDisplayName(
+      primaryForName,
+      passSome,
+    );
     const operatingAirline =
       passSome?.flight_detail?.operatingAirline ??
       firstSegment?.operatingAirline ??
       null;
     const airlineDisplay = operatingAirline
-      ? `${marketingAirline} / ${operatingAirline}`
-      : marketingAirline;
+      ? `${marketingDisplay} / ${getMarketingAirlineDisplayName({ marketingAirline: operatingAirline })}`
+      : marketingDisplay;
     const flightNumber =
       passSome?.flight_detail?.flight_number ??
       firstSegment?.flightNumber ??
       "—";
     const flightClass =
       passSome?.flight_detail?.flight_class ?? firstSegment?.cabinClass ?? "—";
+    const marketingAirlineCode =
+      passSome?.flight_detail?.marketingAirline ??
+      firstSegment?.marketingAirline ??
+      passSome?.name ??
+      "";
     const logo =
-      passSome?.logo ?? `/airlines/${marketingAirline || "default"}.png`;
+      passSome?.logo ?? `/airlines/${marketingAirlineCode || "default"}.png`;
 
     const renderStops = () => {
       if (passSome?.stop?.length) {
@@ -719,7 +728,7 @@ const CompareCard: React.FC<CompareCardProps> = ({
                   <div className="compareLegDivider cardHeader">
                     Flight {String(groupIdx + 1).padStart(2, "0")} Group
                   </div>
-                  {groupEnriched.map((seg, i) => (
+                  {groupEnriched.map((seg: any, i: number) => (
                     <div key={`mc-${groupIdx}-${i}`}>
                       {renderSegmentSummary(seg, {
                         showIcons: true,
