@@ -1,4 +1,8 @@
-import { formatTime, formatDate } from "./helpers";
+import {
+  formatTime,
+  formatDate,
+  getMarketingAirlineDisplayName,
+} from "./helpers";
 import type { BookingStatus } from "../components/molecules/UserBookingsListing";
 import {
   getCancelledSightseeingBookingRefs,
@@ -124,7 +128,7 @@ export function transformBookingItem(apiItem: any): any {
       return {
         journeyIndex,
         airline: {
-          name: marketingAirline ? `${marketingAirline} Airlines` : "Airline",
+          name: getMarketingAirlineDisplayName(firstSegment),
           code: marketingAirline,
           flightNo: flightNumber,
           cabin: cabinClass,

@@ -11,6 +11,8 @@ export const buildPerSegmentFlightDetail = (baseDetail: any = {}, seg: any = {})
     end_date: seg?.arrivalDateTime ? formatDate(seg?.arrivalDateTime) : baseDetail?.end_date,
     duration: seg?.duration ?? baseDetail?.duration,
     marketingAirline: seg?.marketingAirline ?? baseDetail?.marketingAirline,
+    marketingAirlineFullName:
+      seg?.marketingAirlineFullName ?? baseDetail?.marketingAirlineFullName,
     departureTerminal: seg?.departureTerminal ?? baseDetail?.departureTerminal,
     arrivalTerminal: seg?.arrivalTerminal ?? baseDetail?.arrivalTerminal,
   };

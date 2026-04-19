@@ -5,6 +5,7 @@ import {
   calculateFlightDuration,
   formatDate,
   formatTime,
+  getMarketingAirlineDisplayName,
 } from "../../utils/helpers";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
@@ -129,7 +130,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         startTerminal,
         endAirport,
         endTerminal,
-        name: seg?.name,
+        name: getMarketingAirlineDisplayName(firstSegment, seg),
         seats_layout: fd?.seats_layout,
         features: visibleFeatures,
         segments,
@@ -164,7 +165,10 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         startTerminal: airport?.startTerminal,
         endAirport: airport?.endAirport,
         endTerminal: airport?.endTerminal,
-        name: seg?.name,
+        name: getMarketingAirlineDisplayName(
+          details?.raw?.journey?.[0]?.flightSegments?.[0],
+          seg,
+        ),
         seats_layout: fd?.seats_layout,
         features: visibleFeatures,
       });

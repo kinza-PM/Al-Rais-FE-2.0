@@ -29,6 +29,7 @@ export type SegmentSummary = {
   arrivalTerminal?: string;
   duration?: string;
   marketingAirline?: string;
+  marketingAirlineFullName?: string;
   operatingAirline?: string;
   cabinClass?: string;
   priceClassName?: string;
@@ -805,6 +806,7 @@ export function transformFlightJourneysToObjects(
         arrivalTerminal: s.arrivalTerminal,
         duration: s.duration,
         marketingAirline: s.marketingAirline,
+        marketingAirlineFullName: s.marketingAirlineFullName,
         operatingAirline: s.operatingAirline,
         cabinClass: s.cabinClass,
         priceClassName: s.priceClassName,
@@ -896,3 +898,141 @@ export const buildAncillaryPayload = (
 
   return { data: { offerId, searchKey, selectedAncillaries } };
 };
+
+export type AncillaryOfferPriceInfo = {
+  amount: number;
+  currency: string;
+  label: string;
+  category: "baggage" | "meals" | "seats" | "other";
+};
+
+/**
+ * Maps ancillary offer IDs to selling price + label from the ancillary search response
+ * (baggages, meals, otherAncillaries, seatMap).
+ */
+export function buildAncillaryOfferPriceMap(
+  flightAncillarySearch: any,
+): Map<string, AncillaryOfferPriceInfo> {
+  const map = new Map<string, AncillaryOfferPriceInfo>();
+
+  const pushFromList = (
+    list: any[] | undefined,
+    category: AncillaryOfferPriceInfo["category"],
+  ) => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      const id = item?.ancillary?.ancillaryOfferId;
+      if (!id) continue;
+      const fare = item?.fare?.[0];
+      const amount = Number(fare?.sellingAmount ?? 0) || 0;
+      const currency = String(fare?.sellingCurrency || "USD");
+      const label =
+        item?.ancillary?.ancillaryDescription ||
+        item?.ancillary?.ancillaryCode ||
+        String(id);
+      map.set(String(id), { amount, currency, label, category });
+    }
+  };
+
+  pushFromList(flightAncillarySearch?.baggages, "baggage");
+  pushFromList(flightAncillarySearch?.meals, "meals");
+  pushFromList(flightAncillarySearch?.otherAncillaries, "other");
+
+  const seatMap = flightAncillarySearch?.seatMap;
+  if (Array.isArray(seatMap)) {
+    for (const seatMapItem of seatMap) {
+      for (const cabin of seatMapItem?.cabin || []) {
+        const decks = cabin?.deck;
+        const deckList = Array.isArray(decks)
+          ? decks
+          : decks
+            ? [decks]
+            : [];
+        for (const deck of deckList) {
+          for (const row of deck?.airRow || []) {
+            for (const seat of row?.airSeats || []) {
+              if (seat?.noSeat) continue;
+              const id =
+                seat?.ancillaryOfferId ||
+                seat?.seatOffer?.ancillaryOfferId ||
+                seat?.offer?.ancillaryOfferId ||
+                seat?.seatOfferId;
+              if (!id) continue;
+              const fare = seat?.fare?.[0];
+              const amount = Number(fare?.sellingAmount ?? 0) || 0;
+              const currency = String(fare?.sellingCurrency || "USD");
+              const seatLabel =
+                seat?.seatNumber || seat?.seatCode || "";
+              const label = seatLabel
+                ? `Seat ${seatLabel}`
+                : `Seat ${String(id)}`;
+              map.set(String(id), {
+                amount,
+                currency,
+                label,
+                category: "seats",
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
+export type LiveAncillarySummary = {
+  totalAmount: number;
+  currency: string;
+  selectedCount: number;
+  breakdown: Array<{
+    category: "baggage" | "meals" | "seats" | "other";
+    label: string;
+    amount: number;
+    currency: string;
+    ancillaryOfferId: string;
+  }>;
+};
+
+/**
+ * Real-time ancillary totals from current UI selections + ancillary search catalog prices.
+ */
+export function computeLiveAncillarySummary(
+  flightAncillarySearch: any,
+  all: AllSelections,
+  offerId: string,
+  searchKey: string,
+  fallbackCurrency: string,
+): LiveAncillarySummary {
+  const payload = buildAncillaryPayload(all, offerId, searchKey);
+  const selected = payload?.data?.selectedAncillaries || [];
+  const priceMap = buildAncillaryOfferPriceMap(flightAncillarySearch);
+
+  const breakdown: LiveAncillarySummary["breakdown"] = [];
+  let totalAmount = 0;
+  let currency = fallbackCurrency;
+
+  for (const sel of selected) {
+    const id = String(sel.ancillaryOfferId);
+    const info = priceMap.get(id);
+    const amount = info?.amount ?? 0;
+    const cur = info?.currency || fallbackCurrency;
+    currency = cur;
+    totalAmount += amount;
+    breakdown.push({
+      category: info?.category ?? "other",
+      label: info?.label ?? id,
+      amount,
+      currency: cur,
+      ancillaryOfferId: id,
+    });
+  }
+
+  return {
+    totalAmount,
+    currency,
+    selectedCount: selected.length,
+    breakdown,
+  };
+}

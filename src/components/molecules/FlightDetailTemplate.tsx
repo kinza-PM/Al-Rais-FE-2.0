@@ -56,6 +56,7 @@ import {
   formatDate,
   formatDateToLocalISO,
   formatTime,
+  getMarketingAirlineDisplayName,
   timeToMinutesFromAnyString,
 } from "../../utils/helpers";
 import StatusMessageBanner from "../common/StatusMessageBanner";
@@ -65,6 +66,7 @@ import {
   filterOffersByAncillaryMode,
   filterOffersByCheckedBaggage,
   filterOffersByRefundableMode,
+  refundableFilterModeFromCheckboxes,
   type AncillaryFilterMode,
   type RefundableFilterMode,
 } from "../../utils/flightFilters";
@@ -259,8 +261,9 @@ const FlightDetailTemplate: React.FC = () => {
   >(null);
   const [baggageIncludedOnly, setBaggageIncludedOnly] = useState(false);
   const [ancillaryAddOnsOnly, setAncillaryAddOnsOnly] = useState(false);
-  const [refundableFilterMode, setRefundableFilterMode] =
-    useState<RefundableFilterMode>("all");
+  const [refundFilterRefundable, setRefundFilterRefundable] = useState(false);
+  const [refundFilterNonRefundable, setRefundFilterNonRefundable] =
+    useState(false);
   const [priceRangeBounds, setPriceRangeBounds] = React.useState<
     [number, number]
   >([0, 1000]);
@@ -269,7 +272,6 @@ const FlightDetailTemplate: React.FC = () => {
   >([0, 1000]);
   const PRICE_STEP = 50;
   const filterChangeDebounceRef = useRef<number | null>(null);
-  const timeRefs = useRef<Record<string, HTMLInputElement | null>>({});
   
   // Sort dropdown state
   const [sortBy, setSortBy] = useState<string>("lowest_price");
@@ -356,7 +358,7 @@ const FlightDetailTemplate: React.FC = () => {
     return {
       id: seg.segmentKey,
       logo: resolveAirlineLogoFromSegment(seg),
-      name: seg.marketingAirline,
+      name: getMarketingAirlineDisplayName(seg),
       flight_detail: {
         flight_number: seg.flightNumber,
         flight_class: seg.cabinClass,
@@ -845,7 +847,12 @@ const FlightDetailTemplate: React.FC = () => {
       const code = String(seg?.marketingAirline || "").trim().toUpperCase();
       if (!code || gathered.has(code)) return;
       const fallbackLabel =
-        String(seg?.marketingAirlineName || seg?.operatingAirlineName || "").trim() || code;
+        String(
+          seg?.marketingAirlineFullName ||
+            seg?.marketingAirlineName ||
+            seg?.operatingAirlineName ||
+            "",
+        ).trim() || code;
       gathered.set(code, {
         id: code,
         code,
@@ -1004,12 +1011,27 @@ const FlightDetailTemplate: React.FC = () => {
     setBaggageIncludedOnly(Boolean(searchState.baggageIncludedOnly));
     setAncillaryAddOnsOnly(Boolean(searchState.ancillaryAddOnsOnly));
     {
-      const rf = searchState.refundableFilterMode;
-      const nextRf: RefundableFilterMode =
-        rf === "all" || rf === "refundable" || rf === "non_refundable"
-          ? rf
-          : "all";
-      setRefundableFilterMode(nextRf);
+      const hasCheckbox =
+        typeof searchState.refundFilterRefundable === "boolean" ||
+        typeof searchState.refundFilterNonRefundable === "boolean";
+      if (hasCheckbox) {
+        setRefundFilterRefundable(Boolean(searchState.refundFilterRefundable));
+        setRefundFilterNonRefundable(
+          Boolean(searchState.refundFilterNonRefundable),
+        );
+      } else {
+        const rf = searchState.refundableFilterMode;
+        if (rf === "refundable") {
+          setRefundFilterRefundable(true);
+          setRefundFilterNonRefundable(false);
+        } else if (rf === "non_refundable") {
+          setRefundFilterRefundable(false);
+          setRefundFilterNonRefundable(true);
+        } else {
+          setRefundFilterRefundable(false);
+          setRefundFilterNonRefundable(false);
+        }
+      }
     }
     setPriceRangeBounds(searchState.priceRangeBounds ?? [0, 1000]);
     setSelectedPriceRange(searchState.selectedPriceRange ?? [0, 1000]);
@@ -1133,7 +1155,8 @@ const FlightDetailTemplate: React.FC = () => {
       selectedTransitRange,
       baggageIncludedOnly,
       ancillaryAddOnsOnly,
-      refundableFilterMode,
+      refundFilterRefundable,
+      refundFilterNonRefundable,
       priceRangeBounds,
       selectedPriceRange,
       sortBy,
@@ -1376,7 +1399,11 @@ const FlightDetailTemplate: React.FC = () => {
         ? baggageIncludedOverride
         : baggageIncludedOnly;
     const refundableMode: RefundableFilterMode =
-      refundableFilterOverride ?? refundableFilterMode;
+      refundableFilterOverride ??
+      refundableFilterModeFromCheckboxes(
+        refundFilterRefundable,
+        refundFilterNonRefundable,
+      );
 
     const { filteredOneWay, filteredRound } = filterFlightsByTimeAndAirlines(
       originalResponseRef.current ?? [],
@@ -1726,9 +1753,6 @@ const FlightDetailTemplate: React.FC = () => {
     });
   }, [trip, multicityLegs.map((leg) => leg.toCode).join(",")]);
 
-  const openTimePicker = (key: string) => {
-    timeRefs.current[key]?.showPicker?.() || timeRefs.current[key]?.click();
-  };
 
   const flightResultsSummaryLine = useMemo(() => {
     if (!hasSearched || isSearching || searchError) return null;
@@ -2394,8 +2418,6 @@ const FlightDetailTemplate: React.FC = () => {
                 onArrivalRangeChange={(next) =>
                   handleSearchFiltersChange({ arrivalFlightRange: next })
                 }
-                openTimePicker={openTimePicker}
-                timeRefs={timeRefs}
                 airline={availableAirlineOptions}
                 selectedAirlineIds={selectedAirlineIds}
                 onAirlineToggle={(code, checked) =>
@@ -2414,9 +2436,10 @@ const FlightDetailTemplate: React.FC = () => {
                     null,
                   );
                 }}
-                refundableFilterMode={refundableFilterMode}
-                onRefundableFilterChange={(mode) => {
-                  setRefundableFilterMode(mode);
+                refundFilterRefundable={refundFilterRefundable}
+                refundFilterNonRefundable={refundFilterNonRefundable}
+                onRefundFilterRefundableChange={(checked) => {
+                  setRefundFilterRefundable(checked);
                   applyFlightSearchFilters(
                     departureFlightRange,
                     arrivalFlightRange,
@@ -2425,7 +2448,26 @@ const FlightDetailTemplate: React.FC = () => {
                     selectedTransitRange,
                     null,
                     null,
-                    mode,
+                    refundableFilterModeFromCheckboxes(
+                      checked,
+                      refundFilterNonRefundable,
+                    ),
+                  );
+                }}
+                onRefundFilterNonRefundableChange={(checked) => {
+                  setRefundFilterNonRefundable(checked);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    selectedPriceRange,
+                    selectedTransitRange,
+                    null,
+                    null,
+                    refundableFilterModeFromCheckboxes(
+                      refundFilterRefundable,
+                      checked,
+                    ),
                   );
                 }}
                 onReset={() => {
@@ -2437,7 +2479,8 @@ const FlightDetailTemplate: React.FC = () => {
                   setSelectedTransitRange(null);
                   setBaggageIncludedOnly(false);
                   setAncillaryAddOnsOnly(false);
-                  setRefundableFilterMode("all");
+                  setRefundFilterRefundable(false);
+                  setRefundFilterNonRefundable(false);
                   applyFlightSearchFilters(
                     { start: "", end: "" },
                     { start: "", end: "" },
@@ -2512,8 +2555,6 @@ const FlightDetailTemplate: React.FC = () => {
                 onArrivalRangeChange={(next) =>
                   handleSearchFiltersChange({ arrivalFlightRange: next })
                 }
-                openTimePicker={openTimePicker}
-                timeRefs={timeRefs}
                 airline={availableAirlineOptions}
                 selectedAirlineIds={selectedAirlineIds}
                 onAirlineToggle={(code, checked) =>
@@ -2532,9 +2573,10 @@ const FlightDetailTemplate: React.FC = () => {
                     null,
                   );
                 }}
-                refundableFilterMode={refundableFilterMode}
-                onRefundableFilterChange={(mode) => {
-                  setRefundableFilterMode(mode);
+                refundFilterRefundable={refundFilterRefundable}
+                refundFilterNonRefundable={refundFilterNonRefundable}
+                onRefundFilterRefundableChange={(checked) => {
+                  setRefundFilterRefundable(checked);
                   applyFlightSearchFilters(
                     departureFlightRange,
                     arrivalFlightRange,
@@ -2543,7 +2585,26 @@ const FlightDetailTemplate: React.FC = () => {
                     selectedTransitRange,
                     null,
                     null,
-                    mode,
+                    refundableFilterModeFromCheckboxes(
+                      checked,
+                      refundFilterNonRefundable,
+                    ),
+                  );
+                }}
+                onRefundFilterNonRefundableChange={(checked) => {
+                  setRefundFilterNonRefundable(checked);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    selectedPriceRange,
+                    selectedTransitRange,
+                    null,
+                    null,
+                    refundableFilterModeFromCheckboxes(
+                      refundFilterRefundable,
+                      checked,
+                    ),
                   );
                 }}
                 onReset={() => {
@@ -2555,7 +2616,8 @@ const FlightDetailTemplate: React.FC = () => {
                   setSelectedTransitRange(null);
                   setBaggageIncludedOnly(false);
                   setAncillaryAddOnsOnly(false);
-                  setRefundableFilterMode("all");
+                  setRefundFilterRefundable(false);
+                  setRefundFilterNonRefundable(false);
                   applyFlightSearchFilters(
                     { start: "", end: "" },
                     { start: "", end: "" },

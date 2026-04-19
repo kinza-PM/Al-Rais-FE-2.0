@@ -11,6 +11,7 @@ import {
   formatDate,
   formatFlightDurationLabel,
   formatTime,
+  getMarketingAirlineDisplayName,
 } from "../../utils/helpers";
 import { formatQuantityUnit } from "../../utils/baggageAllowanceDisplay";
 import {
@@ -154,6 +155,7 @@ export default function FlightBookingETicketSection({
         return {
           heading,
           airlineCode: seg?.marketingAirline || "EK",
+          airlineDisplayName: getMarketingAirlineDisplayName(seg),
           flightNumber: seg?.flightNumber || "N/A",
           duration,
           stops: stopsLabel,
@@ -187,6 +189,7 @@ export default function FlightBookingETicketSection({
       .filter(Boolean) as Array<{
       heading: string;
       airlineCode: string;
+      airlineDisplayName: string;
       flightNumber: string;
       duration: string;
       stops: string;
@@ -592,7 +595,7 @@ export default function FlightBookingETicketSection({
                 <div className="flex items-center gap-2">
                   <div>
                     <div className="text-[14px] text-nowrap font-medium text-[#0A0C0F]">
-                      {block.airlineCode} Airlines
+                      {block.airlineDisplayName}
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
                       {block.airlineCode} {block.flightNumber}

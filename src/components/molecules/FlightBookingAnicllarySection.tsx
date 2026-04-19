@@ -5,7 +5,7 @@ import baggageIcon from "../../assets/svgs/baggage.svg";
 // import portIcon from "../../assets/svgs/ports.svg";
 // import wifiIcon from "../../assets/svgs/wifi.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FlightBookingBaggageSection from "../atoms/FlightBookingBaggageSection";
 import FlightBookingMealsSection from "../atoms/FlightBookingMealsSection";
 import FlightBookingComfortAirportAndTravelSection from "../atoms/FlightBookingComfortAirportAndTravelSection";
@@ -21,6 +21,7 @@ import {
 } from "../../utils/helpers";
 import {
   buildAncillaryPayload,
+  computeLiveAncillarySummary,
   transformFlightJourneysToObjects,
 } from "../../utils/flightBookingHelper";
 import LoginModal from "../common/LoginModal";
@@ -73,6 +74,12 @@ export default function FlightBookingAnicllarySection({
 }: FlightBookingAnicllarySectionProps) {
   const { isAuthenticated } = useAuth();
   const { getAllSelections, clearAll } = useAncillaryStore();
+  const baggageSelections = useAncillaryStore((s) => s.baggageSelections);
+  const mealSelections = useAncillaryStore((s) => s.mealSelections);
+  const seatSelections = useAncillaryStore((s) => s.seatSelections);
+  const otherAncillariesSelections = useAncillaryStore(
+    (s) => s.otherAncillariesSelections,
+  );
   const [openPrice, setOpenPrice] = useState(false);
   const [openBaggage, setOpenBaggage] = useState(true);
   const [openSeats, setOpenSeats] = useState(true);
@@ -212,16 +219,33 @@ export default function FlightBookingAnicllarySection({
 
   const liveAncillarySummary = useMemo(() => {
     const all = getAllSelections() as AllSelections;
-    const payload = buildAncillaryPayload(all, offerId, searchKey);
-    const selected = payload?.data?.selectedAncillaries || [];
     const fallbackCurrency =
       trip?.raw?.fare?.currencyCode ?? trip?.raw?.fare?.currency ?? "USD";
-    return {
-      totalAmount: 0,
-      currency: fallbackCurrency,
-      selectedCount: selected.length,
-    };
-  }, [getAllSelections, offerId, searchKey, trip]);
+    return computeLiveAncillarySummary(
+      flightAncillarySearch,
+      all,
+      offerId ?? "",
+      searchKey ?? "",
+      fallbackCurrency,
+    );
+  }, [
+    baggageSelections,
+    mealSelections,
+    seatSelections,
+    otherAncillariesSelections,
+    flightAncillarySearch,
+    getAllSelections,
+    offerId,
+    searchKey,
+    trip?.raw?.fare?.currencyCode,
+    trip?.raw?.fare?.currency,
+  ]);
+
+  useEffect(() => {
+    onAncillarySelectionResolved?.(liveAncillarySummary);
+    // Intentionally omit onAncillarySelectionResolved: parent may pass an inline handler each render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveAncillarySummary]);
 
   const handleFlightAncillaryProvBooking = async () => {
     const all = getAllSelections() as AllSelections;

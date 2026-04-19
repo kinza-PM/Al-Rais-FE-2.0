@@ -14,7 +14,10 @@ import { Switch, Modal } from "antd";
 
 import { useNavigate } from "react-router-dom";
 import { travelData } from "../../utils/mockData";
-import { formatListingStartingFare } from "../../utils/helpers";
+import {
+  formatListingStartingFare,
+  getMarketingAirlineDisplayName,
+} from "../../utils/helpers";
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
 import Loader from "../atoms/Loader";
 import {
@@ -50,16 +53,8 @@ const radioReminder = (checked: boolean) => {
   console.log(`switch to ${checked}`);
 };
 
-const getAirlineDisplayName = (item: any, seg?: any) => {
-  return (
-    item?.airlineName ||
-    seg?.marketingAirlineName ||
-    seg?.operatingAirlineName ||
-    item?.name ||
-    seg?.marketingAirline ||
-    "Airline"
-  );
-};
+const getAirlineDisplayName = (item: any, seg?: any) =>
+  getMarketingAirlineDisplayName(seg, item);
 
 const TravelOneWay: React.FC<TravelOneWayProps> = ({
   passData,

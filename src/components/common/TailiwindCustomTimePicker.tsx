@@ -22,6 +22,10 @@ export type TimePickerProps = {
   overridesClass?: boolean;
   inputClass?: string | null;
   error?: string | null;
+  /** Header shown above the hour/minute controls (e.g. "Departure from") */
+  panelTitle?: string;
+  /** Optional class on the root wrapper (e.g. flex sizing in sidebars) */
+  wrapperClassName?: string;
 };
 
 function parseHHMM24(s: string | undefined): { h24: number; m: number } | null {
@@ -72,6 +76,8 @@ const TailiwindCustomTimePicker: React.FC<TimePickerProps> = ({
   overridesClass = false,
   inputClass = null,
   error = null,
+  panelTitle = "Select time",
+  wrapperClassName = "",
 }) => {
   const [open, setOpen] = useState(false);
   const [h12, setH12] = useState(9);
@@ -158,7 +164,7 @@ const TailiwindCustomTimePicker: React.FC<TimePickerProps> = ({
       : "";
 
   return (
-    <div ref={rootRef} className="relative">
+    <div ref={rootRef} className={`relative ${wrapperClassName}`.trim()}>
       <div className="group relative">
         <input
           readOnly
@@ -223,7 +229,7 @@ const TailiwindCustomTimePicker: React.FC<TimePickerProps> = ({
             className="rounded-2xl border border-[#DFE7F3] bg-white shadow-[0_12px_30px_rgba(16,24,40,0.12)]"
           >
             <p className="border-b border-[#F4F7FC] px-3 py-2 text-center text-[12px] font-medium text-[#64748B]">
-              Pick-up time
+              {panelTitle}
             </p>
             <div className="flex gap-2 px-3 pt-3">
               <div className="min-w-0 flex-1">

@@ -8,6 +8,7 @@ import extendedSeatGlyph from "../../assets/svgs/extended-seat-glyph.svg";
 import seat from "../../assets/svgs/enhance-seat.svg";
 import CardCollapseToggle from "../common/CardCollapseToggle";
 import type { SegmentSummary } from "../../utils/flightBookingHelper";
+import { getMarketingAirlineDisplayName } from "../../utils/helpers";
 // import toast from "react-hot-toast";
 import { useAncillaryStore } from "../../store/useAncillaryStore";
 
@@ -839,7 +840,7 @@ export default function FlightBookingSeatSection({
                       />
                       <div>
                         <div className="text-[15px] font-medium text-[#0A0C0F]">
-                          {currentSegment.marketingAirline} Airlines
+                          {getMarketingAirlineDisplayName(currentSegment)}
                         </div>
                         <div className="text-[13px] text-[#3D495C]">
                           {currentSegment.flightNumber} -{" "}
