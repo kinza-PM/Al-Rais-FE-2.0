@@ -30,7 +30,12 @@ import {
   validatePassengersForFlightProvisionalBookingFields,
   withDefaultResidenceCountryFromIssuing,
 } from "../../utils/flightBookingHelper";
-import { getPassportIssuePickerBounds } from "../../utils/travelerFieldValidation";
+import {
+  genderFromFlightBookingNameTitle,
+  getFlightBookingNameTitleDropdownOptions,
+  getPassportIssuePickerBounds,
+  mapSavedTravelerTitleToFlightBookingValue,
+} from "../../utils/travelerFieldValidation";
 import axios from "axios";
 import {
   extractAxiosErrorDetailsSource,
@@ -375,15 +380,6 @@ export default function FlightBookingBookSection({
   const fillFromSavedTravelers = (
     selectedSlots: Array<SavedTraveler | undefined>,
   ) => {
-    const titleToUi = (t?: string) => {
-      const v = String(t ?? "")
-        .trim()
-        .toUpperCase();
-      if (v === "MR") return "MR";
-      if (v === "MS") return "MS";
-      if (v === "MRS") return "MRS";
-      return "";
-    };
     const normalizeIdType = (v?: string) => {
       const x = String(v ?? "")
         .trim()
@@ -408,7 +404,13 @@ export default function FlightBookingBookSection({
       const clear = !t;
       const givenName = clear ? "" : (t.firstName ?? "");
       const surname = clear ? "" : (t.lastName ?? "");
-      const nameTitle = clear ? "" : titleToUi(t.nameTitle);
+      const nameTitle = clear
+        ? ""
+        : mapSavedTravelerTitleToFlightBookingValue(
+            passengers[idx]?.ptc,
+            t.nameTitle,
+            t.gender,
+          );
       const gender = clear ? "" : genderToUi(t.gender);
       const birthDate = clear ? null : (t.birthDate ?? null);
       const passport = clear ? "" : (t.passport ?? "");
@@ -577,11 +579,9 @@ export default function FlightBookingBookSection({
                         className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
-                          options={[
-                            { id: "mr", value: "MR", label: "Mr" },
-                            { id: "ms", value: "MS", label: "Ms" },
-                            { id: "mrs", value: "MRS", label: "Mrs" },
-                          ]}
+                          options={getFlightBookingNameTitleDropdownOptions(
+                            p.ptc,
+                          )}
                           value={p.passengerInfo?.nameTitle ?? ""}
                           onChange={(value) => {
                             onPassengerFieldChange(
@@ -592,7 +592,7 @@ export default function FlightBookingBookSection({
                             onPassengerFieldChange(
                               idx,
                               "passengerInfo.gender",
-                              value === "MR" ? "M" : "F",
+                              genderFromFlightBookingNameTitle(value),
                             );
                             clearFieldError(idx, "passengerInfo.nameTitle");
                             clearFieldError(idx, "passengerInfo.gender");

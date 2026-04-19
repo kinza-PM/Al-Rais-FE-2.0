@@ -49,8 +49,8 @@ const normalizeGender = (g: any, title?: any) => {
   if (gg === "m" || gg === "male") return "M";
   if (gg === "f" || gg === "female") return "F";
   const tt = String(title || "").trim().toLowerCase();
-  if (tt === "mr") return "M";
-  if (tt === "ms" || tt === "mrs") return "F";
+  if (tt === "mr" || tt === "mstr") return "M";
+  if (tt === "ms" || tt === "mrs" || tt === "miss") return "F";
   return "";
 };
 const digitsOnly = (v: any) => String(v ?? "").replace(/[^\d]/g, "");

@@ -6,37 +6,168 @@ export function startOfLocalDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-export type TravelerSurnameOptions = {
-  /** Default 2 */
+/**
+ * Rules for {@link validatePersonName}. Toggle what to enforce; defaults match typical travel “legal name” fields.
+ */
+export type PersonNameValidationOptions = {
+  /** Used in every message, e.g. `"Surname"`, `"Full name"`, `"Middle name"`. */
+  fieldLabel: string;
   minLength?: number;
+  maxLength?: number;
+  /** Block `123` etc. Default true. */
+  disallowDigits?: boolean;
+  /** Block `"John  Doe"`. Default true. */
+  disallowRepeatedSpaces?: boolean;
+  /**
+   * Unicode letters only, with single spaces / hyphens / apostrophes between parts (O'Brien, van der Berg).
+   * Default true. Set false if you only want length/digit checks.
+   */
+  unicodeNamePattern?: boolean;
 };
 
+const UNICODE_NAME_SEGMENT =
+  /^[\p{L}]+(?:[\s'\-][\p{L}]+)*$/u;
+
 /**
- * Optional surname format check (run after required/trim).
- * Returns `null` if valid, otherwise an error message.
+ * Single reusable name validator: pass **which** checks apply via `options`.
+ * Call after optional “required” checks — empty string returns `null` (nothing to validate).
+ *
+ * @example
+ * validatePersonName(v, { fieldLabel: "Surname" })
+ * validatePersonName(v, { fieldLabel: "Full name", minLength: 2 })
+ * validatePersonName(v, { fieldLabel: "Alias", unicodeNamePattern: false, disallowDigits: true })
  */
-export function validateTravelerSurname(
+export function validatePersonName(
   raw: string | null | undefined,
-  options?: TravelerSurnameOptions,
+  options: PersonNameValidationOptions,
 ): string | null {
-  const minLength = options?.minLength ?? 2;
+  const label = options.fieldLabel?.trim() || "Name";
+  const minLength = options.minLength ?? 2;
+  const maxLength = options.maxLength;
+  const disallowDigits = options.disallowDigits !== false;
+  const disallowRepeatedSpaces = options.disallowRepeatedSpaces !== false;
+  const unicodeNamePattern = options.unicodeNamePattern !== false;
+
   const s = String(raw ?? "").trim();
   if (!s) return null;
 
-  if (/\s{2,}/.test(s)) {
-    return "Use a single space between parts of the surname.";
+  if (disallowRepeatedSpaces && /\s{2,}/.test(s)) {
+    return `Use a single space between parts of the ${label.toLowerCase()}.`;
   }
   if (s.length < minLength) {
-    return `Surname must be at least ${minLength} characters.`;
+    return `${label} must be at least ${minLength} characters.`;
   }
-  if (/\d/.test(s)) {
-    return "Surname cannot contain numbers.";
+  if (maxLength != null && s.length > maxLength) {
+    return `${label} must be at most ${maxLength} characters.`;
   }
-  // Letters (Unicode), single spaces, hyphens, apostrophes — e.g. O'Brien, van der Berg
-  if (!/^[\p{L}]+(?:[\s'\-][\p{L}]+)*$/u.test(s)) {
-    return "Use only letters, spaces, hyphens, or apostrophes in the surname.";
+  if (disallowDigits && /\d/.test(s)) {
+    return `${label} cannot contain numbers.`;
+  }
+  if (unicodeNamePattern && !UNICODE_NAME_SEGMENT.test(s)) {
+    return `Use only letters, spaces, hyphens, or apostrophes in the ${label.toLowerCase()}.`;
   }
   return null;
+}
+
+/** Dropdown row for flight booking “Title” (values match API / payload). */
+export type FlightBookingNameTitleOption = {
+  id: string;
+  value: string;
+  label: string;
+};
+
+/**
+ * Title choices depend on PTC: adults use Mr/Ms/Mrs; children and infants use Master/Miss.
+ */
+export function getFlightBookingNameTitleDropdownOptions(
+  ptc: string | null | undefined,
+): FlightBookingNameTitleOption[] {
+  const p = String(ptc ?? "")
+    .trim()
+    .toUpperCase();
+  if (p === "CHD" || p === "INF") {
+    return [
+      { id: "mstr", value: "MSTR", label: "Master" },
+      { id: "miss", value: "MISS", label: "Miss" },
+    ];
+  }
+  return [
+    { id: "mr", value: "MR", label: "Mr" },
+    { id: "ms", value: "MS", label: "Ms" },
+    { id: "mrs", value: "MRS", label: "Mrs" },
+  ];
+}
+
+/**
+ * Map UI/gender to `passengerInfo.gender` (M/F) from the selected title.
+ */
+export function genderFromFlightBookingNameTitle(
+  nameTitle: string | null | undefined,
+): "M" | "F" {
+  const t = String(nameTitle ?? "")
+    .trim()
+    .toUpperCase();
+  if (t === "MR" || t === "MSTR") return "M";
+  return "F";
+}
+
+/**
+ * When applying a saved traveler to a row, map stored title codes to the option set for this passenger type.
+ */
+export function mapSavedTravelerTitleToFlightBookingValue(
+  ptc: string | null | undefined,
+  savedTitle: string | null | undefined,
+  genderHint?: string | null,
+): string {
+  const p = String(ptc ?? "")
+    .trim()
+    .toUpperCase();
+  const v = String(savedTitle ?? "")
+    .trim()
+    .toUpperCase();
+  const g = String(genderHint ?? "")
+    .trim()
+    .toUpperCase();
+
+  if (p === "CHD" || p === "INF") {
+    if (v === "MSTR" || v === "MASTER") return "MSTR";
+    if (v === "MISS") return "MISS";
+    if (v === "MR") return "MSTR";
+    if (v === "MS" || v === "MRS") return "MISS";
+    if (g === "M" || g === "MALE") return "MSTR";
+    if (g === "F" || g === "FEMALE") return "MISS";
+    return "";
+  }
+
+  if (v === "MR") return "MR";
+  if (v === "MS") return "MS";
+  if (v === "MRS") return "MRS";
+  if (v === "MSTR" || v === "MASTER") return "MR";
+  if (v === "MISS") return "MS";
+  return "";
+}
+
+/**
+ * Ensures `passengerInfo.nameTitle` is allowed for this passenger’s PTC (after “required” checks).
+ */
+export function validatePassengerNameTitleForPtc(
+  ptc: string | null | undefined,
+  nameTitle: string | null | undefined,
+): string | null {
+  const t = String(nameTitle ?? "").trim();
+  if (!t) return null;
+  const allowed = new Set(
+    getFlightBookingNameTitleDropdownOptions(ptc).map((o) => o.value),
+  );
+  const u = t.toUpperCase();
+  if (allowed.has(u)) return null;
+  const p = String(ptc ?? "")
+    .trim()
+    .toUpperCase();
+  if (p === "CHD" || p === "INF") {
+    return "Select Master or Miss for a child or infant passenger.";
+  }
+  return "Select Mr, Ms, or Mrs for an adult passenger.";
 }
 
 export type PassportNumberOptions = {

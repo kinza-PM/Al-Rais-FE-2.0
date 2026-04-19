@@ -4,8 +4,9 @@ import { generateUUID } from "./helpers";
 import {
   validateIdentityDocumentNumberForType,
   validateInternationalPhoneParts,
+  validatePassengerNameTitleForPtc,
   validatePassportDateOfIssue,
-  validateTravelerSurname,
+  validatePersonName,
 } from "./travelerFieldValidation";
 
 export type FlightFinalReservedBooking = {
@@ -112,14 +113,28 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     // Always required fields
     if (isEmpty(pi.nameTitle)) {
       passengerErrors["passengerInfo.nameTitle"] = "Title is required.";
+    } else {
+      const titlePtc = validatePassengerNameTitleForPtc(p?.ptc, pi.nameTitle);
+      if (titlePtc) {
+        passengerErrors["passengerInfo.nameTitle"] = titlePtc;
+      }
     }
     if (isEmpty(pi.givenName)) {
       passengerErrors["passengerInfo.givenName"] = "Full name is required.";
+    } else {
+      const givenFmt = validatePersonName(pi.givenName, {
+        fieldLabel: "Full name",
+      });
+      if (givenFmt) {
+        passengerErrors["passengerInfo.givenName"] = givenFmt;
+      }
     }
     if (isEmpty(pi.surname)) {
       passengerErrors["passengerInfo.surname"] = "Surname is required.";
     } else {
-      const surnameFmt = validateTravelerSurname(pi.surname);
+      const surnameFmt = validatePersonName(pi.surname, {
+        fieldLabel: "Surname",
+      });
       if (surnameFmt) {
         passengerErrors["passengerInfo.surname"] = surnameFmt;
       }
@@ -331,7 +346,15 @@ export const validatePassengersForFlightProvisionalBooking = (
       if (isEmpty(r.value)) return { valid: false, error: prefixFor(i, r.msg) };
     }
 
-    const surnameFmt = validateTravelerSurname(pi.surname);
+    const titlePtc = validatePassengerNameTitleForPtc(p?.ptc, pi.nameTitle);
+    if (titlePtc) return { valid: false, error: prefixFor(i, titlePtc) };
+
+    const givenFmt = validatePersonName(pi.givenName, {
+      fieldLabel: "Full name",
+    });
+    if (givenFmt) return { valid: false, error: prefixFor(i, givenFmt) };
+
+    const surnameFmt = validatePersonName(pi.surname, { fieldLabel: "Surname" });
     if (surnameFmt)
       return { valid: false, error: prefixFor(i, surnameFmt) };
 

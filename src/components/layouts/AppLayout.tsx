@@ -147,8 +147,8 @@ const AppLayout: React.FC = () => {
           logoSrc={AlRaisLogo}
         />
 
-        {/* Session expiry UX guard (warn before auto-logout) */}
-        {isAuthenticated && <SessionExpiryWarning warningSeconds={120} />}
+        {/* Silent Cognito refresh before token expiry (no modal) */}
+        {isAuthenticated && <SessionExpiryWarning />}
 
         <main className="min-h-screen">
           <Suspense fallback={<RouteLoadingFallback />}>
