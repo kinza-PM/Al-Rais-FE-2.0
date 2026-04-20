@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Layout, Menu, Dropdown, Drawer, Modal, Typography } from "antd";
+import { Layout, Menu, Dropdown, Drawer, Modal, Tooltip, Typography } from "antd";
 import {
   CalendarOutlined,
   DownOutlined,
@@ -114,25 +114,23 @@ const AppHeader: React.FC<HeaderProps> = ({
 }) => {
   const { isAuthenticated, user, signOut } = useAuth();
   const [drawerVisible, setDrawerVisible] = useState(false);
-  /** Single source for breakpoints: mobile <768, tablet 768–1199, inline nav ≥1024 */
+  /** Single source for breakpoints: mobile <768, tablet 768–1199, inline nav ≥1280 */
   const [viewportWidth, setViewportWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1280,
   );
   const isMobile = viewportWidth < 768;
   const isTablet = viewportWidth >= 768 && viewportWidth < 1200;
-  /** Below this width, primary links move to the drawer + menu control */
-  const showInlineNav = viewportWidth >= 1024;
+  /**
+   * Below this width, primary links move to the drawer + menu control.
+   * At ~1024–1279 we keep the header compact to avoid wrapping/overflow.
+   */
+  const showInlineNav = viewportWidth >= 1280;
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notifNextToken, setNotifNextToken] = useState<string | null>(null);
   const [notifLoadingMore, setNotifLoadingMore] = useState(false);
   const [cartBadgeCount, setCartBadgeCount] = useState(0);
   const navigate = useNavigate();
-
-  const unreadNotificationCount = useMemo(
-    () => notifications.filter((n) => !n.read).length,
-    [notifications],
-  );
 
   const { avatarUrl, initials, displayName, fetchProfile, reset } =
     useUserProfileStore();
@@ -373,9 +371,10 @@ const AppHeader: React.FC<HeaderProps> = ({
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
+              // Allow wrapping + tighter gaps so labels don't get clipped at smaller desktop widths.
               flexWrap: "wrap",
-              rowGap: 8,
-              columnGap: viewportWidth >= 1280 ? 40 : viewportWidth >= 1100 ? 32 : 20,
+              rowGap: 6,
+              columnGap: viewportWidth >= 1440 ? 34 : 20,
             }}
           >
             {centerNavLinks.map(({ key, to, label }) => (
@@ -570,38 +569,39 @@ const AppHeader: React.FC<HeaderProps> = ({
                 </button>
               </Dropdown>
 
-              <button
-                type="button"
-                aria-label="Notifications"
-                onClick={() => {
-                  if (isAuthenticated && user) setShowAllNotifications(true);
-                  else onLoginClick();
-                }}
-                style={{
-                  width: desktopIconBtn,
-                  height: desktopIconBtn,
-                  border: "1.5px solid #5383DA",
-                  borderRadius: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: "#FFFFFF",
-                  cursor: "pointer",
-                  position: "relative",
-                  transition: "all 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = "#F0F7FF";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = "#FFFFFF";
-                }}
-              >
-                <CalendarOutlined
-                  style={{ fontSize: isTablet ? 20 : 24, color: "#3D495C" }}
-                />
-                <IconActionBadge count={unreadNotificationCount} />
-              </button>
+              <Tooltip title="My bookings" placement="bottom">
+                <button
+                  type="button"
+                  aria-label="My bookings"
+                  onClick={() => {
+                    if (isAuthenticated && user) navigate(buildMyBookingsUrl());
+                    else onLoginClick();
+                  }}
+                  style={{
+                    width: desktopIconBtn,
+                    height: desktopIconBtn,
+                    border: "1.5px solid #5383DA",
+                    borderRadius: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "#FFFFFF",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#F0F7FF";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "#FFFFFF";
+                  }}
+                >
+                  <CalendarOutlined
+                    style={{ fontSize: isTablet ? 20 : 24, color: "#3D495C" }}
+                  />
+                </button>
+              </Tooltip>
 
               <div
                 role="img"
@@ -849,8 +849,9 @@ const AppHeader: React.FC<HeaderProps> = ({
             <>
               <button
                 type="button"
-                aria-label="Notifications"
-                onClick={() => setShowAllNotifications(true)}
+                aria-label="My bookings"
+                onClick={() => navigate(buildMyBookingsUrl())}
+                title="My bookings"
                 style={{
                   width: "40px",
                   height: "40px",
@@ -867,7 +868,6 @@ const AppHeader: React.FC<HeaderProps> = ({
                 <CalendarOutlined
                   style={{ fontSize: "18px", color: "#3D495C" }}
                 />
-                <IconActionBadge count={unreadNotificationCount} />
               </button>
               <div
                 role="img"

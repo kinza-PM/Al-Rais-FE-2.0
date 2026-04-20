@@ -179,19 +179,19 @@ export function buildPriceSortOptions(
 }
 
 const STOPS_LABEL_MAP: Record<string, string> = {
-  "0": "non-stop",
-  "01": "one-stop",
-  "1": "one-stop",
-  "02": "two-stop",
-  "2": "two-stop",
+  "0": "non stop",
+  "01": "1 stop",
+  "1": "1 stop",
+  "02": "2 stop",
+  "2": "2 stop",
   // API may return human-readable strings as category values
-  "Non-stop": "non-stop",
-  "non-stop": "non-stop",
-  "nonstop": "non-stop",
-  "1 Stop": "one-stop",
-  "1 stop": "one-stop",
-  "2 Stops": "two-stop",
-  "2 stops": "two-stop",
+  "Non-stop": "non stop",
+  "non-stop": "non stop",
+  "nonstop": "non stop",
+  "1 Stop": "1 stop",
+  "1 stop": "1 stop",
+  "2 Stops": "2 stop",
+  "2 stops": "2 stop",
 };
 
 export function buildNumberStopsOptions(

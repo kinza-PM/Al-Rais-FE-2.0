@@ -73,6 +73,7 @@ export default function HotelBookingPaymentSection({
   hotelBookingPayload,
 }: HotelBookingPaymentSectionProps) {
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
+  const nonCardPaymentsDisabled = true;
   // const [openAddress, setOpenAddress] = useState(true);
   const [email, setEmail] = useState<string>("");
   const [cardDetails, setCardDetails] = useState<HotelPaymentCardDetails>({
@@ -482,14 +483,19 @@ export default function HotelBookingPaymentSection({
             {/* Apple Pay */}
             <Button
               type="button"
-              onClick={() => setPayMethod("apple")}
+              onClick={() => {
+                if (!nonCardPaymentsDisabled) setPayMethod("apple");
+              }}
               aria-pressed={payMethod === "apple"}
+              disabled={nonCardPaymentsDisabled}
               className={[
                 "flex items-center justify-center transition-all duration-200 flex-shrink-0",
                 "w-[102px] h-[65px] rounded-[8px] border-[1.5px] p-8",
                 payMethod === "apple"
                   ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
-                  : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
+                  : nonCardPaymentsDisabled
+                    ? "bg-[#F9FAFB] border-[#E4E4E7] opacity-50 cursor-not-allowed"
+                    : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
               ].join(" ")}
               overrideClasses
             >
@@ -503,14 +509,19 @@ export default function HotelBookingPaymentSection({
             {/* Google Pay */}
             <Button
               type="button"
-              onClick={() => setPayMethod("google")}
+              onClick={() => {
+                if (!nonCardPaymentsDisabled) setPayMethod("google");
+              }}
               aria-pressed={payMethod === "google"}
+              disabled={nonCardPaymentsDisabled}
               className={[
                 "flex items-center justify-center transition-all duration-200 flex-shrink-0",
                 "w-[103px] h-[65px] rounded-[6px] border-[1.5px] p-8",
                 payMethod === "google"
                   ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
-                  : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
+                  : nonCardPaymentsDisabled
+                    ? "bg-[#F9FAFB] border-[#E4E4E7] opacity-50 cursor-not-allowed"
+                    : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
               ].join(" ")}
               overrideClasses
             >
@@ -524,7 +535,13 @@ export default function HotelBookingPaymentSection({
             {/* Tabby */}
             <Button
               type="button"
-              className="flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 w-[103px] h-[65px] rounded-[6px] border-[1.5px] border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm p-3 focus:outline-none"
+              disabled={nonCardPaymentsDisabled}
+              className={[
+                "flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 w-[103px] h-[65px] rounded-[6px] border-[1.5px] p-3 focus:outline-none",
+                nonCardPaymentsDisabled
+                  ? "border-[#E4E4E7] bg-[#F9FAFB] opacity-50 cursor-not-allowed"
+                  : "border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm",
+              ].join(" ")}
               overrideClasses
             >
               <img
@@ -540,7 +557,13 @@ export default function HotelBookingPaymentSection({
             {/* Tamara */}
             <Button
               type="button"
-              className="flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 w-[103px] h-[65px] rounded-[6px] border-[1.5px] border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm p-3 focus:outline-none"
+              disabled={nonCardPaymentsDisabled}
+              className={[
+                "flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 w-[103px] h-[65px] rounded-[6px] border-[1.5px] p-3 focus:outline-none",
+                nonCardPaymentsDisabled
+                  ? "border-[#E4E4E7] bg-[#F9FAFB] opacity-50 cursor-not-allowed"
+                  : "border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm",
+              ].join(" ")}
               overrideClasses
             >
               <img
