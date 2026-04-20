@@ -3531,6 +3531,20 @@ p.pricingDetailFeatureP {
   justify-content: center;
 }
 
+/* TravelRoutePicker (bundleRoute=true): keep swap centered between inputs */
+.travel-route-bundle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: end;
+}
+
+.travel-route-bundle .fromToBtn {
+  margin: 0 !important;
+  align-self: end;
+  justify-self: center;
+}
+
 .cardBody {
   padding: 10px;
   flex-grow: 1;

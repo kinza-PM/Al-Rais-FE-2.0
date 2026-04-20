@@ -309,7 +309,7 @@ const TravelRoutePicker: React.FC<Props> = ({
 
   if (bundleRoute) {
     return (
-      <div className="flex w-full min-w-0 items-end">
+      <div className="travel-route-bundle w-full min-w-0">
         {routeInner}
       </div>
     );
