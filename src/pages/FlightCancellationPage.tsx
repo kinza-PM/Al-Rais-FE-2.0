@@ -544,7 +544,6 @@ const FlightCancellationPage: React.FC = () => {
   );
 
   return (
-<<<<<<< HEAD
     <>
       <Loader
         show={showDetailsLoader}
@@ -552,6 +551,20 @@ const FlightCancellationPage: React.FC = () => {
       />
       <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
         <div className="mx-auto max-w-[650px]">
+          <Button
+            type="button"
+            onClick={() =>
+              navigate(
+                myBookingsSearch
+                  ? `/my-bookings${myBookingsSearch}`
+                  : buildMyBookingsUrl({ mode: "flights", status: "all" }),
+              )
+            }
+            className="mb-5 bg-transparent border-none p-0 text-[14px] font-semibold text-[#5383DA] hover:underline"
+            overrideClasses
+          >
+            ← Back to My Bookings
+          </Button>
           {hasAttemptedValidation && validationErrors.session && (
             <div
               className="mb-4 rounded-[12px] border border-[#E65959] bg-[#FEF2F2] px-4 py-3 text-[13px] text-[#E65959]"
@@ -788,35 +801,6 @@ const FlightCancellationPage: React.FC = () => {
                 )}
               </div>
             </SectionCard>
-=======
-    <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
-      <div className="mx-auto max-w-[650px]">
-        <Button
-          type="button"
-          onClick={() =>
-            navigate(
-              myBookingsSearch
-                ? `/my-bookings${myBookingsSearch}`
-                : buildMyBookingsUrl({ mode: "flights", status: "all" }),
-            )
-          }
-          className="mb-5 bg-transparent border-none p-0 text-[14px] font-semibold text-[#5383DA] hover:underline"
-          overrideClasses
-        >
-          ← Back to My Bookings
-        </Button>
-        <SectionCard
-          title="Select Items to Cancel"
-          subtitle="You can cancel the entire trip or specific segments/passengers."
-        >
-          <div className="space-y-3">
-            <CancelItemCard
-              title="Cancel Entire Trip"
-              subtitle={`${airlineName} • ${routeLabel}`}
-              selected={true}
-              onClick={() => {}}
-            />
->>>>>>> 8acfd38 (Bugs are fixed)
           </div>
 
           <div className="mt-6 flex items-start gap-2 text-[12px] text-[#3D495C]">
