@@ -347,6 +347,8 @@ input[type="number"] {
     grid-template-areas:
       "trip cabin from swap to"
       "travellers departure . . search";
+    /* When column widths do not fill the row (e.g. ultra-wide + fixed cols), center the form */
+    justify-content: center;
   }
 
   .flight-search-page .flight-search-field--trip {
@@ -1045,6 +1047,14 @@ input[type="number"] {
   align-items: end;
   margin-top: 0;
   justify-content: start;
+}
+
+/* Large screens: center multi-city rows (fixed tracks leave extra horizontal space) */
+@media (min-width: 1024px) {
+  .flight-search-page .flight-search-multicity-toprow,
+  .flight-search-page .flight-search-multicity-legrow {
+    justify-content: center;
+  }
 }
 
 /* Let TravelRoutePicker's three siblings become the first 3 grid columns */

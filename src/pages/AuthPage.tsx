@@ -7,10 +7,10 @@ import {
   ResetPasswordForm,
   SignupForm,
 } from "../components";
+import OTPVerificationForm from "../components/molecules/OTPVerificationForm";
 import type { AuthMode } from "../types/AuthTypes";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-// import OTPVerificationForm from "../components/molecules/OTPVerificationForm";
 
 const AuthPage = () => {
   const location = useLocation();
@@ -19,6 +19,7 @@ const AuthPage = () => {
     (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordOtp, setForgotPasswordOtp] = useState("");
 
   const handleModeSwitch = () => {
     setMode(mode === "login" ? "signup" : "login");
@@ -31,13 +32,24 @@ const AuthPage = () => {
   const handleBackToLogin = () => {
     setMode("login");
     setForgotPasswordEmail("");
-    // setForgotPasswordOTP("");
+    setForgotPasswordOtp("");
   };
 
   const handleOTPSent = (email: string) => {
     setForgotPasswordEmail(email);
-    // setMode("otp-verification");
+    setForgotPasswordOtp("");
+    setMode("otp-verification");
+  };
+
+  const handleOTPVerified = (email: string, otp: string) => {
+    setForgotPasswordEmail(email);
+    setForgotPasswordOtp(otp);
     setMode("reset-password");
+  };
+
+  const handleChangeEmailFromOtp = () => {
+    setForgotPasswordOtp("");
+    setMode("forgot-password");
   };
 
   const handlePasswordReset = () => {
@@ -98,6 +110,27 @@ const AuthPage = () => {
             <ForgotPasswordForm
               onBackToLogin={handleBackToLogin}
               onOTPSent={handleOTPSent}
+              prefillEmail={forgotPasswordEmail}
+            />
+          </div>
+        ) : mode === "otp-verification" ? (
+          <div
+            className="relative flex min-h-screen w-full flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:py-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            style={{ background: "#F2F2F3" }}
+          >
+            <button
+              type="button"
+              onClick={handleBackToLogin}
+              className="absolute left-6 top-6 text-sm text-[#0A0C0F] hover:opacity-80 sm:left-8 sm:top-8"
+            >
+              ← Back to login
+            </button>
+
+            <OTPVerificationForm
+              email={forgotPasswordEmail}
+              initialOtp={forgotPasswordOtp}
+              onBackToForgotPassword={handleChangeEmailFromOtp}
+              onOTPVerified={handleOTPVerified}
             />
           </div>
         ) : mode === "reset-password" ? (
@@ -115,6 +148,7 @@ const AuthPage = () => {
 
             <ResetPasswordForm
               email={forgotPasswordEmail}
+              otp={forgotPasswordOtp}
               onPasswordReset={handlePasswordReset}
               onBackToOTP={handleBackToOTP}
             />
