@@ -236,7 +236,7 @@ const TailiwindCustomTimePicker: React.FC<TimePickerProps> = ({
                 <p className="mb-1 text-[11px] font-medium text-[#8A94A6]">
                   Hour
                 </p>
-                <div className="grid max-h-[200px] grid-cols-3 gap-1 overflow-y-auto pr-0.5">
+                <div className="flex max-h-[200px] flex-col gap-0.5 overflow-y-auto pr-1">
                   {HOUR_OPTIONS.map((h) => (
                     <button
                       key={h}
@@ -245,13 +245,13 @@ const TailiwindCustomTimePicker: React.FC<TimePickerProps> = ({
                         setH12(h);
                         pushChange(h, minute, pm);
                       }}
-                      className={`h-9 rounded-md text-[13px] font-medium transition ${
+                      className={`min-h-8 shrink-0 rounded-md px-2 text-left text-[13px] font-medium transition ${
                         h12 === h
                           ? "bg-[#2351A3] text-white"
                           : "text-[#0F172A] hover:bg-[#F4F7FC]"
                       }`}
                     >
-                      {h}
+                      {String(h).padStart(2, "0")}
                     </button>
                   ))}
                 </div>
