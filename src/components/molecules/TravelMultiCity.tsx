@@ -1021,14 +1021,21 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
         }}
         footer={null}
         centered
-        width={1180}
+        width="100%"
         destroyOnClose
         className="flight-details-popup"
         styles={{
+          content: {
+            maxWidth: 1180,
+            width: "100%",
+            margin: "0 auto",
+          },
           body: {
             maxHeight: "92vh",
             overflowY: "auto",
+            overflowX: "hidden",
             padding: "16px 24px 20px",
+            minWidth: 0,
           },
         }}
         title={
@@ -1051,17 +1058,11 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
         />
         {selectedItem && (
           <>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "16px",
-                marginBottom: "16px",
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ display: "flex", gap: "8px" }}>
+            <div className="flight-details-modal-toolbar">
+              <div
+                className="flight-details-modal-toolbar__tabs"
+                style={{ display: "flex", gap: "8px" }}
+              >
                 {[
                   { key: "price", label: "Price options" },
                   { key: "flight", label: "Flight details" },

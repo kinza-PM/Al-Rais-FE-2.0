@@ -28,6 +28,10 @@ import {
   buildPassengerCacheAddPayload,
   extractPassengersFromCacheResponse,
 } from "../../utils/passengerCacheHelper";
+import {
+  collectHotelGalleryUrls,
+  resolveHotelImageUrl,
+} from "../../utils/hotelImages";
 // import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 // import toast from "react-hot-toast";
 // import { useHotelReservationBooking } from "../../hooks/useHotelBooking";
@@ -904,11 +908,20 @@ export default function HotelBookingBookSection({
                   const ratePlan = room?.ratePlan;
                   const roomRate = room?.roomRate;
                   const roomImages = room?.roomImages?.image || [];
+                  const roomUrls = roomImages
+                    .map((img: unknown) => resolveHotelImageUrl(img))
+                    .filter(Boolean) as string[];
+                  const hotelUrls = collectHotelGalleryUrls(hotelDetail, 8);
+                  const merged: string[] = [...roomUrls];
+                  for (const u of hotelUrls) {
+                    if (merged.length >= 3) break;
+                    if (!merged.includes(u)) merged.push(u);
+                  }
+                  const img1 = merged[0] || HotelImage;
+                  const img2 = merged[1] || merged[0] || HotelImage;
+                  const img3 = merged[2] || merged[1] || merged[0] || HotelImage;
                   const isNonRefundable =
                     ratePlan?.cancelPolicyIndicator === "Non-Refundable";
-                  const img1 = roomImages[0]?.path || HotelImage;
-                  const img2 = roomImages[1]?.path || HotelImage;
-                  const img3 = roomImages[2]?.path || HotelImage;
                   const cancellationCost =
                     roomRate?.netAmount && isNonRefundable
                       ? `${roomRate.currency || currency} ${(
@@ -981,34 +994,34 @@ export default function HotelBookingBookSection({
                     >
                       {/* Image gallery: 1 large left, 2 smaller right */}
                       <div className="flex gap-1.5 p-2">
-                        <div className="flex-1 min-h-[140px] rounded-[12px] overflow-hidden">
+                        <div className="relative flex-1 min-h-[140px] rounded-[12px] overflow-hidden bg-[#F4F4F5]">
                           <img
                             src={img1}
                             alt="Room"
-                            className="w-full h-full object-cover"
+                            className="absolute inset-0 h-full w-full object-cover"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).src =
                                 HotelImage;
                             }}
                           />
                         </div>
-                        <div className="flex flex-col gap-1.5 w-[90px]">
-                          <div className="flex-1 min-h-[68px] rounded-[12px] overflow-hidden">
+                        <div className="flex w-[90px] shrink-0 flex-col gap-1.5">
+                          <div className="relative min-h-[68px] flex-1 overflow-hidden rounded-[12px] bg-[#F4F4F5]">
                             <img
                               src={img2}
                               alt="Room"
-                              className="w-full h-full object-cover"
+                              className="absolute inset-0 h-full w-full object-cover"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src =
                                   HotelImage;
                               }}
                             />
                           </div>
-                          <div className="flex-1 min-h-[68px] rounded-[12px] overflow-hidden">
+                          <div className="relative min-h-[68px] flex-1 overflow-hidden rounded-[12px] bg-[#F4F4F5]">
                             <img
                               src={img3}
                               alt="Room"
-                              className="w-full h-full object-cover"
+                              className="absolute inset-0 h-full w-full object-cover"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).src =
                                   HotelImage;
@@ -1080,38 +1093,40 @@ export default function HotelBookingBookSection({
           )}
         </div>
 
-        <div className="min-w-0">
-          <HotelSummaryCard
-            hotelDetail={hotelDetail}
-            bookingInfo={bookingInfo}
-          />
-          <HotelFareRule
-            selectedRooms={selectedRooms}
-            totalPrice={totalPrice}
-            currency={currency}
-            hotelDetail={hotelDetail}
-          />
-          <HotelPriceBreakdown
-            open={openPrice}
-            onToggleOpen={() => setOpenPrice((v) => !v)}
-            totalPrice={totalPrice}
-            currency={currency}
-            selectedRooms={selectedRooms}
-          />
+        <div className="min-w-0 min-[1025px]:sticky min-[1025px]:top-24 min-[1025px]:z-[1] min-[1025px]:self-start">
+          <div className="min-[1025px]:max-h-[calc(100vh-7rem)] min-[1025px]:overflow-y-auto min-[1025px]:overflow-x-hidden min-[1025px]:pr-1 [scrollbar-gutter:stable]">
+            <HotelSummaryCard
+              hotelDetail={hotelDetail}
+              bookingInfo={bookingInfo}
+            />
+            <HotelFareRule
+              selectedRooms={selectedRooms}
+              totalPrice={totalPrice}
+              currency={currency}
+              hotelDetail={hotelDetail}
+            />
+            <HotelPriceBreakdown
+              open={openPrice}
+              onToggleOpen={() => setOpenPrice((v) => !v)}
+              totalPrice={totalPrice}
+              currency={currency}
+              selectedRooms={selectedRooms}
+            />
 
-          <div className="mt-6 flex justify-center">
-            <Button
-              type="button"
-              overrideClasses
-              className="h-[47px] w-full sm:w-[155px] rounded-[100px] px-6 sm:px-10 py-[14px] text-[16px] font-semibold text-white hover:opacity-95 active:opacity-90 transition-opacity flex items-center justify-center gap-2.5"
-              style={{
-                background:
-                  "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-              }}
-              onClick={handleContinue}
-            >
-              Continue
-            </Button>
+            <div className="mt-6 flex justify-center">
+              <Button
+                type="button"
+                overrideClasses
+                className="h-[47px] w-full sm:w-[155px] rounded-[100px] px-6 sm:px-10 py-[14px] text-[16px] font-semibold text-white hover:opacity-95 active:opacity-90 transition-opacity flex items-center justify-center gap-2.5"
+                style={{
+                  background:
+                    "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                }}
+                onClick={handleContinue}
+              >
+                Continue
+              </Button>
+            </div>
           </div>
         </div>
       </div>

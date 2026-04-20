@@ -2,6 +2,7 @@ import HotelImage1 from "../../assets/images/HotelImage1.png";
 import HotelImage2 from "../../assets/images/HotelImage2.png";
 import HotelImage3 from "../../assets/images/HotelImage3.png";
 import HotelImage4 from "../../assets/images/HotelImage4.png";
+import { collectHotelGalleryUrls } from "../../utils/hotelImages";
 
 type HotelSummaryCardProps = {
   paymentPage?: boolean;
@@ -16,17 +17,18 @@ export default function HotelSummaryCard({
   bookingInfo,
   selectedRooms = [],
 }: HotelSummaryCardProps) {
-  // Get first 5 images from hotel detail, fallback to default images
-  const displayImages = hotelDetail?.images
-    ?.slice(0, 5)
-    .map((img: any) => img.path)
-    .filter(Boolean) || [
+  const FALLBACK_GALLERY = [
     HotelImage1,
     HotelImage2,
     HotelImage3,
     HotelImage4,
     HotelImage2,
   ];
+  const apiUrls = collectHotelGalleryUrls(hotelDetail, 5);
+  const displayImages: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    displayImages.push(apiUrls[i] ?? FALLBACK_GALLERY[i]);
+  }
 
   const hotelName = hotelDetail?.name || "Hotel";
   const hotelLocation = hotelDetail?.address
@@ -84,42 +86,47 @@ export default function HotelSummaryCard({
   return (
     <div>
       <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm p-2 mb-4">
-        <div className="grid grid-cols-4 gap-2 auto-rows-fr">
-          <div className="col-span-2 row-span-2 relative overflow-hidden rounded-2xl">
+        <div className="grid grid-cols-4 grid-rows-2 gap-2 min-h-[200px]">
+          <div className="col-span-2 row-span-2 relative min-h-[160px] overflow-hidden rounded-2xl bg-[#F4F4F5]">
             <img
               src={displayImages[0] || HotelImage1}
               alt="Hotel room"
-              className="w-full h-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
             />
           </div>
 
-          <div className="col-span-1 relative overflow-hidden rounded-2xl">
+          <div className="col-span-1 relative min-h-[76px] overflow-hidden rounded-2xl bg-[#F4F4F5]">
             <img
               src={displayImages[1] || HotelImage2}
               alt="Hotel interior"
-              className="w-full h-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
             />
           </div>
-          <div className="col-span-1 relative overflow-hidden rounded-2xl">
+          <div className="col-span-1 relative min-h-[76px] overflow-hidden rounded-2xl bg-[#F4F4F5]">
             <img
               src={displayImages[2] || HotelImage3}
               alt="Hotel pool"
-              className="w-full h-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
             />
           </div>
 
-          <div className="col-span-1 relative overflow-hidden rounded-2xl">
+          <div className="col-span-1 relative min-h-[76px] overflow-hidden rounded-2xl bg-[#F4F4F5]">
             <img
               src={displayImages[3] || HotelImage2}
               alt="Hotel interior"
-              className="w-full h-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
             />
           </div>
-          <div className="col-span-1 relative overflow-hidden rounded-2xl">
+          <div className="col-span-1 relative min-h-[76px] overflow-hidden rounded-2xl bg-[#F4F4F5]">
             <img
               src={displayImages[4] || HotelImage4}
               alt="Hotel pool"
-              className="w-full h-full object-cover"
+              className="absolute inset-0 h-full w-full object-cover"
+              loading="lazy"
             />
           </div>
         </div>

@@ -62,6 +62,17 @@ function groupTaxesFeesNet(pg: {
     );
 }
 
+/** Hide infant block when there are no infants or the fare for that group is zero. */
+function shouldShowInfantPassengerGroup(pg: {
+    paxType: string;
+    paxCount: number;
+    groupTotal: number;
+}): boolean {
+    if (pg.paxType !== "INF") return true;
+    if (pg.paxCount === 0) return false;
+    return Math.abs(Number(pg.groupTotal) || 0) >= 0.005;
+}
+
 export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancillarySummary }: Props) {
     const fare = trip?.fare ?? trip?.financials?.fare ?? null;
     const fareBreakdown = Array.isArray(fare?.fareBreakdown) ? fare.fareBreakdown : fare?.fareBreakdown ?? [];
@@ -176,19 +187,24 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
         [passengerGroups],
     );
 
-    const adtGroup = sortedPassengerGroups.find((g) => g.paxType === "ADT");
-    const hasChd = sortedPassengerGroups.some((g) => g.paxType === "CHD");
-    const hasInf = sortedPassengerGroups.some((g) => g.paxType === "INF");
+    const visiblePassengerGroups = useMemo(
+        () => sortedPassengerGroups.filter(shouldShowInfantPassengerGroup),
+        [sortedPassengerGroups],
+    );
+
+    const adtGroup = visiblePassengerGroups.find((g) => g.paxType === "ADT");
+    const hasChd = visiblePassengerGroups.some((g) => g.paxType === "CHD");
+    const hasInf = visiblePassengerGroups.some((g) => g.paxType === "INF");
 
     const isSingleAdultOnly =
-        sortedPassengerGroups.length === 1 &&
+        visiblePassengerGroups.length === 1 &&
         !!adtGroup &&
         adtGroup.paxCount === 1 &&
         !hasChd &&
         !hasInf;
 
     const hasOnlyMultipleAdults =
-        sortedPassengerGroups.length === 1 &&
+        visiblePassengerGroups.length === 1 &&
         !!adtGroup &&
         adtGroup.paxCount > 1 &&
         !hasChd &&
@@ -215,7 +231,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
 
     const showCollapsedFareSummary =
         !open &&
-        sortedPassengerGroups.length > 0 &&
+        visiblePassengerGroups.length > 0 &&
         !isSingleAdultOnly;
 
     const baseTotalRaw = fare?.totalFare ?? fare?.total ?? null;
@@ -260,7 +276,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                         </>
                     ) : (
                         <>
-                            {sortedPassengerGroups.map((pg, idx) => (
+                            {visiblePassengerGroups.map((pg, idx) => (
                                 <div
                                     key={`${pg.paxType}-${idx}`}
                                     className="flex items-center justify-between gap-4"
@@ -315,10 +331,10 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                     <div className="px-4 py-3 text-[13px] leading-6">
                         <div className="text-[14px] font-semibold text-[#0A0C0F]">Passengers fares</div>
 
-                        {passengerGroups.length === 0 ? (
+                        {visiblePassengerGroups.length === 0 ? (
                             <div className="mt-2 text-[12px] text-[#3D495C]">No passenger fare breakdown available.</div>
                         ) : (
-                            passengerGroups.map((pg, idx) => {
+                            visiblePassengerGroups.map((pg, idx) => {
                                 return (
                                     <div className="mt-3" key={idx}>
                                         <div className="text-[12px] font-medium text-[#0A0C0F]">

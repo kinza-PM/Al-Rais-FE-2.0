@@ -465,14 +465,21 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
         }}
         footer={null}
         centered
-        width={1180}
+        width="100%"
         destroyOnClose
         className="flight-details-popup"
         styles={{
+          content: {
+            maxWidth: 1180,
+            width: "100%",
+            margin: "0 auto",
+          },
           body: {
             maxHeight: "92vh",
             overflowY: "auto",
+            overflowX: "hidden",
             padding: "16px 24px 20px",
+            minWidth: 0,
           },
         }}
         title={
@@ -495,17 +502,11 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
         />
         {selectedItem && (
           <>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: "16px",
-                marginBottom: "16px",
-                flexWrap: "wrap",
-              }}
-            >
-              <div style={{ display: "flex", gap: "8px" }}>
+            <div className="flight-details-modal-toolbar">
+              <div
+                className="flight-details-modal-toolbar__tabs"
+                style={{ display: "flex", gap: "8px" }}
+              >
                 {[
                   { key: "price", label: "Price options" },
                   { key: "flight", label: "Flight details" },
@@ -532,7 +533,10 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 ))}
               </div>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <div
+                className="flight-details-modal-toolbar__actions"
+                style={{ display: "flex", alignItems: "center", gap: "10px" }}
+              >
                 {selectedItem.offerViewCount > 0 && (
                   <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
                     <img src={offerViewIcon} alt="icon" className="mr-1" />
@@ -541,21 +545,11 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 )}
 
                 <button
+                  type="button"
+                  className="flight-details-book-now-btn flight-details-book-now-desktop"
                   onClick={() =>
                     handleOfferSelection(selectedItem?.offerId, selectedItem)
                   }
-                  style={{
-                    width: "130px",
-                    height: "44px",
-                    background:
-                      "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                    borderRadius: "100px",
-                    border: "none",
-                    color: "#FFFFFF",
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
                 >
                   Book Now
                 </button>
@@ -581,6 +575,18 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
                 />
               )}
             </React.Suspense>
+
+            <div className="flight-details-book-now-mobile">
+              <button
+                type="button"
+                className="flight-details-book-now-btn"
+                onClick={() =>
+                  handleOfferSelection(selectedItem?.offerId, selectedItem)
+                }
+              >
+                Book Now
+              </button>
+            </div>
           </>
         )}
       </Modal>

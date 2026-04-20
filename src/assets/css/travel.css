@@ -1247,6 +1247,34 @@ input[type="number"] {
   }
 }
 
+/* Landing page — multi-city form: scrollable legs; swap aligns with From/To like search page */
+.multicity-hero-form .multicity-hero-legs-scroll {
+  max-height: min(280px, 50vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 12px;
+  margin-top: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.multicity-hero-form .multicity-hero-legrow .fromToBtn {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  margin: 0 !important;
+  margin-top: 22px !important;
+  justify-self: center;
+  align-self: start;
+}
+
+@media (max-width: 767.98px) {
+  .multicity-hero-form .multicity-hero-legrow .fromToBtn {
+    margin: 8px auto 0 !important;
+  }
+}
+
 /* Divider line â€” sits inside the form's padding so it aligns with the input edges */
 .flight-search-divider {
   width: 100%;
@@ -3340,6 +3368,167 @@ p.pricingDetailFeatureP {
 
 .pricingCardsWrap {
   padding: 0px 15px 15px;
+}
+
+/* Flight details modal (search results): fluid width, no horizontal clip on phone */
+.flight-details-popup.ant-modal {
+  width: min(1180px, calc(100vw - 16px)) !important;
+  max-width: 100vw !important;
+  padding-bottom: 0;
+}
+
+@media (max-width: 767px) {
+  .flight-details-popup.ant-modal {
+    width: calc(100vw - 12px) !important;
+    max-width: calc(100vw - 12px) !important;
+    margin: 6px auto !important;
+    top: 4px !important;
+  }
+
+  .flight-details-popup .ant-modal-content {
+    max-height: calc(100vh - 12px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .flight-details-popup .ant-modal-body {
+    min-width: 0 !important;
+    /* clip-x only; avoid overflow:hidden so focus rings / shadows aren’t cropped */
+    overflow-x: clip !important;
+    overflow-y: auto !important;
+    padding: 12px 10px 16px !important;
+    flex: 1 1 auto;
+  }
+
+  .flight-details-popup .ant-modal-header {
+    padding: 12px 10px !important;
+  }
+}
+
+/* Toolbar under flight details modal title: tabs + Book Now */
+.flight-details-modal-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+  .flight-details-modal-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 12px;
+  }
+
+  .flight-details-modal-toolbar__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .flight-details-modal-toolbar__tabs button {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 12px !important;
+  }
+
+  .flight-details-modal-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  /* Book Now lives in a full-width footer on small screens (see Travel* modals) */
+  .flight-details-book-now-desktop {
+    display: none !important;
+  }
+
+  .flight-details-book-now-mobile {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e4e4e7;
+  }
+}
+
+@media (min-width: 768px) {
+  .flight-details-book-now-mobile {
+    display: none !important;
+  }
+
+  .flight-details-book-now-desktop {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.flight-details-book-now-btn {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 100px;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(
+    90.59deg,
+    #5383da 0%,
+    #2351a3 50%,
+    #081326 100%
+  );
+}
+
+.flight-details-book-now-desktop.flight-details-book-now-btn {
+  width: 130px;
+}
+
+.flight-details-book-now-mobile .flight-details-book-now-btn {
+  width: 100%;
+}
+
+/* Pricing detail: stacked fare cards (mobile) */
+.pricingCardsWrap--mobile .parahAlign {
+  padding: 6px 2px !important;
+  min-height: 0 !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  border-bottom: none !important;
+  text-align: left !important;
+}
+
+.pricingCardsWrap--mobile .parahAlign.parahAlignMultiSeg {
+  align-items: stretch !important;
+}
+
+.pricingCardsWrap--mobile p.pricingDetailFeatureP {
+  text-align: left !important;
+}
+
+.pricingCardsWrap--mobile .pricingCardRouteSegments {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.pricingCardsWrap--mobile .pricingCardRouteSegments .pricingDetailRouteLbl {
+  min-width: 0 !important;
+}
+
+.cardPrice--mobile .baggageRadio.ant-radio-wrapper {
+  width: 100%;
+  justify-content: center;
 }
 
 .cardBody {
