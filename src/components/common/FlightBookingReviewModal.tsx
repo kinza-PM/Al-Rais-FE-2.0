@@ -9,7 +9,10 @@ import PLANE_ICON from "../../assets/svgs/plane.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import FLightFareRule from "../atoms/FlightFareRule";
-import { buildFlightSegmentFromTrip, getPriceCabinClassForFlightSummary } from "../../utils/helpers";
+import {
+  buildFlightSegmentFromTrip,
+  getPriceCabinClassForFlightSummary,
+} from "../../utils/helpers";
 import type { CountryOption } from "../../features/flights/types";
 
 type FlightBookingReviewModalProps = {
@@ -44,27 +47,40 @@ export default function FlightBookingReviewModal({
     [],
   );
 
-  const segments = useMemo(() => buildFlightSegmentFromTrip(trip, assets), [trip, assets]);
-  const firstPrice = useMemo(() => getPriceCabinClassForFlightSummary(trip), [trip]);
+  const segments = useMemo(
+    () => buildFlightSegmentFromTrip(trip, assets),
+    [trip, assets],
+  );
+  const firstPrice = useMemo(
+    () => getPriceCabinClassForFlightSummary(trip),
+    [trip],
+  );
   const priceFareFamily = useMemo(
     () => ({
       label: "Fare family",
-      value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
-      changeText: typeof onChangeFlight === "function" ? "Modify search" : undefined,
-      onChangeClick: typeof onChangeFlight === "function" ? onChangeFlight : undefined,
+      value:
+        firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
+      changeText:
+        typeof onChangeFlight === "function" ? "Modify search" : undefined,
+      onChangeClick:
+        typeof onChangeFlight === "function" ? onChangeFlight : undefined,
     }),
     [firstPrice, onChangeFlight],
   );
 
   const countryLabel = (code?: string) => {
     if (!code) return "—";
-    return countries.find((c) => c.iso3 === code || c.iso2 === code)?.label ?? code;
+    return (
+      countries.find((c) => c.iso3 === code || c.iso2 === code)?.label ?? code
+    );
   };
 
   const travellersTab = (
     <div className="space-y-3">
       {(passengers || []).length === 0 ? (
-        <div className="text-sm text-[#64748B]">No traveller details available.</div>
+        <div className="text-sm text-[#64748B]">
+          No traveller details available.
+        </div>
       ) : (
         passengers.map((p: any, idx: number) => (
           <div
@@ -95,7 +111,11 @@ export default function FlightBookingReviewModal({
 
               <div className="text-[#64748B]">Phone</div>
               <div className="text-right font-medium text-[#0A0C0F]">
-                {p.contact?.contactsProvided?.[0]?.phone?.[0]?.phoneNumber || "—"}
+                {p.contact?.contactsProvided?.[0]?.phone?.[0]?.areaCode
+                  ? `${p.contact?.contactsProvided?.[0]?.phone?.[0]?.areaCode}-`
+                  : ""}
+                {p.contact?.contactsProvided?.[0]?.phone?.[0]?.phoneNumber ||
+                  "—"}
               </div>
 
               <div className="text-[#64748B]">Passport</div>
@@ -123,8 +143,12 @@ export default function FlightBookingReviewModal({
     <div className="space-y-4">
       <FlightSummaryCard
         title="Flight details"
-        headerActionText={typeof onChangeFlight === "function" ? "Change" : undefined}
-        onHeaderActionClick={typeof onChangeFlight === "function" ? onChangeFlight : undefined}
+        headerActionText={
+          typeof onChangeFlight === "function" ? "Change" : undefined
+        }
+        onHeaderActionClick={
+          typeof onChangeFlight === "function" ? onChangeFlight : undefined
+        }
         segments={segments}
         fare={priceFareFamily}
       />
@@ -161,4 +185,3 @@ export default function FlightBookingReviewModal({
     </Modal>
   );
 }
-

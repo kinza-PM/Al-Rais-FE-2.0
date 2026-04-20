@@ -576,7 +576,7 @@ export default function FlightBookingBookSection({
                   <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
                     <div className="grid gap-x-1 gap-y-3 md:grid-cols-[1.2fr_1.8fr] pr-4">
                       <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
+                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-6" : ""}`}
                       >
                         <SearchableDropdown
                           options={getFlightBookingNameTitleDropdownOptions(
@@ -611,7 +611,7 @@ export default function FlightBookingBookSection({
                         />
                       </div>
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-6" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -642,7 +642,7 @@ export default function FlightBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-7" : ""}`}
+                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-6" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -672,7 +672,7 @@ export default function FlightBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-6" : ""}`}
                       >
                         <SearchableDropdown
                           options={[
@@ -735,7 +735,7 @@ export default function FlightBookingBookSection({
 
                       {pRules.isIdTypeMandatory && (
                         <div
-                          className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idType"] ? "pb-4" : ""}`}
+                          className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idType"] ? "pb-6" : ""}`}
                         >
                           <SearchableDropdown
                             options={[
@@ -776,7 +776,7 @@ export default function FlightBookingBookSection({
 
                       {/* {pRules.isDocumentNumberMandatory && ( */}
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
+                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.idDocumentNumber"] ? "pb-6" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
@@ -826,7 +826,7 @@ export default function FlightBookingBookSection({
 
                       {/* {pRules.isIssuingCountryCodeMandatory && ( */}
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.issuingCountryCode"] ? "pb-6" : ""}`}
                       >
                         <SearchableDropdown
                           // options={
@@ -875,7 +875,7 @@ export default function FlightBookingBookSection({
 
                       {/* {pRules.isDateOfIssueMandatory && ( */}
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
+                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.dateOfIssue"] ? "pb-6" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Date of issue *
@@ -918,7 +918,7 @@ export default function FlightBookingBookSection({
 
                       {/* {pRules.isExpiryDateMandatory && ( */}
                       <div
-                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
+                        className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.expiryDate"] ? "pb-6" : ""}`}
                       >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Expiry date *
@@ -959,7 +959,7 @@ export default function FlightBookingBookSection({
 
                       {/* {pRules.isResidenceCountryCodeMandatory && ( */}
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "pb-4" : ""}`}
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["identityDocuments.0.residenceCountryCode"] ? "pb-6" : ""}`}
                       >
                         <SearchableDropdown
                           // options={
@@ -1008,7 +1008,7 @@ export default function FlightBookingBookSection({
 
                       {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
                       <div
-                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
+                        className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-6" : ""}`}
                       >
                         <TailwindCustomInput
                           type="email"
@@ -1046,7 +1046,7 @@ export default function FlightBookingBookSection({
 
                       {pRules.isDateOfBirthMandatory && (
                         <div
-                          className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
+                          className={`w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.birthDate"] ? "pb-6" : ""}`}
                         >
                           <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                             Birth date *
@@ -1307,7 +1307,16 @@ export default function FlightBookingBookSection({
                         />
                       </div>
                     </div> */}
-                      <div className="relative w-full max-w-[561px]">
+                      <div
+                        className={`relative w-full max-w-[561px] ${
+                          hasAttemptedValidation &&
+                          validationErrors[idx]?.[
+                            "contact.contactsProvided.0.phone.0"
+                          ]
+                            ? "pb-6"
+                            : ""
+                        }`}
+                      >
                         <label className="mb-1 block text-[12px] text-[#0A0C0F]">
                           Phone *
                         </label>

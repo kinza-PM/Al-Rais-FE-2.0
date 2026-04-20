@@ -34,6 +34,7 @@ const S3_TICKET_BASE = VITE_S3_TICKET_PUBLIC_BASE;
 type FlightBookingETicketSectionProps = {
   reservedFlightBooking?: any;
   offerId?: string | number;
+  seatAddOnAvailable?: boolean;
   ancillarySummary?: {
     totalAmount: number;
     currency: string;
@@ -51,6 +52,7 @@ type FlightBookingETicketSectionProps = {
 export default function FlightBookingETicketSection({
   reservedFlightBooking,
   offerId,
+  seatAddOnAvailable = false,
   ancillarySummary,
 }: FlightBookingETicketSectionProps) {
   const [openShareModal, setOpenShareModal] = useState(false);
@@ -253,6 +255,13 @@ export default function FlightBookingETicketSection({
     }
     return "";
   }, [seatLabelsFromAncillaries, seatLabelsFromPassengers]);
+
+  const seatStatusText = useMemo(() => {
+    if (seatDisplayText) return seatDisplayText;
+    return seatAddOnAvailable
+      ? "No seat selected"
+      : "Assigned at check-in";
+  }, [seatDisplayText, seatAddOnAvailable]);
 
   const ancillaryBreakdownNonSeat = useMemo(() => {
     return (ancillarySummary?.breakdown ?? []).filter(
@@ -509,7 +518,7 @@ export default function FlightBookingETicketSection({
       className="rounded-2xl border border-[#E4E4E7] bg-[#ededed] shadow-sm px-4 pt-4 pb-2"
     >
       <div>
-        <div className="flex items-center justify-center gap-2 px-6">
+        <div className="flex items-start justify-center gap-2 px-4 sm:px-6">
           <svg
             width="20"
             height="20"
@@ -523,32 +532,32 @@ export default function FlightBookingETicketSection({
             />
           </svg>
 
-          <p className="text-[13px] text-[#3D495C]">
+          <p className="text-[13px] leading-5 text-[#3D495C]">
             We advise you to print out your itinerary and take it with you to
             ensure your trip goes as smoothly as possible.
           </p>
         </div>
 
-        <div className="mt-4 mb-4 grid grid-cols-3 gap-10 sm:grid-cols-3">
-          <div>
+        <div className="my-4 grid grid-cols-3 gap-x-4 gap-y-3">
+          <div className="min-w-0">
             <div className="text-[13px] text-[#3D495C]">Booking number</div>
-            <div className="text-[15px] font-medium text-[#0A0C0F]">
+            <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
               {bookingRef}
             </div>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="text-[13px] text-[#3D495C]">E-ticket number</div>
-            <div className="text-[15px] font-medium text-[#0A0C0F]">
+            <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
               {ticketNumber}
             </div>
           </div>
 
-          <div>
+          <div className="min-w-0">
             <div className="text-[13px] text-[#3D495C]">
               Airline booking reference
             </div>
-            <div className="text-[15px] font-medium text-[#0A0C0F]">
+            <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
               {airlineLocator}
             </div>
           </div>
@@ -557,23 +566,23 @@ export default function FlightBookingETicketSection({
 
       <NotchDivider />
 
-      <div className="mt-4 mb-4 grid grid-cols-3 gap-10 sm:grid-cols-3">
-        <div>
+      <div className="my-4 grid grid-cols-3 gap-x-4 gap-y-3">
+        <div className="min-w-0">
           <div className="text-[13px] text-[#3D495C]">Title & Full Name</div>
-          <div className="text-[15px] font-medium text-[#0A0C0F]">
+          <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
             {getPassengerName(passengers[0])}
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="text-[13px] text-[#3D495C]">Class</div>
-          <div className="text-[15px] font-medium text-[#0A0C0F]">
+          <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F]">
             {outboundCabinClass}
           </div>
         </div>
-        <div>
+        <div className="min-w-0">
           <div className="text-[13px] text-[#3D495C]">Seat</div>
-          <div className="text-[15px] font-medium text-[#0A0C0F]">
-            {seatDisplayText ? `${seatDisplayText}` : "—"}
+          <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
+            {seatStatusText}
           </div>
         </div>
       </div>
@@ -591,10 +600,10 @@ export default function FlightBookingETicketSection({
                   {block.heading}
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-10">
-                <div className="flex items-center gap-2">
-                  <div>
-                    <div className="text-[14px] text-nowrap font-medium text-[#0A0C0F]">
+              <div className="grid grid-cols-3 gap-x-4 gap-y-2">
+                <div className="min-w-0 flex items-center gap-2">
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-medium leading-5 text-[#0A0C0F] break-words">
                       {block.airlineDisplayName}
                     </div>
                     <div className="text-[12px] text-[#3D495C]">

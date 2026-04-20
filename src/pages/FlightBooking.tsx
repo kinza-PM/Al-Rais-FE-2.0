@@ -74,11 +74,16 @@ function buildFlightFromOffer(offerData: any) {
     PremiumEconomy: "2",
     First: "4",
     Business: "3",
-
   };
   const selectedCabinClassId = cabinMap[cabinClass] ?? "1";
   const fromOption = fromCode
-    ? { id: fromCode, label: fromCode, code: fromCode, city: fromCode, country: "" }
+    ? {
+        id: fromCode,
+        label: fromCode,
+        code: fromCode,
+        city: fromCode,
+        country: "",
+      }
     : null;
   const toOption = toCode
     ? { id: toCode, label: toCode, code: toCode, city: toCode, country: "" }
@@ -376,8 +381,8 @@ const FlightBooking = () => {
   const handleFlightReservationBookingChange = (
     eOrPath:
       | React.ChangeEvent<
-        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-      >
+          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+        >
       | string,
     maybeValue?: any,
   ) => {
@@ -614,9 +619,9 @@ const FlightBooking = () => {
         const userDetails =
           email || phoneNumber
             ? await RemoteUserService.getByIdentifier({
-              email: email || undefined,
-              phoneNumber: phoneNumber || undefined,
-            })
+                email: email || undefined,
+                phoneNumber: phoneNumber || undefined,
+              })
             : null;
 
         if (userDetails) {
@@ -809,6 +814,7 @@ const FlightBooking = () => {
               onEditDetails={() => setCurrentStep(0)}
               onChangeFlight={handleChangeFlight}
               ancillarySummary={ancillarySummary}
+              seatAddOnAvailable={!!ancillarySearchData?.seatMap}
             />
           )}
           {currentStep === payStepIndex && (
@@ -831,6 +837,7 @@ const FlightBooking = () => {
             <FlightBookingETicketSection
               reservedFlightBooking={finalReservedFlightBookingData}
               offerId={offerData?.offerId}
+              seatAddOnAvailable={!!ancillarySearchData?.seatMap}
               ancillarySummary={ancillarySummary}
             />
           )}

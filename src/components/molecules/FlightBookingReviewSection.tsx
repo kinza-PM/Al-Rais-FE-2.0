@@ -15,27 +15,27 @@ import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import FLightFareRule from "../atoms/FlightFareRule";
 import {
-    buildFlightSegmentFromTrip,
-    getPriceCabinClassForFlightSummary,
+  buildFlightSegmentFromTrip,
+  getPriceCabinClassForFlightSummary,
 } from "../../utils/helpers";
 import type { CountryOption } from "../../features/flights/types";
 
 const CardShell = ({
-    title,
-    right,
-    children,
+  title,
+  right,
+  children,
 }: {
-    title: string;
-    right?: React.ReactNode;
-    children: React.ReactNode;
+  title: string;
+  right?: React.ReactNode;
+  children: React.ReactNode;
 }) => (
-    <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
-            <h3 className="text-[15px] font-medium text-[#0A0C0F]">{title}</h3>
-            {right}
-        </div>
-        {children}
+  <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
+      <h3 className="text-[15px] font-medium text-[#0A0C0F]">{title}</h3>
+      {right}
     </div>
+    {children}
+  </div>
 );
 
 // const HeaderActions = ({
@@ -55,264 +55,272 @@ const CardShell = ({
 //     </Button>
 
 type FlightBookingReviewSectionProps = {
-    trip: any;
-    fareBookingSearchRules?: any;
-    fareRuleData?: any;
-    flightBookingPayload?: any;
-    countries: CountryOption[];
-    onNext?: () => void;
-    onEditDetails?: () => void;
-    onChangeFlight?: () => void;
-    ancillarySummary?: {
-        totalAmount: number;
-        currency: string;
-        selectedCount: number;
-        breakdown?: Array<{
-            category: "baggage" | "meals" | "seats" | "other";
-            label: string;
-            amount: number;
-            currency: string;
-            ancillaryOfferId: string;
-        }>;
-    };
+  trip: any;
+  fareBookingSearchRules?: any;
+  fareRuleData?: any;
+  flightBookingPayload?: any;
+  countries: CountryOption[];
+  onNext?: () => void;
+  onEditDetails?: () => void;
+  onChangeFlight?: () => void;
+  ancillarySummary?: {
+    totalAmount: number;
+    currency: string;
+    selectedCount: number;
+    breakdown?: Array<{
+      category: "baggage" | "meals" | "seats" | "other";
+      label: string;
+      amount: number;
+      currency: string;
+      ancillaryOfferId: string;
+    }>;
+  };
+  /** When true (seat map in add-ons), empty seat shows "No seat selected"; otherwise check-in assignment. */
+  seatAddOnAvailable?: boolean;
 };
 
 export default function FlightBookingReviewSection({
-    trip,
-    fareRuleData,
-    flightBookingPayload,
-    countries = [],
-    onNext,
-    // onEditDetails,
-    onChangeFlight,
-    ancillarySummary,
+  trip,
+  fareRuleData,
+  flightBookingPayload,
+  countries = [],
+  onNext,
+  // onEditDetails,
+  onChangeFlight,
+  ancillarySummary,
+  seatAddOnAvailable = false,
 }: FlightBookingReviewSectionProps) {
-    const [openPrice, setOpenPrice] = useState(false);
-    const passengers = flightBookingPayload?.passengers || [];
+  const [openPrice, setOpenPrice] = useState(false);
+  const passengers = flightBookingPayload?.passengers || [];
 
-    // const startEdit = () => {
-    //     if (typeof onEditDetails === "function") {
-    //         onEditDetails();
-    //     }
-    // };
+  // const startEdit = () => {
+  //     if (typeof onEditDetails === "function") {
+  //         onEditDetails();
+  //     }
+  // };
 
-    const assets = {
-        EmirateLogo,
-        cabinIcon,
-        baggageIcon,
-        mealIcon: refundableIcon,
-        wifiIcon: durationIcon,
-        portIcon: SEAT_ICON,
-        entertainmentIcon: PLANE_ICON
-    };
-    const segments = buildFlightSegmentFromTrip(trip, assets);
+  const assets = {
+    EmirateLogo,
+    cabinIcon,
+    baggageIcon,
+    mealIcon: refundableIcon,
+    wifiIcon: durationIcon,
+    portIcon: SEAT_ICON,
+    entertainmentIcon: PLANE_ICON,
+  };
+  const segments = buildFlightSegmentFromTrip(trip, assets);
 
-    const firstPrice = getPriceCabinClassForFlightSummary(trip);
+  const firstPrice = getPriceCabinClassForFlightSummary(trip);
 
-    const priceFareFamily = {
-        label: "Fare family",
-        value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
-        changeText: "Modify search",
-        onChangeClick: () => {
-            if (typeof onChangeFlight === "function") {
-                onChangeFlight();
-            }
-        },
-    };
+  const priceFareFamily = {
+    label: "Fare family",
+    value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
+    changeText: "Modify search",
+    onChangeClick: () => {
+      if (typeof onChangeFlight === "function") {
+        onChangeFlight();
+      }
+    },
+  };
 
-    const continueToPayment = () => {
-        if (typeof onNext === "function") {
-            onNext();
-        }
+  const continueToPayment = () => {
+    if (typeof onNext === "function") {
+      onNext();
     }
+  };
 
-    const cabinClassLabel = (() => {
-        const journeys = trip?.raw?.journey ?? trip?.journey ?? [];
-        const firstSeg = journeys?.[0]?.flightSegments?.[0];
-        return firstSeg?.cabinClass ?? firstSeg?.cabin ?? "—";
-    })();
+  const cabinClassLabel = (() => {
+    const journeys = trip?.raw?.journey ?? trip?.journey ?? [];
+    const firstSeg = journeys?.[0]?.flightSegments?.[0];
+    return firstSeg?.cabinClass ?? firstSeg?.cabin ?? "—";
+  })();
 
-    const seatLabelsFromAncillaries =
-        (ancillarySummary?.breakdown || [])
-            .filter((b) => b?.category === "seats" && String(b?.label || "").trim())
-            .map((b) => String(b.label).trim());
+  const seatLabelsFromAncillaries = (ancillarySummary?.breakdown || [])
+    .filter((b) => b?.category === "seats" && String(b?.label || "").trim())
+    .map((b) => String(b.label).trim());
 
-    const seatLabelsFromPassengers =
-        (passengers || [])
-            .map((p: any) => String(p?.seat || "").trim())
-            .filter(Boolean)
-            .map((s: string) => (s.toLowerCase().startsWith("seat ") ? s : `Seat ${s}`));
+  const seatLabelsFromPassengers = (passengers || [])
+    .map((p: any) => String(p?.seat || "").trim())
+    .filter(Boolean)
+    .map((s: string) =>
+      s.toLowerCase().startsWith("seat ") ? s : `Seat ${s}`,
+    );
 
-    const seatLabel =
-        seatLabelsFromAncillaries.length
-            ? seatLabelsFromAncillaries.join(", ")
-            : (seatLabelsFromPassengers.length ? seatLabelsFromPassengers.join(", ") : "—");
+  const seatDisplayText = seatLabelsFromAncillaries.length
+    ? seatLabelsFromAncillaries.join(", ")
+    : seatLabelsFromPassengers.length
+      ? seatLabelsFromPassengers.join(", ")
+      : "";
 
-    return (
-        <section className="mx-auto max-w-full px-10">
-            <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
-                {/* LEFT: Forms */}
-                <div className="space-y-4">
-                    {passengers.map((p: any, idx: number) => (
-                        <React.Fragment key={p.passengerKey || idx}>
-                            <CardShell
-                                title={`Contact person ${String(idx + 1).padStart(
-                                    2,
-                                    "0"
-                                )} details`}
-                            // right={
-                            //     <HeaderActions
-                            //         onEdit={() => startEdit()}
-                            //         editLabel="Edit"
-                            //     />
-                            // }
-                            >
-                                <div className="px-5 py-4">
-                                    <dl className="grid grid-cols-2 gap-y-2">
-                                        {/* Title */}
-                                        <dt className="text-[12px] text-[#3D495C]">Title</dt>
-                                        <dd className="text-right">
-                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                {p.passengerInfo?.nameTitle || "—"}
-                                            </span>
-                                        </dd>
+  const seatLabel =
+    seatDisplayText ||
+    (seatAddOnAvailable
+      ? "No seat selected"
+      : "Assigned at check-in");
 
-                                        {/* Full Name */}
-                                        <dt className="text-[12px] text-[#3D495C]">Full Name</dt>
-                                        <dd className="text-right">
-                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                {p.passengerInfo?.givenName
-                                                    ? `${p.passengerInfo.givenName}`
-                                                    : "—"}
-                                            </span>
-                                        </dd>
+  return (
+    <section className="mx-auto max-w-full px-10">
+      <div className="grid gap-4 md:grid-cols-[2fr_1fr]">
+        {/* LEFT: Forms */}
+        <div className="space-y-4">
+          {passengers.map((p: any, idx: number) => (
+            <React.Fragment key={p.passengerKey || idx}>
+              <CardShell
+                title={`Contact person ${String(idx + 1).padStart(
+                  2,
+                  "0",
+                )} details`}
+                // right={
+                //     <HeaderActions
+                //         onEdit={() => startEdit()}
+                //         editLabel="Edit"
+                //     />
+                // }
+              >
+                <div className="px-5 py-4">
+                  <dl className="grid grid-cols-2 gap-y-2">
+                    {/* Title */}
+                    <dt className="text-[12px] text-[#3D495C]">Title</dt>
+                    <dd className="text-right">
+                      <span className="text-[14px] text-[#0A0C0F] font-medium">
+                        {p.passengerInfo?.nameTitle || "—"}
+                      </span>
+                    </dd>
 
-                                        {/* Email - only show if required by fare rules */}
-                                        {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
-                                        <>
-                                            <dt className="text-[12px] text-[#3D495C]">Email</dt>
-                                            <dd className="text-right">
-                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                    {p.contact?.contactsProvided?.[0]
-                                                        ?.emailAddress?.[0] || "—"}
-                                                </span>
-                                            </dd>
-                                        </>
-                                        {/* )} */}
+                    {/* Full Name */}
+                    <dt className="text-[12px] text-[#3D495C]">Full Name</dt>
+                    <dd className="text-right">
+                      <span className="text-[14px] text-[#0A0C0F] font-medium">
+                        {p.passengerInfo?.givenName
+                          ? `${p.passengerInfo.givenName}`
+                          : "—"}
+                      </span>
+                    </dd>
 
-                                        {/* Phone - only show if required by fare rules */}
-                                        {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
-                                        <>
-                                            <dt className="text-[12px] text-[#3D495C]">Phone</dt>
-                                            <dd className="text-right">
-                                                {p.contact?.contactsProvided?.[0]?.phone?.[0]
-                                                    ?.phoneNumber
-                                                    ? `${p.contact.contactsProvided[0].phone[0].phoneNumber}`
-                                                    : "—"}
-                                            </dd>
-                                        </>
-                                        {/* )} */}
-                                    </dl>
-                                </div>
-                            </CardShell>
-                            <CardShell
-                                key={`passenger-${p.passengerKey || idx}`}
-                                title={`Traveler ${String(idx + 1).padStart(2, "0")} details`}
-                            // right={
-                            //     <HeaderActions
-                            //         onEdit={() => startEdit()}
-                            //         editLabel="Edit"
-                            //     />
-                            // }
-                            >
-                                <div className="px-5 py-4">
-                                    <dl className="grid grid-cols-2 gap-y-2">
-                                        {/* Pax type - disabled */}
-                                        <dt className="text-[12px] text-[#3D495C]">Pax type</dt>
-                                        <dd className="text-right">
-                                            <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                {p.ptc || "—"}
-                                            </span>
-                                        </dd>
+                    {/* Email - only show if required by fare rules */}
+                    {/* {fareBookingSearchRules?.isLeadEmailAddressMandatory && ( */}
+                    <>
+                      <dt className="text-[12px] text-[#3D495C]">Email</dt>
+                      <dd className="text-right">
+                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                          {p.contact?.contactsProvided?.[0]
+                            ?.emailAddress?.[0] || "—"}
+                        </span>
+                      </dd>
+                    </>
+                    {/* )} */}
 
-                                        {/* Passport number - only show if required by fare rules */}
-                                        {/* {fareBookingSearchRules?.passengerRules?.[0]
+                    {/* Phone - only show if required by fare rules */}
+                    {/* {fareBookingSearchRules?.isLeadPhoneNumberMandatory && ( */}
+                    <>
+                      <dt className="text-[12px] text-[#3D495C]">Phone</dt>
+                      <dd className="text-right">
+                        {p.contact?.contactsProvided?.[0]?.phone?.[0]
+                          ?.phoneNumber
+                          ? `${p.contact.contactsProvided[0].phone[0].areaCode ? `${p.contact.contactsProvided[0].phone[0].areaCode}-` : ""}${p.contact.contactsProvided[0].phone[0].phoneNumber}`
+                          : "—"}
+                      </dd>
+                    </>
+                    {/* )} */}
+                  </dl>
+                </div>
+              </CardShell>
+              <CardShell
+                key={`passenger-${p.passengerKey || idx}`}
+                title={`Traveler ${String(idx + 1).padStart(2, "0")} details`}
+                // right={
+                //     <HeaderActions
+                //         onEdit={() => startEdit()}
+                //         editLabel="Edit"
+                //     />
+                // }
+              >
+                <div className="px-5 py-4">
+                  <dl className="grid grid-cols-2 gap-y-2">
+                    {/* Pax type - disabled */}
+                    <dt className="text-[12px] text-[#3D495C]">Pax type</dt>
+                    <dd className="text-right">
+                      <span className="text-[14px] text-[#0A0C0F] font-medium">
+                        {p.ptc || "—"}
+                      </span>
+                    </dd>
+
+                    {/* Passport number - only show if required by fare rules */}
+                    {/* {fareBookingSearchRules?.passengerRules?.[0]
                                             ?.isDocumentNumberMandatory && ( */}
-                                        <>
-                                            <dt className="text-[12px] text-[#3D495C]">
-                                                Passport number
-                                            </dt>
-                                            <dd className="text-right">
-                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                    {p.identityDocuments?.[0]?.idDocumentNumber || "—"}
-                                                </span>
-                                            </dd>
-                                        </>
-                                        {/* )} */}
+                    <>
+                      <dt className="text-[12px] text-[#3D495C]">
+                        Passport number
+                      </dt>
+                      <dd className="text-right">
+                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                          {p.identityDocuments?.[0]?.idDocumentNumber || "—"}
+                        </span>
+                      </dd>
+                    </>
+                    {/* )} */}
 
-                                        {/* {fareBookingSearchRules?.passengerRules?.[0]
+                    {/* {fareBookingSearchRules?.passengerRules?.[0]
                                             ?.isIssuingCountryCodeMandatory && ( */}
-                                        <>
-                                            <dt className="text-[12px] text-[#3D495C]">
-                                                Issuing country
-                                            </dt>
-                                            <dd className="text-right">
-                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                    {countries.find(
-                                                        (c) =>
-                                                            c.iso3 ===
-                                                            p.identityDocuments?.[0]?.issuingCountryCode
-                                                        // )?.label ||
-                                                    )?.iso3 ||
-                                                        p.identityDocuments?.[0]?.issuingCountryCode ||
-                                                        "—"}
-                                                </span>
-                                            </dd>
-                                        </>
-                                        {/* )} */}
+                    <>
+                      <dt className="text-[12px] text-[#3D495C]">
+                        Issuing country
+                      </dt>
+                      <dd className="text-right">
+                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                          {countries.find(
+                            (c) =>
+                              c.iso3 ===
+                              p.identityDocuments?.[0]?.issuingCountryCode,
+                            // )?.label ||
+                          )?.iso3 ||
+                            p.identityDocuments?.[0]?.issuingCountryCode ||
+                            "—"}
+                        </span>
+                      </dd>
+                    </>
+                    {/* )} */}
 
-                                        {/* {fareBookingSearchRules?.passengerRules?.[0]
+                    {/* {fareBookingSearchRules?.passengerRules?.[0]
                                             ?.isExpiryDateMandatory && ( */}
-                                        <>
-                                            <dt className="text-[12px] text-[#3D495C]">
-                                                Expiry date
-                                            </dt>
-                                            <dd className="text-right">
-                                                <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                                    {p.identityDocuments?.[0]?.expiryDate || "—"}
-                                                </span>
-                                            </dd>
-                                        </>
-                                        {/* )} */}
-                                    </dl>
-                                </div>
-                            </CardShell>
-                        </React.Fragment>
-                    ))}
+                    <>
+                      <dt className="text-[12px] text-[#3D495C]">
+                        Expiry date
+                      </dt>
+                      <dd className="text-right">
+                        <span className="text-[14px] text-[#0A0C0F] font-medium">
+                          {p.identityDocuments?.[0]?.expiryDate || "—"}
+                        </span>
+                      </dd>
+                    </>
+                    {/* )} */}
+                  </dl>
+                </div>
+              </CardShell>
+            </React.Fragment>
+          ))}
 
-                    <CardShell
-                        title="Seat"
-                    >
-                        <div className="px-5 py-4">
-                            <dl className="grid grid-cols-2 gap-y-2">
-                                <dt className="text-[12px] text-[#3D495C]">Cabin class</dt>
-                                <dd className="text-right">
-                                    <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                        {cabinClassLabel || "—"}
-                                    </span>
-                                </dd>
+          <CardShell title="Seat">
+            <div className="px-5 py-4">
+              <dl className="grid grid-cols-2 gap-y-2">
+                <dt className="text-[12px] text-[#3D495C]">Cabin class</dt>
+                <dd className="text-right">
+                  <span className="text-[14px] text-[#0A0C0F] font-medium">
+                    {cabinClassLabel || "—"}
+                  </span>
+                </dd>
 
-                                <dt className="text-[12px] text-[#3D495C]">Seat no.</dt>
-                                <dd className="text-right">
-                                    <span className="text-[14px] text-[#0A0C0F] font-medium">
-                                        {seatLabel}
-                                    </span>
-                                </dd>
-                            </dl>
-                        </div>
-                    </CardShell>
+                <dt className="text-[12px] text-[#3D495C]">Seat no.</dt>
+                <dd className="text-right">
+                  <span className="text-[14px] text-[#0A0C0F] font-medium">
+                    {seatLabel}
+                  </span>
+                </dd>
+              </dl>
+            </div>
+          </CardShell>
 
-                    {/* <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
+          {/* <div className="rounded-xl border border-[#E4E4E7] bg-white shadow-sm">
                         <div className="px-4 py-3 border-b border-[#E4E4E7]">
                             <h3 className="text-[15px] font-medium text-[#0A0C0F]">
                                 Got a promo code?
@@ -386,37 +394,37 @@ export default function FlightBookingReviewSection({
                             </div>
                         </div>
                     </div> */}
-                </div>
+        </div>
 
-                {/* RIGHT: Trip details */}
-                <div className="md:sticky md:top-6 self-start md:max-h-[calc(100vh-3rem)] md:overflow-auto">
-                    <FlightSummaryCard
-                        title="Flight details"
-                        headerActionText="Change"
-                        onHeaderActionClick={() => {
-                            if (typeof onChangeFlight === "function") onChangeFlight();
-                        }}
-                        segments={segments}
-                        fare={priceFareFamily}
-                    />
+        {/* RIGHT: Trip details */}
+        <div className="md:sticky md:top-6 self-start md:max-h-[calc(100vh-3rem)] md:overflow-auto">
+          <FlightSummaryCard
+            title="Flight details"
+            headerActionText="Change"
+            onHeaderActionClick={() => {
+              if (typeof onChangeFlight === "function") onChangeFlight();
+            }}
+            segments={segments}
+            fare={priceFareFamily}
+          />
 
-                    <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
+          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
 
-                    <FLightPriceBreakdown
-                        open={openPrice}
-                        onToggleOpen={() => setOpenPrice((v) => !v)}
-                        trip={trip.raw}
-                        ancillarySummary={ancillarySummary}
-                    />
-                </div>
-            </div>
+          <FLightPriceBreakdown
+            open={openPrice}
+            onToggleOpen={() => setOpenPrice((v) => !v)}
+            trip={trip.raw}
+            ancillarySummary={ancillarySummary}
+          />
+        </div>
+      </div>
 
-            <div className="mt-5 flex justify-center w-full">
-                <Button
-                    type="button"
-                    overrideClasses
-                    onClick={() => continueToPayment()}
-                    className="
+      <div className="mt-5 flex justify-center w-full">
+        <Button
+          type="button"
+          overrideClasses
+          onClick={() => continueToPayment()}
+          className="
       h-[47px]
       w-[252px]
       px-[40px]
@@ -427,11 +435,10 @@ export default function FlightBookingReviewSection({
       flex items-center justify-center gap-[10px]
       bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)]
     "
-                >
-                    Continue to payment
-                </Button>
-            </div>
-
-        </section>
-    );
+        >
+          Continue to payment
+        </Button>
+      </div>
+    </section>
+  );
 }
