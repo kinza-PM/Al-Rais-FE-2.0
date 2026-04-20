@@ -60,6 +60,20 @@ import FlightBookingReviewModal from "../common/FlightBookingReviewModal";
 
 type PaymentMethod = "card" | "apple" | "google";
 
+const toCents = (value: number | string) => {
+  const normalized = String(value ?? "0").trim();
+  const negative = normalized.startsWith("-");
+  const safe = negative ? normalized.slice(1) : normalized;
+  const [wholePartRaw, fractionalPartRaw = ""] = safe.split(".");
+  const wholePart = Number(wholePartRaw || "0");
+  const fractionalPart = Number((fractionalPartRaw + "00").slice(0, 2));
+  const cents = wholePart * 100 + fractionalPart;
+  return negative ? -cents : cents;
+};
+
+const centsToAmount = (cents: number) => cents / 100;
+const centsToAmountString = (cents: number) => (cents / 100).toFixed(2);
+
 type FlightBookingPaymentSectionProps = {
   trip: any;
   fareRuleData?: any;
@@ -171,7 +185,7 @@ export default function FlightBookingPaymentSection({
   const baseTotalRaw = fare?.totalFare ?? fare?.total ?? null;
   const baseTotal = typeof baseTotalRaw === "number" ? baseTotalRaw : 0;
   const ancillaryTotal = Number(ancillarySummary?.totalAmount || 0);
-  const total = baseTotal + ancillaryTotal;
+  const total = centsToAmount(toCents(baseTotal) + toCents(ancillaryTotal));
 
   const priceFareFamily = {
     label: "Fare family",
@@ -333,7 +347,9 @@ export default function FlightBookingPaymentSection({
 
       const paymentPayload = {
         token_name: tokenization ?? null,
-        amount: reservation?.paymentDetails?.transactionAmount,
+        amount: centsToAmountString(
+          toCents(reservation?.paymentDetails?.transactionAmount || 0),
+        ),
         email: reservation?.customerInfo?.emailAddress,
       };
       const response = await paymentMutateAsync(paymentPayload);
