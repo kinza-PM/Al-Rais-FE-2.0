@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import CollapsibleCard from "./CollapsibleCard";
 import MealQuantityStepper from "./MealQuantityStepper";
 import type { SegmentSummary } from "../../utils/flightBookingHelper";
@@ -25,6 +25,7 @@ export default function FlightBookingMealsSection({
   flightJourneys,
 }: FlightBookingMealSectionProps) {
   const { setMealSelections, mealSelections } = useAncillaryStore();
+  const syncingFromStoreRef = useRef(false);
   // Calculate eligible passengers (exclude INF)
   const eligiblePassengers = useMemo(() => {
     return flightPassengers.filter((p) => p.ptc !== "INF");
@@ -69,7 +70,9 @@ export default function FlightBookingMealsSection({
   const [activePassengerIndex, setActivePassengerIndex] = useState(0);
 
   // Store selections: { segmentKey: { passengerKey: { [category]: { itemId: quantity } } } }
-  const [selections, setSelections] = useState<SelectionState>({});
+  const [selections, setSelections] = useState<SelectionState>(
+    () => mealSelections || {},
+  );
 
   // Get items grouped by category for current segment
   const getItemsForSegment = (segmentKey: string) => {
@@ -495,25 +498,43 @@ export default function FlightBookingMealsSection({
   //   }
   // }, [mealSelections]);
 
+  // Hydrate local UI from store when navigating back to Enhance.
   useEffect(() => {
-    const localBaggageJSON = JSON.stringify(selections);
-    const storeBaggageJSON = JSON.stringify(mealSelections);
+    const storeHas = Object.keys(mealSelections || {}).length > 0;
+    const localHas = Object.keys(selections || {}).length > 0;
+    const storeJSON = JSON.stringify(mealSelections || {});
+    const localJSON = JSON.stringify(selections || {});
 
-    if (localBaggageJSON !== storeBaggageJSON) {
-      setMealSelections(selections);
+    if (storeHas && storeJSON !== localJSON) {
+      syncingFromStoreRef.current = true;
+      setSelections(mealSelections || {});
+      queueMicrotask(() => {
+        syncingFromStoreRef.current = false;
+      });
+      return;
     }
-  }, [selections]);
 
-  useEffect(() => {
-    if (
-      Object.keys(mealSelections).length === 0 &&
-      Object.keys(selections).length > 0
-    ) {
+    // Reflect explicit clear.
+    if (!storeHas && localHas) {
+      syncingFromStoreRef.current = true;
       setSelections({});
       setCurrentSegmentIndex(0);
       setActivePassengerIndex(0);
+      queueMicrotask(() => {
+        syncingFromStoreRef.current = false;
+      });
     }
   }, [mealSelections]);
+
+  // Persist local UI changes to store (guarded to avoid loops).
+  useEffect(() => {
+    if (syncingFromStoreRef.current) return;
+    const storeJSON = JSON.stringify(mealSelections || {});
+    const localJSON = JSON.stringify(selections || {});
+    if (storeJSON !== localJSON) {
+      setMealSelections(selections);
+    }
+  }, [selections, mealSelections, setMealSelections]);
 
   return (
     <div className="px-3 pb-3 mt-3">

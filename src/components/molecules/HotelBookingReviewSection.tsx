@@ -352,26 +352,27 @@ export default function HotelBookingReviewSection({
           </CardShell>
         </div>
 
-        {/* RIGHT: Trip details */}
-        <div>
-          <HotelSummaryCard
-            hotelDetail={hotelDetail}
-            bookingInfo={bookingInfo}
-          />
-          <HotelFareRule
-            selectedRooms={selectedRooms}
-            totalPrice={totalPrice}
-            currency={currency}
-            hotelDetail={hotelDetail}
-          />
-          <HotelPriceBreakdown
-            open={openPrice}
-            onToggleOpen={() => setOpenPrice((v) => !v)}
-            totalPrice={totalPrice}
-            currency={currency}
-            selectedRooms={selectedRooms}
-          />
-          <div className="mt-2">
+        {/* RIGHT: Trip details — sticky on wide layouts (matches global .flight-booking-grid breakpoint) */}
+        <div className="min-w-0 min-[1025px]:sticky min-[1025px]:top-24 min-[1025px]:z-[1] min-[1025px]:self-start">
+          <div className="min-[1025px]:max-h-[calc(100vh-7rem)] min-[1025px]:overflow-y-auto min-[1025px]:overflow-x-hidden min-[1025px]:pr-1 [scrollbar-gutter:stable]">
+            <HotelSummaryCard
+              hotelDetail={hotelDetail}
+              bookingInfo={bookingInfo}
+            />
+            <HotelFareRule
+              selectedRooms={selectedRooms}
+              totalPrice={totalPrice}
+              currency={currency}
+              hotelDetail={hotelDetail}
+            />
+            <HotelPriceBreakdown
+              open={openPrice}
+              onToggleOpen={() => setOpenPrice((v) => !v)}
+              totalPrice={totalPrice}
+              currency={currency}
+              selectedRooms={selectedRooms}
+            />
+            <div className="mt-2">
             <Checkbox
               checked={isTermsChecked}
               onChange={(e) => {
@@ -434,6 +435,7 @@ export default function HotelBookingReviewSection({
                 You must agree to the Cancellation Policy to proceed.
               </p>
             )}
+          </div>
           </div>
         </div>
       </div>

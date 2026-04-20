@@ -27,6 +27,7 @@ import TravelMultiCity from "./TravelMultiCity";
 
 // import type { TabsProps } from "antd";
 import { useState } from "react";
+import { useAiprortOptions } from "../../hooks/masterListings/listing";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { FilterOutlined } from "@ant-design/icons";
 
@@ -55,6 +56,7 @@ import {
   formatDate,
   formatDateToLocalISO,
   formatTime,
+  getMarketingAirlineDisplayName,
   timeToMinutesFromAnyString,
 } from "../../utils/helpers";
 import StatusMessageBanner from "../common/StatusMessageBanner";
@@ -63,7 +65,10 @@ import {
   filterFlightsByTimeAndAirlines,
   filterOffersByAncillaryMode,
   filterOffersByCheckedBaggage,
+  filterOffersByRefundableMode,
+  refundableFilterModeFromCheckboxes,
   type AncillaryFilterMode,
+  type RefundableFilterMode,
 } from "../../utils/flightFilters";
 import { sortFlightOffers } from "../../utils/flightSortUtils";
 import { resolveAirlineLogoFromSegment } from "../../utils/searchFlightListingHelpers";
@@ -212,6 +217,46 @@ const buildPassengersArrayForFlightSearch = (
   return arr;
 };
 
+/** Route text for the results summary line — must match the search that produced the listed rows. */
+function buildFlightRouteSummaryLabel(args: {
+  trip: TripType | string;
+  multicityLegs: FlightLeg[];
+  fromOption: AirportOption | null;
+  toOption: AirportOption | null;
+  fromCode: string;
+  toCode: string;
+}): string {
+  const { trip, multicityLegs, fromOption, toOption, fromCode, toCode } = args;
+  if (trip === "multicity") {
+    const legs = multicityLegs || [];
+    if (legs.length > 0) {
+      const leg = legs[0] as FlightLeg & {
+        fromOption?: { city?: string } | null;
+        toOption?: { city?: string } | null;
+      };
+      const fromL =
+        leg.fromOption?.city?.trim() || leg.fromCode?.trim() || "";
+      const toL = leg.toOption?.city?.trim() || leg.toCode?.trim() || "";
+      if (fromL && toL) {
+        return legs.length > 1
+          ? `${fromL} → ${toL} (+${legs.length - 1} more)`
+          : `${fromL} → ${toL}`;
+      }
+      return "Multi-city";
+    }
+    return "Multi-city";
+  }
+  const fromCity = fromOption?.city?.trim() || fromCode?.trim() || "";
+  const toCity = toOption?.city?.trim() || toCode?.trim() || "";
+  if (fromCity && toCity) {
+    return `${fromCity} → ${toCity}`;
+  }
+  if (fromCode?.trim() && toCode?.trim()) {
+    return `${fromCode.trim()} → ${toCode.trim()}`;
+  }
+  return "Flights";
+}
+
 const FlightDetailTemplate: React.FC = () => {
   const { mutateAsync, isPending } = useFlightSearch();
   const { loadMoreAsync, isLoadingMore } = useLoadMoreFlights();
@@ -256,6 +301,9 @@ const FlightDetailTemplate: React.FC = () => {
   >(null);
   const [baggageIncludedOnly, setBaggageIncludedOnly] = useState(false);
   const [ancillaryAddOnsOnly, setAncillaryAddOnsOnly] = useState(false);
+  const [refundFilterRefundable, setRefundFilterRefundable] = useState(false);
+  const [refundFilterNonRefundable, setRefundFilterNonRefundable] =
+    useState(false);
   const [priceRangeBounds, setPriceRangeBounds] = React.useState<
     [number, number]
   >([0, 1000]);
@@ -264,11 +312,14 @@ const FlightDetailTemplate: React.FC = () => {
   >([0, 1000]);
   const PRICE_STEP = 50;
   const filterChangeDebounceRef = useRef<number | null>(null);
-  const timeRefs = useRef<Record<string, HTMLInputElement | null>>({});
   
   // Sort dropdown state
   const [sortBy, setSortBy] = useState<string>("lowest_price");
   const [isSortDropdownOpen, setIsSortDropdownOpen] = useState(false);
+  /** Last successful search route for the summary line (draft bar edits do not change this until Search). */
+  const [resultsSummaryRouteLabel, setResultsSummaryRouteLabel] = useState<
+    string | null
+  >(null);
   const latestSearchStateRef = useRef<FlightSearchState | null>(null);
 
   const handleDate = (date: any, which: "depart" | "return" = "depart") => {
@@ -351,7 +402,7 @@ const FlightDetailTemplate: React.FC = () => {
     return {
       id: seg.segmentKey,
       logo: resolveAirlineLogoFromSegment(seg),
-      name: seg.marketingAirline,
+      name: getMarketingAirlineDisplayName(seg),
       flight_detail: {
         flight_number: seg.flightNumber,
         flight_class: seg.cabinClass,
@@ -539,7 +590,7 @@ const FlightDetailTemplate: React.FC = () => {
   };
 
   const handleSearch = async (
-    searchFilters: { maxConnections?: number } = {},
+    searchFilters: { maxConnections?: number; resetSidebarFilters?: boolean } = {},
   ) => {
     const validationError = validateSearchFields();
     if (validationError) {
@@ -548,10 +599,39 @@ const FlightDetailTemplate: React.FC = () => {
       setIsSearching(false);
       return;
     }
+
+    const routeLabelSnapshot = buildFlightRouteSummaryLabel({
+      trip,
+      multicityLegs,
+      fromOption,
+      toOption,
+      fromCode,
+      toCode,
+    });
+
+    /** New search from the sticky bar: clear sidebar filters. Stops-only API refetch passes `maxConnections` and must keep filters. */
+    const resetSidebar =
+      searchFilters.resetSidebarFilters !== false &&
+      typeof searchFilters.maxConnections === "undefined";
+
+    if (resetSidebar) {
+      setSelectedMaxConnections(0);
+      setDepartureFlightRange({ start: "", end: "" });
+      setArrivalFlightRange({ start: "", end: "" });
+      setSelectedAirlineIds([]);
+      setSelectedTransitRange(null);
+      setRefundFilterRefundable(false);
+      setRefundFilterNonRefundable(false);
+      setSortBy("lowest_price");
+    }
+
+    const sortForFreshResults = resetSidebar ? "lowest_price" : sortBy;
+
     // const sortedPrice = typeof searchFilters.priceId !== "undefined" ? searchFilters.priceId : selectedPriceId;
-    const sortedMaxConnections =
-      typeof searchFilters.maxConnections !== "undefined"
-        ? searchFilters.maxConnections
+    const sortedMaxConnections = resetSidebar
+      ? 0
+      : typeof searchFilters.maxConnections !== "undefined"
+        ? Number(searchFilters.maxConnections)
         : (selectedMaxConnections ?? 0);
 
     const passengersForRequest = buildPassengersArrayForFlightSearch(
@@ -632,7 +712,9 @@ const FlightDetailTemplate: React.FC = () => {
       originalRoundResponseRef.current = roundFormatted;
       originalMulticityResponseRef.current = multiCityFormatted;
       setMulticityResponseData(
-        trip === "multicity" ? sortFlightOffers(multiCityFormatted, sortBy) : [],
+        trip === "multicity"
+          ? sortFlightOffers(multiCityFormatted, sortForFreshResults)
+          : [],
       );
       setHighDemandIndicators(highDemand);
       // start inactivity timers only based on API results
@@ -658,8 +740,9 @@ const FlightDetailTemplate: React.FC = () => {
       setPriceRangeBounds(nextBounds);
 
       const hadCustomPriceFilter =
-        selectedPriceRange[0] !== priceRangeBounds[0] ||
-        selectedPriceRange[1] !== priceRangeBounds[1];
+        !resetSidebar &&
+        (selectedPriceRange[0] !== priceRangeBounds[0] ||
+          selectedPriceRange[1] !== priceRangeBounds[1]);
       const nextSelectedPriceRange: [number, number] = hadCustomPriceFilter
         ? ([
             Math.max(nextBounds[0], Math.min(nextBounds[1], selectedPriceRange[0])),
@@ -668,13 +751,17 @@ const FlightDetailTemplate: React.FC = () => {
         : nextBounds;
       setSelectedPriceRange(nextSelectedPriceRange);
 
-      // Re-apply currently selected client-side filters on fresh results.
+      // Re-apply client-side filters on fresh results (defaults when resetSidebar).
       applyFlightSearchFilters(
-        departureFlightRange,
-        arrivalFlightRange,
-        selectedAirlineIds,
+        resetSidebar ? { start: "", end: "" } : departureFlightRange,
+        resetSidebar ? { start: "", end: "" } : arrivalFlightRange,
+        resetSidebar ? [] : selectedAirlineIds,
         nextSelectedPriceRange,
-        selectedTransitRange,
+        resetSidebar ? null : selectedTransitRange,
+        resetSidebar ? "all" : null,
+        resetSidebar ? false : null,
+        resetSidebar ? "all" : null,
+        sortForFreshResults,
       );
 
       const anyHasMore = (raw || []).some(
@@ -684,6 +771,7 @@ const FlightDetailTemplate: React.FC = () => {
       setHasMore(raw.length > 0 && anyHasMore);
       // setHasMore(raw.length > 0);
       setIoReady(true);
+      setResultsSummaryRouteLabel(routeLabelSnapshot);
       // Keep store so back navigation can restore inputs/results.
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
@@ -744,11 +832,13 @@ const FlightDetailTemplate: React.FC = () => {
     }
   };
 
-  const [countriesSearchTerm, setCountriesSearchTerm] = useState<string>("");
+  const [fromCountriesSearchTerm, setFromCountriesSearchTerm] =
+    useState<string>("");
+  const [toCountriesSearchTerm, setToCountriesSearchTerm] =
+    useState<string>("");
 
   const {
     flightTypes,
-    countries,
     passengers,
     cabinClasses,
     // priceSort,
@@ -757,14 +847,9 @@ const FlightDetailTemplate: React.FC = () => {
     baggage,
     airline,
     loading,
-    loadingMap,
-    countriesHasMore,
-    countriesFetchNext,
-    countriesIsFetchingNext,
   } = useMasterListings({
     include: [
       "flightTypes",
-      "countries",
       "passengers",
       "cabinClasses",
       "priceSort",
@@ -773,14 +858,26 @@ const FlightDetailTemplate: React.FC = () => {
       "baggage",
       "airline",
     ],
-    countriesSearchTerm,
   });
 
+  const qFromAirports = useAiprortOptions(
+    true,
+    fromCountriesSearchTerm,
+    "from",
+  );
+  const qToAirports = useAiprortOptions(true, toCountriesSearchTerm, "to");
+
   const isInitialLoading =
-    !countriesSearchTerm.trim() &&
+    !fromCountriesSearchTerm.trim() &&
+    !toCountriesSearchTerm.trim() &&
     loading &&
-    (!countries || countries.length === 0);
-  const countriesLoading = loadingMap?.countries ?? isInitialLoading;
+    (qFromAirports.data.length === 0 || qToAirports.data.length === 0);
+  const countriesLoading =
+    qFromAirports.isLoading ||
+    qFromAirports.isFetching ||
+    qToAirports.isLoading ||
+    qToAirports.isFetching ||
+    isInitialLoading;
 
   // Preserve full airport options (with labels) for display after clearFlight()
   const [preservedFromOption, setPreservedFromOption] =
@@ -788,35 +885,35 @@ const FlightDetailTemplate: React.FC = () => {
   const [preservedToOption, setPreservedToOption] =
     useState<AirportOption | null>(null);
 
-  const countriesForPicker = useMemo(() => {
-    const base = (countries as AirportOption[]) || [];
-
-    // When user is searching, show only API search results (e.g. "duba" → only Dubai options)
-    if (countriesSearchTerm.trim()) {
-      return base;
-    }
-
+  const fromCountriesForPicker = useMemo(() => {
+    const base = (qFromAirports.data as AirportOption[]) || [];
     const merged: AirportOption[] = [];
     const addUnique = (opt: AirportOption | null | undefined) => {
       if (!opt?.code) return;
       if (merged.some((x) => x.code === opt.code)) return;
       merged.push(opt);
     };
-
-    // No search: keep hero/store or preserved options so they stay in the list
     addUnique((flight?.fromOption ?? preservedFromOption) as AirportOption);
-    addUnique((flight?.toOption ?? preservedToOption) as AirportOption);
-
     for (const c of base) addUnique(c);
     return merged;
   }, [
-    countries,
-    countriesSearchTerm,
+    qFromAirports.data,
     flight?.fromOption,
-    flight?.toOption,
     preservedFromOption,
-    preservedToOption,
   ]);
+
+  const toCountriesForPicker = useMemo(() => {
+    const base = (qToAirports.data as AirportOption[]) || [];
+    const merged: AirportOption[] = [];
+    const addUnique = (opt: AirportOption | null | undefined) => {
+      if (!opt?.code) return;
+      if (merged.some((x) => x.code === opt.code)) return;
+      merged.push(opt);
+    };
+    addUnique((flight?.toOption ?? preservedToOption) as AirportOption);
+    for (const c of base) addUnique(c);
+    return merged;
+  }, [qToAirports.data, flight?.toOption, preservedToOption]);
 
   // Show only airlines that exist in the current flight-search response (frontend-side).
   const availableAirlineOptions = useMemo(() => {
@@ -831,7 +928,12 @@ const FlightDetailTemplate: React.FC = () => {
       const code = String(seg?.marketingAirline || "").trim().toUpperCase();
       if (!code || gathered.has(code)) return;
       const fallbackLabel =
-        String(seg?.marketingAirlineName || seg?.operatingAirlineName || "").trim() || code;
+        String(
+          seg?.marketingAirlineFullName ||
+            seg?.marketingAirlineName ||
+            seg?.operatingAirlineName ||
+            "",
+        ).trim() || code;
       gathered.set(code, {
         id: code,
         code,
@@ -861,7 +963,15 @@ const FlightDetailTemplate: React.FC = () => {
 
   useEffect(() => {
     const allowed = new Set(availableAirlineOptions.map((a) => a.code));
-    setSelectedAirlineIds((prev) => prev.filter((code) => allowed.has(code)));
+    setSelectedAirlineIds((prev) => {
+      const next = prev.filter((code) => allowed.has(code));
+      const isSame =
+        next.length === prev.length &&
+        next.every((code, idx) => code === prev[idx]);
+
+      // Avoid needless state updates (prevents "Maximum update depth" loops).
+      return isSame ? prev : next;
+    });
   }, [availableAirlineOptions]);
 
   const { useBreakpoint } = Grid;
@@ -981,9 +1091,45 @@ const FlightDetailTemplate: React.FC = () => {
     setSelectedTransitRange(searchState.selectedTransitRange ?? null);
     setBaggageIncludedOnly(Boolean(searchState.baggageIncludedOnly));
     setAncillaryAddOnsOnly(Boolean(searchState.ancillaryAddOnsOnly));
+    {
+      const hasCheckbox =
+        typeof searchState.refundFilterRefundable === "boolean" ||
+        typeof searchState.refundFilterNonRefundable === "boolean";
+      if (hasCheckbox) {
+        setRefundFilterRefundable(Boolean(searchState.refundFilterRefundable));
+        setRefundFilterNonRefundable(
+          Boolean(searchState.refundFilterNonRefundable),
+        );
+      } else {
+        const rf = searchState.refundableFilterMode;
+        if (rf === "refundable") {
+          setRefundFilterRefundable(true);
+          setRefundFilterNonRefundable(false);
+        } else if (rf === "non_refundable") {
+          setRefundFilterRefundable(false);
+          setRefundFilterNonRefundable(true);
+        } else {
+          setRefundFilterRefundable(false);
+          setRefundFilterNonRefundable(false);
+        }
+      }
+    }
     setPriceRangeBounds(searchState.priceRangeBounds ?? [0, 1000]);
     setSelectedPriceRange(searchState.selectedPriceRange ?? [0, 1000]);
     setSortBy(searchState.sortBy ?? "lowest_price");
+
+    setResultsSummaryRouteLabel(
+      buildFlightRouteSummaryLabel({
+        trip: searchState.trip as TripType,
+        multicityLegs: Array.isArray(searchState.multicityLegs)
+          ? searchState.multicityLegs
+          : [],
+        fromOption: (searchState.fromOption as AirportOption) ?? null,
+        toOption: (searchState.toOption as AirportOption) ?? null,
+        fromCode: searchState.fromCode ?? "",
+        toCode: searchState.toCode ?? "",
+      }),
+    );
 
     // Important: do NOT auto-search; we already restored results.
     shouldAutoSearchRef.current = false;
@@ -1057,6 +1203,7 @@ const FlightDetailTemplate: React.FC = () => {
     setSearchError(null);
     lastRequestRef.current = null;
     shouldAutoSearchRef.current = true;
+    setResultsSummaryRouteLabel(null);
 
     const timeoutId = window.setTimeout(() => {
       isHydratingFromStore.current = false;
@@ -1103,6 +1250,8 @@ const FlightDetailTemplate: React.FC = () => {
       selectedTransitRange,
       baggageIncludedOnly,
       ancillaryAddOnsOnly,
+      refundFilterRefundable,
+      refundFilterNonRefundable,
       priceRangeBounds,
       selectedPriceRange,
       sortBy,
@@ -1161,6 +1310,7 @@ const FlightDetailTemplate: React.FC = () => {
     setHasMore(false);
     setIoReady(false);
     setSearchError(null);
+    setResultsSummaryRouteLabel(null);
     originalResponseRef.current = [];
     originalRoundResponseRef.current = [];
     originalMulticityResponseRef.current = [];
@@ -1336,13 +1486,22 @@ const FlightDetailTemplate: React.FC = () => {
     transitRange?: string | null,
     ancillaryMode?: AncillaryFilterMode | null,
     baggageIncludedOverride?: boolean | null,
+    refundableFilterOverride?: RefundableFilterMode | null,
+    sortByOverride?: string | null,
   ) {
+    const sortKey = sortByOverride ?? sortBy;
     const mode: AncillaryFilterMode =
       ancillaryMode ?? (ancillaryAddOnsOnly ? "with" : "all");
     const bagOnly =
       baggageIncludedOverride !== null && baggageIncludedOverride !== undefined
         ? baggageIncludedOverride
         : baggageIncludedOnly;
+    const refundableMode: RefundableFilterMode =
+      refundableFilterOverride ??
+      refundableFilterModeFromCheckboxes(
+        refundFilterRefundable,
+        refundFilterNonRefundable,
+      );
 
     const { filteredOneWay, filteredRound } = filterFlightsByTimeAndAirlines(
       originalResponseRef.current ?? [],
@@ -1369,6 +1528,15 @@ const FlightDetailTemplate: React.FC = () => {
       bagOnly,
     );
 
+    const afterRefundableOne = filterOffersByRefundableMode(
+      afterBaggageOne,
+      refundableMode,
+    );
+    const afterRefundableRound = filterOffersByRefundableMode(
+      afterBaggageRound,
+      refundableMode,
+    );
+
     const applyPrice = (list: any[]) => {
       if (!priceRange) return list.slice();
       const [minP, maxP] = priceRange;
@@ -1381,11 +1549,11 @@ const FlightDetailTemplate: React.FC = () => {
       });
     };
 
-    const finalOneWay = applyPrice(afterBaggageOne);
-    const finalRound = applyPrice(afterBaggageRound);
+    const finalOneWay = applyPrice(afterRefundableOne);
+    const finalRound = applyPrice(afterRefundableRound);
 
-    setResponseData(sortFlightOffers(finalOneWay, sortBy));
-    setRoundResponseData(sortFlightOffers(finalRound, sortBy));
+    setResponseData(sortFlightOffers(finalOneWay, sortKey));
+    setRoundResponseData(sortFlightOffers(finalRound, sortKey));
 
     const afterAncillaryMulti = filterOffersByAncillaryMode(
       originalMulticityResponseRef.current ?? [],
@@ -1395,8 +1563,12 @@ const FlightDetailTemplate: React.FC = () => {
       afterAncillaryMulti,
       bagOnly,
     );
+    const afterRefundableMulti = filterOffersByRefundableMode(
+      afterBaggageMulti,
+      refundableMode,
+    );
     setMulticityResponseData(
-      sortFlightOffers(applyPrice(afterBaggageMulti), sortBy),
+      sortFlightOffers(applyPrice(afterRefundableMulti), sortKey),
     );
   }
 
@@ -1679,44 +1851,22 @@ const FlightDetailTemplate: React.FC = () => {
     });
   }, [trip, multicityLegs.map((leg) => leg.toCode).join(",")]);
 
-  const openTimePicker = (key: string) => {
-    timeRefs.current[key]?.showPicker?.() || timeRefs.current[key]?.click();
-  };
 
   const flightResultsSummaryLine = useMemo(() => {
     if (!hasSearched || isSearching || searchError) return null;
 
-    let routeLabel = "Flights";
-    if (trip === "multicity") {
-      const legs = multicityLegs || [];
-      if (legs.length > 0) {
-        const leg = legs[0] as FlightLeg & {
-          fromOption?: { city?: string } | null;
-          toOption?: { city?: string } | null;
-        };
-        const fromL =
-          leg.fromOption?.city?.trim() || leg.fromCode?.trim() || "";
-        const toL = leg.toOption?.city?.trim() || leg.toCode?.trim() || "";
-        if (fromL && toL) {
-          routeLabel =
-            legs.length > 1
-              ? `${fromL} → ${toL} (+${legs.length - 1} more)`
-              : `${fromL} → ${toL}`;
-        } else {
-          routeLabel = "Multi-city";
-        }
-      } else {
-        routeLabel = "Multi-city";
-      }
-    } else {
-      const fromCity = fromOption?.city?.trim() || fromCode?.trim() || "";
-      const toCity = toOption?.city?.trim() || toCode?.trim() || "";
-      if (fromCity && toCity) {
-        routeLabel = `${fromCity} → ${toCity}`;
-      } else if (fromCode?.trim() && toCode?.trim()) {
-        routeLabel = `${fromCode.trim()} → ${toCode.trim()}`;
-      }
-    }
+    const routeLabelFromForm = buildFlightRouteSummaryLabel({
+      trip,
+      multicityLegs,
+      fromOption,
+      toOption,
+      fromCode,
+      toCode,
+    });
+    const routeLabel =
+      resultsSummaryRouteLabel != null && resultsSummaryRouteLabel !== ""
+        ? resultsSummaryRouteLabel
+        : routeLabelFromForm;
 
     let n = 0;
     let total = 0;
@@ -1748,6 +1898,7 @@ const FlightDetailTemplate: React.FC = () => {
     toOption,
     fromCode,
     toCode,
+    resultsSummaryRouteLabel,
     responseData.length,
     roundResponseData.length,
     multicityResponseData.length,
@@ -1876,26 +2027,34 @@ const FlightDetailTemplate: React.FC = () => {
             <>
               {/* First Row: Trip and Passengers */}
               <div className="flight-search-multicity-toprow">
-                <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                  <label className="header-labels-common">Trip</label>
-                  <SearchableDropdown
-                    options={segOptions.map((option) => ({
-                      id: option.value,
-                      value: option.value,
-                      label: option.label,
-                      disabled: false,
-                    }))}
-                    value={trip}
-                    onChange={(value) => setTrip(value as TripType)}
-                    placeholder="Select trip type"
-                    widthClass="w-full"
-                    searchPlaceholder="Search trip type..."
-                  />
-                </Flex>
+                {/* Spans same grid area as From + Swap + To; Departure/Cabin columns stay empty */}
+                <div className="flight-search-multicity-toprow-route">
+                  <Flex
+                    vertical
+                    className="flight-search-multicity-trip-cell min-w-0 w-full"
+                  >
+                    <label className="header-labels-common">Trip</label>
+                    <SearchableDropdown
+                      options={segOptions.map((option) => ({
+                        id: option.value,
+                        value: option.value,
+                        label: option.label,
+                        disabled: false,
+                      }))}
+                      value={trip}
+                      onChange={(value) => setTrip(value as TripType)}
+                      placeholder="Select trip type"
+                      widthClass="w-full"
+                      searchPlaceholder="Search trip type..."
+                    />
+                  </Flex>
 
-                <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                  <label className="header-labels-common flex items-center gap-2">
-                    Travellers
+                  <Flex
+                    vertical
+                    className="flight-search-multicity-travellers-cell min-w-0 w-full"
+                  >
+                    <label className="header-labels-common flex items-center gap-2">
+                      Travellers
                     <span className="relative inline-flex group/info">
                       <img
                         src={Info}
@@ -1921,17 +2080,34 @@ const FlightDetailTemplate: React.FC = () => {
                     />
                   </div>
                 </Flex>
+                </div>
               </div>
 
-              {/* ===== SECTION 2: FLIGHT LEGS (CENTERED) — each row: From/To, Cabin, Date ===== */}
-              {multicityLegs.map((leg, idx) => (
-                <div key={idx} className="relative">
-                  <div className="flight-search-multicity-legrow">
+              {/* ===== SECTION 2: FLIGHT LEGS — scroll when more than 2 rows ===== */}
+              <div
+                className={
+                  multicityLegs.length > 2
+                    ? "flight-search-multicity-legs-scroll"
+                    : "flight-search-multicity-legs"
+                }
+              >
+                {multicityLegs.map((leg, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="flight-search-multicity-legrow">
                     <div className="flight-search-multicity-route">
                       <TravelRoutePicker
-                        options={countriesForPicker as AirportOption[]}
+                        options={[]}
                         loading={countriesLoading}
-                        onSearchChange={setCountriesSearchTerm}
+                        fromOptions={fromCountriesForPicker as AirportOption[]}
+                        toOptions={toCountriesForPicker as AirportOption[]}
+                        fromLoading={
+                          qFromAirports.isLoading || qFromAirports.isFetching
+                        }
+                        toLoading={
+                          qToAirports.isLoading || qToAirports.isFetching
+                        }
+                        onFromSearchChange={setFromCountriesSearchTerm}
+                        onToSearchChange={setToCountriesSearchTerm}
                         value={{
                           fromCode: leg.fromCode,
                           toCode: leg.toCode,
@@ -1966,6 +2142,7 @@ const FlightDetailTemplate: React.FC = () => {
                         }}
                         disableSameSelection
                         widthClass="multicityFromTo"
+                        swapGutter={false}
                       />
                     </div>
 
@@ -2055,10 +2232,11 @@ const FlightDetailTemplate: React.FC = () => {
                     </button>
                   )}
                 </div>
-              ))}
+                ))}
+              </div>
 
-              {/* ===== SECTION 3: ADD ANOTHER STOP BUTTON (CENTERED) ===== */}
-              <Flex align="center" justify="center" className="mt-0 sm:mt-1">
+              {/* ===== SECTION 3: ADD ANOTHER STOP ===== */}
+              <div className="mt-0 flex w-full justify-center sm:mt-1">
                 <button
                   type="button"
                   onClick={() =>
@@ -2089,18 +2267,18 @@ const FlightDetailTemplate: React.FC = () => {
                   </svg>
                   Add another stop
                 </button>
-              </Flex>
+              </div>
 
-              {/* ===== SECTION 4: SEARCH BUTTON (BOTTOM CENTER) ===== */}
-              <Flex align="center" justify="center" className="mt-2 sm:mt-3">
+              {/* ===== SECTION 4: SEARCH ===== */}
+              <div className="mt-2 flex w-full justify-center sm:mt-3">
                 <CustomButton
                   className="searchFilterBtn"
                   onClick={() => handleSearch()}
-                  style={{ minWidth: "200px" }} // Minimum width for better appearance
+                  style={{ minWidth: "200px" }}
                 >
                   {isPending ? "Searching..." : "Search"}
                 </CustomButton>
-              </Flex>
+              </div>
             </>
           ) : (
             <div className="flight-search-detail-inputs">
@@ -2144,9 +2322,16 @@ const FlightDetailTemplate: React.FC = () => {
 
               <div className="flight-search-field flight-search-field--route">
                 <TravelRoutePicker
-                  options={countriesForPicker as AirportOption[]}
+                  options={[]}
                   loading={countriesLoading}
-                  onSearchChange={setCountriesSearchTerm}
+                  fromOptions={fromCountriesForPicker as AirportOption[]}
+                  toOptions={toCountriesForPicker as AirportOption[]}
+                  fromLoading={
+                    qFromAirports.isLoading || qFromAirports.isFetching
+                  }
+                  toLoading={qToAirports.isLoading || qToAirports.isFetching}
+                  onFromSearchChange={setFromCountriesSearchTerm}
+                  onToSearchChange={setToCountriesSearchTerm}
                   value={{
                     fromCode,
                     toCode,
@@ -2170,22 +2355,23 @@ const FlightDetailTemplate: React.FC = () => {
                   disableSameSelection
                   widthClass="fromToSelectWidth"
                   fromError={
-                    !loading && countries.length === 0
+                    !loading &&
+                    fromCountriesForPicker.length === 0
                       ? "Please try a different search."
                       : undefined
                   }
                   toError={
-                    !loading && countries.length === 0
+                    !loading &&
+                    toCountriesForPicker.length === 0
                       ? "Please try a different search."
                       : undefined
                   }
-                  onLoadMore={() => {
-                    if (countriesHasMore) {
-                      countriesFetchNext?.();
-                    }
-                  }}
-                  hasMore={countriesHasMore}
-                  loadingMore={countriesIsFetchingNext}
+                  fromOnLoadMore={qFromAirports.fetchNextPage}
+                  toOnLoadMore={qToAirports.fetchNextPage}
+                  fromHasMore={qFromAirports.hasNextPage}
+                  toHasMore={qToAirports.hasNextPage}
+                  fromLoadingMore={qFromAirports.isFetchingNextPage}
+                  toLoadingMore={qToAirports.isFetchingNextPage}
                 />
               </div>
 
@@ -2330,8 +2516,6 @@ const FlightDetailTemplate: React.FC = () => {
                 onArrivalRangeChange={(next) =>
                   handleSearchFiltersChange({ arrivalFlightRange: next })
                 }
-                openTimePicker={openTimePicker}
-                timeRefs={timeRefs}
                 airline={availableAirlineOptions}
                 selectedAirlineIds={selectedAirlineIds}
                 onAirlineToggle={(code, checked) =>
@@ -2350,6 +2534,40 @@ const FlightDetailTemplate: React.FC = () => {
                     null,
                   );
                 }}
+                refundFilterRefundable={refundFilterRefundable}
+                refundFilterNonRefundable={refundFilterNonRefundable}
+                onRefundFilterRefundableChange={(checked) => {
+                  setRefundFilterRefundable(checked);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    selectedPriceRange,
+                    selectedTransitRange,
+                    null,
+                    null,
+                    refundableFilterModeFromCheckboxes(
+                      checked,
+                      refundFilterNonRefundable,
+                    ),
+                  );
+                }}
+                onRefundFilterNonRefundableChange={(checked) => {
+                  setRefundFilterNonRefundable(checked);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    selectedPriceRange,
+                    selectedTransitRange,
+                    null,
+                    null,
+                    refundableFilterModeFromCheckboxes(
+                      refundFilterRefundable,
+                      checked,
+                    ),
+                  );
+                }}
                 onReset={() => {
                   setSelectedAirlineIds([]);
                   setSelectedMaxConnections(0);
@@ -2359,6 +2577,8 @@ const FlightDetailTemplate: React.FC = () => {
                   setSelectedTransitRange(null);
                   setBaggageIncludedOnly(false);
                   setAncillaryAddOnsOnly(false);
+                  setRefundFilterRefundable(false);
+                  setRefundFilterNonRefundable(false);
                   applyFlightSearchFilters(
                     { start: "", end: "" },
                     { start: "", end: "" },
@@ -2367,6 +2587,7 @@ const FlightDetailTemplate: React.FC = () => {
                     null,
                     "all",
                     false,
+                    "all",
                   );
                 }}
               />
@@ -2432,8 +2653,6 @@ const FlightDetailTemplate: React.FC = () => {
                 onArrivalRangeChange={(next) =>
                   handleSearchFiltersChange({ arrivalFlightRange: next })
                 }
-                openTimePicker={openTimePicker}
-                timeRefs={timeRefs}
                 airline={availableAirlineOptions}
                 selectedAirlineIds={selectedAirlineIds}
                 onAirlineToggle={(code, checked) =>
@@ -2452,6 +2671,40 @@ const FlightDetailTemplate: React.FC = () => {
                     null,
                   );
                 }}
+                refundFilterRefundable={refundFilterRefundable}
+                refundFilterNonRefundable={refundFilterNonRefundable}
+                onRefundFilterRefundableChange={(checked) => {
+                  setRefundFilterRefundable(checked);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    selectedPriceRange,
+                    selectedTransitRange,
+                    null,
+                    null,
+                    refundableFilterModeFromCheckboxes(
+                      checked,
+                      refundFilterNonRefundable,
+                    ),
+                  );
+                }}
+                onRefundFilterNonRefundableChange={(checked) => {
+                  setRefundFilterNonRefundable(checked);
+                  applyFlightSearchFilters(
+                    departureFlightRange,
+                    arrivalFlightRange,
+                    selectedAirlineIds,
+                    selectedPriceRange,
+                    selectedTransitRange,
+                    null,
+                    null,
+                    refundableFilterModeFromCheckboxes(
+                      refundFilterRefundable,
+                      checked,
+                    ),
+                  );
+                }}
                 onReset={() => {
                   setSelectedAirlineIds([]);
                   setSelectedMaxConnections(0);
@@ -2461,6 +2714,8 @@ const FlightDetailTemplate: React.FC = () => {
                   setSelectedTransitRange(null);
                   setBaggageIncludedOnly(false);
                   setAncillaryAddOnsOnly(false);
+                  setRefundFilterRefundable(false);
+                  setRefundFilterNonRefundable(false);
                   applyFlightSearchFilters(
                     { start: "", end: "" },
                     { start: "", end: "" },
@@ -2469,6 +2724,7 @@ const FlightDetailTemplate: React.FC = () => {
                     null,
                     "all",
                     false,
+                    "all",
                   );
                 }}
               />

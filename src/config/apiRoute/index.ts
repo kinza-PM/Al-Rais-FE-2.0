@@ -8,4 +8,12 @@ export const listingTables = {
   transitHours: "transit-hours",
   baggage: "baggage",
   airlines: "airline-codes",
+  flightCancelReason: "flight-cancel-reason",
 } as const;
+
+/** Optional extra `/getListingData` query params keyed like `listingTables`. */
+export const listingExtraParams: Partial<
+  Record<keyof typeof listingTables, Record<string, string>>
+> = {
+  cabinClasses: { sortBy: "sequence", sortOrder: "asc" },
+};

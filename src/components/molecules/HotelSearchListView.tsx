@@ -246,8 +246,8 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
             }
             label={
               isGetFavouritesLoading
-                ? "Loading favourites..."
-                : "Updating favourites..."
+                ? "Loading..."
+                : "Updating..."
             }
           />
           <div className="py-16 flex flex-col items-center text-center">
@@ -266,7 +266,7 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
           }
           label={
             isGetFavouritesLoading
-              ? "Loading favourites..."
+              ? "Loading..."
               : "Updating favourites..."
           }
         />

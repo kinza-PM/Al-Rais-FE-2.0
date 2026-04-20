@@ -1,6 +1,13 @@
 import type { FlightInitialBooking } from "../services/api/flightBooking";
 import type { AllSelections, AncillaryEntry } from "../store/useAncillaryStore";
 import { generateUUID } from "./helpers";
+import {
+  validateIdentityDocumentNumberForType,
+  validateInternationalPhoneParts,
+  validatePassengerNameTitleForPtc,
+  validatePassportDateOfIssue,
+  validatePersonName,
+} from "./travelerFieldValidation";
 
 export type FlightFinalReservedBooking = {
   bookingStatus: string;
@@ -22,6 +29,7 @@ export type SegmentSummary = {
   arrivalTerminal?: string;
   duration?: string;
   marketingAirline?: string;
+  marketingAirlineFullName?: string;
   operatingAirline?: string;
   cabinClass?: string;
   priceClassName?: string;
@@ -106,12 +114,31 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     // Always required fields
     if (isEmpty(pi.nameTitle)) {
       passengerErrors["passengerInfo.nameTitle"] = "Title is required.";
+    } else {
+      const titlePtc = validatePassengerNameTitleForPtc(p?.ptc, pi.nameTitle);
+      if (titlePtc) {
+        passengerErrors["passengerInfo.nameTitle"] = titlePtc;
+      }
     }
     if (isEmpty(pi.givenName)) {
       passengerErrors["passengerInfo.givenName"] = "Full name is required.";
+    } else {
+      const givenFmt = validatePersonName(pi.givenName, {
+        fieldLabel: "Full name",
+      });
+      if (givenFmt) {
+        passengerErrors["passengerInfo.givenName"] = givenFmt;
+      }
     }
     if (isEmpty(pi.surname)) {
       passengerErrors["passengerInfo.surname"] = "Surname is required.";
+    } else {
+      const surnameFmt = validatePersonName(pi.surname, {
+        fieldLabel: "Surname",
+      });
+      if (surnameFmt) {
+        passengerErrors["passengerInfo.surname"] = surnameFmt;
+      }
     }
     // API requires gender (VAL-004) - backend validates airPassengers[0].passengerInfo.gender
     if (isEmpty(pi.gender)) {
@@ -135,9 +162,30 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     if (isEmpty(phoneValue)) {
       passengerErrors["contact.contactsProvided.0.phone.0"] =
         "Phone (country code and number) is required.";
+    } else {
+      const phoneFmt = validateInternationalPhoneParts(
+        phone.areaCode,
+        phone.phoneNumber,
+      );
+      if (phoneFmt) {
+        passengerErrors["contact.contactsProvided.0.phone.0"] = phoneFmt;
+      }
     }
 
     // Date of birth
+    // if (pRules.isDateOfBirthMandatory) {
+    //   const bd = pi.birthDate ?? null;
+    //   if (!bd) {
+    //     passengerErrors["passengerInfo.birthDate"] = "Birth date is required.";
+    //   } else {
+    //     const bdDate = new Date(`${bd}T00:00:00`);
+    //     bdDate.setHours(0, 0, 0, 0);
+    //     if (bdDate > today) {
+    //       passengerErrors["passengerInfo.birthDate"] =
+    //         "Birth date cannot be in the future.";
+    //     }
+    //   }
+    // }
     if (pRules.isDateOfBirthMandatory) {
       const bd = pi.birthDate ?? null;
       if (!bd) {
@@ -148,6 +196,26 @@ export const validatePassengersForFlightProvisionalBookingFields = (
         if (bdDate > today) {
           passengerErrors["passengerInfo.birthDate"] =
             "Birth date cannot be in the future.";
+        } else {
+          const ageYears =
+            (today.getTime() - bdDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+          const ptc = (p?.ptc ?? "ADT").toUpperCase();
+          if (ptc === "ADT") {
+            if (ageYears < 12 || ageYears > 150) {
+              passengerErrors["passengerInfo.birthDate"] =
+                "Adult must be between 12 and 150 years old.";
+            }
+          } else if (ptc === "CHD") {
+            if (ageYears < 2 || ageYears > 11) {
+              passengerErrors["passengerInfo.birthDate"] =
+                "Child must be between 2 and 11 years old.";
+            }
+          } else if (ptc === "INF") {
+            if (ageYears < 0 || ageYears >= 2) {
+              passengerErrors["passengerInfo.birthDate"] =
+                "Infant must be under 2 years old.";
+            }
+          }
         }
       }
     }
@@ -173,6 +241,14 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     if (isEmpty(id.idDocumentNumber)) {
       passengerErrors["identityDocuments.0.idDocumentNumber"] =
         "Document number is required.";
+    } else {
+      const docFmt = validateIdentityDocumentNumberForType(
+        id.idDocumentNumber,
+        id.idType,
+      );
+      if (docFmt) {
+        passengerErrors["identityDocuments.0.idDocumentNumber"] = docFmt;
+      }
     }
     if (isEmpty(id.issuingCountryCode)) {
       passengerErrors["identityDocuments.0.issuingCountryCode"] =
@@ -185,6 +261,16 @@ export const validatePassengersForFlightProvisionalBookingFields = (
     if (pRules.isDateOfIssueMandatory && isEmpty(id.dateOfIssue)) {
       passengerErrors["identityDocuments.0.dateOfIssue"] =
         "Date of issue is required.";
+    } else if (!isEmpty(id.dateOfIssue)) {
+      const issueFmt = validatePassportDateOfIssue(
+        id.dateOfIssue,
+        pi.birthDate ?? null,
+        id.expiryDate ?? null,
+        today,
+      );
+      if (issueFmt) {
+        passengerErrors["identityDocuments.0.dateOfIssue"] = issueFmt;
+      }
     }
     // BK212: Residence country is not mandatory
     if (pRules.isPANMandatory && isEmpty(pi.PAN)) {
@@ -260,6 +346,25 @@ export const validatePassengersForFlightProvisionalBooking = (
     for (const r of alwaysRequired) {
       if (isEmpty(r.value)) return { valid: false, error: prefixFor(i, r.msg) };
     }
+
+    const titlePtc = validatePassengerNameTitleForPtc(p?.ptc, pi.nameTitle);
+    if (titlePtc) return { valid: false, error: prefixFor(i, titlePtc) };
+
+    const givenFmt = validatePersonName(pi.givenName, {
+      fieldLabel: "Full name",
+    });
+    if (givenFmt) return { valid: false, error: prefixFor(i, givenFmt) };
+
+    const surnameFmt = validatePersonName(pi.surname, { fieldLabel: "Surname" });
+    if (surnameFmt)
+      return { valid: false, error: prefixFor(i, surnameFmt) };
+
+    const phoneFmt = validateInternationalPhoneParts(
+      phone.areaCode,
+      phone.phoneNumber,
+    );
+    if (phoneFmt)
+      return { valid: false, error: prefixFor(i, phoneFmt) };
 
     if (pRules.isDateOfBirthMandatory) {
       const bd = pi.birthDate ?? null;
@@ -350,10 +455,104 @@ export const validatePassengersForFlightProvisionalBooking = (
       if (flag && isEmpty(value))
         return { valid: false, error: prefixFor(i, msg) };
     }
+
+    if (!isEmpty(id.idDocumentNumber)) {
+      const docFmt = validateIdentityDocumentNumberForType(
+        id.idDocumentNumber,
+        id.idType,
+      );
+      if (docFmt) return { valid: false, error: prefixFor(i, docFmt) };
+    }
+
+    if (!isEmpty(id.dateOfIssue)) {
+      const issueFmt = validatePassportDateOfIssue(
+        id.dateOfIssue,
+        pi.birthDate ?? null,
+        id.expiryDate ?? null,
+        today,
+      );
+      if (issueFmt) return { valid: false, error: prefixFor(i, issueFmt) };
+    }
   }
 
   return { valid: true };
 };
+
+/**
+ * If residence country is empty, copy issuing country (same behaviour as provisional booking).
+ */
+export function applyPassengersDefaultResidenceFromIssuing(
+  passengers: unknown,
+): any[] {
+  const list = Array.isArray(passengers) ? passengers : [];
+  return list.map((p: any) => {
+    const docs = p?.identityDocuments;
+    if (!Array.isArray(docs) || !docs[0]) return p;
+    const id0 = docs[0];
+    const res = String(id0.residenceCountryCode ?? "").trim();
+    const iss = String(id0.issuingCountryCode ?? "").trim();
+    if (res || !iss) return p;
+    const nextId0 = { ...id0, residenceCountryCode: iss };
+    return {
+      ...p,
+      identityDocuments: [nextId0, ...docs.slice(1)],
+    };
+  });
+}
+
+/**
+ * If residence country is empty, set it to issuing country so provisional booking APIs
+ * that still require a value succeed without forcing the user to pick residence.
+ */
+export function withDefaultResidenceCountryFromIssuing(
+  payload: FlightInitialBooking,
+): FlightInitialBooking {
+  const passengers = applyPassengersDefaultResidenceFromIssuing(
+    payload.passengers,
+  );
+  return { ...payload, passengers };
+};
+
+/** Map API `errorDetails.source` keys to `validatePassengersForFlightProvisionalBookingFields` paths. */
+export function mapFlightProvBookingApiErrorsToPassengerFields(
+  source: Record<string, string> | null | undefined,
+): Record<number, Record<string, string>> {
+  if (!source || typeof source !== "object") return {};
+  const out: Record<number, Record<string, string>> = {};
+
+  const normalizePath = (suffix: string): string => {
+    let s = suffix.replace(/identityDocuments\[0\]/gi, "identityDocuments.0");
+    s = s.replace(
+      /contact\.contactsProvided\[0\]/gi,
+      "contact.contactsProvided.0",
+    );
+    s = s.replace(/phone\[0\]/gi, "phone.0");
+    s = s.replace(/emailAddress\[0\]/gi, "emailAddress.0");
+    return s;
+  };
+
+  for (const [rawKey, message] of Object.entries(source)) {
+    if (typeof message !== "string" || !message.trim()) continue;
+    let idx = 0;
+    let rest = rawKey;
+    const air = rawKey.match(/^airPassengers\[(\d+)\]\.(.+)$/i);
+    if (air) {
+      idx = Number(air[1]);
+      rest = air[2];
+    } else {
+      const pass = rawKey.match(/^passengers\[(\d+)\]\.(.+)$/i);
+      if (pass) {
+        idx = Number(pass[1]);
+        rest = pass[2];
+      }
+    }
+    const pathSuffix = normalizePath(rest);
+    if (!pathSuffix) continue;
+    if (!out[idx]) out[idx] = {};
+    out[idx][pathSuffix] = message.trim();
+  }
+  return out;
+}
 
 // Field-level validation for payment
 export const validateReservationFlightBookingDataFields = (
@@ -607,6 +806,7 @@ export function transformFlightJourneysToObjects(
         arrivalTerminal: s.arrivalTerminal,
         duration: s.duration,
         marketingAirline: s.marketingAirline,
+        marketingAirlineFullName: s.marketingAirlineFullName,
         operatingAirline: s.operatingAirline,
         cabinClass: s.cabinClass,
         priceClassName: s.priceClassName,
@@ -698,3 +898,141 @@ export const buildAncillaryPayload = (
 
   return { data: { offerId, searchKey, selectedAncillaries } };
 };
+
+export type AncillaryOfferPriceInfo = {
+  amount: number;
+  currency: string;
+  label: string;
+  category: "baggage" | "meals" | "seats" | "other";
+};
+
+/**
+ * Maps ancillary offer IDs to selling price + label from the ancillary search response
+ * (baggages, meals, otherAncillaries, seatMap).
+ */
+export function buildAncillaryOfferPriceMap(
+  flightAncillarySearch: any,
+): Map<string, AncillaryOfferPriceInfo> {
+  const map = new Map<string, AncillaryOfferPriceInfo>();
+
+  const pushFromList = (
+    list: any[] | undefined,
+    category: AncillaryOfferPriceInfo["category"],
+  ) => {
+    if (!Array.isArray(list)) return;
+    for (const item of list) {
+      const id = item?.ancillary?.ancillaryOfferId;
+      if (!id) continue;
+      const fare = item?.fare?.[0];
+      const amount = Number(fare?.sellingAmount ?? 0) || 0;
+      const currency = String(fare?.sellingCurrency || "USD");
+      const label =
+        item?.ancillary?.ancillaryDescription ||
+        item?.ancillary?.ancillaryCode ||
+        String(id);
+      map.set(String(id), { amount, currency, label, category });
+    }
+  };
+
+  pushFromList(flightAncillarySearch?.baggages, "baggage");
+  pushFromList(flightAncillarySearch?.meals, "meals");
+  pushFromList(flightAncillarySearch?.otherAncillaries, "other");
+
+  const seatMap = flightAncillarySearch?.seatMap;
+  if (Array.isArray(seatMap)) {
+    for (const seatMapItem of seatMap) {
+      for (const cabin of seatMapItem?.cabin || []) {
+        const decks = cabin?.deck;
+        const deckList = Array.isArray(decks)
+          ? decks
+          : decks
+            ? [decks]
+            : [];
+        for (const deck of deckList) {
+          for (const row of deck?.airRow || []) {
+            for (const seat of row?.airSeats || []) {
+              if (seat?.noSeat) continue;
+              const id =
+                seat?.ancillaryOfferId ||
+                seat?.seatOffer?.ancillaryOfferId ||
+                seat?.offer?.ancillaryOfferId ||
+                seat?.seatOfferId;
+              if (!id) continue;
+              const fare = seat?.fare?.[0];
+              const amount = Number(fare?.sellingAmount ?? 0) || 0;
+              const currency = String(fare?.sellingCurrency || "USD");
+              const seatLabel =
+                seat?.seatNumber || seat?.seatCode || "";
+              const label = seatLabel
+                ? `Seat ${seatLabel}`
+                : `Seat ${String(id)}`;
+              map.set(String(id), {
+                amount,
+                currency,
+                label,
+                category: "seats",
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return map;
+}
+
+export type LiveAncillarySummary = {
+  totalAmount: number;
+  currency: string;
+  selectedCount: number;
+  breakdown: Array<{
+    category: "baggage" | "meals" | "seats" | "other";
+    label: string;
+    amount: number;
+    currency: string;
+    ancillaryOfferId: string;
+  }>;
+};
+
+/**
+ * Real-time ancillary totals from current UI selections + ancillary search catalog prices.
+ */
+export function computeLiveAncillarySummary(
+  flightAncillarySearch: any,
+  all: AllSelections,
+  offerId: string,
+  searchKey: string,
+  fallbackCurrency: string,
+): LiveAncillarySummary {
+  const payload = buildAncillaryPayload(all, offerId, searchKey);
+  const selected = payload?.data?.selectedAncillaries || [];
+  const priceMap = buildAncillaryOfferPriceMap(flightAncillarySearch);
+
+  const breakdown: LiveAncillarySummary["breakdown"] = [];
+  let totalAmount = 0;
+  let currency = fallbackCurrency;
+
+  for (const sel of selected) {
+    const id = String(sel.ancillaryOfferId);
+    const info = priceMap.get(id);
+    const amount = info?.amount ?? 0;
+    const cur = info?.currency || fallbackCurrency;
+    currency = cur;
+    totalAmount += amount;
+    breakdown.push({
+      category: info?.category ?? "other",
+      label: info?.label ?? id,
+      amount,
+      currency: cur,
+      ancillaryOfferId: id,
+    });
+  }
+
+  return {
+    totalAmount,
+    currency,
+    selectedCount: selected.length,
+    breakdown,
+  };
+}

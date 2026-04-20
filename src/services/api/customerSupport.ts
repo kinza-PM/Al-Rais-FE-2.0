@@ -1,3 +1,4 @@
+import { ensureBrowserId } from "../../utils/browserId";
 import { api, toApiError } from "../axios";
 
 export type TicketReason = {
@@ -16,7 +17,10 @@ export type TicketReasonsResponse = {
 export async function getTicketReasons<TResp = TicketReasonsResponse>(): Promise<TResp> {
   const source = "getTicketReasons";
   try {
-    return await api.get<TResp>("/getListingData?tableName=ticket-reasons");
+    return await api.get<TResp>("/getListingData", {
+      tableName: "ticket-reasons",
+      browserId: ensureBrowserId(),
+    });
   } catch (err) {
     throw toApiError(source, err);
   }

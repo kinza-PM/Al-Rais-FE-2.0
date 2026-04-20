@@ -16,6 +16,7 @@ import type {
   PassengerSchema,
   CabinClassOption,
 } from "../../features/flights/types";
+import { useAiprortOptions } from "../../hooks/masterListings/listing";
 import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
 import { useFlightStore } from "../../store/UseFlightStore";
 import { useNavigate } from "react-router-dom";
@@ -34,7 +35,10 @@ const FlightHeroSection: React.FC = () => {
   // const [arrivalDate, setArrivalDate] = useState<Date | null>(new Date());
   const [departDate, setDepartDate] = useState<Date | null>(null);
   const [arrivalDate, setArrivalDate] = useState<Date | null>(null);
-  const [countriesSearchTerm, setCountriesSearchTerm] = useState<string>("");
+  const [fromCountriesSearchTerm, setFromCountriesSearchTerm] =
+    useState<string>("");
+  const [toCountriesSearchTerm, setToCountriesSearchTerm] =
+    useState<string>("");
   const [multicityLegs, setMulticityLegs] = useState<MultiCityLeg[]>([
     { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
     { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
@@ -68,16 +72,17 @@ const FlightHeroSection: React.FC = () => {
 
   const {
     flightTypes,
-    countries,
     passengers,
     cabinClasses,
     loading,
     loadingMap,
     errorMap,
-    countriesHasMore,
-    countriesFetchNext,
-    countriesIsFetchingNext,
-  } = useMasterListings({ countriesSearchTerm });
+  } = useMasterListings({
+    include: ["flightTypes", "passengers", "cabinClasses"],
+  });
+
+  const qFromAirports = useAiprortOptions(true, fromCountriesSearchTerm, "from");
+  const qToAirports = useAiprortOptions(true, toCountriesSearchTerm, "to");
 
   const navigate = useNavigate();
   const { flight, setFlight } = useFlightStore();
@@ -87,14 +92,22 @@ const FlightHeroSection: React.FC = () => {
 
   // Don't block the whole page with loader while user is typing/searching in From/To.
   const isInitialLoading =
-    !countriesSearchTerm.trim() && loading && countries.length === 0;
+    !fromCountriesSearchTerm.trim() &&
+    !toCountriesSearchTerm.trim() &&
+    loading &&
+    (qFromAirports.data.length === 0 || qToAirports.data.length === 0);
 
   const nsLoading = useMemo(
     () => ({
       flightTypes: isInitialLoading,
       // For countries, use field-level loading so the dropdown
       // can show a loading state during search as well.
-      countries: loadingMap?.countries ?? isInitialLoading,
+      countries:
+        qFromAirports.isLoading ||
+        qFromAirports.isFetching ||
+        qToAirports.isLoading ||
+        qToAirports.isFetching ||
+        isInitialLoading,
       passengers: isInitialLoading,
       cabinClasses: isInitialLoading,
     }),
@@ -162,7 +175,8 @@ const FlightHeroSection: React.FC = () => {
         { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
       ]);
     }
-    setCountriesSearchTerm("");
+    setFromCountriesSearchTerm("");
+    setToCountriesSearchTerm("");
     setHasAttemptedValidation(false);
     setValidationErrors({
       fromCode: "",
@@ -189,7 +203,8 @@ const FlightHeroSection: React.FC = () => {
     setPaxCounts({});
     setPaxOrder([]);
     setSelectedCabinClassId("5");
-    setCountriesSearchTerm("");
+    setFromCountriesSearchTerm("");
+    setToCountriesSearchTerm("");
     setMulticityLegs([
       { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
       { fromCode: "", toCode: "", date: null, cabinClassId: "5" },
@@ -364,7 +379,10 @@ const FlightHeroSection: React.FC = () => {
       return;
     }
 
-    const countriesArr = countries as AirportOption[];
+    const countriesArr = [
+      ...(qFromAirports.data as AirportOption[]),
+      ...(qToAirports.data as AirportOption[]),
+    ];
 
     if (trip === "multicity") {
       const legsForStore = multicityLegs
@@ -508,11 +526,19 @@ const FlightHeroSection: React.FC = () => {
           >
             {trip === "oneway" && (
               <OneWayForm
-                countries={countries as AirportOption[]}
                 loadingCountries={nsLoading.countries}
-                onSearchCountries={setCountriesSearchTerm}
                 fromCode={fromCode}
                 toCode={toCode}
+                fromCountries={qFromAirports.data as AirportOption[]}
+                toCountries={qToAirports.data as AirportOption[]}
+                loadingFromCountries={
+                  qFromAirports.isLoading || qFromAirports.isFetching
+                }
+                loadingToCountries={
+                  qToAirports.isLoading || qToAirports.isFetching
+                }
+                onSearchFromCountries={setFromCountriesSearchTerm}
+                onSearchToCountries={setToCountriesSearchTerm}
                 departDateValue={departDate}
                 onChangeFrom={setFromCode}
                 onChangeTo={setToCode}
@@ -527,12 +553,12 @@ const FlightHeroSection: React.FC = () => {
                 fromError={
                   hasAttemptedValidation
                     ? validationErrors.fromCode
-                    : errorMap?.countries || ""
+                    : qFromAirports.error?.message || ""
                 }
                 toError={
                   hasAttemptedValidation
                     ? validationErrors.toCode
-                    : errorMap?.countries || ""
+                    : qToAirports.error?.message || ""
                 }
                 departDateError={
                   hasAttemptedValidation ? validationErrors.departDate : ""
@@ -543,19 +569,30 @@ const FlightHeroSection: React.FC = () => {
                 cabinClassError={
                   hasAttemptedValidation ? validationErrors.cabinClass : ""
                 }
-                countriesHasMore={countriesHasMore}
-                countriesFetchNext={countriesFetchNext}
-                countriesLoadingMore={countriesIsFetchingNext}
+                fromCountriesHasMore={qFromAirports.hasNextPage}
+                toCountriesHasMore={qToAirports.hasNextPage}
+                fromCountriesFetchNext={qFromAirports.fetchNextPage}
+                toCountriesFetchNext={qToAirports.fetchNextPage}
+                fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
+                toCountriesLoadingMore={qToAirports.isFetchingNextPage}
               />
             )}
 
             {trip === "roundtrip" && (
               <RoundTripForm
-                countries={countries as AirportOption[]}
                 loadingCountries={nsLoading.countries}
-                onSearchCountries={setCountriesSearchTerm}
                 fromCode={fromCode}
                 toCode={toCode}
+                fromCountries={qFromAirports.data as AirportOption[]}
+                toCountries={qToAirports.data as AirportOption[]}
+                loadingFromCountries={
+                  qFromAirports.isLoading || qFromAirports.isFetching
+                }
+                loadingToCountries={
+                  qToAirports.isLoading || qToAirports.isFetching
+                }
+                onSearchFromCountries={setFromCountriesSearchTerm}
+                onSearchToCountries={setToCountriesSearchTerm}
                 departDateValue={departDate}
                 arrivalDateValue={arrivalDate}
                 onChangeFrom={setFromCode}
@@ -572,12 +609,12 @@ const FlightHeroSection: React.FC = () => {
                 fromError={
                   hasAttemptedValidation
                     ? validationErrors.fromCode
-                    : errorMap?.countries || ""
+                    : qFromAirports.error?.message || ""
                 }
                 toError={
                   hasAttemptedValidation
                     ? validationErrors.toCode
-                    : errorMap?.countries || ""
+                    : qToAirports.error?.message || ""
                 }
                 departDateError={
                   hasAttemptedValidation ? validationErrors.departDate : ""
@@ -591,17 +628,28 @@ const FlightHeroSection: React.FC = () => {
                 cabinClassError={
                   hasAttemptedValidation ? validationErrors.cabinClass : ""
                 }
-                countriesHasMore={countriesHasMore}
-                countriesFetchNext={countriesFetchNext}
-                countriesLoadingMore={countriesIsFetchingNext}
+                fromCountriesHasMore={qFromAirports.hasNextPage}
+                toCountriesHasMore={qToAirports.hasNextPage}
+                fromCountriesFetchNext={qFromAirports.fetchNextPage}
+                toCountriesFetchNext={qToAirports.fetchNextPage}
+                fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
+                toCountriesLoadingMore={qToAirports.isFetchingNextPage}
               />
             )}
 
             {trip === "multicity" && (
               <MultiCityForm
-                countries={countries as AirportOption[]}
                 loadingCountries={nsLoading.countries}
-                onSearchCountries={setCountriesSearchTerm}
+                fromCountries={qFromAirports.data as AirportOption[]}
+                toCountries={qToAirports.data as AirportOption[]}
+                loadingFromCountries={
+                  qFromAirports.isLoading || qFromAirports.isFetching
+                }
+                loadingToCountries={
+                  qToAirports.isLoading || qToAirports.isFetching
+                }
+                onSearchFromCountries={setFromCountriesSearchTerm}
+                onSearchToCountries={setToCountriesSearchTerm}
                 passengerSchema={passengers as PassengerSchema}
                 loadingPassengers={nsLoading.passengers}
                 cabinClasses={cabinClasses as CabinClassOption[]}
@@ -612,12 +660,12 @@ const FlightHeroSection: React.FC = () => {
                 fromError={
                   hasAttemptedValidation
                     ? validationErrors.fromCode
-                    : errorMap?.countries || ""
+                    : qFromAirports.error?.message || ""
                 }
                 toError={
                   hasAttemptedValidation
                     ? validationErrors.toCode
-                    : errorMap?.countries || ""
+                    : qToAirports.error?.message || ""
                 }
                 departDateError={
                   hasAttemptedValidation ? validationErrors.departDate : ""
@@ -628,9 +676,12 @@ const FlightHeroSection: React.FC = () => {
                 cabinClassError={
                   hasAttemptedValidation ? validationErrors.cabinClass : ""
                 }
-                countriesHasMore={countriesHasMore}
-                countriesFetchNext={countriesFetchNext}
-                countriesLoadingMore={countriesIsFetchingNext}
+                fromCountriesHasMore={qFromAirports.hasNextPage}
+                toCountriesHasMore={qToAirports.hasNextPage}
+                fromCountriesFetchNext={qFromAirports.fetchNextPage}
+                toCountriesFetchNext={qToAirports.fetchNextPage}
+                fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
+                toCountriesLoadingMore={qToAirports.isFetchingNextPage}
               />
             )}
 

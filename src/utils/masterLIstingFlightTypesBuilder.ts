@@ -22,6 +22,8 @@ import type {
   CountryItem,
   CountryOption,
   CityOption,
+  FlightCancelReasonItem,
+  FlightCancelReasonSelectOption,
 } from "../features/flights/types/index";
 
 export function normalizeTripKey(name: string): TripType | null {
@@ -177,19 +179,19 @@ export function buildPriceSortOptions(
 }
 
 const STOPS_LABEL_MAP: Record<string, string> = {
-  "0": "0",
-  "01": "01",
-  "1": "01",
-  "02": "02",
-  "2": "02",
+  "0": "non-stop",
+  "01": "one-stop",
+  "1": "one-stop",
+  "02": "two-stop",
+  "2": "two-stop",
   // API may return human-readable strings as category values
-  "Non-stop": "0",
-  "non-stop": "0",
-  "nonstop": "0",
-  "1 Stop": "01",
-  "1 stop": "01",
-  "2 Stops": "02",
-  "2 stops": "02",
+  "Non-stop": "non-stop",
+  "non-stop": "non-stop",
+  "nonstop": "non-stop",
+  "1 Stop": "one-stop",
+  "1 stop": "one-stop",
+  "2 Stops": "two-stop",
+  "2 stops": "two-stop",
 };
 
 export function buildNumberStopsOptions(
@@ -205,11 +207,15 @@ export function buildNumberStopsOptions(
         (Number.isNaN(numVal)
           ? val
           : numVal === 0
-            ? "0"
-            : String(numVal).padStart(2, "0"));
+            ? "non-stop"
+            : numVal === 1
+              ? "one-stop"
+              : numVal === 2
+                ? "two-stop"
+                : String(numVal).padStart(2, "0"));
       return { label, value: val };
     });
-  if (!opts.length) return [{ label: "0", value: "0" }];
+  if (!opts.length) return [{ label: "non-stop", value: "0" }];
   return opts.sort((a, b) => parseInt(a.value, 10) - parseInt(b.value, 10));
 }
 
@@ -266,4 +272,32 @@ export function buildCityOptions(cities: string[]): CityOption[] {
       label: city,
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
+}
+
+export function buildFlightCancelReasonOptions(
+  items: FlightCancelReasonItem[],
+): FlightCancelReasonSelectOption[] {
+  const active = (items || []).filter((it) => it.status === 1);
+  /** One option per distinct reason label; first row wins when labels duplicate (same id sent for that label). */
+  const byReasonKey = new Map<string, FlightCancelReasonItem>();
+  for (const it of active) {
+    const label = String(it.reason ?? "").trim();
+    if (!label) continue;
+    const key = label.toLowerCase();
+    if (!byReasonKey.has(key)) byReasonKey.set(key, it);
+  }
+  const list = [...byReasonKey.values()];
+  const isOther = (s: string) => s.trim().toLowerCase() === "other";
+  list.sort((a, b) => {
+    const ra = String(a.reason ?? "").trim();
+    const rb = String(b.reason ?? "").trim();
+    const oa = isOther(ra);
+    const ob = isOther(rb);
+    if (oa !== ob) return oa ? 1 : -1;
+    return ra.localeCompare(rb, undefined, { sensitivity: "base" });
+  });
+  return list.map((it) => ({
+    value: String(it.id ?? "").trim(),
+    label: String(it.reason ?? "").trim(),
+  }));
 }

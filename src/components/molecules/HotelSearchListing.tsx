@@ -34,6 +34,7 @@ import Loader from "../atoms/Loader";
 import {
   filterHotels,
   sortHotels,
+  createEmptyHotelListingFilters,
   // cloneHotelListingFilters,
   type HotelFilters,
   type SortOption,
@@ -101,7 +102,14 @@ const HotelSearchListing: React.FC = () => {
     return () => ro.disconnect();
   }, []);
 
-  const { hotel, setHotel, hotelView, setHotelView } = useHotelStore();
+  const {
+    hotel,
+    setHotel,
+    hotelView,
+    setHotelView,
+    setHotelListingFilters,
+    setHotelListingSortOption,
+  } = useHotelStore();
 
   const { passengers } = useMasterListings({
     include: ["passengers"],
@@ -146,6 +154,11 @@ const HotelSearchListing: React.FC = () => {
   const [hotelSearchResults, setHotelSearchResults] = useState<any[]>([]);
   const [hotelResultsSerial, setHotelResultsSerial] = useState(0);
   const [apiError, setApiError] = useState<string | null>(null);
+  /** Location label for the results line — tied to the last successful API search, not draft form edits. */
+  const [resultsSummaryLocation, setResultsSummaryLocation] = useState<{
+    city: string;
+    country: string;
+  } | null>(null);
 
   // Filter and sort state
   const [filters, setFilters] = useState<HotelFilters>({
@@ -296,6 +309,7 @@ const HotelSearchListing: React.FC = () => {
     setApiError(null);
     setHotelSearchResults([]);
     setHasSearched(false);
+    setResultsSummaryLocation(null);
     shouldAutoSearchRef.current = true;
   }, [hotel, convertPaxToRoom]);
 
@@ -331,9 +345,22 @@ const HotelSearchListing: React.FC = () => {
     }
 
     setValidationError(null);
+
+    const emptyFilters = createEmptyHotelListingFilters();
+    setFilters(emptyFilters);
+    setSortOption("");
+    setHotelListingFilters(emptyFilters);
+    setHotelListingSortOption("");
+
+    const locationForResults = {
+      city: searchState.city?.trim() ?? "",
+      country: searchState.country?.trim() ?? "",
+    };
+
     // console.log(searchState);
     try {
       const response = await mutateAsync(searchState);
+      setResultsSummaryLocation(locationForResults);
       // console.log("hotel search api response-----------", response);
       if (response?.data && Array.isArray(response.data)) {
         const searchKey = response?.commonData?.searchKey || "";
@@ -369,7 +396,16 @@ const HotelSearchListing: React.FC = () => {
       setHotelSearchResults([]);
       setHotelResultsSerial((s) => s + 1);
     }
-  }, [searchState, validateForm, mutateAsync, paxData, childAges, setHotel]);
+  }, [
+    searchState,
+    validateForm,
+    mutateAsync,
+    paxData,
+    childAges,
+    setHotel,
+    setHotelListingFilters,
+    setHotelListingSortOption,
+  ]);
 
   // Auto-trigger search when form is pre-filled from store (first visit from hero)
   useEffect(() => {
@@ -427,8 +463,16 @@ const HotelSearchListing: React.FC = () => {
 
   const hotelResultsSummaryLine = React.useMemo(() => {
     if (!hasSearched || isPending || apiError || validationError) return null;
-    const city = searchState.city?.trim() || "";
-    const country = searchState.country?.trim() || "";
+    const src =
+      resultsSummaryLocation &&
+      (resultsSummaryLocation.city || resultsSummaryLocation.country)
+        ? resultsSummaryLocation
+        : {
+            city: searchState.city?.trim() ?? "",
+            country: searchState.country?.trim() ?? "",
+          };
+    const city = src.city?.trim() || "";
+    const country = src.country?.trim() || "";
     /** Primary label before colon (e.g. "Karachi: 564 properties found"). */
     const locationLabel = city || country || "Results";
     const total = hotelSearchResults.length;
@@ -448,6 +492,8 @@ const HotelSearchListing: React.FC = () => {
     validationError,
     searchState.city,
     searchState.country,
+    resultsSummaryLocation?.city,
+    resultsSummaryLocation?.country,
     hotelSearchResults.length,
     filteredAndSortedHotels.length,
   ]);
@@ -503,8 +549,11 @@ const HotelSearchListing: React.FC = () => {
                 valueCountry={searchState.country}
                 valueCity={searchState.city}
                 onChange={({ country, city }) => {
-                  handleSearchChange("country", country);
-                  handleSearchChange("city", city);
+                  setSearchState((prev) => ({
+                    ...prev,
+                    country,
+                    city,
+                  }));
                 }}
                 label="Destination"
                 placeholder="Where are you traveling to?"

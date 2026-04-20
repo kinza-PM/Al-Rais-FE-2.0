@@ -338,12 +338,14 @@ input[type="number"] {
 }
 
 @media (min-width: 1024px) {
-  /* Desktop grid (responsive). Prevent overflow/clipping on mid-width screens. */
+  /* Desktop grid: proportional columns so the bar uses full width (like hotel search). */
   .flight-search-page .flight-search-detail-inputs {
-    grid-template-columns: 220px 220px minmax(280px, 1fr) 56px minmax(
-        280px,
-        1fr
-      );
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(0, 1.35fr)
+      56px
+      minmax(0, 1.35fr);
     grid-template-areas:
       "trip cabin from swap to"
       "travellers departure . . search";
@@ -395,10 +397,9 @@ input[type="number"] {
     grid-area: to;
   }
 
-  /* Keep From/To stable but allow shrink on smaller desktops */
   .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
     width: 100%;
-    max-width: 396px;
+    max-width: 100%;
     min-width: 0;
   }
 
@@ -408,14 +409,15 @@ input[type="number"] {
   }
 }
 
-/* Ultra-wide / Figma-perfect desktop sizing */
+/* Ultra-wide: same proportional stretch (no fixed caps that leave dead space). */
 @media (min-width: 1600px) {
   .flight-search-page .flight-search-detail-inputs {
-    grid-template-columns: 280px 280px 396px 48px 396px;
-  }
-
-  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
-    max-width: 396px;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(0, 1.35fr)
+      56px
+      minmax(0, 1.35fr);
   }
 }
 
@@ -1020,31 +1022,102 @@ input[type="number"] {
   margin-bottom: 20px;
 }
 
-/* Flight Search Detail: Multi-city alignment (NOT home) */
+/* Flight Search Detail: Multi-city — top row grid matches leg rows; Trip+Travellers only in From+Swap+To span */
 .flight-search-page .flight-search-multicity-toprow {
   width: 100%;
   max-width: 100%;
   display: grid;
-  grid-template-columns: 280px 280px;
-  column-gap: 8px;
-  row-gap: 8px;
-  align-items: end;
-  justify-content: start;
+  /* Same five tracks as .flight-search-multicity-legrow; cols 4–5 stay empty on this row */
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    56px
+    minmax(0, 1.15fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 12px;
+  align-items: start;
+  box-sizing: border-box;
+  padding-top: 12px;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 1024px) {
+  .flight-search-page .flight-search-multicity-toprow {
+    padding-top: 16px;
+    margin-bottom: 16px;
+    column-gap: 16px;
+  }
+}
+
+.flight-search-page .flight-search-multicity-toprow-route {
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .flight-search-page .flight-search-multicity-toprow-route {
+    column-gap: 16px;
+  }
+}
+
+/* Trip | Travellers each fill half of the route band; labels + inputs align with leg rows */
+.flight-search-page .flight-search-multicity-trip-cell,
+.flight-search-page .flight-search-multicity-travellers-cell {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Leg list: vertical stack; scroll area clamps height when >2 legs (JS adds .flight-search-multicity-legs-scroll) */
+.flight-search-page .flight-search-multicity-legs,
+.flight-search-page .flight-search-multicity-legs-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.flight-search-page .flight-search-multicity-legs-scroll {
+  max-height: min(272px, 45vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Room for row remove (absolute -right-10) + scrollbar */
+  padding-right: 52px;
+  margin-top: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 .flight-search-page .flight-search-multicity-legrow {
   width: 100%;
   max-width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 260px) 44px minmax(0, 260px) minmax(
-      0,
-      200px
-    ) minmax(0, 200px);
-  column-gap: 6px;
-  row-gap: 8px;
-  align-items: end;
+  /* From | swap | To | Departure | Cabin — swap column wide enough for 48px button + gap */
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    56px
+    minmax(0, 1.15fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 12px;
+  align-items: start;
   margin-top: 0;
-  justify-content: start;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .flight-search-page .flight-search-multicity-legrow {
+    column-gap: 16px;
+  }
 }
 
 /* Let TravelRoutePicker's three siblings become the first 3 grid columns */
@@ -1054,23 +1127,33 @@ input[type="number"] {
 
 .flight-search-page .multicityFromTo {
   width: 100%;
-  max-width: 260px;
+  max-width: 100%;
   min-width: 0;
 }
 
+/* Swap sits in the label row: offset down to align with From/To inputs */
 .flight-search-page .flight-search-multicity-legrow .fromToBtn {
-  width: 44px !important;
-  height: 44px !important;
-  min-width: 44px !important;
-  max-width: 44px !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
   margin: 0 !important;
+  margin-top: 22px !important;
   justify-self: center;
-  align-self: center;
+  align-self: start;
 }
 
 .flight-search-page .flight-search-multicity-side {
   min-width: 0;
-  max-width: 200px;
+  width: 100%;
+  max-width: none;
+}
+
+/* Global .searchFilterBtn uses margin-left:auto — center the Multi-city Search button */
+.flight-search-page .flight-search-form--multicity .searchFilterBtn {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  align-self: center !important;
 }
 
 /* Airport dropdown: wider panel like design reference */
@@ -1113,6 +1196,13 @@ input[type="number"] {
     row-gap: 8px;
   }
 
+  .flight-search-page .flight-search-multicity-toprow-route {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
+    column-gap: 0;
+    row-gap: 8px;
+  }
+
   .flight-search-page .flight-search-multicity-legrow {
     grid-template-columns: 1fr;
     column-gap: 0;
@@ -1142,7 +1232,8 @@ input[type="number"] {
   }
 
   .flight-search-page .flight-search-multicity-toprow,
-  .flight-search-page .flight-search-multicity-legrow {
+  .flight-search-page .flight-search-multicity-legrow,
+  .flight-search-page .flight-search-multicity-toprow-route {
     gap: 6px;
   }
 
@@ -1153,6 +1244,34 @@ input[type="number"] {
   .flight-search-page .flight-search-divider {
     margin-top: 8px;
     margin-bottom: 10px;
+  }
+}
+
+/* Landing page — multi-city form: scrollable legs; swap aligns with From/To like search page */
+.multicity-hero-form .multicity-hero-legs-scroll {
+  max-height: min(280px, 50vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 12px;
+  margin-top: 2px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.multicity-hero-form .multicity-hero-legrow .fromToBtn {
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  margin: 0 !important;
+  margin-top: 22px !important;
+  justify-self: center;
+  align-self: start;
+}
+
+@media (max-width: 767.98px) {
+  .multicity-hero-form .multicity-hero-legrow .fromToBtn {
+    margin: 8px auto 0 !important;
   }
 }
 
@@ -1652,21 +1771,26 @@ input[type="number"] {
   }
 }
 
-/* Number of stops â€” equal-width pill buttons (Figma: 0 / 01 / 02) */
+/* Number of stops — row1: non-stop + one-stop; row2: two-stop full width (3 options) */
 .flight-stops-pills {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   width: 100%;
+}
+
+.flight-stops-pill:nth-child(3) {
+  grid-column: 1 / -1;
 }
 
 .flight-stops-pill {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
+  min-height: 44px;
+  height: auto;
   margin: 0;
-  padding: 0 8px;
+  padding: 8px 6px;
   border-radius: 999px;
   border: 1.5px solid #c2cad6;
   background: #ffffff;
@@ -1674,9 +1798,11 @@ input[type="number"] {
   font-weight: 600;
   font-family: Inter, sans-serif;
   color: #0a0c0f;
-  line-height: 1;
+  line-height: 1.25;
   cursor: pointer;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  word-break: break-word;
   transition:
     background 0.15s ease,
     color 0.15s ease,
@@ -2988,6 +3114,108 @@ input[type="number"] {
   text-align: left;
 }
 
+/* Pricing detail: each label row aligns with its feature row (synced grid) */
+.pricingCardsWrap .pricingDetailSyncRow.ant-row {
+  align-items: stretch !important;
+}
+
+.pricingCardsWrap .pricingDetailSyncRow .parahAlign {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pricingCardsWrap .pricingDetailSyncRow .priceCardHeadings,
+.pricingCardsWrap .pricingDetailSyncRow .cardPrice {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pricingDetailLabelCell {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+
+.pricingDetailLabelCell p {
+  text-align: center !important;
+  line-height: 1.25 !important;
+  margin: 0;
+}
+
+.pricingDetailMultiBlock {
+  margin-bottom: 20px;
+}
+
+.pricingDetailMultiBlock:last-child {
+  margin-bottom: 0;
+}
+
+.pricingDetailStatusIcon {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.pricingDetailPaxType {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.pricingDetailPaxSep {
+  display: inline;
+  margin: 0 2px;
+  padding: 0;
+  color: #94a3b8;
+  font-weight: 400;
+  font-size: 11px;
+}
+
+/* BaggageInfoModal: long GDS text + label alignment */
+.baggageInfoModalRow {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px 16px;
+  font-size: 14px;
+}
+
+.baggageInfoModalLabel {
+  flex: 0 1 auto;
+  min-width: min(132px, 42%);
+  color: #64748b;
+}
+
+.baggageInfoModalValue {
+  flex: 1 1 220px;
+  min-width: 0;
+  font-weight: 600;
+  color: #0f172a;
+  text-align: right;
+  word-break: break-word;
+  line-height: 1.45;
+}
+
+@media (max-width: 420px) {
+  .baggageInfoModalValue {
+    flex-basis: 100%;
+    text-align: left;
+  }
+}
+
+p.pricingDetailFeatureP {
+  /* Default: don't stretch, keep icon+text centered as a group */
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  letter-spacing: 0 !important;
+  text-align: center !important;
+  color: #3d495c !important;
+}
+
 /* Price Card Radio Style */
 
 /* Card base style */
@@ -3142,6 +3370,167 @@ input[type="number"] {
   padding: 0px 15px 15px;
 }
 
+/* Flight details modal (search results): fluid width, no horizontal clip on phone */
+.flight-details-popup.ant-modal {
+  width: min(1180px, calc(100vw - 16px)) !important;
+  max-width: 100vw !important;
+  padding-bottom: 0;
+}
+
+@media (max-width: 767px) {
+  .flight-details-popup.ant-modal {
+    width: calc(100vw - 12px) !important;
+    max-width: calc(100vw - 12px) !important;
+    margin: 6px auto !important;
+    top: 4px !important;
+  }
+
+  .flight-details-popup .ant-modal-content {
+    max-height: calc(100vh - 12px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .flight-details-popup .ant-modal-body {
+    min-width: 0 !important;
+    /* clip-x only; avoid overflow:hidden so focus rings / shadows aren’t cropped */
+    overflow-x: clip !important;
+    overflow-y: auto !important;
+    padding: 12px 10px 16px !important;
+    flex: 1 1 auto;
+  }
+
+  .flight-details-popup .ant-modal-header {
+    padding: 12px 10px !important;
+  }
+}
+
+/* Toolbar under flight details modal title: tabs + Book Now */
+.flight-details-modal-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 767px) {
+  .flight-details-modal-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 12px;
+  }
+
+  .flight-details-modal-toolbar__tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .flight-details-modal-toolbar__tabs button {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    font-size: 12px !important;
+  }
+
+  .flight-details-modal-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+  }
+
+  /* Book Now lives in a full-width footer on small screens (see Travel* modals) */
+  .flight-details-book-now-desktop {
+    display: none !important;
+  }
+
+  .flight-details-book-now-mobile {
+    display: block;
+    width: 100%;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #e4e4e7;
+  }
+}
+
+@media (min-width: 768px) {
+  .flight-details-book-now-mobile {
+    display: none !important;
+  }
+
+  .flight-details-book-now-desktop {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+.flight-details-book-now-btn {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 100px;
+  border: none;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(
+    90.59deg,
+    #5383da 0%,
+    #2351a3 50%,
+    #081326 100%
+  );
+}
+
+.flight-details-book-now-desktop.flight-details-book-now-btn {
+  width: 130px;
+}
+
+.flight-details-book-now-mobile .flight-details-book-now-btn {
+  width: 100%;
+}
+
+/* Pricing detail: stacked fare cards (mobile) */
+.pricingCardsWrap--mobile .parahAlign {
+  padding: 6px 2px !important;
+  min-height: 0 !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  border-bottom: none !important;
+  text-align: left !important;
+}
+
+.pricingCardsWrap--mobile .parahAlign.parahAlignMultiSeg {
+  align-items: stretch !important;
+}
+
+.pricingCardsWrap--mobile p.pricingDetailFeatureP {
+  text-align: left !important;
+}
+
+.pricingCardsWrap--mobile .pricingCardRouteSegments {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.pricingCardsWrap--mobile .pricingCardRouteSegments .pricingDetailRouteLbl {
+  min-width: 0 !important;
+}
+
+.cardPrice--mobile .baggageRadio.ant-radio-wrapper {
+  width: 100%;
+  justify-content: center;
+}
+
 .cardBody {
   padding: 10px;
   flex-grow: 1;
@@ -3185,7 +3574,7 @@ input[type="number"] {
 }
 
 .flight_detail_card {
-  max-height: 35vh;
+  max-height: 80vh;
   overflow-y: auto;
   /* height: fit-content; */
   border-top: 1px solid #e5e7eb;
@@ -3500,6 +3889,7 @@ img:hover {
 /* Flight filter cards: single border look (no double-line) */
 .stopsCollapse,
 .pricePerSeatCollapse,
+.refundableFilterCollapse,
 .flightTimeFilter,
 .timeCollapse {
   background: transparent !important;
@@ -3508,6 +3898,7 @@ img:hover {
 
 .stopsCollapse .collapseStyle,
 .pricePerSeatCollapse .collapseStyle,
+.refundableFilterCollapse .collapseStyle,
 .flightTimeFilter .collapseStyle,
 .timeCollapse .collapseStyle {
   border: 1px solid #e4e4e7 !important;
@@ -3517,6 +3908,7 @@ img:hover {
 
 .stopsCollapse .ant-collapse .ant-collapse-header,
 .pricePerSeatCollapse .ant-collapse .ant-collapse-header,
+.refundableFilterCollapse .ant-collapse .ant-collapse-header,
 .flightTimeFilter .ant-collapse .ant-collapse-header,
 .timeCollapse .ant-collapse .ant-collapse-header {
   background: #ffffff !important;
@@ -3526,11 +3918,20 @@ img:hover {
 .stopsCollapse .ant-collapse .ant-collapse-content-box,
 .pricePerSeatCollapse .ant-collapse .ant-collapse-content,
 .pricePerSeatCollapse .ant-collapse .ant-collapse-content-box,
+.refundableFilterCollapse .ant-collapse .ant-collapse-content,
+.refundableFilterCollapse .ant-collapse .ant-collapse-content-box,
 .flightTimeFilter .ant-collapse .ant-collapse-content,
 .flightTimeFilter .ant-collapse .ant-collapse-content-box,
 .timeCollapse .ant-collapse .ant-collapse-content,
 .timeCollapse .ant-collapse .ant-collapse-content-box {
   background: #ffffff !important;
+}
+
+/* Refund type filter — panel title; body uses `.baggageCheckbox` like Baggage */
+.refundableFilterCollapse .ant-collapse-header-text,
+.refundableFilterCollapse .ant-collapse .ant-collapse-header {
+  font-size: 14px !important;
+  font-weight: 400 !important;
 }
 
 .searchFilterBtn {

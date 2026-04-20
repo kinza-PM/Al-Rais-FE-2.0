@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import BookingPlane from "../../assets/images/flight-booking-plane.png";
 // import EmirateLogo from "../../assets/images/emirates.png";
 import INFO_ICON from "../../assets/svgs/info.svg";
@@ -8,6 +8,7 @@ import extendedSeatGlyph from "../../assets/svgs/extended-seat-glyph.svg";
 import seat from "../../assets/svgs/enhance-seat.svg";
 import CardCollapseToggle from "../common/CardCollapseToggle";
 import type { SegmentSummary } from "../../utils/flightBookingHelper";
+import { getMarketingAirlineDisplayName } from "../../utils/helpers";
 // import toast from "react-hot-toast";
 import { useAncillaryStore } from "../../store/useAncillaryStore";
 
@@ -76,7 +77,8 @@ export default function FlightBookingSeatSection({
       string,
       Record<string, { seatNumber: string; ancillaryOfferId?: string }>
     >
-  >({});
+  >(() => seatSelections || {});
+  const syncingFromStoreRef = useRef(false);
 
   // Currently focused passenger for current segment
   const [selectedPassengerKey, setSelectedPassengerKey] = useState<
@@ -210,7 +212,7 @@ export default function FlightBookingSeatSection({
     }
 
     const isSelectedByAny = Object.values(segmentSeats).some(
-      (s: any) => s?.seatNumber === seatNumber
+      (s: any) => s?.seatNumber === seatNumber,
     );
     if (isSelectedByAny) return "occupied";
 
@@ -221,7 +223,7 @@ export default function FlightBookingSeatSection({
     if (
       seatData.exitRow ||
       seatData.airSeatCharacteristic?.some(
-        (char: any) => char.value === "ExitRowSeat"
+        (char: any) => char.value === "ExitRowSeat",
       )
     ) {
       return "booked";
@@ -229,7 +231,7 @@ export default function FlightBookingSeatSection({
     }
     if (
       seatData.airSeatCharacteristic?.some(
-        (char: any) => char.value === "LegSpaceSeat"
+        (char: any) => char.value === "LegSpaceSeat",
       )
     ) {
       // return "booked";
@@ -255,10 +257,38 @@ export default function FlightBookingSeatSection({
     const seatNumber =
       seatData.seatNumber || extractSeatLetter(seatData.seatCode || "");
     const ancillaryOfferId = getAncillaryOfferIdFromSeatData(seatData);
+    const segmentSeats = selectedSeats[segmentKey] || {};
+
+    const seatOwnerEntry = Object.entries(segmentSeats).find(
+      ([, selected]) => selected?.seatNumber === seatNumber,
+    );
+    const seatOwnerPassengerKey = seatOwnerEntry?.[0] ?? null;
+
+    // Toggle behavior:
+    // Clicking an already selected seat again should unselect it.
+    if (seatOwnerPassengerKey) {
+      // If another passenger is currently focused, jump focus first instead of
+      // clearing that passenger's seat unexpectedly.
+      if (selectedPassengerKey && selectedPassengerKey !== seatOwnerPassengerKey) {
+        setSelectedPassengerKey(seatOwnerPassengerKey);
+        return;
+      }
+
+      setSelectedSeats((prev) => {
+        const nextSegmentSeats = { ...(prev[segmentKey] || {}) };
+        delete nextSegmentSeats[seatOwnerPassengerKey];
+        return {
+          ...prev,
+          [segmentKey]: nextSegmentSeats,
+        };
+      });
+      setSelectedPassengerKey(seatOwnerPassengerKey);
+      return;
+    }
 
     if (!selectedPassengerKey) {
       const firstAvailablePassenger = eligiblePassengers.find(
-        (p) => !selectedSeats[segmentKey]?.[p.passengerKey]
+        (p) => !segmentSeats[p.passengerKey],
       );
 
       if (firstAvailablePassenger) {
@@ -272,13 +302,8 @@ export default function FlightBookingSeatSection({
             },
           },
         }));
-
-        const nextPassenger = eligiblePassengers.find(
-          (p) =>
-            p.passengerKey !== firstAvailablePassenger.passengerKey &&
-            !selectedSeats[segmentKey]?.[p.passengerKey]
-        );
-        setSelectedPassengerKey(nextPassenger?.passengerKey || null);
+        // Keep focus on the same passenger so changing seat works naturally.
+        setSelectedPassengerKey(firstAvailablePassenger.passengerKey);
       }
     } else {
       setSelectedSeats((prev) => ({
@@ -288,15 +313,8 @@ export default function FlightBookingSeatSection({
           [selectedPassengerKey]: { seatNumber, ancillaryOfferId },
         },
       }));
-
-      const currentSegmentSeats = selectedSeats[segmentKey] || {};
-      const nextPassenger = eligiblePassengers.find(
-        (p) =>
-          p.passengerKey !== selectedPassengerKey &&
-          !currentSegmentSeats[p.passengerKey] &&
-          seatNumber !== currentSegmentSeats[p.passengerKey]?.seatNumber
-      );
-      setSelectedPassengerKey(nextPassenger?.passengerKey || null);
+      // Keep focus so user can immediately replace with another seat.
+      setSelectedPassengerKey(selectedPassengerKey);
     }
   };
 
@@ -497,13 +515,6 @@ export default function FlightBookingSeatSection({
   //   };
   // };
 
-  const handleConfirmSelection = () => {
-    // if (!allSegmentsComplete()) {
-    //   toast.error("Please select seats for all passengers in every segment.");
-    //   return;
-    // }
-  };
-
   const Seat = ({
     seatData,
     seatNumber,
@@ -523,12 +534,12 @@ export default function FlightBookingSeatSection({
       status === "selected"
         ? "bg-[#2351A3]"
         : status === "occupied"
-        ? "bg-[#2351A3] cursor-pointer"
-        : status === "booked"
-        ? "bg-[#FF5270] cursor-not-allowed"
-        : status === "extended"
-        ? "border border-dashed border-[#F79E1B]"
-        : "border border-dashed border-[#00522E]";
+          ? "bg-[#2351A3] cursor-pointer"
+          : status === "booked"
+            ? "bg-[#FF5270] cursor-not-allowed"
+            : status === "extended"
+              ? "border border-dashed border-[#F79E1B]"
+              : "border border-dashed border-[#00522E]";
 
     const clickable = status !== "booked";
 
@@ -593,7 +604,7 @@ export default function FlightBookingSeatSection({
                 <React.Fragment key={`aisle-${groupIdx}`}>
                   {groupCodes.map((code) => {
                     const seatData = seats.find(
-                      (s: any) => extractSeatLetter(s.seatCode) === code
+                      (s: any) => extractSeatLetter(s.seatCode) === code,
                     );
                     if (!seatData) return null;
                     return (
@@ -647,24 +658,43 @@ export default function FlightBookingSeatSection({
   //     setSeatSelections(seatSelections);
   //   }
   // }, [seatSelections]);
+  // Hydrate local UI from store when navigating back to Enhance.
   useEffect(() => {
-    const localSeatsJSON = JSON.stringify(selectedSeats);
-    const storeSeatsJSON = JSON.stringify(seatSelections);
+    const storeHas = Object.keys(seatSelections || {}).length > 0;
+    const localHas = Object.keys(selectedSeats || {}).length > 0;
+    const storeJSON = JSON.stringify(seatSelections || {});
+    const localJSON = JSON.stringify(selectedSeats || {});
 
-    if (localSeatsJSON !== storeSeatsJSON) {
-      setSeatSelections(selectedSeats);
+    if (storeHas && storeJSON !== localJSON) {
+      syncingFromStoreRef.current = true;
+      setSelectedSeats(seatSelections || {});
+      // allow one render to pass before re-enabling store writes
+      queueMicrotask(() => {
+        syncingFromStoreRef.current = false;
+      });
+      return;
     }
-  }, [selectedSeats]);
 
-  useEffect(() => {
-    if (
-      Object.keys(seatSelections).length === 0 &&
-      Object.keys(selectedSeats).length > 0
-    ) {
+    // If store is cleared explicitly, reflect that in UI.
+    if (!storeHas && localHas) {
+      syncingFromStoreRef.current = true;
       setSelectedSeats({});
       setCurrentSegmentIndex(0);
+      queueMicrotask(() => {
+        syncingFromStoreRef.current = false;
+      });
     }
   }, [seatSelections]);
+
+  // Persist local UI changes to store (guarded to avoid loops).
+  useEffect(() => {
+    if (syncingFromStoreRef.current) return;
+    const storeJSON = JSON.stringify(seatSelections || {});
+    const localJSON = JSON.stringify(selectedSeats || {});
+    if (storeJSON !== localJSON) {
+      setSeatSelections(selectedSeats);
+    }
+  }, [selectedSeats, seatSelections, setSeatSelections]);
 
   return (
     <div className="px-3 pb-3 mt-3">
@@ -810,7 +840,7 @@ export default function FlightBookingSeatSection({
                       />
                       <div>
                         <div className="text-[15px] font-medium text-[#0A0C0F]">
-                          {currentSegment.marketingAirline} Airlines
+                          {getMarketingAirlineDisplayName(currentSegment)}
                         </div>
                         <div className="text-[13px] text-[#3D495C]">
                           {currentSegment.flightNumber} -{" "}
@@ -852,7 +882,7 @@ export default function FlightBookingSeatSection({
                               type="button"
                               onClick={() =>
                                 setSelectedPassengerKey(
-                                  isSelected ? null : passenger.passengerKey
+                                  isSelected ? null : passenger.passengerKey,
                                 )
                               }
                               className="flex items-center gap-2 flex-1"
@@ -911,16 +941,16 @@ export default function FlightBookingSeatSection({
                     >
                       Next segment →
                     </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleConfirmSelection}
-                      // disabled={!allSegmentsComplete()}
-                      className="px-12 rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Confirm selection
-                    </button>
-                  )}
+                  ) : null
+                  // <button
+                  //   type="button"
+                  //   onClick={handleConfirmSelection}
+                  // disabled={!allSegmentsComplete()}
+                  //   className="px-12 rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  // >
+                  //   Confirm selection
+                  // </button>
+                  }
                 </div>
               </div>
 
@@ -933,10 +963,10 @@ export default function FlightBookingSeatSection({
                           450,
                           seatMapData.seatLayout.groups.reduce(
                             (sum, g) => sum + g.length,
-                            0
+                            0,
                           ) *
                             65 +
-                            seatMapData.seatLayout.aisleCount * 18
+                            seatMapData.seatLayout.aisleCount * 18,
                         )}px`
                       : "520px",
                   }}

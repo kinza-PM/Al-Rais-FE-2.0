@@ -1,10 +1,11 @@
 import { Modal } from "antd";
+import type { ReactNode } from "react";
 import Button from "../atoms/Button";
 
 type ConfirmationModalProps = {
   open: boolean;
   title: string;
-  description: string;
+  description: string | ReactNode;
   note?: string;
   confirmText?: string;
   cancelText?: string;
@@ -69,9 +70,15 @@ export default function ConfirmationModal({
 
       {/* <div style={{ height: 1, background: "#F3F4F6", margin: "0 -32px 20px" }} /> */}
 
-      <p style={{ color: "#374151", lineHeight: 1.65, fontSize: 14, marginBottom: 16 }}>
-        {description}
-      </p>
+      {typeof description === "string" ? (
+        <p style={{ color: "#374151", lineHeight: 1.65, fontSize: 14, marginBottom: 16 }}>
+          {description}
+        </p>
+      ) : (
+        <div style={{ color: "#374151", lineHeight: 1.65, fontSize: 14, marginBottom: 16 }}>
+          {description}
+        </div>
+      )}
 
       {note && (
         <div style={{

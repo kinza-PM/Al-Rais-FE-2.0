@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Input from "../atoms/Input";
 import { AuthService } from "../../features/auth/services/authService";
 import type { OTPVerificationForm as OTPVerificationFormType } from "../../features/auth/types";
@@ -6,23 +6,34 @@ import toast from "react-hot-toast";
 
 interface OTPVerificationFormProps {
   email: string;
+  /** When user returns from the new-password step, restore the code they entered. */
+  initialOtp?: string;
   onBackToForgotPassword: () => void;
   onOTPVerified: (email: string, otp: string) => void;
 }
 
 const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
   email,
-  onBackToForgotPassword: _onBackToForgotPassword,
+  initialOtp = "",
+  onBackToForgotPassword,
   onOTPVerified,
 }) => {
   const [formData, setFormData] = useState<OTPVerificationFormType>({
     email: email,
-    otp: "",
+    otp: initialOtp,
   });
   const [touched, setTouched] = useState({
     otp: false,
   });
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, email }));
+  }, [email]);
+
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, otp: initialOtp }));
+  }, [initialOtp]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -53,17 +64,7 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
     setLoading(true);
 
     try {
-      const result = await AuthService.verifyResetCode(formData);
-      // console.log(result);
-      if (result.success) {
-        toast.success("Code verified successfully!");
-        onOTPVerified(formData.email, formData.otp);
-      } else {
-        toast.error("The code you entered is incorrect");
-      }
-    } catch (err) {
-      console.error("OTPVerificationForm error:", err);
-      toast.error("The code you entered is incorrect");
+      onOTPVerified(formData.email, formData.otp);
     } finally {
       setLoading(false);
     }
@@ -149,12 +150,12 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
               }
               className={`flex min-h-[47px] min-w-[156px] items-center justify-center gap-2.5 rounded-full px-10 py-3.5 font-medium text-white transition-opacity hover:opacity-95 ${loading || !formData.otp.trim() || formData.otp.length !== 6 ? "bg-[#C2CAD6] disabled:cursor-not-allowed disabled:opacity-70" : "auth-bg-btn"}`}
             >
-              {loading ? "Verifying..." : "Verify now"}
+              {loading ? "Please wait..." : "Continue"}
             </button>
           </div>
 
           {/* Figma: "Haven't received the code? Resend" - Resend in blue */}
-          <div className="text-center pt-4">
+          <div className="text-center pt-4 space-y-2">
             <p className="text-sm text-[#3D495C]">
               Haven't received the code?{" "}
               <button
@@ -163,9 +164,17 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
                 disabled={loading}
                 className="text-sm font-medium text-[#5383DA] hover:underline underline disabled:opacity-50"
               >
-                Resend
+                Resend OTP
               </button>
             </p>
+            <button
+              type="button"
+              onClick={onBackToForgotPassword}
+              disabled={loading}
+              className="text-sm font-medium text-[#5383DA] hover:underline disabled:opacity-50"
+            >
+              Change email
+            </button>
           </div>
         </form>
       </div>

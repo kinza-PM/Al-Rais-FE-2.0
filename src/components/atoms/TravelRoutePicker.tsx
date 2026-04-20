@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import DoubledArrow from "../../assets/svgs/doubled-arrow.svg";
 import type { AirportOption } from "../../features/flights/types";
 import SearchableDropdown from "../common/SearchableDropdown";
@@ -23,7 +23,7 @@ type Value = {
 };
 
 type Props = {
-  options: AirportOption[];
+  options?: AirportOption[];
   loading?: boolean;
   /**
    * Optional callback to perform API-based searching.
@@ -43,10 +43,33 @@ type Props = {
   onLoadMore?: () => void;
   hasMore?: boolean;
   loadingMore?: boolean;
+  fromOptions?: AirportOption[];
+  toOptions?: AirportOption[];
+  fromLoading?: boolean;
+  toLoading?: boolean;
+  onFromSearchChange?: (term: string) => void;
+  onToSearchChange?: (term: string) => void;
+  fromOnLoadMore?: () => void;
+  toOnLoadMore?: () => void;
+  fromHasMore?: boolean;
+  toHasMore?: boolean;
+  fromLoadingMore?: boolean;
+  toLoadingMore?: boolean;
+  /**
+   * Wrap From / Swap / To in one flex row so parent grids can use a single column
+   * for the whole route (e.g. landing hero). Keep false for flight-search grid
+   * where `display: contents` must expose each segment to the parent grid.
+   */
+  bundleRoute?: boolean;
+  /**
+   * When false (e.g. multi-city CSS grid), swap has no horizontal margins and sits
+   * in the center of its grid track — avoids overlap with From/To fields.
+   */
+  swapGutter?: boolean;
 };
 
 const TravelRoutePicker: React.FC<Props> = ({
-  options,
+  options = [],
   loading,
   onSearchChange,
   value,
@@ -61,6 +84,20 @@ const TravelRoutePicker: React.FC<Props> = ({
   onLoadMore = () => { },
   hasMore = false,
   loadingMore = false,
+  fromOptions,
+  toOptions,
+  fromLoading,
+  toLoading,
+  onFromSearchChange,
+  onToSearchChange,
+  fromOnLoadMore,
+  toOnLoadMore,
+  fromHasMore,
+  toHasMore,
+  fromLoadingMore,
+  toLoadingMore,
+  bundleRoute = false,
+  swapGutter = true,
 }) => {
   const { fromCode, toCode, fromOption, toOption } = value;
 
@@ -92,36 +129,71 @@ const TravelRoutePicker: React.FC<Props> = ({
     });
   };
 
-  // Convert CountryOption to DropdownOption format
-  const dropdownOptions = options.map((option) => ({
-    id: option.id,
-    value: option.code,
-    label: option.label,
-    subLabel: option.airportName ?? "",
-    searchText: airportSearchText(option),
-    disabled: false,
-  }));
+  const buildDropdownOptions = useMemo(
+    () => (airportOptions: AirportOption[]) =>
+      airportOptions.map((option) => ({
+        id: option.id,
+        value: option.code,
+        label: option.label,
+        subLabel: option.airportName ?? "",
+        searchText: airportSearchText(option),
+        disabled: false,
+      })),
+    [],
+  );
+
+  const sourceFromOptions = fromOptions ?? options;
+  const sourceToOptions = toOptions ?? options;
+
+  const fromDropdownOptions = useMemo(
+    () =>
+      buildDropdownOptions(sourceFromOptions),
+    [buildDropdownOptions, sourceFromOptions],
+  );
+
+  const toDropdownOptions = useMemo(
+    () =>
+      buildDropdownOptions(sourceToOptions),
+    [buildDropdownOptions, sourceToOptions],
+  );
+
+  const fromOptionsByCode = useMemo(
+    () => new Map(sourceFromOptions.map((o) => [o.code, o])),
+    [sourceFromOptions],
+  );
+  const toOptionsByCode = useMemo(
+    () => new Map(sourceToOptions.map((o) => [o.code, o])),
+    [sourceToOptions],
+  );
 
   // Filter options based on disableSameSelection
-  const fromOptions = dropdownOptions.map((option) => ({
-    ...option,
-    disabled: disableSameSelection && option.value === toCode,
-  }));
+  const fromDropdownSelectableOptions = useMemo(
+    () =>
+      fromDropdownOptions.map((option) => ({
+        ...option,
+        disabled: disableSameSelection && option.value === toCode,
+      })),
+    [fromDropdownOptions, disableSameSelection, toCode],
+  );
 
-  const toOptions = dropdownOptions.map((option) => ({
-    ...option,
-    disabled: disableSameSelection && option.value === fromCode,
-  }));
+  const toDropdownSelectableOptions = useMemo(
+    () =>
+      toDropdownOptions.map((option) => ({
+        ...option,
+        disabled: disableSameSelection && option.value === fromCode,
+      })),
+    [toDropdownOptions, disableSameSelection, fromCode],
+  );
 
-  return (
+  const routeInner = (
     <>
       <div className={widthClass}>
         <SearchableDropdown
-          options={fromOptions}
+          options={fromDropdownSelectableOptions}
           value={fromCode}
           onChange={(code) => handleFrom(code)}
           onOptionSelect={(code, opt) => {
-            const full = options.find((o) => o.code === code) ?? {
+            const full = fromOptionsByCode.get(code) ?? {
               id: opt.id,
               code: opt.value,
               label: opt.label,
@@ -132,16 +204,16 @@ const TravelRoutePicker: React.FC<Props> = ({
             handleFrom(code, full);
           }}
           displayLabel={fromOption?.label ?? undefined}
-          onSearchChange={onSearchChange}
+          onSearchChange={onFromSearchChange ?? onSearchChange}
           placeholder={placeholders.from}
           label={labels.from}
-          loading={!!loading}
+          loading={fromLoading ?? loading ?? false}
           error={fromError}
           widthClass="w-full"
           searchPlaceholder="Search destinations..."
-          onLoadMore={onLoadMore}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
+          onLoadMore={fromOnLoadMore ?? onLoadMore}
+          hasMore={fromHasMore ?? hasMore}
+          loadingMore={fromLoadingMore ?? loadingMore}
           tooltip="Select where you're flying from"
           cacheKey="airport"
           panelClassName="airport-dropdown-panel"
@@ -164,8 +236,25 @@ const TravelRoutePicker: React.FC<Props> = ({
         <button
           type="button"
           onClick={swap}
-          className="mx-2 flex items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn"
-          style={{ width: 47, height: 47, minWidth: 47, minHeight: 47, marginTop: 23, marginLeft: 0 }}
+          className={`flex items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn ${swapGutter ? "mx-2" : ""}`}
+          style={
+            swapGutter
+              ? {
+                  width: 47,
+                  height: 47,
+                  minWidth: 47,
+                  minHeight: 47,
+                  marginTop: 23,
+                  marginLeft: 0,
+                }
+              : {
+                  width: 48,
+                  height: 48,
+                  minWidth: 48,
+                  minHeight: 48,
+                  margin: 0,
+                }
+          }
         >
           <img src={DoubledArrow} alt="swap-routes" />
         </button>
@@ -173,11 +262,11 @@ const TravelRoutePicker: React.FC<Props> = ({
 
       <div className={widthClass}>
         <SearchableDropdown
-          options={toOptions}
+          options={toDropdownSelectableOptions}
           value={toCode}
           onChange={(code) => handleTo(code)}
           onOptionSelect={(code, opt) => {
-            const full = options.find((o) => o.code === code) ?? {
+            const full = toOptionsByCode.get(code) ?? {
               id: opt.id,
               code: opt.value,
               label: opt.label,
@@ -188,16 +277,16 @@ const TravelRoutePicker: React.FC<Props> = ({
             handleTo(code, full);
           }}
           displayLabel={toOption?.label ?? undefined}
-          onSearchChange={onSearchChange}
+          onSearchChange={onToSearchChange ?? onSearchChange}
           placeholder={placeholders.to}
           label={labels.to}
-          loading={!!loading}
+          loading={toLoading ?? loading ?? false}
           error={toError}
           widthClass="w-full"
           searchPlaceholder="Search destinations..."
-          onLoadMore={onLoadMore}
-          hasMore={hasMore}
-          loadingMore={loadingMore}
+          onLoadMore={toOnLoadMore ?? onLoadMore}
+          hasMore={toHasMore ?? hasMore}
+          loadingMore={toLoadingMore ?? loadingMore}
           tooltip="Select where you're flying to"
           cacheKey="airport"
           panelClassName="airport-dropdown-panel"
@@ -217,6 +306,16 @@ const TravelRoutePicker: React.FC<Props> = ({
       </div>
     </>
   );
+
+  if (bundleRoute) {
+    return (
+      <div className="flex w-full min-w-0 items-end">
+        {routeInner}
+      </div>
+    );
+  }
+
+  return routeInner;
 };
 
 export default TravelRoutePicker;

@@ -38,6 +38,18 @@ type Props = {
   countriesHasMore?: boolean;
   countriesFetchNext?: () => void;
   countriesLoadingMore?: boolean;
+  fromCountries?: AirportOption[];
+  toCountries?: AirportOption[];
+  loadingFromCountries?: boolean;
+  loadingToCountries?: boolean;
+  onSearchFromCountries?: (term: string) => void;
+  onSearchToCountries?: (term: string) => void;
+  fromCountriesHasMore?: boolean;
+  toCountriesHasMore?: boolean;
+  fromCountriesFetchNext?: () => void;
+  toCountriesFetchNext?: () => void;
+  fromCountriesLoadingMore?: boolean;
+  toCountriesLoadingMore?: boolean;
 };
 
 const DEFAULT_CABIN_ID = "5";
@@ -67,6 +79,18 @@ const MultiCityForm: React.FC<Props> = ({
   countriesHasMore = false,
   countriesFetchNext = () => { },
   countriesLoadingMore = false,
+  fromCountries,
+  toCountries,
+  loadingFromCountries,
+  loadingToCountries,
+  onSearchFromCountries,
+  onSearchToCountries,
+  fromCountriesHasMore,
+  toCountriesHasMore,
+  fromCountriesFetchNext,
+  toCountriesFetchNext,
+  fromCountriesLoadingMore,
+  toCountriesLoadingMore,
 }) => {
   const [internalLegs, setInternalLegs] = useState<MultiCityLeg[]>([
     { ...INITIAL_LEG },
@@ -172,11 +196,14 @@ const MultiCityForm: React.FC<Props> = ({
       ? "Cabin classes are not available right now. Please try again later."
       : null;
 
+  const legGridClass =
+    "grid grid-cols-1 items-start gap-2.5 md:gap-3 md:grid-cols-[230px_47px_minmax(230px,1fr)_230px_220px_40px]";
+
   return (
-    <div className="px-6 pb-5 pt-2">
-      {/* ROW 1 — Passengers only (cabin is per flight row below) */}
-      <div className="flex gap-3 mb-3 justify-center">
-        <div className="relative w-full sm:w-[200px]">
+    <div className="multicity-hero-form px-6 pb-5 pt-2">
+      {/* ROW 1 — Passengers only aligned with From + swap + To (cols 4–6 empty on md+) */}
+      <div className={`${legGridClass} mb-3`}>
+        <div className="relative min-w-0 w-full md:col-span-3">
           <label className="flex items-center gap-2 text-[12px] text-[#3D495C] mb-1">
             Passengers
             <span className="relative inline-flex group/info">
@@ -215,18 +242,30 @@ const MultiCityForm: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Dynamic legs */}
+      {/* Dynamic legs — scroll when more than 2 flights (matches search page multicity) */}
+      <div
+        className={
+          legs.length > 2
+            ? "multicity-hero-legs-scroll"
+            : undefined
+        }
+      >
       {legs.map((leg, idx) => (
-        <div key={idx} className="space-y-3 mb-4">
+        <div key={idx} className="space-y-3 mb-4 last:mb-0">
           <p className="text-[14px] text-[#11253E] font-medium">
             Flight {String(idx + 1).padStart(2, "0")}
           </p>
-          {/* grid: From | swap | To (flex) | Departure date | Cabin | Remove */}
-          <div className="grid grid-cols-1 items-center gap-2.5 md:gap-3 md:grid-cols-[230px_47px_minmax(230px,1fr)_230px_220px_40px]">
+          <div className={`multicity-hero-legrow ${legGridClass}`}>
             <TravelRoutePicker
               options={countries}
               loading={loadingCountries}
               onSearchChange={onSearchCountries}
+              fromOptions={fromCountries}
+              toOptions={toCountries}
+              fromLoading={loadingFromCountries}
+              toLoading={loadingToCountries}
+              onFromSearchChange={onSearchFromCountries}
+              onToSearchChange={onSearchToCountries}
               value={{
                 fromCode: leg.fromCode,
                 toCode: leg.toCode,
@@ -245,7 +284,8 @@ const MultiCityForm: React.FC<Props> = ({
               labels={{ from: "From", to: "To" }}
               placeholders={{ from: "Please select", to: "Please select" }}
               disableSameSelection
-              widthClass="w-full md:w-[230px]"
+              widthClass="w-full"
+              swapGutter={false}
               fromError={(!leg.fromCode?.trim() && fromError) || undefined}
               toError={(!leg.toCode?.trim() && toError) || undefined}
               onLoadMore={() => {
@@ -253,6 +293,12 @@ const MultiCityForm: React.FC<Props> = ({
               }}
               hasMore={countriesHasMore}
               loadingMore={countriesLoadingMore}
+              fromOnLoadMore={fromCountriesFetchNext}
+              toOnLoadMore={toCountriesFetchNext}
+              fromHasMore={fromCountriesHasMore}
+              toHasMore={toCountriesHasMore}
+              fromLoadingMore={fromCountriesLoadingMore}
+              toLoadingMore={toCountriesLoadingMore}
             />
 
             <div className="w-full md:w-[230px]">
@@ -321,6 +367,7 @@ const MultiCityForm: React.FC<Props> = ({
           </div>
         </div>
       ))}
+      </div>
 
       {/* Add another stop */}
       <div className="flex justify-center mb-3">

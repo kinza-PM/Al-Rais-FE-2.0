@@ -484,9 +484,9 @@ export type HotelRoomTaxItem = {
 export function aggregateHotelTaxesFromSelectedRooms(
   selectedRooms:
     | Array<{
-        count?: number;
-        room?: { roomRate?: { taxes?: HotelRoomTaxItem[] } };
-      }>
+      count?: number;
+      room?: { roomRate?: { taxes?: HotelRoomTaxItem[] } };
+    }>
     | undefined
     | null,
 ): HotelRoomTaxItem[] {

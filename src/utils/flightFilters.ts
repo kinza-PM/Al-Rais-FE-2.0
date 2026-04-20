@@ -358,6 +358,39 @@ export function filterOffersByCheckedBaggage<T extends any>(
     return arr.filter((it) => offerHasCheckedBaggageIncluded(it));
 }
 
+/** Client-side filter on `raw.fare.fareType.refundable` from search results. */
+export type RefundableFilterMode = "all" | "refundable" | "non_refundable";
+
+/**
+ * Maps the two Refund type checkboxes to a filter mode.
+ * Neither checked or both checked → no refund filter (show all).
+ * Exactly one checked → filter to that fare type.
+ */
+export function refundableFilterModeFromCheckboxes(
+    refundableChecked: boolean,
+    nonRefundableChecked: boolean,
+): RefundableFilterMode {
+    if (refundableChecked === nonRefundableChecked) return "all";
+    if (refundableChecked) return "refundable";
+    return "non_refundable";
+}
+
+export function offerFareRefundable(item: any): boolean {
+    return item?.raw?.fare?.fareType?.refundable === true;
+}
+
+export function filterOffersByRefundableMode<T extends any>(
+    list: T[] | undefined,
+    mode: RefundableFilterMode,
+): T[] {
+    const arr = list || [];
+    if (mode === "all") return arr.slice();
+    if (mode === "refundable") {
+        return arr.filter((it) => offerFareRefundable(it));
+    }
+    return arr.filter((it) => !offerFareRefundable(it));
+}
+
 export const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 export async function callWithRetries<T>(
     fn: () => Promise<T>,

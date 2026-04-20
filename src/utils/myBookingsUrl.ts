@@ -23,7 +23,8 @@ export type MyBookingsStatusParam =
   | "all"
   | "pending"
   | "confirmed"
-  | "expired";
+  | "expired"
+  | "cancelled";
 
 export function buildMyBookingsUrl(
   opts: Partial<{

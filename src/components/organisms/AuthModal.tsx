@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import LoginForm from '../molecules/LoginForm';
 import SignupForm from '../molecules/SignupForm';
 import ForgotPasswordForm from '../molecules/ForgotPasswordForm';
+import OTPVerificationForm from '../molecules/OTPVerificationForm';
 import ResetPasswordForm from '../molecules/ResetPasswordForm';
 import LoginFailedCard from '../molecules/LoginFailedCard';
 import type { AuthMode } from '../../types/AuthTypes';
@@ -27,7 +28,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   // State for forgot password flow
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
-  // const [forgotPasswordOTP, setForgotPasswordOTP] = useState('');
+  const [forgotPasswordOtp, setForgotPasswordOtp] = useState('');
 
   if (!isOpen) return null;
 
@@ -47,24 +48,35 @@ const AuthModal: React.FC<AuthModalProps> = ({
   const handleBackToLogin = () => {
     onModeChange('login');
     setForgotPasswordEmail('');
+    setForgotPasswordOtp('');
   };
 
   const handleOTPSent = (email: string) => {
     setForgotPasswordEmail(email);
-    // In a full implementation, you'd collect the OTP here
-    // For now, we'll just proceed to reset-password with empty OTP
+    setForgotPasswordOtp('');
+    onModeChange('otp-verification');
+  };
+
+  const handleOTPVerified = (email: string, otp: string) => {
+    setForgotPasswordEmail(email);
+    setForgotPasswordOtp(otp);
     onModeChange('reset-password');
   };
 
+  const handleChangeEmailFromOtp = () => {
+    setForgotPasswordOtp('');
+    onModeChange('forgot-password');
+  };
+
   const handlePasswordReset = () => {
-    // Show success message and redirect to login
     toast.success('Password reset successfully! Please log in with your new password.');
-    handleBackToLogin();
+    setForgotPasswordEmail('');
+    setForgotPasswordOtp('');
+    onModeChange('login');
   };
 
   const handleBackToOTP = () => {
-    onModeChange('forgot-password');
-    // setForgotPasswordOTP('');
+    onModeChange('otp-verification');
   };
 
   return (
@@ -100,10 +112,19 @@ const AuthModal: React.FC<AuthModalProps> = ({
             <ForgotPasswordForm
               onBackToLogin={handleBackToLogin}
               onOTPSent={handleOTPSent}
+              prefillEmail={forgotPasswordEmail}
+            />
+          ) : mode === 'otp-verification' ? (
+            <OTPVerificationForm
+              email={forgotPasswordEmail}
+              initialOtp={forgotPasswordOtp}
+              onBackToForgotPassword={handleChangeEmailFromOtp}
+              onOTPVerified={handleOTPVerified}
             />
           ) : mode === 'reset-password' ? (
             <ResetPasswordForm
               email={forgotPasswordEmail}
+              otp={forgotPasswordOtp}
               onPasswordReset={handlePasswordReset}
               onBackToOTP={handleBackToOTP}
             />

@@ -224,6 +224,80 @@ export function extractServerMessageFromAny(data: any): string | null {
   return null;
 }
 
+/**
+ * Returns `errorDetails.source` from a typical API Gateway error body (string values only).
+ * Used to map server-side field validation to inline form errors.
+ */
+export function extractAxiosErrorDetailsSource(
+  err: unknown,
+): Record<string, string> | null {
+  if (!axios.isAxiosError(err)) return null;
+  const data =
+    (err as any).response?.data ?? (err as any).data ?? (err as any).response;
+  if (!data || typeof data !== "object") return null;
+
+  const sourceObjects = [
+    data?.message?.errorDetails?.source,
+    data?.error?.errorDetails?.source,
+    data?.response?.data?.message?.errorDetails?.source,
+    data?.response?.data?.error?.errorDetails?.source,
+    data?.response?.errorDetails?.source,
+    data?.details?.errorDetails?.source,
+    data?.errorDetails?.source,
+    data?.response?.data?.details?.errorDetails?.source,
+  ];
+
+  for (const src of sourceObjects) {
+    if (src && typeof src === "object" && !Array.isArray(src)) {
+      const out: Record<string, string> = {};
+      for (const [k, v] of Object.entries(src as Record<string, unknown>)) {
+        if (typeof v === "string" && v.trim()) {
+          out[String(k)] = stripTagsSafe(v);
+        }
+      }
+      if (Object.keys(out).length > 0) return out;
+    }
+  }
+  return null;
+}
+
+/**
+ * Extracts a user-facing error message from a successful (non-exception) API response
+ * whose `meta.success` is false or `meta.statusMessage` is not "SUCCESS".
+ * Returns null when no meaningful message can be found.
+ */
+export function extractMessageFromApiResponseBody(response: unknown): string | null {
+  if (!response || typeof response !== "object") return null;
+  const r = response as Record<string, any>;
+  const candidates = [
+    r?.meta?.errorDetails?.message,
+    r?.meta?.errorDetails?.title,
+    r?.data?.[0]?.errorMessage,
+    r?.data?.[0]?.message,
+    r?.message?.errorDetails?.message,
+    r?.error?.errorDetails?.message,
+    r?.errorDetails?.message,
+    r?.errorDetails?.title,
+  ];
+  for (const c of candidates) {
+    if (typeof c === "string" && c.trim()) {
+      const cleaned = stripTagsSafe(c);
+      if (cleaned) return cleaned;
+    }
+  }
+  // Use statusMessage only if it is not a known success/control value
+  const sm: unknown = r?.meta?.statusMessage;
+  if (
+    typeof sm === "string" &&
+    sm.trim() &&
+    sm !== "SUCCESS" &&
+    sm !== "FETCH LATER"
+  ) {
+    return stripTagsSafe(sm);
+  }
+  return null;
+}
+
 export function extractErrorFromAxiosApiError(err: unknown): string {
   const strip = stripTagsSafe;
   if (axios.isAxiosError(err)) {

@@ -7,38 +7,50 @@ import AuthModal from "../organisms/AuthModal";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import RouteLoadingFallback from "../common/RouteLoadingFallback";
 import SessionExpiryWarning from "../../features/auth/components/SessionExpiryWarning";
-import { AuthService } from "../../features/auth/services/authService";
 import type { AuthMode } from "../../types/AuthTypes";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 const AppLayout: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { refreshAuth } = useAuth();
+  const { refreshAuth, isAuthenticated, isInitializing } = useAuth();
 
   const [hideHeader, setHideHeader] = useState<boolean>(false);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const [headerKey, setHeaderKey] = useState<number>(0);
 
+  // /auth: show login modal only when not signed in; if already authenticated, leave the route
   useEffect(() => {
-    const checkAuth = async () => {
-      const authenticated = await AuthService.isAuthenticated();
-      setIsAuthenticated(authenticated);
-    };
+    if (location.pathname !== "/auth") return;
+    if (isInitializing) return;
 
-    void checkAuth();
-  }, [location.pathname]);
-
-  // When on /auth route, show the auth modal (same as navbar) instead of full page
-  useEffect(() => {
-    if (location.pathname === "/auth") {
-      const mode = (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
-      setAuthMode(mode);
-      setAuthModalOpen(true);
+    if (isAuthenticated) {
+      setAuthModalOpen(false);
+      const state = (location.state || {}) as {
+        returnUrl?: string;
+        bookingData?: unknown;
+        from?: string;
+      };
+      const targetPath = state.returnUrl || state.from || "/";
+      navigate(targetPath, {
+        replace: true,
+        state: state.bookingData ?? undefined,
+      });
+      return;
     }
-  }, [location.pathname, location.state]);
+
+    const mode =
+      (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
+    setAuthMode(mode);
+    setAuthModalOpen(true);
+  }, [
+    location.pathname,
+    location.state,
+    isAuthenticated,
+    isInitializing,
+    navigate,
+  ]);
 
   // Scroll to top when navigating to a new page (e.g. footer links)
   useEffect(() => {
@@ -147,8 +159,8 @@ const AppLayout: React.FC = () => {
           logoSrc={AlRaisLogo}
         />
 
-        {/* Session expiry UX guard (warn before auto-logout) */}
-        {isAuthenticated && <SessionExpiryWarning warningSeconds={120} />}
+        {/* Silent Cognito refresh before token expiry (no modal) */}
+        {isAuthenticated && <SessionExpiryWarning />}
 
         <main className="min-h-screen">
           <Suspense fallback={<RouteLoadingFallback />}>

@@ -5,6 +5,7 @@ import CardFeaturingRow from "./CardFeaturingRow";
 import CollapsibleCard from "./CollapsibleCard";
 import { useAncillaryStore } from "../../store/useAncillaryStore";
 import type { SegmentSummary } from "../../utils/flightBookingHelper";
+import { getMarketingAirlineDisplayName } from "../../utils/helpers";
 
 type ComfortAirportTravelProps = {
   flightPassengers: Array<any>;
@@ -442,7 +443,7 @@ export default function FlightBookingComfortAirportAndTravelSection({
                       key={ancillaryId}
                       airline={{
                         logo: `/airlines/${currentSegment.marketingAirline}.png`,
-                        name: `${currentSegment.marketingAirline} Airlines`,
+                        name: getMarketingAirlineDisplayName(currentSegment),
                         flight: `${currentSegment.flightNumber} – ${currentSegment.cabinClass}`,
                       }}
                       blocks={[

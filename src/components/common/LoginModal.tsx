@@ -5,6 +5,7 @@ import LoginForm from "../molecules/LoginForm";
 import LoginFailedCard from "../molecules/LoginFailedCard";
 import SignupForm from "../molecules/SignupForm";
 import ForgotPasswordForm from "../molecules/ForgotPasswordForm";
+import OTPVerificationForm from "../molecules/OTPVerificationForm";
 import ResetPasswordForm from "../molecules/ResetPasswordForm";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
@@ -17,11 +18,12 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const [showLoginFailed, setShowLoginFailed] = useState(false);
-  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "reset">(
-    "login",
-  );
+  const [mode, setMode] = useState<
+    "login" | "signup" | "forgot" | "otp" | "reset"
+  >("login");
   const [internalOpen, setInternalOpen] = useState(true);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordOtp, setForgotPasswordOtp] = useState("");
   const { refreshAuth } = useAuth();
 
   const softRefresh = () => {
@@ -147,14 +149,35 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
               onBackToLogin={() => setMode("login")}
               onOTPSent={(email) => {
                 setForgotPasswordEmail(email);
+                setForgotPasswordOtp("");
+                setMode("otp");
+              }}
+              prefillEmail={forgotPasswordEmail}
+            />
+          ) : mode === "otp" ? (
+            <OTPVerificationForm
+              email={forgotPasswordEmail}
+              initialOtp={forgotPasswordOtp}
+              onBackToForgotPassword={() => {
+                setForgotPasswordOtp("");
+                setMode("forgot");
+              }}
+              onOTPVerified={(email, otp) => {
+                setForgotPasswordEmail(email);
+                setForgotPasswordOtp(otp);
                 setMode("reset");
               }}
             />
           ) : (
             <ResetPasswordForm
               email={forgotPasswordEmail}
-              onPasswordReset={() => setMode("login")}
-              onBackToOTP={() => setMode("forgot")}
+              otp={forgotPasswordOtp}
+              onPasswordReset={() => {
+                setForgotPasswordEmail("");
+                setForgotPasswordOtp("");
+                setMode("login");
+              }}
+              onBackToOTP={() => setMode("otp")}
             />
           )}
         </div>

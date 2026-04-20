@@ -7,7 +7,13 @@ import tripImageCard3 from "../../assets/images/tripimagecard3.jpg";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import INFO_ICON from "../../assets/svgs/info.svg";
 import Button from "../atoms/Button";
-import { formatDate, formatTime } from "../../utils/helpers";
+import {
+  formatDate,
+  formatFlightDurationLabel,
+  formatTime,
+  getMarketingAirlineDisplayName,
+} from "../../utils/helpers";
+import { formatQuantityUnit } from "../../utils/baggageAllowanceDisplay";
 import {
   generateFlightTicketPDF,
   generateFlightTicketPDFBlob,
@@ -28,11 +34,24 @@ const S3_TICKET_BASE = VITE_S3_TICKET_PUBLIC_BASE;
 type FlightBookingETicketSectionProps = {
   reservedFlightBooking?: any;
   offerId?: string | number;
+  ancillarySummary?: {
+    totalAmount: number;
+    currency: string;
+    selectedCount: number;
+    breakdown?: Array<{
+      category: "baggage" | "meals" | "seats" | "other";
+      label: string;
+      amount: number;
+      currency: string;
+      ancillaryOfferId: string;
+    }>;
+  };
 };
 
 export default function FlightBookingETicketSection({
   reservedFlightBooking,
   offerId,
+  ancillarySummary,
 }: FlightBookingETicketSectionProps) {
   const [openShareModal, setOpenShareModal] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
@@ -105,17 +124,22 @@ export default function FlightBookingETicketSection({
         else if (isRoundtripTrip)
           heading = i === 0 ? "Outbound Flight" : "Return Flight";
         else heading = `Flight ${String(i + 1).padStart(2, "0")}`;
-        const duration =
-          seg?.duration ||
-          journey?.flight?.flightInfo?.duration ||
-          "N/A";
+        // Journey-level duration from API (total leg); avoid first-segment-only duration on multi-stop
+        const rawDuration =
+          journey?.flight?.flightInfo?.duration || seg?.duration || "";
+        const duration = rawDuration
+          ? formatFlightDurationLabel(rawDuration)
+          : "N/A";
         const stopQuantity =
           seg?.stopQuantity ??
-          (Array.isArray(allSegments) ? Math.max(0, allSegments.length - 1) : 0);
+          (Array.isArray(allSegments)
+            ? Math.max(0, allSegments.length - 1)
+            : 0);
         const isDirect = stopQuantity === 0;
         const stopsLabel = isDirect ? "Direct" : `${stopQuantity} stop(s)`;
         // Build stop details: each stop = arrival airport of segment[i], layover = segment[i+1].layoverTime
-        const stopDetails: Array<{ airportCode: string; layover?: string }> = [];
+        const stopDetails: Array<{ airportCode: string; layover?: string }> =
+          [];
         if (Array.isArray(allSegments) && allSegments.length > 1) {
           for (let s = 0; s < allSegments.length - 1; s++) {
             const arrSeg = allSegments[s];
@@ -131,6 +155,7 @@ export default function FlightBookingETicketSection({
         return {
           heading,
           airlineCode: seg?.marketingAirline || "EK",
+          airlineDisplayName: getMarketingAirlineDisplayName(seg),
           flightNumber: seg?.flightNumber || "N/A",
           duration,
           stops: stopsLabel,
@@ -138,40 +163,44 @@ export default function FlightBookingETicketSection({
           depCode: seg?.departureAirportCode || "",
           arrCode:
             allSegments.length > 0
-              ? (allSegments[allSegments.length - 1] as any)?.arrivalAirportCode ??
-              seg?.arrivalAirportCode ??
-              ""
+              ? ((allSegments[allSegments.length - 1] as any)
+                  ?.arrivalAirportCode ??
+                seg?.arrivalAirportCode ??
+                "")
               : seg?.arrivalAirportCode || "",
           depTime: seg?.departureDateTime || "",
           arrTime:
             allSegments.length > 0
-              ? (allSegments[allSegments.length - 1] as any)?.arrivalDateTime ??
-              seg?.arrivalDateTime ??
-              ""
+              ? ((allSegments[allSegments.length - 1] as any)
+                  ?.arrivalDateTime ??
+                seg?.arrivalDateTime ??
+                "")
               : seg?.arrivalDateTime || "",
           depTerminal: seg?.departureTerminal || "",
           arrTerminal:
             allSegments.length > 0
-              ? (allSegments[allSegments.length - 1] as any)?.arrivalTerminal ??
-              seg?.arrivalTerminal ??
-              ""
+              ? ((allSegments[allSegments.length - 1] as any)
+                  ?.arrivalTerminal ??
+                seg?.arrivalTerminal ??
+                "")
               : seg?.arrivalTerminal || "",
         };
       })
       .filter(Boolean) as Array<{
-        heading: string;
-        airlineCode: string;
-        flightNumber: string;
-        duration: string;
-        stops: string;
-        stopDetails: Array<{ airportCode: string; layover?: string }>;
-        depCode: string;
-        arrCode: string;
-        depTime: string;
-        arrTime: string;
-        depTerminal: string;
-        arrTerminal: string;
-      }>;
+      heading: string;
+      airlineCode: string;
+      airlineDisplayName: string;
+      flightNumber: string;
+      duration: string;
+      stops: string;
+      stopDetails: Array<{ airportCode: string; layover?: string }>;
+      depCode: string;
+      arrCode: string;
+      depTime: string;
+      arrTime: string;
+      depTerminal: string;
+      arrTerminal: string;
+    }>;
   }, [reservedFlightBooking?.journey]);
 
   // Extract baggage info - use outbound segment for baggage info
@@ -189,13 +218,47 @@ export default function FlightBookingETicketSection({
 
     return {
       carryOn: carryOnForPax
-        ? `${carryOnForPax.value}${carryOnForPax.unit}`
+        ? formatQuantityUnit(carryOnForPax.value, carryOnForPax.unit) || "None"
         : "None",
       checkedIn: checkedInForPax
-        ? `${checkedInForPax.value}${checkedInForPax.unit}`
+        ? formatQuantityUnit(checkedInForPax.value, checkedInForPax.unit) || "None"
         : "None",
     };
   };
+
+  const seatLabelsFromAncillaries = useMemo(() => {
+    return (ancillarySummary?.breakdown ?? [])
+      .filter(
+        (b) => b?.category === "seats" && String(b?.label || "").trim(),
+      )
+      .map((b) => String(b.label).trim());
+  }, [ancillarySummary?.breakdown]);
+
+  const seatLabelsFromPassengers = useMemo(() => {
+    return (passengers || [])
+      .map((p: any) => String(p?.seat || "").trim())
+      .filter(Boolean)
+      .map((s: string) =>
+        s.toLowerCase().startsWith("seat ") ? s : `Seat ${s}`,
+      );
+  }, [passengers]);
+
+  /** Shown in header row; seat ancillaries are listed here, not under Ancillaries. */
+  const seatDisplayText = useMemo(() => {
+    if (seatLabelsFromAncillaries.length) {
+      return seatLabelsFromAncillaries.join(", ");
+    }
+    if (seatLabelsFromPassengers.length) {
+      return seatLabelsFromPassengers.join(", ");
+    }
+    return "";
+  }, [seatLabelsFromAncillaries, seatLabelsFromPassengers]);
+
+  const ancillaryBreakdownNonSeat = useMemo(() => {
+    return (ancillarySummary?.breakdown ?? []).filter(
+      (b) => b?.category !== "seats",
+    );
+  }, [ancillarySummary?.breakdown]);
 
   // When E-ticket page is shown: get pre-signed URL, upload ticket PDF to S3, then register via uploadTicket API
   useEffect(() => {
@@ -507,12 +570,12 @@ export default function FlightBookingETicketSection({
             {outboundCabinClass}
           </div>
         </div>
-        {/* <div>
-                <div className="text-[13px] text-[#3D495C]">Seat</div>
-                <div className="text-[15px] font-medium text-[#0A0C0F]">
-                  B9 (Confirmed)
-                </div>
-              </div> */}
+        <div>
+          <div className="text-[13px] text-[#3D495C]">Seat</div>
+          <div className="text-[15px] font-medium text-[#0A0C0F]">
+            {seatDisplayText ? `${seatDisplayText}` : "—"}
+          </div>
+        </div>
       </div>
 
       <NotchDivider />
@@ -532,7 +595,7 @@ export default function FlightBookingETicketSection({
                 <div className="flex items-center gap-2">
                   <div>
                     <div className="text-[14px] text-nowrap font-medium text-[#0A0C0F]">
-                      {block.airlineCode} Airlines
+                      {block.airlineDisplayName}
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
                       {block.airlineCode} {block.flightNumber}
@@ -596,7 +659,9 @@ export default function FlightBookingETicketSection({
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
                       {formatTime(block.depTime)} • {formatDate(block.depTime)}{" "}
-                      {block.depTerminal ? `• Terminal ${block.depTerminal}` : ""}
+                      {block.depTerminal
+                        ? `• Terminal ${block.depTerminal}`
+                        : ""}
                     </div>
                   </div>
                 </div>
@@ -619,7 +684,9 @@ export default function FlightBookingETicketSection({
                     </div>
                     <div className="text-[12px] text-[#3D495C]">
                       {formatTime(block.arrTime)} • {formatDate(block.arrTime)}{" "}
-                      {block.arrTerminal ? `• Terminal ${block.arrTerminal}` : ""}
+                      {block.arrTerminal
+                        ? `• Terminal ${block.arrTerminal}`
+                        : ""}
                     </div>
                   </div>
                 </div>
@@ -668,6 +735,41 @@ export default function FlightBookingETicketSection({
           </div>
         );
       })}
+
+      {ancillaryBreakdownNonSeat.length > 0 && (
+          <>
+            <NotchDivider />
+            <div className="mt-3">
+              <div className="text-[13px] text-[#3D495C]">Ancillaries</div>
+              <div className="mt-2 space-y-2 [font-variant-numeric:tabular-nums]">
+                {ancillaryBreakdownNonSeat.map((item, idx) => (
+                  <div
+                    key={`${item.ancillaryOfferId}-${idx}`}
+                    className="grid grid-cols-[1fr_auto] items-start gap-6"
+                  >
+                    <div className="text-[12px] font-medium text-[#0A0C0F]">
+                      {item.category.toUpperCase()} • {item.label}
+                    </div>
+                    {/* <div className="text-[12px] font-semibold text-[#0A0C0F] text-right">
+                      {item.currency} {Number(item.amount || 0).toFixed(2)}
+                    </div> */}
+                  </div>
+                ))}
+
+                {/* <div className="pt-2 border-t border-[#E4E4E7] grid grid-cols-[1fr_auto] items-center gap-6">
+                  <div className="text-[13px] font-semibold text-[#3D495C]">
+                    Total ancillaries
+                  </div>
+                  <div className="text-[15px] font-bold text-[#0A0C0F] text-right">
+                    {(ancillarySummary?.currency || "USD") +
+                      " " +
+                      Number(ancillarySummary?.totalAmount || 0).toFixed(2)}
+                  </div>
+                </div> */}
+              </div>
+            </div>
+          </>
+        )}
 
       <div className="pdf-hide">
         <NotchDivider />
@@ -746,7 +848,6 @@ export default function FlightBookingETicketSection({
           </div>
 
           <div className="flex items-center justify-center gap-4 mt-10 mb-12">
-
             {/* Share Button */}
             <Button
               type="button"
@@ -788,92 +889,92 @@ export default function FlightBookingETicketSection({
             >
               {isGeneratingPDF ? "Generating PDF..." : "Download your ticket"}
             </Button>
-
           </div>
-
         </div>
 
         {/* New container: promotional cards in a single row, no scrollbar */}
         <div className="pdf-hide w-full mt-8 mb-12 px-4 flex flex-row flex-nowrap items-center justify-center gap-4">
           {/* Card 1: Hotels */}
-            <div
-              className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden bg-white border border-[#E4E4E7]"
-              style={{ opacity: 1 }}
-            >
-              <div className="flex-1 flex flex-col justify-center pl-4 pr-2 py-3 min-w-0">
-                <p className="text-[15px] font-semibold text-[#0A0C0F] leading-tight">
-                  Enjoy your trip!
-                </p>
-                <p className="text-[13px] text-[#3D495C] mt-0.5 leading-[1.2]">
-                  We have hotels at your destination start just from{" "}
-                  <span className="font-semibold text-[#0A0C0F]">$42</span>
-                  /night
-                </p>
-                <a
-                  href="/hotels"
-                  className="text-[13px] text-[#5383DA] underline mt-1 font-medium hover:text-[#2351A3]"
-                >
-                  Explore hotels listings in Mumbai
-                </a>
-              </div>
-              <div className="w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
-                <img
-                  src={tripImageCard1}
-                  alt="Hotels at your destination"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+          <div
+            className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden bg-white border border-[#E4E4E7]"
+            style={{ opacity: 1 }}
+          >
+            <div className="flex-1 flex flex-col justify-center pl-4 pr-2 py-3 min-w-0">
+              <p className="text-[15px] font-semibold text-[#0A0C0F] leading-tight">
+                Enjoy your trip!
+              </p>
+              <p className="text-[13px] text-[#3D495C] mt-0.5 leading-[1.2]">
+                We have hotels at your destination start just from{" "}
+                <span className="font-semibold text-[#0A0C0F]">$42</span>
+                /night
+              </p>
+              <a
+                href="/hotels"
+                className="text-[13px] text-[#5383DA] underline mt-1 font-medium hover:text-[#2351A3]"
+              >
+                Explore hotels listings in Mumbai
+              </a>
             </div>
+            <div className="w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
+              <img
+                src={tripImageCard1}
+                alt="Hotels at your destination"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
 
-            {/* Card 2: Car bookings - gradient */}
-            <div
-              className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden"
-              style={{
-                background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                opacity: 1,
-              }}
-            >
-              <div className="flex-1 flex flex-col justify-center pl-4 pr-2 py-3 min-w-0">
-                <p className="text-[15px] font-semibold text-white leading-tight">
-                  Travel without worry!
-                </p>
-                <p
-                  className="text-[14px] text-white mt-0.5 leading-[100%] font-normal"
-                  style={{ fontFamily: "Inter, sans-serif" }}
-                >
-                  Al-Rais offers car bookings with un-matched prices!
-                </p>
-              </div>
-              <div className="w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
-                <img
-                  src={tripImageCard2}
-                  alt="Car bookings"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+          {/* Card 2: Car bookings - gradient */}
+          <div
+            className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden"
+            style={{
+              background:
+                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+              opacity: 1,
+            }}
+          >
+            <div className="flex-1 flex flex-col justify-center pl-4 pr-2 py-3 min-w-0">
+              <p className="text-[15px] font-semibold text-white leading-tight">
+                Travel without worry!
+              </p>
+              <p
+                className="text-[14px] text-white mt-0.5 leading-[100%] font-normal"
+                style={{ fontFamily: "Inter, sans-serif" }}
+              >
+                Al-Rais offers car bookings with un-matched prices!
+              </p>
             </div>
+            <div className="w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
+              <img
+                src={tripImageCard2}
+                alt="Car bookings"
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
 
-            {/* Card 3: Tour */}
-            <div
-              className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden bg-white border border-[#E4E4E7] shadow-sm"
-              style={{ opacity: 1 }}
-            >
-              <div className="flex flex-col justify-center pl-4 pr-2 py-3 min-w-0 w-[237px] flex-shrink-0">
-                <p
-                  className="text-[15px] text-[#0A0C0F] leading-[100%] font-medium"
-                  style={{ fontFamily: "Inter, sans-serif" }}
-                >
-                  Book a complete tour with your all-in-one travel booking companion
-                </p>
-              </div>
-              <div className="flex-1 min-w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
-                <img
-                  src={tripImageCard3}
-                  alt="Tour with travel companion"
-                  className="block w-full h-full object-cover object-right"
-                />
-              </div>
+          {/* Card 3: Tour */}
+          <div
+            className="flex flex-shrink-0 w-[477px] h-[120px] rounded-[16px] overflow-hidden bg-white border border-[#E4E4E7] shadow-sm"
+            style={{ opacity: 1 }}
+          >
+            <div className="flex flex-col justify-center pl-4 pr-2 py-3 min-w-0 w-[237px] flex-shrink-0">
+              <p
+                className="text-[15px] text-[#0A0C0F] leading-[100%] font-medium"
+                style={{ fontFamily: "Inter, sans-serif" }}
+              >
+                Book a complete tour with your all-in-one travel booking
+                companion
+              </p>
             </div>
+            <div className="flex-1 min-w-[180px] h-full flex-shrink-0 overflow-hidden rounded-r-[16px]">
+              <img
+                src={tripImageCard3}
+                alt="Tour with travel companion"
+                className="block w-full h-full object-cover object-right"
+              />
+            </div>
+          </div>
         </div>
 
         {openShareModal && (

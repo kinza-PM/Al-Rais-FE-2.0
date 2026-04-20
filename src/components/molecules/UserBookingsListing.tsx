@@ -5,11 +5,7 @@ import ShareTicketModal from "../atoms/ShareTicketModal";
 import { transformBookingToFlightBookingFormat } from "../../utils/transformBookingData";
 import airlineDefault from "../../assets/images/emirates.png";
 
-export type BookingStatus =
-  | "Confirmed"
-  | "Pending"
-  | "Expired"
-  | "Cancelled";
+export type BookingStatus = "Confirmed" | "Pending" | "Expired" | "Cancelled";
 export type TripMode = "Flights" | "Hotels";
 
 function StatusPill({ status }: { status: BookingStatus }) {
@@ -253,11 +249,59 @@ function getPassengerNameFromBooking(booking: any): string {
   return name || "Valued Customer";
 }
 
+function getFlightCancellationNavigationState(booking: any) {
+  const api = booking?.originalApiItem;
+  const bookingReferenceId = String(api?.bookingReferenceId ?? "").trim();
+  const supplierLocator = String(api?.detail?.supplierLocator ?? "").trim();
+  const rawIssueDate = booking?.createdAt || "";
+  let issueDate = "";
+  if (rawIssueDate) {
+    const d = new Date(rawIssueDate);
+    issueDate = Number.isNaN(d.getTime())
+      ? ""
+      : d.toLocaleDateString("en-GB");
+  }
+  const hasRequiredCancellationFields =
+    !!bookingReferenceId && !!supplierLocator && !!issueDate;
+
+  const currencyCode =
+    api?.fare?.currencyCode ?? booking?.price?.currencyCode ?? "USD";
+  const totalAmount = Number(
+    api?.fare?.totalFare ?? booking?.price?.totalFare ?? 0,
+  );
+
+  return {
+    bookingReferenceId,
+    supplierLocator,
+    issueDate,
+    hasRequiredCancellationFields,
+    currencyCode,
+    totalAmount,
+    bookingPassengers: api?.request?.passengers ?? [],
+  };
+}
+
+function normalizeFlightBookingStatus(raw: unknown): BookingStatus {
+  if (typeof raw !== "string") return raw as BookingStatus;
+  const s = raw.trim().toLowerCase();
+  if (s === "cancelled" || s === "canceled") return "Cancelled";
+  if (s === "confirmed" || s === "completed" || s === "active")
+    return "Confirmed";
+  if (s === "pending") return "Pending";
+  if (s === "expired") return "Expired";
+  return raw as BookingStatus;
+}
+
 function BookingCard({ booking }: { booking: any }) {
-  const status = booking.status;
+  const status = normalizeFlightBookingStatus(booking.status);
   const isExpired = status === "Expired";
+  const isCancelled = status === "Cancelled";
   const isPending = status === "Pending";
   const journeys = booking.journeys || [];
+  const cancellationNav = useMemo(
+    () => getFlightCancellationNavigationState(booking),
+    [booking],
+  );
   const [countdown, setCountdown] = useState(booking.countdown);
   const [openShareModal, setOpenShareModal] = useState(false);
   const navigate = useNavigate();
@@ -314,34 +358,41 @@ function BookingCard({ booking }: { booking: any }) {
     <div
       className={[
         "relative rounded-[16px] border-[1.5px] px-6 pb-4 pt-6 shadow-sm transition max-w-[1168px] w-full",
-        isExpired ? "opacity-50 [filter:grayscale(100%)]" : "",
+        isExpired || isCancelled
+          ? "opacity-50 [filter:grayscale(100%)]"
+          : "",
         isPending ? "bg-white" : "bg-[#F2F2F3]",
       ].join(" ")}
       style={{
         borderColor: "#E4E4E7",
-        height: "229px",
+        minHeight: "229px",
         width: "1168px",
         borderRadius: "16px",
-        borderWidth: "1.5px"
+        borderWidth: "1.5px",
       }}
     >
       {/* Gradient bar at the top of the card */}
-      <div className="flex justify-center w-full absolute top-0 left-0" style={{ marginTop: "0px" }}>
+      <div
+        className="flex justify-center w-full absolute top-0 left-0"
+        style={{ marginTop: "0px" }}
+      >
         <div
           className="rounded-tl-[16px] rounded-tr-[16px]"
           aria-hidden="true"
-          style={{
-            // width: "1168px", 
-            // maxWidth: "100%", 
-            // height: "10px", 
-            // background: "linear-gradient(rgb(196, 207, 225) 0%, rgb(222, 247, 254) 100%)", 
-            // backdropFilter: "blur(10px)" 
-          }}
+          style={
+            {
+              // width: "1168px",
+              // maxWidth: "100%",
+              // height: "10px",
+              // background: "linear-gradient(rgb(196, 207, 225) 0%, rgb(222, 247, 254) 100%)",
+              // backdropFilter: "blur(10px)"
+            }
+          }
         />
       </div>
 
       <div className="absolute right-4 top-2">
-        <StatusPill status={status} />
+        <StatusPill status={status as BookingStatus} />
       </div>
 
       {/* Render all journeys in the same card */}
@@ -425,7 +476,8 @@ function BookingCard({ booking }: { booking: any }) {
             onClick={handlePayNow}
             className="text-[#F2F2F3] text-[15px] font-semibold"
             style={{
-              background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+              background:
+                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
               width: "148px",
               height: "47px",
               borderRadius: "100px",
@@ -456,7 +508,6 @@ function BookingCard({ booking }: { booking: any }) {
               // padding: "14px 40px",
               gap: "10px",
             }}
-
             overrideClasses
           >
             Pay now
@@ -464,11 +515,19 @@ function BookingCard({ booking }: { booking: any }) {
         </div>
       )}
 
+      {isCancelled && (
+        <div className="mt-4 mb-4 flex flex-wrap items-center gap-4">
+          <div className="text-[14px] font-medium text-[#3D495C]">
+            This booking has been cancelled.
+          </div>
+        </div>
+      )}
+
       <CardDivider />
 
-       <div className="mt-6 flex items-center text-[15px] font-medium">
+      <div className="mt-6 flex items-center text-[15px] font-medium">
         <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7]">
-          {status === "Confirmed" && (
+          {status === "Confirmed" && !isCancelled && (
             <>
               <div className="pr-4">
                 <Button
@@ -497,57 +556,59 @@ function BookingCard({ booking }: { booking: any }) {
                 </Button>
               </div>
 
-              <div className="px-4">
-                <Button
-  type="button"
-  className="text-[#EA0029] hover:underline"
-  overrideClasses
-  onClick={() => {
-    debugger;
-    const firstJourney = booking?.journeys?.[0];
+              {cancellationNav.hasRequiredCancellationFields && (
+                <div className="px-4">
+                  <Button
+                    type="button"
+                    className="text-[#EA0029] hover:underline"
+                    overrideClasses
+                    onClick={() => {
+                      const firstJourney = booking?.journeys?.[0];
 
-    const rawIssueDate = booking?.createdAt || "";
-    let formattedIssueDate = "";
+                      const passengersCount =
+                        booking?.originalApiItem?.request?.passengers
+                          ?.length || 0;
+                      const passengersLabel =
+                        passengersCount > 0
+                          ? `${passengersCount.toString().padStart(2, "0")} ${
+                              passengersCount === 1 ? "Adult" : "Adults"
+                            }`
+                          : booking?.passengersLabel || "";
 
-    if (rawIssueDate) {
-      const d = new Date(rawIssueDate);
-      formattedIssueDate = Number.isNaN(d.getTime())
-        ? rawIssueDate
-        : d.toLocaleDateString("en-GB");
-    }
-
-    const passengersCount = booking?.request?.passengers?.length || 0;
-    const passengersLabel =
-      passengersCount > 0
-        ? `${passengersCount.toString().padStart(2, "0")} ${
-            passengersCount === 1 ? "Adult" : "Adults"
-          }`
-        : booking?.passengersLabel || "";
-
-    navigate("/flight-cancellation", {
-      state: {
-        bookingReferenceId: booking?.bookingRef || "",
-        supplierLocator: booking?.originalApiItem?.detail?.supplierLocator || "",
-        issueDate: formattedIssueDate,
-        bookingId: booking?.offerId || booking?.id || "",
-        airlineName: firstJourney?.airline?.name || "Airline",
-        routeLabel: firstJourney
-          ? `${firstJourney?.from?.code || ""} → ${firstJourney?.to?.code || ""}`
-          : "Flight booking",
-        passengersLabel,
-        totalAmount: Number(booking?.price?.totalFare || 0),
-      },
-    });
-  }}
->
-  Cancel booking
-</Button>
-              </div>
+                      navigate("/flight-cancellation", {
+                        state: {
+                          bookingReferenceId: cancellationNav.bookingReferenceId,
+                          supplierLocator: cancellationNav.supplierLocator,
+                          issueDate: cancellationNav.issueDate,
+                          bookingId: booking?.offerId || booking?.id || "",
+                          offerId:
+                            booking?.originalApiItem?.offerId ??
+                            booking?.offerId ??
+                            "",
+                          fareRulesDetails:
+                            booking?.originalApiItem?.fareRulesDetails ??
+                            null,
+                          airlineName: firstJourney?.airline?.name || "Airline",
+                          routeLabel: firstJourney
+                            ? `${firstJourney?.from?.code || ""} → ${firstJourney?.to?.code || ""}`
+                            : "Flight booking",
+                          passengersLabel,
+                          totalAmount: cancellationNav.totalAmount,
+                          currencyCode: cancellationNav.currencyCode,
+                          bookingPassengers: cancellationNav.bookingPassengers,
+                        },
+                      });
+                    }}
+                  >
+                    Cancel booking
+                  </Button>
+                </div>
+              )}
             </>
           )}
         </div>
 
-        {status === "Confirmed" && (
+        {status === "Confirmed" && !isCancelled && (
           <div className="ml-auto flex items-center pl-4">
             <Button
               type="button"
@@ -584,9 +645,10 @@ export default function UserBookingsListing({
   mode: TripMode;
 }) {
   const list = useMemo(() => {
-    // Filter by status
     if (filterStatus === "All") return bookings;
-    return bookings.filter((b) => b.status === filterStatus);
+    return bookings.filter(
+      (b) => normalizeFlightBookingStatus(b.status) === filterStatus,
+    );
   }, [bookings, filterStatus, mode]);
 
   if (!list.length || mode === "Hotels") {

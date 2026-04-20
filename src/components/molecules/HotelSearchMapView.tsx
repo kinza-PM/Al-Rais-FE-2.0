@@ -58,9 +58,8 @@ const buildHotelShareUrl = (
 
   const queryString = params.toString();
 
-  return `${window.location.origin}/hotel-detail/${hotelKey}${
-    queryString ? `?${queryString}` : ""
-  }`;
+  return `${window.location.origin}/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""
+    }`;
 };
 
 const getMarkerPriceLabel = (hotel: any) => {
@@ -496,39 +495,39 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
       const rooms =
         Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
           ? hotel.rooms.map((room: any) => ({
-              roomIndex: room?.roomIndex ?? 1,
-              roomKey: room?.roomKey ?? "",
-              roomId: room?.roomId ?? "",
-              roomTypeName: room?.roomTypeName ?? "",
-              roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
-              maxOccupancy: room?.maxOccupancy ?? -1,
-              roomFacilities: room?.roomFacilities ?? [],
-              ratePlan: {
-                supplierCode: room?.ratePlan?.supplierCode ?? "",
-                meal: room?.ratePlan?.meal ?? "",
-                availableStatus: room?.ratePlan?.availableStatus ?? "",
-                cancelPolicyIndicator:
-                  room?.ratePlan?.cancelPolicyIndicator ?? "",
-                code: room?.ratePlan?.code ?? "",
-                isPackage: room?.ratePlan?.isPackage ?? false,
-                fixedCombo: room?.ratePlan?.fixedCombo ?? false,
-                gstAssured: room?.ratePlan?.gstAssured ?? false,
-                lastCancellationDate:
-                  room?.ratePlan?.lastCancellationDate ?? "",
-              },
-              roomRate: {
-                currency: room?.roomRate?.currency ?? "AED",
-                netAmount: room?.roomRate?.netAmount ?? 0,
-                rates: room?.roomRate?.rates ?? [],
-                taxes: room?.roomRate?.taxes ?? [],
-              },
-              rateNotes: room?.rateNotes ?? "",
-              financialInfo: {
-                tmc: room?.financialInfo?.tmc ?? "",
-                supplier: room?.financialInfo?.supplier ?? "",
-              },
-              isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
-            }))
+            roomIndex: room?.roomIndex ?? 1,
+            roomKey: room?.roomKey ?? "",
+            roomId: room?.roomId ?? "",
+            roomTypeName: room?.roomTypeName ?? "",
+            roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+            maxOccupancy: room?.maxOccupancy ?? -1,
+            roomFacilities: room?.roomFacilities ?? [],
+            ratePlan: {
+              supplierCode: room?.ratePlan?.supplierCode ?? "",
+              meal: room?.ratePlan?.meal ?? "",
+              availableStatus: room?.ratePlan?.availableStatus ?? "",
+              cancelPolicyIndicator:
+                room?.ratePlan?.cancelPolicyIndicator ?? "",
+              code: room?.ratePlan?.code ?? "",
+              isPackage: room?.ratePlan?.isPackage ?? false,
+              fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+              gstAssured: room?.ratePlan?.gstAssured ?? false,
+              lastCancellationDate:
+                room?.ratePlan?.lastCancellationDate ?? "",
+            },
+            roomRate: {
+              currency: room?.roomRate?.currency ?? "AED",
+              netAmount: room?.roomRate?.netAmount ?? 0,
+              rates: room?.roomRate?.rates ?? [],
+              taxes: room?.roomRate?.taxes ?? [],
+            },
+            rateNotes: room?.rateNotes ?? "",
+            financialInfo: {
+              tmc: room?.financialInfo?.tmc ?? "",
+              supplier: room?.financialInfo?.supplier ?? "",
+            },
+            isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+          }))
           : [];
 
       const rawFacilities = hotel?.propertyInfo?.facilities || [];
@@ -663,7 +662,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
             show={isAddFavouritePending || isGetFavouritesLoading}
             label={
               isGetFavouritesLoading
-                ? "Loading favourites..."
+                ? "Loading..."
                 : "Updating favourites..."
             }
           />
@@ -680,7 +679,7 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
           show={isAddFavouritePending || isGetFavouritesLoading}
           label={
             isGetFavouritesLoading
-              ? "Loading favourites..."
+              ? "Loading..."
               : "Updating favourites..."
           }
         />
@@ -709,17 +708,15 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
               )}
 
               <div
-                className={`${
-                  isMapExpanded ? "lg:col-span-4" : "lg:col-span-3"
-                } order-1 col-span-1 h-[55vh] min-h-[280px] max-h-[65vh] transition-all duration-300 ease-in-out sm:h-[60vh] lg:order-2 lg:sticky lg:top-5 lg:h-[calc(100vh-27vh)] lg:max-h-[calc(100vh-27vh)]`}
+                className={`${isMapExpanded ? "lg:col-span-4" : "lg:col-span-3"
+                  } order-1 col-span-1 h-[55vh] min-h-[280px] max-h-[65vh] transition-all duration-300 ease-in-out sm:h-[60vh] lg:order-2 lg:sticky lg:top-5 lg:h-[calc(100vh-27vh)] lg:max-h-[calc(100vh-27vh)]`}
               >
                 <div className="relative h-full overflow-hidden rounded-xl">
                   <button
-                    className={`hidden lg:block absolute top-1/2 -translate-y-1/2 z-[1000] bg-[#F2F2F3] py-4 px-5 border border-[#FFFFFF] ${
-                      isMapExpanded
-                        ? "left-0 rounded-r-full border-l-0 px-3"
-                        : "-left-4 rounded-full"
-                    }`}
+                    className={`hidden lg:block absolute top-1/2 -translate-y-1/2 z-[1000] bg-[#F2F2F3] py-4 px-5 border border-[#FFFFFF] ${isMapExpanded
+                      ? "left-0 rounded-r-full border-l-0 px-3"
+                      : "-left-4 rounded-full"
+                      }`}
                     onClick={toggleMapExpand}
                   >
                     <svg

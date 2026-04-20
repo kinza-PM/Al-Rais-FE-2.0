@@ -32,7 +32,7 @@ const flightApis = [
 ];
 const paymentApis = ["/pay"];
 const flightAncillaryApis = ["/ancillarySearch", "/bookAncillary"];
-const flightCancellation = ["/flightCancellationCharge", "/flightCancellation"];
+const flightCancellation = ["/flightCancellationCharge", "/flightCancel"];
 const hotelApis = [
   "/hotelSearch",
   "/hotelDetail",

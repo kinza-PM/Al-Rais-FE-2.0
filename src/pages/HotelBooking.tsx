@@ -8,7 +8,10 @@ import HotelBookingETicketSetion from "../components/molecules/HotelBookingETick
 import { useHotelStore } from "../store/UseHotelStore";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import LoginModal from "../components/common/LoginModal";
-import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
+import {
+  extractErrorFromAxiosApiError,
+  extractMessageFromApiResponseBody,
+} from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useHotelPreBooking } from "../hooks/useHotelBooking";
 import Loader from "../components/atoms/Loader";
@@ -430,7 +433,10 @@ const HotelBooking = () => {
         toast.success("Hotel pre-booking successful");
         setCurrentStep(1);
       } else {
-        toast.error("Pre-booking failed. Please try again.");
+        const msg =
+          extractMessageFromApiResponseBody(response) ||
+          "Pre-booking failed. Please try again.";
+        toast.error(msg);
       }
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);

@@ -43,6 +43,18 @@ type Props = {
   countriesHasMore?: boolean;
   countriesFetchNext?: () => void;
   countriesLoadingMore?: boolean;
+  fromCountries?: AirportOption[];
+  toCountries?: AirportOption[];
+  loadingFromCountries?: boolean;
+  loadingToCountries?: boolean;
+  onSearchFromCountries?: (term: string) => void;
+  onSearchToCountries?: (term: string) => void;
+  fromCountriesHasMore?: boolean;
+  toCountriesHasMore?: boolean;
+  fromCountriesFetchNext?: () => void;
+  toCountriesFetchNext?: () => void;
+  fromCountriesLoadingMore?: boolean;
+  toCountriesLoadingMore?: boolean;
 };
 
 const RoundTripForm: React.FC<Props> = ({
@@ -85,6 +97,18 @@ const RoundTripForm: React.FC<Props> = ({
   countriesHasMore = false,
   countriesFetchNext = () => { },
   countriesLoadingMore = false,
+  fromCountries,
+  toCountries,
+  loadingFromCountries,
+  loadingToCountries,
+  onSearchFromCountries,
+  onSearchToCountries,
+  fromCountriesHasMore,
+  toCountriesHasMore,
+  fromCountriesFetchNext,
+  toCountriesFetchNext,
+  fromCountriesLoadingMore,
+  toCountriesLoadingMore,
 }) => {
   // const depRef = useRef<HTMLInputElement>(null);
   // const arrRef = useRef<HTMLInputElement>(null);
@@ -125,11 +149,18 @@ const RoundTripForm: React.FC<Props> = ({
     [onChangePassengers],
   );
   return (
-    <div className="flex flex-col md:flex-row items-stretch md:items-end gap-4">
+    <div className="flex flex-col items-stretch gap-4 md:flex-row md:items-end xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:items-end xl:gap-4">
       <TravelRoutePicker
+        bundleRoute
         options={countries}
         loading={loadingCountries}
         onSearchChange={onSearchCountries}
+        fromOptions={fromCountries}
+        toOptions={toCountries}
+        fromLoading={loadingFromCountries}
+        toLoading={loadingToCountries}
+        onFromSearchChange={onSearchFromCountries}
+        onToSearchChange={onSearchToCountries}
         value={{ fromCode, toCode }}
         onChange={({ fromCode: f, toCode: t }) => {
           onChangeFrom(f);
@@ -139,7 +170,7 @@ const RoundTripForm: React.FC<Props> = ({
         labels={{ from: "From", to: "To" }}
         placeholders={{ from: "Please select", to: "Please select" }}
         disableSameSelection
-        widthClass="w-full md:w-[190px]"
+        widthClass="w-full min-w-0 md:w-[190px] xl:flex-1 xl:basis-0"
         fromError={fromError || undefined}
         toError={toError || undefined}
         onLoadMore={() => {
@@ -149,10 +180,16 @@ const RoundTripForm: React.FC<Props> = ({
         }}
         hasMore={countriesHasMore}
         loadingMore={countriesLoadingMore}
+        fromOnLoadMore={fromCountriesFetchNext}
+        toOnLoadMore={toCountriesFetchNext}
+        fromHasMore={fromCountriesHasMore}
+        toHasMore={toCountriesHasMore}
+        fromLoadingMore={fromCountriesLoadingMore}
+        toLoadingMore={toCountriesLoadingMore}
       />
 
       {/* Departure date */}
-      <div className="w-full md:w-[240px] relative">
+      <div className="relative w-full min-w-0 md:w-[240px] xl:w-full">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Departure date
         </label>
@@ -195,7 +232,7 @@ const RoundTripForm: React.FC<Props> = ({
         </div> */}
       </div>
 
-      <div className="w-full md:w-[240px] relative">
+      <div className="relative w-full min-w-0 md:w-[240px] xl:w-full">
         <label className="block text-[12px] text-[#3D495C] mb-1">
           Return date
         </label>
@@ -235,7 +272,7 @@ const RoundTripForm: React.FC<Props> = ({
       </div>
 
       {/* Passengers */}
-      <div className="w-full md:w-[240px] relative">
+      <div className="relative w-full min-w-0 md:w-[240px] xl:w-full">
         <PassengerCabinDropdown
           schema={passengerSchema}
           loadingPassengers={loadingPassengers}

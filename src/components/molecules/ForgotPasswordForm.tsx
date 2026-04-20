@@ -9,14 +9,17 @@ import toast from "react-hot-toast";
 interface ForgotPasswordFormProps {
   onBackToLogin: () => void;
   onOTPSent: (email: string) => void;
+  /** Prefill when the user returns from the OTP step via "Change email". */
+  prefillEmail?: string;
 }
 
 const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
   onBackToLogin: _onBackToLogin,
   onOTPSent,
+  prefillEmail = "",
 }) => {
   const [formData, setFormData] = useState<ForgotPasswordFormType>({
-    email: "",
+    email: prefillEmail,
   });
 
   const [loading, setLoading] = useState(false);
@@ -78,6 +81,12 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
   const isFormValid = useMemo(() => {
     return !emailError;
   }, [emailError]);
+
+  useEffect(() => {
+    if (prefillEmail) {
+      setFormData((prev) => ({ ...prev, email: prefillEmail }));
+    }
+  }, [prefillEmail]);
 
   useEffect(() => {
     if (error) {

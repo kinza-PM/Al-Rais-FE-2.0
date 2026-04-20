@@ -36,7 +36,13 @@ import {
   type MyBookingsStatusParam,
 } from "../utils/myBookingsUrl";
 
-const tabs = ["All", "Pending", "Confirmed", "Expired"] as const;
+const tabs = [
+  "All",
+  "Pending",
+  "Confirmed",
+  "Expired",
+  "Cancelled",
+] as const;
 const modeTabs = ["Flights", "Hotels", "Sightseeing"] as const;
 
 type StatusTab = (typeof tabs)[number];
@@ -46,6 +52,7 @@ function parseStatusParam(value: string | null): StatusTab {
   if (s === "pending") return "Pending";
   if (s === "confirmed") return "Confirmed";
   if (s === "expired") return "Expired";
+  if (s === "cancelled" || s === "canceled") return "Cancelled";
   return "All";
 }
 
@@ -64,10 +71,10 @@ function categoryTabClass(selected: boolean): string {
   ].join(" ");
 }
 
-/** Figma status row — rounded top only */
+/** Figma status row — rounded top only (min width fits “Cancelled”) */
 function statusTabClass(selected: boolean): string {
   return [
-    "box-border flex h-[39px] w-[108px] shrink-0 cursor-pointer items-center justify-center rounded-tl-[16px] rounded-tr-[16px] rounded-bl-none rounded-br-none border-0 px-[20px] py-[10px] text-[14px] font-medium uppercase leading-none tracking-normal transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2351A3] focus-visible:ring-offset-2",
+    "box-border flex h-[39px] min-w-[108px] max-w-[160px] shrink-0 cursor-pointer items-center justify-center rounded-tl-[16px] rounded-tr-[16px] rounded-bl-none rounded-br-none border-0 px-[14px] py-[10px] text-[13px] font-medium uppercase leading-none tracking-normal transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2351A3] focus-visible:ring-offset-2 whitespace-nowrap",
     selected
       ? "bg-[#2351A3] text-white"
       : "bg-[#E4E4E7] text-[#0A0C0F]",

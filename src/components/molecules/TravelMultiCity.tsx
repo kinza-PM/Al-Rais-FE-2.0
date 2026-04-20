@@ -388,7 +388,7 @@
 // };
 
 // export default TravelMultiCity;
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../assets/css/travel.css";
 import defaultAirlineLogo from "../../assets/images/emirates.png";
 import cabinIcon from "../../assets/svgs/cabin.svg";
@@ -398,8 +398,13 @@ import refundableIcon from "../../assets/svgs/redundable.svg";
 import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
 import FlightTimingAndStops from "../atoms/FlightTimingAndStops";
+import Loader from "../atoms/Loader";
+import { Modal } from "antd";
 import { useNavigate } from "react-router-dom";
-import { formatListingStartingFare } from "../../utils/helpers";
+import {
+  formatListingStartingFare,
+  getMarketingAirlineDisplayName,
+} from "../../utils/helpers";
 import {
   buildPerSegmentFlightDetail,
   mapOfferForCompareMultiCity,
@@ -408,6 +413,8 @@ import {
   resolveAirlineLogoFromSegment,
 } from "../../utils/searchFlightListingHelpers";
 import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
+import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
+import { useFlightFareRuleSearch } from "../../hooks/useFlightBooking";
 
 const PricingDetailCard = React.lazy(() => import("./PricingDetailCard"));
 const FlightDetailsCard = React.lazy(() => import("./FlightDetailsCard"));
@@ -427,16 +434,8 @@ type TravelMultiCityProps = {
   highDemandIndicators?: any[];
 };
 
-const getAirlineDisplayName = (item: any, seg?: any) => {
-  return (
-    item?.airlineName ||
-    seg?.marketingAirlineName ||
-    seg?.operatingAirlineName ||
-    item?.name ||
-    seg?.marketingAirline ||
-    "Airline"
-  );
-};
+const getAirlineDisplayName = (item: any, seg?: any) =>
+  getMarketingAirlineDisplayName(seg, item);
 
 const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   passData,
@@ -452,7 +451,18 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   const [, setFilterData] = useState<any[]>([]);
   const [filterDetail, setFilterDetail] = useState<any[]>([]);
   const [active, setActive] = useState({ name: "", id: 0 });
-  const [showTabs, setShowTabs] = useState<{ [key: number]: boolean }>({});
+  const [showTabs] = useState<{ [key: number]: boolean }>({});
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [activeTab, setActiveTab] = useState<"price" | "flight" | "compare">(
+    "price",
+  );
+  const [fareRulePriceByOfferId, setFareRulePriceByOfferId] = useState<
+    Record<string, any>
+  >({});
+  const [fareRuleLoadingOfferId, setFareRuleLoadingOfferId] = useState<string | null>(null);
+  const fareRuleInFlightRef = useRef<Record<string, boolean>>({});
+  const { mutateAsync: fetchFareRules } = useFlightFareRuleSearch();
 
   const navigate = useNavigate();
 
@@ -465,18 +475,63 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   const detailById = useMemo(() => {
     const lookup: Record<string | number, any[]> = {};
     (passData || []).forEach((it) => {
-      if (it?.id !== undefined) lookup[it.id] = [it];
+      if (it?.id !== undefined) {
+        const key = String(it?.offerId ?? "").trim();
+        const mergedPrice = key ? fareRulePriceByOfferId[key] : null;
+        lookup[it.id] = [
+          mergedPrice
+            ? {
+                ...it,
+                price: mergedPrice,
+              }
+            : it,
+        ];
+      }
     });
     return lookup;
-  }, [passData]);
+  }, [passData, fareRulePriceByOfferId]);
+
+  const hydrateFareRulesForItem = useCallback(
+    async (item: any) => {
+      const offerId = String(item?.offerId ?? "").trim();
+      const searchKey = String(item?.searchKey ?? "").trim();
+      if (
+        !offerId ||
+        !searchKey ||
+        fareRulePriceByOfferId[offerId] ||
+        fareRuleInFlightRef.current[offerId]
+      ) {
+        return;
+      }
+      try {
+        fareRuleInFlightRef.current[offerId] = true;
+        setFareRuleLoadingOfferId(offerId);
+        const response = await fetchFareRules({ offerId, searchKey });
+        const fareRuleItem = response?.data?.[0];
+        if (!fareRuleItem) return;
+        const nextPrice = buildFlightSearchPriceOptions(item?.raw, fareRuleItem);
+        setFareRulePriceByOfferId((prev) => ({ ...prev, [offerId]: nextPrice }));
+      } catch {
+        // Keep base listing data if fare-rule fetch fails.
+      } finally {
+        delete fareRuleInFlightRef.current[offerId];
+        setFareRuleLoadingOfferId((prev) => (prev === offerId ? null : prev));
+      }
+    },
+    [fareRulePriceByOfferId, fetchFareRules],
+  );
 
   const HandlePriceOption = useCallback(
     ({ id }: { id: number | undefined }) => {
       const filtered = (id !== undefined && detailById[id]) || [];
       setFilterDetail(filtered);
       setFilterData([]);
+      const target = filtered?.[0];
+      if (target) {
+        hydrateFareRulesForItem(target);
+      }
     },
-    [detailById],
+    [detailById, hydrateFareRulesForItem],
   );
 
   const highDemandBySegment = useMemo(() => {
@@ -549,12 +604,26 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
   );
 
   const handleViewDetailsClick = (itemId: number) => {
-    setShowTabs((prev) => ({
-      ...prev,
-      [itemId]: !prev[itemId],
-    }));
-    setActive({ name: "price", id: itemId });
-    HandlePriceOption({ id: itemId });
+    const item = (passData || []).find((it: any) => it?.id === itemId) ?? null;
+    if (!item) return;
+    setActiveTab("price");
+    setIsDetailsModalOpen(true);
+    window.setTimeout(() => {
+      setSelectedItem(item);
+      HandlePriceOption({ id: itemId });
+    }, 0);
+  };
+
+  const handleModalTabChange = (tab: "price" | "flight" | "compare") => {
+    if (!selectedItem) return;
+    setActiveTab(tab);
+    if (tab === "price") {
+      HandlePriceOption({ id: selectedItem.id });
+      return;
+    }
+    if (tab === "compare") {
+      HandleCompareOption({ id: selectedItem.id });
+    }
   };
 
   const renderMultiCityLeg = (seg: any, item: any, segIdx: number) => {
@@ -684,6 +753,10 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
 
   return (
     <div className="flex flex-col gap-0" style={{ background: "transparent" }}>
+      <Loader
+        show={!!fareRuleLoadingOfferId}
+        label="Loading fare rules..."
+      />
       {passData?.map((item: any, index: number) => {
         const segments = item?.segments ?? [];
 
@@ -910,7 +983,9 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
                     }
                   >
                     {active?.name === "price" && active?.id === item.id ? (
-                      <PricingDetailCard passSome={filterDetail} />
+                      <>
+                        <PricingDetailCard passSome={filterDetail} />
+                      </>
                     ) : active?.name === "flight" && active?.id === item.id ? (
                       <FlightDetailsCard details={item} />
                     ) : active?.name === "compare" && active?.id === item.id ? (
@@ -935,6 +1010,108 @@ const TravelMultiCity: React.FC<TravelMultiCityProps> = ({
       <div ref={loadMoreRef} className="min-h-[1px]">
         {renderLoader?.({ isLoadingMore, hasMore })}
       </div>
+
+      <Modal
+        open={isDetailsModalOpen}
+        onCancel={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedItem(null);
+          setActiveTab("price");
+          setFilterDetail([]);
+        }}
+        footer={null}
+        centered
+        width="100%"
+        destroyOnClose
+        className="flight-details-popup"
+        styles={{
+          content: {
+            maxWidth: 1180,
+            width: "100%",
+            margin: "0 auto",
+          },
+          body: {
+            maxHeight: "92vh",
+            overflowY: "auto",
+            overflowX: "hidden",
+            padding: "16px 24px 20px",
+            minWidth: 0,
+          },
+        }}
+        title={
+          <div style={{ textAlign: "center", paddingTop: 4 }}>
+            <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 700 }}>
+              Flight details
+            </h2>
+            <p style={{ margin: "6px 0 0", color: "#64748B" }}>
+              Review price options, flight details and compare flights
+            </p>
+          </div>
+        }
+      >
+        <Loader
+          show={
+            activeTab === "price" &&
+            fareRuleLoadingOfferId === String(selectedItem?.offerId ?? "").trim()
+          }
+          label="Loading fare rules..."
+        />
+        {selectedItem && (
+          <>
+            <div className="flight-details-modal-toolbar">
+              <div
+                className="flight-details-modal-toolbar__tabs"
+                style={{ display: "flex", gap: "8px" }}
+              >
+                {[
+                  { key: "price", label: "Price options" },
+                  { key: "flight", label: "Flight details" },
+                  { key: "compare", label: "Compare" },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    onClick={() =>
+                      handleModalTabChange(
+                        tab.key as "price" | "flight" | "compare",
+                      )
+                    }
+                    style={{
+                      height: "38px",
+                      padding: "0 16px",
+                      borderRadius: "14px 14px 0 0",
+                      border: "none",
+                      cursor: "pointer",
+                      background: activeTab === tab.key ? "#2351A3" : "#F1F5F9",
+                      color: activeTab === tab.key ? "#FFFFFF" : "#64748B",
+                      fontWeight: 500,
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <React.Suspense fallback={<div>Loading…</div>}>
+              {activeTab === "price" ? (
+                <PricingDetailCard passSome={filterDetail} />
+              ) : activeTab === "flight" ? (
+                <FlightDetailsCard details={selectedItem} />
+              ) : (
+                <CompareCard
+                  currentFlight={mapOfferForCompareMultiCity(selectedItem)}
+                  availableFlights={pickRandomFlightsForCompare(
+                    passData || [],
+                    selectedItem.id,
+                    4,
+                    mapOfferForCompareMultiCity,
+                  )}
+                />
+              )}
+            </React.Suspense>
+          </>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Layout, Menu, Dropdown, Drawer, Modal, Typography } from "antd";
 import {
+  CalendarOutlined,
+  DownOutlined,
   MenuOutlined,
   LogoutOutlined,
   ProfileOutlined,
@@ -15,7 +17,6 @@ import {
   markNotificationRead,
   type NotificationItem,
 } from "../../services/notificationService";
-import avatarImage from "../../assets/images/aavter.png";
 import FlagUSA from "../../assets/svgs/Flag-usa.svg";
 import FlagUAE from "../../assets/svgs/Flag-uae.svg";
 import FlagIND from "../../assets/svgs/Flag-ind.svg";
@@ -27,7 +28,55 @@ import { buildMyBookingsUrl } from "../../utils/myBookingsUrl";
 
 const { Header } = Layout;
 
+/** Persisted cart count for header badge; dispatch `alrais:cart-badge` after updates elsewhere */
+const CART_BADGE_COUNT_KEY = "alrais_cart_item_count";
+
+function readCartBadgeCount(): number {
+  if (typeof window === "undefined") return 0;
+  try {
+    const raw = localStorage.getItem(CART_BADGE_COUNT_KEY);
+    if (raw != null && raw !== "") {
+      const n = parseInt(raw, 10);
+      if (!Number.isNaN(n) && n >= 0) return Math.min(n, 999);
+    }
+  } catch {
+    /* ignore */
+  }
+  return 0;
+}
+
 // Flag Icon Component
+/** Red count badge — hidden when count is zero */
+const IconActionBadge: React.FC<{ count: number }> = ({ count }) => {
+  if (count < 1) return null;
+  const label = count > 99 ? "99+" : String(count);
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "-4px",
+        right: "-4px",
+        backgroundColor: "#EA0029",
+        color: "#FFFFFF",
+        fontSize: "12px",
+        fontWeight: 600,
+        lineHeight: 1,
+        borderRadius: "50%",
+        minWidth: "22px",
+        height: "22px",
+        padding: "0 5px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        border: "2px solid #FFFFFF",
+        fontFamily: "inherit",
+      }}
+    >
+      {label}
+    </div>
+  );
+};
+
 const FlagIcon: React.FC<{ src: string; size?: number }> = ({
   src,
   size = 20,
@@ -65,24 +114,31 @@ const AppHeader: React.FC<HeaderProps> = ({
 }) => {
   const { isAuthenticated, user, signOut } = useAuth();
   const [drawerVisible, setDrawerVisible] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [isTablet, setIsTablet] = useState(
-    window.innerWidth >= 768 && window.innerWidth < 1200,
+  /** Single source for breakpoints: mobile <768, tablet 768–1199, inline nav ≥1024 */
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1280,
   );
+  const isMobile = viewportWidth < 768;
+  const isTablet = viewportWidth >= 768 && viewportWidth < 1200;
+  /** Below this width, primary links move to the drawer + menu control */
+  const showInlineNav = viewportWidth >= 1024;
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [notifNextToken, setNotifNextToken] = useState<string | null>(null);
   const [notifLoadingMore, setNotifLoadingMore] = useState(false);
+  const [cartBadgeCount, setCartBadgeCount] = useState(0);
   const navigate = useNavigate();
+
+  const unreadNotificationCount = useMemo(
+    () => notifications.filter((n) => !n.read).length,
+    [notifications],
+  );
 
   const { avatarUrl, initials, displayName, fetchProfile, reset } =
     useUserProfileStore();
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-      setIsTablet(window.innerWidth >= 768 && window.innerWidth < 1200);
-    };
+    const handleResize = () => setViewportWidth(window.innerWidth);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
@@ -92,6 +148,44 @@ const AppHeader: React.FC<HeaderProps> = ({
       void fetchProfile(user);
     }
   }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setNotifications([]);
+      setNotifNextToken(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetchNotificationsPage(user.id, 50, null);
+        if (!cancelled) {
+          setNotifications(res.items ?? []);
+          setNotifNextToken(res.nextToken ?? null);
+        }
+      } catch (e) {
+        console.error("Failed to load notifications for header", e);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user?.id]);
+
+  useEffect(() => {
+    const syncCart = () => setCartBadgeCount(readCartBadgeCount());
+    syncCart();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === CART_BADGE_COUNT_KEY || e.key === null) syncCart();
+    };
+    const onCartBadge = () => syncCart();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("alrais:cart-badge", onCartBadge as EventListener);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("alrais:cart-badge", onCartBadge as EventListener);
+    };
+  }, []);
 
   const handleLogout = async () => {
     await signOut();
@@ -167,55 +261,61 @@ const AppHeader: React.FC<HeaderProps> = ({
     ],
   };
 
-  // Navigation links
+  const centerNavClassName =
+    "text-[14px] sm:text-[16px] lg:text-[16px] font-light text-[#3D495C] hover:text-[#2351A3] transition-colors whitespace-nowrap";
+
+  const centerNavLinks = [
+    { key: "flights", to: "/search_flight", label: "Flights" },
+    { key: "hotels", to: "/search-hotel", label: "Hotels" },
+    { key: "rentals", to: "/travel", label: "Rentals" },
+    { key: "sights", to: "/search-sightseeing", label: "Sights" },
+    { key: "packages", to: "/packages", label: "Packages" },
+  ] as const;
+
+  // Drawer / mobile menu — aligned with Figma “third” navbar destinations + extras
   const navItems = [
-    {
-      key: "home",
-      label: (
-        <Link
-          to="/"
-          onClick={(e) => {
-            if (window.location.pathname === "/") {
-              e.preventDefault();
-              window.location.reload();
-            }
-          }}
-        >
-          Home
-        </Link>
-      ),
-    },
-    { key: "travel", label: <Link to="/travel">Travel</Link> },
-    { key: "packages", label: <Link to="/packages">Packages</Link> },
-    { key: "about", label: <Link to="/about">About</Link> },
+    ...centerNavLinks.map(({ key, to, label }) => ({
+      key,
+      label: <Link to={to}>{label}</Link>,
+    })),
     ...(isAuthenticated
       ? [
-        {
-          key: "my-bookings",
-          label: <Link to={buildMyBookingsUrl()}>My bookings</Link>,
-        },
-      ]
+          {
+            key: "my-bookings",
+            label: <Link to={buildMyBookingsUrl()}>My bookings</Link>,
+          },
+        ]
       : []),
+    { key: "about", label: <Link to="/about">About</Link> },
   ];
+
+  const desktopIconBtn = isTablet ? 44 : 50;
+  const currencyLangHeight = isTablet ? 44 : 50;
 
   return (
     <Header
       className="bg-white"
       style={{
         background: "#FFFFFF",
-        padding: isMobile ? "12px 16px" : isTablet ? "14px 24px" : "16px 180px",
+        padding: isMobile
+          ? "12px 16px"
+          : isTablet
+            ? "14px 24px"
+            : "16px clamp(24px, 8vw, 180px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        borderBottom: "2px solid #C2CAD6",
+        gap: isMobile ? 12 : isTablet ? 16 : 20,
+        flexWrap: "nowrap",
+        borderBottom: "1px solid #C2CAD6",
         height: "auto",
         minHeight: isMobile ? "72px" : "88px",
         width: "100%",
         boxSizing: "border-box",
       }}
     >
-      {/* Logo */}
-      <div>
+      {/* Logo — Figma third navbar */}
+      <div style={{ flexShrink: 0 }}>
         <Link
           to="/"
           aria-label="Go to home page"
@@ -227,25 +327,23 @@ const AppHeader: React.FC<HeaderProps> = ({
             }
           }}
         >
-          <Logo src={logoSrc} alt="Al Rais Travel logo" size="small" />
+          <Logo
+            src={logoSrc}
+            alt="Al Rais Travel logo"
+            size="small"
+            className="!h-[34px] !w-auto !max-w-[min(260px,52vw)] sm:!h-[38px] sm:!max-w-[280px] lg:!h-[42px] lg:!max-w-[300px] !object-contain !object-left [image-rendering:auto]"
+          />
         </Link>
       </div>
 
-      {/* Desktop right controls (Figma-style header) */}
-      {!isMobile && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: isTablet ? "8px" : "12px",
-          }}
-        >
-          {/* Hamburger Menu Button */}
+        {!isMobile && !showInlineNav && (
           <button
+            type="button"
+            aria-label="Open menu"
             onClick={() => setDrawerVisible(true)}
             style={{
-              width: isTablet ? "44px" : "50px",
-              height: isTablet ? "44px" : "50px",
+              width: isTablet ? 44 : 48,
+              height: isTablet ? 44 : 48,
               border: "1.5px solid #5383DA",
               borderRadius: "16px",
               display: "flex",
@@ -253,7 +351,8 @@ const AppHeader: React.FC<HeaderProps> = ({
               justifyContent: "center",
               backgroundColor: "#FFFFFF",
               cursor: "pointer",
-              transition: "all 0.2s",
+              flexShrink: 0,
+              transition: "background-color 0.2s",
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.backgroundColor = "#F0F7FF";
@@ -262,13 +361,46 @@ const AppHeader: React.FC<HeaderProps> = ({
               e.currentTarget.style.backgroundColor = "#FFFFFF";
             }}
           >
-            <MenuOutlined style={{ fontSize: "16px", color: "#3D495C" }} />
+            <MenuOutlined style={{ fontSize: "18px", color: "#3D495C" }} />
           </button>
+        )}
 
-          {/* Hide duplicated header controls while drawer is open */}
+        {!isMobile && showInlineNav && (
+          <nav
+            aria-label="Primary"
+            className="min-w-0 flex-1"
+            style={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              flexWrap: "wrap",
+              rowGap: 8,
+              columnGap: viewportWidth >= 1280 ? 40 : viewportWidth >= 1100 ? 32 : 20,
+            }}
+          >
+            {centerNavLinks.map(({ key, to, label }) => (
+              <Link key={key} to={to} className={centerNavClassName}>
+                {label}
+              </Link>
+            ))}
+          </nav>
+        )}
+
+        {(isMobile || (!isMobile && !showInlineNav)) && (
+          <div style={{ flex: 1, minWidth: 0 }} />
+        )}
+
+        {!isMobile && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: isTablet ? "8px" : "12px",
+            flexShrink: 0,
+          }}
+        >
           {!drawerVisible && (
             <>
-              {/* USD Currency Selector */}
               <Dropdown
                 disabled
                 menu={{
@@ -350,103 +482,171 @@ const AppHeader: React.FC<HeaderProps> = ({
                 placement="bottomRight"
               >
                 <button
+                  type="button"
                   disabled
                   style={{
-                    width: isTablet ? "96px" : "110px",
-                    height: isTablet ? "44px" : "50px",
-                    padding: isTablet ? "0 12px" : "0 16px",
-                    border: "1.5px solid #C2CAD6",
-                    // border: "1.5px solid #5383DA",
+                    minWidth: isTablet ? 150 : 171,
+                    height: currencyLangHeight,
+                    padding: 0,
+                    border: "1.5px solid #5383DA",
                     borderRadius: "16px",
                     display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    // backgroundColor: "#FFFFFF",
-                    backgroundColor: "#F3F4F6",
+                    alignItems: "stretch",
+                    justifyContent: "center",
+                    backgroundColor: "#FFFFFF",
                     cursor: "not-allowed",
                     transition: "all 0.2s",
+                    overflow: "hidden",
                   }}
-                // onMouseEnter={(e) => {
-                //   e.currentTarget.style.backgroundColor = "#F0F7FF";
-                // }}
-                // onMouseLeave={(e) => {
-                //   e.currentTarget.style.backgroundColor = "#FFFFFF";
-                // }}
                 >
-                  <FlagIcon src={FlagUSCircle} size={isTablet ? 20 : 24} />
-                  <span
+                  <div
                     style={{
-                      fontSize: isTablet ? "12px" : "13px",
-                      fontWeight: 500,
-                      color: "#0A0C0F",
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                      minWidth: 0,
+                      paddingLeft: 8,
+                      paddingRight: 4,
                     }}
                   >
-                    USD
-                  </span>
-                  <img
-                    src={CurrencyChevronIcon}
-                    alt="Open currency dropdown"
+                    <FlagIcon
+                      src={FlagUSCircle}
+                      size={isTablet ? 26 : 32}
+                    />
+                    <span
+                      style={{
+                        fontSize: isTablet ? "13px" : "14px",
+                        fontWeight: 500,
+                        color: "#0A0C0F",
+                      }}
+                    >
+                      USD
+                    </span>
+                  </div>
+                  <div
                     style={{
-                      width: "16px",
-                      height: "16px",
-                      objectFit: "contain",
-                      marginLeft: "2px",
+                      width: 1,
+                      alignSelf: "stretch",
+                      backgroundColor: "#C2CAD6",
+                      flexShrink: 0,
+                      marginTop: 8,
+                      marginBottom: 8,
                     }}
                   />
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 4,
+                      minWidth: 0,
+                      paddingLeft: 4,
+                      paddingRight: 8,
+                    }}
+                  >
+                    <span
+                      style={{
+                        fontSize: isTablet ? "13px" : "14px",
+                        fontWeight: 500,
+                        color: "#0A0C0F",
+                      }}
+                    >
+                      English
+                    </span>
+                    <img
+                      src={CurrencyChevronIcon}
+                      alt=""
+                      style={{
+                        width: 20,
+                        height: 20,
+                        objectFit: "contain",
+                        flexShrink: 0,
+                      }}
+                    />
+                  </div>
                 </button>
               </Dropdown>
 
-              {/* EN Language Selector — removed from header per request */}
-
-              {/* Basket icon after Sign up */}
               <button
-                onClick={() => navigate("/cart")}
-                disabled
+                type="button"
+                aria-label="Notifications"
+                onClick={() => {
+                  if (isAuthenticated && user) setShowAllNotifications(true);
+                  else onLoginClick();
+                }}
                 style={{
-                  width: isTablet ? "44px" : "50px",
-                  height: isTablet ? "44px" : "50px",
-                  border: "1.5px solid #C2CAD6",
-                  // border: "1.5px solid #5383DA",
+                  width: desktopIconBtn,
+                  height: desktopIconBtn,
+                  border: "1.5px solid #5383DA",
                   borderRadius: "16px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  backgroundColor: "#F3F4F6",
-                  // backgroundColor: "#FFFFFF",
-                  cursor: "not-allowed",
+                  backgroundColor: "#FFFFFF",
+                  cursor: "pointer",
+                  position: "relative",
                   transition: "all 0.2s",
                 }}
-              // onMouseEnter={(e) => {
-              //   e.currentTarget.style.backgroundColor = "#F0F7FF";
-              // }}
-              // onMouseLeave={(e) => {
-              //   e.currentTarget.style.backgroundColor = "#FFFFFF";
-              // }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = "#F0F7FF";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = "#FFFFFF";
+                }}
+              >
+                <CalendarOutlined
+                  style={{ fontSize: isTablet ? 20 : 24, color: "#3D495C" }}
+                />
+                <IconActionBadge count={unreadNotificationCount} />
+              </button>
+
+              <div
+                role="img"
+                aria-label={
+                  cartBadgeCount > 0
+                    ? `Shopping cart (${cartBadgeCount} items, not available)`
+                    : "Shopping cart (not available)"
+                }
+                style={{
+                  width: desktopIconBtn,
+                  height: desktopIconBtn,
+                  border: "1.5px solid #5383DA",
+                  borderRadius: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#FFFFFF",
+                  cursor: "default",
+                  position: "relative",
+                  flexShrink: 0,
+                }}
               >
                 <img
                   src={BasketIcon}
-                  alt="Cart"
+                  alt=""
                   style={{
-                    width: "24px",
-                    height: "24px",
+                    width: isTablet ? 22 : 24,
+                    height: isTablet ? 22 : 24,
                     objectFit: "contain",
                   }}
                 />
-              </button>
+                <IconActionBadge count={cartBadgeCount} />
+              </div>
 
-              {/* Auth area: avatar when logged in, Login/Sign up when not */}
               {isAuthenticated && user ? (
                 <Dropdown menu={userMenu} placement="bottomRight" arrow>
                   <div
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: "8px",
+                      gap: 10,
                       cursor: "pointer",
-                      padding: "4px 10px",
+                      padding: "4px 4px 4px 8px",
                       borderRadius: "8px",
                       transition: "background-color 0.2s",
-                      marginLeft: "2px",
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.backgroundColor = "#F9FAFB";
@@ -460,8 +660,8 @@ const AppHeader: React.FC<HeaderProps> = ({
                         src={avatarUrl}
                         alt="User avatar"
                         style={{
-                          width: "40px",
-                          height: "40px",
+                          width: isTablet ? 44 : 52,
+                          height: isTablet ? 44 : 52,
                           borderRadius: "50%",
                           objectFit: "cover",
                           border: "2px solid #E4E4E7",
@@ -470,8 +670,8 @@ const AppHeader: React.FC<HeaderProps> = ({
                     ) : (
                       <div
                         style={{
-                          width: "40px",
-                          height: "40px",
+                          width: isTablet ? 44 : 52,
+                          height: isTablet ? 44 : 52,
                           borderRadius: "50%",
                           backgroundColor: "#2351A3",
                           display: "flex",
@@ -484,7 +684,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                           style={{
                             color: "#fff",
                             fontWeight: 600,
-                            fontSize: "14px",
+                            fontSize: "15px",
                           }}
                         >
                           {initials}
@@ -493,7 +693,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                     )}
                     <span
                       style={{
-                        fontSize: "14px",
+                        fontSize: 16,
                         fontWeight: 500,
                         color: "#0A0C0F",
                         whiteSpace: "nowrap",
@@ -509,7 +709,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                     display: "flex",
                     alignItems: "center",
                     gap: isTablet ? "6px" : "8px",
-                    marginLeft: "8px",
+                    marginLeft: 4,
                   }}
                 >
                   <Button
@@ -645,50 +845,56 @@ const AppHeader: React.FC<HeaderProps> = ({
       {/* Mobile View */}
       {isMobile && isAuthenticated && user && (
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          {/* Shopping Cart */}
           {!drawerVisible && (
-            <button
-              disabled
-              onClick={() => navigate("/cart")}
-              style={{
-                width: "40px",
-                height: "40px",
-                border: "2px solid #C2CAD6",
-                // border: "2px solid #5383DA",
-                borderRadius: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                backgroundColor: "#F3F4F6",
-                // backgroundColor: "#FFFFFF",
-                cursor: "not-allowed",
-                position: "relative",
-              }}
-            >
-              <ShoppingCartOutlined
-                style={{ fontSize: "16px", color: "#3D495C" }}
-              />
-              <div
+            <>
+              <button
+                type="button"
+                aria-label="Notifications"
+                onClick={() => setShowAllNotifications(true)}
                 style={{
-                  position: "absolute",
-                  top: "-6px",
-                  right: "-6px",
-                  backgroundColor: "#EA0029",
-                  color: "#FFFFFF",
-                  fontSize: "10px",
-                  fontWeight: 700,
-                  borderRadius: "50%",
-                  width: "18px",
-                  height: "18px",
+                  width: "40px",
+                  height: "40px",
+                  border: "1.5px solid #5383DA",
+                  borderRadius: "16px",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  border: "2px solid #FFFFFF",
+                  backgroundColor: "#FFFFFF",
+                  cursor: "pointer",
+                  position: "relative",
                 }}
               >
-                02
+                <CalendarOutlined
+                  style={{ fontSize: "18px", color: "#3D495C" }}
+                />
+                <IconActionBadge count={unreadNotificationCount} />
+              </button>
+              <div
+                role="img"
+                aria-label={
+                  cartBadgeCount > 0
+                    ? `Shopping cart (${cartBadgeCount} items, not available)`
+                    : "Shopping cart (not available)"
+                }
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  border: "1.5px solid #5383DA",
+                  borderRadius: "16px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#FFFFFF",
+                  cursor: "default",
+                  position: "relative",
+                }}
+              >
+                <ShoppingCartOutlined
+                  style={{ fontSize: "18px", color: "#3D495C" }}
+                />
+                <IconActionBadge count={cartBadgeCount} />
               </div>
-            </button>
+            </>
           )}
 
           {/* Hamburger Menu */}
@@ -776,17 +982,43 @@ const AppHeader: React.FC<HeaderProps> = ({
                 marginBottom: 16,
               }}
             >
-              <img
-                src={avatarImage}
-                alt="User avatar"
-                style={{
-                  width: "56px",
-                  height: "56px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  border: "2px solid #E4E4E7",
-                }}
-              />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="User avatar"
+                  style={{
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "2px solid #E4E4E7",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "50%",
+                    backgroundColor: "#2351A3",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid #E4E4E7",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#fff",
+                      fontWeight: 600,
+                      fontSize: "18px",
+                    }}
+                  >
+                    {initials}
+                  </span>
+                </div>
+              )}
               <div
                 style={{
                   flex: 1,
@@ -803,7 +1035,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {user.name?.split("@")[0] || "User"}
+                  {displayName.split("@")[0] || "User"}
                 </div>
                 <div
                   style={{
@@ -820,85 +1052,89 @@ const AppHeader: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            {/* Currency & Language Selectors */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: 12 }}>
+            {/* Currency & language — single full-width pill (USD | English) */}
+            <div style={{ width: "100%", marginBottom: 12 }}>
               <Dropdown
+                disabled
                 menu={{
                   items: [
                     { key: "usd", label: "🇺🇸 USD - US Dollar" },
                     { key: "eur", label: "🇪🇺 EUR - Euro" },
                     { key: "gbp", label: "🇬🇧 GBP - British Pound" },
                     { key: "aed", label: "🇦🇪 AED - UAE Dirham" },
-                  ],
-                }}
-                disabled
-              >
-                <button
-                  disabled
-                  style={{
-                    flex: 1,
-                    height: "40px",
-                    // border: "2px solid #5383DA",
-                    border: "2px solid #C2CAD6",
-                    borderRadius: "16px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    // backgroundColor: "#FFFFFF",
-                    backgroundColor: "#F3F4F6",
-                    cursor: "not-allowed",
-                  }}
-                >
-                  <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
-                  <span
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "#0A0C0F",
-                    }}
-                  >
-                    USD
-                  </span>
-                </button>
-              </Dropdown>
-
-              <Dropdown
-                disabled
-                menu={{
-                  items: [
+                    { type: "divider" },
                     { key: "en", label: "🇺🇸 English" },
                     { key: "ar", label: "🇸🇦 العربية (Arabic)" },
                     { key: "fr", label: "🇫🇷 Français (French)" },
                   ],
                 }}
+                trigger={["click"]}
               >
                 <button
+                  type="button"
                   disabled
                   style={{
-                    flex: 1,
-                    height: "40px",
-                    // border: "2px solid #5383DA",
-                    border: "2px solid #C2CAD6",
-                    borderRadius: "16px",
+                    width: "100%",
+                    height: "44px",
+                    border: "1.5px solid #5383DA",
+                    borderRadius: "9999px",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    // backgroundColor: "#FFFFFF",
-                    backgroundColor: "#F3F4F6",
+                    alignItems: "stretch",
+                    padding: "0 4px",
+                    backgroundColor: "#FFFFFF",
                     cursor: "not-allowed",
+                    boxSizing: "border-box",
                   }}
                 >
-                  <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
+                  {/* 50% | divider | 50% — line stays centered */}
                   <span
                     style={{
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "#0A0C0F",
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      minWidth: 0,
                     }}
                   >
-                    EN
+                    <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#0A0C0F",
+                      }}
+                    >
+                      USD
+                    </span>
+                  </span>
+                  <div
+                    style={{
+                      alignSelf: "center",
+                      width: "1px",
+                      height: "22px",
+                      backgroundColor: "#E4E4E7",
+                      flexShrink: 0,
+                    }}
+                    aria-hidden
+                  />
+                  <span
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#0A0C0F",
+                      minWidth: 0,
+                    }}
+                  >
+                    English
+                    <DownOutlined
+                      style={{ fontSize: "11px", color: "#3D495C" }}
+                    />
                   </span>
                 </button>
               </Dropdown>

@@ -22,12 +22,26 @@ import {
   useFlightIngestView,
 } from "../hooks/useFlightBooking";
 import toast from "react-hot-toast";
+import axios from "axios";
 import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import FlightBookingAnicllarySection from "../components/molecules/FlightBookingAnicllarySection";
 import AncillaryConfirmationModal from "../components/common/AncillaryConfirmationModal";
 import { useAuth } from "../features/auth/hooks/useAuth";
 import * as RemoteUserService from "../services/api/remoteUserService";
 import { useFlightStore } from "../store/UseFlightStore";
+
+type AncillarySummary = {
+  totalAmount: number;
+  currency: string;
+  selectedCount: number;
+  breakdown?: Array<{
+    category: "baggage" | "meals" | "seats" | "other";
+    label: string;
+    amount: number;
+    currency: string;
+    ancillaryOfferId: string;
+  }>;
+};
 
 /** BK209: Extract flight search params from offerData for "Change" - prefill search without restarting */
 function buildFlightFromOffer(offerData: any) {
@@ -100,7 +114,13 @@ const FlightBooking = () => {
   // const [currentStep, setCurrentStep] = useState(0);
   const [fareBookingSearchRules, setFareBookingSearchRules] =
     useState<any>(null);
+  const [fareRuleDetails, setFareRuleDetails] = useState<any>(null);
   const [showAncillaryModal, setShowAncillaryModal] = useState(false);
+  const [ancillarySummary, setAncillarySummary] = useState<AncillarySummary>({
+    totalAmount: 0,
+    currency: "USD",
+    selectedCount: 0,
+  });
   const enhanceAvailable =
     !!initialOfferData?.flightDetail?.raw?.detail?.ancillaryDetailsAvailable;
   // const steps = ["Book", "Enhance", "Review", "Pay", "E-ticket"];
@@ -244,7 +264,7 @@ const FlightBooking = () => {
   // const { data: cityOptions, isLoading: isCountryLoading } =
   //   useAiprortOptions(true);
   const { data: countriesOptions, isLoading: isCountriesLoading } =
-    useCountriesOptions();
+    useCountriesOptions(isAuthenticated);
 
   const { mutateAsync, isPending } = useFlightFareRuleSearch();
   const { mutateAsync: mutateIngestViewAsync, isPending: isIngestViewPending } =
@@ -424,14 +444,18 @@ const FlightBooking = () => {
         offerId: offerData?.offerId,
         searchKey: offerData?.searchKey,
       });
+      const fareRuleItem = response?.data?.[0] ?? null;
       const rules = response?.data?.[0]?.bookingRules ?? null;
       setFareBookingSearchRules(rules);
+      setFareRuleDetails(fareRuleItem);
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
       toast.error(err);
-      if (err == "Offer Id Invalid or Expired") {
+      const status = axios.isAxiosError(error)
+        ? (error.response?.status ?? 0)
+        : 0;
+      if (status === 404 || status === 410 || status === 409) {
         navigate("/search_flight");
-        // return
       }
     }
   };
@@ -616,6 +640,23 @@ const FlightBooking = () => {
     ingestViewUserCountOnFlightOffer();
   }, [isPendingBooking, offerData?.offerId, user?.email, user?.phone]);
 
+  /** Reservation payload is initialised once; mirror book-step passengers so Pay uses current identity docs. */
+  useEffect(() => {
+    if (payStepIndex < 0 || currentStep !== payStepIndex) return;
+    setFlightReservationBookingPayload((prev) => ({
+      ...prev,
+      offerId: flightBookingPayload.offerId ?? prev.offerId,
+      searchKey: flightBookingPayload.searchKey ?? prev.searchKey,
+      passengers: flightBookingPayload.passengers,
+    }));
+  }, [
+    currentStep,
+    payStepIndex,
+    flightBookingPayload.offerId,
+    flightBookingPayload.searchKey,
+    flightBookingPayload.passengers,
+  ]);
+
   return (
     <>
       <AncillaryConfirmationModal
@@ -713,6 +754,7 @@ const FlightBooking = () => {
               onPassengerFieldChange={updatePassengerField}
               countries={countriesOptions}
               fareBookingSearchRules={fareBookingSearchRules}
+              fareRuleData={fareRuleDetails}
               // onNext={() => setCurrentStep(hasAncillaries ? 1 : 2)}
               onNext={async (newOfferId?: string) => {
                 const usedOfferId = newOfferId ?? offerData.offerId;
@@ -744,42 +786,52 @@ const FlightBooking = () => {
             hasAncillaries && (
               <FlightBookingAnicllarySection
                 trip={offerData.flightDetail}
+                fareRuleData={fareRuleDetails}
                 passengers={flightBookingPayload.passengers}
                 flightAncillarySearch={ancillarySearchData}
                 onNext={() => setCurrentStep(2)}
                 offerId={offerData?.offerId}
                 searchKey={offerData?.searchKey}
                 onChangeFlight={handleChangeFlight}
+                onAncillarySelectionResolved={(summary) => {
+                  setAncillarySummary(summary);
+                }}
               />
             )}
           {currentStep === reviewStepIndex && (
             <FlightBookingReviewSection
               trip={offerData.flightDetail}
               fareBookingSearchRules={fareBookingSearchRules}
+              fareRuleData={fareRuleDetails}
               flightBookingPayload={flightBookingPayload}
               countries={countriesOptions}
               onNext={() => setCurrentStep(enhanceAvailable ? 3 : 2)}
               onEditDetails={() => setCurrentStep(0)}
               onChangeFlight={handleChangeFlight}
+              ancillarySummary={ancillarySummary}
             />
           )}
           {currentStep === payStepIndex && (
             <FlightBookingPaymentSection
               trip={offerData.flightDetail}
+              fareRuleData={fareRuleDetails}
               // cities={cityOptions}
               countries={countriesOptions}
+              bookingPassengers={flightBookingPayload.passengers}
               reservation={flightReservationBookingPayload}
               onReservationChange={handleFlightReservationBookingChange}
               onNext={() => setCurrentStep(eticketStepIndex)}
               onFinalReservationFlightBookingSuccess={
                 onFinalReservationFlightBookingSuccess
               }
+              ancillarySummary={ancillarySummary}
             />
           )}
           {currentStep === eticketStepIndex && (
             <FlightBookingETicketSection
               reservedFlightBooking={finalReservedFlightBookingData}
               offerId={offerData?.offerId}
+              ancillarySummary={ancillarySummary}
             />
           )}
         </div>

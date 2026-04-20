@@ -1,9 +1,10 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import baggage from "../../assets/svgs/enhance-baggage.svg";
 import CustomToggle from "../common/CustomToggle";
 import CollapsibleCard from "./CollapsibleCard";
 import CardFeaturingRow from "./CardFeaturingRow";
 import type { SegmentSummary } from "../../utils/flightBookingHelper";
+import { getMarketingAirlineDisplayName } from "../../utils/helpers";
 import { useAncillaryStore } from "../../store/useAncillaryStore";
 
 type FlightBookingBaggageSectionProps = {
@@ -25,6 +26,7 @@ export default function FlightBookingBaggageSection({
   flightJourneys,
 }: FlightBookingBaggageSectionProps) {
   const { setBaggageSelections, baggageSelections } = useAncillaryStore();
+  const syncingFromStoreRef = useRef(false);
   // Calculate eligible passengers (exclude INF)
   const eligiblePassengers = useMemo(() => {
     return flightPassengers.filter((p) => p.ptc !== "INF");
@@ -70,7 +72,9 @@ export default function FlightBookingBaggageSection({
   const [activePassengerIndex, setActivePassengerIndex] = useState(0);
 
   // Store selections: { segmentKey: { passengerKey: baggageOfferId | null } }
-  const [selections, setSelections] = useState<BaggageSelectionState>({});
+  const [selections, setSelections] = useState<BaggageSelectionState>(
+    () => baggageSelections || {},
+  );
 
   // Get baggage options for current segment
   const getBaggageForSegment = (segmentKey: string) => {
@@ -292,25 +296,43 @@ export default function FlightBookingBaggageSection({
   //   }
   // }, [baggageSelections]);
 
+  // Hydrate local UI from store when navigating back to Enhance.
   useEffect(() => {
-    const localBaggageJSON = JSON.stringify(selections);
-    const storeBaggageJSON = JSON.stringify(baggageSelections);
+    const storeHas = Object.keys(baggageSelections || {}).length > 0;
+    const localHas = Object.keys(selections || {}).length > 0;
+    const storeJSON = JSON.stringify(baggageSelections || {});
+    const localJSON = JSON.stringify(selections || {});
 
-    if (localBaggageJSON !== storeBaggageJSON) {
-      setBaggageSelections(selections);
+    if (storeHas && storeJSON !== localJSON) {
+      syncingFromStoreRef.current = true;
+      setSelections(baggageSelections || {});
+      queueMicrotask(() => {
+        syncingFromStoreRef.current = false;
+      });
+      return;
     }
-  }, [selections]);
 
-  useEffect(() => {
-    if (
-      Object.keys(baggageSelections).length === 0 &&
-      Object.keys(selections).length > 0
-    ) {
+    // Reflect explicit clear.
+    if (!storeHas && localHas) {
+      syncingFromStoreRef.current = true;
       setSelections({});
       setCurrentSegmentIndex(0);
       setActivePassengerIndex(0);
+      queueMicrotask(() => {
+        syncingFromStoreRef.current = false;
+      });
     }
   }, [baggageSelections]);
+
+  // Persist local UI changes to store (guarded to avoid loops).
+  useEffect(() => {
+    if (syncingFromStoreRef.current) return;
+    const storeJSON = JSON.stringify(baggageSelections || {});
+    const localJSON = JSON.stringify(selections || {});
+    if (storeJSON !== localJSON) {
+      setBaggageSelections(selections);
+    }
+  }, [selections, baggageSelections, setBaggageSelections]);
 
   return (
     <div className="px-3 pb-3 mt-3">
@@ -404,7 +426,7 @@ export default function FlightBookingBaggageSection({
                     key={baggageId}
                     airline={{
                       logo: `/airlines/${currentSegment.marketingAirline}.png`,
-                      name: `${currentSegment.marketingAirline} Airlines`,
+                      name: getMarketingAirlineDisplayName(currentSegment),
                       flight: `${currentSegment.flightNumber} – ${currentSegment.cabinClass}`,
                     }}
                     blocks={[

@@ -8,25 +8,26 @@ import PasswordChecklist from "../common/PasswordChecklist";
 
 interface ResetPasswordFormProps {
   email: string;
+  otp: string;
   onPasswordReset: () => void;
   onBackToOTP: () => void;
 }
 
 const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   email,
+  otp,
   onPasswordReset,
   onBackToOTP: _onBackToOTP,
 }) => {
-  const [formData, setFormData] = useState<ResetPasswordFormType>({
-    email: email,
-    otp: "",
+  const [formData, setFormData] = useState<
+    Pick<ResetPasswordFormType, "newPassword" | "confirmPassword">
+  >({
     newPassword: "",
     confirmPassword: "",
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState({
-    otp: false,
     newPassword: false,
     confirmPassword: false,
   });
@@ -38,15 +39,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name === "otp") {
-      // Only allow numbers and limit to 6 digits
-      const numericValue = value.replace(/\D/g, "");
-      if (numericValue.length <= 6) {
-        setFormData((prev) => ({ ...prev, [name]: numericValue }));
-      }
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
     // Enable real-time validation feedback
     if (name === "newPassword" && !touched.newPassword) {
       setTouched((prev) => ({ ...prev, newPassword: true }));
@@ -74,7 +67,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
     if (!isFormValid) {
       setTouched({
-        otp: true,
         newPassword: true,
         confirmPassword: true,
       });
@@ -84,7 +76,12 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     setLoading(true);
 
     try {
-      const result = await AuthService.resetPasswordWithCode(formData);
+      const result = await AuthService.resetPasswordWithCode({
+        email,
+        otp,
+        newPassword: formData.newPassword,
+        confirmPassword: formData.confirmPassword,
+      });
 
       if (result.success) {
         onPasswordReset();
@@ -98,14 +95,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       setLoading(false);
     }
   };
-
-  const otpError = useMemo(() => {
-    if (!formData.otp.trim()) return "Verification code is required.";
-    if (!/^[0-9]+$/.test(formData.otp))
-      return "Code must contain only numbers.";
-    if (formData.otp.length !== 6) return "Code must be 6 digits.";
-    return null;
-  }, [formData.otp]);
 
   const passwordError = useMemo(() => {
     return getPasswordError(formData.newPassword);
@@ -124,11 +113,11 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   }, [formData.newPassword, formData.confirmPassword]);
 
   const isFormValid = useMemo(() => {
-    if (!formData.otp || formData.otp.length !== 6) return false;
+    if (!otp || otp.length !== 6) return false;
     if (!formData.newPassword || !formData.confirmPassword) return false;
     if (formData.newPassword !== formData.confirmPassword) return false;
     return isPasswordValid(formData.newPassword);
-  }, [formData.otp, formData.newPassword, formData.confirmPassword]);
+  }, [otp, formData.newPassword, formData.confirmPassword]);
 
   useEffect(() => {
     if (error) {
@@ -152,33 +141,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           <p className="text-center text-sm text-[#3D495C] mb-6">
             Make sure it's strong and unique.
           </p>
-
-          <div>
-            <Input
-              type="text"
-              name="otp"
-              label="Verification code"
-              placeholder="Enter verification code"
-              value={formData.otp}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              rounded="xl"
-              required
-              touched={touched.otp}
-              error={Boolean(otpError)}
-              errorBorderColor="#FF5270"
-            />
-            {touched.otp && otpError && (
-              <p
-                id="reset-otp-error"
-                role="alert"
-                aria-live="assertive"
-                className="mt-1 text-sm text-red-600"
-              >
-                {otpError}
-              </p>
-            )}
-          </div>
 
           <div className="space-y-1">
             <Input
