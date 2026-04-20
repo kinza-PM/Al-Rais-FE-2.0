@@ -572,7 +572,8 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                                 }
                                 disabled={loading && !baggage.length}
                             >
-                                {(baggage && baggage[0]?.label) || "Checked baggage included"}
+                                {"Checked Baggage Included"}
+                                {/* {(baggage && baggage[0]?.label) || "Checked Baggage Included"} */}
                             </Checkbox>
                         </div>
                     </Panel>
