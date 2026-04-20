@@ -55,6 +55,17 @@ type Props = {
   toHasMore?: boolean;
   fromLoadingMore?: boolean;
   toLoadingMore?: boolean;
+  /**
+   * Wrap From / Swap / To in one flex row so parent grids can use a single column
+   * for the whole route (e.g. landing hero). Keep false for flight-search grid
+   * where `display: contents` must expose each segment to the parent grid.
+   */
+  bundleRoute?: boolean;
+  /**
+   * When false (e.g. multi-city CSS grid), swap has no horizontal margins and sits
+   * in the center of its grid track — avoids overlap with From/To fields.
+   */
+  swapGutter?: boolean;
 };
 
 const TravelRoutePicker: React.FC<Props> = ({
@@ -85,6 +96,8 @@ const TravelRoutePicker: React.FC<Props> = ({
   toHasMore,
   fromLoadingMore,
   toLoadingMore,
+  bundleRoute = false,
+  swapGutter = true,
 }) => {
   const { fromCode, toCode, fromOption, toOption } = value;
 
@@ -172,7 +185,7 @@ const TravelRoutePicker: React.FC<Props> = ({
     [toDropdownOptions, disableSameSelection, fromCode],
   );
 
-  return (
+  const routeInner = (
     <>
       <div className={widthClass}>
         <SearchableDropdown
@@ -223,8 +236,25 @@ const TravelRoutePicker: React.FC<Props> = ({
         <button
           type="button"
           onClick={swap}
-          className="mx-2 flex items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn"
-          style={{ width: 47, height: 47, minWidth: 47, minHeight: 47, marginTop: 23, marginLeft: 0 }}
+          className={`flex items-center justify-center rounded-full bg-[#2351A3] text-white shadow-md border border-white fromToBtn ${swapGutter ? "mx-2" : ""}`}
+          style={
+            swapGutter
+              ? {
+                  width: 47,
+                  height: 47,
+                  minWidth: 47,
+                  minHeight: 47,
+                  marginTop: 23,
+                  marginLeft: 0,
+                }
+              : {
+                  width: 48,
+                  height: 48,
+                  minWidth: 48,
+                  minHeight: 48,
+                  margin: 0,
+                }
+          }
         >
           <img src={DoubledArrow} alt="swap-routes" />
         </button>
@@ -276,6 +306,16 @@ const TravelRoutePicker: React.FC<Props> = ({
       </div>
     </>
   );
+
+  if (bundleRoute) {
+    return (
+      <div className="flex w-full min-w-0 items-end">
+        {routeInner}
+      </div>
+    );
+  }
+
+  return routeInner;
 };
 
 export default TravelRoutePicker;

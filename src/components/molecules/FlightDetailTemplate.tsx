@@ -2027,26 +2027,34 @@ const FlightDetailTemplate: React.FC = () => {
             <>
               {/* First Row: Trip and Passengers */}
               <div className="flight-search-multicity-toprow">
-                <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                  <label className="header-labels-common">Trip</label>
-                  <SearchableDropdown
-                    options={segOptions.map((option) => ({
-                      id: option.value,
-                      value: option.value,
-                      label: option.label,
-                      disabled: false,
-                    }))}
-                    value={trip}
-                    onChange={(value) => setTrip(value as TripType)}
-                    placeholder="Select trip type"
-                    widthClass="w-full"
-                    searchPlaceholder="Search trip type..."
-                  />
-                </Flex>
+                {/* Spans same grid area as From + Swap + To; Departure/Cabin columns stay empty */}
+                <div className="flight-search-multicity-toprow-route">
+                  <Flex
+                    vertical
+                    className="flight-search-multicity-trip-cell min-w-0 w-full"
+                  >
+                    <label className="header-labels-common">Trip</label>
+                    <SearchableDropdown
+                      options={segOptions.map((option) => ({
+                        id: option.value,
+                        value: option.value,
+                        label: option.label,
+                        disabled: false,
+                      }))}
+                      value={trip}
+                      onChange={(value) => setTrip(value as TripType)}
+                      placeholder="Select trip type"
+                      widthClass="w-full"
+                      searchPlaceholder="Search trip type..."
+                    />
+                  </Flex>
 
-                <Flex vertical style={{ width: "100%", maxWidth: 250 }}>
-                  <label className="header-labels-common flex items-center gap-2">
-                    Travellers
+                  <Flex
+                    vertical
+                    className="flight-search-multicity-travellers-cell min-w-0 w-full"
+                  >
+                    <label className="header-labels-common flex items-center gap-2">
+                      Travellers
                     <span className="relative inline-flex group/info">
                       <img
                         src={Info}
@@ -2072,12 +2080,20 @@ const FlightDetailTemplate: React.FC = () => {
                     />
                   </div>
                 </Flex>
+                </div>
               </div>
 
-              {/* ===== SECTION 2: FLIGHT LEGS (CENTERED) — each row: From/To, Cabin, Date ===== */}
-              {multicityLegs.map((leg, idx) => (
-                <div key={idx} className="relative">
-                  <div className="flight-search-multicity-legrow">
+              {/* ===== SECTION 2: FLIGHT LEGS — scroll when more than 2 rows ===== */}
+              <div
+                className={
+                  multicityLegs.length > 2
+                    ? "flight-search-multicity-legs-scroll"
+                    : "flight-search-multicity-legs"
+                }
+              >
+                {multicityLegs.map((leg, idx) => (
+                  <div key={idx} className="relative">
+                    <div className="flight-search-multicity-legrow">
                     <div className="flight-search-multicity-route">
                       <TravelRoutePicker
                         options={[]}
@@ -2126,6 +2142,7 @@ const FlightDetailTemplate: React.FC = () => {
                         }}
                         disableSameSelection
                         widthClass="multicityFromTo"
+                        swapGutter={false}
                       />
                     </div>
 
@@ -2215,10 +2232,11 @@ const FlightDetailTemplate: React.FC = () => {
                     </button>
                   )}
                 </div>
-              ))}
+                ))}
+              </div>
 
-              {/* ===== SECTION 3: ADD ANOTHER STOP BUTTON (CENTERED) ===== */}
-              <Flex align="center" justify="center" className="mt-0 sm:mt-1">
+              {/* ===== SECTION 3: ADD ANOTHER STOP ===== */}
+              <div className="mt-0 flex w-full justify-center sm:mt-1">
                 <button
                   type="button"
                   onClick={() =>
@@ -2249,18 +2267,18 @@ const FlightDetailTemplate: React.FC = () => {
                   </svg>
                   Add another stop
                 </button>
-              </Flex>
+              </div>
 
-              {/* ===== SECTION 4: SEARCH BUTTON (BOTTOM CENTER) ===== */}
-              <Flex align="center" justify="center" className="mt-2 sm:mt-3">
+              {/* ===== SECTION 4: SEARCH ===== */}
+              <div className="mt-2 flex w-full justify-center sm:mt-3">
                 <CustomButton
                   className="searchFilterBtn"
                   onClick={() => handleSearch()}
-                  style={{ minWidth: "200px" }} // Minimum width for better appearance
+                  style={{ minWidth: "200px" }}
                 >
                   {isPending ? "Searching..." : "Search"}
                 </CustomButton>
-              </Flex>
+              </div>
             </>
           ) : (
             <div className="flight-search-detail-inputs">

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Layout, Menu, Dropdown, Drawer, Modal, Typography } from "antd";
 import {
   CalendarOutlined,
+  DownOutlined,
   MenuOutlined,
   LogoutOutlined,
   ProfileOutlined,
@@ -16,7 +17,6 @@ import {
   markNotificationRead,
   type NotificationItem,
 } from "../../services/notificationService";
-import avatarImage from "../../assets/images/aavter.png";
 import FlagUSA from "../../assets/svgs/Flag-usa.svg";
 import FlagUAE from "../../assets/svgs/Flag-uae.svg";
 import FlagIND from "../../assets/svgs/Flag-ind.svg";
@@ -982,17 +982,43 @@ const AppHeader: React.FC<HeaderProps> = ({
                 marginBottom: 16,
               }}
             >
-              <img
-                src={avatarImage}
-                alt="User avatar"
-                style={{
-                  width: "56px",
-                  height: "56px",
-                  borderRadius: "50%",
-                  objectFit: "cover",
-                  border: "2px solid #E4E4E7",
-                }}
-              />
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="User avatar"
+                  style={{
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "2px solid #E4E4E7",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "50%",
+                    backgroundColor: "#2351A3",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "1px solid #E4E4E7",
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
+                    style={{
+                      color: "#fff",
+                      fontWeight: 600,
+                      fontSize: "18px",
+                    }}
+                  >
+                    {initials}
+                  </span>
+                </div>
+              )}
               <div
                 style={{
                   flex: 1,
@@ -1009,7 +1035,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                     textOverflow: "ellipsis",
                   }}
                 >
-                  {user.name?.split("@")[0] || "User"}
+                  {displayName.split("@")[0] || "User"}
                 </div>
                 <div
                   style={{
@@ -1026,85 +1052,89 @@ const AppHeader: React.FC<HeaderProps> = ({
               </div>
             </div>
 
-            {/* Currency & Language Selectors */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: 12 }}>
+            {/* Currency & language — single full-width pill (USD | English) */}
+            <div style={{ width: "100%", marginBottom: 12 }}>
               <Dropdown
+                disabled
                 menu={{
                   items: [
                     { key: "usd", label: "🇺🇸 USD - US Dollar" },
                     { key: "eur", label: "🇪🇺 EUR - Euro" },
                     { key: "gbp", label: "🇬🇧 GBP - British Pound" },
                     { key: "aed", label: "🇦🇪 AED - UAE Dirham" },
-                  ],
-                }}
-                disabled
-              >
-                <button
-                  disabled
-                  style={{
-                    flex: 1,
-                    height: "40px",
-                    // border: "2px solid #5383DA",
-                    border: "2px solid #C2CAD6",
-                    borderRadius: "16px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    // backgroundColor: "#FFFFFF",
-                    backgroundColor: "#F3F4F6",
-                    cursor: "not-allowed",
-                  }}
-                >
-                  <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
-                  <span
-                    style={{
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "#0A0C0F",
-                    }}
-                  >
-                    USD
-                  </span>
-                </button>
-              </Dropdown>
-
-              <Dropdown
-                disabled
-                menu={{
-                  items: [
+                    { type: "divider" },
                     { key: "en", label: "🇺🇸 English" },
                     { key: "ar", label: "🇸🇦 العربية (Arabic)" },
                     { key: "fr", label: "🇫🇷 Français (French)" },
                   ],
                 }}
+                trigger={["click"]}
               >
                 <button
+                  type="button"
                   disabled
                   style={{
-                    flex: 1,
-                    height: "40px",
-                    // border: "2px solid #5383DA",
-                    border: "2px solid #C2CAD6",
-                    borderRadius: "16px",
+                    width: "100%",
+                    height: "44px",
+                    border: "1.5px solid #5383DA",
+                    borderRadius: "9999px",
                     display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: "6px",
-                    // backgroundColor: "#FFFFFF",
-                    backgroundColor: "#F3F4F6",
+                    alignItems: "stretch",
+                    padding: "0 4px",
+                    backgroundColor: "#FFFFFF",
                     cursor: "not-allowed",
+                    boxSizing: "border-box",
                   }}
                 >
-                  <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
+                  {/* 50% | divider | 50% — line stays centered */}
                   <span
                     style={{
-                      fontSize: "13px",
-                      fontWeight: 500,
-                      color: "#0A0C0F",
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                      minWidth: 0,
                     }}
                   >
-                    EN
+                    <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
+                    <span
+                      style={{
+                        fontSize: "14px",
+                        fontWeight: 600,
+                        color: "#0A0C0F",
+                      }}
+                    >
+                      USD
+                    </span>
+                  </span>
+                  <div
+                    style={{
+                      alignSelf: "center",
+                      width: "1px",
+                      height: "22px",
+                      backgroundColor: "#E4E4E7",
+                      flexShrink: 0,
+                    }}
+                    aria-hidden
+                  />
+                  <span
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "6px",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      color: "#0A0C0F",
+                      minWidth: 0,
+                    }}
+                  >
+                    English
+                    <DownOutlined
+                      style={{ fontSize: "11px", color: "#3D495C" }}
+                    />
                   </span>
                 </button>
               </Dropdown>

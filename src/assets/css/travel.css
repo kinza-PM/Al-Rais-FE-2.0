@@ -338,17 +338,17 @@ input[type="number"] {
 }
 
 @media (min-width: 1024px) {
-  /* Desktop grid (responsive). Prevent overflow/clipping on mid-width screens. */
+  /* Desktop grid: proportional columns so the bar uses full width (like hotel search). */
   .flight-search-page .flight-search-detail-inputs {
-    grid-template-columns: 220px 220px minmax(280px, 1fr) 56px minmax(
-        280px,
-        1fr
-      );
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(0, 1.35fr)
+      56px
+      minmax(0, 1.35fr);
     grid-template-areas:
       "trip cabin from swap to"
       "travellers departure . . search";
-    /* When column widths do not fill the row (e.g. ultra-wide + fixed cols), center the form */
-    justify-content: center;
   }
 
   .flight-search-page .flight-search-field--trip {
@@ -397,10 +397,9 @@ input[type="number"] {
     grid-area: to;
   }
 
-  /* Keep From/To stable but allow shrink on smaller desktops */
   .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
     width: 100%;
-    max-width: 396px;
+    max-width: 100%;
     min-width: 0;
   }
 
@@ -410,14 +409,15 @@ input[type="number"] {
   }
 }
 
-/* Ultra-wide / Figma-perfect desktop sizing */
+/* Ultra-wide: same proportional stretch (no fixed caps that leave dead space). */
 @media (min-width: 1600px) {
   .flight-search-page .flight-search-detail-inputs {
-    grid-template-columns: 280px 280px 396px 48px 396px;
-  }
-
-  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
-    max-width: 396px;
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr)
+      minmax(0, 1.35fr)
+      56px
+      minmax(0, 1.35fr);
   }
 }
 
@@ -1022,38 +1022,101 @@ input[type="number"] {
   margin-bottom: 20px;
 }
 
-/* Flight Search Detail: Multi-city alignment (NOT home) */
+/* Flight Search Detail: Multi-city — top row grid matches leg rows; Trip+Travellers only in From+Swap+To span */
 .flight-search-page .flight-search-multicity-toprow {
   width: 100%;
   max-width: 100%;
   display: grid;
-  grid-template-columns: 280px 280px;
-  column-gap: 8px;
-  row-gap: 8px;
-  align-items: end;
-  justify-content: start;
+  /* Same five tracks as .flight-search-multicity-legrow; cols 4–5 stay empty on this row */
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    56px
+    minmax(0, 1.15fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 12px;
+  align-items: start;
+  box-sizing: border-box;
+  padding-top: 12px;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 1024px) {
+  .flight-search-page .flight-search-multicity-toprow {
+    padding-top: 16px;
+    margin-bottom: 16px;
+    column-gap: 16px;
+  }
+}
+
+.flight-search-page .flight-search-multicity-toprow-route {
+  grid-column: 1 / 4;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1024px) {
+  .flight-search-page .flight-search-multicity-toprow-route {
+    column-gap: 16px;
+  }
+}
+
+/* Trip | Travellers each fill half of the route band; labels + inputs align with leg rows */
+.flight-search-page .flight-search-multicity-trip-cell,
+.flight-search-page .flight-search-multicity-travellers-cell {
+  min-width: 0;
+  width: 100%;
+}
+
+/* Leg list: vertical stack; scroll area clamps height when >2 legs (JS adds .flight-search-multicity-legs-scroll) */
+.flight-search-page .flight-search-multicity-legs,
+.flight-search-page .flight-search-multicity-legs-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.flight-search-page .flight-search-multicity-legs-scroll {
+  max-height: min(272px, 45vh);
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Room for row remove (absolute -right-10) + scrollbar */
+  padding-right: 52px;
+  margin-top: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
 }
 
 .flight-search-page .flight-search-multicity-legrow {
   width: 100%;
   max-width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 260px) 44px minmax(0, 260px) minmax(
-      0,
-      200px
-    ) minmax(0, 200px);
-  column-gap: 6px;
-  row-gap: 8px;
-  align-items: end;
+  /* From | swap | To | Departure | Cabin — swap column wide enough for 48px button + gap */
+  grid-template-columns:
+    minmax(0, 1.15fr)
+    56px
+    minmax(0, 1.15fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+  column-gap: 12px;
+  row-gap: 12px;
+  align-items: start;
   margin-top: 0;
-  justify-content: start;
+  box-sizing: border-box;
 }
 
-/* Large screens: center multi-city rows (fixed tracks leave extra horizontal space) */
 @media (min-width: 1024px) {
-  .flight-search-page .flight-search-multicity-toprow,
   .flight-search-page .flight-search-multicity-legrow {
-    justify-content: center;
+    column-gap: 16px;
   }
 }
 
@@ -1064,23 +1127,33 @@ input[type="number"] {
 
 .flight-search-page .multicityFromTo {
   width: 100%;
-  max-width: 260px;
+  max-width: 100%;
   min-width: 0;
 }
 
+/* Swap sits in the label row: offset down to align with From/To inputs */
 .flight-search-page .flight-search-multicity-legrow .fromToBtn {
-  width: 44px !important;
-  height: 44px !important;
-  min-width: 44px !important;
-  max-width: 44px !important;
+  width: 48px !important;
+  height: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
   margin: 0 !important;
+  margin-top: 22px !important;
   justify-self: center;
-  align-self: center;
+  align-self: start;
 }
 
 .flight-search-page .flight-search-multicity-side {
   min-width: 0;
-  max-width: 200px;
+  width: 100%;
+  max-width: none;
+}
+
+/* Global .searchFilterBtn uses margin-left:auto — center the Multi-city Search button */
+.flight-search-page .flight-search-form--multicity .searchFilterBtn {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  align-self: center !important;
 }
 
 /* Airport dropdown: wider panel like design reference */
@@ -1123,6 +1196,13 @@ input[type="number"] {
     row-gap: 8px;
   }
 
+  .flight-search-page .flight-search-multicity-toprow-route {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
+    column-gap: 0;
+    row-gap: 8px;
+  }
+
   .flight-search-page .flight-search-multicity-legrow {
     grid-template-columns: 1fr;
     column-gap: 0;
@@ -1152,7 +1232,8 @@ input[type="number"] {
   }
 
   .flight-search-page .flight-search-multicity-toprow,
-  .flight-search-page .flight-search-multicity-legrow {
+  .flight-search-page .flight-search-multicity-legrow,
+  .flight-search-page .flight-search-multicity-toprow-route {
     gap: 6px;
   }
 
