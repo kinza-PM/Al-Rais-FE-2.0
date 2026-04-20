@@ -1,5 +1,12 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { Checkbox, Select } from "antd";
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Checkbox, Input, Select } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/atoms/Button";
 import Loader from "../components/atoms/Loader";
@@ -22,6 +29,8 @@ import {
 } from "../utils/flightCancellationFareRulesEstimate";
 
 type ChargeDisplaySource = "api" | "fareRules" | "none";
+
+type OtherReasonTextAreaRef = React.ComponentRef<typeof Input.TextArea>;
 
 function SectionCard({
   title,
@@ -92,6 +101,10 @@ function passengerRowKey(p: any, index: number): string {
   return `pax-${index}`;
 }
 
+function isOtherCancelReasonLabel(label: string | undefined): boolean {
+  return String(label ?? "").trim().toLowerCase() === "other";
+}
+
 const FlightCancellationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -133,6 +146,11 @@ const FlightCancellationPage: React.FC = () => {
 
   /** Selected master-listing row id (`flight-cancel-reason`); Select option `value`. */
   const [cancelReasonId, setCancelReasonId] = useState<string | undefined>();
+  const [cancelReasonDetail, setCancelReasonDetail] = useState("");
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
+  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
   const [ack1, setAck1] = useState(false);
   const [ack2, setAck2] = useState(false);
 
@@ -350,28 +368,63 @@ const FlightCancellationPage: React.FC = () => {
     }
   }, [allowPartialCancellation]);
 
+  useEffect(() => {
+    setCancelReasonDetail("");
+  }, [cancelReasonId]);
+
+  const clearFieldError = useCallback(
+    (fieldPath: string) => {
+      setValidationErrors((prev) => {
+        if (!hasAttemptedValidation || !prev[fieldPath]) return prev;
+        const next = { ...prev };
+        delete next[fieldPath];
+        return next;
+      });
+    },
+    [hasAttemptedValidation],
+  );
+
+  const selectedCancelReasonOption = useMemo(
+    () => (cancelReasonOptions ?? []).find((o) => o.value === cancelReasonId),
+    [cancelReasonOptions, cancelReasonId],
+  );
+
+  const isOtherReasonSelected = useMemo(
+    () => isOtherCancelReasonLabel(selectedCancelReasonOption?.label),
+    [selectedCancelReasonOption?.label],
+  );
+
+  const otherReasonTextAreaRef = useRef<OtherReasonTextAreaRef>(null);
+
+  /** Ant Design theme sets `resize: vertical` on the textarea; override with `!important`. */
+  useLayoutEffect(() => {
+    if (!isOtherReasonSelected) return;
+    const apply = () => {
+      otherReasonTextAreaRef.current?.resizableTextArea?.textArea?.style.setProperty(
+        "resize",
+        "none",
+        "important",
+      );
+    };
+    apply();
+    const t = window.setTimeout(apply, 0);
+    return () => clearTimeout(t);
+  }, [isOtherReasonSelected]);
+
   /** Ticket value for the passenger(s) being cancelled minus charges (never negative). */
   const estimatedRefund = useMemo(
     () => Math.max(0, ticketValueForCancellation - displayedCharges.total),
     [ticketValueForCancellation, displayedCharges.total],
   );
 
-  const partialSelectionOk =
-    !cancelAllPassengers &&
-    bookingPassengers.length > 1 &&
-    selectedPassengerKeys.length > 0 &&
-    selectedPassengerKeys.length < bookingPassengers.length;
-
-  const canSubmit =
-    !!cancelReasonId &&
-    ack1 &&
-    ack2 &&
-    (cancelAllPassengers || partialSelectionOk);
-
   const handleConfirmCancellation = async () => {
+    setHasAttemptedValidation(true);
+
+    const errors: Record<string, string> = {};
+
     if (!bookingReferenceId || !supplierLocator || !issueDate) {
-      toast.error("Missing cancellation details");
-      return;
+      errors.session =
+        "Missing cancellation details. Open cancellation again from your booking.";
     }
 
     if (!cancelAllPassengers) {
@@ -379,18 +432,39 @@ const FlightCancellationPage: React.FC = () => {
         selectedPassengerKeys.length === 0 ||
         selectedPassengerKeys.length >= bookingPassengers.length
       ) {
-        toast.error(
-          "Select at least one passenger and leave at least one traveller on the booking.",
-        );
-        return;
+        errors.passengers =
+          "Select at least one passenger to cancel and leave at least one traveller on the booking.";
       }
     }
 
+    if (!cancelReasonId) {
+      errors.cancelReason = "Please select a cancellation reason.";
+    }
+
+    if (isOtherReasonSelected && !cancelReasonDetail.trim()) {
+      errors.otherReason = "Please describe your reason for cancelling.";
+    }
+
+    if (!ack1) {
+      errors.ack1 = "Please confirm you are authorised to cancel this booking.";
+    }
+    if (!ack2) {
+      errors.ack2 = "Please confirm you agree to the Cancellation & Refund Policy.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    setValidationErrors({});
+
     const flightSegments: unknown[] = [];
 
-    const reasonLabel =
-      (cancelReasonOptions ?? []).find((o) => o.value === cancelReasonId)
-        ?.label ?? "";
+    const reasonLabel = selectedCancelReasonOption?.label ?? "";
+    const trimmedDetail = cancelReasonDetail.trim();
+    /** Master listing reason text (e.g. `"Other"`); detail for Other goes in `otherCancelReason`. */
+    const cancelreason = reasonLabel;
 
     const body: FlightCancellationRequest = {
       bookingReferenceId,
@@ -400,7 +474,10 @@ const FlightCancellationPage: React.FC = () => {
       voidOnly: !cancelAllPassengers,
       doSupplierRefund: true,
       flightSegments,
-      cancelreason: reasonLabel,
+      cancelreason,
+      ...(isOtherReasonSelected && trimmedDetail
+        ? { otherCancelReason: trimmedDetail }
+        : {}),
       ...(offerId ? { offerId } : {}),
       ...(cancelReasonId ? { cancelId: cancelReasonId } : {}),
     };
@@ -431,11 +508,14 @@ const FlightCancellationPage: React.FC = () => {
         toast.success("Flight cancelled successfully");
         navigate(buildMyBookingsUrl({ mode: "flights", status: "all" }));
       } else {
-        toast.error(response?.meta?.statusMessage || "Cancellation failed");
+        setValidationErrors({
+          api:
+            response?.meta?.statusMessage?.trim() || "Cancellation failed.",
+        });
       }
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
-      toast.error(err || "Cancellation failed");
+      setValidationErrors({ api: err || "Cancellation failed." });
     }
   };
 
@@ -471,6 +551,14 @@ const FlightCancellationPage: React.FC = () => {
       />
       <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
         <div className="mx-auto max-w-[650px]">
+          {hasAttemptedValidation && validationErrors.session && (
+            <div
+              className="mb-4 rounded-[12px] border border-[#E65959] bg-[#FEF2F2] px-4 py-3 text-[13px] text-[#E65959]"
+              role="alert"
+            >
+              {validationErrors.session}
+            </div>
+          )}
           <SectionCard
             title="Select Items to Cancel"
             subtitle={
@@ -484,14 +572,20 @@ const FlightCancellationPage: React.FC = () => {
                 title="Cancel Entire Trip"
                 subtitle={`${airlineName} • ${routeLabel}`}
                 selected={cancelAllPassengers}
-                onClick={() => setCancelAllPassengers(true)}
+                onClick={() => {
+                  setCancelAllPassengers(true);
+                  clearFieldError("passengers");
+                }}
               />
               {allowPartialCancellation && (
                 <CancelItemCard
                   title="Cancel Selected Passengers"
                   subtitle="Choose who to remove from this booking"
                   selected={!cancelAllPassengers}
-                  onClick={() => setCancelAllPassengers(false)}
+                  onClick={() => {
+                    setCancelAllPassengers(false);
+                    clearFieldError("passengers");
+                  }}
                 />
               )}
             </div>
@@ -504,14 +598,20 @@ const FlightCancellationPage: React.FC = () => {
                     Passengers to cancel
                   </span>
                   <Checkbox.Group
-                    className="flex flex-col gap-2 [&_.ant-checkbox-wrapper]:items-start [&_.ant-checkbox-wrapper]:mb-2"
+                    className={`flex flex-col gap-2 rounded-[10px] p-2 [&_.ant-checkbox-wrapper]:items-start [&_.ant-checkbox-wrapper]:mb-2`}
                     options={passengerCheckboxOptions}
                     value={selectedPassengerKeys}
-                    onChange={(vals) =>
-                      setSelectedPassengerKeys(vals.map(String))
-                    }
+                    onChange={(vals) => {
+                      setSelectedPassengerKeys(vals.map(String));
+                      clearFieldError("passengers");
+                    }}
                   />
-                  <p className="text-[11px] text-[#3D495C] mt-2">
+                  {hasAttemptedValidation && validationErrors.passengers && (
+                    <p className="text-[12px] text-[#E65959]" role="alert">
+                      {validationErrors.passengers}
+                    </p>
+                  )}
+                  <p className="text-[11px] text-[#CE6C22] mt-2">
                     You cannot cancel every passenger here — use “Cancel Entire
                     Trip” to void the whole booking, or leave at least one
                     passenger active.
@@ -523,15 +623,66 @@ const FlightCancellationPage: React.FC = () => {
               <label className="block text-[12px] text-[#3D495C] mb-2">
                 Select a reason
               </label>
-              <Select
-                value={cancelReasonId}
-                onChange={(v) => setCancelReasonId(v)}
-                placeholder="What’s your reason for cancellation?"
-                className="w-full"
-                options={cancelReasonOptions}
-                loading={cancelReasonsLoading || cancelReasonsFetching}
-                size="large"
-              />
+              <div
+                className={
+                  hasAttemptedValidation && validationErrors.cancelReason
+                    ? "pb-1"
+                    : ""
+                }
+              >
+                <Select
+                  value={cancelReasonId}
+                  onChange={(v) => {
+                    setCancelReasonId(v);
+                    clearFieldError("cancelReason");
+                    clearFieldError("otherReason");
+                  }}
+                  placeholder="What’s your reason for cancellation?"
+                  className="w-full"
+                  options={cancelReasonOptions}
+                  loading={cancelReasonsLoading || cancelReasonsFetching}
+                  size="large"
+                  status={
+                    hasAttemptedValidation && validationErrors.cancelReason
+                      ? "error"
+                      : undefined
+                  }
+                />
+                {hasAttemptedValidation && validationErrors.cancelReason && (
+                  <p className="mt-1 text-[12px] text-[#E65959]" role="alert">
+                    {validationErrors.cancelReason}
+                  </p>
+                )}
+              </div>
+              {isOtherReasonSelected && (
+                <div className="mt-3">
+                  <label className="block text-[12px] text-[#3D495C] mb-2">
+                    Please specify your reason (required)
+                  </label>
+                  <Input.TextArea
+                    ref={otherReasonTextAreaRef}
+                    value={cancelReasonDetail}
+                    onChange={(e) => {
+                      setCancelReasonDetail(e.target.value);
+                      clearFieldError("otherReason");
+                    }}
+                    placeholder="Describe why you are cancelling…"
+                    rows={4}
+                    className="w-full"
+                    maxLength={2000}
+                    status={
+                      hasAttemptedValidation && validationErrors.otherReason
+                        ? "error"
+                        : undefined
+                    }
+                  />
+                  {hasAttemptedValidation && validationErrors.otherReason && (
+                    <p className="mt-1 text-[12px] text-[#E65959]" role="alert">
+                      {validationErrors.otherReason}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </SectionCard>
 
@@ -648,40 +799,58 @@ const FlightCancellationPage: React.FC = () => {
           </div>
 
           <div className="mt-6 space-y-5">
-            <Checkbox
-              checked={ack1}
-              onChange={(e) => setAck1(e.target.checked)}
-            >
-              <span className="text-[14px] text-[#3D495C]">
-                I confirm that I am the lead passenger or have the authority to
-                cancel this booking.
-              </span>
-            </Checkbox>
+            <div>
+              <Checkbox
+                checked={ack1}
+                onChange={(e) => {
+                  setAck1(e.target.checked);
+                  clearFieldError("ack1");
+                }}
+              >
+                <span className="text-[14px] text-[#3D495C]">
+                  I confirm that I am the lead passenger or have the authority to
+                  cancel this booking.
+                </span>
+              </Checkbox>
+              {hasAttemptedValidation && validationErrors.ack1 && (
+                <p className="mt-1 text-[12px] text-[#E65959]" role="alert">
+                  {validationErrors.ack1}
+                </p>
+              )}
+            </div>
 
-            <Checkbox
-              checked={ack2}
-              onChange={(e) => setAck2(e.target.checked)}
-            >
-              <span className="text-[14px] text-[#3D495C]">
-                I have read and agree to the{" "}
-                <Link
-                  to="/refund-cancellation-policy"
-                  className="text-[#2351A3] hover:underline"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  Cancellation & Refund Policy
-                </Link>
-              </span>
-            </Checkbox>
+            <div>
+              <Checkbox
+                checked={ack2}
+                onChange={(e) => {
+                  setAck2(e.target.checked);
+                  clearFieldError("ack2");
+                }}
+              >
+                <span className="text-[14px] text-[#3D495C]">
+                  I have read and agree to the{" "}
+                  <Link
+                    to="/refund-cancellation-policy"
+                    className="text-[#2351A3] hover:underline"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    Cancellation & Refund Policy
+                  </Link>
+                </span>
+              </Checkbox>
+              {hasAttemptedValidation && validationErrors.ack2 && (
+                <p className="mt-1 text-[12px] text-[#E65959]" role="alert">
+                  {validationErrors.ack2}
+                </p>
+              )}
+            </div>
           </div>
 
-          <div className="mt-10 flex justify-center">
+          <div className="mt-10 flex flex-col items-center gap-2">
             <Button
               type="button"
-              disabled={!canSubmit || isCancelling}
-              className={`text-white text-[15px] font-semibold ${
-                !canSubmit ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              disabled={isCancelling}
+              className="text-white text-[15px] font-semibold"
               style={{
                 background:
                   "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
@@ -692,8 +861,16 @@ const FlightCancellationPage: React.FC = () => {
               overrideClasses
               onClick={handleConfirmCancellation}
             >
-              {isCancelling ? "Cancelling..." : "Confirm Cancellation"}
+              {isCancelling ? "Cancelling…" : "Confirm Cancellation"}
             </Button>
+            {validationErrors.api && (
+              <p
+                className="w-[320px] text-center text-[13px] text-[#E65959]"
+                role="alert"
+              >
+                {validationErrors.api}
+              </p>
+            )}
           </div>
 
           <div className="mt-4 text-center text-[12px] text-[#3D495C]">

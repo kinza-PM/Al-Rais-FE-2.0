@@ -27,6 +27,8 @@ export type FlightCancellationRequest = {
   flightSegments: unknown[];
   passengers?: FlightCancellationPassengerPayload[];
   cancelreason?: string;
+  /** When reason is “Other”, free-text explanation (listing label stays in `cancelreason`). */
+  otherCancelReason?: string;
   /** Offer id from booking (passed through for downstream supplier routing). */
   offerId?: string;
   /** Master listing id for the selected cancellation reason (`flight-cancel-reason`). */
