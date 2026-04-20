@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../components";
 import ProfileMilesSummary from "../components/molecules/ProfileMilesSummary";
 import LoyaltyPrograms from "../components/molecules/LoyaltyPrograms";
@@ -79,6 +80,7 @@ function profileTabClass(selected: boolean): string {
 }
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const [active, setActive] = useState<(typeof tabs)[number]>("Favorites");
   const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
