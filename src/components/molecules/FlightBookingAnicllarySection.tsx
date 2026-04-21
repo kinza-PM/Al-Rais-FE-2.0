@@ -108,6 +108,29 @@ export default function FlightBookingAnicllarySection({
     () => transformFlightJourneysToObjects(trip?.raw?.journey),
     [trip]
   );
+  const allowedPassengerKeys = useMemo(
+    () =>
+      new Set(
+        (Array.isArray(passengers) ? passengers : [])
+          .map((p: any) => String(p?.passengerKey || "").trim())
+          .filter(Boolean),
+      ),
+    [passengers],
+  );
+  const allowedSegmentKeys = useMemo(() => {
+    const keys = new Set<string>();
+    const journeys = Array.isArray(trip?.raw?.journey) ? trip.raw.journey : [];
+    journeys.forEach((journey: any) => {
+      const segments = Array.isArray(journey?.flightSegments)
+        ? journey.flightSegments
+        : [];
+      segments.forEach((segment: any) => {
+        const key = String(segment?.segmentKey || "").trim();
+        if (key) keys.add(key);
+      });
+    });
+    return keys;
+  }, [trip?.raw?.journey]);
   const priceFareFamily = {
     label: "Fare family",
     value: firstPrice?.label ?? firstPrice?._priceClasses?.[0] ?? "Fare family",
@@ -247,10 +270,25 @@ export default function FlightBookingAnicllarySection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [liveAncillarySummary]);
 
+  useEffect(() => {
+    // Reset global ancillary selections when booking context changes.
+    clearAll();
+  }, [offerId, searchKey, clearAll]);
+
   const handleFlightAncillaryProvBooking = async () => {
     const all = getAllSelections() as AllSelections;
     const payload = buildAncillaryPayload(all, offerId, searchKey);
-    const selectedAncillaries = payload?.data?.selectedAncillaries || [];
+    const selectedAncillaries = (
+      payload?.data?.selectedAncillaries || []
+    ).filter((entry: any) => {
+      const passengerKey = String(entry?.passengerKey || "").trim();
+      const segmentKey = String(entry?.segmentKey || "").trim();
+      return (
+        !!entry?.ancillaryOfferId &&
+        allowedPassengerKeys.has(passengerKey) &&
+        allowedSegmentKeys.has(segmentKey)
+      );
+    });
     if (!selectedAncillaries.length) {
       onAncillarySelectionResolved?.({
         totalAmount: 0,
@@ -266,6 +304,8 @@ export default function FlightBookingAnicllarySection({
       }
       return;
     }
+
+    payload.data.selectedAncillaries = selectedAncillaries;
 
     try {
       const response = await mutateAsync(payload);

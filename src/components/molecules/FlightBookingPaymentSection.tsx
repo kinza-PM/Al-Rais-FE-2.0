@@ -61,14 +61,12 @@ import FlightBookingReviewModal from "../common/FlightBookingReviewModal";
 type PaymentMethod = "card" | "apple" | "google";
 
 const toCents = (value: number | string) => {
-  const normalized = String(value ?? "0").trim();
-  const negative = normalized.startsWith("-");
-  const safe = negative ? normalized.slice(1) : normalized;
-  const [wholePartRaw, fractionalPartRaw = ""] = safe.split(".");
-  const wholePart = Number(wholePartRaw || "0");
-  const fractionalPart = Number((fractionalPartRaw + "00").slice(0, 2));
-  const cents = wholePart * 100 + fractionalPart;
-  return negative ? -cents : cents;
+  const raw =
+    typeof value === "number"
+      ? value
+      : Number(String(value ?? "0").trim().replace(/,/g, ""));
+  if (!Number.isFinite(raw)) return 0;
+  return Math.round((raw + Number.EPSILON) * 100);
 };
 
 const centsToAmount = (cents: number) => cents / 100;
