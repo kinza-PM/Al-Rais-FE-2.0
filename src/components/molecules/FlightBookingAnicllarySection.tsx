@@ -355,7 +355,7 @@ export default function FlightBookingAnicllarySection({
           breakdown,
         });
 
-        toast.success(response?.meta?.actionType);
+        // toast.success(response?.meta?.actionType);
         if (typeof onNext === "function") {
           onNext();
         }
@@ -459,7 +459,7 @@ export default function FlightBookingAnicllarySection({
             onClick={() => handleFlightAncillaryProvBooking()}
             disabled={isPending}
           >
-            {isPending ? "Loading..." : "Continue"}
+            {isPending ? "Confirming add-on prices…" : "Continue"}
           </Button>
         </div>
 

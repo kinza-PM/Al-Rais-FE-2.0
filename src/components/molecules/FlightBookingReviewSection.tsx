@@ -77,6 +77,8 @@ type FlightBookingReviewSectionProps = {
   };
   /** When true (seat map in add-ons), empty seat shows "No seat selected"; otherwise check-in assignment. */
   seatAddOnAvailable?: boolean;
+  /** When set and no add-ons are selected, summary shows a way back to the Enhance step. */
+  onAddAddOns?: () => void;
 };
 
 export default function FlightBookingReviewSection({
@@ -89,6 +91,7 @@ export default function FlightBookingReviewSection({
   onChangeFlight,
   ancillarySummary,
   seatAddOnAvailable = false,
+  onAddAddOns,
 }: FlightBookingReviewSectionProps) {
   const [openPrice, setOpenPrice] = useState(false);
   const passengers = flightBookingPayload?.passengers || [];
@@ -128,6 +131,10 @@ export default function FlightBookingReviewSection({
       onNext();
     }
   };
+
+  const showAddAddOnsBanner =
+    typeof onAddAddOns === "function" &&
+    (ancillarySummary?.selectedCount ?? 0) === 0;
 
   const cabinClassLabel = (() => {
     const journeys = trip?.raw?.journey ?? trip?.journey ?? [];
@@ -416,6 +423,23 @@ export default function FlightBookingReviewSection({
             trip={trip.raw}
             ancillarySummary={ancillarySummary}
           />
+
+          {showAddAddOnsBanner && (
+            <div className="mt-4 rounded-xl border border-dashed border-[#C2CAD6] bg-[#F9FAFB] px-4 py-3">
+              <p className="m-0 text-[12px] leading-5 text-[#3D495C]">
+                Skipped optional add-ons? You can still choose seats, baggage, or
+                meals before payment.
+              </p>
+              <Button
+                type="button"
+                overrideClasses
+                onClick={() => onAddAddOns?.()}
+                className="mt-3 h-10 w-full rounded-xl border border-[#2351A3] bg-white text-[14px] font-semibold text-[#2351A3] hover:bg-[#2351A3]/5"
+              >
+                Add ancillaries
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

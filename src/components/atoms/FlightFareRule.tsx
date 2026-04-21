@@ -2,6 +2,22 @@ import { useMemo, useState } from "react";
 import { Modal } from "antd";
 import BaggageInfoModal from "../common/BaggageInfoModal";
 
+/**
+ * One bullet per API paragraph block. `<br>` / newlines inside that block stay as line breaks
+ * inside the same bullet (not separate bullets).
+ */
+function paragraphsToBulletItems(paragraphs: string[]): string[] {
+  const out: string[] = [];
+  for (const raw of paragraphs) {
+    const s = String(raw ?? "").replace(/<br\s*\/?>/gi, "\n").trim();
+    if (s) out.push(s);
+  }
+  return out;
+}
+
+const fareRulesBulletListClass =
+  "mt-1.5 mb-0 list-disc space-y-1.5 pl-5 text-[12px] leading-relaxed text-[#3D495C] [list-style-position:outside] marker:text-[#9CA3AF]";
+
 export default function FLightFareRule({
   trip,
   ruleData,
@@ -162,6 +178,50 @@ export default function FLightFareRule({
       .filter((x: any) => x.title || x.paragraph);
   }, [sourceRule]);
 
+  /** Same policy title repeated (e.g. multiple Cancellation blocks) → one heading, bullets keep every paragraph. */
+  const mergedFareRuleSections = useMemo(() => {
+    const order: string[] = [];
+    const groups = new Map<string, { title: string; paragraphs: string[] }>();
+    for (const rule of fareRuleSections) {
+      const norm = (rule.title || "Policy").toLowerCase().trim();
+      if (!groups.has(norm)) {
+        groups.set(norm, { title: rule.title || "Policy", paragraphs: [] });
+        order.push(norm);
+      }
+      const g = groups.get(norm)!;
+      const para = rule.paragraph?.trim();
+      if (para) g.paragraphs.push(para);
+    }
+    return order.map((norm) => {
+      const g = groups.get(norm)!;
+      const seen = new Set<string>();
+      const unique = g.paragraphs.filter((p) => {
+        if (seen.has(p)) return false;
+        seen.add(p);
+        return true;
+      });
+      return { title: g.title, paragraphs: unique };
+    });
+  }, [fareRuleSections]);
+
+  const penaltyRowGroups = useMemo(() => {
+    const order: string[] = [];
+    const byKey = new Map<string, typeof penaltyRows>();
+    for (const r of penaltyRows) {
+      const k = String(r.type ?? "").toLowerCase().trim() || "policy";
+      if (!byKey.has(k)) {
+        byKey.set(k, []);
+        order.push(k);
+      }
+      byKey.get(k)!.push(r);
+    }
+    return order.map((k) => ({
+      key: k,
+      typeLabel: byKey.get(k)![0].type,
+      rows: byKey.get(k)!,
+    }));
+  }, [penaltyRows]);
+
   return (
     <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm max-w-[576px]">
       <div className="px-4 py-3 flex items-center justify-between">
@@ -169,7 +229,7 @@ export default function FLightFareRule({
           Important fare rules
         </span>
         <div className="flex items-center gap-3">
-          {(fareRuleSections.length > 0 || penaltyRows.length > 0) && (
+          {(mergedFareRuleSections.length > 0 || penaltyRows.length > 0) && (
             <button
               type="button"
               onClick={() => setFareRulesModalOpen(true)}
@@ -255,22 +315,31 @@ export default function FLightFareRule({
                 Penalties
               </h3>
             </div>
-            {penaltyRows.length > 0 ? (
-              <ul className="px-4 py-2 space-y-2 m-0 list-none">
-                {penaltyRows.map((r: any, idx: number) => (
-                  <li key={`modal-penalty-${idx}`} className="py-1">
+            {penaltyRowGroups.length > 0 ? (
+              <ul className="px-4 py-2 space-y-3 m-0 list-none">
+                {penaltyRowGroups.map((group, gIdx: number) => (
+                  <li key={`modal-penalty-group-${gIdx}`} className="py-1">
                     <div className="text-[12px] font-semibold text-[#0A0C0F]">
-                      {r.type}
+                      {group.typeLabel}
                     </div>
-                    <div className="mt-1 flex items-start justify-between gap-3">
-                      <p className="text-[12px] text-[#3D495C] leading-5 whitespace-pre-wrap m-0">
-                        {[r.when, r.remark].filter(Boolean).join(" - ") ||
-                          "Policy details"}
-                      </p>
-                      <span className="text-[12px] font-semibold text-[#0A0C0F] shrink-0">
-                        {r.feeText}
-                      </span>
-                    </div>
+                    <ul className={`${fareRulesBulletListClass} m-0`}>
+                      {group.rows.map((r: any, idx: number) => (
+                        <li
+                          key={`modal-penalty-${gIdx}-${idx}`}
+                          className="[padding-inline-start:0.125rem]"
+                        >
+                          <div className="flex min-w-0 items-start justify-between gap-3 pr-0.5">
+                            <p className="m-0 min-w-0 flex-1 whitespace-pre-wrap">
+                              {[r.when, r.remark].filter(Boolean).join(" - ") ||
+                                "Policy details"}
+                            </p>
+                            <span className="shrink-0 text-right text-[12px] font-semibold tabular-nums text-[#0A0C0F]">
+                              {r.feeText}
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
                   </li>
                 ))}
               </ul>
@@ -287,16 +356,35 @@ export default function FLightFareRule({
                 Policies
               </h3>
             </div>
-            {fareRuleSections.length > 0 ? (
+            {mergedFareRuleSections.length > 0 ? (
               <ul className="px-4 py-2 space-y-2 m-0 list-none">
-                {fareRuleSections.map((rule: any, idx: number) => (
+                {mergedFareRuleSections.map((rule: any, idx: number) => (
                   <li key={`modal-policy-${idx}`} className="py-1">
                     <div className="text-[12px] font-semibold text-[#0A0C0F]">
                       {rule.title}
                     </div>
-                    <p className="mt-1 mb-0 text-[12px] text-[#3D495C] whitespace-pre-line leading-5">
-                      {rule.paragraph || "No details available"}
-                    </p>
+                    {(() => {
+                      const items = paragraphsToBulletItems(rule.paragraphs);
+                      if (items.length === 0) {
+                        return (
+                          <p className="mt-1 mb-0 text-[12px] text-[#6B7280] leading-5">
+                            No details available
+                          </p>
+                        );
+                      }
+                      return (
+                        <ul className={`${fareRulesBulletListClass} m-0`}>
+                          {items.map((text: string, pIdx: number) => (
+                            <li
+                              key={`modal-policy-${idx}-b-${pIdx}`}
+                              className="whitespace-pre-line [padding-inline-start:0.125rem]"
+                            >
+                              {text}
+                            </li>
+                          ))}
+                        </ul>
+                      );
+                    })()}
                   </li>
                 ))}
               </ul>

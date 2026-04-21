@@ -508,14 +508,13 @@ const FlightCancellationPage: React.FC = () => {
         toast.success("Flight cancelled successfully");
         navigate(buildMyBookingsUrl({ mode: "flights", status: "all" }));
       } else {
-        setValidationErrors({
-          api:
-            response?.meta?.statusMessage?.trim() || "Cancellation failed.",
-        });
+        toast.error(
+          response?.meta?.statusMessage?.trim() || "Cancellation failed.",
+        );
       }
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
-      setValidationErrors({ api: err || "Cancellation failed." });
+      toast.error(err || "Cancellation failed.");
     }
   };
 
@@ -846,15 +845,14 @@ const FlightCancellationPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-10 flex flex-col items-center gap-2">
+          <div className="mt-10 flex justify-center">
             <Button
               type="button"
               disabled={isCancelling}
-              className="text-white text-[15px] font-semibold"
+              className="box-border inline-flex w-[min(100%,320px)] shrink-0 items-center justify-center gap-2 whitespace-nowrap text-[15px] font-semibold text-white"
               style={{
                 background:
                   "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                width: "320px",
                 height: "47px",
                 borderRadius: "100px",
               }}
@@ -863,14 +861,6 @@ const FlightCancellationPage: React.FC = () => {
             >
               {isCancelling ? "Cancelling…" : "Confirm Cancellation"}
             </Button>
-            {validationErrors.api && (
-              <p
-                className="w-[320px] text-center text-[13px] text-[#E65959]"
-                role="alert"
-              >
-                {validationErrors.api}
-              </p>
-            )}
           </div>
 
           <div className="mt-4 text-center text-[12px] text-[#3D495C]">

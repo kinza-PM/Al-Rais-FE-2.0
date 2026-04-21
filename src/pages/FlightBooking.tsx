@@ -815,6 +815,11 @@ const FlightBooking = () => {
               onChangeFlight={handleChangeFlight}
               ancillarySummary={ancillarySummary}
               seatAddOnAvailable={!!ancillarySearchData?.seatMap}
+              onAddAddOns={
+                enhanceStepIndex >= 0 && hasAncillaries
+                  ? () => setCurrentStep(enhanceStepIndex)
+                  : undefined
+              }
             />
           )}
           {currentStep === payStepIndex && (

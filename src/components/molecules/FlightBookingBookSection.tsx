@@ -345,7 +345,7 @@ export default function FlightBookingBookSection({
           return;
         }
 
-        if (successMsg) toast.success(successMsg);
+        // if (successMsg) toast.success(successMsg);
         if (Object.keys(newRaw).length > 0 && onUpdateFlightRaw) {
           onUpdateFlightRaw(newRaw);
         }
@@ -551,7 +551,11 @@ export default function FlightBookingBookSection({
     <section className="mx-auto max-w-full px-10 flight-booking-section">
       <Loader
         show={isPending || isAddingCache}
-        label="Please wait while we complete your provisional booking"
+        label={
+          isPending
+            ? "Verifying flight details and fare…"
+            : "Saving traveler to your profile…"
+        }
       />
       <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
         <div className="space-y-4">
@@ -1462,9 +1466,9 @@ export default function FlightBookingBookSection({
 
       <ConfirmationModal
         open={showBookingConfirm}
-        title="Confirm your booking"
-        description="You're about to submit your passenger details and proceed with the booking. Please make sure all information is correct before continuing."
-        note="This will reserve your flight. You can still view summary details before final payment."
+        title="Continue with these details?"
+        description="We will use your passenger information to check the latest fare and availability for this itinerary. Please confirm that names, dates of birth, and travel documents match what you will travel with."
+        note="You will still review a trip summary and complete payment before a ticket is issued."
         confirmText="Proceed"
         cancelText="Cancel"
         loading={isPending}
