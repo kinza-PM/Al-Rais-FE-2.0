@@ -51,15 +51,7 @@ function StatusPill({ status }: { status: BookingStatus }) {
   if (status === "Pending") {
     return (
       <span
-        className="inline-flex items-center justify-center text-[12px] font-normal text-[#EA0029]"
-        style={{
-          background: "#FFB8C4",
-          width: "129px",
-          height: "31px",
-          borderRadius: "100px",
-          padding: "8px 15px",
-          gap: "10px",
-        }}
+        className="inline-flex max-w-[calc(100vw-2rem)] items-center justify-center whitespace-nowrap rounded-full bg-[#FFE4E6] px-4 py-2 text-center text-[12px] font-medium leading-none text-[#B91C1C]"
       >
         Pending payment
       </span>
@@ -391,7 +383,7 @@ function BookingCard({ booking }: { booking: any }) {
         />
       </div>
 
-      <div className="absolute right-4 top-2">
+      <div className="absolute right-4 top-3 z-10 sm:right-5 sm:top-4">
         <StatusPill status={status as BookingStatus} />
       </div>
 

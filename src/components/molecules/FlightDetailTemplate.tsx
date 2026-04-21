@@ -2588,6 +2588,7 @@ const FlightDetailTemplate: React.FC = () => {
                     "all",
                     false,
                     "all",
+                    undefined,
                   );
                 }}
               />
@@ -2725,6 +2726,7 @@ const FlightDetailTemplate: React.FC = () => {
                     "all",
                     false,
                     "all",
+                    undefined,
                   );
                 }}
               />

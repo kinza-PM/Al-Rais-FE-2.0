@@ -51,12 +51,7 @@ function StatusPill({ status }: { status: BookingStatus }) {
   if (status === "Pending") {
     return (
       <span
-        className="inline-flex items-center justify-center px-3 text-[11px] font-semibold text-[#EA0029]"
-        style={{
-          background: "#FFB8C4",
-          minHeight: "28px",
-          borderRadius: "100px",
-        }}
+        className="inline-flex max-w-[calc(100vw-2rem)] items-center justify-center whitespace-nowrap rounded-full bg-[#FFE4E6] px-4 py-2 text-center text-[12px] font-medium leading-none text-[#B91C1C]"
       >
         Pending payment
       </span>
@@ -165,7 +160,7 @@ function SightseeingBookingCard({
       ].join(" ")}
       style={{ maxWidth: "1168px", width: "100%" }}
     >
-      {/* Header — title (left), status (right). */}
+      {/* Title + status pill (Pending / Confirmed / etc.) on the right */}
       <div className="px-4 sm:px-5 pt-5 pb-4 border-b border-[#E4E4E7]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1 pr-2">
@@ -173,7 +168,7 @@ function SightseeingBookingCard({
               {booking.activityTitle}
             </h3>
           </div>
-          <div className="shrink-0 flex justify-start sm:justify-end sm:pt-0.5">
+          <div className="shrink-0 flex justify-end sm:justify-end sm:pt-0.5">
             <StatusPill status={booking.status} />
           </div>
         </div>
