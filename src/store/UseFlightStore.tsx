@@ -97,7 +97,9 @@ type Store = {
 
 export const useFlightStore = create<Store>((set) => ({
   flight: null, // initially empty
-  setFlight: (flight) => set({ flight }), // update with new flight
+  // Any "new search" criteria should invalidate preserved search results state.
+  // Otherwise, `/search_flight` may keep showing the previous inputs/results.
+  setFlight: (flight) => set({ flight, searchState: null }), // update with new flight
   clearFlight: () => set({ flight: null }), // clear flight data
   searchState: null,
   setSearchState: (state) => set({ searchState: state }),
