@@ -250,9 +250,9 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 : "Updating..."
             }
           />
-          <div className="py-16 flex flex-col items-center text-center">
-            <p className="mt-2 text-[14px] text-[#0F172A]">No hotels found</p>
-          </div>
+        <div className="py-16 flex flex-col items-center text-center">
+          <p className="mt-2 text-[14px] text-[#0F172A]">No hotels found</p>
+        </div>
         </>
       );
     }
@@ -271,12 +271,12 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
           }
         />
 
-        <div className="min-h-screen">
-          <div className="w-full">
+      <div className="min-h-screen">
+        <div className="w-full">
             {visible.map((hotel, index) => {
               const isFavourite = !!favorites[hotel.hotelKey];
 
-              return (
+            return (
                 <HotelListCard
                   key={hotel.hotelKey || index}
                   hotel={hotel}
@@ -295,8 +295,8 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
                 aria-hidden
               />
             ) : null}
-          </div>
-        </div>
+                            </div>
+                          </div>
 
         {openShareModal && selectedShareHotel && (
           <ShareTicketModal
