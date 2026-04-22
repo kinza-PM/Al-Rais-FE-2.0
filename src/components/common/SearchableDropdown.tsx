@@ -69,6 +69,8 @@ interface SearchableDropdownProps {
   renderOption?: (option: DropdownOption, isSelected: boolean) => React.ReactNode;
   /** Optional extra classes for the dropdown panel container. */
   panelClassName?: string;
+  /** When true, options list only (no search field in panel). For short fixed lists like filters. */
+  hidePanelSearch?: boolean;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -98,6 +100,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   renderSelectedContent,
   renderOption,
   panelClassName = "",
+  hidePanelSearch = false,
 }) => {
   const OPTIONS_CHUNK_SIZE = 150;
   const [isOpen, setIsOpen] = useState(false);
@@ -400,7 +403,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           ) : (
             <span
               className={`block min-w-0 flex-1 truncate whitespace-nowrap text-left ${
-                !selectedOption && !value ? "text-[#98A4B3]" : ""
+                !selectedOption && !value ? "text-[#9CA3AF]" : ""
               }`}
               title={typeof displayValue === "string" ? displayValue : undefined}
             >
@@ -408,8 +411,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
             </span>
           )}
 
-          <span
-            className="pointer-events-none absolute right-[20px] top-[65%] flex h-[12px] w-[14px] -translate-y-1/2 items-center justify-center"
+            <span
+            className="pointer-events-none absolute right-3 top-1/2 flex h-[12px] w-[14px] -translate-y-1/2 items-center justify-center"
             aria-hidden
           >
             <img
@@ -446,22 +449,23 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
               noInnerOptionsScroll ? "overflow-visible" : "overflow-hidden"
             }`}
           >
-            {/* Search Input */}
-            <div className="p-3 border-b border-[#EDEFF6]">
-              <input
-                ref={searchInputRef}
-                type="text"
-                placeholder={searchPlaceholder}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                autoComplete="new-password"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                name={`search-${Math.random()}`}
-                className="w-full px-3 py-2 text-sm border border-[#DFE7F3] rounded-lg focus:outline-none"
-              />
-            </div>
+            {!hidePanelSearch ? (
+              <div className="border-b border-[#EDEFF6] p-3">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder={searchPlaceholder}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  autoComplete="new-password"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  name={`search-${Math.random()}`}
+                  className="w-full rounded-lg border border-[#DFE7F3] px-3 py-2 text-sm focus:outline-none"
+                />
+              </div>
+            ) : null}
 
             {/* Options List */}
             <div

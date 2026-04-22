@@ -5,6 +5,10 @@ import { Link, useSearchParams } from "react-router-dom";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 // import { InfoCircleOutlined } from "@ant-design/icons";
 import type { HotelBookingCardItem } from "../../utils/transformBookingData";
+import {
+  hotelBookingInDateRange,
+  hotelBookingMatchesQuery,
+} from "../../utils/myBookingsClientFilters";
 import { markExpectMyBookingsQueryRestore } from "../../utils/myBookingsUrl";
 import HotelBookingETicketSetion, {
   type HotelListDownloadParams,
@@ -445,9 +449,15 @@ function HotelBookingCard({
 export default function UserHotelBookingsListing({
   filterStatus,
   bookings = [],
+  searchQuery = "",
+  dateFrom = "",
+  dateTo = "",
 }: {
   filterStatus: "All" | BookingStatus;
   bookings?: HotelBookingCardItem[];
+  searchQuery?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const [searchParams] = useSearchParams();
   const [receiptDownload, setReceiptDownload] =
@@ -465,9 +475,17 @@ export default function UserHotelBookingsListing({
   const list = useMemo(() => {
     if (!bookings || !Array.isArray(bookings) || bookings.length === 0)
       return [];
-    if (filterStatus === "All") return bookings;
-    return bookings.filter((b) => b?.status === filterStatus);
-  }, [bookings, filterStatus]);
+    let rows =
+      filterStatus === "All"
+        ? bookings
+        : bookings.filter((b) => b?.status === filterStatus);
+    rows = rows.filter(
+      (b) =>
+        hotelBookingMatchesQuery(b, searchQuery) &&
+        hotelBookingInDateRange(b, dateFrom, dateTo),
+    );
+    return rows;
+  }, [bookings, filterStatus, searchQuery, dateFrom, dateTo]);
 
   if (!list.length) {
     return (

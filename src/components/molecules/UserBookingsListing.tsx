@@ -3,7 +3,10 @@ import { useNavigate } from "react-router-dom";
 import Button from "../atoms/Button";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { transformBookingToFlightBookingFormat } from "../../utils/transformBookingData";
-import { buildTripShapeForFlightSummaryFromBookingApi } from "../../utils/helpers";
+import {
+  flightBookingInDateRange,
+  flightBookingMatchesQuery,
+} from "../../utils/myBookingsClientFilters";
 import airlineDefault from "../../assets/images/emirates.png";
 
 export type BookingStatus = "Confirmed" | "Pending" | "Expired" | "Cancelled";
@@ -639,17 +642,31 @@ export default function UserBookingsListing({
   bookings,
   filterStatus,
   mode,
+  searchQuery = "",
+  dateFrom = "",
+  dateTo = "",
 }: {
   bookings: any[];
   filterStatus: "All" | BookingStatus;
   mode: TripMode;
+  searchQuery?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const list = useMemo(() => {
-    if (filterStatus === "All") return bookings;
-    return bookings.filter(
-      (b) => normalizeFlightBookingStatus(b.status) === filterStatus,
+    let rows = bookings;
+    if (filterStatus !== "All") {
+      rows = rows.filter(
+        (b) => normalizeFlightBookingStatus(b.status) === filterStatus,
+      );
+    }
+    rows = rows.filter(
+      (b) =>
+        flightBookingMatchesQuery(b, searchQuery) &&
+        flightBookingInDateRange(b, dateFrom, dateTo),
     );
-  }, [bookings, filterStatus, mode]);
+    return rows;
+  }, [bookings, filterStatus, mode, searchQuery, dateFrom, dateTo]);
 
   if (!list.length || mode === "Hotels") {
     return (
