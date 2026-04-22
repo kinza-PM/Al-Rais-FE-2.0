@@ -2118,6 +2118,17 @@ input[type="number"] {
   color: #ffffff !important;
 }
 
+/* Radio.Button groups render a 1px ::before “divider” between siblings. Ant Design’s
+   css-dev-only-do-not-override-* hash changes per version/build, so hash-scoped rules
+   stop working and stray vertical lines appear. Strip dividers without relying on hash. */
+.stopsRadioStyle .ant-radio-button-wrapper::before,
+.transitHours .ant-radio-button-wrapper::before {
+  content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 .stopsRadioStyle
   :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
     :first-child
