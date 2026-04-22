@@ -34,8 +34,8 @@ export default function FLightFareRule({
   const segmentsFromJourneys =
     Array.isArray(journeys) && journeys.length > 0
       ? journeys.flatMap((j: any) =>
-          Array.isArray(j?.flightSegments) ? j.flightSegments : [],
-        )
+        Array.isArray(j?.flightSegments) ? j.flightSegments : [],
+      )
       : [];
   const segmentsFallback =
     trip?.raw?.journey?.[0]?.flightSegments ??
@@ -119,7 +119,7 @@ export default function FLightFareRule({
           const currency = String(a?.currency ?? "").trim();
           const remark =
             Array.isArray(a?.applicableFeeRemarks) &&
-            a.applicableFeeRemarks.length > 0
+              a.applicableFeeRemarks.length > 0
               ? String(a.applicableFeeRemarks[0]?.value ?? "").trim()
               : "";
           const whenParts = [];
@@ -270,14 +270,14 @@ export default function FLightFareRule({
             {noShowText}
           </span>
         </li>
-        {fare?.fareType?.farePreference && (
+        {/* {fare?.fareType?.farePreference && (
           <li className="flex items-center justify-between py-1">
             <span className="text-[#3D495C] text-[12px]">Fare preference</span>
             <span className="text-[#0A0C0F] text-[14px] font-medium">
               {fare.fareType.farePreference}
             </span>
           </li>
-        )}
+        )} */}
       </ul>
 
       <BaggageInfoModal

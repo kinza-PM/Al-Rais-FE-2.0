@@ -10,6 +10,7 @@ import { Checkbox, Input, Select } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import Button from "../components/atoms/Button";
 import Loader from "../components/atoms/Loader";
+import ConfirmationModal from "../components/common/ConfirmationModal";
 import {
   useFlightCancellation,
   useFlightCancellationCharges,
@@ -171,6 +172,8 @@ const FlightCancellationPage: React.FC = () => {
     useState<ChargeDisplaySource>("none");
   const [refundDetailNotes, setRefundDetailNotes] = useState<string[]>([]);
   const [chargesResolved, setChargesResolved] = useState(false);
+  const [showCancellationSuccessModal, setShowCancellationSuccessModal] =
+    useState(false);
 
   const fareRulesFeeModel = useMemo(
     () =>
@@ -506,7 +509,7 @@ const FlightCancellationPage: React.FC = () => {
 
       if (response?.meta?.success) {
         toast.success("Flight cancelled successfully");
-        navigate(buildMyBookingsUrl({ mode: "flights", status: "all" }));
+        setShowCancellationSuccessModal(true);
       } else {
         toast.error(
           response?.meta?.statusMessage?.trim() || "Cancellation failed.",
@@ -517,6 +520,11 @@ const FlightCancellationPage: React.FC = () => {
       toast.error(err || "Cancellation failed.");
     }
   };
+
+  const handleSuccessModalClose = useCallback(() => {
+    setShowCancellationSuccessModal(false);
+    navigate(buildMyBookingsUrl({ mode: "flights", status: "cancelled" }));
+  }, [navigate]);
 
   const showDetailsLoader =
     !chargesResolved ||
@@ -868,6 +876,18 @@ const FlightCancellationPage: React.FC = () => {
           </div>
         </div>
       </div>
+      <ConfirmationModal
+        open={showCancellationSuccessModal}
+        title="Cancellation Confirmed"
+        subtitle=""
+        description="Your ticket has been cancelled successfully."
+        note="Any applicable refund will be processed according to the airline rules and your payment method timeline."
+        noteVariant="error"
+        confirmText="OK"
+        showCancelButton={false}
+        onConfirm={handleSuccessModalClose}
+        onCancel={handleSuccessModalClose}
+      />
     </>
   );
 };
