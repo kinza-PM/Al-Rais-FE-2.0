@@ -413,6 +413,19 @@ export function buildFlightSegmentFromTrip(
   return expandBySegments(trip, "Departure flight");
 }
 
+/** Minimal `trip` shape for `buildFlightSegmentFromTrip` from a stored booking API item (`originalApiItem`). */
+export function buildTripShapeForFlightSummaryFromBookingApi(apiItem: any) {
+  const journey = apiItem?.request?.journey;
+  if (!Array.isArray(journey) || journey.length === 0) return null;
+  return {
+    raw: {
+      journey,
+      fare: apiItem?.fare,
+    },
+    journey,
+  };
+}
+
 export function getPriceCabinClassForFlightSummary(trip: any) {
   // Handle new structure from pending bookings (trip.raw.fare.fareBreakdown)
   // Original logic for normal bookings (trip.price)

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Button from "../atoms/Button";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { transformBookingToFlightBookingFormat } from "../../utils/transformBookingData";
+import { buildTripShapeForFlightSummaryFromBookingApi } from "../../utils/helpers";
 import airlineDefault from "../../assets/images/emirates.png";
 
 export type BookingStatus = "Confirmed" | "Pending" | "Expired" | "Cancelled";
@@ -588,6 +589,14 @@ function BookingCard({ booking }: { booking: any }) {
                           totalAmount: cancellationNav.totalAmount,
                           currencyCode: cancellationNav.currencyCode,
                           bookingPassengers: cancellationNav.bookingPassengers,
+                          tripForSummary:
+                            buildTripShapeForFlightSummaryFromBookingApi(
+                              booking?.originalApiItem,
+                            ),
+                          displayBookingRef:
+                            booking?.bookingRef ??
+                            cancellationNav.bookingReferenceId ??
+                            "",
                         },
                       });
                     }}

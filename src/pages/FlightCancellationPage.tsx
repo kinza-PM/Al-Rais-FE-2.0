@@ -8,7 +8,15 @@ import React, {
 } from "react";
 import { Checkbox, Input, Select } from "antd";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import cabinIcon from "../assets/svgs/cabin.svg";
+import baggageIcon from "../assets/svgs/baggage.svg";
+import durationIcon from "../assets/svgs/duration.svg";
+import refundableIcon from "../assets/svgs/redundable.svg";
+import SEAT_ICON from "../assets/svgs/seat.svg";
+import PLANE_ICON from "../assets/svgs/plane.svg";
+import EmirateLogo from "../assets/images/emirates.png";
 import Button from "../components/atoms/Button";
+import FlightSummaryCard from "../components/atoms/FlightSummaryCard";
 import Loader from "../components/atoms/Loader";
 import ConfirmationModal from "../components/common/ConfirmationModal";
 import {
@@ -28,6 +36,10 @@ import {
   buildFareRulesCancellationFeeModel,
   sumCancellationFeesForPassengers,
 } from "../utils/flightCancellationFareRulesEstimate";
+import {
+  buildFlightSegmentFromTrip,
+  getPriceCabinClassForFlightSummary,
+} from "../utils/helpers";
 
 type ChargeDisplaySource = "api" | "fareRules" | "none";
 
@@ -70,7 +82,7 @@ function CancelItemCard({
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-[10px] border px-4 py-4 text-center transition-all ${
+      className={`w-full rounded-[10px] border px-4 py-6 text-center transition-all ${
         selected
           ? "border-[#EA0029] bg-[#FFB8C4]"
           : "border-[#E4E4E7] bg-white hover:border-[#EA0029]/50"
@@ -128,6 +140,12 @@ const FlightCancellationPage: React.FC = () => {
   const offerId = String(
     location.state?.offerId ?? location.state?.bookingId ?? "",
   ).trim();
+  const tripForSummary = location.state?.tripForSummary ?? null;
+  const displayBookingRef =
+    String(location.state?.displayBookingRef ?? "").trim() ||
+    bookingReferenceId ||
+    supplierLocator ||
+    "";
 
   const allowPartialCancellation = bookingPassengers.length > 1;
 
@@ -550,6 +568,55 @@ const FlightCancellationPage: React.FC = () => {
     [bookingPassengers],
   );
 
+  const summaryCardAssets = useMemo(
+    () => ({
+      EmirateLogo,
+      cabinIcon,
+      baggageIcon,
+      mealIcon: refundableIcon,
+      wifiIcon: durationIcon,
+      portIcon: SEAT_ICON,
+      entertainmentIcon: PLANE_ICON,
+    }),
+    [],
+  );
+
+  const cancellationSummarySegments = useMemo(() => {
+    if (tripForSummary) {
+      const built = buildFlightSegmentFromTrip(
+        tripForSummary,
+        summaryCardAssets,
+      );
+      if (built.length > 0) return built;
+    }
+    if (routeLabel && airlineName) {
+      return [
+        {
+          route: routeLabel,
+          airlineLogo: "",
+          airlineName,
+          flightMeta: routeLabel,
+          dep: { time: "—", date: "—" },
+          arr: { time: "—", date: "—" },
+          durationLabel: "—",
+        },
+      ];
+    }
+    return [];
+  }, [tripForSummary, summaryCardAssets, routeLabel, airlineName]);
+
+  const cancellationSummaryFare = useMemo(() => {
+    if (!tripForSummary) return undefined;
+    const firstPrice = getPriceCabinClassForFlightSummary(tripForSummary);
+    const value =
+      firstPrice?.label ?? firstPrice?._priceClasses?.[0];
+    if (!value) return undefined;
+    return {
+      label: "Fare family",
+      value,
+    };
+  }, [tripForSummary]);
+
   return (
     <>
       <Loader
@@ -566,6 +633,29 @@ const FlightCancellationPage: React.FC = () => {
               {validationErrors.session}
             </div>
           )}
+
+          {cancellationSummarySegments.length > 0 && (
+            <div className="mb-5">
+              <FlightSummaryCard
+                variant="cancellation"
+                title="Flight details"
+                statusPill="Confirmed"
+                segments={cancellationSummarySegments}
+                fare={cancellationSummaryFare}
+                footerPassengers={
+                  passengersLabel
+                    ? { value: passengersLabel }
+                    : undefined
+                }
+                footerBookingRef={
+                  displayBookingRef
+                    ? { value: displayBookingRef }
+                    : undefined
+                }
+              />
+            </div>
+          )}
+
           <SectionCard
             title="Select Items to Cancel"
             subtitle={
@@ -577,7 +667,7 @@ const FlightCancellationPage: React.FC = () => {
             <div className="space-y-3">
               <CancelItemCard
                 title="Cancel Entire Trip"
-                subtitle={`${airlineName} • ${routeLabel}`}
+                // subtitle={`${airlineName} • ${routeLabel}`}
                 selected={cancelAllPassengers}
                 onClick={() => {
                   setCancelAllPassengers(true);
