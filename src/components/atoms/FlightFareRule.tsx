@@ -1,32 +1,50 @@
-import { useMemo, useState } from "react";
-import { Modal } from "antd";
+import { useEffect, useMemo, useState } from "react";
+import { Collapse, Modal, Tabs } from "antd";
 import BaggageInfoModal from "../common/BaggageInfoModal";
 
+/** Strip tags for display; keep `<br>` as newlines inside the same block (not separate bullets). */
+function stripFareRuleHtmlKeepBreaks(raw: string): string {
+  return String(raw ?? "")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/p>\s*<p[^>]*>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/\r\n/g, "\n")
+    .trim();
+}
+
 /**
- * One bullet per API paragraph block. `<br>` / newlines inside that block stay as line breaks
- * inside the same bullet (not separate bullets).
+ * One bullet per API paragraph block. Line breaks from `<br>` / newlines stay inside that bullet.
  */
 function paragraphsToBulletItems(paragraphs: string[]): string[] {
   const out: string[] = [];
   for (const raw of paragraphs) {
-    const s = String(raw ?? "").replace(/<br\s*\/?>/gi, "\n").trim();
+    const s = stripFareRuleHtmlKeepBreaks(raw);
     if (s) out.push(s);
   }
   return out;
 }
 
-const fareRulesBulletListClass =
-  "mt-1.5 mb-0 list-disc space-y-1.5 pl-5 text-[12px] leading-relaxed text-[#3D495C] [list-style-position:outside] marker:text-[#9CA3AF]";
+/** Modal / policy body: readable size and rhythm (matches common 14px / 1.6 UI copy). */
+const fareRulesModalCopyClass =
+  "font-sans text-[13px] leading-[1.65] text-[#374151] font-normal tracking-normal antialiased";
+
+const fareRulesBulletListClass = `${fareRulesModalCopyClass} mt-2 mb-0 list-disc space-y-2.5 pl-5 [list-style-position:outside] marker:text-[#9CA3AF] break-words`;
 
 export default function FLightFareRule({
   trip,
   ruleData,
+  wideLayout,
 }: {
   trip: any;
   ruleData?: any;
+  /** Use inside wide parents (e.g. review modal) so the card is not capped at 576px. */
+  wideLayout?: boolean;
 }) {
   const [baggageModalOpen, setBaggageModalOpen] = useState(false);
   const [fareRulesModalOpen, setFareRulesModalOpen] = useState(false);
+  const [fareRulesModalTab, setFareRulesModalTab] = useState<
+    "penalties" | "policies"
+  >("penalties");
   const sourceRule = ruleData ?? trip ?? {};
   const fare = trip?.fare ?? sourceRule?.fare;
 
@@ -34,8 +52,8 @@ export default function FLightFareRule({
   const segmentsFromJourneys =
     Array.isArray(journeys) && journeys.length > 0
       ? journeys.flatMap((j: any) =>
-        Array.isArray(j?.flightSegments) ? j.flightSegments : [],
-      )
+          Array.isArray(j?.flightSegments) ? j.flightSegments : [],
+        )
       : [];
   const segmentsFallback =
     trip?.raw?.journey?.[0]?.flightSegments ??
@@ -119,7 +137,7 @@ export default function FLightFareRule({
           const currency = String(a?.currency ?? "").trim();
           const remark =
             Array.isArray(a?.applicableFeeRemarks) &&
-              a.applicableFeeRemarks.length > 0
+            a.applicableFeeRemarks.length > 0
               ? String(a.applicableFeeRemarks[0]?.value ?? "").trim()
               : "";
           const whenParts = [];
@@ -208,7 +226,10 @@ export default function FLightFareRule({
     const order: string[] = [];
     const byKey = new Map<string, typeof penaltyRows>();
     for (const r of penaltyRows) {
-      const k = String(r.type ?? "").toLowerCase().trim() || "policy";
+      const k =
+        String(r.type ?? "")
+          .toLowerCase()
+          .trim() || "policy";
       if (!byKey.has(k)) {
         byKey.set(k, []);
         order.push(k);
@@ -222,8 +243,85 @@ export default function FLightFareRule({
     }));
   }, [penaltyRows]);
 
+  useEffect(() => {
+    if (!fareRulesModalOpen) return;
+    setFareRulesModalTab(
+      penaltyRowGroups.length > 0 ? "penalties" : "policies",
+    );
+  }, [fareRulesModalOpen, penaltyRowGroups.length]);
+
+  const policyCollapseItems = useMemo(
+    () =>
+      mergedFareRuleSections.map((rule: any, idx: number) => {
+        const items = paragraphsToBulletItems(rule.paragraphs);
+        return {
+          key: String(idx),
+          label: (
+            <span className="block max-w-full text-left text-[14px] font-semibold leading-snug text-[#0F172A] line-clamp-2">
+              {rule.title}
+            </span>
+          ),
+          children:
+            items.length === 0 ? (
+              <p className={`m-0 ${fareRulesModalCopyClass} text-[#64748B]`}>
+                No details available
+              </p>
+            ) : (
+              <ul className={`${fareRulesBulletListClass} m-0`}>
+                {items.map((text: string, pIdx: number) => (
+                  <li
+                    key={`policy-${idx}-b-${pIdx}`}
+                    className="whitespace-pre-wrap [padding-inline-start:0.125rem]"
+                  >
+                    {text}
+                  </li>
+                ))}
+              </ul>
+            ),
+        };
+      }),
+    [mergedFareRuleSections],
+  );
+
+  const penaltyCollapseItems = useMemo(
+    () =>
+      penaltyRowGroups.map((group, gIdx: number) => ({
+        key: `penalty-${gIdx}`,
+        label: (
+          <span className="text-[14px] font-semibold text-[#0F172A]">
+            {group.typeLabel}
+          </span>
+        ),
+        children: (
+          <ul className={`${fareRulesBulletListClass} m-0`}>
+            {group.rows.map((r: any, idx: number) => (
+              <li
+                key={`modal-penalty-${gIdx}-${idx}`}
+                className="[padding-inline-start:0.125rem]"
+              >
+                <div className="flex min-w-0 items-start justify-between gap-3">
+                  <span
+                    className={`min-w-0 flex-1 break-words ${fareRulesModalCopyClass}`}
+                  >
+                    {[r.when, r.remark].filter(Boolean).join(" - ") ||
+                      "Policy details"}
+                  </span>
+                  <span className="shrink-0 text-right text-[13px] font-semibold tabular-nums text-[#0F172A]">
+                    {r.feeText}
+                  </span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ),
+      })),
+    [penaltyRowGroups],
+  );
+
   return (
-    <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm max-w-[576px]">
+    <div
+      className={`mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm ${wideLayout ? "w-full max-w-full" : "max-w-[576px]"}`}
+    >
       <div className="px-4 py-3 flex items-center justify-between">
         <span className="text-[16px] font-semibold text-[#0A0C0F]">
           Important fare rules
@@ -289,10 +387,12 @@ export default function FLightFareRule({
       <Modal
         title={
           <>
-            <span className="text-[16px] font-semibold text-[#0A0C0F]">
+            <span className="text-[17px] font-semibold leading-tight text-[#0F172A]">
               Fare rules
             </span>
-            <p className="text-[12px] text-[#3D495C]">
+            <p
+              className={`m-0 mt-1.5 ${fareRulesModalCopyClass} text-[#64748B]`}
+            >
               Airline policy details for changes, cancellations and fare
               conditions.
             </p>
@@ -304,97 +404,72 @@ export default function FLightFareRule({
         width={720}
         centered
         styles={{
-          header: { padding: "14px 16px" },
-          body: { padding: "12px 16px 16px" },
+          header: { padding: "16px 20px 12px" },
+          body: {
+            padding: "4px 20px 20px",
+            maxHeight: "min(78vh, 720px)",
+          },
         }}
       >
-        <div className="space-y-3 max-h-[68vh] overflow-y-auto pr-1">
-          <div className="rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white">
-            <div className="px-4 py-3 border-b-[1.5px] border-[#E4E4E7]">
-              <h3 className="text-[14px] font-semibold text-[#0A0C0F] m-0">
-                Penalties
-              </h3>
-            </div>
-            {penaltyRowGroups.length > 0 ? (
-              <ul className="px-4 py-2 space-y-3 m-0 list-none">
-                {penaltyRowGroups.map((group, gIdx: number) => (
-                  <li key={`modal-penalty-group-${gIdx}`} className="py-1">
-                    <div className="text-[12px] font-semibold text-[#0A0C0F]">
-                      {group.typeLabel}
-                    </div>
-                    <ul className={`${fareRulesBulletListClass} m-0`}>
-                      {group.rows.map((r: any, idx: number) => (
-                        <li
-                          key={`modal-penalty-${gIdx}-${idx}`}
-                          className="[padding-inline-start:0.125rem]"
-                        >
-                          <div className="flex min-w-0 items-start justify-between gap-3 pr-0.5">
-                            <p className="m-0 min-w-0 flex-1 whitespace-pre-wrap">
-                              {[r.when, r.remark].filter(Boolean).join(" - ") ||
-                                "Policy details"}
-                            </p>
-                            <span className="shrink-0 text-right text-[12px] font-semibold tabular-nums text-[#0A0C0F]">
-                              {r.feeText}
-                            </span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="px-4 py-3 text-[12px] text-[#6B7280] m-0">
-                No penalties available.
-              </p>
-            )}
-          </div>
-
-          <div className="rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white">
-            <div className="px-4 py-3 border-b-[1.5px] border-[#E4E4E7]">
-              <h3 className="text-[14px] font-semibold text-[#0A0C0F] m-0">
-                Policies
-              </h3>
-            </div>
-            {mergedFareRuleSections.length > 0 ? (
-              <ul className="px-4 py-2 space-y-2 m-0 list-none">
-                {mergedFareRuleSections.map((rule: any, idx: number) => (
-                  <li key={`modal-policy-${idx}`} className="py-1">
-                    <div className="text-[12px] font-semibold text-[#0A0C0F]">
-                      {rule.title}
-                    </div>
-                    {(() => {
-                      const items = paragraphsToBulletItems(rule.paragraphs);
-                      if (items.length === 0) {
-                        return (
-                          <p className="mt-1 mb-0 text-[12px] text-[#6B7280] leading-5">
-                            No details available
-                          </p>
-                        );
-                      }
-                      return (
-                        <ul className={`${fareRulesBulletListClass} m-0`}>
-                          {items.map((text: string, pIdx: number) => (
-                            <li
-                              key={`modal-policy-${idx}-b-${pIdx}`}
-                              className="whitespace-pre-line [padding-inline-start:0.125rem]"
-                            >
-                              {text}
-                            </li>
-                          ))}
-                        </ul>
-                      );
-                    })()}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="px-4 py-3 text-[12px] text-[#6B7280] m-0">
-                No policy sections available.
-              </p>
-            )}
-          </div>
-        </div>
+        <Tabs
+          size="middle"
+          activeKey={fareRulesModalTab}
+          onChange={(k) => setFareRulesModalTab(k as "penalties" | "policies")}
+          className={`fare-rules-fare-modal-tabs ${fareRulesModalCopyClass} max-h-[min(68vh,620px)] [&_.ant-tabs-tab]:px-3 [&_.ant-tabs-tab]:text-[13px] [&_.ant-tabs-nav]:mb-2 [&_.ant-tabs-content]:max-h-[min(58vh,520px)] [&_.ant-tabs-content]:overflow-y-auto [&_.ant-tabs-content]:overflow-x-hidden [&_.ant-tabs-content]:pr-1`}
+          items={[
+            {
+              key: "penalties",
+              label: "Penalties",
+              children: (
+                <div className="rounded-[12px] px-1.5 py-1.5">
+                {/* <div className="rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] px-1.5 py-1.5"> */}
+                  {penaltyCollapseItems.length > 0 ? (
+                    <Collapse
+                      bordered={false}
+                      accordion
+                      expandIconPosition="end"
+                      className="fare-rules-penalty-collapse bg-transparent [&_.ant-collapse-item]:mb-1.5 [&_.ant-collapse-item]:overflow-hidden [&_.ant-collapse-item]:rounded-[10px] [&_.ant-collapse-item]:border [&_.ant-collapse-item]:border-[#E2E8F0] [&_.ant-collapse-item]:bg-white [&_.ant-collapse-item]:shadow-sm [&_.ant-collapse-item]:last:mb-0 [&_.ant-collapse-header]:items-center [&_.ant-collapse-header]:py-3 [&_.ant-collapse-header]:pl-3.5 [&_.ant-collapse-header]:pr-2 [&_.ant-collapse-content-box]:border-t [&_.ant-collapse-content-box]:border-[#F1F5F9] [&_.ant-collapse-content-box]:px-3.5 [&_.ant-collapse-content-box]:pb-3 [&_.ant-collapse-content-box]:pt-3"
+                      items={penaltyCollapseItems}
+                    />
+                  ) : (
+                    <p
+                      className={`px-3 py-5 text-center m-0 ${fareRulesModalCopyClass} text-[#64748B]`}
+                    >
+                      No penalties available.
+                    </p>
+                  )}
+                </div>
+              ),
+            },
+            {
+              key: "policies",
+              label: "Policies",
+              // mergedFareRuleSections.length > 0
+              //   ? `Policies (${mergedFareRuleSections.length})`
+              //   : "Policies",
+              children: (
+                <div className="rounded-[12px] px-1.5 py-1.5">
+                {/* <div className="rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] px-1.5 py-1.5"> */}
+                  {policyCollapseItems.length > 0 ? (
+                    <Collapse
+                      bordered={false}
+                      accordion
+                      expandIconPosition="end"
+                      className="fare-rules-policy-collapse bg-transparent [&_.ant-collapse-item]:mb-1.5 [&_.ant-collapse-item]:overflow-hidden [&_.ant-collapse-item]:rounded-[10px] [&_.ant-collapse-item]:border [&_.ant-collapse-item]:border-[#E2E8F0] [&_.ant-collapse-item]:bg-white [&_.ant-collapse-item]:shadow-sm [&_.ant-collapse-item]:last:mb-0 [&_.ant-collapse-header]:items-start [&_.ant-collapse-header]:py-3 [&_.ant-collapse-header]:pl-3.5 [&_.ant-collapse-header]:pr-2 [&_.ant-collapse-content-box]:border-t [&_.ant-collapse-content-box]:border-[#F1F5F9] [&_.ant-collapse-content-box]:px-3.5 [&_.ant-collapse-content-box]:pb-3 [&_.ant-collapse-content-box]:pt-3"
+                      items={policyCollapseItems}
+                    />
+                  ) : (
+                    <p
+                      className={`px-3 py-5 text-center m-0 ${fareRulesModalCopyClass} text-[#64748B]`}
+                    >
+                      No policy sections available.
+                    </p>
+                  )}
+                </div>
+              ),
+            },
+          ]}
+        />
       </Modal>
     </div>
   );

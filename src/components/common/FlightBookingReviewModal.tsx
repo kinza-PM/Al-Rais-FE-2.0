@@ -157,7 +157,11 @@ export default function FlightBookingReviewModal({
 
   const baggageTab = (
     <div className="space-y-4">
-      <FLightFareRule trip={trip?.raw} ruleData={fareRuleData} />
+      <FLightFareRule
+        trip={trip?.raw}
+        ruleData={fareRuleData}
+        wideLayout
+      />
     </div>
   );
 
