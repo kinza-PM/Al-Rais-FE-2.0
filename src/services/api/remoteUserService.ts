@@ -66,6 +66,70 @@ export async function getByIdentifier(input: {
   }
 }
 
+/**
+ * Unauthenticated lookup used before Cognito forgot-password.
+ * Cognito may return a generic success when "Prevent user existence errors" is enabled,
+ * so we verify against the app user service first for email-based reset.
+ */
+export type EmailRegistrationLookup =
+  | { status: "registered" }
+  | { status: "not_registered" }
+  | { status: "lookup_failed"; message: string };
+
+export async function lookupEmailRegistration(
+  email: string,
+): Promise<EmailRegistrationLookup> {
+  const trimmed = email.trim();
+  if (!trimmed) {
+    return { status: "not_registered" };
+  }
+
+  const qs = new URLSearchParams();
+  qs.set("email", trimmed);
+  const url = `${BASE_URL}/users/by-identifier?${qs.toString()}`;
+
+  try {
+    const res = await fetch(url, {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+    const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+
+    if (res.ok) {
+      const userId = json.userId ?? json.id;
+      if (userId != null && String(userId).length > 0) {
+        return { status: "registered" };
+      }
+      return { status: "not_registered" };
+    }
+
+    if (res.status === 404) {
+      return { status: "not_registered" };
+    }
+
+    const msg =
+      (typeof json.message === "string" && json.message) ||
+      (typeof json.error === "string" && json.error) ||
+      `Request failed (${res.status})`;
+    const lower = msg.toLowerCase();
+    if (
+      lower.includes("not found") ||
+      lower.includes("no user") ||
+      lower.includes("does not exist")
+    ) {
+      return { status: "not_registered" };
+    }
+
+    return { status: "lookup_failed", message: String(msg) };
+  } catch {
+    return {
+      status: "lookup_failed",
+      message:
+        "Unable to verify your email. Please check your connection and try again.",
+    };
+  }
+}
+
 export async function createUser(input: {
   userId: string;
   email?: string;

@@ -4,7 +4,6 @@ import {
   // LoginFailedCard,
   LoginForm,
   MainLayout,
-  ResetPasswordForm,
   SignupForm,
 } from "../components";
 import OTPVerificationForm from "../components/molecules/OTPVerificationForm";
@@ -15,11 +14,19 @@ import toast from "react-hot-toast";
 const AuthPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const initialMode =
-    (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
+  const rawInitialMode =
+    (location.state as { mode?: string } | undefined)?.mode ?? "login";
+  const initialMode: AuthMode =
+    rawInitialMode === "reset-password"
+      ? "otp-verification"
+      : rawInitialMode === "signup" ||
+          rawInitialMode === "forgot-password" ||
+          rawInitialMode === "otp-verification" ||
+          rawInitialMode === "login-failed"
+        ? rawInitialMode
+        : "login";
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
-  const [forgotPasswordOtp, setForgotPasswordOtp] = useState("");
 
   const handleModeSwitch = () => {
     setMode(mode === "login" ? "signup" : "login");
@@ -32,37 +39,24 @@ const AuthPage = () => {
   const handleBackToLogin = () => {
     setMode("login");
     setForgotPasswordEmail("");
-    setForgotPasswordOtp("");
   };
 
   const handleOTPSent = (email: string) => {
     setForgotPasswordEmail(email);
-    setForgotPasswordOtp("");
     setMode("otp-verification");
   };
 
-  const handleOTPVerified = (email: string, otp: string) => {
-    setForgotPasswordEmail(email);
-    setForgotPasswordOtp(otp);
-    setMode("reset-password");
-  };
-
   const handleChangeEmailFromOtp = () => {
-    setForgotPasswordOtp("");
     setMode("forgot-password");
   };
 
-  const handlePasswordReset = () => {
+  const handleForgotPasswordResetSuccess = () => {
     toast.success(
       "Password reset successfully! Please log in with your new password.",
     );
     setTimeout(() => {
       handleBackToLogin();
     }, 500);
-  };
-
-  const handleBackToOTP = () => {
-    setMode("otp-verification");
   };
 
   const onLoginClick = () => {
@@ -128,29 +122,9 @@ const AuthPage = () => {
 
             <OTPVerificationForm
               email={forgotPasswordEmail}
-              initialOtp={forgotPasswordOtp}
               onBackToForgotPassword={handleChangeEmailFromOtp}
-              onOTPVerified={handleOTPVerified}
-            />
-          </div>
-        ) : mode === "reset-password" ? (
-          <div
-            className="relative flex min-h-screen w-full flex-1 items-center justify-center overflow-y-auto px-4 py-6 sm:py-8 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            style={{ background: "#F2F2F3" }}
-          >
-            <button
-              type="button"
-              onClick={handleBackToLogin}
-              className="absolute left-6 top-6 text-sm text-[#0A0C0F] hover:opacity-80 sm:left-8 sm:top-8"
-            >
-              ← Back to login
-            </button>
-
-            <ResetPasswordForm
-              email={forgotPasswordEmail}
-              otp={forgotPasswordOtp}
-              onPasswordReset={handlePasswordReset}
-              onBackToOTP={handleBackToOTP}
+              onResetSuccess={handleForgotPasswordResetSuccess}
+              onCloseModal={handleBackToLogin}
             />
           </div>
         ) : (

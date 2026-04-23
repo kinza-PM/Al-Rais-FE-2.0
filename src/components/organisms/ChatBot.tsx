@@ -32,32 +32,32 @@ const STATIC_MESSAGES: Message[] = [
       "Hello! 👋 Welcome to Al-Rais Travel. I'm your AI travel assistant. I can help you with:\n\n✈️ Flight bookings\n🏨 Hotel reservations\n🚗 Airport transfers & car rentals\n\nHow can I assist you today?",
     timestamp: "12:00 PM",
   },
-  {
-    id: "2",
-    role: "user",
-    content: "I need a flight from Dubai to London on March 15",
-    timestamp: "12:01 PM",
-  },
-  {
-    id: "3",
-    role: "assistant",
-    content:
-      "I found 3 flights from Dubai (DXB) to London (LHR) on March 15:\n\n1. Emirates EK007 — 08:00 → 12:30 — AED 1,650\n2. British Airways BA108 — 14:00 → 18:45 — AED 1,395\n3. flydubai FZ001 — 22:00 → 02:30+1 — AED 1,065\n\nWould you like to book any of these, or see fare rules?",
-    timestamp: "12:01 PM",
-  },
-  {
-    id: "4",
-    role: "user",
-    content: "Book the Emirates one please",
-    timestamp: "12:02 PM",
-  },
-  {
-    id: "5",
-    role: "assistant",
-    content:
-      "Great choice! ✈️ To book Emirates EK007 on March 15, I'll need the following details:\n\n• Passenger full name (as on passport)\n• Date of birth\n• Passport number & expiry\n• Contact email\n\nPlease share these and I'll proceed with the booking.",
-    timestamp: "12:02 PM",
-  },
+  // {
+  //   id: "2",
+  //   role: "user",
+  //   content: "I need a flight from Dubai to London on March 15",
+  //   timestamp: "12:01 PM",
+  // },
+  // {
+  //   id: "3",
+  //   role: "assistant",
+  //   content:
+  //     "I found 3 flights from Dubai (DXB) to London (LHR) on March 15:\n\n1. Emirates EK007 — 08:00 → 12:30 — AED 1,650\n2. British Airways BA108 — 14:00 → 18:45 — AED 1,395\n3. flydubai FZ001 — 22:00 → 02:30+1 — AED 1,065\n\nWould you like to book any of these, or see fare rules?",
+  //   timestamp: "12:01 PM",
+  // },
+  // {
+  //   id: "4",
+  //   role: "user",
+  //   content: "Book the Emirates one please",
+  //   timestamp: "12:02 PM",
+  // },
+  // {
+  //   id: "5",
+  //   role: "assistant",
+  //   content:
+  //     "Great choice! ✈️ To book Emirates EK007 on March 15, I'll need the following details:\n\n• Passenger full name (as on passport)\n• Date of birth\n• Passport number & expiry\n• Contact email\n\nPlease share these and I'll proceed with the booking.",
+  //   timestamp: "12:02 PM",
+  // },
 ];
 
 const QUICK_ACTIONS = [
