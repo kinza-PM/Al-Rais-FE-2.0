@@ -4,7 +4,6 @@ import LoginForm from '../molecules/LoginForm';
 import SignupForm from '../molecules/SignupForm';
 import ForgotPasswordForm from '../molecules/ForgotPasswordForm';
 import OTPVerificationForm from '../molecules/OTPVerificationForm';
-import ResetPasswordForm from '../molecules/ResetPasswordForm';
 import LoginFailedCard from '../molecules/LoginFailedCard';
 import type { AuthMode } from '../../types/AuthTypes';
 
@@ -28,7 +27,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
 }) => {
   // State for forgot password flow
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
-  const [forgotPasswordOtp, setForgotPasswordOtp] = useState('');
 
   if (!isOpen) return null;
 
@@ -48,35 +46,21 @@ const AuthModal: React.FC<AuthModalProps> = ({
   const handleBackToLogin = () => {
     onModeChange('login');
     setForgotPasswordEmail('');
-    setForgotPasswordOtp('');
   };
 
   const handleOTPSent = (email: string) => {
     setForgotPasswordEmail(email);
-    setForgotPasswordOtp('');
     onModeChange('otp-verification');
-  };
-
-  const handleOTPVerified = (email: string, otp: string) => {
-    setForgotPasswordEmail(email);
-    setForgotPasswordOtp(otp);
-    onModeChange('reset-password');
   };
 
   const handleChangeEmailFromOtp = () => {
-    setForgotPasswordOtp('');
     onModeChange('forgot-password');
   };
 
-  const handlePasswordReset = () => {
+  const handleForgotPasswordResetSuccess = () => {
     toast.success('Password reset successfully! Please log in with your new password.');
     setForgotPasswordEmail('');
-    setForgotPasswordOtp('');
     onModeChange('login');
-  };
-
-  const handleBackToOTP = () => {
-    onModeChange('otp-verification');
   };
 
   return (
@@ -85,12 +69,13 @@ const AuthModal: React.FC<AuthModalProps> = ({
       <div
         className="absolute inset-0"
         onClick={onClose}
-      ></div>
-      {/* Centering wrapper — allows vertical scroll on small screens */}
-      <div className="relative flex min-h-full items-center justify-center p-4 py-8">
+        aria-hidden
+      />
+      {/* Centering wrapper: pointer-events-none so clicks outside the card hit the backdrop */}
+      <div className="relative flex min-h-full items-center justify-center p-4 py-8 pointer-events-none">
 
         {/* Form container */}
-        <div className="relative z-10 w-full max-w-[468px] mx-auto">
+        <div className="relative z-10 w-full max-w-[468px] mx-auto pointer-events-auto">
 
           {mode === 'login' ? (
             <LoginForm
@@ -117,16 +102,9 @@ const AuthModal: React.FC<AuthModalProps> = ({
           ) : mode === 'otp-verification' ? (
             <OTPVerificationForm
               email={forgotPasswordEmail}
-              initialOtp={forgotPasswordOtp}
               onBackToForgotPassword={handleChangeEmailFromOtp}
-              onOTPVerified={handleOTPVerified}
-            />
-          ) : mode === 'reset-password' ? (
-            <ResetPasswordForm
-              email={forgotPasswordEmail}
-              otp={forgotPasswordOtp}
-              onPasswordReset={handlePasswordReset}
-              onBackToOTP={handleBackToOTP}
+              onResetSuccess={handleForgotPasswordResetSuccess}
+              onCloseModal={onClose}
             />
           ) : null}
         </div>

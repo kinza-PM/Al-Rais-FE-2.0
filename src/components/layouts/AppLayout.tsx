@@ -40,8 +40,17 @@ const AppLayout: React.FC = () => {
       return;
     }
 
-    const mode =
-      (location.state as { mode?: AuthMode } | undefined)?.mode ?? "login";
+    const rawMode =
+      (location.state as { mode?: string } | undefined)?.mode ?? "login";
+    const mode: AuthMode =
+      rawMode === "reset-password"
+        ? "otp-verification"
+        : rawMode === "signup" ||
+            rawMode === "forgot-password" ||
+            rawMode === "otp-verification" ||
+            rawMode === "login-failed"
+          ? rawMode
+          : "login";
     setAuthMode(mode);
     setAuthModalOpen(true);
   }, [
