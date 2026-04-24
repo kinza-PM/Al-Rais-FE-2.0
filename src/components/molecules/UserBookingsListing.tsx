@@ -563,9 +563,8 @@ function BookingCard({ booking }: { booking: any }) {
                           ?.length || 0;
                       const passengersLabel =
                         passengersCount > 0
-                          ? `${passengersCount.toString().padStart(2, "0")} ${
-                              passengersCount === 1 ? "Adult" : "Adults"
-                            }`
+                          ? `${passengersCount.toString().padStart(2, "0")} ${passengersCount === 1 ? "Adult" : "Adults"
+                          }`
                           : booking?.passengersLabel || "";
 
                       navigate("/flight-cancellation", {

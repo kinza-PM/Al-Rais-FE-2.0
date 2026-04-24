@@ -43,6 +43,8 @@ import {
 } from "../../utils/apiErrorHanlder";
 import {
   applyPassengersDefaultResidenceFromIssuing,
+  getAllowedCvvLengthsForCard,
+  getCardBrandFromNumber,
   openBlankPopupAndCheckWebisteAllowPopup,
   // validateReservationFlightBookingData,
   validateReservationFlightBookingDataFields,
@@ -64,7 +66,11 @@ const toCents = (value: number | string) => {
   const raw =
     typeof value === "number"
       ? value
-      : Number(String(value ?? "0").trim().replace(/,/g, ""));
+      : Number(
+        String(value ?? "0")
+          .trim()
+          .replace(/,/g, ""),
+      );
   if (!Number.isFinite(raw)) return 0;
   return Math.round((raw + Number.EPSILON) * 100);
 };
@@ -83,8 +89,8 @@ type FlightBookingPaymentSectionProps = {
   onReservationChange: (
     eOrPath:
       | React.ChangeEvent<
-          HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-        >
+        HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+      >
       | string,
     maybeValue?: any,
   ) => void;
@@ -202,6 +208,20 @@ export default function FlightBookingPaymentSection({
   const { data: citiesData, isLoading: isCitiesLoading } = useCitiesOptions(
     selectedCountry?.label || "",
     !!selectedCountry?.label,
+  );
+
+  const cardNumberDigits = useMemo(
+    () => cardDetails.number.replace(/\D/g, ""),
+    [cardDetails.number],
+  );
+  const cvvAllowedLengths = useMemo(
+    () => getAllowedCvvLengthsForCard(cardNumberDigits),
+    [cardNumberDigits],
+  );
+  const cvvPlaceholder = cvvAllowedLengths.includes(4) ? "0000" : "000";
+  const cardBrand = useMemo(
+    () => getCardBrandFromNumber(cardNumberDigits),
+    [cardNumberDigits],
   );
 
   const handleCardFieldChange = (
@@ -406,7 +426,7 @@ export default function FlightBookingPaymentSection({
       // always cleanup/close popup if still open
       try {
         if (popup && !popup.closed) popup.close();
-      } catch (_) {}
+      } catch (_) { }
       setIsProcessing(false);
     }
   };
@@ -414,12 +434,9 @@ export default function FlightBookingPaymentSection({
   const handleReservationFlightBooking = async (tokenization: string) => {
     try {
       setTimeout(() => {
-        warningToast("Initializing reservation booking request...");
+        warningToast("Processing your booking, please wait...");
       }, 500);
-      const basePassengers =
-        bookingPassengers ??
-        reservation?.passengers ??
-        [];
+      const basePassengers = bookingPassengers ?? reservation?.passengers ?? [];
       const reservationWithToken = {
         ...reservation,
         passengers: applyPassengersDefaultResidenceFromIssuing(basePassengers),
@@ -550,7 +567,7 @@ export default function FlightBookingPaymentSection({
   const getPayButtonText = () => {
     if (isTokenizing) return "Preparing secure payment…";
     if (paymentPending) return "Processing your payment…";
-    if (isPending) return "Confirming your flight booking…";
+    if (isPending) return "Processing your booking, please wait...";
     if (retrieveFlightBookingPending || isPolling)
       return "Retrieving booking details…";
     return "Pay";
@@ -569,7 +586,7 @@ export default function FlightBookingPaymentSection({
           isCitiesLoading
             ? "Loading cities..."
             : isPending
-              ? "Confirming your flight booking…"
+              ? "Processing your booking, please wait..."
               : retrieveFlightBookingPending || isPolling
                 ? "Retrieving booking details…"
                 : "Please wait while we are fetching records..."
@@ -805,6 +822,7 @@ export default function FlightBookingPaymentSection({
                         name="expiry"
                         value={cardDetails.expiryDisplay}
                         onChange={handleCardFieldChange}
+                        maxLength={5}
                         error={
                           hasAttemptedValidation
                             ? validationErrors["card.expiry"]
@@ -822,6 +840,7 @@ export default function FlightBookingPaymentSection({
                         name="cvv"
                         value={cardDetails.cvv}
                         onChange={handleCardFieldChange}
+                        maxLength={4}
                         error={
                           hasAttemptedValidation
                             ? validationErrors["card.cvv"]
@@ -873,7 +892,7 @@ export default function FlightBookingPaymentSection({
 
                       <CardCollapseToggle
                         open={openAddress}
-                        onClick={() => {}}
+                        onClick={() => { }}
                         className="pointer-events-none"
                       />
                     </div>

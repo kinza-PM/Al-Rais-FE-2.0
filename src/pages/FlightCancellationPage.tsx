@@ -90,11 +90,10 @@ function CancelItemCard({
     <Button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-[10px] border-[1.5px] px-4 py-6 text-center transition-all ${
-        selected
-          ? "border-[#B80020] bg-[#FFB8C4]"
-          : "border-[#E4E4E7] bg-white hover:border-[#EA0029]/50"
-      }`}
+      className={`w-full rounded-[10px] border-[1.5px] px-4 py-6 max-[768px]:py-4 max-[768px]:px-3 text-center transition-all ${selected
+        ? "border-[#B80020] bg-[#FFB8C4]"
+        : "border-[#E4E4E7] bg-white hover:border-[#EA0029]/50"
+        }`}
       overrideClasses
     >
       <div className="text-[14px] font-semibold text-[#B80020]">{title}</div>
@@ -115,9 +114,9 @@ function SummaryAmountRow({
   valueClassName?: string;
 }) {
   return (
-    <div className="flex items-center justify-between text-[12px]">
-      <span className="text-[#3D495C]">{label}</span>
-      <span className={valueClassName}>{value}</span>
+    <div className="flex items-start justify-between gap-2 text-[12px]">
+      <span className="text-[#3D495C] flex-1">{label}</span>
+      <span className={`${valueClassName} shrink-0 text-right`}>{value}</span>
     </div>
   );
 }
@@ -136,11 +135,11 @@ function AcknowledgementCheckbox({
   return (
     <div className="px-1 py-1">
       <Checkbox
-        className="[&_.ant-checkbox-inner]:!border-[#A7C0EC] [&_.ant-checkbox-inner]:!border-[1.5px] [&_.ant-checkbox-inner]:!rounded-[4px]"
+        className="items-start max-[768px]:items-start [&_.ant-checkbox-inner]:!border-[#A7C0EC] [&_.ant-checkbox-inner]:!border-[1.5px] [&_.ant-checkbox-inner]:!rounded-[4px] [&_.ant-checkbox]:mt-1 max-[768px]:[&_.ant-checkbox]:mt-[3px]"
         checked={checked}
         onChange={onChange}
       >
-        <span className="text-[16px] text-[#3D495C] font-medium">
+        <span className="text-[16px] max-[768px]:text-[14px] text-[#3D495C] font-medium leading-tight block">
           {children}
         </span>
       </Checkbox>
@@ -671,7 +670,6 @@ const FlightCancellationPage: React.FC = () => {
     }
     return [];
   }, [tripForSummary, summaryCardAssets, routeLabel, airlineName]);
-
   const cancellationSummaryFare = useMemo(() => {
     if (!tripForSummary) return undefined;
     const firstPrice = getPriceCabinClassForFlightSummary(tripForSummary);
@@ -689,8 +687,8 @@ const FlightCancellationPage: React.FC = () => {
         show={showDetailsLoader}
         label="Please wait while we fetch your details"
       />
-      <div className="min-h-screen bg-[#F8FAFC] py-10 px-4">
-        <div className="mx-auto max-w-[650px]">
+      <div className="min-h-screen bg-[#F8FAFC] py-10 px-4 max-[768px]:py-5 max-[768px]:px-3">
+        <div className="mx-auto w-full max-w-[650px]">
           {hasAttemptedValidation && validationErrors.session && (
             <div
               className="mb-4 rounded-[12px] border border-[#E65959] bg-[#FEF2F2] px-4 py-3 text-[13px] text-[#E65959]"
@@ -855,16 +853,15 @@ const FlightCancellationPage: React.FC = () => {
                 <SummaryAmountRow
                   label={
                     allowPartialCancellation &&
-                    !cancelAllPassengers &&
-                    bookingPassengers.length > 1
+                      !cancelAllPassengers &&
+                      bookingPassengers.length > 1
                       ? "Ticket value (passengers you cancel)"
                       : "Original ticket price"
                   }
-                  value={`${displayedCharges.currency} ${
-                    !chargesResolved || isChargesLoading
-                      ? "…"
-                      : ticketValueForCancellation.toFixed(2)
-                  }`}
+                  value={`${displayedCharges.currency} ${!chargesResolved || isChargesLoading
+                    ? "…"
+                    : ticketValueForCancellation.toFixed(2)
+                    }`}
                 />
 
                 <SummaryAmountRow
@@ -873,11 +870,10 @@ const FlightCancellationPage: React.FC = () => {
                       Supplier cancellation charge
                     </span>
                   }
-                  value={`- ${displayedCharges.currency} ${
-                    !chargesResolved || isChargesLoading
-                      ? "Loading..."
-                      : displayedCharges.supplier.toFixed(2)
-                  }`}
+                  value={`- ${displayedCharges.currency} ${!chargesResolved || isChargesLoading
+                    ? "Loading..."
+                    : displayedCharges.supplier.toFixed(2)
+                    }`}
                   valueClassName="font-medium text-[#EA0029] text-[16px]"
                 />
 
@@ -887,21 +883,19 @@ const FlightCancellationPage: React.FC = () => {
                       Admin cancellation charge
                     </span>
                   }
-                  value={`- ${displayedCharges.currency} ${
-                    !chargesResolved || isChargesLoading
-                      ? "Loading..."
-                      : displayedCharges.admin.toFixed(2)
-                  }`}
+                  value={`- ${displayedCharges.currency} ${!chargesResolved || isChargesLoading
+                    ? "Loading..."
+                    : displayedCharges.admin.toFixed(2)
+                    }`}
                   valueClassName="font-medium text-[#EA0029] text-[16px]"
                 />
 
                 <SummaryAmountRow
                   label="Total cancellation charges"
-                  value={`${displayedCharges.currency} ${
-                    !chargesResolved || isChargesLoading
-                      ? "Loading..."
-                      : displayedCharges.total.toFixed(2)
-                  }`}
+                  value={`${displayedCharges.currency} ${!chargesResolved || isChargesLoading
+                    ? "Loading..."
+                    : displayedCharges.total.toFixed(2)
+                    }`}
                 />
 
                 {!displayedCharges.refundApplicable && (
@@ -915,11 +909,10 @@ const FlightCancellationPage: React.FC = () => {
 
                 <SummaryAmountRow
                   label="Total estimated refund"
-                  value={`${displayedCharges.currency} ${
-                    !chargesResolved || isChargesLoading
-                      ? "…"
-                      : estimatedRefund.toFixed(2)
-                  }`}
+                  value={`${displayedCharges.currency} ${!chargesResolved || isChargesLoading
+                    ? "…"
+                    : estimatedRefund.toFixed(2)
+                    }`}
                   valueClassName="text-[16px] font-semibold text-[#0A0C0F]"
                 />
 
@@ -934,11 +927,11 @@ const FlightCancellationPage: React.FC = () => {
             </SectionCard>
           </div>
 
-          <div className="mt-6 flex items-center gap-2 text-[12px] text-[#3D495C] px-16">
+          <div className="mt-6 flex items-start gap-2 text-[12px] text-[#3D495C] px-16 max-[768px]:px-0">
             <span className="mt-[2px]">
-              <img alt="info" src={InfoPrimary} className="w-7 h-7" />
+              <img alt="info" src={InfoPrimary} className="w-7 h-7 max-[768px]:w-5 max-[768px]:h-5" />
             </span>
-            <p>
+            <p className="leading-relaxed">
               This action is irreversible. Once you click "Confirm
               Cancellation," your seats will be released immediately and cannot
               be reclaimed at the same price.
@@ -977,15 +970,16 @@ const FlightCancellationPage: React.FC = () => {
             </AcknowledgementCheckbox>
           </div>
 
-          <div className="mt-10 flex justify-center">
+          <div className="mt-10 max-[768px]:mt-6 flex justify-center w-full">
             <Button
               type="button"
               disabled={isCancelling}
-              className="box-border inline-flex w-[min(100%,450px)] shrink-0 items-center justify-center gap-2 whitespace-nowrap text-[15px] font-semibold text-white"
+              className="box-border inline-flex w-[min(100%,450px)] max-[768px]:w-full shrink-0 items-center justify-center gap-2 max-[768px]:whitespace-normal text-center text-[15px] max-[768px]:text-[14px] font-semibold text-white px-4 max-[768px]:py-3"
               style={{
                 background:
                   "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                height: "47px",
+                minHeight: "47px",
+                height: "auto",
                 borderRadius: "100px",
               }}
               overrideClasses
@@ -997,12 +991,12 @@ const FlightCancellationPage: React.FC = () => {
             </Button>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 max-[768px]:mt-6">
             {/* {passengersLabel ? `Passengers: ${passengersLabel}` : ""} */}
-            <div className="text-[18px] text-[#0A0C0F] font-bold">
+            <div className="text-[18px] max-[768px]:text-[16px] text-[#0A0C0F] font-bold">
               Contact Us:
             </div>
-            <p className="text-[18px] mt-1 text-[#0A0C0F]">
+            <p className="text-[18px] max-[768px]:text-[14px] mt-1 text-[#0A0C0F]">
               If you have any questions about this page, check FAQs or please
               contact us{" "}
               <Link
