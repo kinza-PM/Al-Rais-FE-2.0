@@ -43,8 +43,8 @@ import {
 } from "../../utils/apiErrorHanlder";
 import {
   applyPassengersDefaultResidenceFromIssuing,
-  getAllowedCvvLengthsForCard,
-  getCardBrandFromNumber,
+  // getAllowedCvvLengthsForCard,
+  // getCardBrandFromNumber,
   openBlankPopupAndCheckWebisteAllowPopup,
   // validateReservationFlightBookingData,
   validateReservationFlightBookingDataFields,
@@ -210,19 +210,19 @@ export default function FlightBookingPaymentSection({
     !!selectedCountry?.label,
   );
 
-  const cardNumberDigits = useMemo(
-    () => cardDetails.number.replace(/\D/g, ""),
-    [cardDetails.number],
-  );
-  const cvvAllowedLengths = useMemo(
-    () => getAllowedCvvLengthsForCard(cardNumberDigits),
-    [cardNumberDigits],
-  );
-  const cvvPlaceholder = cvvAllowedLengths.includes(4) ? "0000" : "000";
-  const cardBrand = useMemo(
-    () => getCardBrandFromNumber(cardNumberDigits),
-    [cardNumberDigits],
-  );
+  // const cardNumberDigits = useMemo(
+  //   () => cardDetails.number.replace(/\D/g, ""),
+  //   [cardDetails.number],
+  // );
+  // const cvvAllowedLengths = useMemo(
+  //   () => getAllowedCvvLengthsForCard(cardNumberDigits),
+  //   [cardNumberDigits],
+  // );
+  // const cvvPlaceholder = cvvAllowedLengths.includes(4) ? "0000" : "000";
+  // const cardBrand = useMemo(
+  //   () => getCardBrandFromNumber(cardNumberDigits),
+  //   [cardNumberDigits],
+  // );
 
   const handleCardFieldChange = (
     e: React.ChangeEvent<
