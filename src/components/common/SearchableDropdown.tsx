@@ -71,6 +71,13 @@ interface SearchableDropdownProps {
   panelClassName?: string;
   /** When true, options list only (no search field in panel). For short fixed lists like filters. */
   hidePanelSearch?: boolean;
+  /** Extra Tailwind classes for the selected value text in the trigger (not the placeholder state). */
+  selectedValueClassName?: string;
+  /**
+   * When the trigger is in placeholder mode (no matching option / empty value),
+   * use these classes instead of the default muted placeholder style.
+   */
+  placeholderValueClassName?: string;
 }
 
 const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
@@ -101,6 +108,8 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   renderOption,
   panelClassName = "",
   hidePanelSearch = false,
+  selectedValueClassName = "",
+  placeholderValueClassName,
 }) => {
   const OPTIONS_CHUNK_SIZE = 150;
   const [isOpen, setIsOpen] = useState(false);
@@ -358,7 +367,7 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
   }, [searchTerm, remoteSearch, onSearchChange]);
 
   const baseClasses = `
-    appearance-none h-[50px] w-full rounded-[16px] border pl-4 pr-11 text-[14px] text-[#0F172A]
+    appearance-none h-[50px] w-full rounded-[16px] border pl-4 pr-12 text-[14px] text-[#0F172A]
     outline-none
     ${disabled ? "bg-gray-100 cursor-not-allowed" : "cursor-pointer"}
     ${error && isValidationError ? "border-red-500" : "border-[#C2CAD6]"}
@@ -403,7 +412,11 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           ) : (
             <span
               className={`block min-w-0 flex-1 truncate whitespace-nowrap text-left ${
-                !selectedOption && !value ? "text-[#9CA3AF]" : ""
+                !selectedOption && !value
+                  ? placeholderValueClassName?.trim()
+                    ? placeholderValueClassName
+                    : "font-normal text-[#9CA3AF]"
+                  : selectedValueClassName || "text-[#0F172A]"
               }`}
               title={typeof displayValue === "string" ? displayValue : undefined}
             >
@@ -412,13 +425,13 @@ const SearchableDropdown: React.FC<SearchableDropdownProps> = ({
           )}
 
             <span
-            className="pointer-events-none absolute right-3 top-1/2 flex h-[12px] w-[14px] -translate-y-1/2 items-center justify-center"
+            className="pointer-events-none absolute inset-y-0 right-4 flex w-[22px] shrink-0 items-center justify-center"
             aria-hidden
           >
             <img
               src={downArrowPng}
               alt=""
-              className={`h-full w-full origin-center object-contain transition-transform duration-200 ease-out ${
+              className={`h-[10px] w-[14px] max-h-full origin-center object-contain transition-transform duration-200 ease-out sm:h-[11px] ${
                 isOpen ? "rotate-180" : "rotate-0"
               }`}
             />

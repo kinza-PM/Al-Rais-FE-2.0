@@ -38,6 +38,10 @@ import {
 import SearchableDropdown, {
   type DropdownOption,
 } from "../components/common/SearchableDropdown";
+import TailiwindCustomDatePicker from "../components/common/TailiwindCustomDatePicker";
+import { convertDateToString } from "../utils/hotelBookingParams";
+import CalendarIcon from "../assets/svgs/calendar.svg";
+import "../assets/css/travel.css";
 
 const statusTabs = [
   "All",
@@ -48,20 +52,21 @@ const statusTabs = [
 ] as const;
 
 /**
- * My Bookings filter bar — matches Figma (node 5099:16949 area):
- * light grey fill, 8px radius, 50px height, 10px gaps, compact dropdowns.
+ * My Bookings filter bar — Types/Status triggers match hotel `hotel-date-range-row`:
+ * 50px tall, 1px #c2cad6 border, 16px radius (see travel.css).
  */
 const FILTER_LABEL_CLASS =
-  "mb-1.5 block text-[12px] font-normal leading-tight text-[#6B7280]";
+  "mb-[5px] block text-[12px] font-normal leading-none text-[#3D495C]";
 
-const FILTER_FIELD_SHELL =
-  "h-[50px] rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] transition-colors focus-within:border-[#5383DA] focus-within:ring-2 focus-within:ring-[#5383DA]/15";
+/** Shared typography for Types, Status, and date-range field text (size, weight, color). */
+const FILTER_FIELD_VALUE_TEXT_CLASS =
+  "text-[14px] font-medium leading-normal text-[#0A0C0F] antialiased";
 
-const FILTER_SEARCH_INPUT_CLASS =
-  "h-[50px] w-full rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] py-0 pl-[42px] pr-[15px] text-[14px] font-medium leading-none text-[#0A0C0F] placeholder:text-[#9CA3AF] outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/15";
+const FILTER_DROPDOWN_TRIGGER_CLASS = `box-border appearance-none h-[50px] w-full rounded-[16px] border border-[#C2CAD6] bg-white pl-[15px] pr-12 outline-none flex min-w-0 items-center cursor-pointer transition-colors focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/15 disabled:cursor-not-allowed disabled:opacity-60 ${FILTER_FIELD_VALUE_TEXT_CLASS}`;
 
-const FILTER_DROPDOWN_TRIGGER_CLASS =
-  "appearance-none h-[50px] w-full rounded-lg border border-[#E5E7EB] bg-[#F8F9FA] pl-[15px] pr-10 text-[14px] font-medium leading-none text-[#0A0C0F] outline-none flex min-w-0 items-center cursor-pointer transition-colors focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/15 disabled:cursor-not-allowed disabled:opacity-60";
+const FILTER_DROPDOWN_VALUE_CLASS = FILTER_FIELD_VALUE_TEXT_CLASS;
+
+const FILTER_DATE_INPUT_CLASS = `hotel-date-range-input !pl-2 !pr-0.5 ${FILTER_FIELD_VALUE_TEXT_CLASS} !text-[#0A0C0F] placeholder:!font-medium placeholder:!text-[#0A0C0F]`;
 
 type StatusTab = (typeof statusTabs)[number];
 type BookingsMode = "All" | "Flights" | "Hotels" | "Sightseeing";
@@ -119,9 +124,25 @@ const MyBookingsPage = () => {
   >([]);
   const sightseeingErrorToastKey = useRef<string | null>(null);
 
-  const [searchQuery, setSearchQuery] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const myBookingsDateFromWrapRef = useRef<HTMLDivElement>(null);
+  const myBookingsDateToWrapRef = useRef<HTMLDivElement>(null);
+
+  const openMyBookingsRangeCalendar = useCallback(() => {
+    const fromInput = myBookingsDateFromWrapRef.current?.querySelector(
+      "input",
+    ) as HTMLInputElement | null | undefined;
+    const toInput = myBookingsDateToWrapRef.current?.querySelector("input") as
+      | HTMLInputElement
+      | null
+      | undefined;
+    if (!dateFrom && fromInput) {
+      fromInput.click();
+      return;
+    }
+    toInput?.click();
+  }, [dateFrom]);
 
   const active = useMemo(
     () => parseStatusParam(searchParams.get("status")),
@@ -184,8 +205,7 @@ const MyBookingsPage = () => {
   const sightFilters =
     mode === "Sightseeing" || mode === "All"
       ? {
-          status:
-            active === "Confirmed" ? "confirmed" : active.toLowerCase(),
+          status: active === "Confirmed" ? "confirmed" : active.toLowerCase(),
         }
       : null;
 
@@ -312,11 +332,10 @@ const MyBookingsPage = () => {
 
   const sharedListProps = useMemo(
     () => ({
-      searchQuery,
       dateFrom,
       dateTo,
     }),
-    [searchQuery, dateFrom, dateTo],
+    [dateFrom, dateTo],
   );
 
   return (
@@ -325,137 +344,152 @@ const MyBookingsPage = () => {
         show={showBookingsLoader}
         label="Please wait while we are fetching your bookings"
       />
-      <div className="mx-auto w-full max-w-[1168px] px-6">
-        <div className="flex w-full flex-col gap-4 min-[720px]:flex-row min-[720px]:flex-nowrap min-[720px]:items-end min-[720px]:gap-[10px]">
-          <div className="w-full shrink-0 min-[720px]:w-[396px] min-[720px]:max-w-[396px]">
-            <label className={FILTER_LABEL_CLASS} htmlFor="my-bookings-search">
-              Search
-            </label>
-            <div className="relative">
-              <span
-                className="pointer-events-none absolute left-[15px] top-1/2 z-[1] -translate-y-1/2 text-[#9CA3AF]"
-                aria-hidden
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                  <path
-                    d="M16.5 16.5 21 21"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </span>
-              <input
-                id="my-bookings-search"
-                type="text"
-                placeholder="Search for bookings"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                autoComplete="off"
-                className={FILTER_SEARCH_INPUT_CLASS}
+      <div className="mx-auto w-full max-w-[1440px] px-6">
+        <div className="flex w-full justify-end">
+          <div className="flex max-w-full flex-col gap-3 min-[540px]:flex-row min-[540px]:items-end min-[540px]:gap-4">
+            {/* Types */}
+            <div className="w-full min-[540px]:w-[120px] min-[540px]:shrink-0">
+              <SearchableDropdown
+                label="Types"
+                labelClass={FILTER_LABEL_CLASS}
+                options={MODE_OPTIONS}
+                value={modeSelectValue}
+                onChange={(v) => {
+                  const next =
+                    v === "hotels"
+                      ? "Hotels"
+                      : v === "sightseeing"
+                        ? "Sightseeing"
+                        : v === "flights"
+                          ? "Flights"
+                          : "All";
+                  setModeFilter(next);
+                }}
+                placeholder="All"
+                widthClass="w-full"
+                className={FILTER_DROPDOWN_TRIGGER_CLASS}
+                selectedValueClassName={FILTER_DROPDOWN_VALUE_CLASS}
+                placeholderValueClassName={FILTER_DROPDOWN_VALUE_CLASS}
+                noInnerOptionsScroll
+                hidePanelSearch
+                cacheKey="my-bookings-mode"
               />
             </div>
-          </div>
 
-          <div className="w-full shrink-0 min-[720px]:w-[120px]">
-            <SearchableDropdown
-              label="Types"
-              labelClass={FILTER_LABEL_CLASS}
-              options={MODE_OPTIONS}
-              value={modeSelectValue}
-              onChange={(v) => {
-                const next =
-                  v === "hotels"
-                    ? "Hotels"
-                    : v === "sightseeing"
-                      ? "Sightseeing"
-                      : v === "flights"
-                        ? "Flights"
-                        : "All";
-                setModeFilter(next);
-              }}
-              placeholder="All"
-              widthClass="w-full"
-              className={FILTER_DROPDOWN_TRIGGER_CLASS}
-              searchPlaceholder="Search"
-              noInnerOptionsScroll
-              hidePanelSearch
-              cacheKey="my-bookings-mode"
-            />
-          </div>
-
-          <div className="w-full shrink-0 min-[720px]:w-[120px]">
-            <SearchableDropdown
-              label="Status"
-              labelClass={FILTER_LABEL_CLASS}
-              options={STATUS_OPTIONS}
-              value={statusSelectValue}
-              onChange={(v) => {
-                const next = parseStatusParam(v);
-                setStatusFilter(next);
-              }}
-              placeholder="All"
-              widthClass="w-full"
-              className={FILTER_DROPDOWN_TRIGGER_CLASS}
-              searchPlaceholder="Search"
-              noInnerOptionsScroll
-              hidePanelSearch
-              cacheKey="my-bookings-status"
-            />
-          </div>
-
-          <div className="w-full shrink-0 min-[720px]:w-[216px]">
-            <span className={FILTER_LABEL_CLASS}>Filter by Date</span>
-            <div
-              className={`flex h-[50px] min-w-0 items-center gap-1.5 px-3 ${FILTER_FIELD_SHELL} [color-scheme:light]`}
-            >
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="min-h-0 min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-[14px] font-medium leading-none text-[#0A0C0F] outline-none"
-                aria-label="From date"
+            {/* Status */}
+            <div className="w-full min-[540px]:w-[120px] min-[540px]:shrink-0">
+              <SearchableDropdown
+                label="Status"
+                labelClass={FILTER_LABEL_CLASS}
+                options={STATUS_OPTIONS}
+                value={statusSelectValue}
+                onChange={(v) => {
+                  const next = parseStatusParam(v);
+                  setStatusFilter(next);
+                }}
+                placeholder="All"
+                widthClass="w-full"
+                className={FILTER_DROPDOWN_TRIGGER_CLASS}
+                selectedValueClassName={FILTER_DROPDOWN_VALUE_CLASS}
+                placeholderValueClassName={FILTER_DROPDOWN_VALUE_CLASS}
+                noInnerOptionsScroll
+                hidePanelSearch
+                cacheKey="my-bookings-status"
               />
-              <span
-                className="shrink-0 select-none text-[14px] font-medium leading-none text-[#9CA3AF]"
-                aria-hidden
-              >
-                –
-              </span>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="min-h-0 min-w-0 flex-1 cursor-pointer border-0 bg-transparent p-0 text-[14px] font-medium leading-none text-[#0A0C0F] outline-none"
-                aria-label="To date"
-              />
-              <span className="ml-0.5 shrink-0 text-[#9CA3AF]" aria-hidden>
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+            </div>
+
+            {/* Filter by Date */}
+            <div className="w-full min-w-0 min-[540px]:w-[360px] min-[540px]:shrink-0">
+              <span className={FILTER_LABEL_CLASS}>Filter by Date</span>
+              <div className="hotel-date-range-row">
+                <div
+                  ref={myBookingsDateFromWrapRef}
+                  className="min-w-0 flex-1 basis-0"
                 >
-                  <path
-                    d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M4 11h16M7 11v8a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-8"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
+                  <TailiwindCustomDatePicker
+                    value={dateFrom ? new Date(dateFrom) : null}
+                    onChange={(date) => {
+                      const dateStr = convertDateToString(date);
+                      setDateFrom(dateStr);
+                      if (dateTo && dateStr && dateTo < dateStr) setDateTo("");
+                    }}
+                    placeholder="From"
+                    buttonIconSrc={true}
+                    overridesClass={true}
+                    showCalendarIconRight={false}
+                    hideCalendarButton
+                    inputClass={FILTER_DATE_INPUT_CLASS}
+                    disablePastDates={false}
+                    tooltip="Select from date"
                   />
-                </svg>
-              </span>
+                </div>
+
+                <span
+                  className={`shrink-0 select-none ${FILTER_FIELD_VALUE_TEXT_CLASS}`}
+                  aria-hidden
+                >
+                  —
+                </span>
+
+                <div
+                  ref={myBookingsDateToWrapRef}
+                  className="min-w-0 flex-1 basis-0"
+                >
+                  <TailiwindCustomDatePicker
+                    value={dateTo ? new Date(dateTo) : null}
+                    onChange={(date) => setDateTo(convertDateToString(date))}
+                    placeholder="To"
+                    buttonIconSrc={true}
+                    overridesClass={true}
+                    showCalendarIconRight={false}
+                    hideCalendarButton
+                    inputClass={FILTER_DATE_INPUT_CLASS}
+                    disablePastDates={false}
+                    minDate={dateFrom ? new Date(dateFrom) : null}
+                    tooltip="Select to date"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={openMyBookingsRangeCalendar}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-md text-[#64748B] transition-colors hover:bg-[#F1F5F9]"
+                  aria-label="Open calendar"
+                >
+                  <img
+                    src={CalendarIcon}
+                    alt=""
+                    className="pointer-events-none h-4 w-4 opacity-80"
+                  />
+                </button>
+
+                {(dateFrom || dateTo) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDateFrom("");
+                      setDateTo("");
+                    }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-md text-[#94A3B8] transition-colors hover:bg-[#F1F5F9] hover:text-[#64748B]"
+                    aria-label="Clear date filter"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden
+                    >
+                      <path
+                        d="M18 6 6 18M6 6l12 12"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

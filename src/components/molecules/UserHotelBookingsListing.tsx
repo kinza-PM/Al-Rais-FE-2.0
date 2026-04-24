@@ -13,7 +13,11 @@ import { markExpectMyBookingsQueryRestore } from "../../utils/myBookingsUrl";
 import HotelBookingETicketSetion, {
   type HotelListDownloadParams,
 } from "./HotelBookingETicketSetion";
-import type { BookingStatus } from "./UserBookingsListing";
+import {
+  StatusPill,
+  TripCategoryPill,
+  type BookingStatus,
+} from "./UserBookingsListing";
 import FilledStar from "../../assets/svgs/filled_star.svg";
 
 const actionLinkClass =
@@ -21,66 +25,8 @@ const actionLinkClass =
 
 export type { BookingStatus };
 
-function StatusPill({ status }: { status: BookingStatus }) {
-  if (status === "Cancelled") {
-    return (
-      <span
-        className="inline-flex items-center justify-center text-[11px] font-medium text-[#9A3412]"
-        style={{
-          background: "#FFEDD5",
-          minWidth: "86px",
-          height: "26px",
-          borderRadius: "100px",
-        }}
-      >
-        Cancelled
-      </span>
-    );
-  }
-
-  if (status === "Confirmed") {
-    return (
-      <span
-        className="inline-flex items-center justify-center text-[11px] font-medium text-[#0A0C0F]"
-        style={{
-          background: "#85FFCA",
-          width: "86px",
-          height: "26px",
-          borderRadius: "100px",
-        }}
-      >
-        Confirmed
-      </span>
-    );
-  }
-
-  if (status === "Pending") {
-    return (
-      <span
-        className="inline-flex max-w-[calc(100vw-2rem)] items-center justify-center whitespace-nowrap rounded-full bg-[#FFE4E6] px-4 py-2 text-center text-[12px] font-medium leading-none text-[#B91C1C]"
-      >
-        Pending payment
-      </span>
-    );
-  }
-
-  return (
-    <span
-      className="inline-flex items-center justify-center text-[11px] font-medium text-[#3D495C]"
-      style={{
-        background: "#E4E4E7",
-        width: "72px",
-        height: "26px",
-        borderRadius: "100px",
-      }}
-    >
-      Expired
-    </span>
-  );
-}
-
 function CardDivider() {
-  return <div className="-mx-4 h-px bg-[#E4E4E7]" />;
+  return <div className="-mx-6 h-px bg-[#E4E4E7] max-[768px]:-mx-4" />;
 }
 
 function StayTimeline({
@@ -186,19 +132,24 @@ function HotelBookingCard({
   return (
     <div
       className={[
-        "relative rounded-[16px] border border-[#E4E4E7] bg-white overflow-hidden transition",
+        "relative rounded-[16px] border-[1.5px] px-6 pb-4 pt-14 shadow-sm transition max-w-[1168px] w-full overflow-hidden",
         isExpired || isCancelled ? "opacity-60 [filter:grayscale(80%)]" : "",
+        isPending ? "bg-white" : "bg-[#F2F2F3]",
       ].join(" ")}
       style={{
-        maxWidth: "1168px",
+        borderColor: "#E4E4E7",
         width: "100%",
+        maxWidth: "1168px",
+        borderRadius: "16px",
+        borderWidth: "1.5px",
       }}
     >
-      <div className="absolute right-4 top-4 z-10 sm:right-5">
+      <div className="absolute right-6 top-5 z-10 flex flex-wrap items-center justify-end gap-2 sm:right-6 sm:top-6">
+        <TripCategoryPill label="Hotel" />
         <StatusPill status={booking.status} />
       </div>
 
-      <div className="px-4 pt-10 pb-4">
+      <div className="px-0 pt-2 pb-4">
         <StayTimeline
           checkInTime={booking.checkInTime}
           checkOutTime={booking.checkOutTime}
@@ -210,7 +161,7 @@ function HotelBookingCard({
 
       <CardDivider />
 
-      <div className="px-4 py-3 grid grid-cols-[1.5fr_.6fr_.45fr] gap-6 items-start">
+      <div className="px-0 py-3 grid grid-cols-[1.5fr_.6fr_.45fr] gap-6 items-start">
         <div>
           <div className="flex items-center gap-1 mb-1">
             <span className="text-[14px] font-medium text-[#0A0C0F] leading-none">
@@ -249,7 +200,7 @@ function HotelBookingCard({
         !isCancelled && (
         <>
           <CardDivider />
-          <div className="px-4 py-3">
+          <div className="px-0 py-3">
             <div className="text-[12px] text-[#3D495C]">
               <span className="font-semibold text-[#0A0C0F]">Free cancellation until:</span>{" "}
               {booking.cancellationDeadline}
@@ -261,7 +212,7 @@ function HotelBookingCard({
       {(isPending || isExpired) && <CardDivider />}
 
       {isPending && (
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
+        <div className="px-0 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-[13px] font-medium text-[#3D495C]">
             <span className="rounded-[6px] bg-[#FFB8C4] px-1.5 py-1 font-mono text-[#EA0029] text-[12px] leading-none">
               {countdown.hours}
@@ -293,7 +244,7 @@ function HotelBookingCard({
       )}
 
       {isExpired && (
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
+        <div className="px-0 py-3 flex items-center justify-between gap-4">
           <div className="text-[13px] font-medium text-[#3D495C]">
             This booking has expired!
           </div>
@@ -317,7 +268,7 @@ function HotelBookingCard({
 
       <CardDivider />
 
-      <div className="px-4 py-3 flex items-center justify-between text-[13px] font-medium">
+      <div className="px-0 py-3 flex items-center justify-between text-[13px] font-medium">
         <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7] gap-0">
           {isCancelled && (
             <>
@@ -497,7 +448,7 @@ export default function UserHotelBookingsListing({
 
   return (
     <>
-      <div className="mt-6 space-y-4 flex flex-col items-center">
+      <div className="mt-6 space-y-6 flex flex-col items-center">
         {list.map((b) => (
           <div key={b.id} className="w-full max-w-[1168px]">
             <HotelBookingCard

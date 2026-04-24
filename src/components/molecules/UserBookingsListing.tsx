@@ -12,20 +12,15 @@ import airlineDefault from "../../assets/images/emirates.png";
 export type BookingStatus = "Confirmed" | "Pending" | "Expired" | "Cancelled";
 export type TripMode = "Flights" | "Hotels";
 
-function StatusPill({ status }: { status: BookingStatus }) {
+export function StatusPill({ status }: { status: BookingStatus }) {
+  /** My Bookings status chips — Figma node 5099:16949 (secondary / tertiary tokens). */
+  const pillBase =
+    "inline-flex h-[31px] shrink-0 items-center justify-center whitespace-nowrap rounded-full px-[15px] py-[8px] text-[12px] font-normal leading-none";
+
   if (status === "Cancelled") {
     return (
       <span
-        className="inline-flex items-center justify-center text-[12px] font-medium text-[#9A3412]"
-        style={{
-          background: "#FFEDD5",
-          lineHeight: "15px",
-          minWidth: "90px",
-          height: "31px",
-          borderRadius: "100px",
-          padding: "8px 15px",
-          gap: "10px",
-        }}
+        className={`${pillBase} min-w-[90px] bg-[#FFEDD5] font-medium text-[#9A3412]`}
       >
         Cancelled
       </span>
@@ -35,17 +30,7 @@ function StatusPill({ status }: { status: BookingStatus }) {
   if (status === "Confirmed") {
     return (
       <span
-        className="inline-flex items-center justify-center text-[12px] font-normal text-white"
-        style={{
-          background: "#85FFCA",
-          lineHeight: "15px",
-          width: "90px",
-          height: "31px",
-          borderRadius: "100px",
-          padding: "8px 15px",
-          gap: "10px",
-          color: "black",
-        }}
+        className={`${pillBase} w-[90px] bg-[#85FFCA] font-normal text-[#00522E]`}
       >
         Confirmed
       </span>
@@ -55,7 +40,7 @@ function StatusPill({ status }: { status: BookingStatus }) {
   if (status === "Pending") {
     return (
       <span
-        className="inline-flex max-w-[calc(100vw-2rem)] items-center justify-center whitespace-nowrap rounded-full bg-[#FFE4E6] px-4 py-2 text-center text-[12px] font-medium leading-none text-[#B91C1C]"
+        className={`${pillBase} max-w-[calc(100vw-2rem)] bg-[#FFB8C4] text-[#EA0029]`}
       >
         Pending payment
       </span>
@@ -63,24 +48,30 @@ function StatusPill({ status }: { status: BookingStatus }) {
   }
 
   return (
-    <span
-      className="inline-flex items-center justify-center text-[12px] font-normal text-[#3D495C]"
-      style={{
-        background: "#E4E4E7",
-        width: "73px",
-        height: "31px",
-        borderRadius: "100px",
-        padding: "8px 15px",
-        gap: "10px",
-      }}
-    >
+    <span className={`${pillBase} w-[73px] bg-[#E4E4E7] text-[#3D495C]`}>
       Expired
     </span>
   );
 }
 
+/**
+ * Flight / Hotel category chip — Figma: white fill, 1.5px border primary-brand-200 (#5383DA),
+ * label 12px regular primary-brand-300 (#2351A3). Node 9453:8373 / 9453:8359.
+ */
+export function TripCategoryPill({ label }: { label: "Flight" | "Hotel" }) {
+  return (
+    <span
+      className="inline-flex h-[31px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-solid border-[#5383DA] bg-white px-[15px] py-[8px] text-[12px] font-normal leading-none text-[#2351A3]"
+      role="img"
+      aria-label={label}
+    >
+      {label}
+    </span>
+  );
+}
+
 function CardDivider() {
-  return <div className="-mx-5 h-px bg-[#E4E4E7] max-[768px]:-mx-4" />;
+  return <div className="-mx-6 h-px bg-[#E4E4E7] max-[768px]:-mx-4" />;
 }
 
 // Flight timeline for single journey - shows segment durations and layovers for multi-stop
@@ -353,7 +344,7 @@ function BookingCard({ booking }: { booking: any }) {
   return (
     <div
       className={[
-        "relative rounded-[16px] border-[1.5px] px-6 pb-4 pt-6 shadow-sm transition max-w-[1168px] w-full",
+        "relative rounded-[16px] border-[1.5px] px-6 pb-4 pt-14 shadow-sm transition max-w-[1168px] w-full",
         isExpired || isCancelled
           ? "opacity-50 [filter:grayscale(100%)]"
           : "",
@@ -362,7 +353,8 @@ function BookingCard({ booking }: { booking: any }) {
       style={{
         borderColor: "#E4E4E7",
         minHeight: "229px",
-        width: "1168px",
+        width: "100%",
+        maxWidth: "1168px",
         borderRadius: "16px",
         borderWidth: "1.5px",
       }}
@@ -387,7 +379,8 @@ function BookingCard({ booking }: { booking: any }) {
         />
       </div>
 
-      <div className="absolute right-4 top-3 z-10 sm:right-5 sm:top-4">
+      <div className="absolute right-6 top-5 z-10 flex flex-wrap items-center justify-end gap-2 sm:right-6 sm:top-6">
+        <TripCategoryPill label="Flight" />
         <StatusPill status={status as BookingStatus} />
       </div>
 
