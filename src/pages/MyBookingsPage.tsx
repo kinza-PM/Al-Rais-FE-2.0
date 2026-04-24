@@ -344,11 +344,12 @@ const MyBookingsPage = () => {
         show={showBookingsLoader}
         label="Please wait while we are fetching your bookings"
       />
-      <div className="mx-auto w-full max-w-[1440px] px-6">
-        <div className="flex w-full justify-end">
-          <div className="flex max-w-full flex-col gap-3 min-[540px]:flex-row min-[540px]:items-end min-[540px]:gap-4">
+      <div className="mx-auto w-full max-w-[1168px] px-6">
+        <div className="flex w-full flex-col gap-4 min-[640px]:flex-row min-[640px]:items-end min-[640px]:justify-between">
+          {/* LEFT SIDE: Types + Status */}
+          <div className="flex w-full flex-col gap-3 min-[640px]:w-auto min-[640px]:flex-row min-[640px]:items-end min-[640px]:gap-4">
             {/* Types */}
-            <div className="w-full min-[540px]:w-[120px] min-[540px]:shrink-0">
+            <div className="w-full min-[640px]:w-[120px] min-[640px]:shrink-0">
               <SearchableDropdown
                 label="Types"
                 labelClass={FILTER_LABEL_CLASS}
@@ -377,7 +378,7 @@ const MyBookingsPage = () => {
             </div>
 
             {/* Status */}
-            <div className="w-full min-[540px]:w-[120px] min-[540px]:shrink-0">
+            <div className="w-full min-[640px]:w-[120px] min-[640px]:shrink-0">
               <SearchableDropdown
                 label="Status"
                 labelClass={FILTER_LABEL_CLASS}
@@ -397,99 +398,94 @@ const MyBookingsPage = () => {
                 cacheKey="my-bookings-status"
               />
             </div>
+          </div>
 
-            {/* Filter by Date */}
-            <div className="w-full min-w-0 min-[540px]:w-[360px] min-[540px]:shrink-0">
-              <span className={FILTER_LABEL_CLASS}>Filter by Date</span>
-              <div className="hotel-date-range-row">
-                <div
-                  ref={myBookingsDateFromWrapRef}
-                  className="min-w-0 flex-1 basis-0"
-                >
-                  <TailiwindCustomDatePicker
-                    value={dateFrom ? new Date(dateFrom) : null}
-                    onChange={(date) => {
-                      const dateStr = convertDateToString(date);
-                      setDateFrom(dateStr);
-                      if (dateTo && dateStr && dateTo < dateStr) setDateTo("");
-                    }}
-                    placeholder="From"
-                    buttonIconSrc={true}
-                    overridesClass={true}
-                    showCalendarIconRight={false}
-                    hideCalendarButton
-                    inputClass={FILTER_DATE_INPUT_CLASS}
-                    disablePastDates={false}
-                    tooltip="Select from date"
-                  />
-                </div>
+          {/* RIGHT SIDE: Filter by Date (UNCHANGED) */}
+          <div className="w-full min-w-0 min-[540px]:w-[360px] min-[540px]:shrink-0">
+            <span className={FILTER_LABEL_CLASS}>Filter by Date</span>
 
-                <span
-                  className={`shrink-0 select-none ${FILTER_FIELD_VALUE_TEXT_CLASS}`}
-                  aria-hidden
-                >
-                  —
-                </span>
+            <div className="hotel-date-range-row">
+              <div
+                ref={myBookingsDateFromWrapRef}
+                className="min-w-0 flex-1 basis-0"
+              >
+                <TailiwindCustomDatePicker
+                  value={dateFrom ? new Date(dateFrom) : null}
+                  onChange={(date) => {
+                    const dateStr = convertDateToString(date);
+                    setDateFrom(dateStr);
+                    if (dateTo && dateStr && dateTo < dateStr) setDateTo("");
+                  }}
+                  placeholder="From"
+                  buttonIconSrc={true}
+                  overridesClass={true}
+                  showCalendarIconRight={false}
+                  hideCalendarButton
+                  inputClass={FILTER_DATE_INPUT_CLASS}
+                  disablePastDates={false}
+                  tooltip="Select from date"
+                />
+              </div>
 
-                <div
-                  ref={myBookingsDateToWrapRef}
-                  className="min-w-0 flex-1 basis-0"
-                >
-                  <TailiwindCustomDatePicker
-                    value={dateTo ? new Date(dateTo) : null}
-                    onChange={(date) => setDateTo(convertDateToString(date))}
-                    placeholder="To"
-                    buttonIconSrc={true}
-                    overridesClass={true}
-                    showCalendarIconRight={false}
-                    hideCalendarButton
-                    inputClass={FILTER_DATE_INPUT_CLASS}
-                    disablePastDates={false}
-                    minDate={dateFrom ? new Date(dateFrom) : null}
-                    tooltip="Select to date"
-                  />
-                </div>
+              <span
+                className={`shrink-0 select-none ${FILTER_FIELD_VALUE_TEXT_CLASS}`}
+                aria-hidden
+              >
+                —
+              </span>
 
+              <div
+                ref={myBookingsDateToWrapRef}
+                className="min-w-0 flex-1 basis-0"
+              >
+                <TailiwindCustomDatePicker
+                  value={dateTo ? new Date(dateTo) : null}
+                  onChange={(date) => setDateTo(convertDateToString(date))}
+                  placeholder="To"
+                  buttonIconSrc={true}
+                  overridesClass={true}
+                  showCalendarIconRight={false}
+                  hideCalendarButton
+                  inputClass={FILTER_DATE_INPUT_CLASS}
+                  disablePastDates={false}
+                  minDate={dateFrom ? new Date(dateFrom) : null}
+                  tooltip="Select to date"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={openMyBookingsRangeCalendar}
+                className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-md text-[#64748B] transition-colors hover:bg-[#F1F5F9]"
+                aria-label="Open calendar"
+              >
+                <img
+                  src={CalendarIcon}
+                  alt=""
+                  className="pointer-events-none h-4 w-4 opacity-80"
+                />
+              </button>
+
+              {(dateFrom || dateTo) && (
                 <button
                   type="button"
-                  onClick={openMyBookingsRangeCalendar}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-md text-[#64748B] transition-colors hover:bg-[#F1F5F9]"
-                  aria-label="Open calendar"
+                  onClick={() => {
+                    setDateFrom("");
+                    setDateTo("");
+                  }}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-md text-[#94A3B8] transition-colors hover:bg-[#F1F5F9] hover:text-[#64748B]"
+                  aria-label="Clear date filter"
                 >
-                  <img
-                    src={CalendarIcon}
-                    alt=""
-                    className="pointer-events-none h-4 w-4 opacity-80"
-                  />
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M18 6 6 18M6 6l12 12"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                    />
+                  </svg>
                 </button>
-
-                {(dateFrom || dateTo) && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDateFrom("");
-                      setDateTo("");
-                    }}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-md text-[#94A3B8] transition-colors hover:bg-[#F1F5F9] hover:text-[#64748B]"
-                    aria-label="Clear date filter"
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      aria-hidden
-                    >
-                      <path
-                        d="M18 6 6 18M6 6l12 12"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  </button>
-                )}
-              </div>
+              )}
             </div>
           </div>
         </div>
