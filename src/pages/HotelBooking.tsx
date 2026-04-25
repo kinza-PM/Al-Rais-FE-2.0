@@ -430,7 +430,7 @@ const HotelBooking = () => {
             })),
           };
         });
-        toast.success("Hotel pre-booking successful");
+        // toast.success("Hotel pre-booking successful");
         setCurrentStep(1);
       } else {
         const msg =
@@ -457,7 +457,7 @@ const HotelBooking = () => {
           label={
             isPassengerCacheFetching
               ? "Please wait while we are fetching data"
-              : "Please wait while we complete your provisional booking"
+              : "Checking availability and securing your room..."
           }
         />
         {/* <div className={`p-8 ${showTimerBanner ? "pt-8" : ""}`}> */}

@@ -443,14 +443,14 @@ export default function HotelBookingPaymentSection({
   const getPayButtonText = () => {
     if (isTokenizing || showMinimumLoading) return "Preparing secure payment";
     if (paymentPending) return "Processing your payment";
-    if (isPending) return "Confirming your hotel booking";
+    if (isPending) return "Processing your booking, please wait…";
     if (isProcessing) return "Please wait";
     return "Pay";
   };
 
   return (
     <section className="mt-10 flex items-center justify-center px-4">
-      <Loader show={isPending} label="Confirming your hotel booking…" />
+      <Loader show={isPending} label="Processing your booking, please wait…" />
       <div className="w-full max-w-[550px]">
         <HotelSummaryCard
           paymentPage={true}
@@ -673,6 +673,7 @@ export default function HotelBookingPaymentSection({
                       name="expiry"
                       value={cardDetails.expiryDisplay}
                       onChange={handleCardFieldChange}
+                      maxLength={5}
                       error={
                         hasAttemptedValidation
                           ? validationErrors["card.expiry"]
@@ -690,6 +691,7 @@ export default function HotelBookingPaymentSection({
                       name="cvv"
                       value={cardDetails.cvv}
                       onChange={handleCardFieldChange}
+                      maxLength={4}
                       error={
                         hasAttemptedValidation
                           ? validationErrors["card.cvv"]

@@ -295,7 +295,7 @@ const TermsOfServiceContent: React.FC = () => {
         >
           Email:{" "}
           <span
-            className="cursor-pointer hover:text-[#2351A3] hover:underline"
+            className="cursor-pointer text-[#2351A3] underline font-medium"
             onClick={(e) => {
               e.stopPropagation();
               window.location.href = "mailto:contact@al-rais.com";

@@ -600,8 +600,9 @@ export const validateCardExpiryYYMM = (
   }
 
   const maxYearsAhead = options?.maxYearsAhead ?? MAX_CARD_EXPIRY_YEARS_AHEAD;
+  const maxAllowedYear = now.getFullYear() + maxYearsAhead;
   const latestAllowed = new Date(
-    now.getFullYear() + maxYearsAhead,
+    maxAllowedYear,
     now.getMonth(),
     1,
   );

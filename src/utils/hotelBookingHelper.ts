@@ -1,4 +1,10 @@
 // import { generateUUID } from "./helpers";
+import {
+  validateIdentityDocumentNumberForType,
+  validateInternationalPhoneParts,
+  validatePassportDateOfIssue,
+  validatePersonName,
+} from "./travelerFieldValidation";
 
 export type HotelBookingPayload = {
   searchKey: string;
@@ -254,9 +260,23 @@ export function validateHotelBookingPassengersFields(
       }
       if (isEmpty(pi.givenName)) {
         passengerErrors["passengerInfo.givenName"] = "Full name is required.";
+      } else {
+        const givenFmt = validatePersonName(pi.givenName, {
+          fieldLabel: "Full name",
+        });
+        if (givenFmt) {
+          passengerErrors["passengerInfo.givenName"] = givenFmt;
+        }
       }
       if (isEmpty(pi.surname)) {
         passengerErrors["passengerInfo.surname"] = "Surname is required.";
+      } else {
+        const surnameFmt = validatePersonName(pi.surname, {
+          fieldLabel: "Surname",
+        });
+        if (surnameFmt) {
+          passengerErrors["passengerInfo.surname"] = surnameFmt;
+        }
       }
       if (isEmpty(pi.gender)) {
         passengerErrors["passengerInfo.gender"] = "Gender is required.";
@@ -332,10 +352,39 @@ export function validateHotelBookingPassengersFields(
       if (isEmpty(phoneValue)) {
         passengerErrors["contact.contactsProvided.0.phone.0"] =
           "Phone (country code and number) is required.";
+      } else {
+        const phoneFmt = validateInternationalPhoneParts(
+          phone.areaCode != null ? String(phone.areaCode) : phone.areaCode,
+          phone.phoneNumber != null
+            ? String(phone.phoneNumber)
+            : phone.phoneNumber,
+        );
+        if (phoneFmt) {
+          passengerErrors["contact.contactsProvided.0.phone.0"] = phoneFmt;
+        }
       }
       if (isEmpty(id.idDocumentNumber)) {
         passengerErrors["identityDocuments.0.idDocumentNumber"] =
           "Document number is required.";
+      } else {
+        const normalizedIdType = String(id.idType ?? "PASSPORT")
+          .trim()
+          .toUpperCase();
+        const mappedIdType =
+          normalizedIdType === "PASSPORT"
+            ? "PT"
+            : normalizedIdType === "NATIONAL_ID"
+              ? "NI"
+              : normalizedIdType === "DRIVING_LICENSE"
+                ? "DL"
+                : normalizedIdType;
+        const docFmt = validateIdentityDocumentNumberForType(
+          id.idDocumentNumber,
+          mappedIdType,
+        );
+        if (docFmt) {
+          passengerErrors["identityDocuments.0.idDocumentNumber"] = docFmt;
+        }
       }
       if (isEmpty(id.issuingCountryCode)) {
         passengerErrors["identityDocuments.0.issuingCountryCode"] =
@@ -344,6 +393,16 @@ export function validateHotelBookingPassengersFields(
       if (isEmpty(id.dateOfIssue)) {
         passengerErrors["identityDocuments.0.dateOfIssue"] =
           "Date of issue is required.";
+      } else {
+        const issueFmt = validatePassportDateOfIssue(
+          id.dateOfIssue,
+          pi.birthDate ?? null,
+          id.expiryDate ?? null,
+          today,
+        );
+        if (issueFmt) {
+          passengerErrors["identityDocuments.0.dateOfIssue"] = issueFmt;
+        }
       }
       if (isEmpty(id.expiryDate)) {
         passengerErrors["identityDocuments.0.expiryDate"] =
@@ -410,9 +469,54 @@ export const validateHotelReservationBookingDataFields = (
     | any,
   card: HotelPaymentCardDetails,
 ): Record<string, string> => {
+  const MAX_CARD_EXPIRY_YEARS_AHEAD = 35;
   const errors: Record<string, string> = {};
   const isEmpty = (v: any) =>
     v === undefined || v === null || String(v).trim() === "";
+  const getCardBrandFromNumber = (
+    cardNumber: string | null | undefined,
+  ): "amex" | "other" | "unknown" => {
+    const digits = String(cardNumber ?? "").replace(/\D/g, "");
+    if (!digits) return "unknown";
+    if (/^3[47]/.test(digits)) return "amex";
+    return "other";
+  };
+  const getAllowedCvvLengthsForCard = (
+    cardNumber: string | null | undefined,
+  ): number[] => {
+    const brand = getCardBrandFromNumber(cardNumber);
+    if (brand === "amex") return [4];
+    if (brand === "unknown") return [3, 4];
+    return [3];
+  };
+  const validateCardExpiryYYMM = (expiry: string): string | null => {
+    const raw = String(expiry ?? "").trim();
+    if (!/^\d{4}$/.test(raw)) {
+      return "Expiry date is invalid. Please use MM/YY.";
+    }
+    const yy = Number(raw.slice(0, 2));
+    const mm = Number(raw.slice(2, 4));
+    if (!(mm >= 1 && mm <= 12)) {
+      return "Expiry month is invalid.";
+    }
+    const fullYear = 2000 + yy;
+    const expiryDate = new Date(fullYear, mm, 0);
+    expiryDate.setHours(23, 59, 59, 999);
+    const now = new Date();
+    if (expiryDate < now) {
+      return "Card expiry is in the past.";
+    }
+    const latestAllowed = new Date(
+      now.getFullYear() + MAX_CARD_EXPIRY_YEARS_AHEAD,
+      now.getMonth(),
+      1,
+    );
+    latestAllowed.setHours(23, 59, 59, 999);
+    if (expiryDate > latestAllowed) {
+      return "Expiry date looks too far in the future.";
+    }
+    return null;
+  };
 
   // Card number
   if (isEmpty(card.number)) {
@@ -426,31 +530,37 @@ export const validateHotelReservationBookingDataFields = (
 
   if (isEmpty(card.expiry)) {
     errors["card.expiry"] = "Expiry date is required.";
-  } else if (!/^\d{4}$/.test(card.expiry)) {
-    errors["card.expiry"] = "Expiry date is invalid. Please use MM/YY.";
   } else {
-    const yy = Number(card.expiry.slice(0, 2));
-    const mm = Number(card.expiry.slice(2, 4));
-    if (!(mm >= 1 && mm <= 12)) {
-      errors["card.expiry"] = "Expiry month is invalid.";
-    } else {
-      const fullYear = 2000 + yy;
-      const expiryDate = new Date(fullYear, mm, 0);
-      expiryDate.setHours(23, 59, 59, 999);
-      if (expiryDate < new Date()) {
-        errors["card.expiry"] = "Card expiry is in the past.";
-      }
+    const expiryError = validateCardExpiryYYMM(card.expiry);
+    if (expiryError) {
+      errors["card.expiry"] = expiryError;
     }
   }
 
   if (isEmpty(card.cvv)) {
     errors["card.cvv"] = "Security code (CVV) is required.";
-  } else if (!/^\d{3,4}$/.test(card.cvv)) {
-    errors["card.cvv"] = "Security code should be 3 or 4 digits.";
+  } else if (!/^\d+$/.test(card.cvv)) {
+    errors["card.cvv"] = "Security code should contain numbers only.";
+  } else {
+    const numericCard = card.number.replace(/\s+/g, "");
+    const allowedLengths = getAllowedCvvLengthsForCard(numericCard);
+    if (!allowedLengths.includes(card.cvv.length)) {
+      errors["card.cvv"] =
+        allowedLengths.length === 1
+          ? `Security code should be ${allowedLengths[0]} digits for this card.`
+          : "Security code should be 3 or 4 digits.";
+    }
   }
 
   if (isEmpty(card.holderName)) {
     errors["card.holderName"] = "Cardholder name is required.";
+  } else {
+    const holderFmt = validatePersonName(card.holderName, {
+      fieldLabel: "Cardholder name",
+    });
+    if (holderFmt) {
+      errors["card.holderName"] = holderFmt;
+    }
   }
 
   // if (isEmpty(reservation?.customerInfo?.emailAddress)) {
