@@ -335,10 +335,18 @@ function HotelBookingCard({
                 to="/hotel-booking-detail"
                 onClick={markExpectMyBookingsQueryRestore}
                 state={{
-                  bookingReferenceId: booking.bookingRef,
-                  searchKey: booking.searchKey || booking.bookingRef,
+                  bookingReferenceId:
+                    booking.bookingRef && booking.bookingRef !== "N/A"
+                      ? booking.bookingRef
+                      : undefined,
+                  searchKey:
+                    booking.searchKey ||
+                    (booking.bookingRef && booking.bookingRef !== "N/A"
+                      ? booking.bookingRef
+                      : undefined),
                   bookingKey: booking.bookingKey || booking.id,
                   myBookingsSearch,
+                  fallbackBooking: booking,
                 }}
                 className={`${actionLinkClass} pr-4`}
               >
@@ -391,10 +399,18 @@ function HotelBookingCard({
               to="/hotel-booking-detail"
               onClick={markExpectMyBookingsQueryRestore}
               state={{
-                bookingReferenceId: booking.bookingRef,
-                searchKey: booking.searchKey || booking.bookingRef,
+                bookingReferenceId:
+                  booking.bookingRef && booking.bookingRef !== "N/A"
+                    ? booking.bookingRef
+                    : undefined,
+                searchKey:
+                  booking.searchKey ||
+                  (booking.bookingRef && booking.bookingRef !== "N/A"
+                    ? booking.bookingRef
+                    : undefined),
                 bookingKey: booking.bookingKey || booking.id,
                 myBookingsSearch,
+                fallbackBooking: booking,
               }}
               className={actionLinkClass}
             >

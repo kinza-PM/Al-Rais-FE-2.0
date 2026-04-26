@@ -37,6 +37,8 @@ type FlightSummaryCardProps = {
   title: string;
   /** Booking flow: gray card + classic fare row. Cancellation: white card, optional footer strip. */
   variant?: "default" | "cancellation";
+  /** Hide the top header strip (used for compact search-style summaries). */
+  hideHeader?: boolean;
   statusPill?: string;
   headerActionText?: string;
   onHeaderActionClick?: () => void;
@@ -50,6 +52,7 @@ type FlightSummaryCardProps = {
 export default function FlightSummaryCard({
   title,
   variant = "default",
+  hideHeader = false,
   statusPill,
   headerActionText,
   onHeaderActionClick,
@@ -81,22 +84,35 @@ export default function FlightSummaryCard({
   return (
     <div className={`${shellClass} ${className}`}>
       {/* Header */}
-      <div
-        className={`flex items-center justify-between gap-3 px-4 py-3 ${headerDividerClass}`}
-      >
-        <h3 className="text-[16px] font-semibold text-[#0A0C0F]">{title}</h3>
+      {!hideHeader ? (
+        <div
+          className={`flex items-center justify-between gap-3 px-4 py-3 ${headerDividerClass}`}
+        >
+          <h3 className="text-[16px] font-semibold text-[#0A0C0F]">{title}</h3>
 
-        {isCancellation ? (
-          <div className="flex shrink-0 items-center gap-2">
-            {statusPill ? (
-              <span
-                className="inline-flex items-center rounded-full bg-[#85FFCA] px-3 py-1 text-[12px] font-medium text-[#00522E]"
-                role="status"
-              >
-                {statusPill}
-              </span>
-            ) : null}
-            {headerActionText ? (
+          {isCancellation ? (
+            <div className="flex shrink-0 items-center gap-2">
+              {statusPill ? (
+                <span
+                  className="inline-flex items-center rounded-full bg-[#85FFCA] px-3 py-1 text-[12px] font-medium text-[#00522E]"
+                  role="status"
+                >
+                  {statusPill}
+                </span>
+              ) : null}
+              {headerActionText ? (
+                <Button
+                  type="button"
+                  onClick={onHeaderActionClick}
+                  className="text-[14px] font-medium text-[#5383DA] hover:underline"
+                  overrideClasses
+                >
+                  {headerActionText}
+                </Button>
+              ) : null}
+            </div>
+          ) : (
+            headerActionText && (
               <Button
                 type="button"
                 onClick={onHeaderActionClick}
@@ -105,21 +121,10 @@ export default function FlightSummaryCard({
               >
                 {headerActionText}
               </Button>
-            ) : null}
-          </div>
-        ) : (
-          headerActionText && (
-            <Button
-              type="button"
-              onClick={onHeaderActionClick}
-              className="text-[14px] font-medium text-[#5383DA] hover:underline"
-              overrideClasses
-            >
-              {headerActionText}
-            </Button>
-          )
-        )}
-      </div>
+            )
+          )}
+        </div>
+      ) : null}
 
       {/* Segments */}
       {segments.map((seg, i) => (
@@ -161,15 +166,17 @@ export default function FlightSummaryCard({
               </div>
 
               {seg.amenities && seg.amenities.length > 0 && (
-                <div className="flex items-center gap-3">
+                <div className="featureIcons items-center">
                   {seg.amenities.map((a, idx) => (
-                    <img
-                      key={idx}
-                      src={a.src}
-                      alt={a.alt}
-                      className="h-5 w-5"
-                      title={a.title}
-                    />
+                    <div className="featureIconTooltipWrap" key={idx}>
+                      <img
+                        src={a.src}
+                        alt={a.alt}
+                        className="h-5 w-5"
+                        draggable={false}
+                      />
+                      <span className="tooltip">{a.title || a.alt}</span>
+                    </div>
                   ))}
                 </div>
               )}

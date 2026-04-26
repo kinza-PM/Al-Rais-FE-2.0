@@ -4,6 +4,7 @@ import Button from "../atoms/Button";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { transformBookingToFlightBookingFormat } from "../../utils/transformBookingData";
 import { buildTripShapeForFlightSummaryFromBookingApi } from "../../utils/helpers";
+import { markExpectMyBookingsQueryRestore } from "../../utils/myBookingsUrl";
 import {
   flightBookingInDateRange,
   flightBookingMatchesQuery,
@@ -331,6 +332,11 @@ function BookingCard({ booking }: { booking: any }) {
     }
   };
 
+  const openViewDetails = () => {
+    markExpectMyBookingsQueryRestore();
+    navigate("/flight-booking-detail", { state: { booking } });
+  };
+
   const handlePayNow = () => {
     goToFlightBookingFromCard();
   };
@@ -561,7 +567,7 @@ function BookingCard({ booking }: { booking: any }) {
                 type="button"
                 className={`${footerMuted} ${FIGMA_INTER} text-[16px] font-medium leading-normal tracking-normal`}
                 overrideClasses
-                onClick={goToFlightBookingFromCard}
+                onClick={openViewDetails}
               >
                 View details
               </Button>

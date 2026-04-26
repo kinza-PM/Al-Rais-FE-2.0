@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Layout, Menu, Dropdown, Drawer, Modal, Tooltip, Typography } from "antd";
 import {
   CalendarOutlined,
-  DownOutlined,
   MenuOutlined,
   LogoutOutlined,
   ProfileOutlined,
@@ -20,9 +19,7 @@ import {
 import FlagUSA from "../../assets/svgs/Flag-usa.svg";
 import FlagUAE from "../../assets/svgs/Flag-uae.svg";
 import FlagIND from "../../assets/svgs/Flag-ind.svg";
-import FlagUSCircle from "../../assets/images/flagofunitedstate.png";
 import BasketIcon from "../../assets/images/Basket.png";
-import CurrencyChevronIcon from "../../assets/images/Icon.png";
 import { useUserProfileStore } from "../../store/userProfileStore";
 import { buildMyBookingsUrl } from "../../utils/myBookingsUrl";
 
@@ -270,11 +267,20 @@ const AppHeader: React.FC<HeaderProps> = ({
     { key: "packages", to: "/packages", label: "Packages" },
   ] as const;
 
+  const disabledNavKeys = new Set(["rentals", "sights", "packages"]);
+  const disabledNavClassName =
+    "text-[14px] sm:text-[16px] lg:text-[16px] font-light text-[#3D495C]/50 cursor-not-allowed whitespace-nowrap select-none";
+
   // Drawer / mobile menu — aligned with Figma “third” navbar destinations + extras
   const navItems = [
     ...centerNavLinks.map(({ key, to, label }) => ({
       key,
-      label: <Link to={to}>{label}</Link>,
+      label: disabledNavKeys.has(key) ? (
+        <span style={{ color: "#94A3B8", cursor: "not-allowed" }}>{label}</span>
+      ) : (
+        <Link to={to}>{label}</Link>
+      ),
+      disabled: disabledNavKeys.has(key),
     })),
     ...(isAuthenticated
       ? [
@@ -371,16 +377,24 @@ const AppHeader: React.FC<HeaderProps> = ({
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              // Allow wrapping + tighter gaps so labels don't get clipped at smaller desktop widths.
-              flexWrap: "wrap",
-              rowGap: 6,
-              columnGap: viewportWidth >= 1440 ? 34 : 20,
+              // Desktop nav must stay on a single line (no wrapping).
+              flexWrap: "nowrap",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              columnGap:
+                viewportWidth >= 1600 ? 34 : viewportWidth >= 1440 ? 28 : 18,
             }}
           >
             {centerNavLinks.map(({ key, to, label }) => (
-              <Link key={key} to={to} className={centerNavClassName}>
-                {label}
-              </Link>
+              disabledNavKeys.has(key) ? (
+                <span key={key} className={disabledNavClassName}>
+                  {label}
+                </span>
+              ) : (
+                <Link key={key} to={to} className={centerNavClassName}>
+                  {label}
+                </Link>
+              )
             ))}
           </nav>
         )}
@@ -510,10 +524,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                       paddingRight: 4,
                     }}
                   >
-                    <FlagIcon
-                      src={FlagUSCircle}
-                      size={isTablet ? 26 : 32}
-                    />
+                    <FlagIcon src={FlagUAE} size={isTablet ? 26 : 32} />
                     <span
                       style={{
                         fontSize: isTablet ? "13px" : "14px",
@@ -521,7 +532,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                         color: "#0A0C0F",
                       }}
                     >
-                      USD
+                      AED
                     </span>
                   </div>
                   <div
@@ -555,16 +566,6 @@ const AppHeader: React.FC<HeaderProps> = ({
                     >
                       English
                     </span>
-                    <img
-                      src={CurrencyChevronIcon}
-                      alt=""
-                      style={{
-                        width: 20,
-                        height: 20,
-                        objectFit: "contain",
-                        flexShrink: 0,
-                      }}
-                    />
                   </div>
                 </button>
               </Dropdown>
@@ -1097,7 +1098,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                       minWidth: 0,
                     }}
                   >
-                    <span style={{ fontSize: "18px", lineHeight: 1 }}>🇺🇸</span>
+                    <span style={{ fontSize: "18px", lineHeight: 1 }}>🇦🇪</span>
                     <span
                       style={{
                         fontSize: "14px",
@@ -1105,7 +1106,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                         color: "#0A0C0F",
                       }}
                     >
-                      USD
+                      AED
                     </span>
                   </span>
                   <div
@@ -1132,9 +1133,6 @@ const AppHeader: React.FC<HeaderProps> = ({
                     }}
                   >
                     English
-                    <DownOutlined
-                      style={{ fontSize: "11px", color: "#3D495C" }}
-                    />
                   </span>
                 </button>
               </Dropdown>

@@ -43,9 +43,17 @@ const formatTerminalLabel = (code: string | null | undefined): string => {
 
 type FlightDetailsCardProps = {
   details: any;
+  /** In search modal this shows a map. For booking details page we render map separately at bottom. */
+  showMap?: boolean;
+  /** Remove the bordered white row wrapper (page-managed container). */
+  borderless?: boolean;
 };
 
-const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
+const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({
+  details,
+  showMap = true,
+  borderless = false,
+}) => {
   const [mapLocations, setMapLocations] = React.useState<any[]>([]);
   const [baggageModalOpen, setBaggageModalOpen] = React.useState(false);
   const [baggageModalSegments, setBaggageModalSegments] = React.useState<any[]>(
@@ -126,6 +134,11 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         duration: durationVal,
         flight_number: firstSegment?.flightNumber ?? fd?.flight_number,
         flight_class: cabinRaw,
+        airlineLogo:
+          firstSegment?.marketingAirlineLogo ??
+          firstSegment?.operatingAirlineLogo ??
+          seg?.logo ??
+          "",
         startAirport,
         startTerminal,
         endAirport,
@@ -161,6 +174,11 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
         duration: fd?.duration,
         flight_number: fd?.flight_number,
         flight_class: fd?.flight_class,
+        airlineLogo:
+          details?.raw?.journey?.[0]?.flightSegments?.[0]?.marketingAirlineLogo ??
+          details?.raw?.journey?.[0]?.flightSegments?.[0]?.operatingAirlineLogo ??
+          seg?.logo ??
+          "",
         startAirport: airport?.startAirport,
         startTerminal: airport?.startTerminal,
         endAirport: airport?.endAirport,
@@ -262,10 +280,10 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
           <div
             key={row.key ?? idx}
             style={{
-              border: "1px solid #E5E7EB",
-              borderRadius: "20px",
-              padding: "18px",
-              background: "#FFFFFF",
+              border: borderless ? "none" : "1px solid #E5E7EB",
+              borderRadius: borderless ? 0 : "20px",
+              padding: borderless ? 0 : "18px",
+              background: borderless ? "transparent" : "#FFFFFF",
             }}
           >
             <div className="flight-details-modal-grid">
@@ -346,6 +364,59 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                   gap={18}
                   style={{ minWidth: 0, flex: 1 }}
                 >
+                  {/* Airline header (more visible, moved to top) */}
+                  {row?.name ? (
+                    <Flex
+                      gap={10}
+                      align="center"
+                      style={{ width: "100%", minWidth: 0 }}
+                    >
+                      <div
+                        style={{
+                          width: 54,
+                          height: 54,
+                          borderRadius: 999,
+                          overflow: "hidden",
+                          border: "1px solid #E5E7EB",
+                          background: "#fff",
+                          flexShrink: 0,
+                        }}
+                      >
+                        <img
+                          src={row?.airlineLogo || PLANE_ICON}
+                          alt="airline"
+                          style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = PLANE_ICON;
+                          }}
+                        />
+                      </div>
+
+                      <div style={{ minWidth: 0 }}>
+                        <div
+                          className="prefix_headings"
+                          style={{
+                            marginBottom: 0,
+                            fontSize: 18,
+                            fontWeight: 700,
+                            lineHeight: "22px",
+                            color: "#0A0C0F",
+                          }}
+                        >
+                          {row.name}
+                        </div>
+                        <div
+                          className="common_typography_fd"
+                          style={{ marginTop: 4, fontSize: 14, fontWeight: 500 }}
+                        >
+                          {[row.flight_number, row.flight_class]
+                            .filter(Boolean)
+                            .join(" - ")}
+                        </div>
+                      </div>
+                    </Flex>
+                  ) : null}
+
                   <div>
                     <CustomTypography
                       className="prefix_headings"
@@ -412,26 +483,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                       rowGap: "12px",
                     }}
                   >
-                    {row?.name && (
-                      <Flex gap={8} align="start" style={{ minWidth: "180px" }}>
-                        <img width={20} height={20} src={PLANE_ICON} alt="plane" />
-                        <Flex vertical>
-                          <CustomTypography
-                            style={{ marginBottom: 0 }}
-                            className="prefix_headings"
-                            variant="title"
-                          >
-                            {row?.name}
-                          </CustomTypography>
-                          <CustomTypography
-                            className="common_typography_fd"
-                            variant="paragraph"
-                          >
-                            {row?.flight_number}
-                          </CustomTypography>
-                        </Flex>
-                      </Flex>
-                    )}
+                    {/* Airline block moved to top */}
 
                     <Flex gap={8} align="start" style={{ minWidth: "160px" }}>
                       <img width={18} height={18} src={SEAT_ICON} alt="seat" />
@@ -510,7 +562,7 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                             key={segIndex}
                             style={{
                               marginTop: "10px",
-                              padding: "14px",
+                              padding: "12px",
                               border: "1px solid #E5E7EB",
                               borderRadius: "14px",
                               background: "#F8FAFC",
@@ -645,23 +697,25 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({ details }) => {
                 </Flex>
               </Flex>
 
-              <div
-                style={{
-                  width: "100%",
-                  height: "240px",
-                  borderRadius: "16px",
-                  overflow: "hidden",
-                  border: "1px solid #E5E7EB",
-                }}
-              >
-                {mapLocations[idx] ? (
-                  <MapInfo key={row.key ?? idx} locations={mapLocations[idx]} />
-                ) : (
-                  <div className="flex items-center justify-center text-[#2351a3] h-full">
-                    Loading map...
-                  </div>
-                )}
-              </div>
+              {showMap ? (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "220px",
+                    borderRadius: "16px",
+                    overflow: "hidden",
+                    border: "1px solid #E5E7EB",
+                  }}
+                >
+                  {mapLocations[idx] ? (
+                    <MapInfo key={row.key ?? idx} locations={mapLocations[idx]} />
+                  ) : (
+                    <div className="flex items-center justify-center text-[#2351a3] h-full">
+                      Loading map...
+                    </div>
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
         ))}
