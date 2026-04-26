@@ -4,7 +4,7 @@ import HotelFareRule from "../atoms/HotelFareRule";
 import Button from "../atoms/Button";
 import React from "react";
 import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
-import { formatDate } from "../../utils/helpers";
+import { formatDate, formatTo12Hour } from "../../utils/helpers";
 import { Checkbox } from "antd";
 import { useState } from "react";
 import LegalModal from "../common/LegalModal";
@@ -37,7 +37,7 @@ const HeaderActions = ({
   <Button
     type="button"
     onClick={onEdit}
-    className="text-sm font-medium text-[#5383DA] hover:underline"
+    className="text-[15px] font-medium text-[#5383DA] hover:underline"
     overrideClasses
   >
     {editLabel}
@@ -99,9 +99,9 @@ export default function HotelBookingReviewSection({
     const date = bookingInfo?.checkIn;
     const time = bookingInfo?.checkInTime;
     if (!date && !time) return "—";
-    if (date && time) return `${time}, ${formatDate(date)}`;
+    if (date && time) return `${formatTo12Hour(time)}, ${formatDate(date)}`;
     if (date) return formatDate(date);
-    return time || "—";
+    return formatTo12Hour(time) || "—";
   })();
 
   const continueToPayment = () => {
@@ -123,8 +123,8 @@ export default function HotelBookingReviewSection({
   }
 
   return (
-    <section className="mx-auto max-w-full px-10 flight-booking-section">
-      <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
+    <section className="mx-auto max-w-full flight-booking-section">
+      <div className="grid gap-4 md:grid-cols-[1.8fr_1.2fr] flight-booking-grid">
         <div className="space-y-4">
           {flatPassengers.map(({ passenger: p }, idx) => {
             const fullName = `${p.passengerInfo?.givenName || ""} ${p.passengerInfo?.surname || ""
@@ -158,27 +158,27 @@ export default function HotelBookingReviewSection({
                   <dl className="grid grid-cols-2 gap-y-2">
                     <dt className="text-xs text-[#3D495C]">Title</dt>
                     <dd className="text-right">
-                      <span className="text-sm text-[#0A0C0F] font-medium">
+                      <span className="text-[15px] text-[#0A0C0F] font-medium">
                         {formatTitle(p.passengerInfo?.nameTitle)}
                       </span>
                     </dd>
 
                     <dt className="text-xs text-[#3D495C]">Full Name</dt>
                     <dd className="text-right">
-                      <span className="text-sm text-[#0A0C0F] font-medium">
+                      <span className="text-[15px] text-[#0A0C0F] font-medium">
                         {fullName || "—"}
                       </span>
                     </dd>
 
                     <dt className="text-xs text-[#3D495C]">Email</dt>
                     <dd className="text-right">
-                      <span className="text-sm text-[#0A0C0F] font-medium">
+                      <span className="text-[15px] text-[#0A0C0F] font-medium">
                         {email}
                       </span>
                     </dd>
 
                     <dt className="text-xs text-[#3D495C]">Phone</dt>
-                    <dd className="text-right">{phone}</dd>
+                    <dd className="text-right text-[15px] text-[#0A0C0F] font-medium">{phone}</dd>
                   </dl>
                 </div>
               </CardShell>
@@ -208,7 +208,7 @@ export default function HotelBookingReviewSection({
                           Full name and age group
                         </dt>
                         <dd className="text-right">
-                          <span className="text-sm text-[#0A0C0F] font-medium">
+                          <span className="text-[15px] text-[#0A0C0F] font-medium">
                             {fullName || "—"} ({ageGroup})
                           </span>
                         </dd>
@@ -373,69 +373,69 @@ export default function HotelBookingReviewSection({
               selectedRooms={selectedRooms}
             />
             <div className="mt-2">
-            <Checkbox
-              checked={isTermsChecked}
-              onChange={(e) => {
-                setIsTermsChecked(e.target.checked);
-                if (e.target.checked) {
-                  setShowTermsError(false);
-                }
-              }}
-              className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
-            >
-              <span className="font-medium text-sm leading-none tracking-normal align-middle">
-                I agree to the{" "}
-                <span
-                  className="text-[#5383DA] cursor-pointer hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setLegalModal({ isOpen: true, type: "terms" });
-                  }}
-                >
-                  Terms & Conditions
-                </span>{" "}
-                and Payment Rules and Regulations.
-              </span>
-            </Checkbox>
-            {showTermsError && (
-              <p className="text-red-500 text-xs mt-1">
-                You must agree to the Terms & Conditions to proceed.
-              </p>
-            )}
-          </div>
+              <Checkbox
+                checked={isTermsChecked}
+                onChange={(e) => {
+                  setIsTermsChecked(e.target.checked);
+                  if (e.target.checked) {
+                    setShowTermsError(false);
+                  }
+                }}
+                className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
+              >
+                <span className="font-medium text-sm leading-none tracking-normal align-middle">
+                  I agree to the{" "}
+                  <span
+                    className="text-[#5383DA] cursor-pointer hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setLegalModal({ isOpen: true, type: "terms" });
+                    }}
+                  >
+                    Terms & Conditions
+                  </span>{" "}
+                  and Payment Rules and Regulations.
+                </span>
+              </Checkbox>
+              {showTermsError && (
+                <p className="text-red-500 text-xs mt-1">
+                  You must agree to the Terms & Conditions to proceed.
+                </p>
+              )}
+            </div>
 
-          <div className="mt-2">
-            <Checkbox
-              checked={isCancellationChecked}
-              onChange={(e) => {
-                setIsCancellationChecked(e.target.checked);
-                if (e.target.checked) {
-                  setShowCancellationError(false);
-                }
-              }}
-              className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
-            >
-              <span className="font-medium text-sm leading-none tracking-normal align-middle">
-                I have read and agree to the{" "}
-                <span
-                  className="text-[#5383DA] cursor-pointer hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setLegalModal({ isOpen: true, type: "cancellation" });
-                  }}
-                >
-                  Cancellation Policy
-                </span>.
-              </span>
-            </Checkbox>
-            {showCancellationError && (
-              <p className="text-red-500 text-xs mt-1">
-                You must agree to the Cancellation Policy to proceed.
-              </p>
-            )}
-          </div>
+            <div className="mt-2">
+              <Checkbox
+                checked={isCancellationChecked}
+                onChange={(e) => {
+                  setIsCancellationChecked(e.target.checked);
+                  if (e.target.checked) {
+                    setShowCancellationError(false);
+                  }
+                }}
+                className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
+              >
+                <span className="font-medium text-sm leading-none tracking-normal align-middle">
+                  I have read and agree to the{" "}
+                  <span
+                    className="text-[#5383DA] cursor-pointer hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setLegalModal({ isOpen: true, type: "cancellation" });
+                    }}
+                  >
+                    Cancellation Policy
+                  </span>.
+                </span>
+              </Checkbox>
+              {showCancellationError && (
+                <p className="text-red-500 text-xs mt-1">
+                  You must agree to the Cancellation Policy to proceed.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

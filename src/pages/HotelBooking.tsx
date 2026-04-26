@@ -451,7 +451,7 @@ const HotelBooking = () => {
 
   return (
     <>
-      <div className="px-3 py-4 sm:px-6 sm:py-6 lg:px-12 lg:py-8">
+      <div className="py-4 sm:py-6 lg:py-8 px-[16px] md:px-[24px] min-[1200px]:px-[clamp(24px,8vw,180px)] box-border">
         <Loader
           show={isPending || isPassengerCacheSaving || isPassengerCacheFetching}
           label={

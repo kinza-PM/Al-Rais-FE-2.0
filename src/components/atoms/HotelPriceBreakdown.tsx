@@ -71,7 +71,7 @@ export default function HotelPriceBreakdown({
   );
 
   return (
-    <div className="mt-4 max-w-[576px] rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm">
+    <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm">
       <div className="flex items-center justify-between border-b-[1.5px] border-[#E4E4E7] px-4 py-3">
         <div className="text-[16px] font-semibold text-[#0A0C0F]">
           Price breakdown

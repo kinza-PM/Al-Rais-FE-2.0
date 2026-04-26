@@ -382,8 +382,8 @@ export default function HotelBookingBookSection({
   };
 
   return (
-    <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
+    <section className="mx-auto max-w-full flight-booking-section">
+      <div className="grid gap-4 lg:grid-cols-[1.8fr_1.2fr] flight-booking-grid">
         <div className="space-y-4">
           <SavedTravelersSection
             onProceedSelection={fillFromSavedTravelers}
