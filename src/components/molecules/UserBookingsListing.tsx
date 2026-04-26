@@ -4,25 +4,31 @@ import Button from "../atoms/Button";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { transformBookingToFlightBookingFormat } from "../../utils/transformBookingData";
 import { buildTripShapeForFlightSummaryFromBookingApi } from "../../utils/helpers";
+import {
+  flightBookingInDateRange,
+  flightBookingMatchesQuery,
+} from "../../utils/myBookingsClientFilters";
 import airlineDefault from "../../assets/images/emirates.png";
 
 export type BookingStatus = "Confirmed" | "Pending" | "Expired" | "Cancelled";
 export type TripMode = "Flights" | "Hotels";
 
-function StatusPill({ status }: { status: BookingStatus }) {
+/** Figma 5099:16949 — Inter + design text styles (line-height 100% on single-line tokens). */
+const FIGMA_INTER = "font-[Inter,sans-serif] antialiased";
+const textXs400 = `${FIGMA_INTER} text-[12px] font-normal leading-none tracking-normal`;
+const textSm500 = `${FIGMA_INTER} text-[14px] font-medium leading-none tracking-normal`;
+const textBase500 = `${FIGMA_INTER} text-[16px] font-medium leading-none tracking-normal`;
+const textBase500Relaxed = `${FIGMA_INTER} text-[16px] font-medium leading-normal tracking-normal`;
+const textBtn = `${FIGMA_INTER} text-[16px] font-semibold leading-none tracking-[0.5px]`;
+
+export function StatusPill({ status }: { status: BookingStatus }) {
+  /** My Bookings status chips — Figma: Text/Extra Small/400 (12 Regular). */
+  const pillBase = `inline-flex h-[31px] shrink-0 items-center justify-center whitespace-nowrap rounded-full px-[15px] py-[8px] ${textXs400}`;
+
   if (status === "Cancelled") {
     return (
       <span
-        className="inline-flex items-center justify-center text-[12px] font-medium text-[#9A3412]"
-        style={{
-          background: "#FFEDD5",
-          lineHeight: "15px",
-          minWidth: "90px",
-          height: "31px",
-          borderRadius: "100px",
-          padding: "8px 15px",
-          gap: "10px",
-        }}
+        className={`${pillBase} min-w-[90px] bg-[#FFEDD5] text-[#9A3412]`}
       >
         Cancelled
       </span>
@@ -31,19 +37,7 @@ function StatusPill({ status }: { status: BookingStatus }) {
 
   if (status === "Confirmed") {
     return (
-      <span
-        className="inline-flex items-center justify-center text-[12px] font-normal text-white"
-        style={{
-          background: "#85FFCA",
-          lineHeight: "15px",
-          width: "90px",
-          height: "31px",
-          borderRadius: "100px",
-          padding: "8px 15px",
-          gap: "10px",
-          color: "black",
-        }}
-      >
+      <span className={`${pillBase} w-[90px] bg-[#85FFCA] text-[#00522E]`}>
         Confirmed
       </span>
     );
@@ -52,7 +46,7 @@ function StatusPill({ status }: { status: BookingStatus }) {
   if (status === "Pending") {
     return (
       <span
-        className="inline-flex max-w-[calc(100vw-2rem)] items-center justify-center whitespace-nowrap rounded-full bg-[#FFE4E6] px-4 py-2 text-center text-[12px] font-medium leading-none text-[#B91C1C]"
+        className={`${pillBase} max-w-[calc(100vw-2rem)] bg-[#FFB8C4] text-[#EA0029]`}
       >
         Pending payment
       </span>
@@ -60,59 +54,75 @@ function StatusPill({ status }: { status: BookingStatus }) {
   }
 
   return (
-    <span
-      className="inline-flex items-center justify-center text-[12px] font-normal text-[#3D495C]"
-      style={{
-        background: "#E4E4E7",
-        width: "73px",
-        height: "31px",
-        borderRadius: "100px",
-        padding: "8px 15px",
-        gap: "10px",
-      }}
-    >
+    <span className={`${pillBase} w-[73px] bg-[#E4E4E7] text-[#3D495C]`}>
       Expired
     </span>
   );
 }
 
+/**
+ * Flight / Hotel category chip — Figma: white fill, 1.5px border primary-brand-200 (#5383DA),
+ * label 12px regular primary-brand-300 (#2351A3). Node 9453:8373 / 9453:8359.
+ */
+export function TripCategoryPill({ label }: { label: "Flight" | "Hotel" }) {
+  return (
+    <span
+      className={`inline-flex h-[31px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-solid border-[#5383DA] bg-white px-[15px] py-[8px] text-[#2351A3] ${textXs400}`}
+      role="img"
+      aria-label={label}
+    >
+      {label}
+    </span>
+  );
+}
+
 function CardDivider() {
-  return <div className="-mx-5 h-px bg-[#E4E4E7] max-[768px]:-mx-4" />;
+  return <div className="-mx-6 h-px bg-[#E4E4E7] max-[768px]:-mx-4" />;
 }
 
 // Flight timeline for single journey - shows segment durations and layovers for multi-stop
-function FlightTimeline({ segments }: { segments: any[] }) {
+function FlightTimeline({
+  segments,
+  formattedJourneyDuration,
+}: {
+  segments: any[];
+  /** Whole-journey duration copy (e.g. "03 hours 15 minutes") — Figma node 5099:16949. */
+  formattedJourneyDuration?: string;
+}) {
   const hasMultipleSegments = segments.length > 1;
 
   if (!hasMultipleSegments) {
     // Direct flight - show duration
-    const duration = segments[0]?.duration || "";
+    const duration =
+      (formattedJourneyDuration && String(formattedJourneyDuration).trim()) ||
+      segments[0]?.duration ||
+      "";
     return (
-      <div className="flex flex-col items-center mb-2">
+      <div className="mb-0 flex flex-col items-center">
         {duration && (
-          <span className="text-[10px] text-[#3D495C] mb-1">
-            Duration {duration}
+          <span className={`mb-0.5 text-[#3D495C] ${textXs400}`}>
+            Duration: {duration}
           </span>
         )}
-        <div className="relative h-[1px] w-[440px] max-w-[72vw] rounded-full bg-[#A7C0EC] max-[768px]:w-full max-[768px]:max-w-full">
+        <div className="relative h-px w-[352px] max-w-[min(352px,72vw)] rounded-full bg-[#A7C0EC] max-[768px]:w-full max-[768px]:max-w-full">
           <span className="absolute -top-[5px] left-0 h-2.5 w-2.5 rounded-full bg-[#2351A3]" />
           <span className="absolute -top-[5px] right-0 h-2.5 w-2.5 rounded-full bg-[#2351A3]" />
         </div>
-        <span className="text-[11px] text-[#3D495C]">Direct</span>
+        <span className={`mt-0.5 text-[#3D495C] ${textXs400}`}>Direct</span>
       </div>
     );
   }
 
   // Multi-segment: above line = each leg duration (departure→stop, stop→arrival); below line at each stop = layover + airport
   const lineClass =
-    "relative h-[1px] w-[440px] max-w-[72vw] rounded-full bg-[#A7C0EC] max-[768px]:w-full max-[768px]:max-w-full";
+    "relative h-px w-[352px] max-w-[min(352px,72vw)] rounded-full bg-[#A7C0EC] max-[768px]:w-full max-[768px]:max-w-full";
   const n = segments.length;
 
   return (
-    <div className="flex flex-col items-center mb-2">
+    <div className="mb-0 flex flex-col items-center">
       {/* Above line: each segment duration centred between consecutive dots */}
       <div
-        className="relative w-[440px] max-w-[72vw] max-[768px]:w-full max-[768px]:max-w-full mb-1"
+        className="relative mb-0.5 w-[352px] max-w-[min(352px,72vw)] max-[768px]:w-full max-[768px]:max-w-full"
         style={{ height: "18px" }}
       >
         {segments.map((segment, idx) => {
@@ -129,7 +139,7 @@ function FlightTimeline({ segments }: { segments: any[] }) {
               }}
             >
               {duration && (
-                <span className="text-[10px] text-[#3D495C] whitespace-nowrap">
+                <span className={`whitespace-nowrap text-[#3D495C] ${textXs400}`}>
                   {duration}
                 </span>
               )}
@@ -156,7 +166,7 @@ function FlightTimeline({ segments }: { segments: any[] }) {
 
       {/* Below line: at each stop dot show layover + airport */}
       <div
-        className="relative w-[440px] max-w-[72vw] max-[768px]:w-full max-[768px]:max-w-full mt-1"
+        className="relative mt-0.5 w-[352px] max-w-[min(352px,72vw)] max-[768px]:w-full max-[768px]:max-w-full"
         style={{ height: "16px" }}
       >
         {segments.slice(1).map((segment, idx) => {
@@ -170,7 +180,9 @@ function FlightTimeline({ segments }: { segments: any[] }) {
               style={{ left: `${position}%` }}
             >
               {(layoverTime || stopAirport) && (
-                <span className="text-[9px] text-[#3D495C] whitespace-nowrap text-center">
+                <span
+                  className={`whitespace-nowrap text-center text-[#3D495C] ${textXs400}`}
+                >
                   {layoverTime && stopAirport
                     ? `${stopAirport} (${layoverTime})`
                     : layoverTime || stopAirport}
@@ -192,36 +204,49 @@ function FlightJourneyCard({
   journey: any;
   isLast: boolean;
 }) {
+  const fromCity = (journey.from?.city as string | undefined)?.trim();
+  const toCity = (journey.to?.city as string | undefined)?.trim();
+  const fromRoute =
+    fromCity && journey.from?.code
+      ? `${fromCity} (${journey.from.code})`
+      : journey.from?.code ?? "";
+  const toRoute =
+    toCity && journey.to?.code
+      ? `${toCity} (${journey.to.code})`
+      : journey.to?.code ?? "";
+
   return (
     <>
-      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-8 max-[768px]:grid-cols-[.5fr_auto_.5fr]">
-        <div className="text-end mt-4">
-          <div className="text-[15px] font-medium text-[#0A0C0F]">
-            {journey.from.time}
-          </div>
-          <div className="text-[12px] text-[#3D495C]">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 max-[768px]:grid-cols-[.5fr_auto_.5fr] max-[768px]:gap-2">
+        <div className="mt-2 text-end">
+          <div className={`text-[#0A0C0F] ${textBase500}`}>{journey.from.time}</div>
+          <div className={`mt-0.5 text-[#3D495C] ${textXs400}`}>
             {journey.from.dateLabel}
           </div>
         </div>
 
         <div className="text-center">
           <div
-            className={`text-[15px] font-medium text-[#0A0C0F] ${journey.segments.length > 1 ? "relative" : ""}`}
+            className={`flex items-center justify-center gap-4 text-[#0A0C0F] max-[768px]:gap-2 max-[768px]:text-[14px] max-[768px]:font-medium ${textBase500} ${journey.segments.length > 1 ? "relative" : ""}`}
           >
-            {journey.from.code} <span className="mx-2">→</span>{" "}
-            {journey.to.code}
+            <span className="whitespace-nowrap">{fromRoute}</span>
+            <span className="shrink-0" aria-hidden="true">
+              →
+            </span>
+            <span className="whitespace-nowrap">{toRoute}</span>
           </div>
 
-          <div className="mt-1">
-            <FlightTimeline segments={journey.segments} />
+          <div className="mt-1.5">
+            <FlightTimeline
+              segments={journey.segments}
+              formattedJourneyDuration={journey.durationLabel}
+            />
           </div>
         </div>
 
-        <div className="text-start mt-4">
-          <div className="text-[15px] font-medium text-[#0A0C0F]">
-            {journey.to.time}
-          </div>
-          <div className="text-[13px] text-[#3D495C]">
+        <div className="mt-2 text-start">
+          <div className={`text-[#0A0C0F] ${textBase500}`}>{journey.to.time}</div>
+          <div className={`mt-0.5 text-[#3D495C] ${textXs400}`}>
             {journey.to.dateLabel}
           </div>
         </div>
@@ -299,14 +324,15 @@ function BookingCard({ booking }: { booking: any }) {
   const [openShareModal, setOpenShareModal] = useState(false);
   const navigate = useNavigate();
 
-  const handlePayNow = () => {
-    // Transform booking to FlightBooking format
+  const goToFlightBookingFromCard = () => {
     const flightBookingData = transformBookingToFlightBookingFormat(booking);
     if (flightBookingData) {
-      navigate("/flight-booking", {
-        state: flightBookingData,
-      });
+      navigate("/flight-booking", { state: flightBookingData });
     }
+  };
+
+  const handlePayNow = () => {
+    goToFlightBookingFromCard();
   };
 
   // Update countdown in real-time for pending bookings
@@ -347,19 +373,37 @@ function BookingCard({ booking }: { booking: any }) {
     return () => clearInterval(interval);
   }, [status, booking.createdAt]);
 
+  const bookingRefDisplay =
+    booking.bookingRef && String(booking.bookingRef).trim()
+      ? String(booking.bookingRef).trim()
+      : "—";
+
+  const cabinRaw = journeys[0]?.airline?.cabin;
+  const cabinLine =
+    cabinRaw && String(cabinRaw).trim()
+      ? /\bclass\b/i.test(String(cabinRaw))
+        ? String(cabinRaw).trim()
+        : `${String(cabinRaw).trim()} class`
+      : "";
+
+  const footerMuted =
+    isExpired || isCancelled
+      ? "text-[#C2CAD6]"
+      : "text-[#5383DA] hover:underline";
+
   return (
     <div
       className={[
-        "relative rounded-[16px] border-[1.5px] px-6 pb-4 pt-6 shadow-sm transition max-w-[1168px] w-full",
+        `${FIGMA_INTER} relative w-full max-w-[1168px] rounded-[16px] border-[1.5px] px-6 pb-3 pt-12 shadow-sm transition`,
         isExpired || isCancelled
           ? "opacity-50 [filter:grayscale(100%)]"
           : "",
-        isPending ? "bg-white" : "bg-[#F2F2F3]",
+        isExpired ? "bg-[#F2F2F3]" : "bg-white",
       ].join(" ")}
       style={{
         borderColor: "#E4E4E7",
-        minHeight: "229px",
-        width: "1168px",
+        width: "100%",
+        maxWidth: "1168px",
         borderRadius: "16px",
         borderWidth: "1.5px",
       }}
@@ -384,148 +428,151 @@ function BookingCard({ booking }: { booking: any }) {
         />
       </div>
 
-      <div className="absolute right-4 top-3 z-10 sm:right-5 sm:top-4">
+      <div className="absolute right-6 top-4 z-10 flex flex-wrap items-center justify-end gap-2 sm:right-6 sm:top-4">
+        <TripCategoryPill label="Flight" />
         <StatusPill status={status as BookingStatus} />
       </div>
 
       {/* Render all journeys in the same card */}
-      {journeys.map((journey: any, idx: number) => (
-        <FlightJourneyCard
-          key={journey.journeyIndex}
-          journey={journey}
-          isLast={idx === journeys.length - 1}
-        />
-      ))}
+      <div className="pb-4 max-[768px]:pb-3">
+        {journeys.map((journey: any, idx: number) => (
+          <FlightJourneyCard
+            key={journey.journeyIndex}
+            journey={journey}
+            isLast={idx === journeys.length - 1}
+          />
+        ))}
+      </div>
 
       <CardDivider />
 
-      <div className="mt-2 mb-2 flex items-start justify-between gap-4 max-[768px]:flex-col">
+      <div className="flex items-start justify-between gap-8 py-3 max-[768px]:flex-col max-[768px]:gap-5">
         {/* Airline info from first journey */}
         {journeys.length > 0 && (
-          <div className="flex items-center gap-3">
-            {/* Airline logo/profile */}
-            <div className="flex-shrink-0">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-full">
               <img
                 src={airlineDefault}
                 alt={journeys[0].airline?.name || "Airline"}
-                className="h-12 w-12 rounded-full object-cover"
+                className="h-full w-full object-cover"
               />
             </div>
 
-            <div>
-              <div className="text-[15px] font-medium text-[#0A0C0F]">
+            <div className="min-w-0">
+              <div className={`text-[#0A0C0F] ${textBase500}`}>
                 {journeys[0].airline?.name ?? "Airline"}
               </div>
-              <div className="text-[12px] text-[#3D495C]">
-                {journeys[0].airline?.code} {journeys[0].airline?.flightNo}{" "}
-                {journeys[0].airline?.cabin
-                  ? ` - ${journeys[0].airline.cabin}`
-                  : null}
+              <div className={`mt-0.5 text-[#3D495C] ${textXs400}`}>
+                {journeys[0].airline?.code} {journeys[0].airline?.flightNo}
+                {cabinLine ? ` - ${cabinLine}` : ""}
               </div>
             </div>
           </div>
         )}
 
-        <div className="grid grid-cols-2 gap-x-20">
-          <div className="text-[#3D495C] text-[13px]">Passengers</div>
-          {booking.bookingRef ? (
-            <div className="text-[#3D495C] text-[13px]">
-              Booking ref. number
+        <div className="flex shrink-0 gap-12 max-[768px]:w-full max-[768px]:justify-between sm:gap-16">
+          <div className="text-end sm:text-start">
+            <div className={`text-[#3D495C] ${textSm500}`}>Passengers</div>
+            <div className={`mt-1 text-[#0A0C0F] ${textBase500Relaxed}`}>
+              {booking.passengersLabel}
             </div>
-          ) : (
-            <div></div>
-          )}
-          <div className="text-[#0A0C0F] font-medium text-[15px]">
-            {booking.passengersLabel}
           </div>
-          {booking.bookingRef && (
-            <div className="text-[#0A0C0F] font-medium text-[15px]">
-              {booking.bookingRef}
+          <div className="text-end">
+            <div className={`text-[#3D495C] ${textSm500}`}>Booking ref. number</div>
+            <div
+              className={`mt-1 max-w-[220px] break-all text-[#0A0C0F] max-[768px]:max-w-none ${textBase500Relaxed}`}
+            >
+              {bookingRefDisplay}
             </div>
-          )}
+          </div>
         </div>
       </div>
 
-      <CardDivider />
-
-      {status === "Pending" && countdown && (
-        <div className="mt-4 mb-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-1 text-[14px] font-medium text-[#3D495C]">
-            <span className="rounded-lg bg-[#FFB8C4] px-2 py-1 font-mono text-[#EA0029]">
-              {countdown.hours}
-            </span>{" "}
-            :
-            <span className="rounded-lg bg-[#FFB8C4] px-2 py-1 font-mono text-[#EA0029]">
-              {countdown.mins}
-            </span>{" "}
-            :
-            <span className="rounded-lg bg-[#FFB8C4] px-2 py-1 font-mono text-[#EA0029]">
-              {countdown.secs}
-            </span>
-            <span>Until your booking expires</span>
+      {status === "Pending" && countdown ? (
+        <>
+          <CardDivider />
+          <div className="flex flex-wrap items-center justify-between gap-4 py-3">
+            <div
+              className={`flex flex-wrap items-center gap-1.5 text-[#3D495C] ${textBase500Relaxed}`}
+            >
+              {countdown.hours !== "00" && (
+                <>
+                  <span
+                    className={`rounded-lg bg-[#FFB8C4] p-[5px] text-[#EA0029] ${textBase500}`}
+                  >
+                    {countdown.hours}
+                  </span>
+                  <span className={`text-[#EA0029] ${textBase500}`}>:</span>
+                </>
+              )}
+              <span
+                className={`rounded-lg bg-[#FFB8C4] p-[5px] text-[#EA0029] ${textBase500}`}
+              >
+                {countdown.mins}
+              </span>
+              <span className={`text-[#EA0029] ${textBase500}`}>:</span>
+              <span
+                className={`rounded-lg bg-[#FFB8C4] p-[5px] text-[#EA0029] ${textBase500}`}
+              >
+                {countdown.secs}
+              </span>
+              <span className={`ml-1 text-[#3D495C] ${textBase500Relaxed}`}>
+                Until your booking expires
+              </span>
+            </div>
+            <Button
+              type="button"
+              onClick={handlePayNow}
+              className={`text-[#F2F2F3] ${textBtn}`}
+              style={{
+                background:
+                  "linear-gradient(91.86deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                minWidth: "148px",
+                borderRadius: "100px",
+                padding: "14px 40px",
+              }}
+              overrideClasses
+            >
+              Pay now
+            </Button>
           </div>
-          <Button
-            type="button"
-            onClick={handlePayNow}
-            className="text-[#F2F2F3] text-[15px] font-semibold"
-            style={{
-              background:
-                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-              width: "148px",
-              height: "47px",
-              borderRadius: "100px",
-              padding: "14px 40px",
-              gap: "10px",
-            }}
-            overrideClasses
-          >
-            Pay now
-          </Button>
-        </div>
-      )}
-
-      {status === "Expired" && (
-        <div className="mt-4 mb-4 flex flex-wrap items-center justify-between gap-4">
-          <div className="text-[14px] font-medium text-[#3D495C]">
-            <span>This booking has expired!</span>
-          </div>
-          <Button
-            type="button"
-            disabled={true}
-            className="text-[#F2F2F3] text-[15px] font-semibold opacity-50 cursor-not-allowed"
-            style={{
-              background: "rgb(35, 81, 163)",
-              width: "109px",
-              height: "38px",
-              borderRadius: "100px",
-              // padding: "14px 40px",
-              gap: "10px",
-            }}
-            overrideClasses
-          >
-            Pay now
-          </Button>
-        </div>
-      )}
-
-      {isCancelled && (
-        <div className="mt-4 mb-4 flex flex-wrap items-center gap-4">
-          <div className="text-[14px] font-medium text-[#3D495C]">
-            This booking has been cancelled.
-          </div>
-        </div>
-      )}
+        </>
+      ) : null}
 
       <CardDivider />
 
-      <div className="mt-6 flex items-center text-[15px] font-medium">
+      <div
+        className={`mt-2 flex flex-wrap items-center justify-between gap-4 pb-2 pt-3 ${textBase500Relaxed}`}
+      >
         <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7]">
+          {isExpired && (
+            <div className={`pr-4 text-[#C2CAD6] ${textBase500Relaxed}`}>
+              This booking has expired!
+            </div>
+          )}
+          {isCancelled && (
+            <div className={`pr-4 text-[#3D495C] ${textBase500Relaxed}`}>
+              This booking has been cancelled.
+            </div>
+          )}
+          {(isPending || isExpired || (status === "Confirmed" && !isCancelled)) && (
+            <div className={isExpired ? "px-4" : "pr-4"}>
+              <Button
+                type="button"
+                className={`${footerMuted} ${FIGMA_INTER} text-[16px] font-medium leading-normal tracking-normal`}
+                overrideClasses
+                onClick={goToFlightBookingFromCard}
+              >
+                View details
+              </Button>
+            </div>
+          )}
           {status === "Confirmed" && !isCancelled && (
             <>
-              <div className="pr-4">
+              <div className="px-4">
                 <Button
                   type="button"
-                  className="text-[#5383DA] hover:underline"
+                  className={`${FIGMA_INTER} text-[16px] font-medium leading-normal tracking-normal text-[#5383DA] hover:underline`}
                   overrideClasses
                   onClick={async () => {
                     if (!booking.ticketImage) return;
@@ -553,7 +600,7 @@ function BookingCard({ booking }: { booking: any }) {
                 <div className="px-4">
                   <Button
                     type="button"
-                    className="text-[#EA0029] hover:underline"
+                    className={`${FIGMA_INTER} text-[16px] font-medium leading-normal tracking-normal text-[#EA0029] hover:underline`}
                     overrideClasses
                     onClick={() => {
                       const firstJourney = booking?.journeys?.[0];
@@ -608,11 +655,13 @@ function BookingCard({ booking }: { booking: any }) {
           )}
         </div>
 
-        {status === "Confirmed" && !isCancelled && (
-          <div className="ml-auto flex items-center pl-4">
+        {(isPending ||
+          isExpired ||
+          (status === "Confirmed" && !isCancelled)) && (
+          <div className="flex items-center sm:ml-auto">
             <Button
               type="button"
-              className="text-[#5383DA] hover:underline"
+              className={`${footerMuted} ${FIGMA_INTER} text-[16px] font-medium leading-normal tracking-normal`}
               overrideClasses
               onClick={() => setOpenShareModal(true)}
             >
@@ -625,7 +674,7 @@ function BookingCard({ booking }: { booking: any }) {
       {openShareModal && (
         <ShareTicketModal
           closeModal={() => setOpenShareModal(false)}
-          bookingRef={booking.bookingRef || "N/A"}
+          bookingRef={bookingRefDisplay === "—" ? "N/A" : bookingRefDisplay}
           passengerName={getPassengerNameFromBooking(booking)}
           ticketPdfUrl={booking.ticketImage ?? undefined}
           showPrint={false}
@@ -639,21 +688,37 @@ export default function UserBookingsListing({
   bookings,
   filterStatus,
   mode,
+  searchQuery = "",
+  dateFrom = "",
+  dateTo = "",
 }: {
   bookings: any[];
   filterStatus: "All" | BookingStatus;
   mode: TripMode;
+  searchQuery?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const list = useMemo(() => {
-    if (filterStatus === "All") return bookings;
-    return bookings.filter(
-      (b) => normalizeFlightBookingStatus(b.status) === filterStatus,
+    let rows = bookings;
+    if (filterStatus !== "All") {
+      rows = rows.filter(
+        (b) => normalizeFlightBookingStatus(b.status) === filterStatus,
+      );
+    }
+    rows = rows.filter(
+      (b) =>
+        flightBookingMatchesQuery(b, searchQuery) &&
+        flightBookingInDateRange(b, dateFrom, dateTo),
     );
-  }, [bookings, filterStatus, mode]);
+    return rows;
+  }, [bookings, filterStatus, mode, searchQuery, dateFrom, dateTo]);
 
   if (!list.length || mode === "Hotels") {
     return (
-      <div className="mt-6 rounded-xl border border-dashed border-[#E4E4E7] bg-white p-8 text-center text-[14px] text-[#3D495C]">
+      <div
+        className={`mt-6 rounded-xl border border-dashed border-[#E4E4E7] bg-white p-8 text-center text-[14px] font-medium leading-normal tracking-normal text-[#3D495C] ${FIGMA_INTER}`}
+      >
         No bookings found.
       </div>
     );
