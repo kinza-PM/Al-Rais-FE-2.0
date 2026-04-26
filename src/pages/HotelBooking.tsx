@@ -226,6 +226,7 @@ const HotelBooking = () => {
         effectiveCheckOut,
         selectedRooms,
         pax,
+        bookingInfo.checkInTime,
       );
       setHotelBookingPayload(payload);
     }
@@ -239,6 +240,7 @@ const HotelBooking = () => {
     effectiveCheckIn,
     effectiveCheckOut,
     pax,
+    bookingInfo.checkInTime,
   ]);
 
   useEffect(() => {
@@ -383,6 +385,13 @@ const HotelBooking = () => {
         );
         return next;
       });
+    },
+    [],
+  );
+
+  const patchHotelBookingPayload = useCallback(
+    (patch: Partial<HotelBookingPayload>) => {
+      setHotelBookingPayload((prev) => (prev ? { ...prev, ...patch } : prev));
     },
     [],
   );
@@ -539,6 +548,7 @@ const HotelBooking = () => {
                 setCurrentStep(0);
               }}
               hotelBookingPayload={hotelBookingPayload}
+              onPatchHotelBookingPayload={patchHotelBookingPayload}
               hotelDetail={hotelDetail}
               bookingInfo={bookingInfo}
               selectedRooms={selectedRooms}

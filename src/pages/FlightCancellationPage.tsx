@@ -42,6 +42,7 @@ import {
 import {
   buildFlightSegmentFromTrip,
   getPriceCabinClassForFlightSummary,
+  sameCalendarDate,
 } from "../utils/helpers";
 
 type ChargeDisplaySource = "api" | "fareRules" | "none";
@@ -201,6 +202,18 @@ const FlightCancellationPage: React.FC = () => {
     location.state?.offerId ?? location.state?.bookingId ?? "",
   ).trim();
   const tripForSummary = location.state?.tripForSummary ?? null;
+
+  /** First outbound segment departure (local date) vs today — controls `voidOnly` on cancel API. */
+  const isFirstDepartureToday = useMemo(() => {
+    const j0 =
+      tripForSummary?.raw?.journey?.[0] ?? tripForSummary?.journey?.[0];
+    const iso = j0?.flightSegments?.[0]?.departureDateTime;
+    if (!iso || typeof iso !== "string") return false;
+    const dep = new Date(iso);
+    if (Number.isNaN(dep.getTime())) return false;
+    const today = new Date();
+    return sameCalendarDate(dep, today);
+  }, [tripForSummary]);
   const displayBookingRef =
     String(location.state?.displayBookingRef ?? "").trim() ||
     bookingReferenceId ||
@@ -558,10 +571,10 @@ const FlightCancellationPage: React.FC = () => {
       supplierLocator,
       issueDate,
       cancelAllPassengers,
-      voidOnly: !cancelAllPassengers,
       doSupplierRefund: true,
       flightSegments,
       cancelreason,
+      ...(isFirstDepartureToday ? { voidOnly: true } : {}),
       ...(isOtherReasonSelected && trimmedDetail
         ? { otherCancelReason: trimmedDetail }
         : {}),

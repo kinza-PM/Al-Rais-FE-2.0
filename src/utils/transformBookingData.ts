@@ -194,6 +194,12 @@ export function transformBookingItem(apiItem: any): any {
       const isDirect =
         flightSegments.length === 1 && journey?.flight?.stopQuantity === 0;
 
+      const logoUrl = String(
+        firstSegment.marketingAirlineLogo ||
+          firstSegment.airlineLogo ||
+          "",
+      ).trim();
+
       return {
         journeyIndex,
         airline: {
@@ -201,6 +207,7 @@ export function transformBookingItem(apiItem: any): any {
           code: marketingAirline,
           flightNo: flightNumber,
           cabin: cabinClass,
+          ...(logoUrl ? { logoUrl } : {}),
         },
         from: {
           city: pickDepartureCityName(firstSegment),

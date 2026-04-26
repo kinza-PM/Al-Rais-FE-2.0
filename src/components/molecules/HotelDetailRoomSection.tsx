@@ -18,6 +18,7 @@ import {
   categorizeFacilities,
   FACILITY_KEYWORDS,
   GREAT_KEYWORDS,
+  resolveHotelStayNightCount,
 } from "../../utils/hotelHelper";
 import {
   // convertDateToString,
@@ -702,9 +703,19 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       </span>
                       <span className="text-sm font-semibold text-[#0A0C0F]">
                         {formatPrice(
-                          selectedForRoom?.room?.roomRate?.netAmount || 0,
+                          (selectedForRoom?.room?.roomRate?.netAmount || 0) /
+                            Math.max(
+                              1,
+                              resolveHotelStayNightCount(
+                                selectedForRoom?.room,
+                                normalizedBookingParams,
+                              ),
+                            ),
                           selectedForRoom?.room?.roomRate?.currency || "AED",
                         )}
+                        <span className="ml-[4px] text-xs font-normal text-[#3D495C]">
+                          /night
+                        </span>
                       </span>
                     </div>
 
@@ -941,19 +952,30 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
 
                           <div className="divide-y divide-[#E4E4E7]">
                             {visibleRooms.map((room: any, index: number) => {
-                              const price = room.roomRate?.netAmount || 0;
                               const currency = room.roomRate?.currency || "AED";
                               const mealPlan = getMealPlanLabel(room);
                               const highlights = getPlanHighlights(room, mealPlan);
                               const hasOffers = Array.isArray(room?.offers) && room.offers.length > 0;
-                              const originalPrice = hasOffers
-                                ? price -
-                                room.offers.reduce(
-                                  (sum: number, offer: any) =>
-                                    sum + (offer.amount || 0),
-                                  0,
-                                )
-                                : price;
+                              const netStay = room.roomRate?.netAmount || 0;
+                              const nights = Math.max(
+                                1,
+                                resolveHotelStayNightCount(
+                                  room,
+                                  normalizedBookingParams,
+                                ),
+                              );
+                              const offerTotal = hasOffers
+                                ? room.offers.reduce(
+                                    (sum: number, offer: any) =>
+                                      sum + (offer.amount || 0),
+                                    0,
+                                  )
+                                : 0;
+                              const originalStay = hasOffers
+                                ? netStay - offerTotal
+                                : netStay;
+                              const price = netStay / nights;
+                              const originalPrice = originalStay / nights;
                               // const availabilityCount = getAvailabilityCount(room);
 
                               const roomKey =
@@ -1019,19 +1041,25 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                     {price > 0 ? (
                                       <div className="text-left">
                                         {hasOffers ? (
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-[12px] text-[#64748B] line-through">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-[12px] text-[#EA0029] line-through">
                                               {formatPrice(originalPrice, currency)}
+                                              <span className="ml-[2px] text-[11px] font-normal text-[#EA0029]">
+                                                /night
+                                              </span>
                                             </span>
-                                            <span className="text-[18px] font-bold text-[#EA0029]">
+                                            <span className="text-[18px] font-bold text-[#0A0C0F]">
                                               {formatPrice(price, currency)}
+                                              <span className="ml-[2px] text-[12px] font-normal text-[#3D495C]">
+                                                /night
+                                              </span>
                                             </span>
                                           </div>
                                         ) : (
                                           <div className="text-[18px] font-bold text-[#0A0C0F]">
                                             {formatPrice(price, currency)}
-                                            <span className="ml-[2px] text-[14px] font-normal text-[#3D495C]">
-                                              /per night
+                                            <span className="ml-[2px] text-[12px] font-normal text-[#3D495C]">
+                                              /night
                                             </span>
                                           </div>
                                         )}

@@ -16,6 +16,7 @@ import {
   HOTEL_LISTING_REVIEW_FALLBACK,
 } from "../../utils/hotelHelper";
 import { HotelProxiedImage } from "../atoms/HotelProxiedImage";
+import { useHotelStore } from "../../store/UseHotelStore";
 
 type HotelListCardProps = {
   hotel: any;
@@ -34,17 +35,19 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
   onShare,
   onCheckAvailability,
 }) => {
+  const { hotel: bookingParams } = useHotelStore();
   const {
     hasRooms,
     isAvailable,
     bestRoom,
     currency,
     price,
+    totalStayPrice,
     hasFreeCancellation,
     totalOriginalPrice: originalPrice,
     uniqueOfferNames,
     hasOffer,
-  } = processHotelSearchListingData(hotel);
+  } = processHotelSearchListingData(hotel, bookingParams ?? null);
 
   const apiImages: string[] =
     hotel?.propertyInfo?.images
@@ -323,7 +326,7 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
               Starting from (including VAT)
             </span>
             <HotelPriceSummaryTooltip
-              totalPrice={price}
+              totalPrice={totalStayPrice}
               currency={currency}
               taxes={aggregateHotelTaxesFromRoomArray(
                 Array.isArray(hotel?.rooms) && hotel.rooms.length > 0
@@ -368,7 +371,9 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
               >
                 {currency} {price.toFixed(2)}
               </span>
-              <span className="text-[12px] font-bold leading-none text-[#3D495C]">/Night</span>
+              <span className="text-[12px] font-bold leading-none text-[#3D495C]">
+                /room/night
+              </span>
             </div>
           </div>
 

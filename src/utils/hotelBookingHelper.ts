@@ -6,6 +6,16 @@ import {
   validatePersonName,
 } from "./travelerFieldValidation";
 
+/** Normalize loose time strings to `HH:mm` for pickers / API (24h). */
+export function normalizeHotelArrivalTimeHHMM(time?: string | null): string {
+  if (!time || typeof time !== "string") return "12:00";
+  const m = /^(\d{1,2}):(\d{2})/.exec(time.trim());
+  if (!m) return "14:00";
+  const h = Math.min(23, Math.max(0, parseInt(m[1], 10)));
+  const min = Math.min(59, Math.max(0, parseInt(m[2], 10)));
+  return `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+}
+
 export type HotelBookingPayload = {
   searchKey: string;
   bookingKey: string;
@@ -14,6 +24,10 @@ export type HotelBookingPayload = {
   currency: string;
   culture: string;
   stayDateRange: { checkIn: string; checkOut: string };
+  /** Guest-indicated arrival date (YYYY-MM-DD), within stay; sent to `/hotelBooking`. */
+  userSelectedArrivalDate?: string;
+  /** Guest-indicated arrival time (HH:mm 24h); sent to `/hotelBooking`. */
+  userSelectedArrivalTime?: string;
   rooms: Array<{
     roomIndex: number;
     roomKey: string;
@@ -121,6 +135,8 @@ export function buildInitialHotelBookingPayload(
     kids?: number;
     rooms?: number;
   },
+  /** Defaults `userSelectedArrivalTime` when hotel publishes standard check-in time. */
+  hotelStandardCheckInTime?: string | null,
 ): HotelBookingPayload {
   const adults = paxData?.adults ?? 1;
   const children = (paxData?.children ?? 0) + (paxData?.kids ?? 0);
@@ -187,6 +203,10 @@ export function buildInitialHotelBookingPayload(
     currency,
     culture: "en",
     stayDateRange: { checkIn, checkOut },
+    userSelectedArrivalDate: checkIn,
+    userSelectedArrivalTime: normalizeHotelArrivalTimeHHMM(
+      hotelStandardCheckInTime ?? undefined,
+    ),
     rooms,
     paymentDetails: { paymentMode: "CR" },
   };

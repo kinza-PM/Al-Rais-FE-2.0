@@ -10,6 +10,60 @@ import TeaCoffeeMaker from "../assets/svgs/tea-coffee-maker.svg";
 import HotelBreakfast from "../assets/svgs/hotel-breakfast.svg";
 import Hotel from "../assets/svgs/hotel.svg";
 import toast from "react-hot-toast";
+import type { HotelBookingParams } from "./hotelBookingParams";
+
+/** Nights for one room line: daily rates length, or check-in → check-out when set. */
+export const resolveHotelStayNightCount = (
+  sampleRoom: any,
+  bookingParams?: HotelBookingParams | null,
+): number => {
+  let nights = 1;
+  const rates = sampleRoom?.roomRate?.rates;
+  if (Array.isArray(rates) && rates.length > 0) {
+    nights = rates.length;
+  }
+
+  const cin = bookingParams?.checkIn;
+  const cout = bookingParams?.checkOut;
+  if (cin && cout) {
+    const t0 = new Date(cin).getTime();
+    const t1 = new Date(cout).getTime();
+    if (Number.isFinite(t0) && Number.isFinite(t1) && t1 > t0) {
+      const d = Math.round((t1 - t0) / 86400000);
+      nights = Math.max(1, d);
+    }
+  }
+
+  return Math.max(1, nights);
+};
+
+/**
+ * Room-nights for the current search (rooms × nights), used to turn stay totals
+ * into an average per room per night on listing UIs.
+ */
+export const getHotelStayRoomNightDivisor = (
+  hotel: any,
+  bookingParams?: HotelBookingParams | null,
+): { roomCount: number; nightCount: number; divisor: number } => {
+  const arr = Array.isArray(hotel?.rooms) ? hotel.rooms : [];
+  const maxIdx =
+    arr.length > 0
+      ? Math.max(...arr.map((r: any) => Number(r.roomIndex) || 1))
+      : 1;
+
+  const bookingRooms = bookingParams?.paxData?.rooms;
+  const roomCount = Math.max(
+    1,
+    typeof bookingRooms === "number" && bookingRooms > 0
+      ? bookingRooms
+      : maxIdx,
+  );
+
+  const nightCount = resolveHotelStayNightCount(arr[0], bookingParams);
+  const divisor = Math.max(1, roomCount * nightCount);
+
+  return { roomCount, nightCount, divisor };
+};
 
 export const FACILITY_KEYWORDS: Record<string, string[]> = {
   bathroom: [
@@ -221,8 +275,12 @@ export interface ProcessedHotelData {
   isAvailable: boolean;
   bestRoom: any;
   currency: string;
+  /** Average per room per night (stay total ÷ room-nights). */
   price: number;
+  /** Full stay total before dividing (for tooltips / breakdowns). */
+  totalStayPrice: number;
   hasFreeCancellation: boolean;
+  /** Pre-offer average per room per night when offers apply. */
   totalOriginalPrice: number;
   uniqueOfferNames: string[];
   hasOffer: boolean;
@@ -233,7 +291,8 @@ export interface ProcessedHotelData {
  * Used for displaying hotel information in list and grid views
  */
 export const processHotelSearchListingData = (
-  hotel: any
+  hotel: any,
+  bookingParams?: HotelBookingParams | null,
 ): ProcessedHotelData => {
   const hasRooms = hotel?.rooms && hotel?.rooms.length > 0;
   const allRooms = hotel?.rooms || [];
@@ -260,7 +319,9 @@ export const processHotelSearchListingData = (
   }
 
   const currency = bestRoom?.roomRate?.currency || "AED";
-  const price = hotel?.totalPrice || bestRoom?.roomRate?.netAmount || 0;
+  const totalStayPrice = Number(
+    hotel?.totalPrice ?? bestRoom?.roomRate?.netAmount ?? 0,
+  );
 
   // Check if ANY room has free cancellation
   const hasFreeCancellation = availableRooms.some((room: any) => {
@@ -317,7 +378,7 @@ export const processHotelSearchListingData = (
           0
         )
       : 0;
-    totalOriginalPrice = hasOffer ? price + totalDiscount : price;
+    totalOriginalPrice = hasOffer ? totalStayPrice + totalDiscount : totalStayPrice;
 
     offers
       .filter((offer: any) => offer.included)
@@ -337,6 +398,11 @@ export const processHotelSearchListingData = (
   const uniqueOfferNames = Array.from(allOfferNames);
   const hasOffer = uniqueOfferNames.length > 0;
 
+  const { divisor } = getHotelStayRoomNightDivisor(hotel, bookingParams ?? null);
+  const price = divisor > 0 ? totalStayPrice / divisor : totalStayPrice;
+  const displayOriginalPrice =
+    divisor > 0 ? totalOriginalPrice / divisor : totalOriginalPrice;
+
   return {
     hasRooms,
     allRooms,
@@ -345,8 +411,9 @@ export const processHotelSearchListingData = (
     bestRoom,
     currency,
     price,
+    totalStayPrice,
     hasFreeCancellation,
-    totalOriginalPrice,
+    totalOriginalPrice: displayOriginalPrice,
     uniqueOfferNames,
     hasOffer,
   };

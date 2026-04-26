@@ -81,6 +81,35 @@ function CardDivider() {
   return <div className="-mx-6 h-px bg-[#E4E4E7] max-[768px]:-mx-4" />;
 }
 
+/** Airline logo from API with fallback (same pattern as FlightSummaryCard cancellation). */
+function AirlineAvatar({
+  logoUrl,
+  name,
+  sizeClass = "h-[52px] w-[52px]",
+}: {
+  logoUrl?: string;
+  name?: string;
+  sizeClass?: string;
+}) {
+  const [failed, setFailed] = useState(false);
+  const trimmed = logoUrl?.trim();
+  const src =
+    failed || !trimmed ? airlineDefault : trimmed;
+
+  return (
+    <div
+      className={`${sizeClass} shrink-0 overflow-hidden rounded-full border border-[#E4E4E7] bg-white`}
+    >
+      <img
+        src={src}
+        alt={name || "Airline"}
+        className="h-full w-full object-cover"
+        onError={() => setFailed(true)}
+      />
+    </div>
+  );
+}
+
 // Flight timeline for single journey - shows segment durations and layovers for multi-stop
 function FlightTimeline({
   segments,
@@ -201,9 +230,12 @@ function FlightTimeline({
 function FlightJourneyCard({
   journey,
   isLast: _isLast,
+  showAirlineAvatarTop = false,
 }: {
   journey: any;
   isLast: boolean;
+  /** Round-trip / multi-journey: show logo above each leg (single-journey uses footer avatar only). */
+  showAirlineAvatarTop?: boolean;
 }) {
   const fromCity = (journey.from?.city as string | undefined)?.trim();
   const toCity = (journey.to?.city as string | undefined)?.trim();
@@ -218,6 +250,15 @@ function FlightJourneyCard({
 
   return (
     <>
+      {showAirlineAvatarTop ? (
+        <div className="mb-4 flex justify-center">
+          <AirlineAvatar
+            logoUrl={journey.airline?.logoUrl}
+            name={journey.airline?.name}
+            sizeClass="h-11 w-11 max-[768px]:h-10 max-[768px]:w-10"
+          />
+        </div>
+      ) : null}
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 max-[768px]:grid-cols-[.5fr_auto_.5fr] max-[768px]:gap-2">
         <div className="mt-2 text-end">
           <div className={`text-[#0A0C0F] ${textBase500}`}>{journey.from.time}</div>
@@ -446,6 +487,7 @@ function BookingCard({ booking }: { booking: any }) {
             key={journey.journeyIndex}
             journey={journey}
             isLast={idx === journeys.length - 1}
+            showAirlineAvatarTop={journeys.length > 1}
           />
         ))}
       </div>
@@ -456,13 +498,10 @@ function BookingCard({ booking }: { booking: any }) {
         {/* Airline info from first journey */}
         {journeys.length > 0 && (
           <div className="flex min-w-0 items-center gap-3">
-            <div className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-full">
-              <img
-                src={airlineDefault}
-                alt={journeys[0].airline?.name || "Airline"}
-                className="h-full w-full object-cover"
-              />
-            </div>
+            <AirlineAvatar
+              logoUrl={journeys[0].airline?.logoUrl}
+              name={journeys[0].airline?.name}
+            />
 
             <div className="min-w-0">
               <div className={`text-[#0A0C0F] ${textBase500}`}>
