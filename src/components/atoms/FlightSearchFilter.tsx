@@ -178,59 +178,61 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
                 </button>
             </div>
 
-            {/* Number of stops - Collapsible */}
-            <div
-                className="stopsCollapse"
-                style={{
-                    ...fullWidth,
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                }}
-            >
-                <CustomCollapse>
-                    <Panel 
-                        header="Number of stops" 
-                        key="stops"
-                        style={{ border: 'none' }}
-                    >
-                        <div style={{ padding: '14px 16px 18px' }}>
-                            <div
-                                className="flight-stops-pills"
-                                role="radiogroup"
-                                aria-label="Number of stops"
-                            >
-                                {(numberStops?.length ? numberStops : []).map((opt) => {
-                                    const n = parseInt(String(opt.value), 10);
-                                    const isActive =
-                                        !Number.isNaN(n) &&
-                                        selectedMaxConnections === n;
-                                    return (
-                                        <button
-                                            key={String(opt.value)}
-                                            type="button"
-                                            role="radio"
-                                            aria-checked={isActive}
-                                            disabled={loading && !numberStops.length}
-                                            className={
-                                                isActive
-                                                    ? "flight-stops-pill flight-stops-pill--active"
-                                                    : "flight-stops-pill"
-                                            }
-                                            onClick={() =>
-                                                onMaxConnectionsChange(
-                                                    Number.isNaN(n) ? 0 : n,
-                                                )
-                                            }
-                                        >
-                                            {opt.label}
-                                        </button>
-                                    );
-                                })}
+            {/* Filter blocks (alternate background like Figma) */}
+            <div className="flight-filter-blocks" style={fullWidth}>
+                {/* Number of stops - Collapsible */}
+                <div
+                    className="flight-filter-block stopsCollapse"
+                    style={{
+                        ...fullWidth,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                    }}
+                >
+                    <CustomCollapse>
+                        <Panel 
+                            header="Number of stops" 
+                            key="stops"
+                            style={{ border: 'none' }}
+                        >
+                            <div style={{ padding: '14px 16px 18px' }}>
+                                <div
+                                    className="flight-stops-pills"
+                                    role="radiogroup"
+                                    aria-label="Number of stops"
+                                >
+                                    {(numberStops?.length ? numberStops : []).map((opt) => {
+                                        const n = parseInt(String(opt.value), 10);
+                                        const isActive =
+                                            !Number.isNaN(n) &&
+                                            selectedMaxConnections === n;
+                                        return (
+                                            <button
+                                                key={String(opt.value)}
+                                                type="button"
+                                                role="radio"
+                                                aria-checked={isActive}
+                                                disabled={loading && !numberStops.length}
+                                                className={
+                                                    isActive
+                                                        ? "flight-stops-pill flight-stops-pill--active"
+                                                        : "flight-stops-pill"
+                                                }
+                                                onClick={() =>
+                                                    onMaxConnectionsChange(
+                                                        Number.isNaN(n) ? 0 : n,
+                                                    )
+                                                }
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        </div>
-                    </Panel>
-                </CustomCollapse>
-            </div>
+                        </Panel>
+                    </CustomCollapse>
+                </div>
 
             {/* Price per seat — Min/Max only (Figma) */}
             {/* <div
@@ -354,255 +356,258 @@ const FlightSearchFilter: React.FC<FlightSearchFilterProps> = ({
             </div> */}
 
             {/* Refundability — matches `raw.fare.fareType.refundable` */}
-            <div
-                className="refundableFilterCollapse"
-                style={{
-                    ...fullWidth,
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                }}
-            >
-                <CustomCollapse>
-                    <Panel
-                        header="Refund type"
-                        key="refundable"
-                        style={{ border: "none" }}
-                    >
-                        <div
-                            style={{
-                                padding: "0 16px 16px 16px",
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: "10px",
-                            }}
+                <div
+                    className="flight-filter-block refundableFilterCollapse"
+                    style={{
+                        ...fullWidth,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                    }}
+                >
+                    <CustomCollapse>
+                        <Panel
+                            header="Refund type"
+                            key="refundable"
+                            style={{ border: "none" }}
                         >
-                            <Checkbox
-                                className="baggageCheckbox"
-                                checked={refundFilterRefundable}
-                                onChange={(e) =>
-                                    onRefundFilterRefundableChange(
-                                        e.target.checked,
-                                    )
-                                }
-                                disabled={loading}
+                            <div
+                                style={{
+                                    padding: "0 16px 16px 16px",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "10px",
+                                }}
                             >
-                                Refundable
-                            </Checkbox>
-                            <Checkbox
-                                className="baggageCheckbox"
-                                checked={refundFilterNonRefundable}
-                                onChange={(e) =>
-                                    onRefundFilterNonRefundableChange(
-                                        e.target.checked,
-                                    )
-                                }
-                                disabled={loading}
-                            >
-                                Non-refundable
-                            </Checkbox>
-                        </div>
-                    </Panel>
-                </CustomCollapse>
-            </div>
+                                <Checkbox
+                                    className="baggageCheckbox"
+                                    checked={refundFilterRefundable}
+                                    onChange={(e) =>
+                                        onRefundFilterRefundableChange(
+                                            e.target.checked,
+                                        )
+                                    }
+                                    disabled={loading}
+                                >
+                                    Refundable
+                                </Checkbox>
+                                <Checkbox
+                                    className="baggageCheckbox"
+                                    checked={refundFilterNonRefundable}
+                                    onChange={(e) =>
+                                        onRefundFilterNonRefundableChange(
+                                            e.target.checked,
+                                        )
+                                    }
+                                    disabled={loading}
+                                >
+                                    Non-refundable
+                                </Checkbox>
+                            </div>
+                        </Panel>
+                    </CustomCollapse>
+                </div>
 
             {/* Transit hours - Collapsible */}
-            <div
-                className="timeCollapse"
-                style={{
-                    ...fullWidth,
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                }}
-            >
-                <CustomCollapse>
-                    <Panel
-                        header="Transit hours"
-                        key="transit"
-                        style={{ border: "none" }}
-                    >
-                        <div style={{ padding: "0 16px 16px 16px" }}>
-                            <Radio.Group
-                                block
-                                options={transitHourOptions}
-                                value={selectedTransitRange ?? undefined}
-                                optionType="button"
-                                buttonStyle="solid"
-                                className="transitHours"
-                                onChange={(e) =>
-                                    onTransitRangeChange?.(e?.target?.value ?? null)
-                                }
-                            />
-                        </div>
-                    </Panel>
-                </CustomCollapse>
-            </div>
+                <div
+                    className="flight-filter-block timeCollapse"
+                    style={{
+                        ...fullWidth,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                    }}
+                >
+                    <CustomCollapse>
+                        <Panel
+                            header="Transit hours"
+                            key="transit"
+                            style={{ border: "none" }}
+                        >
+                            <div style={{ padding: "0 16px 16px 16px" }}>
+                                <Radio.Group
+                                    block
+                                    options={transitHourOptions}
+                                    value={selectedTransitRange ?? undefined}
+                                    optionType="button"
+                                    buttonStyle="solid"
+                                    className="transitHours"
+                                    onChange={(e) =>
+                                        onTransitRangeChange?.(e?.target?.value ?? null)
+                                    }
+                                />
+                            </div>
+                        </Panel>
+                    </CustomCollapse>
+                </div>
 
             {/* Flight time - Collapsible */}
-            <div
-                className="flightTimeFilter"
-                style={{
-                    ...fullWidth,
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                }}
-            >
-                <CustomCollapse>
-                    <Panel 
-                        header="Flight time" 
-                        key="time"
-                        style={{ border: 'none' }}
-                    >
-                        <div style={{ padding: '12px 16px 18px' }}>
-                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 300, marginBottom: '8px', marginTop: 0 }}>
-                                Departure
-                            </p>
-                            <div className="departureArrival" style={{ marginBottom: '14px' }}>
-                                <TailiwindCustomTimePicker
-                                    value={departureFlightRange.start || ""}
-                                    onChange={(hhmm) =>
-                                        onDepartureRangeChange({ start: hhmm || "" })
-                                    }
-                                    placeholder="--:--"
-                                    panelTitle="Departure from"
-                                    overridesClass
-                                    wrapperClassName="min-w-0 flex-1"
-                                    inputClass="timeBox w-full cursor-pointer text-left bg-white"
-                                />
-                                <span style={{ fontSize: "24px", color: "#0F172A", lineHeight: 1 }}>→</span>
-                                <TailiwindCustomTimePicker
-                                    value={departureFlightRange.end || ""}
-                                    onChange={(hhmm) =>
-                                        onDepartureRangeChange({ end: hhmm || "" })
-                                    }
-                                    placeholder="--:--"
-                                    panelTitle="Departure to"
-                                    overridesClass
-                                    wrapperClassName="min-w-0 flex-1"
-                                    inputClass="timeBox w-full cursor-pointer text-left bg-white"
-                                />
-                            </div>
+                <div
+                    className="flight-filter-block flightTimeFilter"
+                    style={{
+                        ...fullWidth,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                    }}
+                >
+                    <CustomCollapse>
+                        <Panel 
+                            header="Flight time" 
+                            key="time"
+                            style={{ border: 'none' }}
+                        >
+                            <div style={{ padding: '12px 16px 18px' }}>
+                                <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 300, marginBottom: '8px', marginTop: 0 }}>
+                                    Departure
+                                </p>
+                                <div className="departureArrival" style={{ marginBottom: '14px' }}>
+                                    <TailiwindCustomTimePicker
+                                        value={departureFlightRange.start || ""}
+                                        onChange={(hhmm) =>
+                                            onDepartureRangeChange({ start: hhmm || "" })
+                                        }
+                                        placeholder="--:--"
+                                        panelTitle="Departure from"
+                                        overridesClass
+                                        wrapperClassName="min-w-0 flex-1"
+                                        inputClass="timeBox w-full cursor-pointer text-left bg-white"
+                                    />
+                                    <span style={{ fontSize: "24px", color: "#0F172A", lineHeight: 1 }}>→</span>
+                                    <TailiwindCustomTimePicker
+                                        value={departureFlightRange.end || ""}
+                                        onChange={(hhmm) =>
+                                            onDepartureRangeChange({ end: hhmm || "" })
+                                        }
+                                        placeholder="--:--"
+                                        panelTitle="Departure to"
+                                        overridesClass
+                                        wrapperClassName="min-w-0 flex-1"
+                                        inputClass="timeBox w-full cursor-pointer text-left bg-white"
+                                    />
+                                </div>
 
-                            <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 300, marginBottom: '8px', marginTop: 0 }}>
-                                Arrival
-                            </p>
-                            <div className="departureArrival">
-                                <TailiwindCustomTimePicker
-                                    value={arrivalFlightRange.start || ""}
-                                    onChange={(hhmm) =>
-                                        onArrivalRangeChange({ start: hhmm || "" })
-                                    }
-                                    placeholder="--:--"
-                                    panelTitle="Arrival from"
-                                    overridesClass
-                                    wrapperClassName="min-w-0 flex-1"
-                                    inputClass="timeBox w-full cursor-pointer text-left bg-white"
-                                />
-                                <span style={{ fontSize: "24px", color: "#0F172A", lineHeight: 1 }}>→</span>
-                                <TailiwindCustomTimePicker
-                                    value={arrivalFlightRange.end || ""}
-                                    onChange={(hhmm) =>
-                                        onArrivalRangeChange({ end: hhmm || "" })
-                                    }
-                                    placeholder="--:--"
-                                    panelTitle="Arrival to"
-                                    overridesClass
-                                    wrapperClassName="min-w-0 flex-1"
-                                    inputClass="timeBox w-full cursor-pointer text-left bg-white"
-                                />
+                                <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 300, marginBottom: '8px', marginTop: 0 }}>
+                                    Arrival
+                                </p>
+                                <div className="departureArrival">
+                                    <TailiwindCustomTimePicker
+                                        value={arrivalFlightRange.start || ""}
+                                        onChange={(hhmm) =>
+                                            onArrivalRangeChange({ start: hhmm || "" })
+                                        }
+                                        placeholder="--:--"
+                                        panelTitle="Arrival from"
+                                        overridesClass
+                                        wrapperClassName="min-w-0 flex-1"
+                                        inputClass="timeBox w-full cursor-pointer text-left bg-white"
+                                    />
+                                    <span style={{ fontSize: "24px", color: "#0F172A", lineHeight: 1 }}>→</span>
+                                    <TailiwindCustomTimePicker
+                                        value={arrivalFlightRange.end || ""}
+                                        onChange={(hhmm) =>
+                                            onArrivalRangeChange({ end: hhmm || "" })
+                                        }
+                                        placeholder="--:--"
+                                        panelTitle="Arrival to"
+                                        overridesClass
+                                        wrapperClassName="min-w-0 flex-1"
+                                        inputClass="timeBox w-full cursor-pointer text-left bg-white"
+                                    />
+                                </div>
                             </div>
-                        </div>
-                    </Panel>
-                </CustomCollapse>
-            </div>
+                        </Panel>
+                    </CustomCollapse>
+                </div>
 
             {/* Airlines - Collapsible */}
-            <div
-                className="timeCollapse"
-                style={{
-                    ...fullWidth,
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                }}
-            >
-                <CustomCollapse>
-                    <Panel 
-                        header="Airlines" 
-                        key="airlines"
-                        style={{ border: 'none' }}
-                    >
-                        <div style={{ padding: '0 16px 16px 16px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                {airline.map((a) => (
-                                    <Checkbox
-                                        key={a.id}
-                                        className="baggageCheckbox"
-                                        disabled={loading && !airline.length}
-                                        onChange={(e: any) => onAirlineToggle(a.code, e?.target?.checked ?? !!e)}
-                                        checked={selectedAirlineIds.includes(a.code)}
-                                    >
-                                        {a.label}
-                                    </Checkbox>
-                                ))}
+                <div
+                    className="flight-filter-block timeCollapse"
+                    style={{
+                        ...fullWidth,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                    }}
+                >
+                    <CustomCollapse>
+                        <Panel 
+                            header="Airlines" 
+                            key="airlines"
+                            style={{ border: 'none' }}
+                        >
+                            <div style={{ padding: '0 16px 16px 16px' }}>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                    {airline.map((a) => (
+                                        <Checkbox
+                                            key={a.id}
+                                            className="baggageCheckbox"
+                                            disabled={loading && !airline.length}
+                                            onChange={(e: any) => onAirlineToggle(a.code, e?.target?.checked ?? !!e)}
+                                            checked={selectedAirlineIds.includes(a.code)}
+                                        >
+                                            {a.label}
+                                        </Checkbox>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
-                    </Panel>
-                </CustomCollapse>
-            </div>
+                        </Panel>
+                    </CustomCollapse>
+                </div>
 
             {/* Baggage - Collapsible */}
-            <div
-                style={{
-                    ...fullWidth,
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                }}
-            >
-                <CustomCollapse>
-                    <Panel 
-                        header="Baggage" 
-                        key="baggage"
-                        style={{ border: 'none' }}
-                    >
-                        <div style={{ padding: '0 16px 16px 16px' }}>
-                            <Checkbox
-                                className="baggageCheckbox"
-                                checked={baggageIncludedOnly}
-                                onChange={(e) =>
-                                    onBaggageIncludedChange(e.target.checked)
-                                }
-                                disabled={loading && !baggage.length}
-                            >
-                                {"Checked Baggage Included"}
-                                {/* {(baggage && baggage[0]?.label) || "Checked Baggage Included"} */}
-                            </Checkbox>
-                        </div>
-                    </Panel>
-                </CustomCollapse>
-            </div>
+                <div
+                    className="flight-filter-block"
+                    style={{
+                        ...fullWidth,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                    }}
+                >
+                    <CustomCollapse>
+                        <Panel 
+                            header="Baggage" 
+                            key="baggage"
+                            style={{ border: 'none' }}
+                        >
+                            <div style={{ padding: '0 16px 16px 16px' }}>
+                                <Checkbox
+                                    className="baggageCheckbox"
+                                    checked={baggageIncludedOnly}
+                                    onChange={(e) =>
+                                        onBaggageIncludedChange(e.target.checked)
+                                    }
+                                    disabled={loading && !baggage.length}
+                                >
+                                    {"Checked Baggage Included"}
+                                    {/* {(baggage && baggage[0]?.label) || "Checked Baggage Included"} */}
+                                </Checkbox>
+                            </div>
+                        </Panel>
+                    </CustomCollapse>
+                </div>
 
             {/* Ancillaries — same pattern as Baggage */}
-            <div
-                style={{
-                    ...fullWidth,
-                    borderRadius: "16px",
-                    overflow: "hidden",
-                }}
-            >
-                <CustomCollapse>
-                    <Panel header="Ancillaries" key="ancillaries" style={{ border: "none" }}>
-                        <div style={{ padding: "0 16px 16px 16px" }}>
-                            <Checkbox
-                                className="baggageCheckbox"
-                                checked={ancillaryAddOnsOnly}
-                                onChange={(e) =>
-                                    onAncillaryAddOnsOnlyChange(e.target.checked)
-                                }
-                            >
-                                Add-ons available
-                            </Checkbox>
-                        </div>
-                    </Panel>
-                </CustomCollapse>
+                <div
+                    className="flight-filter-block"
+                    style={{
+                        ...fullWidth,
+                        borderRadius: "16px",
+                        overflow: "hidden",
+                    }}
+                >
+                    <CustomCollapse>
+                        <Panel header="Ancillaries" key="ancillaries" style={{ border: "none" }}>
+                            <div style={{ padding: "0 16px 16px 16px" }}>
+                                <Checkbox
+                                    className="baggageCheckbox"
+                                    checked={ancillaryAddOnsOnly}
+                                    onChange={(e) =>
+                                        onAncillaryAddOnsOnlyChange(e.target.checked)
+                                    }
+                                >
+                                    Add-ons available
+                                </Checkbox>
+                            </div>
+                        </Panel>
+                    </CustomCollapse>
+                </div>
             </div>
         </div>
     );

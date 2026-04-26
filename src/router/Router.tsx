@@ -44,6 +44,9 @@ const SightseeingCancellationPage = lazy(
 );
 const HotelBookingDetailPage = lazy(() => import("../pages/HotelBookingDetailPage"));
 const FlightCancellationPage = lazy(() => import("../pages/FlightCancellationPage"));
+const FlightBookingDetailPage = lazy(
+  () => import("../pages/FlightBookingDetailPage"),
+);
 
 const router = createBrowserRouter([
   {
@@ -188,6 +191,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <HotelBookingDetailPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "flight-booking-detail",
+        element: (
+          <ProtectedRoute>
+            <FlightBookingDetailPage />
           </ProtectedRoute>
         ),
       },

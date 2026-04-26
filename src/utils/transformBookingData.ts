@@ -447,17 +447,27 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
   });
   const roomLabel = roomParts.length > 0 ? roomParts.join("; ") : "01, Room";
 
-  const bookingRef =
+  const bookingRefCandidateRaw =
     apiItem.bookingReferenceId ||
     apiItem.bookingRef ||
     apiItem.bookingReference ||
     apiItem.supplierLocator ||
     apiItem.detail?.supplierLocator ||
     apiItem.id ||
-    "N/A";
+    "";
+  const bookingRefCandidate =
+    bookingRefCandidateRaw != null &&
+    String(bookingRefCandidateRaw).trim() !== "" &&
+    String(bookingRefCandidateRaw).trim().toUpperCase() !== "N/A"
+      ? String(bookingRefCandidateRaw).trim()
+      : "";
+  const bookingRef = bookingRefCandidate || "N/A";
 
   const id =
-    apiItem.id || apiItem.bookingKey || bookingRef || `hotel-${Date.now()}`;
+    apiItem.id ||
+    apiItem.bookingKey ||
+    bookingRefCandidate ||
+    `hotel-${Date.now()}`;
 
   const searchKey =
     apiItem.searchKey || apiItem.search_key || apiItem.detail?.searchKey || "";
