@@ -2,8 +2,10 @@ import { MapContainer, TileLayer, Marker, Tooltip, useMap } from "react-leaflet"
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 import FilledStar from "../assets/svgs/filled_star.svg";
+// import InfoPrimary from "../assets/svgs/info-primary.svg";
 import HotelImage from "../assets/images/Hotel Image.png";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import HotelPriceSummaryTooltip from "../components/atoms/HotelPriceSummaryTooltip";
 import { Button } from "../components";
 import HotelDetailOverviewSection from "../components/molecules/HotelDetailOverviewSection";
 import HotelDetailAmenetiesSection from "../components/molecules/HotelDetailAmenetiesSection";
@@ -65,9 +67,8 @@ const buildHotelShareUrl = (
 
   const queryString = params.toString();
 
-  return `${window.location.origin}/hotel-detail/${hotelKey}${
-    queryString ? `?${queryString}` : ""
-  }`;
+  return `${window.location.origin}/hotel-detail/${hotelKey}${queryString ? `?${queryString}` : ""
+    }`;
 };
 
 const defaultMarkerIconUrl =
@@ -511,14 +512,13 @@ const HotelDetailListing = () => {
   } = useGetHotelFavourites();
 
   const favouriteItems = useMemo(() => {
-    if (Array.isArray(favouriteHotelsResponse)) {
-      return favouriteHotelsResponse;
+    const payload = (favouriteHotelsResponse as any)?.data ?? favouriteHotelsResponse;
+    if (Array.isArray(payload)) return payload;
+    if (payload && typeof payload === "object") {
+      return Object.values(payload).flatMap((items: any) =>
+        Array.isArray(items) ? items : []
+      );
     }
-
-    if (Array.isArray((favouriteHotelsResponse as any)?.data)) {
-      return (favouriteHotelsResponse as any).data;
-    }
-
     return [];
   }, [favouriteHotelsResponse]);
 
@@ -648,7 +648,7 @@ const HotelDetailListing = () => {
     [hotelDetail?.starRating]
   );
 
-  
+
   const totalPrice = useMemo(() => {
     return selectedRooms.reduce((total, selectedRoom) => {
       const roomPrice = selectedRoom.room?.roomRate?.netAmount || 0;
@@ -736,12 +736,12 @@ const HotelDetailListing = () => {
 
       const starRatingsForStore =
         normalizedBookingParams.starRatings &&
-        normalizedBookingParams.starRatings.length > 0
+          normalizedBookingParams.starRatings.length > 0
           ? normalizedBookingParams.starRatings
           : hotelSearchState?.starRatings &&
             hotelSearchState.starRatings.length > 0
-          ? hotelSearchState.starRatings
-          : (() => {
+            ? hotelSearchState.starRatings
+            : (() => {
               const m =
                 normalizedBookingParams.minStarRating ??
                 hotelSearchState?.minStarRating ??
@@ -811,7 +811,7 @@ const HotelDetailListing = () => {
             currency: "AED",
             minStarRating: nextStoreHotel.minStarRating ?? 0,
             ...(nextStoreHotel.starRatings &&
-            nextStoreHotel.starRatings.length > 0
+              nextStoreHotel.starRatings.length > 0
               ? { starRatings: nextStoreHotel.starRatings }
               : {}),
           },
@@ -924,6 +924,50 @@ const HotelDetailListing = () => {
       : resolvedBookingParams?.paxData?.rooms ?? 1;
   }, [hotelMoreRooms?.rooms, resolvedBookingParams?.paxData?.rooms]);
 
+  // Derive nights count from checkIn / checkOut
+  const nightsCount = useMemo(() => {
+    const ci = resolvedBookingParams?.checkIn;
+    const co = resolvedBookingParams?.checkOut;
+    if (!ci || !co) return 0;
+    const diff = new Date(co).getTime() - new Date(ci).getTime();
+    const n = Math.round(diff / (1000 * 60 * 60 * 24));
+    return n > 0 ? n : 0;
+  }, [resolvedBookingParams?.checkIn, resolvedBookingParams?.checkOut]);
+
+  // Build a comma-separated list of room names with meal plan
+  const selectedRoomNames = useMemo(() => {
+    return selectedRooms
+      .flatMap((s) => {
+        const name = s?.room?.roomTypeName || "";
+        const meal = s?.room?.ratePlan?.meal || "";
+        const label = meal ? `${name} (${meal})` : name;
+        // repeat label for each count
+        return Array.from({ length: s.count || 1 }, () => label);
+      })
+      .filter(Boolean)
+      .join(", ");
+  }, [selectedRooms]);
+
+  // Build traveler summary: "02 Adults" or "02 Adults + 1 Child"
+  const travelerSummary = useMemo(() => {
+    const adults = resolvedBookingParams?.paxData?.adults ?? 0;
+    const children = (resolvedBookingParams?.paxData?.children ?? 0) + (resolvedBookingParams?.paxData?.kids ?? 0);
+    const adultStr = `${String(adults).padStart(2, "0")} Adult${adults !== 1 ? "s" : ""}`;
+    const childStr = children > 0 ? ` + ${children} Child${children !== 1 ? "ren" : ""}` : "";
+    return adultStr + childStr;
+  }, [resolvedBookingParams?.paxData]);
+
+  const allTaxes = useMemo(() => {
+    return selectedRooms.flatMap((selected) => {
+      const taxes = selected.room?.roomRate?.taxes || [];
+      return taxes.map((tax: any) => ({
+        name: tax.name,
+        amount: (tax.amount || 0) * (selected.count || 1),
+        included: tax.included,
+      }));
+    });
+  }, [selectedRooms]);
+
   useEffect(() => {
     const requestedRooms = resolvedBookingParams?.paxData?.rooms ?? 1;
 
@@ -937,78 +981,78 @@ const HotelDetailListing = () => {
       const favouriteRooms =
         selectedRooms.length > 0
           ? selectedRooms.map((selected) => ({
-              roomIndex: selected?.room?.roomIndex ?? 1,
-              roomKey: selected?.room?.roomKey ?? "",
-              roomId: selected?.room?.roomId ?? "",
-              roomTypeName: selected?.room?.roomTypeName ?? "",
-              roomTypeDesc:
-                selected?.room?.roomTypeDesc ??
-                selected?.room?.roomTypeName ??
-                "",
-              maxOccupancy: selected?.room?.maxOccupancy ?? -1,
-              roomFacilities: selected?.room?.roomFacilities ?? [],
-              ratePlan: {
-                supplierCode: selected?.room?.ratePlan?.supplierCode ?? "",
-                meal: selected?.room?.ratePlan?.meal ?? "",
-                availableStatus:
-                  selected?.room?.ratePlan?.availableStatus ?? "",
-                cancelPolicyIndicator:
-                  selected?.room?.ratePlan?.cancelPolicyIndicator ?? "",
-                code: selected?.room?.ratePlan?.code ?? "",
-                isPackage: selected?.room?.ratePlan?.isPackage ?? false,
-                fixedCombo: selected?.room?.ratePlan?.fixedCombo ?? false,
-                gstAssured: selected?.room?.ratePlan?.gstAssured ?? false,
-                lastCancellationDate:
-                  selected?.room?.ratePlan?.lastCancellationDate ?? "",
-              },
-              roomRate: {
-                currency: selected?.room?.roomRate?.currency ?? "AED",
-                netAmount: selected?.room?.roomRate?.netAmount ?? 0,
-                rates: selected?.room?.roomRate?.rates ?? [],
-                taxes: selected?.room?.roomRate?.taxes ?? [],
-              },
-              rateNotes: selected?.room?.rateNotes ?? "",
-              financialInfo: {
-                tmc: selected?.room?.financialInfo?.tmc ?? "",
-                supplier: selected?.room?.financialInfo?.supplier ?? "",
-              },
-              isAllPaxInfoMandatory:
-                selected?.room?.isAllPaxInfoMandatory ?? false,
-            }))
+            roomIndex: selected?.room?.roomIndex ?? 1,
+            roomKey: selected?.room?.roomKey ?? "",
+            roomId: selected?.room?.roomId ?? "",
+            roomTypeName: selected?.room?.roomTypeName ?? "",
+            roomTypeDesc:
+              selected?.room?.roomTypeDesc ??
+              selected?.room?.roomTypeName ??
+              "",
+            maxOccupancy: selected?.room?.maxOccupancy ?? -1,
+            roomFacilities: selected?.room?.roomFacilities ?? [],
+            ratePlan: {
+              supplierCode: selected?.room?.ratePlan?.supplierCode ?? "",
+              meal: selected?.room?.ratePlan?.meal ?? "",
+              availableStatus:
+                selected?.room?.ratePlan?.availableStatus ?? "",
+              cancelPolicyIndicator:
+                selected?.room?.ratePlan?.cancelPolicyIndicator ?? "",
+              code: selected?.room?.ratePlan?.code ?? "",
+              isPackage: selected?.room?.ratePlan?.isPackage ?? false,
+              fixedCombo: selected?.room?.ratePlan?.fixedCombo ?? false,
+              gstAssured: selected?.room?.ratePlan?.gstAssured ?? false,
+              lastCancellationDate:
+                selected?.room?.ratePlan?.lastCancellationDate ?? "",
+            },
+            roomRate: {
+              currency: selected?.room?.roomRate?.currency ?? "AED",
+              netAmount: selected?.room?.roomRate?.netAmount ?? 0,
+              rates: selected?.room?.roomRate?.rates ?? [],
+              taxes: selected?.room?.roomRate?.taxes ?? [],
+            },
+            rateNotes: selected?.room?.rateNotes ?? "",
+            financialInfo: {
+              tmc: selected?.room?.financialInfo?.tmc ?? "",
+              supplier: selected?.room?.financialInfo?.supplier ?? "",
+            },
+            isAllPaxInfoMandatory:
+              selected?.room?.isAllPaxInfoMandatory ?? false,
+          }))
           : (hotelMoreRooms?.rooms || []).slice(0, 1).map((room: any) => ({
-              roomIndex: room?.roomIndex ?? 1,
-              roomKey: room?.roomKey ?? "",
-              roomId: room?.roomId ?? "",
-              roomTypeName: room?.roomTypeName ?? "",
-              roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
-              maxOccupancy: room?.maxOccupancy ?? -1,
-              roomFacilities: room?.roomFacilities ?? [],
-              ratePlan: {
-                supplierCode: room?.ratePlan?.supplierCode ?? "",
-                meal: room?.ratePlan?.meal ?? "",
-                availableStatus: room?.ratePlan?.availableStatus ?? "",
-                cancelPolicyIndicator:
-                  room?.ratePlan?.cancelPolicyIndicator ?? "",
-                code: room?.ratePlan?.code ?? "",
-                isPackage: room?.ratePlan?.isPackage ?? false,
-                fixedCombo: room?.ratePlan?.fixedCombo ?? false,
-                gstAssured: room?.ratePlan?.gstAssured ?? false,
-                lastCancellationDate:
-                  room?.ratePlan?.lastCancellationDate ?? "",
-              },
-              roomRate: {
-                currency: room?.roomRate?.currency ?? "AED",
-                netAmount: room?.roomRate?.netAmount ?? 0,
-                rates: room?.roomRate?.rates ?? [],
-                taxes: room?.roomRate?.taxes ?? [],
-              },
-              rateNotes: room?.rateNotes ?? "",
-              financialInfo: {
-                tmc: room?.financialInfo?.tmc ?? "",
-                supplier: room?.financialInfo?.supplier ?? "",
-              },
-              isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
-            }));
+            roomIndex: room?.roomIndex ?? 1,
+            roomKey: room?.roomKey ?? "",
+            roomId: room?.roomId ?? "",
+            roomTypeName: room?.roomTypeName ?? "",
+            roomTypeDesc: room?.roomTypeDesc ?? room?.roomTypeName ?? "",
+            maxOccupancy: room?.maxOccupancy ?? -1,
+            roomFacilities: room?.roomFacilities ?? [],
+            ratePlan: {
+              supplierCode: room?.ratePlan?.supplierCode ?? "",
+              meal: room?.ratePlan?.meal ?? "",
+              availableStatus: room?.ratePlan?.availableStatus ?? "",
+              cancelPolicyIndicator:
+                room?.ratePlan?.cancelPolicyIndicator ?? "",
+              code: room?.ratePlan?.code ?? "",
+              isPackage: room?.ratePlan?.isPackage ?? false,
+              fixedCombo: room?.ratePlan?.fixedCombo ?? false,
+              gstAssured: room?.ratePlan?.gstAssured ?? false,
+              lastCancellationDate:
+                room?.ratePlan?.lastCancellationDate ?? "",
+            },
+            roomRate: {
+              currency: room?.roomRate?.currency ?? "AED",
+              netAmount: room?.roomRate?.netAmount ?? 0,
+              rates: room?.roomRate?.rates ?? [],
+              taxes: room?.roomRate?.taxes ?? [],
+            },
+            rateNotes: room?.rateNotes ?? "",
+            financialInfo: {
+              tmc: room?.financialInfo?.tmc ?? "",
+              supplier: room?.financialInfo?.supplier ?? "",
+            },
+            isAllPaxInfoMandatory: room?.isAllPaxInfoMandatory ?? false,
+          }));
 
       const facilities =
         hotelDetail?.hotelFacilities
@@ -1045,11 +1089,12 @@ const HotelDetailListing = () => {
           totalPrice > 0
             ? totalPrice
             : favouriteRooms.reduce(
-                (sum: number, room: any) =>
-                  sum + (room?.roomRate?.netAmount || 0),
-                0
-              ),
+              (sum: number, room: any) =>
+                sum + (room?.roomRate?.netAmount || 0),
+              0
+            ),
         searchKey: resolvedSearchKey,
+        city: resolvedBookingParams?.city || "",
         flag,
       };
     },
@@ -1061,6 +1106,7 @@ const HotelDetailListing = () => {
       selectedRooms,
       totalPrice,
       resolvedSearchKey,
+      resolvedBookingParams?.city,
     ]
   );
 
@@ -1116,10 +1162,10 @@ const HotelDetailListing = () => {
             isHotelSearchPending
               ? "Please wait while we are updating room availability"
               : isAddingFavourite
-              ? "Please wait while we are updating favourites"
-              : isGetFavouritesLoading
-              ? "Please wait while we are checking favourites"
-              : "Please wait while we are fetching hotel details"
+                ? "Please wait while we are updating favourites"
+                : isGetFavouritesLoading
+                  ? "Please wait while we are checking favourites"
+                  : "Please wait while we are fetching hotel details"
           }
         />
 
@@ -1499,21 +1545,20 @@ const HotelDetailListing = () => {
             <button
               onClick={handleToggleFavourite}
               disabled={isAddingFavourite || isGetFavouritesLoading}
-              className={`px-8 py-3 text-[#F2F2F3] font-semibold rounded-full text-sm shadow-sm transition-all ${
-                isAddingFavourite || isGetFavouritesLoading
-                  ? "bg-[#AEB8C5] cursor-not-allowed"
-                  : isFavourite
+              className={`px-8 py-3 text-[#F2F2F3] font-semibold rounded-full text-sm shadow-sm transition-all ${isAddingFavourite || isGetFavouritesLoading
+                ? "bg-[#AEB8C5] cursor-not-allowed"
+                : isFavourite
                   ? "bg-[#EA0029] hover:opacity-95"
                   : "bg-[#2351A3] hover:opacity-95"
-              }`}
+                }`}
             >
               {isAddingFavourite
                 ? isFavourite
                   ? "Removing..."
                   : "Adding..."
                 : isFavourite
-                ? "Remove from favorites"
-                : "Add to favorites"}
+                  ? "Remove from favorites"
+                  : "Add to favorites"}
             </button>
           </div>
         </div>
@@ -1529,63 +1574,66 @@ const HotelDetailListing = () => {
           <button
             onClick={handleToggleFavourite}
             disabled={isAddingFavourite || isGetFavouritesLoading}
-            className={`w-full px-4 py-3 text-[#F2F2F3] font-semibold rounded-lg text-sm shadow-sm transition-all ${
-              isAddingFavourite || isGetFavouritesLoading
-                ? "bg-[#AEB8C5] cursor-not-allowed"
-                : isFavourite
+            className={`w-full px-4 py-3 text-[#F2F2F3] font-semibold rounded-lg text-sm shadow-sm transition-all ${isAddingFavourite || isGetFavouritesLoading
+              ? "bg-[#AEB8C5] cursor-not-allowed"
+              : isFavourite
                 ? "bg-[#EA0029] hover:opacity-95"
                 : "bg-[#2351A3] hover:opacity-95"
-            }`}
+              }`}
           >
             {isAddingFavourite
               ? isFavourite
                 ? "Removing..."
                 : "Adding..."
               : isFavourite
-              ? "Remove from favorites"
-              : "Add to favorites"}
+                ? "Remove from favorites"
+                : "Add to favorites"}
           </button>
         </div>
 
-        <div className="mt-6 w-full">
-          <div className="flex justify-center">
-            <div className="flex w-full items-end gap-2 overflow-x-auto pb-1 sm:gap-3 lg:w-auto lg:gap-[14px] lg:overflow-visible">
-              {tabItems.map((tab) => {
-                const selected = activeTab === tab.value;
+        <div className="mt-6 flex w-full justify-center">
+          <div
+            role="tablist"
+            aria-label="Hotel detail sections"
+            className="flex flex-wrap items-center justify-center gap-[10px]"
+          >
+            {tabItems.map((tab) => {
+              const selected = activeTab === tab.value;
 
-                return (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    role="tab"
-                    aria-selected={selected}
-                    onClick={() => handleTabChange(tab.value)}
-                    className={[
-                      "h-[44px] min-w-[96px] lg:min-w-[105px] rounded-t-[16px] rounded-b-none px-4 lg:px-6",
-                      "flex items-center justify-center",
-                      "text-[14px] leading-none",
-                      "shrink-0",
-                      "border-0 outline-none appearance-none",
-                      "transition-all duration-200",
-                      selected
-                        ? "bg-[#43C6E2] font-medium text-[#F2F2F3]"
-                        : "bg-[#F2F2F3] font-normal text-[#3D495C] hover:bg-[#ECECEF]",
-                    ].join(" ")}
-                    style={{
-                      WebkitAppearance: "none",
-                      appearance: "none",
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
+              return (
+                <Button
+                  overrideClasses
+                  key={tab.value}
+                  type="button"
+                  aria-selected={selected}
+                  onClick={() => handleTabChange(tab.value)}
+                  className={[
+                    "box-border flex h-[39px] min-w-[108px] shrink-0 cursor-pointer items-center justify-center",
+                    "rounded-tl-[16px] rounded-tr-[16px] rounded-bl-none rounded-br-none",
+                    "border-0 px-[20px] py-[10px] text-[15px] font-medium leading-none tracking-normal",
+                    "transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2351A3] focus-visible:ring-offset-2",
+                    selected ? "bg-[#2351A3] text-[#F2F2F3]" : "bg-[#E4E4E7] text-[#0A0C0F]",
+                  ].join(" ")}
+                >
+                  {tab.label}
+                </Button>
+              );
+            })}
           </div>
+        </div>
 
-          <div className="mx-auto mt-0 h-[14px] w-full max-w-[1000px] hidden lg:block">
-            <div className="h-[10px] w-full rounded-t-[16px] bg-[#D7EAF8] blur-[5px]" />
-          </div>
+        <div className="mt-0 flex w-full justify-center">
+          <div
+            aria-hidden="true"
+            className="rounded-tl-[16px] rounded-tr-[16px]"
+            style={{
+              width: "100%",
+              maxWidth: 1350,
+              height: 10,
+              background: "linear-gradient(180deg, #C4CFE1 0%, #DEF7FE 100%)",
+              backdropFilter: "blur(5px)",
+            }}
+          />
         </div>
 
         {activeTab === "Overview" && (
@@ -1684,28 +1732,38 @@ const HotelDetailListing = () => {
           <div className="relative max-w-5xl mx-auto px-4 py-6">
             <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EE7] px-4 py-3">
               <div className="flex items-center justify-between gap-6">
-                <div className="flex-shrink-0 flex-1">
+                <div className="flex-shrink-0 flex-1 min-w-0">
                   <p className="text-xs text-[#3D495C]">Your selection</p>
                   {selectedRooms.length > 0 ? (
                     <>
-                      <p className="text-base font-medium text-[#0A0C0F]">
-                        {totalRoomsCount} room
-                        {totalRoomsCount > 1 ? "s" : ""} selected
+                      <p className="text-[15px] font-semibold text-[#0A0C0F] leading-snug break-words">
+                        {selectedRoomNames}
                       </p>
-                      <div className="mt-1 space-y-1">
-                        <div className="text-base font-semibold text-[#0A0C0F] mt-2 pt-2 border-t border-[#E4E4E7]">
-                          Total: {formatPrice(totalPrice, currency)}
-                        </div>
+                      <div className="mt-1 flex items-center gap-1 flex-wrap">
+                        <span className="text-[15px] font-bold text-[#0A0C0F]">
+                          {formatPrice(totalPrice, currency)}
+                        </span>
+                        {nightsCount > 0 && (
+                          <span className="text-xs text-[#3D495C] font-normal">
+                            for {String(nightsCount).padStart(2, "0")} night{nightsCount !== 1 ? "s" : ""}
+                          </span>
+                        )}
+                        {travelerSummary && (
+                          <span className="text-xs text-[#3D495C] font-normal">
+                            •&nbsp;{travelerSummary}
+                          </span>
+                        )}
+                        <HotelPriceSummaryTooltip className="ml-8" totalPrice={totalPrice} currency={currency} taxes={allTaxes} />
                       </div>
                     </>
                   ) : (
                     <>
-                      <p className="text-base font-medium text-[#0A0C0F]">
+                      <p className="text-[15px] font-semibold text-[#0A0C0F]">
                         No rooms selected
                       </p>
-                      <button className="text-sm text-[#EA0029] mt-1 font-normal">
+                      <p className="text-sm text-[#EA0029] mt-0.5 font-normal">
                         Select dates, travelers and rooms to see prices.
-                      </button>
+                      </p>
                     </>
                   )}
                 </div>
@@ -1714,8 +1772,8 @@ const HotelDetailListing = () => {
                   disabled={totalRoomsCount < numberOfRooms}
                   className={
                     totalRoomsCount >= numberOfRooms
-                      ? "bg-[#2351A3] text-[#F2F2F3] px-10 py-3 rounded-lg font-semibold text-base"
-                      : "bg-[#C2CAD6] text-[#F2F2F3] px-10 py-3 rounded-lg font-semibold text-base cursor-not-allowed"
+                      ? "auth-bg-btn text-[#F2F2F3] px-10 py-3 rounded-full font-semibold text-base"
+                      : "bg-[#C2CAD6] text-[#F2F2F3] px-10 py-3 rounded-full font-semibold text-base cursor-not-allowed"
                   }
                   overrideClasses
                   onClick={() => {
@@ -1763,22 +1821,34 @@ const HotelDetailListing = () => {
               <p className="text-xs text-[#3D495C]">Your selection</p>
               {selectedRooms.length > 0 ? (
                 <>
-                  <p className="text-base font-medium text-[#0A0C0F]">
-                    {totalRoomsCount} room
-                    {totalRoomsCount > 1 ? "s" : ""} selected
+                  <p className="text-[15px] font-medium text-[#0A0C0F] leading-snug break-words">
+                    {selectedRoomNames}
                   </p>
-                  <div className="text-base font-semibold text-[#0A0C0F] mt-2 pt-2 border-t border-[#E4E4E7]">
-                    Total: {formatPrice(totalPrice, currency)}
+                  <div className="mt-1 flex items-center gap-1 flex-wrap">
+                    <span className="text-[14px] font-semibold text-[#0A0C0F]">
+                      {formatPrice(totalPrice, currency)}
+                    </span>
+                    {nightsCount > 0 && (
+                      <span className="text-xs text-[#3D495C] font-normal">
+                        for {String(nightsCount).padStart(2, "0")} night{nightsCount !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                    {travelerSummary && (
+                      <span className="text-sm text-[#3D495C] font-normal">
+                        •&nbsp;{travelerSummary}
+                      </span>
+                    )}
+                    <HotelPriceSummaryTooltip className="ml-4" totalPrice={totalPrice} currency={currency} taxes={allTaxes} />
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="text-base font-medium text-[#0A0C0F]">
+                  <p className="text-[15px] font-semibold text-[#0A0C0F]">
                     No rooms selected
                   </p>
-                  <button className="text-sm text-[#EA0029] mt-1 font-normal">
-                    Select dates, travelers and rooms to see prices.
-                  </button>
+                  <p className="text-sm text-[#EA0029] mt-0.5 font-normal">
+                    Select rooms to see prices.
+                  </p>
                 </>
               )}
 
@@ -1786,8 +1856,8 @@ const HotelDetailListing = () => {
                 disabled={totalRoomsCount < numberOfRooms}
                 className={
                   totalRoomsCount >= numberOfRooms
-                    ? "mt-3 w-full bg-[#2351A3] text-[#F2F2F3] px-6 py-3 rounded-lg font-semibold text-base"
-                    : "mt-3 w-full bg-[#C2CAD6] text-[#F2F2F3] px-6 py-3 rounded-lg font-semibold text-base cursor-not-allowed"
+                    ? "mt-3 w-full auth-bg-btn text-[#F2F2F3] px-6 py-3 rounded-full font-semibold text-base"
+                    : "mt-3 w-full bg-[#C2CAD6] text-[#F2F2F3] px-6 py-3 rounded-full font-semibold text-base cursor-not-allowed"
                 }
                 overrideClasses
                 onClick={() => {

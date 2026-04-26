@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useEffect } from "react";
 import { Collapse, Checkbox, Input } from "antd";
 import CustomCollapse from "../common/CustomCollapse";
 import type { HotelFilters, SortOption } from "../../utils/hotelFilters";
@@ -80,6 +80,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
   hotels = [],
 }) => {
   const [isSortOpen, setIsSortOpen] = useState(false);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
 
   const activeFilterCount = getActiveFilterCount(filters);
 
@@ -156,7 +157,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                 .split(" ")
                 .map(
                   (word: string) =>
-                    word.charAt(0).toUpperCase() + word.slice(1)
+                    word.charAt(0).toUpperCase() + word.slice(1),
                 )
                 .join(" ");
 
@@ -205,7 +206,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     });
 
     const roomFacilitiesArray = Array.from(roomFacSet).filter(
-      (f) => !propertyFacLcSet.has(f.toLowerCase())
+      (f) => !propertyFacLcSet.has(f.toLowerCase()),
     );
 
     return {
@@ -234,7 +235,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     (
       filterType: keyof HotelFilters,
       value: string | number,
-      isChecked?: boolean
+      isChecked?: boolean,
     ) => {
       const newFilters = { ...filters };
 
@@ -260,7 +261,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
 
       onFiltersChange(newFilters);
     },
-    [filters, onFiltersChange]
+    [filters, onFiltersChange],
   );
 
   const handleResetAll = useCallback(() => {
@@ -295,9 +296,26 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
     sortOptions.find((opt) => opt.value === sortOption)?.label ||
     "Please Select";
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        sortDropdownRef.current &&
+        !sortDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsSortOpen(false);
+      }
+    };
+    if (isSortOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isSortOpen]);
+
   return (
     <div className="filterSectionStyle hotel-search-filter-root">
-      <div className="relative">
+      <div className="relative" ref={sortDropdownRef}>
         <button
           onClick={() => setIsSortOpen(!isSortOpen)}
           className="w-full bg-white text-left flex flex-col justify-center"
@@ -333,8 +351,9 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
               {selectedLabel}
             </span>
             <svg
-              className={`w-5 h-5 transition-transform flex-shrink-0 ${isSortOpen ? "rotate-180" : ""
-                }`}
+              className={`w-5 h-5 transition-transform flex-shrink-0 ${
+                isSortOpen ? "rotate-180" : ""
+              }`}
               fill="none"
               stroke="#3D495C"
               viewBox="0 0 24 24"
@@ -358,10 +377,11 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
                   onSortChange(option.value);
                   setIsSortOpen(false);
                 }}
-                className={`px-4 py-3 cursor-pointer flex items-center justify-between ${index !== sortOptions.length - 1
+                className={`px-4 py-3 cursor-pointer flex items-center justify-between ${
+                  index !== sortOptions.length - 1
                     ? "border-b border-[#E4E4E7]"
                     : ""
-                  }`}
+                }`}
               >
                 <span
                   style={{ color: "#0A0C0F", fontSize: 13, fontWeight: 300 }}
@@ -505,7 +525,7 @@ const HotelsSearchFilter: React.FC<HotelsSearchFilterProps> = ({
             />
           </Panel>
         </CustomCollapse> */}
-{/* 
+        {/* 
         <CustomCollapse>
           <Panel header="Previously used filters" key="previously">
             <div className="flex flex-col gap-[10px]">

@@ -70,7 +70,7 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       allowedHosts: [
-        "pyritic-juliane-introductory.ngrok-free.dev",
+        "gloomily-tranquil-release.ngrok-free.dev",
       ],
       host: true,
       proxy: {

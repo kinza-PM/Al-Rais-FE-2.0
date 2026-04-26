@@ -128,6 +128,7 @@ export default function HotelBookingETicketSetion({
   const currency = hotel?.currency ?? "AED";
   const totalNet = Number(hotel?.totalNet ?? 0);
   const bookingRef = bookingData?.bookingReferenceId ?? "—";
+  const supplierReferenceId = bookingData?.supplierReferenceId ?? "—";
 
   const displayImages = useMemo(() => {
     const roomImages = (rooms || [])
@@ -390,6 +391,10 @@ export default function HotelBookingETicketSetion({
           <h5 className="text-sm mt-3">
             Your booking confirmation number is:{" "}
             <span className="font-semibold">{bookingRef}</span>
+          </h5>
+          <h5 className="text-sm mt-3">
+            Your Supplier Reference Number is:{" "}
+            <span className="font-semibold">{supplierReferenceId}</span>
           </h5>
           <p className="text-[#3D495C] text-xs mt-5 mb-3">
             We've sent a copy of this receipt to your email address.

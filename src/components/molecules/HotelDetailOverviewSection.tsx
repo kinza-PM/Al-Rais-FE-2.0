@@ -12,7 +12,7 @@ const FacilityItem = memo<{ name: string; icon: string | null }>(
       {icon && <img src={icon} alt="icon" className="w-5 h-5" />}
       <span>{name}</span>
     </div>
-  )
+  ),
 );
 
 FacilityItem.displayName = "FacilityItem";
@@ -81,12 +81,13 @@ const HotelDetailOverviewSection = ({
                 : "This hotel offers comfortable accommodation with modern amenities and excellent service.",
             }}
           />
-          <br />
-          Guests really like the location — it’s rated{" "}
-          <span className="font-bold">
-            {hotelDetail?.userRating || hotelDetail?.starRating || "4"}
-          </span>
-          .
+          {hotelDetail?.userRating && (
+            <>
+              <br />
+              Guests really like the location — it’s rated{" "}
+              <span className="font-bold">{hotelDetail?.userRating}</span>.
+            </>
+          )}
         </p>
         {hotelDetail?.phoneNumber && (
           <div className="flex items-center gap-2 text-[#2351A3] text-sm mt-1">

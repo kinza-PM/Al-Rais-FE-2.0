@@ -5,7 +5,7 @@ import Printer from "../../assets/svgs/printer.svg";
 import Mail from "../../assets/svgs/mail.svg";
 import Cross from "../../assets/svgs/cross.svg";
 import ShareFill from "../../assets/images/share-fill 1.png";
-import AlRaisLogo from "../../assets/images/alraisLogo.png";
+import AlRaisLogo from "../../assets/images/logo-small.png";
 
 type ShareTicketProps = {
   closeModal: () => void;
