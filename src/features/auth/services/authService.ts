@@ -588,8 +588,8 @@ export class AuthService {
       });
 
       const message = isPhoneNumber
-        ? "Password reset code sent to your phone!"
-        : "Password reset code sent to your email!";
+        ? "Password reset code sent to your phone. This code is valid for 5 minutes."
+        : "Password reset code sent to your email. This code is valid for 5 minutes.";
 
       return {
         success: true,

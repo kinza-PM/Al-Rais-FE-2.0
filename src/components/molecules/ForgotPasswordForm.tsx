@@ -126,7 +126,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
           </h3>
           {/* Figma: Instruction text */}
           <p className="text-center text-sm text-[#3D495C] mb-6">
-            Enter your email address to receive a verification code.
+            Enter your email address to receive a verification code. The code is valid for 5 minutes.
           </p>
 
           <div className="space-y-1">

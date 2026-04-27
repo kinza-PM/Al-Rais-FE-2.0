@@ -11,6 +11,8 @@ import {
   isPasswordValid,
 } from "../../utils/validators";
 
+const RESET_CODE_VALIDITY_MESSAGE = "This code is valid for 5 minutes.";
+
 interface OTPVerificationFormProps {
   email: string;
   /** Prefill OTP when returning from a previous step (rare). */
@@ -180,7 +182,7 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
       const result = await AuthService.forgotPassword({ email });
 
       if (result.success) {
-        toast.success("New verification code sent to your email!");
+        toast.success(`New verification code sent to your email. ${RESET_CODE_VALIDITY_MESSAGE}`);
         setOtpServerError(null);
       } else {
         toast.error(result.message || "Failed to resend code");
@@ -230,6 +232,9 @@ const OTPVerificationForm: React.FC<OTPVerificationFormProps> = ({
           <p className="text-center text-sm text-[#3D495C] mb-2">
             A code has been sent to{" "}
             <span className="font-medium text-[#5383DA]">{email}</span>
+          </p>
+          <p className="text-center text-sm font-medium text-[#3D495C] mb-2">
+            {RESET_CODE_VALIDITY_MESSAGE}
           </p>
 
           <div className="space-y-1">

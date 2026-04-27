@@ -678,7 +678,7 @@ const FlightHeroSection: React.FC = () => {
                 className={`flex justify-center xl:justify-end ${!hasAttemptedValidation ? "mt-4 xl:mt-0" : "mt-8 xl:mt-0"}`}
               >
                 <button
-                  className="text-[16px] font-medium text-white w-full sm:w-auto"
+                  className="flight-cta-button text-white w-full sm:w-auto"
                   style={{
                     width: "auto",
                     minWidth: 137,

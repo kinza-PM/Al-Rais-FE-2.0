@@ -415,7 +415,7 @@ export default function FlightBookingReviewSection({
             fare={priceFareFamily}
           />
 
-          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
+          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} wideLayout />
 
           <FLightPriceBreakdown
             open={openPrice}
