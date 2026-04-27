@@ -6,6 +6,7 @@ import baggageIcon from "../../assets/svgs/baggage.svg";
 // import wifiIcon from "../../assets/svgs/wifi.svg";
 import EmirateLogo from "../../assets/images/emirates.png";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import FlightBookingBaggageSection from "../atoms/FlightBookingBaggageSection";
 import FlightBookingMealsSection from "../atoms/FlightBookingMealsSection";
 import FlightBookingComfortAirportAndTravelSection from "../atoms/FlightBookingComfortAirportAndTravelSection";
@@ -73,6 +74,7 @@ export default function FlightBookingAnicllarySection({
   onAncillarySelectionResolved,
 }: FlightBookingAnicllarySectionProps) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const { getAllSelections, clearAll } = useAncillaryStore();
   const baggageSelections = useAncillaryStore((s) => s.baggageSelections);
   const mealSelections = useAncillaryStore((s) => s.mealSelections);
@@ -443,7 +445,7 @@ export default function FlightBookingAnicllarySection({
             fare={priceFareFamily}
           />
 
-          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
+          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} wideLayout />
 
           <FLightPriceBreakdown
             open={openPrice}
@@ -463,7 +465,13 @@ export default function FlightBookingAnicllarySection({
           </Button>
         </div>
 
-        {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />}
+        {!isAuthenticated && (
+          <LoginModal
+            showModal={!isAuthenticated}
+            showGoBack
+            onClose={() => navigate(-1)}
+          />
+        )}
       </div>
     </section>
   );

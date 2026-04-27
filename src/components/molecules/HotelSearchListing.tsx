@@ -439,12 +439,12 @@ const HotelSearchListing: React.FC = () => {
 
     // Apply filters (merge star rating from search bar into filters)
     if (hasSearched && result.length > 0) {
-      const barStarRatings = searchState.filters?.starRatings ?? [];
-      const effectiveFilters = {
-        ...filters,
-        ratings: barStarRatings.length > 0 ? barStarRatings : filters.ratings,
-      };
-      result = filterHotels(result, effectiveFilters);
+      // const barStarRatings = searchState.filters?.starRatings ?? [];
+      // const effectiveFilters = {
+      //   ...filters,
+      //   ratings: barStarRatings.length > 0 ? barStarRatings : filters.ratings,
+      // };
+      result = filterHotels(result, filters);
     }
 
     // Apply sorting

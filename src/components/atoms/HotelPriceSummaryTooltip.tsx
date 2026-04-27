@@ -10,12 +10,14 @@ type Props = {
   totalPrice?: number;
   currency?: string;
   taxes?: TaxItem[];
+  className?: string;
 };
 
 export default function HotelPriceSummaryTooltip({
   totalPrice,
   currency = "AED",
   taxes = [],
+  className = "ml-auto",
 }: Props) {
   const mergedTaxes = taxes.reduce<TaxItem[]>((acc, tax) => {
     const label = (tax.name || "Tax").trim() || "Tax";
@@ -38,11 +40,11 @@ export default function HotelPriceSummaryTooltip({
   }, []);
 
   return (
-    <div className="relative group ml-auto">
+    <div className={`relative group ${className}`}>
       <button>
         <img src={InfoPrimary} alt="icon" />
       </button>
-      <div className="absolute right-0 pb-2 hidden group-hover:block z-[9999] w-64">
+      <div className="absolute bottom-full right-0 pb-2 hidden group-hover:block z-[9999] w-64">
         <div className="bg-[#F2F2F3] rounded-lg px-5 py-4 shadow-[0_4px_20px_rgba(0,0,0,0.15)] relative">
           {/* Triangle arrow at bottom */}
           <div className="absolute -bottom-2 right-2 w-0 h-0 border-l-[8px] border-r-[8px] border-t-[8px] border-l-transparent border-r-transparent border-t-[#F2F2F3]"></div>

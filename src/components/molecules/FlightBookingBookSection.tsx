@@ -118,6 +118,16 @@ export default function FlightBookingBookSection({
   const [saveTravelerByPassengerKey, setSaveTravelerByPassengerKey] = useState<
     Record<string, boolean>
   >({});
+  const [isBookingForSomeoneElse, setIsBookingForSomeoneElse] = useState(false);
+  const [separateContactPerson, setSeparateContactPerson] = useState({
+    nameTitle: "",
+    givenName: "",
+    surname: "",
+    gender: "",
+    email: "",
+    phoneAreaCode: "+1",
+    phoneNumber: "",
+  });
   const [showBookingConfirm, setShowBookingConfirm] = useState(false);
   const [showFareChangeModal, setShowFareChangeModal] = useState(false);
   const [provisionalFareChange, setProvisionalFareChange] = useState<{
@@ -543,6 +553,79 @@ export default function FlightBookingBookSection({
     return "PT";
   };
 
+  const getContactPersonFromPassenger = (passenger?: any) => ({
+    nameTitle: passenger?.passengerInfo?.nameTitle ?? "",
+    givenName: passenger?.passengerInfo?.givenName ?? "",
+    surname: passenger?.passengerInfo?.surname ?? "",
+    gender: passenger?.passengerInfo?.gender ?? "",
+    email: passenger?.contact?.contactsProvided?.[0]?.emailAddress?.[0] ?? "",
+    phoneAreaCode:
+      passenger?.contact?.contactsProvided?.[0]?.phone?.[0]?.areaCode ?? "+1",
+    phoneNumber:
+      passenger?.contact?.contactsProvided?.[0]?.phone?.[0]?.phoneNumber ?? "",
+  });
+
+  const syncContactPersonToPrimaryTraveler = (contact = separateContactPerson) => {
+    if (!passengers[0]) return;
+
+    onPassengerFieldChange(0, "passengerInfo.nameTitle", contact.nameTitle);
+    onPassengerFieldChange(0, "passengerInfo.givenName", contact.givenName);
+    onPassengerFieldChange(0, "passengerInfo.surname", contact.surname);
+    onPassengerFieldChange(0, "passengerInfo.gender", contact.gender);
+    onPassengerFieldChange(
+      0,
+      "contact.contactsProvided.0.emailAddress.0",
+      contact.email,
+    );
+    onPassengerFieldChange(
+      0,
+      "contact.contactsProvided.0.phone.0.areaCode",
+      contact.phoneAreaCode,
+    );
+    onPassengerFieldChange(
+      0,
+      "contact.contactsProvided.0.phone.0.phoneNumber",
+      contact.phoneNumber,
+    );
+  };
+
+  const handleBookingForSomeoneElseToggle = () => {
+    if (!isBookingForSomeoneElse) {
+      setSeparateContactPerson(getContactPersonFromPassenger(passengers[0]));
+      setIsBookingForSomeoneElse(true);
+      return;
+    }
+
+    syncContactPersonToPrimaryTraveler();
+    setIsBookingForSomeoneElse(false);
+  };
+
+  const updateContactPersonField = (
+    field: keyof typeof separateContactPerson,
+    value: string,
+  ) => {
+    if (isBookingForSomeoneElse) {
+      setSeparateContactPerson((prev) => ({ ...prev, [field]: value }));
+      return;
+    }
+
+    const fieldPathByContactField: Record<
+      keyof typeof separateContactPerson,
+      string
+    > = {
+      nameTitle: "passengerInfo.nameTitle",
+      givenName: "passengerInfo.givenName",
+      surname: "passengerInfo.surname",
+      gender: "passengerInfo.gender",
+      email: "contact.contactsProvided.0.emailAddress.0",
+      phoneAreaCode: "contact.contactsProvided.0.phone.0.areaCode",
+      phoneNumber: "contact.contactsProvided.0.phone.0.phoneNumber",
+    };
+
+    onPassengerFieldChange(0, fieldPathByContactField[field], value);
+    clearFieldError(0, fieldPathByContactField[field]);
+  };
+
   // const countryOptions = useMemo(() => {
   //   return getUniqueCountries(cities);
   // }, [cities]);
@@ -568,45 +651,54 @@ export default function FlightBookingBookSection({
               birthDateIso: p.passengerInfo?.birthDate ?? null,
               expiryDateIso: p.identityDocuments?.[0]?.expiryDate ?? null,
             });
+            const contactPersonDetails = isBookingForSomeoneElse
+              ? separateContactPerson
+              : getContactPersonFromPassenger(passengers[0]);
+            const shouldShowTravelerPersonalFields =
+              isBookingForSomeoneElse || idx > 0;
             return (
               <React.Fragment key={p.passengerKey || idx}>
+                {idx === 0 && (
                 <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
                   <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px] bg-[#F2F2F3]">
                     <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                      Contact person {String(idx + 1).padStart(2, "0")} details
+                      Contact person details
                     </h3>
+                    <CustomToggle
+                      label="I'm booking for someone else"
+                      checked={isBookingForSomeoneElse}
+                      onChange={handleBookingForSomeoneElseToggle}
+                    />
                   </div>
 
                   <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
-                    <div className="grid gap-x-1 gap-y-3 md:grid-cols-[1.2fr_1.8fr] pr-4">
+                    <p className="mb-3 text-[12px] leading-5 text-[#3D495C]">
+                      {isBookingForSomeoneElse
+                        ? "Contact person is separate from the traveler. Traveler details below must be filled independently."
+                        : "Contact person is Traveler 01. These details are used for the primary traveler."}
+                    </p>
+                    <div className="flight-contact-person-grid grid gap-x-4 gap-y-3 md:grid-cols-2">
                       <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-6" : ""}`}
+                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.nameTitle"] ? "pb-6" : ""}`}
                       >
                         <SearchableDropdown
                           options={getFlightBookingNameTitleDropdownOptions(
                             p.ptc,
                           )}
-                          value={p.passengerInfo?.nameTitle ?? ""}
+                          value={contactPersonDetails.nameTitle}
                           onChange={(value) => {
-                            onPassengerFieldChange(
-                              idx,
-                              "passengerInfo.nameTitle",
-                              value,
-                            );
-                            onPassengerFieldChange(
-                              idx,
-                              "passengerInfo.gender",
+                            updateContactPersonField("nameTitle", value);
+                            updateContactPersonField(
+                              "gender",
                               genderFromFlightBookingNameTitle(value),
                             );
-                            clearFieldError(idx, "passengerInfo.nameTitle");
-                            clearFieldError(idx, "passengerInfo.gender");
                           }}
                           placeholder="Select title"
                           label="Title *"
                           widthClass="w-full"
                           error={
-                            hasAttemptedValidation
-                              ? validationErrors[idx]?.[
+                            hasAttemptedValidation && !isBookingForSomeoneElse
+                              ? validationErrors[0]?.[
                                   "passengerInfo.nameTitle"
                                 ]
                               : null
@@ -615,28 +707,22 @@ export default function FlightBookingBookSection({
                         />
                       </div>
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-6" : ""}`}
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.givenName"] ? "pb-6" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
                           placeholder="Enter your full name"
                           label="Full name (Filled based on ID/Passport/Driver’s license) *"
-                          value={p.passengerInfo?.givenName ?? ""}
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            onPassengerFieldChange(
-                              idx,
-                              "passengerInfo.givenName",
-                              v ?? "",
+                          value={contactPersonDetails.givenName}
+                          onChange={(event) => {
+                            updateContactPersonField(
+                              "givenName",
+                              event.target.value,
                             );
-                            clearFieldError(idx, "passengerInfo.givenName");
                           }}
                           error={
-                            hasAttemptedValidation
-                              ? validationErrors[idx]?.[
+                            hasAttemptedValidation && !isBookingForSomeoneElse
+                              ? validationErrors[0]?.[
                                   "passengerInfo.givenName"
                                 ]
                               : null
@@ -646,29 +732,23 @@ export default function FlightBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-6" : ""}`}
+                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.surname"] ? "pb-6" : ""}`}
                       >
                         <TailwindCustomInput
                           type="text"
                           placeholder="Enter your surname"
                           label="Surname *"
                           maxLength={80}
-                          value={p.passengerInfo?.surname ?? ""}
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            onPassengerFieldChange(
-                              idx,
-                              "passengerInfo.surname",
-                              v ?? "",
+                          value={contactPersonDetails.surname}
+                          onChange={(event) => {
+                            updateContactPersonField(
+                              "surname",
+                              event.target.value,
                             );
-                            clearFieldError(idx, "passengerInfo.surname");
                           }}
                           error={
-                            hasAttemptedValidation
-                              ? validationErrors[idx]?.["passengerInfo.surname"]
+                            hasAttemptedValidation && !isBookingForSomeoneElse
+                              ? validationErrors[0]?.["passengerInfo.surname"]
                               : null
                           }
                           className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
@@ -676,36 +756,118 @@ export default function FlightBookingBookSection({
                       </div>
 
                       <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-6" : ""}`}
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.gender"] ? "pb-6" : ""}`}
                       >
                         <SearchableDropdown
                           options={[
                             { id: "male", value: "M", label: "Male" },
                             { id: "female", value: "F", label: "Female" },
                           ]}
-                          value={p.passengerInfo?.gender ?? ""}
+                          value={contactPersonDetails.gender}
                           onChange={(value) => {
-                            onPassengerFieldChange(
-                              idx,
-                              "passengerInfo.gender",
-                              value,
-                            );
-                            clearFieldError(idx, "passengerInfo.gender");
+                            updateContactPersonField("gender", value);
                           }}
                           placeholder="Select gender"
                           label="Gender *"
                           widthClass="w-full"
                           error={
-                            hasAttemptedValidation
-                              ? validationErrors[idx]?.["passengerInfo.gender"]
+                            hasAttemptedValidation && !isBookingForSomeoneElse
+                              ? validationErrors[0]?.["passengerInfo.gender"]
                               : null
                           }
                           className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
                         />
                       </div>
+
+                      <div
+                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["contact.contactsProvided.0.phone.0"] ? "pb-6" : ""}`}
+                      >
+                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                          Phone *
+                        </label>
+                        <div
+                          className={
+                            hasAttemptedValidation &&
+                            !isBookingForSomeoneElse &&
+                            validationErrors[0]?.[
+                              "contact.contactsProvided.0.phone.0"
+                            ]
+                              ? "phone-input-error"
+                              : ""
+                          }
+                        >
+                          <PhoneInput
+                            defaultCountry="us"
+                            value={`${contactPersonDetails.phoneAreaCode}${contactPersonDetails.phoneNumber}`}
+                            onChange={(phone, meta) => {
+                              const dialCode = `+${meta.country.dialCode}`;
+                              updateContactPersonField(
+                                "phoneAreaCode",
+                                dialCode,
+                              );
+                              updateContactPersonField(
+                                "phoneNumber",
+                                phone.replace(dialCode, ""),
+                              );
+                              clearFieldError(
+                                0,
+                                "contact.contactsProvided.0.phone.0",
+                              );
+                            }}
+                            forceDialCode={true}
+                            hideDropdown={false}
+                            disableCountryGuess={false}
+                            className="custom-phone-wrapper"
+                            countrySelectorStyleProps={{
+                              buttonClassName: "country-selector-btn",
+                            }}
+                            inputProps={{
+                              placeholder: "Phone",
+                            }}
+                          />
+                        </div>
+                        {hasAttemptedValidation &&
+                          !isBookingForSomeoneElse &&
+                          validationErrors[0]?.[
+                            "contact.contactsProvided.0.phone.0"
+                          ] && (
+                            <p className="absolute left-0 text-[12px] mt-1 text-[#E65959] whitespace-nowrap">
+                              {
+                                validationErrors[0][
+                                  "contact.contactsProvided.0.phone.0"
+                                ]
+                              }
+                            </p>
+                          )}
+                      </div>
+
+                      <div
+                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-6" : ""}`}
+                      >
+                        <TailwindCustomInput
+                          type="email"
+                          placeholder="Enter an email"
+                          label="Email *"
+                          value={contactPersonDetails.email}
+                          onChange={(event) => {
+                            updateContactPersonField(
+                              "email",
+                              event.target.value,
+                            );
+                          }}
+                          error={
+                            hasAttemptedValidation && !isBookingForSomeoneElse
+                              ? validationErrors[0]?.[
+                                  "contact.contactsProvided.0.emailAddress.0"
+                                ]
+                              : null
+                          }
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
+                )}
 
                 {/* Passenger details (separate card) */}
 
@@ -726,7 +888,142 @@ export default function FlightBookingBookSection({
                   </div>
 
                   <div className="px-4 py-4 rounded-b-[16px]">
-                    <div className="grid gap-4 md:grid-cols-[1.2fr_1.8fr]">
+                    <div className="flight-traveler-details-grid grid gap-x-4 gap-y-3 md:grid-cols-2">
+                      {shouldShowTravelerPersonalFields && (
+                        <>
+                          <div
+                            className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.nameTitle"] ? "pb-6" : ""}`}
+                          >
+                            <SearchableDropdown
+                              options={getFlightBookingNameTitleDropdownOptions(
+                                p.ptc,
+                              )}
+                              value={p.passengerInfo?.nameTitle ?? ""}
+                              onChange={(value) => {
+                                onPassengerFieldChange(
+                                  idx,
+                                  "passengerInfo.nameTitle",
+                                  value,
+                                );
+                                onPassengerFieldChange(
+                                  idx,
+                                  "passengerInfo.gender",
+                                  genderFromFlightBookingNameTitle(value),
+                                );
+                                clearFieldError(idx, "passengerInfo.nameTitle");
+                                clearFieldError(idx, "passengerInfo.gender");
+                              }}
+                              placeholder="Select title"
+                              label="Traveler title *"
+                              widthClass="w-full"
+                              error={
+                                hasAttemptedValidation
+                                  ? validationErrors[idx]?.[
+                                      "passengerInfo.nameTitle"
+                                    ]
+                                  : null
+                              }
+                              className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                            />
+                          </div>
+
+                          <div
+                            className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.givenName"] ? "pb-6" : ""}`}
+                          >
+                            <TailwindCustomInput
+                              type="text"
+                              placeholder="Enter traveler full name"
+                              label="Traveler full name *"
+                              value={p.passengerInfo?.givenName ?? ""}
+                              onChange={(evOrVal) => {
+                                const v =
+                                  evOrVal && evOrVal.target
+                                    ? evOrVal.target.value
+                                    : evOrVal;
+                                onPassengerFieldChange(
+                                  idx,
+                                  "passengerInfo.givenName",
+                                  v ?? "",
+                                );
+                                clearFieldError(
+                                  idx,
+                                  "passengerInfo.givenName",
+                                );
+                              }}
+                              error={
+                                hasAttemptedValidation
+                                  ? validationErrors[idx]?.[
+                                      "passengerInfo.givenName"
+                                    ]
+                                  : null
+                              }
+                            />
+                          </div>
+
+                          <div
+                            className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.surname"] ? "pb-6" : ""}`}
+                          >
+                            <TailwindCustomInput
+                              type="text"
+                              placeholder="Enter traveler surname"
+                              label="Traveler surname *"
+                              maxLength={80}
+                              value={p.passengerInfo?.surname ?? ""}
+                              onChange={(evOrVal) => {
+                                const v =
+                                  evOrVal && evOrVal.target
+                                    ? evOrVal.target.value
+                                    : evOrVal;
+                                onPassengerFieldChange(
+                                  idx,
+                                  "passengerInfo.surname",
+                                  v ?? "",
+                                );
+                                clearFieldError(idx, "passengerInfo.surname");
+                              }}
+                              error={
+                                hasAttemptedValidation
+                                  ? validationErrors[idx]?.[
+                                      "passengerInfo.surname"
+                                    ]
+                                  : null
+                              }
+                            />
+                          </div>
+
+                          <div
+                            className={`relative w-full ${hasAttemptedValidation && validationErrors[idx]?.["passengerInfo.gender"] ? "pb-6" : ""}`}
+                          >
+                            <SearchableDropdown
+                              options={[
+                                { id: "male", value: "M", label: "Male" },
+                                { id: "female", value: "F", label: "Female" },
+                              ]}
+                              value={p.passengerInfo?.gender ?? ""}
+                              onChange={(value) => {
+                                onPassengerFieldChange(
+                                  idx,
+                                  "passengerInfo.gender",
+                                  value,
+                                );
+                                clearFieldError(idx, "passengerInfo.gender");
+                              }}
+                              placeholder="Select gender"
+                              label="Traveler gender *"
+                              widthClass="w-full"
+                              error={
+                                hasAttemptedValidation
+                                  ? validationErrors[idx]?.[
+                                      "passengerInfo.gender"
+                                    ]
+                                  : null
+                              }
+                              className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                            />
+                          </div>
+                        </>
+                      )}
+
                       <div className="relative w-full">
                         <TailwindCustomInput
                           type="text"
@@ -1428,7 +1725,7 @@ export default function FlightBookingBookSection({
               fare={priceFareFamily}
             />
 
-            <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
+            <FLightFareRule trip={trip.raw} ruleData={fareRuleData} wideLayout />
 
             <FLightPriceBreakdown
               open={openPrice}
@@ -1461,7 +1758,13 @@ export default function FlightBookingBookSection({
           </Button>
         </div>
 
-        {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />}
+        {!isAuthenticated && (
+          <LoginModal
+            showModal={!isAuthenticated}
+            showGoBack
+            onClose={() => navigate(-1)}
+          />
+        )}
       </div>
 
       <ConfirmationModal
@@ -1561,7 +1864,7 @@ export default function FlightBookingBookSection({
             setShowFareChangeModal(false);
             return;
           }
-          if (p.successToast) toast.success(p.successToast);
+          // if (p.successToast) toast.success(p.successToast);
           if (Object.keys(p.newRaw).length > 0 && onUpdateFlightRaw) {
             onUpdateFlightRaw(p.newRaw);
           }

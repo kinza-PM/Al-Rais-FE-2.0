@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components";
 import HotelBookingBookSection from "../components/molecules/HotelBookingBookSection";
 import HotelBookingReviewSection from "../components/molecules/HotelBookingReviewSection";
@@ -25,6 +25,7 @@ import { AuthService } from "../features/auth/services/authService";
 
 const HotelBooking = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { hotel: hotelFromStore } = useHotelStore();
   const state = (location.state || {}) as {
@@ -226,6 +227,7 @@ const HotelBooking = () => {
         effectiveCheckOut,
         selectedRooms,
         pax,
+        bookingInfo.checkInTime,
       );
       setHotelBookingPayload(payload);
     }
@@ -239,6 +241,7 @@ const HotelBooking = () => {
     effectiveCheckIn,
     effectiveCheckOut,
     pax,
+    bookingInfo.checkInTime,
   ]);
 
   useEffect(() => {
@@ -387,6 +390,13 @@ const HotelBooking = () => {
     [],
   );
 
+  const patchHotelBookingPayload = useCallback(
+    (patch: Partial<HotelBookingPayload>) => {
+      setHotelBookingPayload((prev) => (prev ? { ...prev, ...patch } : prev));
+    },
+    [],
+  );
+
   const handleBookSectionContinue = useCallback(async () => {
     if (!hotelBookingPayload) return;
     try {
@@ -430,7 +440,7 @@ const HotelBooking = () => {
             })),
           };
         });
-        toast.success("Hotel pre-booking successful");
+        // toast.success("Hotel pre-booking successful");
         setCurrentStep(1);
       } else {
         const msg =
@@ -451,13 +461,13 @@ const HotelBooking = () => {
 
   return (
     <>
-      <div className="px-3 py-4 sm:px-6 sm:py-6 lg:px-12 lg:py-8">
+      <div className="py-4 sm:py-6 lg:py-8 px-[16px] md:px-[24px] min-[1200px]:px-[clamp(24px,8vw,180px)] box-border">
         <Loader
           show={isPending || isPassengerCacheSaving || isPassengerCacheFetching}
           label={
             isPassengerCacheFetching
               ? "Please wait while we are fetching data"
-              : "Please wait while we complete your provisional booking"
+              : "Checking availability and securing your room..."
           }
         />
         {/* <div className={`p-8 ${showTimerBanner ? "pt-8" : ""}`}> */}
@@ -539,6 +549,7 @@ const HotelBooking = () => {
                 setCurrentStep(0);
               }}
               hotelBookingPayload={hotelBookingPayload}
+              onPatchHotelBookingPayload={patchHotelBookingPayload}
               hotelDetail={hotelDetail}
               bookingInfo={bookingInfo}
               selectedRooms={selectedRooms}
@@ -569,7 +580,13 @@ const HotelBooking = () => {
           )}
         </div>
       </div>
-      {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />}
+      {!isAuthenticated && (
+        <LoginModal
+          showModal={!isAuthenticated}
+          showGoBack
+          onClose={() => navigate(-1)}
+        />
+      )}
     </>
   );
 };

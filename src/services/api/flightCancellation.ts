@@ -22,7 +22,8 @@ export type FlightCancellationRequest = {
   supplierLocator: string;
   issueDate: string;
   cancelAllPassengers: boolean;
-  voidOnly: boolean;
+  /** When true, void-style cancellation; only sent when first departure is today (local date). */
+  voidOnly?: boolean;
   doSupplierRefund: boolean;
   flightSegments: unknown[];
   passengers?: FlightCancellationPassengerPayload[];

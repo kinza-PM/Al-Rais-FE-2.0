@@ -79,6 +79,31 @@ export default function HotelBookingBookSection({
   childAgesPerRoom,
   checkInDate,
 }: HotelBookingBookSectionProps) {
+  const getHotelTitleOptions = (ptc?: string) => {
+    const type = String(ptc ?? "")
+      .trim()
+      .toUpperCase();
+    if (type === "CHD" || type === "INF") {
+      return [
+        { id: "master", value: "master", label: "Master" },
+        { id: "miss", value: "miss", label: "Miss" },
+      ];
+    }
+    return [
+      { id: "mr", value: "mr", label: "Mr" },
+      { id: "ms", value: "ms", label: "Ms" },
+      { id: "mrs", value: "mrs", label: "Mrs" },
+    ];
+  };
+
+  const genderFromHotelTitle = (title?: string) => {
+    const t = String(title ?? "")
+      .trim()
+      .toLowerCase();
+    if (t === "mr" || t === "master") return "male";
+    return "female";
+  };
+
   const [validationErrors, setValidationErrors] =
     useState<HotelPassengerFieldErrors>({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
@@ -116,11 +141,24 @@ export default function HotelBookingBookSection({
   });
 
   const fillFromSavedTravelers = (selectedSlots: Array<SavedTraveler | undefined>) => {
-    const titleToUi = (t?: string) => {
+    const titleToUi = (ptc?: string, t?: string, g?: string) => {
+      const type = String(ptc ?? "")
+        .trim()
+        .toUpperCase();
       const v = String(t ?? "").trim().toUpperCase();
+      const gender = String(g ?? "").trim().toUpperCase();
+      if (type === "CHD" || type === "INF") {
+        if (v === "MSTR" || v === "MASTER" || v === "MR") return "master";
+        if (v === "MISS" || v === "MS" || v === "MRS") return "miss";
+        if (gender === "M" || gender === "MALE") return "master";
+        if (gender === "F" || gender === "FEMALE") return "miss";
+        return "";
+      }
       if (v === "MR") return "mr";
       if (v === "MS") return "ms";
       if (v === "MRS") return "mrs";
+      if (v === "MSTR" || v === "MASTER") return "mr";
+      if (v === "MISS") return "ms";
       return "";
     };
     const normalizeIdType = (v?: string) => {
@@ -145,7 +183,9 @@ export default function HotelBookingBookSection({
       const clear = !t;
       const givenName = clear ? "" : t.firstName ?? "";
       const surname = clear ? "" : t.lastName ?? "";
-      const nameTitle = clear ? "" : titleToUi(t.nameTitle);
+      const nameTitle = clear
+        ? ""
+        : titleToUi(target.passenger?.ptc, t.nameTitle, t.gender);
       const gender = clear ? "" : genderToUi(t.gender);
       const birthDate = clear ? null : (t.birthDate ?? null);
       const passport = clear ? "" : (t.passport ?? "");
@@ -342,8 +382,8 @@ export default function HotelBookingBookSection({
   };
 
   return (
-    <section className="mx-auto max-w-full px-0 sm:px-2 lg:px-4 flight-booking-section">
-      <div className="grid gap-4 lg:grid-cols-[2fr_1fr] flight-booking-grid">
+    <section className="mx-auto max-w-full flight-booking-section">
+      <div className="grid gap-4 lg:grid-cols-[1.8fr_1.2fr] flight-booking-grid">
         <div className="space-y-4">
           <SavedTravelersSection
             onProceedSelection={fillFromSavedTravelers}
@@ -366,11 +406,7 @@ export default function HotelBookingBookSection({
                         className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
                       >
                         <SearchableDropdown
-                          options={[
-                            { id: "mr", value: "mr", label: "Mr" },
-                            { id: "ms", value: "ms", label: "Ms" },
-                            { id: "mrs", value: "mrs", label: "Mrs" },
-                          ]}
+                          options={getHotelTitleOptions(p.ptc)}
                           value={p.passengerInfo?.nameTitle ?? ""}
                           onChange={(value) => {
                             onPassengerFieldChange(
@@ -383,7 +419,7 @@ export default function HotelBookingBookSection({
                               roomIndex,
                               passengerIndex,
                               "passengerInfo.gender",
-                              value === "mr" ? "male" : "female",
+                              genderFromHotelTitle(value),
                             );
                             clearFieldError(
                               roomIndex,
@@ -451,6 +487,7 @@ export default function HotelBookingBookSection({
                           type="text"
                           placeholder="Enter your surname"
                           label="Surname"
+                          maxLength={80}
                           value={p.passengerInfo?.surname ?? ""}
                           onChange={(evOrVal) => {
                             const v =
@@ -613,6 +650,7 @@ export default function HotelBookingBookSection({
                           type="text"
                           placeholder="Enter passport number"
                           label="Passport number"
+                          maxLength={20}
                           value={
                             p.identityDocuments?.[0]?.idDocumentNumber ?? ""
                           }

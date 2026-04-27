@@ -152,6 +152,7 @@ const RoundTripForm: React.FC<Props> = ({
     <div className="flex flex-col items-stretch gap-4 md:flex-row md:items-end xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.15fr)] xl:items-end xl:gap-4">
       <TravelRoutePicker
         bundleRoute
+        swapGutter={false}
         options={countries}
         loading={loadingCountries}
         onSearchChange={onSearchCountries}
@@ -170,7 +171,10 @@ const RoundTripForm: React.FC<Props> = ({
         labels={{ from: "From", to: "To" }}
         placeholders={{ from: "Please select", to: "Please select" }}
         disableSameSelection
-        widthClass="w-full min-w-0 md:w-[190px] xl:flex-1 xl:basis-0"
+        // NOTE: when `bundleRoute` is true, the picker uses a 3-col CSS grid.
+        // Forcing `w-full` on each input causes them to overlap the swap button.
+        // Let the grid control widths; only keep min-width constraints.
+        widthClass="min-w-0"
         fromError={fromError || undefined}
         toError={toError || undefined}
         onLoadMore={() => {

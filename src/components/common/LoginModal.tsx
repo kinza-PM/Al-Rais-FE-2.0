@@ -1,38 +1,35 @@
 import { useEffect, useState } from "react";
 import { Modal } from "antd";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import LoginForm from "../molecules/LoginForm";
 import LoginFailedCard from "../molecules/LoginFailedCard";
 import SignupForm from "../molecules/SignupForm";
 import ForgotPasswordForm from "../molecules/ForgotPasswordForm";
 import OTPVerificationForm from "../molecules/OTPVerificationForm";
-import ResetPasswordForm from "../molecules/ResetPasswordForm";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
 interface LoginModalProps {
   showModal?: boolean;
   onClose?: () => void;
+  onAuthSuccess?: () => void;
+  /** When true, shows a "← Go back" link below the form so the user can
+   *  explicitly cancel the protected action and return to the previous view. */
+  showGoBack?: boolean;
 }
 
-export default function LoginModal({ showModal, onClose }: LoginModalProps) {
+export default function LoginModal({
+  showModal,
+  onClose,
+  onAuthSuccess,
+}: LoginModalProps) {
   const location = useLocation();
-  const navigate = useNavigate();
   const [showLoginFailed, setShowLoginFailed] = useState(false);
-  const [mode, setMode] = useState<
-    "login" | "signup" | "forgot" | "otp" | "reset"
-  >("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "otp">(
+    "login",
+  );
   const [internalOpen, setInternalOpen] = useState(true);
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
-  const [forgotPasswordOtp, setForgotPasswordOtp] = useState("");
   const { refreshAuth } = useAuth();
-
-  const softRefresh = () => {
-    // Re-run route rendering without a hard page refresh (keeps route state like booking data).
-    navigate(`${location.pathname}${location.search ?? ""}`, {
-      replace: true,
-      state: location.state,
-    });
-  };
 
   const handleClose = () => {
     setInternalOpen(false);
@@ -51,12 +48,12 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
   };
 
   const handleLoginSuccess = () => {
-    // No hard refresh: update auth state then close.
+    // No hard refresh: update auth state, then close without running cancel/back handlers.
     void refreshAuth().finally(() => {
-      softRefresh();
       // Notify the rest of the app (e.g. header) to refresh its auth snapshot.
       window.dispatchEvent(new Event("alrais:auth-changed"));
-      handleClose();
+      onAuthSuccess?.();
+      setInternalOpen(false);
     });
   };
 
@@ -134,9 +131,9 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
               onLoginClick={() => setMode("login")}
               onSignupSuccess={() => {
                 void refreshAuth().finally(() => {
-                  softRefresh();
                   window.dispatchEvent(new Event("alrais:auth-changed"));
-                  handleClose();
+                  onAuthSuccess?.();
+                  setInternalOpen(false);
                 });
               }}
               onClose={handleClose}
@@ -149,7 +146,6 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
               onBackToLogin={() => setMode("login")}
               onOTPSent={(email) => {
                 setForgotPasswordEmail(email);
-                setForgotPasswordOtp("");
                 setMode("otp");
               }}
               prefillEmail={forgotPasswordEmail}
@@ -157,29 +153,16 @@ export default function LoginModal({ showModal, onClose }: LoginModalProps) {
           ) : mode === "otp" ? (
             <OTPVerificationForm
               email={forgotPasswordEmail}
-              initialOtp={forgotPasswordOtp}
               onBackToForgotPassword={() => {
-                setForgotPasswordOtp("");
                 setMode("forgot");
               }}
-              onOTPVerified={(email, otp) => {
-                setForgotPasswordEmail(email);
-                setForgotPasswordOtp(otp);
-                setMode("reset");
-              }}
-            />
-          ) : (
-            <ResetPasswordForm
-              email={forgotPasswordEmail}
-              otp={forgotPasswordOtp}
-              onPasswordReset={() => {
+              onResetSuccess={() => {
                 setForgotPasswordEmail("");
-                setForgotPasswordOtp("");
                 setMode("login");
               }}
-              onBackToOTP={() => setMode("otp")}
+              onCloseModal={handleClose}
             />
-          )}
+          ) : null}
         </div>
       </div>
     </Modal>

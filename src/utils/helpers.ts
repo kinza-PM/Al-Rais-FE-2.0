@@ -277,7 +277,7 @@ export function mapFlightSegment(
   return {
     heading: defaultHeading,
     route,
-    airlineLogo: item?.logo ?? item?.outbound?.logo ?? assets.EmirateLogo ?? "",
+    airlineLogo: primarySeg?.marketingAirlineLogo ?? item?.logo ?? item?.outbound?.logo ?? assets.EmirateLogo ?? "",
     airlineName: getMarketingAirlineDisplayName(primarySeg, item),
     flightMeta: `${flightNumber} – ${flightClass}`,
     amenities: [
@@ -411,6 +411,19 @@ export function buildFlightSegmentFromTrip(
   }
 
   return expandBySegments(trip, "Departure flight");
+}
+
+/** Minimal `trip` shape for `buildFlightSegmentFromTrip` from a stored booking API item (`originalApiItem`). */
+export function buildTripShapeForFlightSummaryFromBookingApi(apiItem: any) {
+  const journey = apiItem?.request?.journey;
+  if (!Array.isArray(journey) || journey.length === 0) return null;
+  return {
+    raw: {
+      journey,
+      fare: apiItem?.fare,
+    },
+    journey,
+  };
 }
 
 export function getPriceCabinClassForFlightSummary(trip: any) {

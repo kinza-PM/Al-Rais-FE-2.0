@@ -1,14 +1,14 @@
 import { memo, useMemo, useState, useEffect, useRef, useCallback } from "react";
-import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
-import type { PassengerSchema } from "../../features/flights/types";
+// import { useMasterListings } from "../../hooks/masterListings/useMasterListings";
+// import type { PassengerSchema } from "../../features/flights/types";
 import HotelDetailRoom1 from "../../assets/images/hotel-detail-room-1.png";
 import HotelDetailRoom2 from "../../assets/images/hotel-detail-room-2.png";
 import HotelDetailRoom3 from "../../assets/images/hotel-detail-room-3.png";
 import HotelDetailRoom4 from "../../assets/images/hotel-detail-room-4.png";
-import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
-import TravellersAndRoomDropdown from "../atoms/TravellersAndRoomDropdown";
+// import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
+// import TravellersAndRoomDropdown from "../atoms/TravellersAndRoomDropdown";
 import RoomImageGalleryModal from "../common/RoomImageGalleryModal";
-import Info from "../../assets/svgs/info-black.svg";
+// import Info from "../../assets/svgs/info-black.svg";
 import GreatStayIcon from "../../assets/svgs/great_stay.svg";
 import KnifeIcon from "../../assets/svgs/knife.svg";
 import BedroomIcon from "../../assets/svgs/bedroom.svg";
@@ -18,6 +18,7 @@ import {
   categorizeFacilities,
   FACILITY_KEYWORDS,
   GREAT_KEYWORDS,
+  resolveHotelStayNightCount,
 } from "../../utils/hotelHelper";
 import {
   // convertDateToString,
@@ -113,9 +114,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   // onBookingParamsChange,
   // isSearching = false,
 }) => {
-  const { passengers } = useMasterListings({
-    include: ["passengers"],
-  });
+  // const { passengers } = useMasterListings({
+  //   include: ["passengers"],
+  // });
   const normalizedBookingParams = useMemo(
     () => normalizeHotelBookingParams(bookingParams),
     [bookingParams],
@@ -350,36 +351,36 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
     return items.slice(0, 5);
   };
 
-  const [checkInDate, setCheckInDate] = useState<Date | null>(
-    normalizedBookingParams?.checkIn
-      ? new Date(normalizedBookingParams.checkIn)
-      : null,
-  );
-  const [checkOutDate, setCheckOutDate] = useState<Date | null>(
-    normalizedBookingParams?.checkOut
-      ? new Date(normalizedBookingParams.checkOut)
-      : null,
-  );
-  const [paxData, setPaxData] = useState<{
-    adults?: number;
-    kids?: number;
-    children?: number;
-    rooms?: number;
-  }>({
-    adults: normalizedBookingParams?.paxData?.adults ?? 1,
-    kids:
-      normalizedBookingParams?.paxData?.kids ??
-      normalizedBookingParams?.paxData?.children ??
-      0,
-    children:
-      normalizedBookingParams?.paxData?.children ??
-      normalizedBookingParams?.paxData?.kids ??
-      0,
-    rooms: normalizedBookingParams?.paxData?.rooms ?? numberOfRooms ?? 1,
-  });
-  const [childAges, setChildAges] = useState<Array<number | null>>(
-    normalizedBookingParams?.childAges ?? [],
-  );
+  // const [checkInDate, setCheckInDate] = useState<Date | null>(
+  //   normalizedBookingParams?.checkIn
+  //     ? new Date(normalizedBookingParams.checkIn)
+  //     : null,
+  // );
+  // const [checkOutDate, setCheckOutDate] = useState<Date | null>(
+  //   normalizedBookingParams?.checkOut
+  //     ? new Date(normalizedBookingParams.checkOut)
+  //     : null,
+  // );
+  // const [paxData, setPaxData] = useState<{
+  //   adults?: number;
+  //   kids?: number;
+  //   children?: number;
+  //   rooms?: number;
+  // }>({
+  //   adults: normalizedBookingParams?.paxData?.adults ?? 1,
+  //   kids:
+  //     normalizedBookingParams?.paxData?.kids ??
+  //     normalizedBookingParams?.paxData?.children ??
+  //     0,
+  //   children:
+  //     normalizedBookingParams?.paxData?.children ??
+  //     normalizedBookingParams?.paxData?.kids ??
+  //     0,
+  //   rooms: normalizedBookingParams?.paxData?.rooms ?? numberOfRooms ?? 1,
+  // });
+  // const [childAges, setChildAges] = useState<Array<number | null>>(
+  //   normalizedBookingParams?.childAges ?? [],
+  // );
   const [validationError, setValidationError] = useState<string | null>(null);
   const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [galleryInitialIndex, setGalleryInitialIndex] = useState(0);
@@ -390,50 +391,50 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   >({});
 
   useEffect(() => {
-    setCheckInDate(
-      normalizedBookingParams?.checkIn
-        ? new Date(normalizedBookingParams.checkIn)
-        : null,
-    );
-    setCheckOutDate(
-      normalizedBookingParams?.checkOut
-        ? new Date(normalizedBookingParams.checkOut)
-        : null,
-    );
-    setPaxData({
-      adults: normalizedBookingParams?.paxData?.adults ?? 1,
-      kids:
-        normalizedBookingParams?.paxData?.kids ??
-        normalizedBookingParams?.paxData?.children ??
-        0,
-      children:
-        normalizedBookingParams?.paxData?.children ??
-        normalizedBookingParams?.paxData?.kids ??
-        0,
-      rooms: normalizedBookingParams?.paxData?.rooms ?? numberOfRooms ?? 1,
-    });
-    setChildAges(normalizedBookingParams?.childAges ?? []);
+    // setCheckInDate(
+    //   normalizedBookingParams?.checkIn
+    //     ? new Date(normalizedBookingParams.checkIn)
+    //     : null,
+    // );
+    // setCheckOutDate(
+    //   normalizedBookingParams?.checkOut
+    //     ? new Date(normalizedBookingParams.checkOut)
+    //     : null,
+    // );
+    // setPaxData({
+    //   adults: normalizedBookingParams?.paxData?.adults ?? 1,
+    //   kids:
+    //     normalizedBookingParams?.paxData?.kids ??
+    //     normalizedBookingParams?.paxData?.children ??
+    //     0,
+    //   children:
+    //     normalizedBookingParams?.paxData?.children ??
+    //     normalizedBookingParams?.paxData?.kids ??
+    //     0,
+    //   rooms: normalizedBookingParams?.paxData?.rooms ?? numberOfRooms ?? 1,
+    // });
+    // setChildAges(normalizedBookingParams?.childAges ?? []);
     setValidationError(null);
   }, [normalizedBookingParams, numberOfRooms]);
 
-  const handlePaxChange = useCallback(
-    (nextPax: {
-      adults?: number;
-      kids?: number;
-      children?: number;
-      rooms?: number;
-    }) => {
-      setPaxData(nextPax);
-    },
-    [],
-  );
+  // const handlePaxChange = useCallback(
+  //   (nextPax: {
+  //     adults?: number;
+  //     kids?: number;
+  //     children?: number;
+  //     rooms?: number;
+  //   }) => {
+  //     setPaxData(nextPax);
+  //   },
+  //   [],
+  // );
 
-  const handleChildrenAgesChange = useCallback(
-    (ages: Array<number | null>) => {
-      setChildAges(ages);
-    },
-    [],
-  );
+  // const handleChildrenAgesChange = useCallback(
+  //   (ages: Array<number | null>) => {
+  //     setChildAges(ages);
+  //   },
+  //   [],
+  // );
 
   // const validateToolbarSearch = useCallback(() => {
   //   const validationMessage = getHotelBookingValidationError({
@@ -508,7 +509,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
         <h4 className="text-[#0A0C0F] text-base font-bold">Rooms availability</h4>
         <div className="mt-2 border-t border-[#E4E4E7]" />
 
-        <div className="mt-8 flex flex-col items-stretch justify-start gap-4 lg:flex-row lg:items-end">
+        {/* <div className="mt-8 flex flex-col items-stretch justify-start gap-4 lg:flex-row lg:items-end">
           <div className="hotel-filter-dates w-full min-w-0 lg:max-w-[460px]">
             <div className="mb-2 text-[12px] font-normal text-[#3D495C]">Dates</div>
             <div
@@ -578,15 +579,8 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
             </div>
           </div>
 
-          {/* <button
-            type="button"
-            onClick={handleToolbarSearch}
-            disabled={isSearching}
-            className="flex h-[50px] min-w-[140px] items-center justify-center rounded-[12px] bg-[#2351A3] px-7 text-[15px] font-semibold text-[#F2F2F3] disabled:cursor-not-allowed disabled:opacity-70"
-          >
-            {isSearching ? "Searching..." : "Search"}
-          </button> */}
-        </div>
+         
+        </div> */}
 
         {validationError && (
           <p className="mt-3 text-[12px] text-[#E65959]">{validationError}</p>
@@ -709,9 +703,19 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       </span>
                       <span className="text-sm font-semibold text-[#0A0C0F]">
                         {formatPrice(
-                          selectedForRoom?.room?.roomRate?.netAmount || 0,
+                          (selectedForRoom?.room?.roomRate?.netAmount || 0) /
+                            Math.max(
+                              1,
+                              resolveHotelStayNightCount(
+                                selectedForRoom?.room,
+                                normalizedBookingParams,
+                              ),
+                            ),
                           selectedForRoom?.room?.roomRate?.currency || "AED",
                         )}
+                        <span className="ml-[4px] text-xs font-normal text-[#3D495C]">
+                          /night
+                        </span>
                       </span>
                     </div>
 
@@ -948,19 +952,30 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
 
                           <div className="divide-y divide-[#E4E4E7]">
                             {visibleRooms.map((room: any, index: number) => {
-                              const price = room.roomRate?.netAmount || 0;
                               const currency = room.roomRate?.currency || "AED";
                               const mealPlan = getMealPlanLabel(room);
                               const highlights = getPlanHighlights(room, mealPlan);
                               const hasOffers = Array.isArray(room?.offers) && room.offers.length > 0;
-                              const originalPrice = hasOffers
-                                ? price -
-                                room.offers.reduce(
-                                  (sum: number, offer: any) =>
-                                    sum + (offer.amount || 0),
-                                  0,
-                                )
-                                : price;
+                              const netStay = room.roomRate?.netAmount || 0;
+                              const nights = Math.max(
+                                1,
+                                resolveHotelStayNightCount(
+                                  room,
+                                  normalizedBookingParams,
+                                ),
+                              );
+                              const offerTotal = hasOffers
+                                ? room.offers.reduce(
+                                    (sum: number, offer: any) =>
+                                      sum + (offer.amount || 0),
+                                    0,
+                                  )
+                                : 0;
+                              const originalStay = hasOffers
+                                ? netStay - offerTotal
+                                : netStay;
+                              const price = netStay / nights;
+                              const originalPrice = originalStay / nights;
                               // const availabilityCount = getAvailabilityCount(room);
 
                               const roomKey =
@@ -1026,19 +1041,25 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                     {price > 0 ? (
                                       <div className="text-left">
                                         {hasOffers ? (
-                                          <div className="flex items-center gap-2">
-                                            <span className="text-[12px] text-[#64748B] line-through">
+                                          <div className="flex flex-wrap items-center gap-2">
+                                            <span className="text-[12px] text-[#EA0029] line-through">
                                               {formatPrice(originalPrice, currency)}
+                                              <span className="ml-[2px] text-[11px] font-normal text-[#EA0029]">
+                                                /night
+                                              </span>
                                             </span>
-                                            <span className="text-[18px] font-bold text-[#EA0029]">
+                                            <span className="text-[18px] font-bold text-[#0A0C0F]">
                                               {formatPrice(price, currency)}
+                                              <span className="ml-[2px] text-[12px] font-normal text-[#3D495C]">
+                                                /night
+                                              </span>
                                             </span>
                                           </div>
                                         ) : (
                                           <div className="text-[18px] font-bold text-[#0A0C0F]">
                                             {formatPrice(price, currency)}
-                                            <span className="ml-[2px] text-[14px] font-normal text-[#3D495C]">
-                                              /per night
+                                            <span className="ml-[2px] text-[12px] font-normal text-[#3D495C]">
+                                              /night
                                             </span>
                                           </div>
                                         )}
@@ -1073,9 +1094,10 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                           -1,
                                         )
                                       }
+                                      disabled={count <= 0}
                                       className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${count > 0
                                         ? "bg-[#2351A3] text-white"
-                                        : "bg-[#C2CAD6] text-white"
+                                        : "bg-[#C2CAD6] text-white cursor-not-allowed"
                                         }`}
                                     >
                                       –
@@ -1095,7 +1117,11 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                           +1,
                                         )
                                       }
-                                      className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#2351A3] text-[20px] leading-none text-white"
+                                      disabled={count >= 1}
+                                      className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${count < 1
+                                        ? "bg-[#2351A3] text-white"
+                                        : "bg-[#C2CAD6] text-white cursor-not-allowed"
+                                        }`}
                                     >
                                       +
                                     </button>

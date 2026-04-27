@@ -9,6 +9,76 @@ import {
   type StoredSightseeingBooking,
 } from "./sightseeingLocalBookings";
 
+/** Map GDS passenger type codes to short labels for My Bookings cards. */
+function flightPtcShortLabel(ptc?: string): string {
+  const s = (ptc ?? "").toString().trim().toUpperCase();
+  if (s === "ADT") return "Adult";
+  if (s === "CHD") return "Child";
+  if (s === "INF" || s === "INS") return "Infant";
+  return s ? s : "Passenger";
+}
+
+function pluralPaxLabel(base: string, count: number): string {
+  if (count === 1) return base;
+  if (base === "Child") return "Children";
+  if (base === "Adult") return "Adults";
+  if (base === "Infant") return "Infants";
+  return `${base}s`;
+}
+
+/** e.g. "01 Adult", "01 Adult, 02 Children" — matches My Bookings Figma (node 5099:16949). */
+function buildFlightPassengersSummaryLine(
+  passengers: unknown[] | undefined,
+): string {
+  if (!Array.isArray(passengers) || passengers.length === 0) {
+    return "01 Adult";
+  }
+  const counts = new Map<string, number>();
+  for (const p of passengers) {
+    const raw = (p as { ptc?: string })?.ptc;
+    const key = (raw ?? "ADT").toString().trim().toUpperCase() || "ADT";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const order = ["ADT", "CHD", "INF"];
+  const keys = [...counts.keys()].sort((a, b) => {
+    const ia = order.indexOf(a);
+    const ib = order.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+  return keys
+    .map((key) => {
+      const n = counts.get(key) ?? 0;
+      const label = flightPtcShortLabel(key);
+      return `${String(n).padStart(2, "0")} ${pluralPaxLabel(label, n)}`;
+    })
+    .join(", ");
+}
+
+function pickDepartureCityName(seg: any): string {
+  if (!seg) return "";
+  const v =
+    seg.departureAirportCity ||
+    seg.departureCity ||
+    seg.originCity ||
+    seg.origin ||
+    "";
+  return String(v).trim();
+}
+
+function pickArrivalCityName(seg: any): string {
+  if (!seg) return "";
+  const v =
+    seg.arrivalAirportCity ||
+    seg.arrivalCity ||
+    seg.destinationCity ||
+    seg.destination ||
+    "";
+  return String(v).trim();
+}
+
 // Helper to format duration
 function formatDuration(duration: string): string {
   if (!duration) return "";
@@ -77,14 +147,10 @@ export function transformBookingItem(apiItem: any): any {
   const journeys = apiItem.request?.journey || [];
   const isRoundTrip = journeys.length > 1;
 
-  // Get passenger count
-  const passengerCount = apiItem.request?.passengers?.length || 1;
-  const passengerLabel =
-    passengerCount === 1
-      ? `${passengerCount} Passenger`
-      : `${passengerCount} Passenges`;
+  const passengers = apiItem.request?.passengers;
+  const passengerLabel = buildFlightPassengersSummaryLine(passengers);
 
-  /** Pending: no confirmed PNR yet — hide ref on the card. Cancelled / expired still show locator when API sends it. */
+  /** Show reference whenever the API supplies one (Figma shows ref on pending / expired cards). */
   const bookingRefResolved =
     apiItem.bookingReferenceId ||
     apiItem.detail?.supplierLocator ||
@@ -93,9 +159,9 @@ export function transformBookingItem(apiItem: any): any {
     null;
 
   const bookingRef =
-    status === "Pending" || status === "Expired"
-      ? null
-      : (bookingRefResolved ?? "N/A");
+    bookingRefResolved != null && String(bookingRefResolved).trim() !== ""
+      ? String(bookingRefResolved).trim()
+      : null;
 
   // Calculate countdown for pending bookings
   const countdown =
@@ -128,6 +194,12 @@ export function transformBookingItem(apiItem: any): any {
       const isDirect =
         flightSegments.length === 1 && journey?.flight?.stopQuantity === 0;
 
+      const logoUrl = String(
+        firstSegment.marketingAirlineLogo ||
+          firstSegment.airlineLogo ||
+          "",
+      ).trim();
+
       return {
         journeyIndex,
         airline: {
@@ -135,13 +207,16 @@ export function transformBookingItem(apiItem: any): any {
           code: marketingAirline,
           flightNo: flightNumber,
           cabin: cabinClass,
+          ...(logoUrl ? { logoUrl } : {}),
         },
         from: {
+          city: pickDepartureCityName(firstSegment),
           code: firstSegment.departureAirportCode,
           time: formatTime(firstSegment.departureDateTime),
           dateLabel: formatDate(firstSegment.departureDateTime),
         },
         to: {
+          city: pickArrivalCityName(lastSegment),
           code: lastSegment.arrivalAirportCode,
           time: formatTime(lastSegment.arrivalDateTime),
           dateLabel: formatDate(lastSegment.arrivalDateTime),
@@ -379,17 +454,27 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
   });
   const roomLabel = roomParts.length > 0 ? roomParts.join("; ") : "01, Room";
 
-  const bookingRef =
+  const bookingRefCandidateRaw =
     apiItem.bookingReferenceId ||
     apiItem.bookingRef ||
     apiItem.bookingReference ||
     apiItem.supplierLocator ||
     apiItem.detail?.supplierLocator ||
     apiItem.id ||
-    "N/A";
+    "";
+  const bookingRefCandidate =
+    bookingRefCandidateRaw != null &&
+    String(bookingRefCandidateRaw).trim() !== "" &&
+    String(bookingRefCandidateRaw).trim().toUpperCase() !== "N/A"
+      ? String(bookingRefCandidateRaw).trim()
+      : "";
+  const bookingRef = bookingRefCandidate || "N/A";
 
   const id =
-    apiItem.id || apiItem.bookingKey || bookingRef || `hotel-${Date.now()}`;
+    apiItem.id ||
+    apiItem.bookingKey ||
+    bookingRefCandidate ||
+    `hotel-${Date.now()}`;
 
   const searchKey =
     apiItem.searchKey || apiItem.search_key || apiItem.detail?.searchKey || "";
@@ -453,9 +538,11 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     status,
     hotelName,
     address,
-    checkInTime: formatTimeForHotel(checkIn, ""),
+    // When the API only returns a date (no specific time), fall back to the
+    // standard hotel check-in / check-out windows shown in the Figma design.
+    checkInTime: formatTimeForHotel(checkIn, "2:00 PM – 12:00 AM"),
     checkInDate: formatDateForHotel(checkIn) || "—",
-    checkOutTime: formatTimeForHotel(checkOut, ""),
+    checkOutTime: formatTimeForHotel(checkOut, "2:00 PM – 12:00 AM"),
     checkOutDate: formatDateForHotel(checkOut) || "—",
     totalStay,
     roomLabel,

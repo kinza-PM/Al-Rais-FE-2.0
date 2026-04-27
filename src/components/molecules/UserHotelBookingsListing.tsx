@@ -1,82 +1,47 @@
 import { useMemo, useEffect, useState, useCallback } from "react";
-// import { Tooltip } from "antd";
 import Button from "../atoms/Button";
 import { Link, useSearchParams } from "react-router-dom";
 import ShareTicketModal from "../atoms/ShareTicketModal";
-// import { InfoCircleOutlined } from "@ant-design/icons";
 import type { HotelBookingCardItem } from "../../utils/transformBookingData";
+import {
+  hotelBookingInDateRange,
+  hotelBookingMatchesQuery,
+} from "../../utils/myBookingsClientFilters";
 import { markExpectMyBookingsQueryRestore } from "../../utils/myBookingsUrl";
 import HotelBookingETicketSetion, {
   type HotelListDownloadParams,
 } from "./HotelBookingETicketSetion";
-import type { BookingStatus } from "./UserBookingsListing";
+import {
+  StatusPill,
+  TripCategoryPill,
+  type BookingStatus,
+} from "./UserBookingsListing";
 import FilledStar from "../../assets/svgs/filled_star.svg";
 
-const actionLinkClass =
-  "text-[13px] font-medium text-[#5383DA] hover:underline cursor-pointer whitespace-nowrap";
+const FIGMA_INTER = "font-[Inter,sans-serif] antialiased";
+
+/**
+ * Typography constants sourced directly from Figma node 9453:8256
+ * (My Bookings – Hotel card). All line‑heights are 100% in Figma,
+ * which maps to Tailwind `leading-none` for single-line elements and
+ * `leading-normal` where text may wrap.
+ */
+const textDate = `${FIGMA_INTER} text-[11px] font-normal leading-normal text-[#3D495C]`;
+const textLabel = `${FIGMA_INTER} text-[13px] font-normal leading-none text-[#3D495C]`;
+const textValue = `${FIGMA_INTER} text-[15px] font-medium leading-none text-[#0A0C0F]`;
+const textHeading = `${FIGMA_INTER} text-[17px] font-semibold leading-none text-[#0A0C0F]`;
+const textTime = `${FIGMA_INTER} text-[15px] font-medium leading-none text-[#0A0C0F]`;
+const textHotelName = `${FIGMA_INTER} text-[15px] font-medium leading-none text-[#0A0C0F]`;
+const textAddress = `${FIGMA_INTER} text-[11px] font-normal leading-normal text-[#3D495C]`;
+const textBtn = `${FIGMA_INTER} text-[15px] font-semibold leading-none tracking-[0.5px]`;
+const textStatusMsg = `${FIGMA_INTER} text-[15px] font-medium leading-none`;
+
+const actionLinkClass = `${FIGMA_INTER} text-[15px] font-medium leading-none tracking-normal text-[#5383DA] hover:underline cursor-pointer whitespace-nowrap`;
 
 export type { BookingStatus };
 
-function StatusPill({ status }: { status: BookingStatus }) {
-  if (status === "Cancelled") {
-    return (
-      <span
-        className="inline-flex items-center justify-center text-[11px] font-medium text-[#9A3412]"
-        style={{
-          background: "#FFEDD5",
-          minWidth: "86px",
-          height: "26px",
-          borderRadius: "100px",
-        }}
-      >
-        Cancelled
-      </span>
-    );
-  }
-
-  if (status === "Confirmed") {
-    return (
-      <span
-        className="inline-flex items-center justify-center text-[11px] font-medium text-[#0A0C0F]"
-        style={{
-          background: "#85FFCA",
-          width: "86px",
-          height: "26px",
-          borderRadius: "100px",
-        }}
-      >
-        Confirmed
-      </span>
-    );
-  }
-
-  if (status === "Pending") {
-    return (
-      <span
-        className="inline-flex max-w-[calc(100vw-2rem)] items-center justify-center whitespace-nowrap rounded-full bg-[#FFE4E6] px-4 py-2 text-center text-[12px] font-medium leading-none text-[#B91C1C]"
-      >
-        Pending payment
-      </span>
-    );
-  }
-
-  return (
-    <span
-      className="inline-flex items-center justify-center text-[11px] font-medium text-[#3D495C]"
-      style={{
-        background: "#E4E4E7",
-        width: "72px",
-        height: "26px",
-        borderRadius: "100px",
-      }}
-    >
-      Expired
-    </span>
-  );
-}
-
 function CardDivider() {
-  return <div className="-mx-4 h-px bg-[#E4E4E7]" />;
+  return <div className="h-px bg-[#E4E4E7]" />;
 }
 
 function StayTimeline({
@@ -92,38 +57,67 @@ function StayTimeline({
   checkInDate: string;
   checkOutDate: string;
 }) {
+  const totalStayLabel = (totalStay || "").trim();
+  const totalStayDisplay = !totalStayLabel
+    ? ""
+    : /total\s*stay\s*:/i.test(totalStayLabel)
+      ? totalStayLabel
+      : `Total stay: ${totalStayLabel}`;
+
+  const hasTimeRow = Boolean(
+    (checkInTime || "").trim() || (checkOutTime || "").trim(),
+  );
+
+  /**
+   * Figma layout (node 9453:8256):
+   *   row 1: [Check-in]          [ — ]          [Check-out]
+   *   row 2: [2:00 PM – 12:00 AM] [Total stay:]  [2:00 PM – 12:00 AM]
+   *          └── dot ─────────── line ────────── dot ──┘   (line sits on row 2)
+   *   row 3: [date]                ∅                [date]
+   */
   return (
-    <div className="grid grid-cols-[1fr_auto_1fr] items-start gap-10 px-2">
-      <div className="text-left ml-0 lg:ml-[347px]">
-        <div className="text-[14px] font-semibold text-[#0A0C0F] mb-3">
-          Check-in
-        </div>
-        {checkInTime && (
-          <div className="text-[13px] font-medium text-[#0A0C0F] leading-none">
+    <div className="grid grid-cols-[auto_minmax(160px,1fr)_auto] items-start gap-6 max-[900px]:grid-cols-1 max-[900px]:gap-4">
+      <div className="text-left max-[900px]:text-center">
+        <div className={`whitespace-nowrap ${textHeading}`}>Check-in</div>
+        {hasTimeRow ? (
+          <div className={`mt-3 whitespace-nowrap ${textTime}`}>
             {checkInTime}
           </div>
-        )}
-        <div className="text-[10px] text-[#3D495C] mt-2">{checkInDate}</div>
-      </div>
-
-      <div className="flex flex-col items-center justify-center pt-7">
-        <div className="text-[9px] text-[#3D495C] mb-1">{totalStay}</div>
-        <div className="relative h-[1px] w-[158px] rounded-full bg-[#A7C0EC]">
-          <span className="absolute -top-[3px] left-0 h-[7px] w-[7px] rounded-full bg-[#2351A3]" />
-          <span className="absolute -top-[3px] right-0 h-[7px] w-[7px] rounded-full bg-[#2351A3]" />
+        ) : null}
+        <div
+          className={`whitespace-nowrap ${hasTimeRow ? "mt-1" : "mt-3"} ${textDate}`}
+        >
+          {checkInDate}
         </div>
       </div>
 
-      <div className="text-left">
-        <div className="text-[14px] font-semibold text-[#0A0C0F] mb-3">
-          Check-out
+      <div
+        className="flex flex-col items-center justify-start max-[900px]:pt-0"
+        style={{ paddingTop: hasTimeRow ? 32 : 22 }}
+      >
+        <div
+          className={`mb-1 whitespace-nowrap text-center ${textDate}`}
+        >
+          {totalStayDisplay}
         </div>
-        {checkOutTime && (
-          <div className="text-[13px] font-medium text-[#0A0C0F] leading-none">
+        <div className="relative h-px w-full min-w-[160px] rounded-full bg-[#A7C0EC]">
+          <span className="absolute -top-[4px] left-0 h-2 w-2 rounded-full bg-[#2351A3]" />
+          <span className="absolute -top-[4px] right-0 h-2 w-2 rounded-full bg-[#2351A3]" />
+        </div>
+      </div>
+
+      <div className="text-left max-[900px]:text-center">
+        <div className={`whitespace-nowrap ${textHeading}`}>Check-out</div>
+        {hasTimeRow ? (
+          <div className={`mt-3 whitespace-nowrap ${textTime}`}>
             {checkOutTime}
           </div>
-        )}
-        <div className="text-[10px] text-[#3D495C] mt-2">{checkOutDate}</div>
+        ) : null}
+        <div
+          className={`whitespace-nowrap ${hasTimeRow ? "mt-1" : "mt-3"} ${textDate}`}
+        >
+          {checkOutDate}
+        </div>
       </div>
     </div>
   );
@@ -135,7 +129,6 @@ function HotelBookingCard({
   onRequestReceiptPdf,
 }: {
   booking: HotelBookingCardItem;
-  /** Query string including "?", e.g. "?mode=hotels&status=all" — restored on back / in-app navigation */
   myBookingsSearch: string;
   onRequestReceiptPdf: (params: HotelListDownloadParams) => void;
 }) {
@@ -143,6 +136,7 @@ function HotelBookingCard({
   const isPending = booking.status === "Pending";
   const isExpired = booking.status === "Expired";
   const isCancelled = booking.status === "Cancelled";
+
   const [countdown, setCountdown] = useState(
     booking.countdown || { hours: "00", mins: "35", secs: "49" },
   );
@@ -182,60 +176,71 @@ function HotelBookingCard({
   return (
     <div
       className={[
-        "relative rounded-[16px] border border-[#E4E4E7] bg-white overflow-hidden transition",
+        `${FIGMA_INTER} relative w-full max-w-[1168px] overflow-hidden rounded-[16px] border-[1.5px] bg-white shadow-sm transition`,
         isExpired || isCancelled ? "opacity-60 [filter:grayscale(80%)]" : "",
+        isExpired ? "bg-[#F2F2F3]" : "bg-white",
       ].join(" ")}
       style={{
-        maxWidth: "1168px",
+        borderColor: "#E4E4E7",
         width: "100%",
+        maxWidth: "1168px",
       }}
     >
-      <div className="absolute right-4 top-4 z-10 sm:right-5">
-        <StatusPill status={booking.status} />
-      </div>
+      {/* Top section */}
+      <div className="relative px-5 pb-4 pt-5 max-[640px]:pt-4">
+        <div className="absolute right-5 top-5 flex flex-wrap items-center justify-end gap-2 max-[640px]:static max-[640px]:mb-3">
+          <TripCategoryPill label="Hotel" />
+          <StatusPill status={booking.status} />
+        </div>
 
-      <div className="px-4 pt-10 pb-4">
-        <StayTimeline
-          checkInTime={booking.checkInTime}
-          checkOutTime={booking.checkOutTime}
-          totalStay={booking.totalStay}
-          checkInDate={booking.checkInDate}
-          checkOutDate={booking.checkOutDate}
-        />
+        {/**
+         * Right padding reserves room for the pills in the top-right,
+         * which shifts the centered Check-in / Check-out block slightly left
+         * to match the Figma layout.
+         */}
+        <div className="mx-auto w-full max-w-[720px] pr-[180px] max-[900px]:pr-0 max-[640px]:max-w-none">
+          <StayTimeline
+            checkInTime={booking.checkInTime}
+            checkOutTime={booking.checkOutTime}
+            totalStay={booking.totalStay || ""}
+            checkInDate={booking.checkInDate}
+            checkOutDate={booking.checkOutDate}
+          />
+        </div>
       </div>
 
       <CardDivider />
 
-      <div className="px-4 py-3 grid grid-cols-[1.5fr_.6fr_.45fr] gap-6 items-start">
+      {/* Details section */}
+      <div className="grid grid-cols-[1.7fr_.65fr_.65fr] items-start gap-8 px-5 py-4 max-[900px]:grid-cols-1 max-[900px]:gap-4">
         <div>
-          <div className="flex items-center gap-1 mb-1">
-            <span className="text-[14px] font-medium text-[#0A0C0F] leading-none">
-              {booking.hotelName}
-            </span>
+          <div className="flex items-center gap-1">
+            <span className={textHotelName}>{booking.hotelName}</span>
+
             {booking.starRating
               ? Array.from({ length: booking.starRating }).map((_, i) => (
-                <img key={i} src={FilledStar} alt="star" className="w-3 h-3" />
-              ))
+                  <img
+                    key={i}
+                    src={FilledStar}
+                    alt="star"
+                    className="h-3 w-3"
+                  />
+                ))
               : null}
           </div>
-          <div className="text-[10px] text-[#3D495C] mt-2 leading-[14px]">
-            {booking.address}
-          </div>
+
+          <div className={`mt-1.5 ${textAddress}`}>{booking.address}</div>
         </div>
 
         <div>
-          <div className="text-[10px] text-[#3D495C] mb-1">Rooms</div>
-          <div className="text-[14px] font-medium text-[#0A0C0F] leading-none">
-            {booking.roomLabel}
-          </div>
+          <div className={`mb-1.5 ${textLabel}`}>Rooms</div>
+          <div className={textValue}>{booking.roomLabel || "—"}</div>
         </div>
 
         <div>
-          <div className="text-[10px] text-[#3D495C] mb-1">
-            Booking ref. number
-          </div>
-          <div className="text-[14px] font-medium text-[#0A0C0F] leading-none break-all">
-            {booking.bookingRef}
+          <div className={`mb-1.5 ${textLabel}`}>Booking ref. number</div>
+          <div className={`break-all ${textValue}`}>
+            {booking.bookingRef || "—"}
           </div>
         </div>
       </div>
@@ -243,83 +248,78 @@ function HotelBookingCard({
       {booking.cancellationDeadline &&
         booking.status === "Confirmed" &&
         !isCancelled && (
+          <>
+            <CardDivider />
+            <div className="px-5 py-3">
+              <div className={textDate}>
+                <span className="font-semibold text-[#0A0C0F]">
+                  Free cancellation until:
+                </span>{" "}
+                {booking.cancellationDeadline}
+              </div>
+            </div>
+          </>
+        )}
+
+      {isPending ? (
         <>
           <CardDivider />
-          <div className="px-4 py-3">
-            <div className="text-[12px] text-[#3D495C]">
-              <span className="font-semibold text-[#0A0C0F]">Free cancellation until:</span>{" "}
-              {booking.cancellationDeadline}
+
+          <div className="flex flex-wrap items-center justify-between gap-4 px-5 py-3 max-[640px]:flex-col max-[640px]:items-stretch">
+            <div className={`flex flex-wrap items-center gap-2 ${textValue}`}>
+              {countdown.hours !== "00" && (
+                <>
+                  <span className="rounded-lg bg-[#FFB8C4] px-2 py-1 text-[#EA0029]">
+                    {countdown.hours}
+                  </span>
+                  <span className="text-[#EA0029]">:</span>
+                </>
+              )}
+
+              <span className="rounded-lg bg-[#FFB8C4] px-2 py-1 text-[#EA0029]">
+                {countdown.mins}
+              </span>
+
+              <span className="text-[#EA0029]">:</span>
+
+              <span className="rounded-lg bg-[#FFB8C4] px-2 py-1 text-[#EA0029]">
+                {countdown.secs}
+              </span>
+
+              <span className="ml-2 text-[#3D495C]">
+                Until your booking expires
+              </span>
             </div>
+
+            <Button
+              type="button"
+              className={`text-[#F2F2F3] ${textBtn} max-[640px]:w-full`}
+              style={{
+                background:
+                  "linear-gradient(91.86deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                minWidth: "unset",
+                borderRadius: "100px",
+                padding: "10px 28px",
+              }}
+              overrideClasses
+            >
+              Pay now
+            </Button>
           </div>
         </>
-      )}
-
-      {(isPending || isExpired) && <CardDivider />}
-
-      {isPending && (
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-[13px] font-medium text-[#3D495C]">
-            <span className="rounded-[6px] bg-[#FFB8C4] px-1.5 py-1 font-mono text-[#EA0029] text-[12px] leading-none">
-              {countdown.hours}
-            </span>
-            <span className="rounded-[6px] bg-[#FFB8C4] px-1.5 py-1 font-mono text-[#EA0029] text-[12px] leading-none">
-              {countdown.mins}
-            </span>
-            <span className="rounded-[6px] bg-[#FFB8C4] px-1.5 py-1 font-mono text-[#EA0029] text-[12px] leading-none">
-              {countdown.secs}
-            </span>
-            <span>Until your booking expires</span>
-          </div>
-
-          <Button
-            type="button"
-            className="text-[#F2F2F3] text-[14px] font-semibold"
-            style={{
-              background:
-                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-              width: "126px",
-              height: "37px",
-              borderRadius: "100px",
-            }}
-            overrideClasses
-          >
-            Pay now
-          </Button>
-        </div>
-      )}
-
-      {isExpired && (
-        <div className="px-4 py-3 flex items-center justify-between gap-4">
-          <div className="text-[13px] font-medium text-[#3D495C]">
-            This booking has expired!
-          </div>
-
-          <Button
-            type="button"
-            disabled
-            className="text-[#F2F2F3] text-[14px] font-semibold opacity-50 cursor-not-allowed"
-            style={{
-              background: "#2351A3",
-              width: "109px",
-              height: "37px",
-              borderRadius: "100px",
-            }}
-            overrideClasses
-          >
-            Pay now
-          </Button>
-        </div>
-      )}
+      ) : null}
 
       <CardDivider />
 
-      <div className="px-4 py-3 flex items-center justify-between text-[13px] font-medium">
-        <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7] gap-0">
+      {/* Actions */}
+      <div className="flex items-center justify-between px-5 py-3 max-[768px]:flex-col max-[768px]:items-start max-[768px]:gap-3">
+        <div className="flex flex-wrap items-center divide-x divide-[#E4E4E7] gap-0 max-[768px]:divide-x-0 max-[768px]:gap-4">
           {isCancelled && (
             <>
-              <span className="pr-4 text-[12px] text-[#64748B]">
+              <span className={`pr-4 text-[#3D495C] ${textStatusMsg}`}>
                 This reservation was cancelled.
               </span>
+
               <Link
                 to="/customer-support"
                 className={`${actionLinkClass} px-4`}
@@ -328,24 +328,34 @@ function HotelBookingCard({
               </Link>
             </>
           )}
+
           {booking.status === "Confirmed" && !isCancelled && (
             <>
               <Link
                 to="/hotel-booking-detail"
                 onClick={markExpectMyBookingsQueryRestore}
                 state={{
-                  bookingReferenceId: booking.bookingRef,
-                  searchKey: booking.searchKey || booking.bookingRef,
+                  bookingReferenceId:
+                    booking.bookingRef && booking.bookingRef !== "N/A"
+                      ? booking.bookingRef
+                      : undefined,
+                  searchKey:
+                    booking.searchKey ||
+                    (booking.bookingRef && booking.bookingRef !== "N/A"
+                      ? booking.bookingRef
+                      : undefined),
                   bookingKey: booking.bookingKey || booking.id,
                   myBookingsSearch,
+                  fallbackBooking: booking,
                 }}
                 className={`${actionLinkClass} pr-4`}
               >
                 View details
               </Link>
+
               <button
                 type="button"
-                className={`${actionLinkClass} px-4 bg-transparent border-0 p-0 font-inherit text-left`}
+                className={`${actionLinkClass} border-0 bg-transparent px-4 text-left font-inherit`}
                 onClick={() =>
                   onRequestReceiptPdf({
                     bookingReferenceId: booking.bookingRef,
@@ -356,49 +366,31 @@ function HotelBookingCard({
               >
                 Download receipt
               </button>
+
               <Link
                 to="/customer-support"
                 className={`${actionLinkClass} px-4`}
               >
                 Request changes
               </Link>
-              {(() => {
-                // const isPastCancellationDeadline =
-                //   booking.cancellationDeadlineDate &&
-                //   new Date() > new Date(booking.cancellationDeadlineDate);
-                // if (isPastCancellationDeadline) {
-                //   return (
-                //     <Tooltip title="This booking can't be cancelled">
-                //       <span className="inline-flex items-center pl-4 cursor-not-allowed text-[#98A4B3]">
-                //         <span className="font-medium">Cancel booking</span>
-                //         <InfoCircleOutlined
-                //           className="ml-1 text-[#98A4B3]"
-                //           style={{ fontSize: 14 }}
-                //         />
-                //       </span>
-                //     </Tooltip>
-                //   );
-                // }
-                return (
-                  <Link
-                    to="/hotel-cancellation"
-                    onClick={markExpectMyBookingsQueryRestore}
-                    state={{
-                      bookingReferenceId: booking.bookingRef,
-                      hotelName: booking.hotelName,
-                      bookingKey: booking.bookingKey || booking.id,
-                      cancellationDeadline: booking.cancellationDeadline,
-                      cancellationDeadlineDate: booking.cancellationDeadlineDate,
-                      totalPaid: booking.totalPaid,
-                      currency: booking.currency,
-                      myBookingsSearch,
-                    }}
-                    className={`${actionLinkClass} pl-4 text-[#EA0029]`}
-                  >
-                    Cancel booking
-                  </Link>
-                );
-              })()}
+
+              <Link
+                to="/hotel-cancellation"
+                onClick={markExpectMyBookingsQueryRestore}
+                state={{
+                  bookingReferenceId: booking.bookingRef,
+                  hotelName: booking.hotelName,
+                  bookingKey: booking.bookingKey || booking.id,
+                  cancellationDeadline: booking.cancellationDeadline,
+                  cancellationDeadlineDate: booking.cancellationDeadlineDate,
+                  totalPaid: booking.totalPaid,
+                  currency: booking.currency,
+                  myBookingsSearch,
+                }}
+                className={`${actionLinkClass} pl-4 text-[#FF5270]`}
+              >
+                Cancel booking
+              </Link>
             </>
           )}
 
@@ -407,22 +399,36 @@ function HotelBookingCard({
               to="/hotel-booking-detail"
               onClick={markExpectMyBookingsQueryRestore}
               state={{
-                bookingReferenceId: booking.bookingRef,
-                searchKey: booking.searchKey || booking.bookingRef,
+                bookingReferenceId:
+                  booking.bookingRef && booking.bookingRef !== "N/A"
+                    ? booking.bookingRef
+                    : undefined,
+                searchKey:
+                  booking.searchKey ||
+                  (booking.bookingRef && booking.bookingRef !== "N/A"
+                    ? booking.bookingRef
+                    : undefined),
                 bookingKey: booking.bookingKey || booking.id,
                 myBookingsSearch,
+                fallbackBooking: booking,
               }}
               className={actionLinkClass}
             >
               View details
             </Link>
           )}
+
+          {isExpired && !isCancelled && (
+            <span className={`pl-4 text-[#C2CAD6] ${textStatusMsg}`}>
+              This booking has expired!
+            </span>
+          )}
         </div>
 
         <button
           type="button"
           onClick={() => setShareModalOpen(true)}
-          className={`${actionLinkClass} bg-transparent border-none p-0`}
+          className={`${actionLinkClass} border-none bg-transparent p-0 max-[768px]:self-end`}
         >
           Share
         </button>
@@ -445,9 +451,15 @@ function HotelBookingCard({
 export default function UserHotelBookingsListing({
   filterStatus,
   bookings = [],
+  searchQuery = "",
+  dateFrom = "",
+  dateTo = "",
 }: {
   filterStatus: "All" | BookingStatus;
   bookings?: HotelBookingCardItem[];
+  searchQuery?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const [searchParams] = useSearchParams();
   const [receiptDownload, setReceiptDownload] =
@@ -465,13 +477,26 @@ export default function UserHotelBookingsListing({
   const list = useMemo(() => {
     if (!bookings || !Array.isArray(bookings) || bookings.length === 0)
       return [];
-    if (filterStatus === "All") return bookings;
-    return bookings.filter((b) => b?.status === filterStatus);
-  }, [bookings, filterStatus]);
+
+    let rows =
+      filterStatus === "All"
+        ? bookings
+        : bookings.filter((b) => b?.status === filterStatus);
+
+    rows = rows.filter(
+      (b) =>
+        hotelBookingMatchesQuery(b, searchQuery) &&
+        hotelBookingInDateRange(b, dateFrom, dateTo),
+    );
+
+    return rows;
+  }, [bookings, filterStatus, searchQuery, dateFrom, dateTo]);
 
   if (!list.length) {
     return (
-      <div className="mt-6 rounded-xl border border-dashed border-[#E4E4E7] bg-white p-8 text-center text-[14px] text-[#3D495C]">
+      <div
+        className={`${FIGMA_INTER} mt-6 rounded-xl border border-dashed border-[#E4E4E7] bg-white p-8 text-center text-[14px] font-medium leading-normal tracking-normal text-[#3D495C]`}
+      >
         No hotel bookings found.
       </div>
     );
@@ -479,7 +504,7 @@ export default function UserHotelBookingsListing({
 
   return (
     <>
-      <div className="mt-6 space-y-4 flex flex-col items-center">
+      <div className="mt-6 flex flex-col items-center space-y-6">
         {list.map((b) => (
           <div key={b.id} className="w-full max-w-[1168px]">
             <HotelBookingCard
@@ -490,6 +515,7 @@ export default function UserHotelBookingsListing({
           </div>
         ))}
       </div>
+
       {receiptDownload ? (
         <HotelBookingETicketSetion
           listDownload={receiptDownload}

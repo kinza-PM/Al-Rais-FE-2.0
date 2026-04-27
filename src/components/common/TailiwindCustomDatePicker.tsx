@@ -21,6 +21,8 @@ type DatePickerProps = {
   /** When set, dates after this calendar day are disabled (e.g. birth date or booking window end). */
   maxDate?: Date | null;
   tooltip?: string | null;
+  /** When true, the calendar toggle button is not rendered (input click still opens the popup). */
+  hideCalendarButton?: boolean;
 };
 
 const WEEKDAY_LABELS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
@@ -112,6 +114,7 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
   minDate = null,
   maxDate = null,
   tooltip = null,
+  hideCalendarButton = false,
 }) => {
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<Date>(() => value ?? new Date());
@@ -280,27 +283,29 @@ const TailiwindCustomDatePicker: React.FC<DatePickerProps> = ({
             }`
             }`}
         />
-        <button
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-label="Open calendar"
-          className={`absolute inset-y-0 ${showCalendarIconRight ? "right-3" : "left-3"
-            } flex items-center`}
-        >
-          {buttonIconSrc ? (
-            <img src={Calendar} alt="calendar" className="w-[16px] h-[16px]" />
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24">
-              <path
-                d="M7 2v2M17 2v2M3 10h18M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"
-                stroke="#2351A3"
-                fill="none"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-              />
-            </svg>
-          )}
-        </button>
+        {!hideCalendarButton && (
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            aria-label="Open calendar"
+            className={`absolute inset-y-0 ${showCalendarIconRight ? "right-3" : "left-3"
+              } flex items-center`}
+          >
+            {buttonIconSrc ? (
+              <img src={Calendar} alt="calendar" className="w-[16px] h-[16px]" />
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24">
+                <path
+                  d="M7 2v2M17 2v2M3 10h18M5 6h14a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z"
+                  stroke="#2351A3"
+                  fill="none"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                />
+              </svg>
+            )}
+          </button>
+        )}
         {tooltip && (
           <div
             className={`

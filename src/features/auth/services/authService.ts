@@ -10,6 +10,7 @@ import {
   confirmResetPassword,
 } from "aws-amplify/auth";
 import { VITE_USER_SERVICE_BASE_URL } from "../../../config/publicEnv";
+import { lookupEmailRegistration } from "../../../services/api/remoteUserService";
 import type {
   LoginForm,
   SignupForm,
@@ -564,15 +565,31 @@ export class AuthService {
   ): Promise<AuthResponse> {
     try {
       const identifier = forgotPasswordData.email.trim();
+      const isPhoneNumber = identifier.startsWith("+");
+
+      if (!isPhoneNumber) {
+        const lookup = await lookupEmailRegistration(identifier);
+        if (lookup.status === "not_registered") {
+          return {
+            success: false,
+            message: "No account found with this email address.",
+          };
+        }
+        if (lookup.status === "lookup_failed") {
+          return {
+            success: false,
+            message: lookup.message,
+          };
+        }
+      }
 
       await resetPassword({
         username: identifier, // Can be email or phone
       });
 
-      const isPhoneNumber = identifier.startsWith("+");
       const message = isPhoneNumber
-        ? "Password reset code sent to your phone!"
-        : "Password reset code sent to your email!";
+        ? "Password reset code sent to your phone. This code is valid for 5 minutes."
+        : "Password reset code sent to your email. This code is valid for 5 minutes.";
 
       return {
         success: true,
@@ -581,8 +598,20 @@ export class AuthService {
     } catch (error: unknown) {
       console.error("AuthService: forgotPassword error:", error);
       const errorObj = error as Record<string, unknown>;
+      const underlying = errorObj.underlyingError as
+        | Record<string, unknown>
+        | undefined;
+      const cognitoName =
+        (typeof errorObj.name === "string" && errorObj.name) ||
+        (underlying && typeof underlying.name === "string"
+          ? underlying.name
+          : undefined);
+
       // Handle known errors (user-facing)
-      if (errorObj.name === "UserNotFoundException") {
+      if (
+        cognitoName === "UserNotFoundException" ||
+        errorObj.name === "UserNotFoundException"
+      ) {
         return {
           success: false,
           message: "No account found with this email address.",
@@ -695,22 +724,40 @@ export class AuthService {
     } catch (error: unknown) {
       console.error("AuthService: resetPasswordWithCode error:", error);
       const errorObj = error as Record<string, unknown>;
+      const underlying = errorObj.underlyingError as
+        | Record<string, unknown>
+        | undefined;
+      const cognitoName =
+        (typeof errorObj.name === "string" && errorObj.name) ||
+        (underlying && typeof underlying.name === "string"
+          ? underlying.name
+          : undefined);
+
       // Handle known errors (user-facing)
-      if (errorObj.name === "CodeMismatchException") {
+      if (
+        cognitoName === "CodeMismatchException" ||
+        errorObj.name === "CodeMismatchException"
+      ) {
         return {
           success: false,
           message: "Invalid verification code. Please try again.",
         };
       }
 
-      if (errorObj.name === "ExpiredCodeException") {
+      if (
+        cognitoName === "ExpiredCodeException" ||
+        errorObj.name === "ExpiredCodeException"
+      ) {
         return {
           success: false,
           message: "Verification code has expired. Please request a new one.",
         };
       }
 
-      if (errorObj.name === "InvalidPasswordException") {
+      if (
+        cognitoName === "InvalidPasswordException" ||
+        errorObj.name === "InvalidPasswordException"
+      ) {
         return {
           success: false,
           message:

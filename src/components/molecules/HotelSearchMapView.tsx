@@ -19,6 +19,8 @@ import {
   HOTEL_LEAFLET_TILE_ATTRIBUTION_ESRI,
   HOTEL_LEAFLET_TILE_URL_ESRI_WORLD_STREET,
 } from "../../constants/hotelMapTiles";
+import { getHotelStayRoomNightDivisor } from "../../utils/hotelHelper";
+import type { HotelBookingParams } from "../../utils/hotelBookingParams";
 
 type HotelSearchMapViewProps = {
   hotels: Array<any>;
@@ -62,12 +64,19 @@ const buildHotelShareUrl = (
     }`;
 };
 
-const getMarkerPriceLabel = (hotel: any) => {
+const getMarkerPriceLabel = (
+  hotel: any,
+  bookingParams?: HotelBookingParams | null,
+) => {
   const firstRoom = hotel?.rooms?.[0];
   const currency = firstRoom?.roomRate?.currency || "PKR";
-  const price = Number(hotel?.totalPrice || firstRoom?.roomRate?.netAmount || 0);
+  const total = Number(
+    hotel?.totalPrice || firstRoom?.roomRate?.netAmount || 0,
+  );
+  const { divisor } = getHotelStayRoomNightDivisor(hotel, bookingParams ?? null);
+  const display = divisor > 0 ? total / divisor : total;
 
-  return `${currency} ${price.toLocaleString(undefined, {
+  return `${currency} ${display.toLocaleString(undefined, {
     minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })}`;
@@ -151,9 +160,16 @@ const renderStars = (rating: string | number | undefined) => {
   );
 };
 
-const getPreviewData = (hotel: any) => {
+const getPreviewData = (
+  hotel: any,
+  bookingParams?: HotelBookingParams | null,
+) => {
   const firstRoom = hotel.rooms?.[0];
-  const price = hotel.totalPrice || firstRoom?.roomRate?.netAmount || 0;
+  const total = Number(
+    hotel.totalPrice || firstRoom?.roomRate?.netAmount || 0,
+  );
+  const { divisor } = getHotelStayRoomNightDivisor(hotel, bookingParams ?? null);
+  const price = divisor > 0 ? total / divisor : total;
   const currency = firstRoom?.roomRate?.currency || "PKR";
   const roomName = firstRoom?.roomTypeName || "Superior Single Room";
   const meal = firstRoom?.ratePlan?.meal || "";
@@ -187,7 +203,13 @@ const getPreviewData = (hotel: any) => {
   };
 };
 
-const HotelMapHoverCard = ({ hotel }: { hotel: any }) => {
+const HotelMapHoverCard = ({
+  hotel,
+  // bookingParams,
+}: {
+  hotel: any;
+  bookingParams?: HotelBookingParams | null;
+}) => {
   const imageUrl = hotel.propertyInfo?.imageUrl || HotelImage;
   const hotelName = hotel.propertyInfo?.hotelName || "Hotel";
   const starRating = hotel.propertyInfo?.starRating || 0;
@@ -749,7 +771,10 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
                     {validHotels.map((hotel) => {
                       const lat = parseFloat(hotel.propertyInfo.latitude);
                       const lng = parseFloat(hotel.propertyInfo.longitude);
-                      const markerLabel = getMarkerPriceLabel(hotel);
+                      const markerLabel = getMarkerPriceLabel(
+                        hotel,
+                        bookingParams ?? null,
+                      );
                       const isActive = activeHotelKey === hotel.hotelKey;
 
                       if (Number.isNaN(lat) || Number.isNaN(lng)) return null;
@@ -772,7 +797,10 @@ const HotelSearchMapView: React.FC<HotelSearchMapViewProps> = React.memo(
                             interactive={true}
                             className="hotel-map-custom-tooltip"
                           >
-                            <HotelMapHoverCard hotel={hotel} />
+                            <HotelMapHoverCard
+                              hotel={hotel}
+                              bookingParams={bookingParams ?? null}
+                            />
                           </Tooltip>
                         </Marker>
                       );

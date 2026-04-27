@@ -71,7 +71,7 @@ export default function HotelPriceBreakdown({
   );
 
   return (
-    <div className="mt-4 max-w-[576px] rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm">
+    <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm">
       <div className="flex items-center justify-between border-b-[1.5px] border-[#E4E4E7] px-4 py-3">
         <div className="text-[16px] font-semibold text-[#0A0C0F]">
           Price breakdown
@@ -86,9 +86,9 @@ export default function HotelPriceBreakdown({
         ].join(" ")}
       >
         <div className="overflow-hidden">
-          <div className="px-4 py-3 text-[13px] leading-6">
+          <div className="px-4 py-3 text-[14px] font-normal leading-6">
             {roomLines.length === 0 ? (
-              <div className="text-[12px] text-[#3D495C]">
+              <div className="text-[14px] font-normal text-[#3D495C]">
                 No room rate details available.
               </div>
             ) : (
@@ -100,7 +100,7 @@ export default function HotelPriceBreakdown({
                   const roomTotal = line.netAmount * line.count;
                   return (
                     <div className="mt-3" key={line.idx}>
-                      <div className="text-[12px] font-medium text-[#0A0C0F]">
+                      <div className="text-[14px] font-normal text-[#0A0C0F]">
                         {line.title}
                         {line.count > 1 ? (
                           <span className="font-normal text-[#3D495C]">
@@ -109,16 +109,16 @@ export default function HotelPriceBreakdown({
                           </span>
                         ) : null}
                       </div>
-                      <ul className="mt-1 space-y-1 pl-3 text-[12px]">
+                      <ul className="mt-1 space-y-1 pl-3 text-[14px] font-normal">
                         <li className="flex items-center justify-between">
                           <span className="text-[#3D495C]">Room total</span>
-                          <span className="font-semibold text-[#0A0C0F]">
+                          <span className="font-normal text-[#0A0C0F]">
                             {formatMoney(roomTotal, currency)}
                           </span>
                         </li>
                         {line.taxes.length > 0 && (
                           <>
-                            <li className="pt-0.5 text-[11px] text-[#3D495C]">
+                            <li className="pt-0.5 text-[14px] font-normal text-[#3D495C]">
                               Taxes & fees (this room type)
                             </li>
                             {line.taxes.map((tax, ti) => {
@@ -135,7 +135,7 @@ export default function HotelPriceBreakdown({
                                     {tax.name || "Tax"}
                                     {tax.included ? " (incl.)" : ""}
                                   </span>
-                                  <span className="font-semibold text-[#0A0C0F]">
+                                  <span className="font-normal text-[#0A0C0F]">
                                     {formatMoney(amt, currency)}
                                   </span>
                                 </li>
@@ -154,7 +154,7 @@ export default function HotelPriceBreakdown({
                     <div className="text-[14px] font-semibold text-[#0A0C0F]">
                       Taxes & fees (all rooms)
                     </div>
-                    <ul className="mt-2 space-y-1 pl-3 text-[12px]">
+                    <ul className="mt-2 space-y-1 pl-3 text-[14px] font-normal">
                       {aggregatedTaxes.map((tax, ai) => (
                         <li
                           key={`${tax.name}-${ai}`}
@@ -164,14 +164,14 @@ export default function HotelPriceBreakdown({
                             {tax.name || "Tax"}
                             {tax.included ? " (incl.)" : ""}
                           </span>
-                          <span className="font-semibold text-[#0A0C0F]">
+                          <span className="font-normal text-[#0A0C0F]">
                             {formatMoney(tax.amount ?? 0, currency)}
                           </span>
                         </li>
                       ))}
                       <li className="flex items-center justify-between pt-1">
                         <span className="text-[#3D495C]">Taxes subtotal</span>
-                        <span className="font-semibold text-[#0A0C0F]">
+                        <span className="font-normal text-[#0A0C0F]">
                           {formatMoney(totalTaxAmount, currency)}
                         </span>
                       </li>
@@ -187,8 +187,8 @@ export default function HotelPriceBreakdown({
       {open && <div className="h-[1.5px] bg-[#E4E4E7]" />}
 
       <div className="flex items-center justify-between px-4 py-2">
-        <span className="text-[12px] text-[#3D495C]">Total</span>
-        <span className="text-[14px] font-semibold text-[#0A0C0F]">
+        <span className="text-[14px] font-normal text-[#3D495C]">Total</span>
+        <span className="text-[16px] font-normal text-[#0A0C0F]">
           {formatMoney(totalPrice, currency)}
         </span>
       </div>

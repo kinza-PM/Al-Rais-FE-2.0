@@ -21,6 +21,14 @@
   ) !important;
 }
 
+.flight-cta-button {
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -85,6 +93,9 @@ input[type="number"] {
 .header-labels-common {
   font-size: 12px;
   color: var(--black-200);
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  line-height: 1.2;
 }
 
 .header-input-common:focus,
@@ -106,6 +117,60 @@ input[type="number"] {
   font-weight: normal !important;
   font-size: 14px !important;
   color: #0f172a !important;
+  font-family: Inter, sans-serif !important;
+}
+
+/* Flight module typography baseline (match Figma: Inter-based). */
+.flightDetailTemplateWrap,
+.flight-search-page,
+.flightDetailCards,
+.flight_detail_card,
+.flight-details-popup,
+.flight-details-modal-grid,
+.flight-booking-grid {
+  font-family: Inter, sans-serif;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.flight-details-popup,
+.flight-details-popup .ant-modal-content,
+.flight-details-popup .ant-modal-header,
+.flight-details-popup .ant-modal-title,
+.flight-details-popup .ant-modal-body,
+.flight-details-popup :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    div,
+    button,
+    label,
+    strong,
+    small,
+    a,
+    li,
+    td,
+    th,
+    input,
+    textarea,
+    select,
+    .ant-typography,
+    .ant-btn,
+    .ant-radio-wrapper,
+    .ant-radio-button-wrapper,
+    .ant-radio-button-label
+  ) {
+  font-family: Inter, sans-serif !important;
+}
+
+.flight-details-popup {
+  font-synthesis: none;
 }
 
 .radioButtonGroup {
@@ -229,12 +294,13 @@ input[type="number"] {
   border-radius: 100px;
   background: linear-gradient(90.59deg, #5383da 0%, #2351a3 50%, #081326 100%);
   color: #f2f2f3;
-  font-size: 16px;
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
   min-height: 47px;
   height: 47px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.5px;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
 }
 
 .bottomHeaderSetting {
@@ -315,40 +381,76 @@ input[type="number"] {
   padding-top: 18px;
 }
 
-/* Flight Search Detail: input alignment only (NOT home page) */
+/* Flight Search Detail: clean two-row grid that mirrors the hotel search form.
+   Row 1: Trip | Cabin Class | From | Swap | To
+   Row 2: Travellers | Departure | (empty) | (empty) | Search
+   Spans the full width of the form container (just like the hotel search form),
+   with the Search button bottom-aligned to the Row 2 inputs. */
 .flight-search-page .flight-search-detail-inputs {
   width: 100%;
-  /* Match results row width (do not hard-cap to 1464) */
   max-width: 100%;
   display: grid;
+  grid-template-columns: 1fr;
   column-gap: 16px;
-  row-gap: 12px;
+  row-gap: 14px;
   align-items: end;
   box-sizing: border-box;
 }
 
-.flight-search-page .flight-search-detail-inputs .flight-search-field {
+.flight-search-page
+  .flight-search-detail-inputs
+  .flight-search-field:not(.flight-search-field--route) {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+/* Submit cell: no label, so we just bottom-align the button to the row baseline. */
+.flight-search-page .flight-search-detail-inputs .flight-search-field--submit {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-end;
   min-width: 0;
 }
 
+.flight-search-page .flight-search-field--submit .searchFilterBtn {
+  margin: 0 !important;
+  align-self: flex-end;
+}
+
 /* IMPORTANT: TravelRoutePicker renders multiple siblings (From div, swap button, To div).
-   On detail page, we want those siblings to become grid items (so they don't stack). */
-.flight-search-page .flight-search-field--route {
+   On detail page, we want those siblings to become grid items (so they don't stack).
+   This rule MUST keep `display: contents` so :first-of-type / :last-of-type targeting
+   below works on the inputs grid directly. */
+.flight-search-page
+  .flight-search-detail-inputs
+  > .flight-search-field--route {
   display: contents;
 }
 
+/* Ensure all input fields share the same height baseline. */
+.flight-search-page .flight-search-detail-inputs .ant-select-selector,
+.flight-search-page .flight-search-detail-inputs .header-input-common,
+.flight-search-page .flight-search-detail-inputs input[type="text"],
+.flight-search-page .flight-search-detail-inputs .ant-picker {
+  min-height: 47px;
+}
+
 @media (min-width: 1024px) {
-  /* Desktop grid: proportional columns so the bar uses full width (like hotel search). */
+  /* Desktop grid: 5 equal-width columns (Trip/Cabin/From/To/Search) plus a fixed
+     56px Swap track. All inputs and the Search button get the same width and
+     stretch evenly across the full container width. */
   .flight-search-page .flight-search-detail-inputs {
     grid-template-columns:
       minmax(0, 1fr)
       minmax(0, 1fr)
-      minmax(0, 1.35fr)
+      minmax(0, 1fr)
       56px
-      minmax(0, 1.35fr);
+      minmax(0, 1fr);
     grid-template-areas:
       "trip cabin from swap to"
-      "travellers departure . . search";
+      "travellers departure return . search";
   }
 
   .flight-search-page .flight-search-field--trip {
@@ -367,57 +469,87 @@ input[type="number"] {
     grid-area: departure;
   }
 
+  .flight-search-page .flight-search-field--return {
+    grid-area: return;
+  }
+
   .flight-search-page .flight-search-field--submit {
     grid-area: search;
     justify-self: end;
-    align-self: center;
+    align-self: end;
   }
 
-  /* Map TravelRoutePicker internal nodes into grid areas */
+  /* Map TravelRoutePicker internal nodes into grid areas.
+     NOTE: We must use descendant combinators (not >) because the route picker's
+     wrapper has `display: contents`, which makes its children grid items but
+     keeps them as DOM descendants — direct-child combinators would not match. */
   .flight-search-page
     .flight-search-detail-inputs
-    > .fromToSelectWidth:first-of-type {
+    .flight-search-field--route
+    .fromToSelectWidth:first-of-type {
     grid-area: from;
   }
 
-  .flight-search-page .flight-search-detail-inputs > .fromToBtn {
+  .flight-search-page
+    .flight-search-detail-inputs
+    .flight-search-field--route
+    .fromToSelectWidth:last-of-type {
+    grid-area: to;
+  }
+
+  /* Swap button: centered between From and To, sitting on the input baseline.
+     Override the inline margin-top set by TravelRoutePicker and the mx-2 utility
+     class so it sits exactly in the middle of its 56px grid track. */
+  .flight-search-page
+    .flight-search-detail-inputs
+    .flight-search-field--route
+    .fromToBtn {
     grid-area: swap;
     justify-self: center;
-    align-self: center;
+    align-self: end;
     width: 48px !important;
     height: 48px !important;
     min-width: 48px !important;
     max-width: 48px !important;
     margin: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 
+  /* Force From/To inputs to fill their grid columns (override the global
+     `.fromToSelectWidth { max-width: 396px }` rule defined elsewhere). */
   .flight-search-page
     .flight-search-detail-inputs
-    > .fromToSelectWidth:last-of-type {
-    grid-area: to;
-  }
-
-  .flight-search-page .flight-search-detail-inputs > .fromToSelectWidth {
-    width: 100%;
-    max-width: 100%;
+    .flight-search-field--route
+    .fromToSelectWidth {
+    width: 100% !important;
+    max-width: 100% !important;
     min-width: 0;
   }
 
-  /* Divider aligns with inputs block */
+  /* Divider spans the full form container width. */
   .flight-search-page .flight-search-divider {
+    width: 100%;
     max-width: 100%;
   }
 }
 
-/* Ultra-wide: same proportional stretch (no fixed caps that leave dead space). */
+/* Ultra-wide: keep the form full-width with the same equal-column grid. */
 @media (min-width: 1600px) {
   .flight-search-page .flight-search-detail-inputs {
     grid-template-columns:
       minmax(0, 1fr)
       minmax(0, 1fr)
-      minmax(0, 1.35fr)
+      minmax(0, 1fr)
       56px
-      minmax(0, 1.35fr);
+      minmax(0, 1fr);
+    max-width: 100%;
+  }
+
+  .flight-search-page .flight-search-divider {
+    max-width: 100%;
   }
 }
 
@@ -697,11 +829,11 @@ input[type="number"] {
 }
 
 .flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn {
-  font-family: "Inter", sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  line-height: 1;
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1 !important;
   padding: 14px 25px;
   border-radius: 100px;
   cursor: pointer;
@@ -715,7 +847,7 @@ input[type="number"] {
   background: #ffffff;
   color: var(--primary-300, #2351a3);
   border: 1.5px solid var(--primary-300, #2351a3);
-  font-size: 14px;
+  font-size: 16px !important;
   font-weight: 600;
   letter-spacing: 0.4px;
   padding: 10px 2;
@@ -788,12 +920,12 @@ input[type="number"] {
   }
 
   .flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn-primary {
-    font-size: 14px;
+    font-size: 16px !important;
     padding: 12px 18px;
   }
 
   .flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn-outline {
-    font-size: 13px;
+    font-size: 16px !important;
     padding: 9px 14px;
   }
 }
@@ -819,7 +951,7 @@ input[type="number"] {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    font-size: 14px;
+    font-size: 16px !important;
     padding: 12px 18px;
   }
 }
@@ -1006,8 +1138,12 @@ input[type="number"] {
     column-gap: 12px;
   }
 
-  /* Route picker: keep its default stacking rules, but avoid weird margins */
-  .flight-search-page .flight-search-detail-inputs > .fromToBtn {
+  /* Route picker: keep its default stacking rules, but avoid weird margins.
+     Use descendant combinator since the route wrapper has `display: contents`. */
+  .flight-search-page
+    .flight-search-detail-inputs
+    .flight-search-field--route
+    .fromToBtn {
     margin: 8px auto 0 !important;
   }
 
@@ -1428,9 +1564,11 @@ input[type="number"] {
   min-width: 0;
   height: 50px;
   border-radius: 999px;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1;
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
   padding: 0 28px;
   display: inline-flex;
   align-items: center;
@@ -2884,7 +3022,7 @@ input[type="number"] {
     width: auto !important;
     min-width: 118px;
     height: 43px !important;
-    font-size: 13px !important;
+    font-size: 16px !important;
     padding: 10px 16px !important;
   }
 }
@@ -2984,7 +3122,7 @@ input[type="number"] {
   .flightDetailCards.flightDetailRoundTripCards .StartingPrice button {
     min-width: 112px;
     height: 42px !important;
-    font-size: 13px !important;
+    font-size: 16px !important;
   }
 }
 
@@ -3490,8 +3628,11 @@ p.pricingDetailFeatureP {
   border-radius: 100px;
   border: none;
   color: #fff;
-  font-size: 14px;
-  font-weight: 600;
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
   cursor: pointer;
   background: linear-gradient(
     90.59deg,
@@ -3602,7 +3743,7 @@ p.pricingDetailFeatureP {
   max-height: 80vh;
   overflow-y: auto;
   /* height: fit-content; */
-  border-top: 1px solid #e5e7eb;
+  border-top: none;
 }
 
 .sub_inner {
@@ -3921,12 +4062,50 @@ img:hover {
   border: none !important;
 }
 
+/* Flight filters: alternate card surface like Figma (gray/white/gray/white...). */
+.flight-search-filter-root .flight-filter-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Default surface (white). */
+.flight-search-filter-root .flight-filter-block .collapseStyle,
+.flight-search-filter-root .flight-filter-block .ant-collapse .ant-collapse-header,
+.flight-search-filter-root .flight-filter-block .ant-collapse .ant-collapse-content,
+.flight-search-filter-root .flight-filter-block .ant-collapse .ant-collapse-content-box {
+  background: #ffffff !important;
+}
+
+/* Alternating surface (light gray). */
+.flight-search-filter-root
+  .flight-filter-blocks
+  > .flight-filter-block:nth-child(odd)
+  .collapseStyle,
+.flight-search-filter-root
+  .flight-filter-blocks
+  > .flight-filter-block:nth-child(odd)
+  .ant-collapse
+  .ant-collapse-header,
+.flight-search-filter-root
+  .flight-filter-blocks
+  > .flight-filter-block:nth-child(odd)
+  .ant-collapse
+  .ant-collapse-content,
+.flight-search-filter-root
+  .flight-filter-blocks
+  > .flight-filter-block:nth-child(odd)
+  .ant-collapse
+  .ant-collapse-content-box {
+  background: #F2F2F3 !important;
+}
+
 .stopsCollapse .collapseStyle,
 .pricePerSeatCollapse .collapseStyle,
 .refundableFilterCollapse .collapseStyle,
 .flightTimeFilter .collapseStyle,
 .timeCollapse .collapseStyle {
-  border: 1px solid #e4e4e7 !important;
+  border: 1px solid #C2CAD6 !important;
   background: #ffffff !important;
   box-shadow: none !important;
 }
@@ -3967,12 +4146,13 @@ img:hover {
   align-self: flex-end;
   padding: 14px 28px !important;
   color: #f2f2f3 !important;
+  font-family: Inter, sans-serif !important;
   font-size: 16px !important;
   min-height: 47px !important;
   height: 47px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.5px !important;
   background: linear-gradient(
     90.59deg,
     #5383da 0%,
@@ -4082,6 +4262,43 @@ img:hover {
   outline: none !important;
   border-color: #5383da !important;
   box-shadow: 0 0 0 2px rgba(83, 131, 218, 0.2) !important;
+}
+
+.flight-traveler-details-grid {
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.flight-contact-person-grid {
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.flight-traveler-details-grid > * {
+  min-width: 0;
+  width: 100%;
+  max-width: 100% !important;
+}
+
+.flight-contact-person-grid > * {
+  min-width: 0;
+  width: 100%;
+  max-width: 100% !important;
+}
+
+.flight-traveler-details-grid .custom-phone-wrapper {
+  width: 100%;
+}
+
+.flight-contact-person-grid .custom-phone-wrapper {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .flight-contact-person-grid,
+  .flight-traveler-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 
 .phone-input-error .react-international-phone-input {

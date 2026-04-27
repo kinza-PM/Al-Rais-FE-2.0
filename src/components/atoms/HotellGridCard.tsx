@@ -70,11 +70,12 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
       bestRoom,
       currency,
       price,
+      totalStayPrice,
       totalOriginalPrice: originalPrice,
       hasOffer,
       hasFreeCancellation,
       // availableRooms,
-    } = processHotelSearchListingData(hotel);
+    } = processHotelSearchListingData(hotel, bookingParams ?? null);
 
     const apiImages: string[] =
       hotel?.propertyInfo?.images
@@ -438,12 +439,12 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                     {currency} {price.toFixed(2)}
                   </span>
                   <span className="text-[12px] font-bold leading-none text-[#3D495C]">
-                    /Night
+                    /room/night
                   </span>
                 </div>
               </div>
               <HotelPriceSummaryTooltip
-                totalPrice={price}
+                totalPrice={totalStayPrice}
                 currency={currency}
                 taxes={aggregateHotelTaxesFromRoomArray(
                   Array.isArray(hotel?.rooms) && hotel.rooms.length > 0

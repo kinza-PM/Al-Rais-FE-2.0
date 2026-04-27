@@ -18,7 +18,7 @@ export function markExpectMyBookingsQueryRestore() {
   }
 }
 
-export type MyBookingsModeParam = "flights" | "hotels";
+export type MyBookingsModeParam = "all" | "flights" | "hotels" | "sightseeing";
 export type MyBookingsStatusParam =
   | "all"
   | "pending"
@@ -33,7 +33,7 @@ export function buildMyBookingsUrl(
   }> = {},
 ): string {
   const params = new URLSearchParams();
-  params.set("mode", opts.mode ?? "flights");
+  params.set("mode", opts.mode ?? "all");
   params.set("status", opts.status ?? "all");
   return `${MY_BOOKINGS_PATH}?${params.toString()}`;
 }

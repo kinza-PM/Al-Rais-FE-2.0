@@ -5,10 +5,13 @@ import Button from "../atoms/Button";
 type ConfirmationModalProps = {
   open: boolean;
   title: string;
+  subtitle?: string;
   description: string | ReactNode;
-  note?: string;
+  note?: string | ReactNode;
+  noteVariant?: "info" | "error";
   confirmText?: string;
   cancelText?: string;
+  showCancelButton?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
   loading?: boolean;
@@ -23,10 +26,13 @@ const modalOverlayStyles = {
 export default function ConfirmationModal({
   open,
   title,
+  subtitle = "Review before proceeding",
   description,
   note,
+  noteVariant = "info",
   confirmText = "Proceed",
   cancelText = "Cancel",
+  showCancelButton = true,
   onConfirm,
   onCancel,
   loading = false,
@@ -64,7 +70,9 @@ export default function ConfirmationModal({
         </div> */}
         <div style={{ display: "flex", flexDirection: "column", gap: 3, justifyContent: "center" }}>
           <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: "#111827" }}>{title}</p>
-          <p style={{ margin: 0, fontSize: 12, color: "#9CA3AF" }}>Review before proceeding</p>
+          {subtitle ? (
+            <p style={{ margin: 0, fontSize: 12, color: "#9CA3AF" }}>{subtitle}</p>
+          ) : null}
         </div>
       </div>
 
@@ -82,28 +90,36 @@ export default function ConfirmationModal({
 
       {note && (
         <div style={{
-          background: "#F0F6FF", borderRadius: 10, padding: "12px 14px",
-          marginBottom: 24, fontSize: 13, color: "#4B5563",
-          lineHeight: 1.6, borderLeft: "3px solid #2351A3",
+          background: noteVariant === "error" ? "#FFB8C4" : "#F0F6FF",
+          borderRadius: 10,
+          padding: "12px 14px",
+          marginBottom: 24,
+          fontSize: 13,
+          color: noteVariant === "error" ? "#ad152e" : "#4B5563",
+          lineHeight: 1.6,
+          borderLeft:
+            noteVariant === "error" ? "3px solid #B80020" : "3px solid #2351A3",
         }}>
           {note}
         </div>
       )}
 
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, paddingTop: 4 }}>
-        <Button
-          type="button"
-          onClick={onCancel}
-          disabled={loading}
-          style={{
-            padding: "10px 22px", borderRadius: 100,
-            border: "1px solid #E5E7EB", background: "#F9FAFB",
-            fontWeight: 600, cursor: "pointer", fontSize: 14, color: "#374151",
-          }}
-          overrideClasses
-        >
-          {cancelText}
-        </Button>
+        {showCancelButton ? (
+          <Button
+            type="button"
+            onClick={onCancel}
+            disabled={loading}
+            style={{
+              padding: "10px 22px", borderRadius: 100,
+              border: "1px solid #E5E7EB", background: "#F9FAFB",
+              fontWeight: 600, cursor: "pointer", fontSize: 14, color: "#374151",
+            }}
+            overrideClasses
+          >
+            {cancelText}
+          </Button>
+        ) : null}
         <Button
           type="button"
           onClick={onConfirm}

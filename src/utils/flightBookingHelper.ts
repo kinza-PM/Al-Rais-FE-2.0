@@ -198,7 +198,8 @@ export const validatePassengersForFlightProvisionalBookingFields = (
             "Birth date cannot be in the future.";
         } else {
           const ageYears =
-            (today.getTime() - bdDate.getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+            (today.getTime() - bdDate.getTime()) /
+            (365.25 * 24 * 60 * 60 * 1000);
           const ptc = (p?.ptc ?? "ADT").toUpperCase();
           if (ptc === "ADT") {
             if (ageYears < 12 || ageYears > 150) {
@@ -355,16 +356,16 @@ export const validatePassengersForFlightProvisionalBooking = (
     });
     if (givenFmt) return { valid: false, error: prefixFor(i, givenFmt) };
 
-    const surnameFmt = validatePersonName(pi.surname, { fieldLabel: "Surname" });
-    if (surnameFmt)
-      return { valid: false, error: prefixFor(i, surnameFmt) };
+    const surnameFmt = validatePersonName(pi.surname, {
+      fieldLabel: "Surname",
+    });
+    if (surnameFmt) return { valid: false, error: prefixFor(i, surnameFmt) };
 
     const phoneFmt = validateInternationalPhoneParts(
       phone.areaCode,
       phone.phoneNumber,
     );
-    if (phoneFmt)
-      return { valid: false, error: prefixFor(i, phoneFmt) };
+    if (phoneFmt) return { valid: false, error: prefixFor(i, phoneFmt) };
 
     if (pRules.isDateOfBirthMandatory) {
       const bd = pi.birthDate ?? null;
@@ -511,7 +512,7 @@ export function withDefaultResidenceCountryFromIssuing(
     payload.passengers,
   );
   return { ...payload, passengers };
-};
+}
 
 /** Map API `errorDetails.source` keys to `validatePassengersForFlightProvisionalBookingFields` paths. */
 export function mapFlightProvBookingApiErrorsToPassengerFields(
@@ -554,6 +555,66 @@ export function mapFlightProvBookingApiErrorsToPassengerFields(
   return out;
 }
 
+const MAX_CARD_EXPIRY_YEARS_AHEAD = 35;
+
+export const getCardBrandFromNumber = (
+  cardNumber: string | null | undefined,
+): "amex" | "other" | "unknown" => {
+  const digits = String(cardNumber ?? "").replace(/\D/g, "");
+  if (!digits) return "unknown";
+  if (/^3[47]/.test(digits)) return "amex";
+  return "other";
+};
+
+export const getAllowedCvvLengthsForCard = (
+  cardNumber: string | null | undefined,
+): number[] => {
+  const brand = getCardBrandFromNumber(cardNumber);
+  if (brand === "amex") return [4];
+  if (brand === "unknown") return [3, 4];
+  return [3];
+};
+
+export const validateCardExpiryYYMM = (
+  expiry: string,
+  options?: { maxYearsAhead?: number; now?: Date },
+): string | null => {
+  const raw = String(expiry ?? "").trim();
+  if (!/^\d{4}$/.test(raw)) {
+    return "Expiry date is invalid. Please use MM/YY.";
+  }
+
+  const yy = Number(raw.slice(0, 2));
+  const mm = Number(raw.slice(2, 4));
+  if (!(mm >= 1 && mm <= 12)) {
+    return "Expiry month is invalid.";
+  }
+
+  const fullYear = 2000 + yy;
+  const expiryDate = new Date(fullYear, mm, 0);
+  expiryDate.setHours(23, 59, 59, 999);
+
+  const now = options?.now ?? new Date();
+  if (expiryDate < now) {
+    return "Card expiry is in the past.";
+  }
+
+  const maxYearsAhead = options?.maxYearsAhead ?? MAX_CARD_EXPIRY_YEARS_AHEAD;
+  const maxAllowedYear = now.getFullYear() + maxYearsAhead;
+  const latestAllowed = new Date(
+    maxAllowedYear,
+    now.getMonth(),
+    1,
+  );
+  latestAllowed.setHours(23, 59, 59, 999);
+  if (expiryDate > latestAllowed) {
+    return `Expiry date looks too far in the future.`;
+    // return `Expiry date looks too far in the future (max ${maxYearsAhead} years).`;
+  }
+
+  return null;
+};
+
 // Field-level validation for payment
 export const validateReservationFlightBookingDataFields = (
   reservation: any,
@@ -564,10 +625,11 @@ export const validateReservationFlightBookingDataFields = (
     v === undefined || v === null || String(v).trim() === "";
 
   // Card number
+  const numericCard = card.number.replace(/\s+/g, "");
+
   if (isEmpty(card.number)) {
     errors["card.number"] = "Card number is required.";
   } else {
-    const numericCard = card.number.replace(/\s+/g, "");
     if (!/^\d{12,19}$/.test(numericCard)) {
       errors["card.number"] = "Card number looks invalid.";
     }
@@ -577,34 +639,37 @@ export const validateReservationFlightBookingDataFields = (
   if (isEmpty(card.expiry)) {
     errors["card.expiry"] = "Expiry date is required.";
   } else {
-    if (!/^\d{4}$/.test(card.expiry)) {
-      errors["card.expiry"] = "Expiry date is invalid. Please use MM/YY.";
-    } else {
-      const yy = Number(card.expiry.slice(0, 2));
-      const mm = Number(card.expiry.slice(2, 4));
-      if (!(mm >= 1 && mm <= 12)) {
-        errors["card.expiry"] = "Expiry month is invalid.";
-      } else {
-        const fullYear = 2000 + yy;
-        const expiryDate = new Date(fullYear, mm, 0);
-        expiryDate.setHours(23, 59, 59, 999);
-        if (expiryDate < new Date()) {
-          errors["card.expiry"] = "Card expiry is in the past.";
-        }
-      }
+    const expiryError = validateCardExpiryYYMM(card.expiry);
+    if (expiryError) {
+      errors["card.expiry"] = expiryError;
     }
   }
 
   // CVV
   if (isEmpty(card.cvv)) {
     errors["card.cvv"] = "Security code (CVV) is required.";
-  } else if (!/^\d{3,4}$/.test(card.cvv)) {
-    errors["card.cvv"] = "Security code should be 3 or 4 digits.";
+  } else if (!/^\d+$/.test(card.cvv)) {
+    errors["card.cvv"] = "Security code should contain numbers only.";
+  } else {
+    const allowedLengths = getAllowedCvvLengthsForCard(numericCard);
+    if (!allowedLengths.includes(card.cvv.length)) {
+      errors["card.cvv"] =
+        allowedLengths.length === 1
+          ? `Security code should be ${allowedLengths[0]} digits for this card.`
+          : "Security code should be 3 or 4 digits.";
+    }
   }
 
   // Holder name
   if (isEmpty(card.holderName)) {
     errors["card.holderName"] = "Cardholder name is required.";
+  } else {
+    const holderFmt = validatePersonName(card.holderName, {
+      fieldLabel: "Cardholder name",
+    });
+    if (holderFmt) {
+      errors["card.holderName"] = holderFmt;
+    }
   }
 
   // Billing address
@@ -662,27 +727,33 @@ export const validateReservationFlightBookingData = (
 
   if (isEmpty(card.expiry))
     return { valid: false, error: "Expiry date is required." };
-  if (!/^\d{4}$/.test(card.expiry))
-    return { valid: false, error: "Expiry date is invalid. Please use MM/YY." };
-
-  const yy = Number(card.expiry.slice(0, 2));
-  const mm = Number(card.expiry.slice(2, 4));
-  if (!(mm >= 1 && mm <= 12))
-    return { valid: false, error: "Expiry month is invalid." };
-
-  const fullYear = 2000 + yy;
-  const expiryDate = new Date(fullYear, mm, 0);
-  expiryDate.setHours(23, 59, 59, 999);
-  if (expiryDate < new Date())
-    return { valid: false, error: "Card expiry is in the past." };
+  const expiryError = validateCardExpiryYYMM(card.expiry);
+  if (expiryError) return { valid: false, error: expiryError };
 
   if (isEmpty(card.cvv))
     return { valid: false, error: "Security code (CVV) is required." };
-  if (!/^\d{3,4}$/.test(card.cvv))
-    return { valid: false, error: "Security code should be 3 or 4 digits." };
+  if (!/^\d+$/.test(card.cvv))
+    return {
+      valid: false,
+      error: "Security code should contain numbers only.",
+    };
+  const allowedLengths = getAllowedCvvLengthsForCard(numericCard);
+  if (!allowedLengths.includes(card.cvv.length)) {
+    return {
+      valid: false,
+      error:
+        allowedLengths.length === 1
+          ? `Security code should be ${allowedLengths[0]} digits for this card.`
+          : "Security code should be 3 or 4 digits.",
+    };
+  }
 
   if (isEmpty(card.holderName))
     return { valid: false, error: "Cardholder name is required." };
+  const holderFmt = validatePersonName(card.holderName, {
+    fieldLabel: "Cardholder name",
+  });
+  if (holderFmt) return { valid: false, error: holderFmt };
 
   const address = reservation?.paymentDetails?.address ?? null;
   if (!address) return { valid: false, error: "Billing address is required." };
@@ -746,7 +817,7 @@ export function openBlankPopupAndCheckWebisteAllowPopup(
         </div>
       </div>
     `;
-  } catch (e) { }
+  } catch (e) {}
 
   return popup;
 }
@@ -772,7 +843,7 @@ export function waitFor3DSecurePaymentPopupReturnResponse(
     const cleanup = () => {
       try {
         window.removeEventListener("message", handler);
-      } catch (_) { }
+      } catch (_) {}
       if (timeoutId) {
         clearTimeout(timeoutId);
         timeoutId = null;
@@ -943,11 +1014,7 @@ export function buildAncillaryOfferPriceMap(
     for (const seatMapItem of seatMap) {
       for (const cabin of seatMapItem?.cabin || []) {
         const decks = cabin?.deck;
-        const deckList = Array.isArray(decks)
-          ? decks
-          : decks
-            ? [decks]
-            : [];
+        const deckList = Array.isArray(decks) ? decks : decks ? [decks] : [];
         for (const deck of deckList) {
           for (const row of deck?.airRow || []) {
             for (const seat of row?.airSeats || []) {
@@ -961,8 +1028,7 @@ export function buildAncillaryOfferPriceMap(
               const fare = seat?.fare?.[0];
               const amount = Number(fare?.sellingAmount ?? 0) || 0;
               const currency = String(fare?.sellingCurrency || "USD");
-              const seatLabel =
-                seat?.seatNumber || seat?.seatCode || "";
+              const seatLabel = seat?.seatNumber || seat?.seatCode || "";
               const label = seatLabel
                 ? `Seat ${seatLabel}`
                 : `Seat ${String(id)}`;

@@ -2,6 +2,7 @@ import HotelImage1 from "../../assets/images/HotelImage1.png";
 import HotelImage2 from "../../assets/images/HotelImage2.png";
 import HotelImage3 from "../../assets/images/HotelImage3.png";
 import HotelImage4 from "../../assets/images/HotelImage4.png";
+import { formatTo12Hour } from "../../utils/helpers";
 import { collectHotelGalleryUrls } from "../../utils/hotelImages";
 
 type HotelSummaryCardProps = {
@@ -32,9 +33,8 @@ export default function HotelSummaryCard({
 
   const hotelName = hotelDetail?.name || "Hotel";
   const hotelLocation = hotelDetail?.address
-    ? `${hotelDetail.address}${hotelDetail.city ? `, ${hotelDetail.city}` : ""}${
-        hotelDetail.country ? `, ${hotelDetail.country}` : ""
-      }`
+    ? `${hotelDetail.address}${hotelDetail.city ? `, ${hotelDetail.city}` : ""}${hotelDetail.country ? `, ${hotelDetail.country}` : ""
+    }`
     : hotelDetail?.city && hotelDetail?.country
       ? `${hotelDetail.city}, ${hotelDetail.country}`
       : "";
@@ -50,11 +50,9 @@ export default function HotelSummaryCard({
   const occupancyText =
     totalGuests > 0
       ? children > 0
-        ? `${String(adults).padStart(2, "0")} adult${
-            adults === 1 ? "" : "s"
-          }, ${String(children).padStart(2, "0")} child${
-            children === 1 ? "" : "ren"
-          }`
+        ? `${String(adults).padStart(2, "0")} adult${adults === 1 ? "" : "s"
+        }, ${String(children).padStart(2, "0")} child${children === 1 ? "" : "ren"
+        }`
         : `${String(adults).padStart(2, "0")} adult${adults === 1 ? "" : "s"}`
       : "—";
 
@@ -164,9 +162,8 @@ export default function HotelSummaryCard({
                       //     : "—";
                       const roomsQtyText =
                         r.count && Number(r.count) > 0
-                          ? `${String(Number(r.count)).padStart(2, "0")} room${
-                              Number(r.count) > 1 ? "s" : ""
-                            }`
+                          ? `${String(Number(r.count)).padStart(2, "0")} room${Number(r.count) > 1 ? "s" : ""
+                          }`
                           : "—";
 
                       return (
@@ -274,9 +271,8 @@ const HotelBookingDetailContent = ({
         "November",
         "December",
       ];
-      return `${days[date.getDay()]}, ${date.getDate()} ${
-        months[date.getMonth()]
-      } ${date.getFullYear()}`;
+      return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]
+        } ${date.getFullYear()}`;
     } catch {
       return dateString;
     }
@@ -294,20 +290,20 @@ const HotelBookingDetailContent = ({
   const selectionText =
     rooms > 0 && (adults > 0 || children > 0)
       ? (() => {
-          const r = `${rooms.toString().padStart(2, "0")} room${rooms > 1 ? "s" : ""}`;
-          const a =
-            adults > 0
-              ? `${adults.toString().padStart(2, "0")} adult${adults > 1 ? "s" : ""}`
-              : "";
-          const c =
-            children > 0
-              ? `${children.toString().padStart(2, "0")} child${children > 1 ? "ren" : ""}`
-              : "";
-          if (a && c) return `${r} for ${a} and ${c}`;
-          if (a) return `${r} for ${a}`;
-          if (c) return `${r} for ${c}`;
-          return r;
-        })()
+        const r = `${rooms.toString().padStart(2, "0")} room${rooms > 1 ? "s" : ""}`;
+        const a =
+          adults > 0
+            ? `${adults.toString().padStart(2, "0")} adult${adults > 1 ? "s" : ""}`
+            : "";
+        const c =
+          children > 0
+            ? `${children.toString().padStart(2, "0")} child${children > 1 ? "ren" : ""}`
+            : "";
+        if (a && c) return `${r} for ${a} and ${c}`;
+        if (a) return `${r} for ${a}`;
+        if (c) return `${r} for ${c}`;
+        return r;
+      })()
       : "Select rooms and guests";
 
   return (
@@ -317,7 +313,7 @@ const HotelBookingDetailContent = ({
           <div className="col-span-4">
             <p className="text-lg font-semibold text-[#0A0C0F]">Check-in</p>
             <p className="mt-4 text-base font-medium text-[#0A0C0F]">
-              {checkInTime}
+              {checkInTime ? formatTo12Hour(checkInTime) : ""}
             </p>
             {checkInDate && (
               <p className="text-xs text-[#3D495C] mt-1">
@@ -348,7 +344,7 @@ const HotelBookingDetailContent = ({
           <div className="col-span-4 text-left">
             <p className="text-base font-semibold text-[#0A0C0F]">Check-out</p>
             <p className="mt-4 text-base font-medium text-[#0A0C0F]">
-              {checkOutTime}
+              {checkOutTime ? formatTo12Hour(checkOutTime) : ""}
             </p>
             {checkOutDate && (
               <p className="text-xs text-[#3D495C] mt-1">

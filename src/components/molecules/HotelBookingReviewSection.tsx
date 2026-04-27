@@ -2,12 +2,30 @@ import HotelSummaryCard from "../atoms/HotelSummaryCard";
 import HotelPriceBreakdown from "../atoms/HotelPriceBreakdown";
 import HotelFareRule from "../atoms/HotelFareRule";
 import Button from "../atoms/Button";
-import React from "react";
-import type { HotelBookingPayload } from "../../utils/hotelBookingHelper";
-import { formatDate } from "../../utils/helpers";
+import React, { useEffect, useMemo, useState } from "react";
+import {
+  normalizeHotelArrivalTimeHHMM,
+  type HotelBookingPayload,
+} from "../../utils/hotelBookingHelper";
 import { Checkbox } from "antd";
-import { useState } from "react";
 import LegalModal from "../common/LegalModal";
+import TailiwindCustomDatePicker from "../common/TailiwindCustomDatePicker";
+import TailiwindCustomTimePicker from "../common/TailiwindCustomTimePicker";
+import { convertDateToString } from "../../utils/hotelBookingParams";
+
+function parseStayDateString(s: string): Date | null {
+  if (!s || typeof s !== "string") return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+  if (!m) {
+    const d = new Date(s);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+function startOfLocalDay(d: Date): number {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+}
 
 const CardShell = ({
   title,
@@ -37,7 +55,7 @@ const HeaderActions = ({
   <Button
     type="button"
     onClick={onEdit}
-    className="text-sm font-medium text-[#5383DA] hover:underline"
+    className="text-[15px] font-medium text-[#5383DA] hover:underline"
     overrideClasses
   >
     {editLabel}
@@ -53,6 +71,7 @@ type HotelBookingReviewSectionProps = {
   totalPrice?: number;
   currency?: string;
   hotelBookingPayload?: HotelBookingPayload | null;
+  onPatchHotelBookingPayload?: (patch: Partial<HotelBookingPayload>) => void;
 };
 
 export default function HotelBookingReviewSection({
@@ -64,6 +83,7 @@ export default function HotelBookingReviewSection({
   totalPrice = 0,
   currency = "AED",
   hotelBookingPayload,
+  onPatchHotelBookingPayload,
 }: HotelBookingReviewSectionProps) {
   const formatGuests = (count?: number) => {
     if (!count || count <= 0) return "—";
@@ -95,14 +115,57 @@ export default function HotelBookingReviewSection({
     return lower.charAt(0).toUpperCase() + lower.slice(1);
   };
 
-  const arrivalLabel = (() => {
-    const date = bookingInfo?.checkIn;
-    const time = bookingInfo?.checkInTime;
-    if (!date && !time) return "—";
-    if (date && time) return `${time}, ${formatDate(date)}`;
-    if (date) return formatDate(date);
-    return time || "—";
-  })();
+  const checkInStr =
+    hotelBookingPayload?.stayDateRange?.checkIn ?? bookingInfo?.checkIn ?? "";
+  const checkOutStr =
+    hotelBookingPayload?.stayDateRange?.checkOut ?? bookingInfo?.checkOut ?? "";
+
+  const { minArrivalDate, maxArrivalDate } = useMemo(() => {
+    const minD = parseStayDateString(checkInStr);
+    const maxD = parseStayDateString(checkOutStr);
+    return { minArrivalDate: minD, maxArrivalDate: maxD };
+  }, [checkInStr, checkOutStr]);
+
+  const arrivalDateStr =
+    hotelBookingPayload?.userSelectedArrivalDate ?? checkInStr;
+  const arrivalTimeStr = normalizeHotelArrivalTimeHHMM(
+    hotelBookingPayload?.userSelectedArrivalTime ??
+      bookingInfo?.checkInTime ??
+      undefined,
+  );
+
+  const arrivalDateValue = useMemo(() => {
+    const d = parseStayDateString(arrivalDateStr);
+    if (!d || !minArrivalDate || !maxArrivalDate) return d;
+    const t = startOfLocalDay(d);
+    const t0 = startOfLocalDay(minArrivalDate);
+    const t1 = startOfLocalDay(maxArrivalDate);
+    if (t < t0 || t > t1) return minArrivalDate;
+    return d;
+  }, [arrivalDateStr, minArrivalDate, maxArrivalDate]);
+
+  useEffect(() => {
+    if (!hotelBookingPayload || !onPatchHotelBookingPayload) return;
+    if (!checkInStr || !minArrivalDate || !maxArrivalDate) return;
+    const d = parseStayDateString(arrivalDateStr);
+    if (!d) {
+      onPatchHotelBookingPayload({ userSelectedArrivalDate: checkInStr });
+      return;
+    }
+    const t = startOfLocalDay(d);
+    const t0 = startOfLocalDay(minArrivalDate);
+    const t1 = startOfLocalDay(maxArrivalDate);
+    if (t < t0 || t > t1) {
+      onPatchHotelBookingPayload({ userSelectedArrivalDate: checkInStr });
+    }
+  }, [
+    hotelBookingPayload,
+    onPatchHotelBookingPayload,
+    arrivalDateStr,
+    checkInStr,
+    minArrivalDate,
+    maxArrivalDate,
+  ]);
 
   const continueToPayment = () => {
     let hasError = false;
@@ -123,8 +186,8 @@ export default function HotelBookingReviewSection({
   }
 
   return (
-    <section className="mx-auto max-w-full px-10 flight-booking-section">
-      <div className="grid gap-4 md:grid-cols-[2fr_1fr] flight-booking-grid">
+    <section className="mx-auto max-w-full flight-booking-section">
+      <div className="grid gap-4 md:grid-cols-[1.8fr_1.2fr] flight-booking-grid">
         <div className="space-y-4">
           {flatPassengers.map(({ passenger: p }, idx) => {
             const fullName = `${p.passengerInfo?.givenName || ""} ${p.passengerInfo?.surname || ""
@@ -158,27 +221,27 @@ export default function HotelBookingReviewSection({
                   <dl className="grid grid-cols-2 gap-y-2">
                     <dt className="text-xs text-[#3D495C]">Title</dt>
                     <dd className="text-right">
-                      <span className="text-sm text-[#0A0C0F] font-medium">
+                      <span className="text-[15px] text-[#0A0C0F] font-medium">
                         {formatTitle(p.passengerInfo?.nameTitle)}
                       </span>
                     </dd>
 
                     <dt className="text-xs text-[#3D495C]">Full Name</dt>
                     <dd className="text-right">
-                      <span className="text-sm text-[#0A0C0F] font-medium">
+                      <span className="text-[15px] text-[#0A0C0F] font-medium">
                         {fullName || "—"}
                       </span>
                     </dd>
 
                     <dt className="text-xs text-[#3D495C]">Email</dt>
                     <dd className="text-right">
-                      <span className="text-sm text-[#0A0C0F] font-medium">
+                      <span className="text-[15px] text-[#0A0C0F] font-medium">
                         {email}
                       </span>
                     </dd>
 
                     <dt className="text-xs text-[#3D495C]">Phone</dt>
-                    <dd className="text-right">{phone}</dd>
+                    <dd className="text-right text-[15px] text-[#0A0C0F] font-medium">{phone}</dd>
                   </dl>
                 </div>
               </CardShell>
@@ -208,7 +271,7 @@ export default function HotelBookingReviewSection({
                           Full name and age group
                         </dt>
                         <dd className="text-right">
-                          <span className="text-sm text-[#0A0C0F] font-medium">
+                          <span className="text-[15px] text-[#0A0C0F] font-medium">
                             {fullName || "—"} ({ageGroup})
                           </span>
                         </dd>
@@ -301,55 +364,51 @@ export default function HotelBookingReviewSection({
             </CardShell>
           )}
 
-          {/* <CardShell
-            title="Enhancements"
-            right={<HeaderActions onEdit={() => {}} editLabel="Change" />}
-          >
-            <div className="px-4 py-3">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="w-12 h-12 rounded-xl bg-[#A7C0EC] flex items-center justify-center flex-shrink-0">
-                  <AirportShuttleIcon />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium text-[#0A0C0F]">
-                    Airport shuttle (Free)
-                  </h4>
+          {hotelBookingPayload && onPatchHotelBookingPayload ? (
+            <CardShell title="Your arrival time">
+              <div className="px-4 py-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="min-w-0">
+                    <label className="mb-1 block text-xs text-[#3D495C]">
+                      Date
+                    </label>
+                    <TailiwindCustomDatePicker
+                      value={arrivalDateValue}
+                      onChange={(d) => {
+                        onPatchHotelBookingPayload({
+                          userSelectedArrivalDate: convertDateToString(d),
+                        });
+                      }}
+                      placeholder="Select date"
+                      minDate={minArrivalDate}
+                      maxDate={maxArrivalDate}
+                      overridesClass
+                      inputClass="h-11 w-full cursor-pointer rounded-xl border border-[#E4E4E7] bg-white px-3 text-left text-sm text-[#0A0C0F] outline-none transition-colors hover:border-[#C2CAD6] focus:border-[#5383DA]"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <label className="mb-1 block text-xs text-[#3D495C]">
+                      Time
+                    </label>
+                    <TailiwindCustomTimePicker
+                      value={arrivalTimeStr}
+                      onChange={(hhmm) => {
+                        onPatchHotelBookingPayload({
+                          userSelectedArrivalTime:
+                            normalizeHotelArrivalTimeHHMM(hhmm),
+                        });
+                      }}
+                      placeholder="Select time"
+                      panelTitle="Arrival time"
+                      overridesClass
+                      wrapperClassName="w-full min-w-0"
+                      inputClass="h-11 w-full cursor-pointer rounded-xl border border-[#E4E4E7] bg-white px-3 text-left text-sm text-[#0A0C0F] outline-none transition-colors hover:border-[#C2CAD6] focus:border-[#5383DA]"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
-          </CardShell>
-
-          <CardShell
-            title="Your arrival time"
-            right={<HeaderActions onEdit={() => {}} editLabel="Edit" />}
-          >
-            <div className="px-4 py-3">
-              <dl className="grid grid-cols-2 gap-y-2">
-                <dt className="text-xs text-[#3D495C]">Time and date</dt>
-                <dd className="text-right">
-                  <span className="text-sm text-[#0A0C0F] font-medium">
-                    9:30 PM, 27th August 2025
-                  </span>
-                </dd>
-              </dl>
-            </div>
-          </CardShell> */}
-
-          <CardShell
-            title="Your arrival time"
-          // right={<HeaderActions onEdit={() => {}} editLabel="Edit" />}
-          >
-            <div className="px-4 py-3">
-              <dl className="grid grid-cols-2 gap-y-2">
-                <dt className="text-xs text-[#3D495C]">Time and date</dt>
-                <dd className="text-right">
-                  <span className="text-sm text-[#0A0C0F] font-medium">
-                    {arrivalLabel}
-                  </span>
-                </dd>
-              </dl>
-            </div>
-          </CardShell>
+            </CardShell>
+          ) : null}
         </div>
 
         {/* RIGHT: Trip details — sticky on wide layouts (matches global .flight-booking-grid breakpoint) */}
@@ -373,69 +432,69 @@ export default function HotelBookingReviewSection({
               selectedRooms={selectedRooms}
             />
             <div className="mt-2">
-            <Checkbox
-              checked={isTermsChecked}
-              onChange={(e) => {
-                setIsTermsChecked(e.target.checked);
-                if (e.target.checked) {
-                  setShowTermsError(false);
-                }
-              }}
-              className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
-            >
-              <span className="font-medium text-sm leading-none tracking-normal align-middle">
-                I agree to the{" "}
-                <span
-                  className="text-[#5383DA] cursor-pointer hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setLegalModal({ isOpen: true, type: "terms" });
-                  }}
-                >
-                  Terms & Conditions
-                </span>{" "}
-                and Payment Rules and Regulations.
-              </span>
-            </Checkbox>
-            {showTermsError && (
-              <p className="text-red-500 text-xs mt-1">
-                You must agree to the Terms & Conditions to proceed.
-              </p>
-            )}
-          </div>
+              <Checkbox
+                checked={isTermsChecked}
+                onChange={(e) => {
+                  setIsTermsChecked(e.target.checked);
+                  if (e.target.checked) {
+                    setShowTermsError(false);
+                  }
+                }}
+                className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
+              >
+                <span className="font-medium text-sm leading-none tracking-normal align-middle">
+                  I agree to the{" "}
+                  <span
+                    className="text-[#5383DA] cursor-pointer hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setLegalModal({ isOpen: true, type: "terms" });
+                    }}
+                  >
+                    Terms & Conditions
+                  </span>{" "}
+                  and Payment Rules and Regulations.
+                </span>
+              </Checkbox>
+              {showTermsError && (
+                <p className="text-red-500 text-xs mt-1">
+                  You must agree to the Terms & Conditions to proceed.
+                </p>
+              )}
+            </div>
 
-          <div className="mt-2">
-            <Checkbox
-              checked={isCancellationChecked}
-              onChange={(e) => {
-                setIsCancellationChecked(e.target.checked);
-                if (e.target.checked) {
-                  setShowCancellationError(false);
-                }
-              }}
-              className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
-            >
-              <span className="font-medium text-sm leading-none tracking-normal align-middle">
-                I have read and agree to the{" "}
-                <span
-                  className="text-[#5383DA] cursor-pointer hover:underline"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setLegalModal({ isOpen: true, type: "cancellation" });
-                  }}
-                >
-                  Cancellation Policy
-                </span>.
-              </span>
-            </Checkbox>
-            {showCancellationError && (
-              <p className="text-red-500 text-xs mt-1">
-                You must agree to the Cancellation Policy to proceed.
-              </p>
-            )}
-          </div>
+            <div className="mt-2">
+              <Checkbox
+                checked={isCancellationChecked}
+                onChange={(e) => {
+                  setIsCancellationChecked(e.target.checked);
+                  if (e.target.checked) {
+                    setShowCancellationError(false);
+                  }
+                }}
+                className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
+              >
+                <span className="font-medium text-sm leading-none tracking-normal align-middle">
+                  I have read and agree to the{" "}
+                  <span
+                    className="text-[#5383DA] cursor-pointer hover:underline"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setLegalModal({ isOpen: true, type: "cancellation" });
+                    }}
+                  >
+                    Cancellation Policy
+                  </span>.
+                </span>
+              </Checkbox>
+              {showCancellationError && (
+                <p className="text-red-500 text-xs mt-1">
+                  You must agree to the Cancellation Policy to proceed.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

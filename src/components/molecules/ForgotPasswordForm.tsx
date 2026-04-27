@@ -4,6 +4,7 @@ import { AuthService } from "../../features/auth/services/authService";
 import type { ForgotPasswordForm as ForgotPasswordFormType } from "../../features/auth/types";
 import { filterEmailInput } from "../../utils/helpers";
 import { getEmailError } from "../../utils/validators";
+import { closeAuthOverlay } from "../../utils/closeAuthOverlay";
 import toast from "react-hot-toast";
 
 interface ForgotPasswordFormProps {
@@ -105,28 +106,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
         {/* Close button — inside the card, top-right corner (same pattern as Login/Signup) */}
         <button
           type="button"
-          onClick={() => {
-            // Prefer AntD modal close if present
-            const antClose = document.querySelector(
-              ".ant-modal .ant-modal-close",
-            ) as HTMLElement | null;
-            if (antClose) {
-              antClose.click();
-              return;
-            }
-            // Fallback to custom AuthModal backdrop
-            const backdrop = document.querySelector(
-              ".modal-overlay .absolute.inset-0",
-            ) as HTMLElement | null;
-            if (backdrop) {
-              backdrop.click();
-              return;
-            }
-            // Last resort: browser back
-            try {
-              window.history.back();
-            } catch {}
-          }}
+          onClick={() => closeAuthOverlay()}
           className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full text-[#3D495C] hover:bg-[#F2F2F3] transition-colors"
           aria-label="Close"
         >
@@ -146,7 +126,7 @@ const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({
           </h3>
           {/* Figma: Instruction text */}
           <p className="text-center text-sm text-[#3D495C] mb-6">
-            Enter your email address to receive a verification code.
+            Enter your email address to receive a verification code. The code is valid for 5 minutes.
           </p>
 
           <div className="space-y-1">

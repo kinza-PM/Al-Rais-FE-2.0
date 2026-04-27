@@ -524,197 +524,197 @@ const FlightHeroSection: React.FC = () => {
             key={trip}
             className="animate-[fadeSlideUp_220ms_ease-out_both] px-4 pt-5 pb-5 sm:px-6 md:px-10 lg:pt-4 lg:pb-4"
           >
-            {trip === "oneway" && (
-              <OneWayForm
-                loadingCountries={nsLoading.countries}
-                fromCode={fromCode}
-                toCode={toCode}
-                fromCountries={qFromAirports.data as AirportOption[]}
-                toCountries={qToAirports.data as AirportOption[]}
-                loadingFromCountries={
-                  qFromAirports.isLoading || qFromAirports.isFetching
-                }
-                loadingToCountries={
-                  qToAirports.isLoading || qToAirports.isFetching
-                }
-                onSearchFromCountries={setFromCountriesSearchTerm}
-                onSearchToCountries={setToCountriesSearchTerm}
-                departDateValue={departDate}
-                onChangeFrom={setFromCode}
-                onChangeTo={setToCode}
-                passengerSchema={passengers as PassengerSchema}
-                loadingPassengers={nsLoading.passengers}
-                cabinClasses={cabinClasses as CabinClassOption[]}
-                loadingCabinClasses={nsLoading.cabinClasses}
-                selectedCabinClassId={selectedCabinClassId}
-                onChangeCabinClassId={setSelectedCabinClassId}
-                onChangePassengers={handlePassengers}
-                onChangeDepartDate={handleDepartDate}
-                fromError={
-                  hasAttemptedValidation
-                    ? validationErrors.fromCode
-                    : qFromAirports.error?.message || ""
-                }
-                toError={
-                  hasAttemptedValidation
-                    ? validationErrors.toCode
-                    : qToAirports.error?.message || ""
-                }
-                departDateError={
-                  hasAttemptedValidation ? validationErrors.departDate : ""
-                }
-                passengersError={
-                  hasAttemptedValidation ? validationErrors.passengers : ""
-                }
-                cabinClassError={
-                  hasAttemptedValidation ? validationErrors.cabinClass : ""
-                }
-                fromCountriesHasMore={qFromAirports.hasNextPage}
-                toCountriesHasMore={qToAirports.hasNextPage}
-                fromCountriesFetchNext={qFromAirports.fetchNextPage}
-                toCountriesFetchNext={qToAirports.fetchNextPage}
-                fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
-                toCountriesLoadingMore={qToAirports.isFetchingNextPage}
-              />
-            )}
+            <div className="w-full min-w-0 xl:grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end xl:gap-4">
+              <div className="min-w-0">
+                {trip === "oneway" && (
+                  <OneWayForm
+                    loadingCountries={nsLoading.countries}
+                    fromCode={fromCode}
+                    toCode={toCode}
+                    fromCountries={qFromAirports.data as AirportOption[]}
+                    toCountries={qToAirports.data as AirportOption[]}
+                    loadingFromCountries={
+                      qFromAirports.isLoading || qFromAirports.isFetching
+                    }
+                    loadingToCountries={
+                      qToAirports.isLoading || qToAirports.isFetching
+                    }
+                    onSearchFromCountries={setFromCountriesSearchTerm}
+                    onSearchToCountries={setToCountriesSearchTerm}
+                    departDateValue={departDate}
+                    onChangeFrom={setFromCode}
+                    onChangeTo={setToCode}
+                    passengerSchema={passengers as PassengerSchema}
+                    loadingPassengers={nsLoading.passengers}
+                    cabinClasses={cabinClasses as CabinClassOption[]}
+                    loadingCabinClasses={nsLoading.cabinClasses}
+                    selectedCabinClassId={selectedCabinClassId}
+                    onChangeCabinClassId={setSelectedCabinClassId}
+                    onChangePassengers={handlePassengers}
+                    onChangeDepartDate={handleDepartDate}
+                    fromError={
+                      hasAttemptedValidation
+                        ? validationErrors.fromCode
+                        : qFromAirports.error?.message || ""
+                    }
+                    toError={
+                      hasAttemptedValidation
+                        ? validationErrors.toCode
+                        : qToAirports.error?.message || ""
+                    }
+                    departDateError={
+                      hasAttemptedValidation ? validationErrors.departDate : ""
+                    }
+                    passengersError={
+                      hasAttemptedValidation ? validationErrors.passengers : ""
+                    }
+                    cabinClassError={
+                      hasAttemptedValidation ? validationErrors.cabinClass : ""
+                    }
+                    fromCountriesHasMore={qFromAirports.hasNextPage}
+                    toCountriesHasMore={qToAirports.hasNextPage}
+                    fromCountriesFetchNext={qFromAirports.fetchNextPage}
+                    toCountriesFetchNext={qToAirports.fetchNextPage}
+                    fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
+                    toCountriesLoadingMore={qToAirports.isFetchingNextPage}
+                  />
+                )}
 
-            {trip === "roundtrip" && (
-              <RoundTripForm
-                loadingCountries={nsLoading.countries}
-                fromCode={fromCode}
-                toCode={toCode}
-                fromCountries={qFromAirports.data as AirportOption[]}
-                toCountries={qToAirports.data as AirportOption[]}
-                loadingFromCountries={
-                  qFromAirports.isLoading || qFromAirports.isFetching
-                }
-                loadingToCountries={
-                  qToAirports.isLoading || qToAirports.isFetching
-                }
-                onSearchFromCountries={setFromCountriesSearchTerm}
-                onSearchToCountries={setToCountriesSearchTerm}
-                departDateValue={departDate}
-                arrivalDateValue={arrivalDate}
-                onChangeFrom={setFromCode}
-                onChangeTo={setToCode}
-                passengerSchema={passengers as PassengerSchema}
-                loadingPassengers={nsLoading.passengers}
-                cabinClasses={cabinClasses as CabinClassOption[]}
-                loadingCabinClasses={nsLoading.cabinClasses}
-                selectedCabinClassId={selectedCabinClassId}
-                onChangeCabinClassId={setSelectedCabinClassId}
-                onChangePassengers={handlePassengers}
-                onChangeDepartDate={handleDepartDate}
-                onChangeArrivalDate={handleArrivalDate}
-                fromError={
-                  hasAttemptedValidation
-                    ? validationErrors.fromCode
-                    : qFromAirports.error?.message || ""
-                }
-                toError={
-                  hasAttemptedValidation
-                    ? validationErrors.toCode
-                    : qToAirports.error?.message || ""
-                }
-                departDateError={
-                  hasAttemptedValidation ? validationErrors.departDate : ""
-                }
-                arrivalDateError={
-                  hasAttemptedValidation ? validationErrors.arrivalDate : ""
-                }
-                passengersError={
-                  hasAttemptedValidation ? validationErrors.passengers : ""
-                }
-                cabinClassError={
-                  hasAttemptedValidation ? validationErrors.cabinClass : ""
-                }
-                fromCountriesHasMore={qFromAirports.hasNextPage}
-                toCountriesHasMore={qToAirports.hasNextPage}
-                fromCountriesFetchNext={qFromAirports.fetchNextPage}
-                toCountriesFetchNext={qToAirports.fetchNextPage}
-                fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
-                toCountriesLoadingMore={qToAirports.isFetchingNextPage}
-              />
-            )}
+                {trip === "roundtrip" && (
+                  <RoundTripForm
+                    loadingCountries={nsLoading.countries}
+                    fromCode={fromCode}
+                    toCode={toCode}
+                    fromCountries={qFromAirports.data as AirportOption[]}
+                    toCountries={qToAirports.data as AirportOption[]}
+                    loadingFromCountries={
+                      qFromAirports.isLoading || qFromAirports.isFetching
+                    }
+                    loadingToCountries={
+                      qToAirports.isLoading || qToAirports.isFetching
+                    }
+                    onSearchFromCountries={setFromCountriesSearchTerm}
+                    onSearchToCountries={setToCountriesSearchTerm}
+                    departDateValue={departDate}
+                    arrivalDateValue={arrivalDate}
+                    onChangeFrom={setFromCode}
+                    onChangeTo={setToCode}
+                    passengerSchema={passengers as PassengerSchema}
+                    loadingPassengers={nsLoading.passengers}
+                    cabinClasses={cabinClasses as CabinClassOption[]}
+                    loadingCabinClasses={nsLoading.cabinClasses}
+                    selectedCabinClassId={selectedCabinClassId}
+                    onChangeCabinClassId={setSelectedCabinClassId}
+                    onChangePassengers={handlePassengers}
+                    onChangeDepartDate={handleDepartDate}
+                    onChangeArrivalDate={handleArrivalDate}
+                    fromError={
+                      hasAttemptedValidation
+                        ? validationErrors.fromCode
+                        : qFromAirports.error?.message || ""
+                    }
+                    toError={
+                      hasAttemptedValidation
+                        ? validationErrors.toCode
+                        : qToAirports.error?.message || ""
+                    }
+                    departDateError={
+                      hasAttemptedValidation ? validationErrors.departDate : ""
+                    }
+                    arrivalDateError={
+                      hasAttemptedValidation ? validationErrors.arrivalDate : ""
+                    }
+                    passengersError={
+                      hasAttemptedValidation ? validationErrors.passengers : ""
+                    }
+                    cabinClassError={
+                      hasAttemptedValidation ? validationErrors.cabinClass : ""
+                    }
+                    fromCountriesHasMore={qFromAirports.hasNextPage}
+                    toCountriesHasMore={qToAirports.hasNextPage}
+                    fromCountriesFetchNext={qFromAirports.fetchNextPage}
+                    toCountriesFetchNext={qToAirports.fetchNextPage}
+                    fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
+                    toCountriesLoadingMore={qToAirports.isFetchingNextPage}
+                  />
+                )}
 
-            {trip === "multicity" && (
-              <MultiCityForm
-                loadingCountries={nsLoading.countries}
-                fromCountries={qFromAirports.data as AirportOption[]}
-                toCountries={qToAirports.data as AirportOption[]}
-                loadingFromCountries={
-                  qFromAirports.isLoading || qFromAirports.isFetching
-                }
-                loadingToCountries={
-                  qToAirports.isLoading || qToAirports.isFetching
-                }
-                onSearchFromCountries={setFromCountriesSearchTerm}
-                onSearchToCountries={setToCountriesSearchTerm}
-                passengerSchema={passengers as PassengerSchema}
-                loadingPassengers={nsLoading.passengers}
-                cabinClasses={cabinClasses as CabinClassOption[]}
-                loadingCabinClasses={nsLoading.cabinClasses}
-                legs={multicityLegs}
-                onChangeLegs={setMulticityLegs}
-                onChangePassengers={handlePassengers}
-                fromError={
-                  hasAttemptedValidation
-                    ? validationErrors.fromCode
-                    : qFromAirports.error?.message || ""
-                }
-                toError={
-                  hasAttemptedValidation
-                    ? validationErrors.toCode
-                    : qToAirports.error?.message || ""
-                }
-                departDateError={
-                  hasAttemptedValidation ? validationErrors.departDate : ""
-                }
-                passengersError={
-                  hasAttemptedValidation ? validationErrors.passengers : ""
-                }
-                cabinClassError={
-                  hasAttemptedValidation ? validationErrors.cabinClass : ""
-                }
-                fromCountriesHasMore={qFromAirports.hasNextPage}
-                toCountriesHasMore={qToAirports.hasNextPage}
-                fromCountriesFetchNext={qFromAirports.fetchNextPage}
-                toCountriesFetchNext={qToAirports.fetchNextPage}
-                fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
-                toCountriesLoadingMore={qToAirports.isFetchingNextPage}
-              />
-            )}
+                {trip === "multicity" && (
+                  <MultiCityForm
+                    loadingCountries={nsLoading.countries}
+                    fromCountries={qFromAirports.data as AirportOption[]}
+                    toCountries={qToAirports.data as AirportOption[]}
+                    loadingFromCountries={
+                      qFromAirports.isLoading || qFromAirports.isFetching
+                    }
+                    loadingToCountries={
+                      qToAirports.isLoading || qToAirports.isFetching
+                    }
+                    onSearchFromCountries={setFromCountriesSearchTerm}
+                    onSearchToCountries={setToCountriesSearchTerm}
+                    passengerSchema={passengers as PassengerSchema}
+                    loadingPassengers={nsLoading.passengers}
+                    cabinClasses={cabinClasses as CabinClassOption[]}
+                    loadingCabinClasses={nsLoading.cabinClasses}
+                    legs={multicityLegs}
+                    onChangeLegs={setMulticityLegs}
+                    onChangePassengers={handlePassengers}
+                    fromError={
+                      hasAttemptedValidation
+                        ? validationErrors.fromCode
+                        : qFromAirports.error?.message || ""
+                    }
+                    toError={
+                      hasAttemptedValidation
+                        ? validationErrors.toCode
+                        : qToAirports.error?.message || ""
+                    }
+                    departDateError={
+                      hasAttemptedValidation ? validationErrors.departDate : ""
+                    }
+                    passengersError={
+                      hasAttemptedValidation ? validationErrors.passengers : ""
+                    }
+                    cabinClassError={
+                      hasAttemptedValidation ? validationErrors.cabinClass : ""
+                    }
+                    fromCountriesHasMore={qFromAirports.hasNextPage}
+                    toCountriesHasMore={qToAirports.hasNextPage}
+                    fromCountriesFetchNext={qFromAirports.fetchNextPage}
+                    toCountriesFetchNext={qToAirports.fetchNextPage}
+                    fromCountriesLoadingMore={qFromAirports.isFetchingNextPage}
+                    toCountriesLoadingMore={qToAirports.isFetchingNextPage}
+                  />
+                )}
+              </div>
 
-            {/* ── Search button ── */}
-            <div
-              className={`flex justify-center ${!hasAttemptedValidation ? "mt-4 lg:mt-3" : "mt-8 lg:mt-6"}`}
-            >
-              <button
-                type="button"
-                className={[
-                  "text-[16px] font-medium text-white",
-                  "w-full sm:w-auto",
-                  // smooth transitions
-                  "transition-all duration-200 ease-out",
-                  // press scale
-                  "active:scale-95",
-                  // hover: slight lift + glow
-                  "hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(35,81,163,0.45)]",
-                  // focus ring
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5383DA] focus-visible:ring-offset-2",
-                ].join(" ")}
-                style={{
-                  minWidth: 137,
-                  height: 47,
-                  borderRadius: 100,
-                  padding: "14px 40px",
-                  background:
-                    "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                }}
-                onClick={handleSearch}
+              {/* ── Search button (aligned to the right on xl+) ── */}
+              <div
+                className={`flex justify-center xl:justify-end ${!hasAttemptedValidation ? "mt-4 xl:mt-0" : "mt-8 xl:mt-0"}`}
               >
-                Search
-              </button>
+                <button
+                  type="button"
+                  className={[
+                    "text-[16px] font-medium text-white",
+                    "w-full sm:w-auto",
+                    "transition-all duration-200 ease-out",
+                    "active:scale-95",
+                    "hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(35,81,163,0.45)]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5383DA] focus-visible:ring-offset-2",
+                  ].join(" ")}
+                  style={{
+                    minWidth: 137,
+                    height: 47,
+                    borderRadius: 100,
+                    padding: "14px 40px",
+                    background:
+                      "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                  }}
+                  onClick={handleSearch}
+                >
+                  Search
+                </button>
+              </div>
             </div>
           </div>
         </>

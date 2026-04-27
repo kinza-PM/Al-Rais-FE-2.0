@@ -6,6 +6,10 @@ import toast from "react-hot-toast";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { SightseeingTicketPdfContent } from "./sightseeing/SightseeingTicketPdfContent";
 import type { SightseeingBookingCardItem } from "../../utils/transformBookingData";
+import {
+  sightseeingBookingInDateRange,
+  sightseeingBookingMatchesQuery,
+} from "../../utils/myBookingsClientFilters";
 import type { BookingStatus } from "./UserBookingsListing";
 import { generateMultiPagePDF } from "../../utils/pdfGenerator";
 import {
@@ -344,9 +348,15 @@ function SightseeingBookingCard({
 export default function UserSightseeingBookingsListing({
   filterStatus,
   bookings = [],
+  searchQuery = "",
+  dateFrom = "",
+  dateTo = "",
 }: {
   filterStatus: "All" | BookingStatus;
   bookings?: SightseeingBookingCardItem[];
+  searchQuery?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }) {
   const [pdfBooking, setPdfBooking] = useState<SightseeingBookingCardItem | null>(
     null,
@@ -354,9 +364,17 @@ export default function UserSightseeingBookingsListing({
 
   const list = useMemo(() => {
     if (!bookings?.length) return [];
-    if (filterStatus === "All") return bookings;
-    return bookings.filter((b) => b?.status === filterStatus);
-  }, [bookings, filterStatus]);
+    let rows =
+      filterStatus === "All"
+        ? bookings
+        : bookings.filter((b) => b?.status === filterStatus);
+    rows = rows.filter(
+      (b) =>
+        sightseeingBookingMatchesQuery(b, searchQuery) &&
+        sightseeingBookingInDateRange(b, dateFrom, dateTo),
+    );
+    return rows;
+  }, [bookings, filterStatus, searchQuery, dateFrom, dateTo]);
 
   useEffect(() => {
     if (!pdfBooking) return;

@@ -13,6 +13,8 @@ import PLANE_ICON from "../../assets/svgs/plane.svg";
 import { Switch, Modal } from "antd";
 
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../features/auth/hooks/useAuth";
+import LoginModal from "../common/LoginModal";
 import { travelData } from "../../utils/mockData";
 import {
   formatListingStartingFare,
@@ -81,6 +83,34 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
   const { mutateAsync: fetchFareRules } = useFlightFareRuleSearch();
 
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  // Pending booking action — set when user clicks Book Now without being logged in.
+  const pendingBookingRef = useRef<{ offerId: string; item: any } | null>(null);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+
+  const resumePendingBooking = useCallback(() => {
+    if (!pendingBookingRef.current) return;
+
+    const { offerId, item } = pendingBookingRef.current;
+    pendingBookingRef.current = null;
+    setLoginModalOpen(false);
+    navigate("/flight-booking", {
+      state: {
+        offerId,
+        searchKey: item?.searchKey,
+        flightDetail: item,
+        passengersForRequest: passengersForRequest || [],
+      },
+    });
+  }, [navigate, passengersForRequest]);
+
+  // Once login succeeds, resume the pending booking navigation.
+  useEffect(() => {
+    if (isAuthenticated) {
+      resumePendingBooking();
+    }
+  }, [isAuthenticated, resumePendingBooking]);
 
   useEffect(() => {
     import("./PricingDetailCard");
@@ -221,6 +251,12 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
 
   const handleOfferSelection = React.useCallback(
     (offerId: string, item: any) => {
+      if (!isAuthenticated) {
+        // Guard: show login modal and queue the action for after sign-in.
+        pendingBookingRef.current = { offerId, item };
+        setLoginModalOpen(true);
+        return;
+      }
       navigate("/flight-booking", {
         state: {
           offerId,
@@ -230,7 +266,7 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
         },
       });
     },
-    [navigate, passengersForRequest],
+    [navigate, passengersForRequest, isAuthenticated],
   );
 
   if (!passData || passData.length === 0) {
@@ -626,6 +662,19 @@ const TravelOneWay: React.FC<TravelOneWayProps> = ({
           </div>
         ))}
       </Modal>
+
+      {/* Login required — shown when an unauthenticated user clicks Book Now.
+          Closing without logging in cancels the booking action. */}
+      <LoginModal
+        showModal={loginModalOpen}
+        showGoBack
+        onAuthSuccess={resumePendingBooking}
+        onClose={() => {
+          // User dismissed without logging in — cancel the pending booking.
+          pendingBookingRef.current = null;
+          setLoginModalOpen(false);
+        }}
+      />
     </div>
   );
 };
