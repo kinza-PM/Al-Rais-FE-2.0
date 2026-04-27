@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "../components";
 import HotelBookingBookSection from "../components/molecules/HotelBookingBookSection";
 import HotelBookingReviewSection from "../components/molecules/HotelBookingReviewSection";
@@ -25,6 +25,7 @@ import { AuthService } from "../features/auth/services/authService";
 
 const HotelBooking = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
   const { hotel: hotelFromStore } = useHotelStore();
   const state = (location.state || {}) as {
@@ -579,7 +580,13 @@ const HotelBooking = () => {
           )}
         </div>
       </div>
-      {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />}
+      {!isAuthenticated && (
+        <LoginModal
+          showModal={!isAuthenticated}
+          showGoBack
+          onClose={() => navigate(-1)}
+        />
+      )}
     </>
   );
 };

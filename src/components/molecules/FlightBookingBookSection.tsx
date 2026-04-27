@@ -1428,7 +1428,7 @@ export default function FlightBookingBookSection({
               fare={priceFareFamily}
             />
 
-            <FLightFareRule trip={trip.raw} ruleData={fareRuleData} />
+            <FLightFareRule trip={trip.raw} ruleData={fareRuleData} wideLayout />
 
             <FLightPriceBreakdown
               open={openPrice}
@@ -1461,7 +1461,13 @@ export default function FlightBookingBookSection({
           </Button>
         </div>
 
-        {!isAuthenticated && <LoginModal showModal={!isAuthenticated} />}
+        {!isAuthenticated && (
+          <LoginModal
+            showModal={!isAuthenticated}
+            showGoBack
+            onClose={() => navigate(-1)}
+          />
+        )}
       </div>
 
       <ConfirmationModal

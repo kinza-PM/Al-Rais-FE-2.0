@@ -244,7 +244,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
     const total = baseTotal + ancillaryTotal;
 
     return (
-        <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm max-w-[576px]">
+        <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm w-full max-w-full">
             <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#E4E4E7]">
                 <div className="text-[16px] font-semibold text-[#0A0C0F]">Price breakdown</div>
                 <CardCollapseToggle open={open} onClick={onToggleOpen} />
