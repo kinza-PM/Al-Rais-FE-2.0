@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../components";
 import ProfileMilesSummary from "../components/molecules/ProfileMilesSummary";
 import LoyaltyPrograms from "../components/molecules/LoyaltyPrograms";
@@ -20,6 +21,57 @@ const tabs = [
   "Saved Travelers",
 ] as const;
 
+type EmptyStateProps = {
+  title: string;
+  description: string;
+  actionLabel?: string;
+  onAction?: () => void;
+};
+
+const EmptySectionState: React.FC<EmptyStateProps> = ({
+  title,
+  description,
+  actionLabel,
+  onAction,
+}) => (
+  <div className="mx-auto flex w-full max-w-[1080px] items-center justify-center px-4">
+    <div className="w-full rounded-2xl border border-[#E4E4E7] bg-white px-6 py-12 text-center shadow-sm">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#EEF3FF] text-[#2351A3]">
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M12 17v.01M12 13a3 3 0 1 0-3-3"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+        </svg>
+      </div>
+      <h3 className="text-[20px] font-semibold text-[#0A0C0F]">{title}</h3>
+      <p className="mx-auto mt-2 max-w-[540px] text-[14px] text-[#3D495C]">
+        {description}
+      </p>
+      {actionLabel && onAction && (
+        <Button
+          type="button"
+          onClick={onAction}
+          className="mt-6 inline-flex items-center justify-center rounded-lg bg-[#2351A3] px-6 py-2 text-[14px] font-semibold text-white hover:opacity-95"
+          overrideClasses
+        >
+          {actionLabel}
+        </Button>
+      )}
+    </div>
+  </div>
+);
+
 function profileTabClass(selected: boolean): string {
   return [
     "box-border flex h-[39px] min-w-[108px] shrink-0 cursor-pointer items-center justify-center rounded-tl-[16px] rounded-tr-[16px] rounded-bl-none rounded-br-none border-0 px-[20px] py-[10px] text-[14px] font-medium leading-none tracking-normal transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#2351A3] focus-visible:ring-offset-2",
@@ -28,6 +80,7 @@ function profileTabClass(selected: boolean): string {
 }
 
 const ProfilePage: React.FC = () => {
+  const navigate = useNavigate();
   const [active, setActive] = useState<(typeof tabs)[number]>("Favorites");
   const { user } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
@@ -48,6 +101,11 @@ const ProfilePage: React.FC = () => {
 
   const displayEmail = remoteUser?.email || user?.email || "";
   const displayPhone = remoteUser?.phoneNumber || user?.phone || "";
+  const hasBasicsData = Boolean(
+    String(remoteUser?.name || user?.full_name || user?.name || "").trim() ||
+      String(displayEmail).trim() ||
+      String(displayPhone).trim(),
+  );
 
   const openEdit = () => {
     const fullName = remoteUser?.name || user?.full_name || user?.name || "";
@@ -221,7 +279,17 @@ const ProfilePage: React.FC = () => {
       </div>
 
       <div className="mt-8 w-full">
-        {active === "Basics" && <ProfileBasicsTab />}
+        {active === "Basics" &&
+          (hasBasicsData ? (
+            <ProfileBasicsTab />
+          ) : (
+            <EmptySectionState
+              title="No profile info found"
+              description="It looks like your basic details haven't been set up yet."
+              actionLabel="Complete Profile"
+              onAction={openEdit}
+            />
+          ))}
 
         {active === "Favorites" && <ProfileFavouriteHotels />}
 
@@ -235,11 +303,21 @@ const ProfilePage: React.FC = () => {
         )}
 
         {active === "Payments" && (
-          <div className="text-sm text-[#3D495C]">Payments content…</div>
+          <EmptySectionState
+            title="No payment history"
+            description="You haven't made any transactions or added a payment method yet."
+            actionLabel="Add Payment Method"
+            onAction={() => navigate("/payments-help")}
+          />
         )}
 
         {active === "Account" && (
-          <div className="text-sm text-[#3D495C]">Account content…</div>
+          <EmptySectionState
+            title="Account details missing"
+            description="We couldn't find any account-specific data for this user."
+            actionLabel="Refresh Page"
+            onAction={() => window.location.reload()}
+          />
         )}
         {active === "Saved Travelers" && <ProfileSavedTravelersTab />}
       </div>

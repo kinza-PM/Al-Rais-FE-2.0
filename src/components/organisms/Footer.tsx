@@ -35,18 +35,17 @@ const Footer: React.FC = () => {
     <footer className="w-full">
       {/* Main footer content */}
       <div
-        className="mx-auto w-full max-w-[1920px] px-6 py-12 sm:px-8 md:px-12 lg:px-16"
+        className="mx-auto w-full max-w-[1920px] px-4 py-10 sm:px-8 sm:py-12 md:px-12 lg:px-16"
         style={{
           minHeight: FOOTER_MAIN_HEIGHT,
           background: "var(--white-100, #F2F2F3)",
         }}
       >
         <div
-          className="flex flex-row flex-wrap items-start justify-between gap-x-10 gap-y-10 lg:gap-x-12"
-          style={{ display: "flex" }}
+          className="flex flex-col items-center gap-y-10 text-center sm:items-start sm:text-left lg:flex-row lg:flex-wrap lg:items-start lg:justify-between lg:gap-x-12"
         >
           {/* Left column: Brand */}
-          <div className="flex min-w-0 flex-1 flex-col md:max-w-[280px] lg:max-w-[320px]">
+          <div className="flex min-w-0 w-full max-w-[420px] flex-col items-center sm:items-start lg:flex-1 lg:max-w-[320px]">
             <img
               src={footerLogo}
               alt="Al Rais Travel Logo"
@@ -62,17 +61,19 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Column 2: Company */}
-          <div className="min-w-0">
-            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
+          <div className="min-w-0 w-full sm:w-auto">
+            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F] relative inline-block
+              after:block after:h-[2px] after:w-6 after:rounded-full after:bg-[#2351A3] after:mt-1">
               Company
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {COMPANY_LINKS.map((item) => (
                 <li key={item.label}>
                   <Link
                     to={item.link}
-                    className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
+                    className="group flex items-center gap-1.5 py-0.5 text-sm text-[#3D495C] transition-all duration-200 ease-out hover:text-[#2351A3] hover:translate-x-1"
                   >
+                    <span className="inline-block w-1 h-1 rounded-full bg-[#2351A3] opacity-0 scale-0 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 shrink-0" />
                     {item.label}
                   </Link>
                 </li>
@@ -81,24 +82,27 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Column 3: Services */}
-          <div className="min-w-0">
-            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
+          <div className="min-w-0 w-full sm:w-auto">
+            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F] relative inline-block
+              after:block after:h-[2px] after:w-6 after:rounded-full after:bg-[#2351A3] after:mt-1">
               Services
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {SERVICES_LINKS.map((item) =>
                 item.link ? (
                   <li key={item.label}>
                     <Link
                       to={item.link}
-                      className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
+                      className="group flex items-center gap-1.5 py-0.5 text-sm text-[#3D495C] transition-all duration-200 ease-out hover:text-[#2351A3] hover:translate-x-1"
                     >
+                      <span className="inline-block w-1 h-1 rounded-full bg-[#2351A3] opacity-0 scale-0 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 shrink-0" />
                       {item.label}
                     </Link>
                   </li>
                 ) : (
                   <li key={item.label}>
-                    <span className="text-sm text-[#A4A9AD] cursor-not-allowed">
+                    <span className="flex items-center gap-1.5 py-0.5 text-sm text-[#A4A9AD] cursor-not-allowed">
+                      <span className="inline-block w-1 h-1 rounded-full shrink-0 opacity-0" />
                       {item.label}
                     </span>
                   </li>
@@ -108,17 +112,19 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Column 4: Help */}
-          <div className="min-w-0">
-            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F]">
+          <div className="min-w-0 w-full sm:w-auto">
+            <h3 className="mb-4 text-base font-semibold text-[#0A0C0F] relative inline-block
+              after:block after:h-[2px] after:w-6 after:rounded-full after:bg-[#2351A3] after:mt-1">
               Help
             </h3>
-            <ul className="space-y-2">
+            <ul className="space-y-1">
               {HELP_LINKS.map((item) => (
                 <li key={item.label}>
                   <Link
                     to={item.link}
-                    className="text-sm text-[#3D495C] transition-colors hover:text-[#2351A3]"
+                    className="group flex items-center gap-1.5 py-0.5 text-sm text-[#3D495C] transition-all duration-200 ease-out hover:text-[#2351A3] hover:translate-x-1"
                   >
+                    <span className="inline-block w-1 h-1 rounded-full bg-[#2351A3] opacity-0 scale-0 transition-all duration-200 group-hover:opacity-100 group-hover:scale-100 shrink-0" />
                     {item.label}
                   </Link>
                 </li>
@@ -127,19 +133,40 @@ const Footer: React.FC = () => {
           </div>
 
           {/* Social icons */}
-          <div className="flex min-w-0 flex-shrink-0 flex-row items-end justify-end gap-4">
-            <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="Twitter">
-              <TwitterIcon />
-            </a>
-            <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="Instagram">
-              <InstagramIcon />
-            </a>
-            <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="LinkedIn">
-              <LinkedInIcon />
-            </a>
-            <a href="#" className="text-[#2351A3] hover:opacity-80" aria-label="Facebook">
-              <FacebookIcon />
-            </a>
+          <div className="flex min-w-0 flex-shrink-0 flex-row items-center justify-center gap-3 w-full sm:w-auto sm:justify-start lg:justify-end">
+            {[
+              { label: "Twitter",   icon: <TwitterIcon /> },
+              { label: "Instagram", icon: <InstagramIcon /> },
+              { label: "LinkedIn",  icon: <LinkedInIcon /> },
+              { label: "Facebook",  icon: <FacebookIcon /> },
+            ].map(({ label, icon }) => (
+              <a
+                key={label}
+                href="#"
+                aria-label={label}
+                className={[
+                  "group relative flex items-center justify-center overflow-hidden",
+                  "w-11 h-11 rounded-2xl",
+                  // base: clean light pill
+                  "bg-[#E8EDF8] text-[#2351A3]",
+                  "transition-all duration-300 ease-out",
+                  "hover:-translate-y-1 hover:shadow-[0_8px_20px_rgba(35,81,163,0.30)]",
+                  "active:scale-95 active:translate-y-0",
+                ].join(" ")}
+              >
+                {/* Sliding blue fill on hover */}
+                <span
+                  className="absolute inset-0 translate-y-full rounded-2xl transition-transform duration-300 ease-out group-hover:translate-y-0"
+                  style={{
+                    background: "linear-gradient(160deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+                  }}
+                />
+                {/* Icon sits above the fill */}
+                <span className="relative z-10 flex items-center justify-center transition-colors duration-300 group-hover:text-white [&_svg]:w-[18px] [&_svg]:h-[18px]">
+                  {icon}
+                </span>
+              </a>
+            ))}
           </div>
         </div>
       </div>
@@ -149,7 +176,7 @@ const Footer: React.FC = () => {
         className="w-full py-4 text-center text-sm text-white/90"
         style={{ background: "#3D495C" }}
       >
-        © Al Rais Travel. All rights reserved.
+      AL RAIS TRAVEL AGENCIES (L.L.C.)       
       </div>
 
       <style>{`

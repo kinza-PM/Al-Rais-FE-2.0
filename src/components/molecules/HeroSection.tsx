@@ -46,7 +46,7 @@ const PromotionalCards: React.FC = () => (
     <div className="w-full max-w-[1268px] grid md:grid-cols-3 gap-4 lg:gap-6 justify-items-center">
       {/* Card 1 — Welcome gift */}
       <div
-        className="relative flex w-full max-w-[401px] items-center justify-between gap-4 px-4 py-4 shadow-[0_1px_4px_rgba(12,40,86,0.12)] bg-cover bg-right bg-no-repeat rounded-[16px]"
+        className="relative flex w-full max-w-[401px] items-center justify-between gap-4 px-4 py-4 shadow-[0_1px_4px_rgba(12,40,86,0.12)] bg-cover bg-right bg-no-repeat rounded-[16px] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(12,40,86,0.18)] cursor-pointer"
         style={{
           height: 113,
           backgroundImage: `url(${CardBg25})`,
@@ -76,7 +76,7 @@ const PromotionalCards: React.FC = () => (
 
       {/* Card 2 — Did you know */}
       <div
-        className="flex w-full max-w-[401px] items-center justify-between gap-4 px-6 py-4 text-white shadow-[0_8px_28px_rgba(12,40,86,0.18)] rounded-[16px]"
+        className="flex w-full max-w-[401px] items-center justify-between gap-4 px-6 py-4 text-white shadow-[0_8px_28px_rgba(12,40,86,0.18)] rounded-[16px] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(12,40,86,0.28)] cursor-pointer"
         style={{
           height: 113,
           background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
@@ -100,7 +100,7 @@ const PromotionalCards: React.FC = () => (
 
       {/* Card 3 — Companion */}
       <div
-        className="flex w-full max-w-[401px] items-center justify-between gap-4 px-6 py-4 border border-[#E7EEF7] bg-cover bg-right bg-no-repeat shadow-[0_1px_4px_rgba(12,40,86,0.12)] rounded-[16px]"
+        className="flex w-full max-w-[401px] items-center justify-between gap-4 px-6 py-4 border border-[#E7EEF7] bg-cover bg-right bg-no-repeat shadow-[0_1px_4px_rgba(12,40,86,0.12)] rounded-[16px] transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(12,40,86,0.18)] cursor-pointer"
         style={{
           height: 113,
           backgroundImage: `url(${CardBgExplore})`,

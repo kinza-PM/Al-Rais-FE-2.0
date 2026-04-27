@@ -7,9 +7,17 @@ import { Select } from "antd";
 import toast from "react-hot-toast";
 import { getTicketReasons, createTicket } from "../services/api/customerSupport";
 import { useAuth } from "../features/auth/hooks/useAuth";
+import { useLocation, useNavigate } from "react-router-dom";
+import { buildMyBookingsUrl } from "../utils/myBookingsUrl";
 
 const CustomerSupportPage = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const navState = (location.state || {}) as {
+    myBookingsSearch?: string;
+    bookingsMode?: "flights" | "hotels";
+  };
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -158,8 +166,26 @@ const CustomerSupportPage = () => {
     }
   };
 
+  const navigateBackToMyBookings = () => {
+    if (navState.myBookingsSearch) {
+      navigate(`/my-bookings${navState.myBookingsSearch}`);
+      return;
+    }
+    navigate(buildMyBookingsUrl({ mode: navState.bookingsMode ?? "flights", status: "all" }));
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#E0F4FF] to-white ">
+      <div className="mx-auto w-full max-w-xl px-4 pt-6">
+        <Button
+          type="button"
+          onClick={navigateBackToMyBookings}
+          className="bg-transparent border-none p-0 text-[14px] font-semibold text-[#5383DA] hover:underline"
+          overrideClasses
+        >
+          ← Back to My Bookings
+        </Button>
+      </div>
       {/* Header with gradient background */}
       <div className="py-10 px-4">
         <h2 className="text-center text-3xl font-semibold mb-3">

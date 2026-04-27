@@ -353,10 +353,14 @@ const SightseeingCancellationPage: React.FC = () => {
       <div className="mx-auto flex w-full max-w-[576px] flex-col gap-5">
         <button
           type="button"
-          onClick={() => navigate(-1)}
+          onClick={() =>
+            navigate("/my-bookings", {
+              state: { mode: "Sightseeing" },
+            })
+          }
           className="self-start text-[14px] font-semibold text-[#2351A3] hover:underline"
         >
-          ← Back
+          ← Back to My Bookings
         </button>
 
         {/* Sightseeing details — Figma: 576×259, #FFF, 1.5px #C2CAD6, inner 1px #E4E4E7 */}

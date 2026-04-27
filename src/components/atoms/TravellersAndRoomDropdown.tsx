@@ -87,7 +87,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   // Initial pax state should preserve incoming values even before schema loads.
   const initialPax = useMemo<Pax>(() => {
     const p: Pax = {
-      adults: value?.adults ?? 0,
+      adults: Math.max(1, value?.adults ?? 1),
       kids: value?.kids ?? 0,
       children: value?.children ?? 0,
       infants: value?.infants ?? 0,
@@ -95,7 +95,10 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
       rooms: value?.rooms ?? 1,
     };
 
-    for (const r of rows) (p as any)[r.key] = (value as any)?.[r.key] ?? 0;
+    for (const r of rows) {
+      const incoming = (value as any)?.[r.key];
+      (p as any)[r.key] = r.key === "adults" ? Math.max(1, incoming ?? 1) : (incoming ?? 0);
+    }
     return p;
   }, [rows, value]);
 
@@ -147,7 +150,8 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   const dec = (k: PaxKey) =>
     setPax((p) => {
       const cur = (p as any)[k] || 0;
-      return { ...p, [k]: Math.max(0, cur - 1) };
+      const minAllowed = k === "adults" ? 1 : 0;
+      return { ...p, [k]: Math.max(minAllowed, cur - 1) };
     });
   const incRooms = () => setPax((p) => ({ ...p, rooms: (p.rooms ?? 1) + 1 }));
   const decRooms = () =>
@@ -360,7 +364,7 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
                 count={(pax as any)[r.key] || 0}
                 dec={() => dec(r.key as PaxKey)}
                 inc={() => inc(r.key as PaxKey)}
-                disableDec={((pax as any)[r.key] || 0) <= 0}
+                disableDec={((pax as any)[r.key] || 0) <= (r.key === "adults" ? 1 : 0)}
                 disableInc={!canInc(r.key as PaxKey)}
               />
               {idx < visibleRows.length - 1 && (

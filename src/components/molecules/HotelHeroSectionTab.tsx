@@ -423,7 +423,7 @@ const HotelHeroSectionTab: React.FC = () => {
                 errorMessage={travellersError || null}
               />
               {travellersError && (
-                <p className="absolute top-full left-0 mt-2 text-[12px] text-[#E65959] whitespace-nowrap">
+                <p className="mt-1 text-[12px] leading-snug text-[#E65959]">
                   {travellersError}
                 </p>
               )}

@@ -471,34 +471,45 @@ const FlightHeroSection: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Trip type segmented control */}
-          {/* Trip type segmented control */}
-          {/* Trip type segmented control */}
-          <div className="flex justify-center mt-0.5"> {/* Changed from mt-1 to mt-0.5 */}
-            <div className="flex items-center rounded-xl p-1 bg-white">
+          {/* ── Trip type segmented control ── */}
+          <div className="mt-0.5 flex justify-center px-1">
+            <div className="flex max-w-full flex-wrap items-center justify-center gap-2 rounded-xl bg-white p-1">
               {nsLoading.flightTypes && (
-                <div className="px-6 py-2 text-[14px] rounded-xl text-[#3A4350] opacity-60">
+                <div className="rounded-xl px-6 py-2 text-[14px] text-[#3A4350] opacity-60">
                   Loading…
                 </div>
               )}
               {!nsLoading.flightTypes &&
-                tabs.map((t, index) => (
+                tabs.map((t) => (
                   <button
                     key={t.id}
                     type="button"
                     onClick={() => setTrip(t.key)}
-                    className={`text-[14px] transition-colors cursor-pointer flex items-center justify-center ${trip === t.key ? "text-white" : "text-[#3A4350]"
-                      }`}
+                    className={[
+                      "min-w-0 flex-1 sm:flex-none sm:w-[115px]",
+                      "text-[12px] sm:text-[14px] font-medium",
+                      "flex cursor-pointer items-center justify-center",
+                      // smooth all: bg, color, shadow, transform
+                      "transition-all duration-200 ease-out",
+                      // press feedback
+                      "active:scale-95",
+                      // active lift
+                      trip === t.key ? "-translate-y-[1px]" : "translate-y-0",
+                      trip === t.key ? "text-white" : "text-[#3A4350] hover:text-[#2351A3]",
+                    ].join(" ")}
                     style={{
-                      width: 115,
                       height: 35,
-                      padding: "0 16px",
+                      padding: "0 8px",
                       borderBottomLeftRadius: 16,
                       borderBottomRightRadius: 16,
-                      background: trip === t.key ? "var(--primary-300, #2351A3)" : "#F2F2F3",
-                      opacity: 1,
-                      transform: "rotate(0deg)",
-                      marginRight: index < tabs.length - 1 ? 8 : 0,
+                      background:
+                        trip === t.key
+                          ? "var(--primary-300, #2351A3)"
+                          : "#F2F2F3",
+                      boxShadow:
+                        trip === t.key
+                          ? "0 4px 12px rgba(35,81,163,0.30)"
+                          : "none",
                     }}
                   >
                     {t.label}
@@ -508,7 +519,11 @@ const FlightHeroSection: React.FC = () => {
           </div>
 
           {/* ── Form fields + Search button ── */}
-          <div className="px-4 sm:px-6 md:px-10 pt-5 pb-5">
+          {/* animate-in: fade + slide up on every tab switch */}
+          <div
+            key={trip}
+            className="animate-[fadeSlideUp_220ms_ease-out_both] px-4 pt-5 pb-5 sm:px-6 md:px-10 lg:pt-4 lg:pb-4"
+          >
             <div className="w-full min-w-0 xl:grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end xl:gap-4">
               <div className="min-w-0">
                 {trip === "oneway" && (
@@ -678,9 +693,16 @@ const FlightHeroSection: React.FC = () => {
                 className={`flex justify-center xl:justify-end ${!hasAttemptedValidation ? "mt-4 xl:mt-0" : "mt-8 xl:mt-0"}`}
               >
                 <button
-                  className="flight-cta-button text-white w-full sm:w-auto"
+                  type="button"
+                  className={[
+                    "text-[16px] font-medium text-white",
+                    "w-full sm:w-auto",
+                    "transition-all duration-200 ease-out",
+                    "active:scale-95",
+                    "hover:-translate-y-[2px] hover:shadow-[0_8px_24px_rgba(35,81,163,0.45)]",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5383DA] focus-visible:ring-offset-2",
+                  ].join(" ")}
                   style={{
-                    width: "auto",
                     minWidth: 137,
                     height: 47,
                     borderRadius: 100,

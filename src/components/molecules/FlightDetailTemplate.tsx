@@ -803,13 +803,13 @@ const FlightDetailTemplate: React.FC = () => {
       // append only unique items, then re-apply current sort
       setResponseData((prev) =>
         sortFlightOffers(
-          appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted),
+        appendUniqueItemsForLoadMoreFlights(prev, oneWayFormatted),
           sortBy,
         ),
       );
       setRoundResponseData((prev) =>
         sortFlightOffers(
-          appendUniqueItemsForLoadMoreFlights(prev, roundFormatted),
+        appendUniqueItemsForLoadMoreFlights(prev, roundFormatted),
           sortBy,
         ),
       );
@@ -2095,9 +2095,9 @@ const FlightDetailTemplate: React.FC = () => {
                   <div key={idx} className="relative">
                     <div className="flight-search-multicity-legrow">
                     <div className="flight-search-multicity-route">
-                      <TravelRoutePicker
+            <TravelRoutePicker
                         options={[]}
-                        loading={countriesLoading}
+              loading={countriesLoading}
                         fromOptions={fromCountriesForPicker as AirportOption[]}
                         toOptions={toCountriesForPicker as AirportOption[]}
                         fromLoading={
@@ -2332,40 +2332,40 @@ const FlightDetailTemplate: React.FC = () => {
                   toLoading={qToAirports.isLoading || qToAirports.isFetching}
                   onFromSearchChange={setFromCountriesSearchTerm}
                   onToSearchChange={setToCountriesSearchTerm}
-                  value={{
-                    fromCode,
-                    toCode,
-                    fromOption: fromOption ?? preservedFromOption,
-                    toOption: toOption ?? preservedToOption,
-                  }}
+              value={{
+                fromCode,
+                toCode,
+                fromOption: fromOption ?? preservedFromOption,
+                toOption: toOption ?? preservedToOption,
+              }}
                   onChange={({
                     fromCode: f,
                     toCode: t,
                     fromOption: fOpt,
                     toOption: tOpt,
                   }) => {
-                    setFromCode(f);
-                    setToCode(t);
-                    if (fOpt !== undefined) setFromOption(fOpt);
-                    if (tOpt !== undefined) setToOption(tOpt);
-                  }}
-                  showSwap
-                  labels={{ from: "From", to: "To" }}
-                  placeholders={{ from: "Please select", to: "Please select" }}
-                  disableSameSelection
-                  widthClass="fromToSelectWidth"
-                  fromError={
+                setFromCode(f);
+                setToCode(t);
+                if (fOpt !== undefined) setFromOption(fOpt);
+                if (tOpt !== undefined) setToOption(tOpt);
+              }}
+              showSwap
+              labels={{ from: "From", to: "To" }}
+              placeholders={{ from: "Please select", to: "Please select" }}
+              disableSameSelection
+              widthClass="fromToSelectWidth"
+              fromError={
                     !loading &&
                     fromCountriesForPicker.length === 0
-                      ? "Please try a different search."
-                      : undefined
-                  }
-                  toError={
+                  ? "Please try a different search."
+                  : undefined
+              }
+              toError={
                     !loading &&
                     toCountriesForPicker.length === 0
-                      ? "Please try a different search."
-                      : undefined
-                  }
+                  ? "Please try a different search."
+                  : undefined
+              }
                   fromOnLoadMore={qFromAirports.fetchNextPage}
                   toOnLoadMore={qToAirports.fetchNextPage}
                   fromHasMore={qFromAirports.hasNextPage}
@@ -2399,7 +2399,7 @@ const FlightDetailTemplate: React.FC = () => {
                     value={paxCounts}
                     schema={passengers as PassengerSchema}
                     maxTotal={100}
-                    onChange={(value) => {
+                onChange={(value) => {
                       handlePassenger(value);
                     }}
                   />
@@ -2408,42 +2408,42 @@ const FlightDetailTemplate: React.FC = () => {
 
               <div className="flight-search-field flight-search-field--depart">
                 <label className="header-labels-common ">Departure Date</label>
-                <TailiwindCustomDatePicker
-                  value={departDate ? new Date(departDate) : null}
-                  onChange={(value) => {
-                    handleDate(value, "depart");
-                  }}
-                  placeholder="Select departure date"
-                  tooltip="Select departure date"
-                  buttonIconSrc={true}
-                  disablePastDates={true}
-                />
+              <TailiwindCustomDatePicker
+                value={departDate ? new Date(departDate) : null}
+                onChange={(value) => {
+                  handleDate(value, "depart");
+                }}
+                placeholder="Select departure date"
+                tooltip="Select departure date"
+                buttonIconSrc={true}
+                disablePastDates={true}
+              />
               </div>
 
-              {trip === "roundtrip" && (
+            {trip === "roundtrip" && (
                 <div className="flight-search-field flight-search-field--return">
-                  <label className="header-labels-common ">Return Date</label>
-                  <TailiwindCustomDatePicker
-                    value={returnDate ? new Date(returnDate) : null}
-                    onChange={(value) => {
-                      handleDate(value, "return");
-                    }}
-                    placeholder="Select return date"
-                    tooltip="Select return date"
-                    buttonIconSrc={true}
-                    disablePastDates={true}
+                <label className="header-labels-common ">Return Date</label>
+                <TailiwindCustomDatePicker
+                  value={returnDate ? new Date(returnDate) : null}
+                  onChange={(value) => {
+                    handleDate(value, "return");
+                  }}
+                  placeholder="Select return date"
+                  tooltip="Select return date"
+                  buttonIconSrc={true}
+                  disablePastDates={true}
                     minDate={departDate ? new Date(departDate) : null}
-                  />
-                </div>
+                />
+              </div>
               )}
 
               <div className="flight-search-field flight-search-field--submit">
-                <CustomButton
-                  className="searchFilterBtn"
-                  onClick={() => handleSearch()}
-                >
+          <CustomButton
+            className="searchFilterBtn"
+            onClick={() => handleSearch()}
+          >
                   {isPending ? "Searching..." : "Search"}
-                </CustomButton>
+          </CustomButton>
               </div>
             </div>
           )}

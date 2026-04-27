@@ -2,35 +2,37 @@
 interface LogoProps {
   src: string;
   alt: string;
-  size?: 'small' | 'medium' | 'large' | 'modal';
+  size?: "small" | "medium" | "large" | "modal";
   className?: string;
 }
 
-function Logo({ 
-  src, 
-  alt, 
-  size = 'medium', 
-  className = '' 
+function Logo({
+  src,
+  alt,
+  size = "medium",
+  className = "",
 }: LogoProps) {
   const sizeClasses = {
-    small: 'w-[120px] h-[31px] sm:w-[140px] sm:h-[36px]',
-    medium: 'w-[140px] h-[36px] lg:w-[172px] lg:h-[44px]',
-    large: 'w-[172px] h-[44px]',
-    modal: 'w-[60px] h-[44px]'
+    // Keep consistent width scale and let image preserve its own aspect ratio for sharp rendering.
+    small: "w-[142px] sm:w-[156px] lg:w-[176px] h-auto",
+    medium: "w-[156px] lg:w-[176px] h-auto",
+    large: "w-[176px] h-auto",
+    modal: "w-[78px] h-auto",
   };
 
-  const responsiveClasses = size === 'small' 
-    ? 'w-[120px] h-[31px] sm:w-[140px] sm:h-[36px] lg:w-[172px] lg:h-[44px]'
-    : sizeClasses[size];
+  const responsiveClasses = sizeClasses[size];
 
   return (
-    <img 
+    <img
       src={src}
       alt={alt}
-      className={`${responsiveClasses} ${className}`}
+      className={`${responsiveClasses} object-contain ${className}`}
+      loading="eager"
+      decoding="async"
       style={{
-        transform: 'rotate(0deg)',
-        opacity: 1
+        transform: "rotate(0deg)",
+        opacity: 1,
+        imageRendering: "auto",
       }}
     />
   );

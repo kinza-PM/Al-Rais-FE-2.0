@@ -182,6 +182,7 @@ function isOtherCancelReasonLabel(label: string | undefined): boolean {
 const FlightCancellationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const myBookingsSearch = location.state?.myBookingsSearch as string | undefined;
 
   const bookingReferenceId = location.state?.bookingReferenceId || "";
   const supplierLocator = location.state?.supplierLocator || "";
@@ -702,6 +703,20 @@ const FlightCancellationPage: React.FC = () => {
       />
       <div className="min-h-screen bg-[#F8FAFC] py-10 px-4 max-[768px]:py-5 max-[768px]:px-3">
         <div className="mx-auto w-full max-w-[650px]">
+          <Button
+            type="button"
+            onClick={() =>
+              navigate(
+                myBookingsSearch
+                  ? `/my-bookings${myBookingsSearch}`
+                  : buildMyBookingsUrl({ mode: "flights", status: "all" }),
+              )
+            }
+            className="mb-5 bg-transparent border-none p-0 text-[14px] font-semibold text-[#5383DA] hover:underline"
+            overrideClasses
+          >
+            ← Back to My Bookings
+          </Button>
           {hasAttemptedValidation && validationErrors.session && (
             <div
               className="mb-4 rounded-[12px] border border-[#E65959] bg-[#FEF2F2] px-4 py-3 text-[13px] text-[#E65959]"

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Splide, SplideSlide } from "@splidejs/react-splide";
 import "@splidejs/react-splide/css";
 import GroupImg from "../../assets/images/Group.png";
@@ -70,17 +70,20 @@ function FeedbackCard({
 
   return (
     <div
-      className="relative flex h-[320px] flex-col rounded-[8px] p-5 sm:p-6"
+      className={[
+        "group relative flex h-[320px] flex-col rounded-[8px] p-5 sm:p-6",
+        "transition-all duration-300 ease-out",
+        "hover:-translate-y-2 hover:shadow-[0_12px_32px_rgba(35,81,163,0.14)] hover:border-[#2351A3]",
+      ].join(" ")}
       style={{
         background: isGradientCard
           ? "linear-gradient(360deg, #D2F4FE 0%, #FFFFFF 100%)"
           : "#FFFFFF",
         border: "1.5px solid #E4E4E7",
-        boxShadow: "0 0 0 1px #E4E4E7",
       }}
     >
-      {/* Group.png at top-left of every card */}
-      <div className="absolute left-4 top-4 sm:left-5 sm:top-5">
+      {/* Quote icon — scales up on card hover */}
+      <div className="absolute left-4 top-4 sm:left-5 sm:top-5 transition-transform duration-300 ease-out group-hover:scale-110 origin-top-left">
         <img
           src={GroupImg}
           alt=""
@@ -89,24 +92,25 @@ function FeedbackCard({
         />
       </div>
 
-      {/* Testimonial text - with top padding so it doesn't overlap the icon */}
-      <p className="mt-12 flex-1 text-left text-sm leading-relaxed text-[#0A0C0F] sm:mt-14 sm:text-base">
+      {/* Testimonial text */}
+      <p className="mt-12 flex-1 text-left text-sm font-normal leading-relaxed text-[#0A0C0F] sm:mt-14 sm:text-base">
         {testimonial.text}
       </p>
 
       {/* Customer info: avatar + name + role */}
       <div className="mt-4 flex items-center gap-3">
+        {/* Avatar zooms slightly on card hover */}
         <img
           src={testimonial.avatar}
           alt=""
-          className="h-10 w-10 flex-shrink-0 rounded-full object-cover sm:h-12 sm:w-12"
+          className="h-10 w-10 flex-shrink-0 rounded-full object-cover sm:h-12 sm:w-12 transition-transform duration-300 ease-out group-hover:scale-110"
           aria-hidden
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[#0A0C0F] sm:text-base">
+          <p className="truncate text-sm font-semibold text-[#0A0C0F] sm:text-base transition-colors duration-200 group-hover:text-[#2351A3]">
             {testimonial.name}
           </p>
-          <p className="truncate text-xs text-[#3D495C] opacity-80 sm:text-sm">
+          <p className="truncate text-xs font-medium text-[#3D495C] sm:text-sm">
             {testimonial.role}
           </p>
         </div>
@@ -120,30 +124,62 @@ const CustomersFeedbackSection: React.FC = () => {
   const goPrev = useCallback(() => splide?.go("<"), [splide]);
   const goNext = useCallback(() => splide?.go(">"), [splide]);
 
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { threshold: 0.08 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const arrowBase = [
+    "flex flex-shrink-0 items-center justify-center rounded-full",
+    "transition-all duration-200 ease-out",
+    "hover:bg-[#EEF3FF] hover:scale-110 active:scale-95",
+  ].join(" ");
+
   return (
-    <section className="w-full bg-white py-12 sm:py-16 md:py-20">
+    <section ref={sectionRef} className="w-full bg-white py-12 sm:py-16 md:py-20">
       <div className="mx-auto max-w-[1464px] px-4 sm:px-6 lg:px-8">
-        {/* Section header (centered) */}
-        <div className="w-full text-center">
-          <p className="text-sm text-[#3D495C]">Customers feedback</p>
-          <h2 className="mt-2 text-2xl font-bold text-[#0A0C0F] sm:text-3xl lg:text-4xl">
+
+        {/* Header — fade + slide down */}
+        <div
+          className={[
+            "w-full text-center",
+            "transition-all duration-500 ease-out",
+            visible ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4",
+          ].join(" ")}
+        >
+          <p className="text-sm font-medium text-[#3D495C]">Customers feedback</p>
+          <h2 className="mt-2 text-2xl font-extrabold text-[#0A0C0F] sm:text-3xl lg:text-4xl">
             See what travelers think about us
           </h2>
         </div>
 
-        {/* Slider with arrows outside + light border around track */}
-        <div className="mt-6 flex w-full items-center gap-3 sm:gap-4 lg:gap-6">
+        {/* Slider row — fade + slide up after header */}
+        <div
+          className={[
+            "mt-4 flex w-full items-center gap-3 sm:gap-4 lg:gap-6",
+            "transition-all duration-500 ease-out",
+            visible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6",
+          ].join(" ")}
+          style={{ transitionDelay: visible ? "130ms" : "0ms" }}
+        >
           <button
             type="button"
             aria-label="Previous testimonials"
             onClick={goPrev}
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-[#3D495C] transition-colors hover:text-[#0A0C0F] sm:h-14 sm:w-14"
-            style={{ background: "transparent" }}
+            className={`h-12 w-12 sm:h-14 sm:w-14 ${arrowBase}`}
           >
             <img src={ArrowLeftIcon} alt="prev" className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
 
-          <div className="min-w-0 flex-1 overflow-hidden rounded-lg p-2 sm:p-3">
+          <div className="min-w-0 flex-1 rounded-lg px-1 py-3">
             <Splide
               aria-label="Customer testimonials"
               options={{
@@ -154,22 +190,10 @@ const CustomersFeedbackSection: React.FC = () => {
                 pagination: false,
                 arrows: false,
                 breakpoints: {
-                  1280: {
-                    perPage: 4,
-                    gap: `${CARD_GAP}px`,
-                  },
-                  1024: {
-                    perPage: 3,
-                    gap: `${CARD_GAP}px`,
-                  },
-                  768: {
-                    perPage: 2,
-                    gap: "16px",
-                  },
-                  640: {
-                    perPage: 1,
-                    gap: "16px",
-                  },
+                  1280: { perPage: 4, gap: `${CARD_GAP}px` },
+                  1024: { perPage: 3, gap: `${CARD_GAP}px` },
+                  768:  { perPage: 2, gap: "16px" },
+                  640:  { perPage: 1, gap: "16px" },
                 },
               }}
               onMounted={(instance: SplideInstance) => setSplide(instance)}
@@ -186,8 +210,7 @@ const CustomersFeedbackSection: React.FC = () => {
             type="button"
             aria-label="Next testimonials"
             onClick={goNext}
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-[#3D495C] transition-colors hover:text-[#0A0C0F] sm:h-14 sm:w-14"
-            style={{ background: "transparent" }}
+            className={`h-12 w-12 sm:h-14 sm:w-14 ${arrowBase}`}
           >
             <img src={ArrowRightIcon} alt="next" className="h-5 w-5 sm:h-6 sm:w-6" />
           </button>
