@@ -1,6 +1,7 @@
 import { memo, useMemo } from "react";
 import { getFacilityIcon } from "../../utils/hotelHelper";
 import { formatTo12Hour } from "../../utils/helpers";
+import EmptyAmenitiesStatus from "../common/EmptyAmenitiesStatus";
 
 type HotelDetailOverviewSectionProps = {
   hotelDetail?: any;
@@ -172,9 +173,15 @@ const HotelDetailOverviewSection = ({
             ))}
           </div>
         ) : (
-          <p className="text-[#3D495C] text-sm mt-4">
-            No facilities information available
-          </p>
+          // <p className="text-[#3D495C] text-sm mt-4">
+          //   No facilities information available
+          // </p>
+          <div className="mt-4">
+            <EmptyAmenitiesStatus
+              title="Facility details are being finalized by the property."
+              description="The hotel hasn't shared their full facility list with us yet. Feel free to contact them directly for specific requests regarding the gym, pool, or spa."
+            />
+          </div>
         )}
       </div>
     </div>

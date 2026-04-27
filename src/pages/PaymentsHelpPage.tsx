@@ -207,7 +207,10 @@ const PaymentsHelpPage: React.FC = () => {
                     marginTop: 8,
                   }}
                 >
-                  Email: contact@al-rais.com
+                  Email: <span className="cursor-pointer text-[#2351A3] underline font-medium" onClick={(e) => {
+                    e.stopPropagation();
+                    window.location.href = "mailto:contact@al-rais.com";
+                  }}>contact@al-rais.com</span>
                 </p>
               </div>
             </div>

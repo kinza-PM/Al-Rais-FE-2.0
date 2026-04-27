@@ -8,7 +8,7 @@ type Props = {
 
 const Loader: React.FC<Props> = ({
     show,
-    label = "Loading, Please wait...",
+    label = "Loading, please wait...",
 }) => {
 
     if (!show) return null;

@@ -248,16 +248,33 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
         <div className="min-h-screen">
           <div className="mx-auto">
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5 lg:gap-x-8 lg:gap-y-8">
-              {visible.map((hotel, index) => (
-                <HotellGridCard
-                  key={hotel.hotelKey || index}
-                  hotel={hotel}
-                  isFavourite={!!favorites[hotel.hotelKey]}
-                  isFavouriteLoading={isAddFavouritePending}
-                  onToggleFavourite={() => handleToggleFavourite(hotel)}
-                  onShare={() => handleShareClick(hotel)}
-                />
-              ))}
+              {visible.map((hotel, index) => {
+                if (index === 3) {
+                  return (
+                    <React.Fragment key={`banner-${hotel.hotelKey || index}`}>
+                      <SignupPromoCard />
+                      <HotellGridCard
+                        key={hotel.hotelKey || index}
+                        hotel={hotel}
+                        isFavourite={!!favorites[hotel.hotelKey]}
+                        isFavouriteLoading={isAddFavouritePending}
+                        onToggleFavourite={() => handleToggleFavourite(hotel)}
+                        onShare={() => handleShareClick(hotel)}
+                      />
+                    </React.Fragment>
+                  );
+                }
+                return (
+                  <HotellGridCard
+                    key={hotel.hotelKey || index}
+                    hotel={hotel}
+                    isFavourite={!!favorites[hotel.hotelKey]}
+                    isFavouriteLoading={isAddFavouritePending}
+                    onToggleFavourite={() => handleToggleFavourite(hotel)}
+                    onShare={() => handleShareClick(hotel)}
+                  />
+                )
+              })}
               {hasMore ? (
                 <div
                   ref={sentinelRef}
@@ -306,3 +323,24 @@ const HotelSearchGridView: React.FC<HotelSearchGridViewProps> = React.memo(
 HotelSearchGridView.displayName = "HotelSearchGridView";
 
 export default HotelSearchGridView;
+
+const SignupPromoCard: React.FC = () => {
+  return (
+    <div className="rounded-2xl overflow-hidden mb-2 shadow-sm h-full">
+      <div className="flex flex-col items-center bg-[linear-gradient(180deg,#5383DA_0%,#2351A3_50%,#081326_100%)] text-white h-full pt-8 px-4">
+        <div className="w-48 h-48 bg-[#D9D9D9] mb-6" />
+
+        <div className="text-center text-white px-6 py-6">
+          <h3 className="text-lg font-bold leading-tight mb-3">
+            Join now to experience the richness of travel.
+          </h3>
+          <p className="text-sm">Get the best deals in your inbox</p>
+        </div>
+
+        <button className="mt-auto mb-16 bg-[#FFFFFF] text-[#2351A3] px-8 py-2 text-base rounded-lg font-semibold shadow-md">
+          Sign up
+        </button>
+      </div>
+    </div>
+  );
+};

@@ -40,8 +40,8 @@ const HotelSearchSignInUpdatesBanner: React.FC = () => {
           </svg>
         </div>
         <div className="textSection">
-          <h5>Sign in to get important updates</h5>
-          <p>
+          <h5 className="text-base">Sign in to get important updates</h5>
+          <p className="text-xs">
             Get important updates about price alerts, weather alerts and other
             updates in your inbox
           </p>

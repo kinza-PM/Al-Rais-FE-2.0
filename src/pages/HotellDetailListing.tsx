@@ -1730,7 +1730,7 @@ const HotelDetailListing = () => {
           />
 
           <div className="relative max-w-5xl mx-auto px-4 py-6">
-            <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EE7] px-4 py-3">
+            <div className="bg-[#FFFFFF] rounded-2xl border border-[#E4EE7] px-4 py-4">
               <div className="flex items-center justify-between gap-6">
                 <div className="flex-shrink-0 flex-1 min-w-0">
                   <p className="text-xs text-[#3D495C]">Your selection</p>
@@ -1761,9 +1761,9 @@ const HotelDetailListing = () => {
                       <p className="text-[15px] font-semibold text-[#0A0C0F]">
                         No rooms selected
                       </p>
-                      <p className="text-sm text-[#EA0029] mt-0.5 font-normal">
-                        Select dates, travelers and rooms to see prices.
-                      </p>
+                      {/* <p className="text-sm text-[#EA0029] mt-0.5 font-normal">
+                        Select rooms to see prices.
+                      </p> */}
                     </>
                   )}
                 </div>
@@ -1817,7 +1817,7 @@ const HotelDetailListing = () => {
             }}
           />
           <div className="relative px-4 py-3">
-            <div className="bg-[#FFFFFF] rounded-t-2xl border border-[#E4EE7] px-4 py-3">
+            <div className="bg-[#FFFFFF] rounded-t-2xl border border-[#E4EE7] px-4 py-4">
               <p className="text-xs text-[#3D495C]">Your selection</p>
               {selectedRooms.length > 0 ? (
                 <>
@@ -1846,9 +1846,9 @@ const HotelDetailListing = () => {
                   <p className="text-[15px] font-semibold text-[#0A0C0F]">
                     No rooms selected
                   </p>
-                  <p className="text-sm text-[#EA0029] mt-0.5 font-normal">
+                  {/* <p className="text-sm text-[#EA0029] mt-0.5 font-normal">
                     Select rooms to see prices.
-                  </p>
+                  </p> */}
                 </>
               )}
 

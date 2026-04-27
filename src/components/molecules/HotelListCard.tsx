@@ -13,7 +13,7 @@ import {
   getHotelGuestReviewMeta,
   getHotelListingDescription,
   resolveHotelListingReviewDisplay,
-  HOTEL_LISTING_REVIEW_FALLBACK,
+  // HOTEL_LISTING_REVIEW_FALLBACK,
 } from "../../utils/hotelHelper";
 import { HotelProxiedImage } from "../atoms/HotelProxiedImage";
 import { useHotelStore } from "../../store/UseHotelStore";
@@ -70,11 +70,15 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
     .map((f: any) => (typeof f === "string" ? f : f?.name || ""))
     .filter(Boolean);
 
-  const childMatch = facilityNames.find((n: string) => /child|family|kids/i.test(n));
-  const internetMatch = facilityNames.find((n: string) =>
-    /wifi|internet|wi-fi/i.test(n)
+  const childMatch = facilityNames.find((n: string) =>
+    /child|family|kids/i.test(n),
   );
-  const parkingMatch = facilityNames.find((n: string) => /parking|car park/i.test(n));
+  const internetMatch = facilityNames.find((n: string) =>
+    /wifi|internet|wi-fi/i.test(n),
+  );
+  const parkingMatch = facilityNames.find((n: string) =>
+    /parking|car park/i.test(n),
+  );
 
   const displayAmenities: string[] = [];
   if (hasFreeCancellation) displayAmenities.push("Free cancellation");
@@ -89,11 +93,14 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
   }
 
   const amenitiesToShow = displayAmenities.slice(0, 4);
-  const reviewDisplay = resolveHotelListingReviewDisplay(reviewScore, reviewCount);
-  const dealBadgeLabel =
-    uniqueOfferNames.length > 0
-      ? uniqueOfferNames[0]
-      : HOTEL_LISTING_REVIEW_FALLBACK.dealLabel;
+  const reviewDisplay = resolveHotelListingReviewDisplay(
+    reviewScore,
+    reviewCount,
+  );
+  // const dealBadgeLabel =
+  //   uniqueOfferNames.length > 0
+  //     ? uniqueOfferNames[0]
+  //     : HOTEL_LISTING_REVIEW_FALLBACK.dealLabel;
 
   const renderStars = (rating: string | undefined) => {
     const numRating = rating ? parseFloat(rating) : 0;
@@ -103,10 +110,20 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
     return (
       <div className="mb-3 flex items-center gap-[5px]">
         {Array.from({ length: fullStars }).map((_, i) => (
-          <img key={`filled-${i}`} className="h-5 w-5" src={FilledStar} alt="filled" />
+          <img
+            key={`filled-${i}`}
+            className="h-5 w-5"
+            src={FilledStar}
+            alt="filled"
+          />
         ))}
         {Array.from({ length: totalStars - fullStars }).map((_, i) => (
-          <img key={`empty-${i}`} className="h-5 w-5" src={EmptyStar} alt="empty" />
+          <img
+            key={`empty-${i}`}
+            className="h-5 w-5"
+            src={EmptyStar}
+            alt="empty"
+          />
         ))}
       </div>
     );
@@ -141,7 +158,11 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
             disabled={isAddFavouritePending}
             onClick={() => onToggleFavourite(hotel)}
           >
-            {isFavourite ? <img src={RedHeart} alt="Heart" /> : <img src={Heart} alt="Heart" />}
+            {isFavourite ? (
+              <img src={RedHeart} alt="Heart" />
+            ) : (
+              <img src={Heart} alt="Heart" />
+            )}
           </button>
         </div>
 
@@ -228,7 +249,9 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
 
           {hasRooms && !isAvailable && (
             <div className="text-xs flex flex-col gap-2 mt-3">
-              <p className="text-[#EA0029]">No rooms are available on the dates you selected!</p>
+              <p className="text-[#EA0029]">
+                No rooms are available on the dates you selected!
+              </p>
               <p className="text-[#0A0C0F]">Please select other dates</p>
             </div>
           )}
@@ -296,21 +319,22 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
                 </div>
               </div>
             )}
-            <span
-              className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
-              style={{
-                padding: "8px 15px",
-                minHeight: "31px",
-                fontFamily: "Inter, sans-serif",
-                fontWeight: 600,
-                fontSize: "12px",
-                lineHeight: "100%",
-                color: "#FFFFFF",
-                verticalAlign: "middle",
-              }}
-            >
-              {dealBadgeLabel}
-            </span>
+            {uniqueOfferNames.length > 0 && (
+              <span
+                className="inline-flex max-w-full items-center justify-center rounded-[100px] bg-[#00B868] box-border"
+                style={{
+                  padding: "8px 15px",
+                  minHeight: "31px",
+                  fontFamily: "Inter, sans-serif",
+                  fontWeight: 600,
+                  fontSize: "12px",
+                  lineHeight: "100%",
+                  color: "#FFFFFF",
+                }}
+              >
+                {uniqueOfferNames[0]}
+              </span>
+            )}
           </div>
 
           <div className="mb-[2px] flex w-full items-center justify-end gap-[8px]">
@@ -333,7 +357,7 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
                   ? hotel.rooms
                   : bestRoom
                     ? [bestRoom]
-                    : []
+                    : [],
               )}
             />
           </div>
@@ -372,7 +396,7 @@ const HotelListCard: React.FC<HotelListCardProps> = ({
                 {currency} {price.toFixed(2)}
               </span>
               <span className="text-[12px] font-bold leading-none text-[#3D495C]">
-                /room/night
+                /Room/Night
               </span>
             </div>
           </div>

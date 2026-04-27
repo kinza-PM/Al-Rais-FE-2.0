@@ -6,6 +6,7 @@ import {
   getFacilityIcon,
   GREAT_KEYWORDS,
 } from "../../utils/hotelHelper";
+import EmptyAmenitiesStatus from "../common/EmptyAmenitiesStatus";
 
 const HotelDetailAmenetiesSection = ({
   hotelDetail,
@@ -89,12 +90,22 @@ const HotelDetailAmenetiesSection = ({
               Facilities of {hotelDetail?.name || "Hotel"}
             </h4>
             <div className="mt-2">
-              <div className="text-[#00B868] font-semibold text-sm">
-                Great facilities
-              </div>
+              {hotelDetail?.userRating && (
+                <div className="text-[#00B868] font-semibold text-sm">
+                  Great facilities
+                </div>
+              )}
               <div className="text-sm text-[#3D495C]">
-                Review score{" "}
-                {hotelDetail?.userRating || hotelDetail?.starRating || "N/A"}
+                {hotelDetail?.userRating ? (
+                  <>Review score {hotelDetail?.userRating || "N/A"}</>
+                ) : (
+                  <div className="mt-3">
+                    <EmptyAmenitiesStatus
+                      title="No reviews yet—be the first to share your experience!"
+                      description="This property is a new addition to our collection. Stay here and help future travelers by leaving the first review."
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -126,7 +137,13 @@ const HotelDetailAmenetiesSection = ({
                 </div>
               ))
             ) : (
-              <p>No popular facilities available</p>
+              // <p>No popular facilities available</p>
+              <div className="mt-2">
+                <EmptyAmenitiesStatus
+                  title="Facility details are being finalized by the property."
+                  description="The hotel hasn't shared their full facility list with us yet. Feel free to contact them directly for specific requests regarding the gym, pool, or spa."
+                />
+              </div>
             )}
           </div>
         </div>

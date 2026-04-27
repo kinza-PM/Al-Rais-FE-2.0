@@ -64,7 +64,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 modal-overlay z-50 overflow-y-auto">
+    <div className="fixed inset-0 modal-overlay z-900 overflow-y-auto">
       {/* Backdrop click to close */}
       <div
         className="absolute inset-0"

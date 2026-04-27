@@ -11,6 +11,7 @@ import { extractErrorFromAxiosApiError } from "../../utils/apiErrorHanlder";
 import ShareTicketModal from "../atoms/ShareTicketModal";
 import { useProgressiveList } from "../../hooks/useProgressiveList";
 import HotelListCard from "./HotelListCard";
+import HotelSearchSignInUpdatesBanner from "./HotelSearchSignInUpdatesBanner";
 
 type HotelSearchListViewProps = {
   hotels: Array<any>;
@@ -275,18 +276,30 @@ const HotelSearchListView: React.FC<HotelSearchListViewProps> = React.memo(
           <div className="w-full">
             {visible.map((hotel, index) => {
               const isFavourite = !!favorites[hotel.hotelKey];
-
               return (
-                <HotelListCard
-                  key={hotel.hotelKey || index}
-                  hotel={hotel}
-                  isFavourite={isFavourite}
-                  isAddFavouritePending={isAddFavouritePending}
-                  onToggleFavourite={handleToggleFavourite}
-                  onShare={handleShareClick}
-                  onCheckAvailability={handleCheckAvailability}
-                />
+                // <HotelListCard
+                //   key={hotel.hotelKey || index}
+                //   hotel={hotel}
+                //   isFavourite={isFavourite}
+                //   isAddFavouritePending={isAddFavouritePending}
+                //   onToggleFavourite={handleToggleFavourite}
+                //   onShare={handleShareClick}
+                //   onCheckAvailability={handleCheckAvailability}
+                // />
+                <React.Fragment key={hotel.hotelKey || index}>
+                  <HotelListCard
+                    hotel={hotel}
+                    isFavourite={isFavourite}
+                    isAddFavouritePending={isAddFavouritePending}
+                    onToggleFavourite={handleToggleFavourite}
+                    onShare={handleShareClick}
+                    onCheckAvailability={handleCheckAvailability}
+                  />
+                  {/* {index === 1 && <HotelSearchSignInUpdatesBanner />} */}
+                  {(index + 1) % 3 === 0 && <HotelSearchSignInUpdatesBanner />}
+                </React.Fragment>
               );
+
             })}
             {hasMore ? (
               <div

@@ -147,7 +147,9 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
   const dec = (k: PaxKey) =>
     setPax((p) => {
       const cur = (p as any)[k] || 0;
-      return { ...p, [k]: Math.max(0, cur - 1) };
+      const min = k === "adults" ? 1 : 0;
+      // return { ...p, [k]: Math.max(0, cur - 1) };
+      return { ...p, [k]: Math.max(min, cur - 1) };
     });
   const incRooms = () => setPax((p) => ({ ...p, rooms: (p.rooms ?? 1) + 1 }));
   const decRooms = () =>
@@ -360,7 +362,12 @@ const TravellersAndRoomDropdown: React.FC<Props> = ({
                 count={(pax as any)[r.key] || 0}
                 dec={() => dec(r.key as PaxKey)}
                 inc={() => inc(r.key as PaxKey)}
-                disableDec={((pax as any)[r.key] || 0) <= 0}
+                // disableDec={((pax as any)[r.key] || 0) <= 0}
+                disableDec={
+                  r.key === "adults"
+                    ? ((pax as any)[r.key] || 0) <= 1
+                    : ((pax as any)[r.key] || 0) <= 0
+                }
                 disableInc={!canInc(r.key as PaxKey)}
               />
               {idx < visibleRows.length - 1 && (

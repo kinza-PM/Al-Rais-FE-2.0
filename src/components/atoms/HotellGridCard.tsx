@@ -439,7 +439,7 @@ const HotellGridCard: React.FC<HotellGridCardProps> = React.memo(
                     {currency} {price.toFixed(2)}
                   </span>
                   <span className="text-[12px] font-bold leading-none text-[#3D495C]">
-                    /room/night
+                    /Room/Night
                   </span>
                 </div>
               </div>

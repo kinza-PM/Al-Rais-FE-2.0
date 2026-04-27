@@ -244,7 +244,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
           { roomKey, room, count: 1, selectedAt: Date.now() } as SelectedRoom,
         ];
 
-        next.sort((a, b) => (a.room?.roomIndex ?? 1) - (b.room?.roomIndex ?? 1));
+        next.sort(
+          (a, b) => (a.room?.roomIndex ?? 1) - (b.room?.roomIndex ?? 1),
+        );
         onRoomsChange(next);
         return;
       }
@@ -339,7 +341,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
 
     if (Array.isArray(room?.offers)) {
       room.offers.forEach((offer: any) => {
-        if (offer?.name) {
+        if (offer?.name && Number(offer?.amount) > 0) {
           items.push({
             text: offer.name,
             html: true,
@@ -506,8 +508,10 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
   return (
     <div className="mt-6">
       <div className="mx-auto max-w-8xl">
-        <h4 className="text-[#0A0C0F] text-base font-bold">Rooms availability</h4>
-        <div className="mt-2 border-t border-[#E4E4E7]" />
+        <h4 className="text-[#0A0C0F] text-base font-bold">
+          Rooms availability
+        </h4>
+        {/* <div className="mt-2 border-t border-[#E4E4E7]" /> */}
 
         {/* <div className="mt-8 flex flex-col items-stretch justify-start gap-4 lg:flex-row lg:items-end">
           <div className="hotel-filter-dates w-full min-w-0 lg:max-w-[460px]">
@@ -604,12 +608,13 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       key={ri}
                       type="button"
                       onClick={() => scrollToRoom(ri)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${isSelected
-                        ? "bg-[#2351A3] text-white"
-                        : isExpanded
-                          ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
-                          : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
-                        }`}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                        isSelected
+                          ? "bg-[#2351A3] text-white"
+                          : isExpanded
+                            ? "bg-[#E8EEF7] text-[#2351A3] ring-1 ring-[#2351A3]"
+                            : "bg-white text-[#3D495C] hover:bg-[#E4E4E7] border border-[#E4E4E7]"
+                      }`}
                     >
                       <span>Room {ri}</span>
                       {isSelected && (
@@ -714,7 +719,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                           selectedForRoom?.room?.roomRate?.currency || "AED",
                         )}
                         <span className="ml-[4px] text-xs font-normal text-[#3D495C]">
-                          /night
+                          /per night
                         </span>
                       </span>
                     </div>
@@ -728,8 +733,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                         height="16"
                         viewBox="0 0 16 16"
                         fill="none"
-                        className={`transition-transform ${isExpanded ? "rotate-180" : ""
-                          }`}
+                        className={`transition-transform ${
+                          isExpanded ? "rotate-180" : ""
+                        }`}
                       >
                         <path
                           d="M4 6L8 10L12 6"
@@ -775,7 +781,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       });
 
                       const gallerySourceImages =
-                        allRoomImages.length > 0 ? allRoomImages : DEFAULT_ROOM_IMAGES;
+                        allRoomImages.length > 0
+                          ? allRoomImages
+                          : DEFAULT_ROOM_IMAGES;
                       const roomImages = gallerySourceImages.slice(0, 4);
 
                       const categories = [
@@ -800,22 +808,27 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       const roomFacilities = group.rooms.flatMap(
                         (room: any) => room?.roomFacilities || [],
                       );
-                      const hotelFacilities = hotelDetail?.hotelFacilities || [];
+                      const hotelFacilities =
+                        hotelDetail?.hotelFacilities || [];
                       const rawFacilities =
                         roomFacilities.length > 0
                           ? [...hotelFacilities, ...roomFacilities]
                           : hotelFacilities;
-                      const allFacilities = rawFacilities.filter((facility: any) => {
-                        const cleanName = facility?.name?.replace(/\*\*/g, "").trim();
-                        const lowerName = cleanName?.toLowerCase() || "";
+                      const allFacilities = rawFacilities.filter(
+                        (facility: any) => {
+                          const cleanName = facility?.name
+                            ?.replace(/\*\*/g, "")
+                            .trim();
+                          const lowerName = cleanName?.toLowerCase() || "";
 
-                        return (
-                          cleanName &&
-                          !unwantedKeywords.some((keyword) =>
-                            lowerName.includes(keyword),
-                          )
-                        );
-                      });
+                          return (
+                            cleanName &&
+                            !unwantedKeywords.some((keyword) =>
+                              lowerName.includes(keyword),
+                            )
+                          );
+                        },
+                      );
 
                       const categorizedAmenities = categorizeFacilities(
                         [allFacilities],
@@ -835,12 +848,15 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                       return (
                         <div
                           key={`${roomIndex}-${group.roomTypeName}`}
-                          className={`overflow-hidden rounded-[16px] border border-[#E4E4E7] bg-white ${groupIndex > 0 ? "mt-6" : ""
-                            }`}
+                          className={`rounded-[16px] border border-[#E4E4E7] bg-white ${
+                            groupIndex > 0 ? "mt-6" : ""
+                          } ${hasMoreOptions ? "mb-12" : ""}`}
                         >
                           <div className="flex items-center justify-between px-[15px] py-[14px]">
                             <h2 className="text-[16px] font-medium text-[#0A0C0F]">
-                              {firstRoom?.roomTypeName || group.roomTypeName || "Room"}
+                              {firstRoom?.roomTypeName ||
+                                group.roomTypeName ||
+                                "Room"}
                             </h2>
                             {/* <button
                               type="button"
@@ -855,36 +871,43 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                           <div className="grid grid-cols-1 gap-4 px-[15px] py-[12px] lg:grid-cols-[340px_1px_minmax(0,1fr)]">
                             <div>
                               <div className="flex items-start overflow-hidden">
-                                {roomImages.slice(0, 4).map((image, imageIndex) => (
-                                  <button
-                                    key={`${image}-${imageIndex}`}
-                                    type="button"
-                                    onClick={() =>
-                                      openRoomImageGallery(
-                                        gallerySourceImages,
-                                        imageIndex,
-                                        firstRoom?.roomTypeName ||
-                                        group.roomTypeName ||
-                                        "Room images",
-                                      )
-                                    }
-                                    className={`h-[100px] w-[100px] sm:h-[115px] sm:w-[115px] lg:h-[130px] lg:w-[130px] shrink-0 overflow-hidden rounded-[10px] border border-white bg-[#F1F5F9] ${imageIndex === 0 ? "" : "-ml-[35px] sm:-ml-[48px] lg:-ml-[65px]"
+                                {roomImages
+                                  .slice(0, 4)
+                                  .map((image, imageIndex) => (
+                                    <button
+                                      key={`${image}-${imageIndex}`}
+                                      type="button"
+                                      onClick={() =>
+                                        openRoomImageGallery(
+                                          gallerySourceImages,
+                                          imageIndex,
+                                          firstRoom?.roomTypeName ||
+                                            group.roomTypeName ||
+                                            "Room images",
+                                        )
+                                      }
+                                      className={`h-[100px] w-[100px] sm:h-[115px] sm:w-[115px] lg:h-[130px] lg:w-[130px] shrink-0 overflow-hidden rounded-[10px] border border-white bg-[#F1F5F9] ${
+                                        imageIndex === 0
+                                          ? ""
+                                          : "-ml-[35px] sm:-ml-[48px] lg:-ml-[65px]"
                                       } cursor-zoom-in`}
-                                  >
-                                    <img
-                                      src={image}
-                                      alt="Room"
-                                      className="h-full w-full object-cover"
-                                      onError={(e) => {
-                                        const t = e.currentTarget as HTMLImageElement;
-                                        t.src =
-                                          DEFAULT_ROOM_IMAGES[
-                                          imageIndex % DEFAULT_ROOM_IMAGES.length
-                                          ];
-                                      }}
-                                    />
-                                  </button>
-                                ))}
+                                    >
+                                      <img
+                                        src={image}
+                                        alt="Room"
+                                        className="h-full w-full object-cover"
+                                        onError={(e) => {
+                                          const t =
+                                            e.currentTarget as HTMLImageElement;
+                                          t.src =
+                                            DEFAULT_ROOM_IMAGES[
+                                              imageIndex %
+                                                DEFAULT_ROOM_IMAGES.length
+                                            ];
+                                        }}
+                                      />
+                                    </button>
+                                  ))}
                               </div>
 
                               <div className="mt-[8px] text-[14px] font-normal text-[#3D495C]">
@@ -898,46 +921,166 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                               {Object.values(categorizedAmenities).some(
                                 (arr) => arr.length > 0,
                               ) ? (
-                                <div className="grid grid-cols-1 gap-x-[28px] gap-y-[12px] sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)]">
-                                  <div className="min-w-0">
-                                    <SectionHeading icon={GreatStayIcon} title="Great for your stay" />
-                                    <AmenitiesInlineList
-                                      items={categorizedAmenities.greatForYourStay.slice(0, 7)}
-                                    />
-                                  </div>
+                                // <div className="grid grid-cols-1 gap-x-[28px] gap-y-[12px] sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)_minmax(0,0.8fr)]">
+                                //   <div className="min-w-0">
+                                //     {categorizedAmenities.greatForYourStay.length > 0 && (
+                                //       <>
+                                //         <SectionHeading icon={GreatStayIcon} title="Great for your stay" />
+                                //         <AmenitiesInlineList
+                                //           items={categorizedAmenities.greatForYourStay.slice(0, 7)}
+                                //         />
+                                //       </>
+                                //     )}
+                                //   </div>
 
-                                  <div className="min-w-0">
-                                    <SectionHeading icon={KnifeIcon} title="Kitchen" />
-                                    <AmenitiesStackList
-                                      items={categorizedAmenities.kitchen.slice(0, 6)}
-                                    />
-                                  </div>
+                                //   <div className="min-w-0">
+                                //     {categorizedAmenities.kitchen.length > 0 && (
+                                //       <>
+                                //         <SectionHeading icon={KnifeIcon} title="Kitchen" />
+                                //         <AmenitiesStackList
+                                //           items={categorizedAmenities.kitchen.slice(0, 6)}
+                                //         />
+                                //       </>
+                                //     )}
+                                //   </div>
 
-                                  <div className="min-w-0">
-                                    <SectionHeading icon={BedroomIcon} title="Bedrooms" />
-                                    <AmenitiesStackList
-                                      items={categorizedAmenities.bedrooms.slice(0, 6)}
-                                    />
-                                  </div>
+                                //   <div className="min-w-0">
+                                //     {categorizedAmenities.bedrooms.length > 0 && (
+                                //       <>
+                                //         <SectionHeading icon={BedroomIcon} title="Bedrooms" />
+                                //         <AmenitiesStackList
+                                //           items={categorizedAmenities.bedrooms.slice(0, 6)}
+                                //         />
+                                //       </>
+                                //     )}
+                                //   </div>
 
-                                  <div className="min-w-0 sm:col-span-2 lg:col-span-2">
-                                    <SectionHeading icon={MediaIcon} title="Media & Technology" />
-                                    <AmenitiesInlineList
-                                      items={categorizedAmenities.mediaAndTechnology.slice(0, 8)}
-                                    />
-                                  </div>
+                                //   <div className="min-w-0 sm:col-span-2 lg:col-span-2">
+                                //     {categorizedAmenities.mediaAndTechnology.length > 0 && (
+                                //       <>
+                                //         <SectionHeading icon={MediaIcon} title="Media & Technology" />
+                                //         <AmenitiesInlineList
+                                //           items={categorizedAmenities.mediaAndTechnology.slice(0, 8)}
+                                //         />
+                                //       </>
+                                //     )}
+                                //   </div>
 
-                                  <div className="min-w-0">
-                                    <SectionHeading icon={BathroomIcon} title="Bathroom" />
-                                    <AmenitiesInlineList
-                                      items={categorizedAmenities.bathroom.slice(0, 9)}
-                                    />
-                                  </div>
+                                //   <div className="min-w-0">
+                                //     {categorizedAmenities.bathroom.length > 0 && (
+                                //       <>
+                                //         <SectionHeading icon={BathroomIcon} title="Bathroom" />
+                                //         <AmenitiesInlineList
+                                //           items={categorizedAmenities.bathroom.slice(0, 9)}
+                                //         />
+                                //       </>
+                                //     )}
+                                //   </div>
+                                // </div>
+                                <div className="flex flex-wrap gap-x-[28px] gap-y-[12px]">
+                                  {categorizedAmenities.greatForYourStay
+                                    .length > 0 && (
+                                    <div className="min-w-0 w-full sm:w-auto sm:flex-[1.2]">
+                                      <SectionHeading
+                                        icon={GreatStayIcon}
+                                        title="Great for your stay"
+                                      />
+                                      <AmenitiesInlineList
+                                        items={categorizedAmenities.greatForYourStay.slice(
+                                          0,
+                                          7,
+                                        )}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {categorizedAmenities.kitchen.length > 0 && (
+                                    <div className="min-w-0 w-full sm:w-auto sm:flex-[0.8]">
+                                      <SectionHeading
+                                        icon={KnifeIcon}
+                                        title="Kitchen"
+                                      />
+                                      <AmenitiesStackList
+                                        items={categorizedAmenities.kitchen.slice(
+                                          0,
+                                          6,
+                                        )}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {categorizedAmenities.bedrooms.length > 0 && (
+                                    <div className="min-w-0 w-full sm:w-auto sm:flex-[0.8]">
+                                      <SectionHeading
+                                        icon={BedroomIcon}
+                                        title="Bedrooms"
+                                      />
+                                      <AmenitiesStackList
+                                        items={categorizedAmenities.bedrooms.slice(
+                                          0,
+                                          6,
+                                        )}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {categorizedAmenities.mediaAndTechnology
+                                    .length > 0 && (
+                                    <div className="min-w-0 w-full">
+                                      <SectionHeading
+                                        icon={MediaIcon}
+                                        title="Media & Technology"
+                                      />
+                                      <AmenitiesInlineList
+                                        items={categorizedAmenities.mediaAndTechnology.slice(
+                                          0,
+                                          8,
+                                        )}
+                                      />
+                                    </div>
+                                  )}
+
+                                  {categorizedAmenities.bathroom.length > 0 && (
+                                    <div className="min-w-0 w-full sm:w-auto sm:flex-[0.8]">
+                                      <SectionHeading
+                                        icon={BathroomIcon}
+                                        title="Bathroom"
+                                      />
+                                      <AmenitiesInlineList
+                                        items={categorizedAmenities.bathroom.slice(
+                                          0,
+                                          9,
+                                        )}
+                                      />
+                                    </div>
+                                  )}
                                 </div>
                               ) : (
-                                <span className="text-xs text-[#94A3B8]">
-                                  No amenities listed
-                                </span>
+                                <div className="flex items-center gap-3 pl-2 h-full w-full">
+                                  <div>
+                                    <svg
+                                      width="21"
+                                      height="21"
+                                      viewBox="0 0 27 27"
+                                      fill="none"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        d="M13.3333 26.6667C5.96933 26.6667 0 20.6973 0 13.3333C0 5.96933 5.96933 0 13.3333 0C20.6973 0 26.6667 5.96933 26.6667 13.3333C26.6667 20.6973 20.6973 26.6667 13.3333 26.6667ZM13.3333 24C16.1623 24 18.8754 22.8762 20.8758 20.8758C22.8762 18.8754 24 16.1623 24 13.3333C24 10.5044 22.8762 7.79125 20.8758 5.79086C18.8754 3.79047 16.1623 2.66667 13.3333 2.66667C10.5044 2.66667 7.79125 3.79047 5.79086 5.79086C3.79047 7.79125 2.66667 10.5044 2.66667 13.3333C2.66667 16.1623 3.79047 18.8754 5.79086 20.8758C7.79125 22.8762 10.5044 24 13.3333 24ZM12 17.3333H14.6667V20H12V17.3333ZM14.6667 15.14V16H12V14C12 13.6464 12.1405 13.3072 12.3905 13.0572C12.6406 12.8071 12.9797 12.6667 13.3333 12.6667C13.7121 12.6666 14.0831 12.5591 14.4031 12.3564C14.7231 12.1538 14.979 11.8645 15.141 11.5221C15.303 11.1797 15.3645 10.7984 15.3182 10.4225C15.272 10.0465 15.1199 9.69145 14.8798 9.39855C14.6396 9.10565 14.3212 8.88697 13.9616 8.76796C13.602 8.64895 13.216 8.63449 12.8486 8.72627C12.4811 8.81806 12.1472 9.01231 11.8858 9.28642C11.6244 9.56053 11.4462 9.90324 11.372 10.2747L8.756 9.75067C8.91818 8.94011 9.29268 8.18716 9.84123 7.56878C10.3898 6.9504 11.0927 6.48878 11.8781 6.23109C12.6635 5.97341 13.5033 5.92891 14.3116 6.10215C15.1198 6.27539 15.8676 6.66015 16.4784 7.2171C17.0892 7.77405 17.5412 8.48321 17.7881 9.27208C18.0351 10.061 18.0681 10.9013 17.8838 11.7071C17.6995 12.5129 17.3046 13.2553 16.7394 13.8585C16.1741 14.4616 15.4588 14.9039 14.6667 15.14Z"
+                                        fill="#2351A3"
+                                      />
+                                    </svg>
+                                  </div>
+                                  <div>
+                                    <h4 className="text-sm font-semibold text-[#0A0C0F]">
+                                      Looking for something specific?
+                                    </h4>
+                                    <p className="text-xs text-[#3D495C]">
+                                      This hotel hasn't listed their amenities
+                                      yet.
+                                    </p>
+                                  </div>
+                                </div>
                               )}
                             </div>
                           </div>
@@ -954,8 +1097,16 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                             {visibleRooms.map((room: any, index: number) => {
                               const currency = room.roomRate?.currency || "AED";
                               const mealPlan = getMealPlanLabel(room);
-                              const highlights = getPlanHighlights(room, mealPlan);
-                              const hasOffers = Array.isArray(room?.offers) && room.offers.length > 0;
+                              const highlights = getPlanHighlights(
+                                room,
+                                mealPlan,
+                              );
+                              const validOffers = Array.isArray(room?.offers)
+                                ? room.offers.filter(
+                                    (offer: any) => Number(offer?.amount) > 0,
+                                  )
+                                : [];
+                              const hasOffers = validOffers.length > 0;
                               const netStay = room.roomRate?.netAmount || 0;
                               const nights = Math.max(
                                 1,
@@ -965,9 +1116,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                 ),
                               );
                               const offerTotal = hasOffers
-                                ? room.offers.reduce(
+                                ? validOffers.reduce(
                                     (sum: number, offer: any) =>
-                                      sum + (offer.amount || 0),
+                                      sum + Number(offer?.amount || 0),
                                     0,
                                   )
                                 : 0;
@@ -1017,7 +1168,9 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                               }}
                                             />
                                           ) : (
-                                            <span className="truncate">{item.text}</span>
+                                            <span className="truncate">
+                                              {item.text}
+                                            </span>
                                           )}
                                         </div>
                                       ))}
@@ -1031,7 +1184,8 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                   <div className="flex items-center gap-[5px] whitespace-nowrap text-[14px] text-[#3D495C]">
                                     <GuestsIcon />
                                     <span>
-                                      {room?.maxOccupancy && room?.maxOccupancy > 0
+                                      {room?.maxOccupancy &&
+                                      room?.maxOccupancy > 0
                                         ? `${room.maxOccupancy} Adults`
                                         : "2 Adults"}
                                     </span>
@@ -1043,15 +1197,18 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                         {hasOffers ? (
                                           <div className="flex flex-wrap items-center gap-2">
                                             <span className="text-[12px] text-[#EA0029] line-through">
-                                              {formatPrice(originalPrice, currency)}
+                                              {formatPrice(
+                                                originalPrice,
+                                                currency,
+                                              )}
                                               <span className="ml-[2px] text-[11px] font-normal text-[#EA0029]">
-                                                /night
+                                                /per night
                                               </span>
                                             </span>
                                             <span className="text-[18px] font-bold text-[#0A0C0F]">
                                               {formatPrice(price, currency)}
                                               <span className="ml-[2px] text-[12px] font-normal text-[#3D495C]">
-                                                /night
+                                                /per night
                                               </span>
                                             </span>
                                           </div>
@@ -1059,7 +1216,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                           <div className="text-[18px] font-bold text-[#0A0C0F]">
                                             {formatPrice(price, currency)}
                                             <span className="ml-[2px] text-[12px] font-normal text-[#3D495C]">
-                                              /night
+                                              /per night
                                             </span>
                                           </div>
                                         )}
@@ -1080,7 +1237,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                   </div>
 
                                   <div className="hidden lg:flex justify-center">
-                                    <InfoIcon />
+                                    {/* <InfoIcon /> */}
                                   </div>
 
                                   <div className="flex items-center justify-start gap-[10px] lg:justify-end">
@@ -1095,10 +1252,11 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                         )
                                       }
                                       disabled={count <= 0}
-                                      className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${count > 0
-                                        ? "bg-[#2351A3] text-white"
-                                        : "bg-[#C2CAD6] text-white cursor-not-allowed"
-                                        }`}
+                                      className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${
+                                        count > 0
+                                          ? "bg-[#2351A3] text-white"
+                                          : "bg-[#C2CAD6] text-white cursor-not-allowed"
+                                      }`}
                                     >
                                       –
                                     </button>
@@ -1118,10 +1276,11 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                         )
                                       }
                                       disabled={count >= 1}
-                                      className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${count < 1
-                                        ? "bg-[#2351A3] text-white"
-                                        : "bg-[#C2CAD6] text-white cursor-not-allowed"
-                                        }`}
+                                      className={`flex h-[32px] w-[32px] items-center justify-center rounded-full text-[20px] leading-none ${
+                                        count < 1
+                                          ? "bg-[#2351A3] text-white"
+                                          : "bg-[#C2CAD6] text-white cursor-not-allowed"
+                                      }`}
                                     >
                                       +
                                     </button>
@@ -1132,7 +1291,7 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                           </div>
 
                           {hasMoreOptions && (
-                            <div className="border-t border-[#E4E4E7] px-[15px] py-[14px]">
+                            <div className="relative w-full flex justify-center h-[40px]">
                               <button
                                 type="button"
                                 onClick={() =>
@@ -1141,16 +1300,21 @@ const HotelDetailRoomSection: React.FC<HotelDetailRoomSectionProps> = ({
                                     [optionGroupKey]: !isOptionGroupExpanded,
                                   }))
                                 }
-                                className="mx-auto flex items-center gap-[6px] rounded-full border border-[#E4E4E7] bg-white px-[16px] py-[8px] text-[13px] font-semibold text-[#2351A3] shadow-[0_2px_8px_rgba(10,12,15,0.05)] transition hover:bg-[#F8FAFC]"
+                                className="absolute top-2 flex flex-col items-center justify-center gap-0.5 pt-6 rounded-full border border-[#FFFFFF] bg-[#F2F2F3] w-[70px] h-[70px] text-xs font-semibold text-[#0A0C0F]  z-10"
                               >
                                 <span>
-                                  {isOptionGroupExpanded ? "See less" : "See more"}
+                                  {isOptionGroupExpanded
+                                    ? "See less"
+                                    : "See more"}
                                 </span>
-                                <ChevronIcon direction={isOptionGroupExpanded ? "up" : "down"} />
+                                <ChevronIcon
+                                  direction={
+                                    isOptionGroupExpanded ? "up" : "down"
+                                  }
+                                />
                               </button>
                             </div>
                           )}
-
                         </div>
                       );
                     })}
@@ -1218,50 +1382,46 @@ const AvaialableIcon = () => {
   );
 };
 
-const SectionHeading = ({
-  icon,
-  title,
-}: {
-  icon: string;
-  title: string;
-}) => (
+const SectionHeading = ({ icon, title }: { icon: string; title: string }) => (
   <div className="flex items-center gap-[5px] text-[14px] font-semibold text-[#0A0C0F]">
     <img alt="" src={icon} className="h-5 w-5 shrink-0" />
     <span>{title}</span>
   </div>
 );
 
-const EmptyAmenitiesMessage = () => (
-  <div className="mt-[10px] text-[12px] text-[#94A3B8]">No details available</div>
-);
+// const EmptyAmenitiesMessage = () => (
+//   <div className="mt-[10px] text-[12px] text-[#94A3B8]">No details available</div>
+// );
 
 const AmenitiesInlineList = ({ items }: { items: string[] }) =>
   items.length > 0 ? (
     <div className="mt-[10px] flex flex-wrap gap-x-[14px] gap-y-[8px] text-[12px] text-[#3D495C]">
       {items.map((item) => (
-        <span key={item} className="flex items-center gap-[5px] whitespace-nowrap">
+        <span
+          key={item}
+          className="flex items-center gap-[5px] whitespace-nowrap"
+        >
           <CheckIcon />
           <span className="truncate">{item}</span>
         </span>
       ))}
     </div>
-  ) : (
-    <EmptyAmenitiesMessage />
-  );
+  ) : null;
 
 const AmenitiesStackList = ({ items }: { items: string[] }) =>
   items.length > 0 ? (
     <div className="mt-[10px] flex flex-col gap-[8px] text-[12px] text-[#3D495C]">
       {items.map((item) => (
-        <span key={item} className="flex items-center gap-[5px] whitespace-nowrap">
+        <span
+          key={item}
+          className="flex items-center gap-[5px] whitespace-nowrap"
+        >
           <CheckIcon />
           <span className="truncate">{item}</span>
         </span>
       ))}
     </div>
-  ) : (
-    <EmptyAmenitiesMessage />
-  );
+  ) : null;
 
 const GuestsIcon = () => (
   <svg
@@ -1297,36 +1457,32 @@ const GuestsIcon = () => (
   </svg>
 );
 
-const InfoIcon = () => (
-  <button
-    type="button"
-    className="flex h-8 w-8 items-center justify-center rounded-full text-[#2351A3]"
-    aria-label="Room information"
-  >
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle cx="10" cy="10" r="8.5" stroke="currentColor" />
-      <path
-        d="M10 9V13"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-      <circle cx="10" cy="6.5" r="1" fill="currentColor" />
-    </svg>
-  </button>
-);
+// const InfoIcon = () => (
+//   <button
+//     type="button"
+//     className="flex h-8 w-8 items-center justify-center rounded-full text-[#2351A3]"
+//     aria-label="Room information"
+//   >
+//     <svg
+//       width="20"
+//       height="20"
+//       viewBox="0 0 20 20"
+//       fill="none"
+//       xmlns="http://www.w3.org/2000/svg"
+//     >
+//       <circle cx="10" cy="10" r="8.5" stroke="currentColor" />
+//       <path
+//         d="M10 9V13"
+//         stroke="currentColor"
+//         strokeWidth="1.5"
+//         strokeLinecap="round"
+//       />
+//       <circle cx="10" cy="6.5" r="1" fill="currentColor" />
+//     </svg>
+//   </button>
+// );
 
-const ChevronIcon = ({
-  direction,
-}: {
-  direction: "up" | "down";
-}) => (
+const ChevronIcon = ({ direction }: { direction: "up" | "down" }) => (
   <svg
     width="20"
     height="20"
@@ -1335,7 +1491,9 @@ const ChevronIcon = ({
     xmlns="http://www.w3.org/2000/svg"
   >
     <path
-      d={direction === "up" ? "M5 12.5L10 7.5L15 12.5" : "M5 7.5L10 12.5L15 7.5"}
+      d={
+        direction === "up" ? "M5 12.5L10 7.5L15 12.5" : "M5 7.5L10 12.5L15 7.5"
+      }
       stroke="#2351A3"
       strokeWidth="1.5"
       strokeLinecap="round"
