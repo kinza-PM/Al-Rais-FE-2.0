@@ -7,7 +7,6 @@ import { StorageService } from "../utils/storage";
 import { fetchAuthSession } from "aws-amplify/auth";
 import {
   VITE_API_BASE,
-  VITE_ACTIVITIES_API_BASE,
   VITE_FLIGHT_ANCILLARY_API_BASE,
   VITE_FLIGHT_API_BASE,
   VITE_FLIGHT_CANCELLATION_API_BASE,
@@ -75,51 +74,10 @@ export const HOTEL_FAVOURITE_API_BASE = VITE_HOTEL_FAVOURITE_API_BASE;
 
 export const FLIGHT_CANCELLATION = VITE_FLIGHT_CANCELLATION_API_BASE;
 
-/** Hotel Beds activities execute-api base (mode fallbacks in `publicEnv.ts`). */
-export const ACTIVITIES_API_BASE = VITE_ACTIVITIES_API_BASE;
-
-type WindowWithInjectedActivitiesEnv = Window & {
-  __AR_ENV__?: {
-    VITE_ACTIVITIES_API_KEY?: string;
-    VITE_ACTIVITIES_BROWSER_BASE?: string;
-  };
-};
-
-function readInjectedActivitiesEnv():
-  | WindowWithInjectedActivitiesEnv["__AR_ENV__"]
-  | undefined {
-  if (typeof window === "undefined") return undefined;
-  return (window as WindowWithInjectedActivitiesEnv).__AR_ENV__;
-}
-
-/** API key for activities execute-api (`x-api-key`). Build-time env or optional runtime inject. */
-function resolveActivitiesApiKey(): string | undefined {
-  const injected = readInjectedActivitiesEnv()?.VITE_ACTIVITIES_API_KEY?.trim();
-  if (injected) return injected;
-  const fromBuild = import.meta.env.VITE_ACTIVITIES_API_KEY;
-  if (typeof fromBuild === "string" && fromBuild.trim() !== "") {
-    return fromBuild.trim();
-  }
-  return undefined;
-}
-
-/**
- * Base URL the browser uses for sightseeing routes.
- * - Dev: always `/api/activities-proxy` (Vite SigV4 / mock).
- * - Prod: `VITE_ACTIVITIES_BROWSER_BASE` or `window.__AR_ENV__.VITE_ACTIVITIES_BROWSER_BASE` if set
- *   (same-origin proxy), else direct `ACTIVITIES_API_BASE` (needs `x-api-key` or gateway CORS+auth).
- */
-function resolveActivitiesClientBase(): string {
-  if (import.meta.env.DEV) {
-    return "/api/activities-proxy";
-  }
-  const fromBuild = import.meta.env.VITE_ACTIVITIES_BROWSER_BASE?.trim();
-  if (fromBuild) return fromBuild.replace(/\/+$/, "");
-  const fromWindow =
-    readInjectedActivitiesEnv()?.VITE_ACTIVITIES_BROWSER_BASE?.trim();
-  if (fromWindow) return fromWindow.replace(/\/+$/, "");
-  return ACTIVITIES_API_BASE.replace(/\/+$/, "");
-}
+/** Hotel Beds activities — UAT/QA (override with `VITE_ACTIVITIES_API_BASE`). */
+export const ACTIVITIES_API_BASE =
+  import.meta.env.VITE_ACTIVITIES_API_BASE ||
+  "https://vfp63x1v88.execute-api.eu-west-1.amazonaws.com/qa";
 
 const activitiesApis = [
   "/destinationByOurCountry",
@@ -230,12 +188,14 @@ axiosClient.interceptors.request.use(async (config) => {
 
   if (myActivityPath) {
     if (myActivityTarget === "activities") {
-      const activitiesBase = resolveActivitiesClientBase();
+      const activitiesBase = import.meta.env.DEV
+        ? "/api/activities-proxy"
+        : ACTIVITIES_API_BASE;
       config.baseURL = `${activitiesBase.replace(/\/+$/, "")}/`;
       config.headers.delete("Authorization");
-      const ak = resolveActivitiesApiKey();
-      if (ak) {
-        config.headers.set("x-api-key", ak);
+      const ak = import.meta.env.VITE_ACTIVITIES_API_KEY;
+      if (typeof ak === "string" && ak.trim() !== "") {
+        config.headers.set("x-api-key", ak.trim());
       }
     } else if (myActivityTarget === "hotel") {
       config.baseURL =
@@ -268,15 +228,17 @@ axiosClient.interceptors.request.use(async (config) => {
      * Must end with `/` and use relative paths like `activitiesDetail` (no leading `/`).
      * Otherwise `new URL('/activitiesDetail', 'https://host/qa')` drops the stage → wrong API path.
      */
-    const activitiesBase = resolveActivitiesClientBase();
+    const activitiesBase = import.meta.env.DEV
+      ? "/api/activities-proxy"
+      : ACTIVITIES_API_BASE;
     config.baseURL = `${activitiesBase.replace(/\/+$/, "")}/`;
   }
 
   if (isActivities) {
     config.headers.delete("Authorization");
-    const ak = resolveActivitiesApiKey();
-    if (ak) {
-      config.headers.set("x-api-key", ak);
+    const ak = import.meta.env.VITE_ACTIVITIES_API_KEY;
+    if (typeof ak === "string" && ak.trim() !== "") {
+      config.headers.set("x-api-key", ak.trim());
     }
   }
   else if (flightCancellation.some((prefix) => config.url?.startsWith(prefix))) {

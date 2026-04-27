@@ -45,11 +45,6 @@ interface ImportMetaEnv {
   /** Sightseeing / activities API (execute-api), optional in dev when using proxy */
   readonly VITE_ACTIVITIES_API_BASE?: string;
   readonly VITE_ACTIVITIES_API_KEY?: string;
-  /**
-   * Non-dev: browser base for activities (e.g. same-origin `/api/activities-proxy` if CloudFront forwards
-   * to a SigV4-capable origin). When unset, requests use `VITE_ACTIVITIES_API_BASE` directly.
-   */
-  readonly VITE_ACTIVITIES_BROWSER_BASE?: string;
   /** Dev SigV4 proxy only: optional overrides (same semantics as AWS_*). */
   readonly VITE_ACTIVITIES_AWS_ACCESS_KEY_ID?: string;
   readonly VITE_ACTIVITIES_AWS_SECRET_ACCESS_KEY?: string;
@@ -61,14 +56,6 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
-}
-
-/** Optional runtime overrides (e.g. inject in `index.html` without rebuilding). */
-interface Window {
-  __AR_ENV__?: {
-    VITE_ACTIVITIES_API_KEY?: string;
-    VITE_ACTIVITIES_BROWSER_BASE?: string;
-  };
 }
 
 // Declare module types for static assets
