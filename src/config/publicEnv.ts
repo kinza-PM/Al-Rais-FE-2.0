@@ -40,6 +40,7 @@ const LOCAL_HOTEL = "https://hotel-api.dev.invalid/dev";
 const LOCAL_TICKET = "https://ticket-api.dev.invalid";
 const LOCAL_HOTEL_FAV = "https://hotel-favourite-api.dev.invalid";
 const LOCAL_FLIGHT_CANCEL = "https://flight-cancellation-api.dev.invalid";
+const LOCAL_ACTIVITIES = "https://activities-api.dev.invalid";
 const LOCAL_GUEST_REST = "https://guest-rest-api.dev.invalid";
 const LOCAL_USER_SVC = "https://user-svc-api.dev.invalid";
 const LOCAL_GUEST_TOKEN = "https://guest-token-api.dev.invalid/guest-token";
@@ -61,6 +62,9 @@ const DEV_HOTEL_FAV =
   "https://iqgovf9bf7.execute-api.eu-west-1.amazonaws.com/dev";
 const DEV_FLIGHT_CANCEL =
   "https://orvmy7zbb5.execute-api.eu-west-1.amazonaws.com/dev";
+/** Sightseeing / Hotel Beds activities (override with `VITE_ACTIVITIES_API_BASE`). */
+const DEV_ACTIVITIES =
+  "https://vfp63x1v88.execute-api.eu-west-1.amazonaws.com/dev";
 const DEV_GUEST_REST =
   "https://aj8e5f03b6.execute-api.eu-west-1.amazonaws.com/dev";
 const DEV_USER_SVC = "https://6le202qw69.execute-api.eu-west-1.amazonaws.com";
@@ -81,6 +85,8 @@ const QA_FLIGHT_CANCEL =
   "https://wfyy7adwqh.execute-api.eu-west-1.amazonaws.com/qa";
 const QA_GUEST_TOKEN =
   "https://lxwyy0x3f5.execute-api.eu-west-1.amazonaws.com/qa/guest-token";
+const QA_ACTIVITIES =
+  "https://vfp63x1v88.execute-api.eu-west-1.amazonaws.com/qa";
 
 const SHARED_APPSYNC =
   "https://q24kjogjhbaufln5mlqcajiwmq.appsync-api.eu-west-1.amazonaws.com/graphql";
@@ -115,6 +121,15 @@ export const VITE_FLIGHT_ANCILLARY_API_BASE = /* @__PURE__ */ envUrl(
 export const VITE_HOTEL_API_BASE = /* @__PURE__ */ envUrl(
   "VITE_HOTEL_API_BASE",
   fb(QA_HOTEL, DEV_HOTEL, LOCAL_HOTEL),
+);
+
+/**
+ * Sightseeing / activities execute-api (IAM or `x-api-key`; not JWT Bearer).
+ * Same `fb(qa, dev, local)` pattern as flight/hotel when `VITE_ACTIVITIES_API_BASE` is unset.
+ */
+export const VITE_ACTIVITIES_API_BASE = /* @__PURE__ */ envUrl(
+  "VITE_ACTIVITIES_API_BASE",
+  fb(QA_ACTIVITIES, DEV_ACTIVITIES, LOCAL_ACTIVITIES),
 );
 
 /** Countries / cities listing (countriesnow.space). */
