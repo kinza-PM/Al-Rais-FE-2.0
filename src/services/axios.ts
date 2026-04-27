@@ -7,6 +7,7 @@ import { StorageService } from "../utils/storage";
 import { fetchAuthSession } from "aws-amplify/auth";
 import {
   VITE_API_BASE,
+  VITE_ACTIVITIES_API_BASE,
   VITE_FLIGHT_ANCILLARY_API_BASE,
   VITE_FLIGHT_API_BASE,
   VITE_FLIGHT_CANCELLATION_API_BASE,
@@ -74,10 +75,8 @@ export const HOTEL_FAVOURITE_API_BASE = VITE_HOTEL_FAVOURITE_API_BASE;
 
 export const FLIGHT_CANCELLATION = VITE_FLIGHT_CANCELLATION_API_BASE;
 
-/** Hotel Beds activities — UAT/QA (override with `VITE_ACTIVITIES_API_BASE`). */
-export const ACTIVITIES_API_BASE =
-  import.meta.env.VITE_ACTIVITIES_API_BASE ||
-  "https://vfp63x1v88.execute-api.eu-west-1.amazonaws.com/qa";
+/** Hotel Beds activities execute-api base (mode fallbacks in `publicEnv.ts`). */
+export const ACTIVITIES_API_BASE = VITE_ACTIVITIES_API_BASE;
 
 type WindowWithInjectedActivitiesEnv = Window & {
   __AR_ENV__?: {
