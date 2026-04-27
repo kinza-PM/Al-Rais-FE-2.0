@@ -251,14 +251,14 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
             </div>
 
             {showCollapsedFareSummary && (
-                <div className="space-y-2 px-4 py-3 border-b-[1.5px] border-[#E4E4E7] text-[12px] leading-5">
+                <div className="space-y-2 px-4 py-3 border-b-[1.5px] border-[#E4E4E7] text-[14px] font-normal leading-6">
                     {hasOnlyMultipleAdults && adtGroup ? (
                         <>
                             <div className="flex items-center justify-between gap-4">
                                 <span className="text-[#3D495C]">
                                     {adtGroup.paxCount} X Adults
                                 </span>
-                                <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                <span className="font-normal tabular-nums text-[#0A0C0F]">
                                     {formatMoney(
                                         collapsedMultiAdultBaseAmount ?? 0,
                                         currency,
@@ -269,7 +269,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                                 <span className="text-[#3D495C]">
                                     Airport Tax &amp; Surcharge
                                 </span>
-                                <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                <span className="font-normal tabular-nums text-[#0A0C0F]">
                                     {formatMoney(collapsedTaxLineAmount, currency)}
                                 </span>
                             </div>
@@ -288,7 +288,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                                             pg.paxLabel,
                                         )}
                                     </span>
-                                    <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                    <span className="font-normal tabular-nums text-[#0A0C0F]">
                                         {formatMoney(
                                             groupBaseFareTotal(pg),
                                             currency,
@@ -300,7 +300,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                                 <span className="text-[#3D495C]">
                                     Airport Tax &amp; Surcharge
                                 </span>
-                                <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                                <span className="font-normal tabular-nums text-[#0A0C0F]">
                                     {formatMoney(collapsedTaxLineAmount, currency)}
                                 </span>
                             </div>
@@ -310,7 +310,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                     {hasAncillary && (
                         <div className="flex items-center justify-between gap-4">
                             <span className="text-[#3D495C]">Enhancements</span>
-                            <span className="font-semibold tabular-nums text-[#0A0C0F]">
+                            <span className="font-normal tabular-nums text-[#0A0C0F]">
                                 {formatMoney(
                                     ancillaryTotal,
                                     ancillarySummary?.currency || currency,
@@ -328,61 +328,61 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                 ].join(" ")}
             >
                 <div className="overflow-hidden">
-                    <div className="px-4 py-3 text-[13px] leading-6">
+                    <div className="px-4 py-3 text-[14px] font-normal leading-6">
                         <div className="text-[14px] font-semibold text-[#0A0C0F]">Passengers fares</div>
 
                         {visiblePassengerGroups.length === 0 ? (
-                            <div className="mt-2 text-[12px] text-[#3D495C]">No passenger fare breakdown available.</div>
+                            <div className="mt-2 text-[14px] font-normal text-[#3D495C]">No passenger fare breakdown available.</div>
                         ) : (
                             visiblePassengerGroups.map((pg, idx) => {
                                 return (
                                     <div className="mt-3" key={idx}>
-                                        <div className="text-[12px] font-medium text-[#0A0C0F]">
+                                        <div className="text-[14px] font-normal text-[#0A0C0F]">
                                             {pg.paxCount} {pg.paxLabel}{pg.paxCount > 1 ? "s" : ""}
                                         </div>
 
-                                        <ul className="mt-1 space-y-1 text-[12px] pl-3">
+                                        <ul className="mt-1 space-y-1 text-[14px] font-normal pl-3">
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Price per person</span>
-                                                <span className="font-semibold text-[#0A0C0F]">
+                                                <span className="font-normal text-[#0A0C0F]">
                                                     {formatMoney(pg.officialSubtotalEach || pg.computedSubtotalEach, currency)}
                                                 </span>
                                             </li>
 
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Base fare per person</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.baseFareEach, currency)}</span>
+                                                <span className="font-normal text-[#0A0C0F]">{formatMoney(pg.baseFareEach, currency)}</span>
                                             </li>
 
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Taxes and fees per person</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.taxesEach, currency)}</span>
+                                                <span className="font-normal text-[#0A0C0F]">{formatMoney(pg.taxesEach, currency)}</span>
                                             </li>
 
                                             <li className="flex items-center justify-between pt-1">
                                                 <span className="text-[#3D495C]">Transaction fee</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.transactionFeeEach, currency)}</span>
+                                                <span className="font-normal text-[#0A0C0F]">{formatMoney(pg.transactionFeeEach, currency)}</span>
                                             </li>
 
                                             {/* discount (shown negative) */}
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Discount</span>
-                                                <span className="font-semibold text-[#0A0C0F]">-{formatMoney(pg.discountEach, currency)}</span>
+                                                <span className="font-normal text-[#0A0C0F]">-{formatMoney(pg.discountEach, currency)}</span>
                                             </li>
 
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Subtotal (computed)</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.computedSubtotalEach, currency)}</span>
+                                                <span className="font-normal text-[#0A0C0F]">{formatMoney(pg.computedSubtotalEach, currency)}</span>
                                             </li>
 
                                             <li className="flex items-center justify-between">
                                                 <span className="text-[#3D495C]">Subtotal (official)</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.officialSubtotalEach, currency)}</span>
+                                                <span className="font-normal text-[#0A0C0F]">{formatMoney(pg.officialSubtotalEach, currency)}</span>
                                             </li>
 
                                             <li className="flex items-center justify-between pt-1">
                                                 <span className="text-[#3D495C]">Group total</span>
-                                                <span className="font-semibold text-[#0A0C0F]">{formatMoney(pg.groupTotal, currency)}</span>
+                                                <span className="font-normal text-[#0A0C0F]">{formatMoney(pg.groupTotal, currency)}</span>
                                             </li>
                                         </ul>
                                     </div>
@@ -392,15 +392,15 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
 
                         {hasAncillary && (
                             <div className="mt-4">
-                                <div className="text-[13px] font-semibold text-[#0A0C0F]">Enhancements</div>
-                                <ul className="mt-1 space-y-1 text-[12px] pl-3">
+                                <div className="text-[14px] font-semibold text-[#0A0C0F]">Enhancements</div>
+                                <ul className="mt-1 space-y-1 text-[14px] font-normal pl-3">
                                     {breakdown.length > 0 ? (
                                         breakdown.map((item, idx) => (
                                             <li key={`${item.ancillaryOfferId}-${idx}`} className="flex items-start justify-between gap-6">
                                                 <span className="text-[#3D495C]">
                                                     {item.category.toUpperCase()} • {item.label}
                                                 </span>
-                                                <span className="font-semibold text-[#0A0C0F] shrink-0">
+                                                <span className="font-normal text-[#0A0C0F] shrink-0">
                                                     {formatMoney(
                                                         Number(item.amount || 0),
                                                         item.currency || ancillarySummary?.currency || currency
@@ -413,7 +413,7 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                                             <span className="text-[#3D495C]">
                                                 Ancillary selections ({ancillarySummary?.selectedCount || 0})
                                             </span>
-                                            <span className="font-semibold text-[#0A0C0F]">
+                                            <span className="font-normal text-[#0A0C0F]">
                                                 {formatMoney(
                                                     ancillaryTotal,
                                                     ancillarySummary?.currency || currency
@@ -439,13 +439,13 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
                 <span
                     className={
                         showCollapsedFareSummary
-                            ? "text-[12px] font-semibold text-[#0A0C0F]"
-                            : "text-[12px] text-[#3D495C]"
+                            ? "text-[14px] font-normal text-[#0A0C0F]"
+                            : "text-[14px] font-normal text-[#3D495C]"
                     }
                 >
                     {showCollapsedFareSummary ? "Total all inclusive" : "Total"}
                 </span>
-                <span className="text-[14px] font-semibold text-[#0A0C0F] tabular-nums">
+                <span className="text-[16px] font-normal text-[#0A0C0F] tabular-nums">
                     {total != null ? formatMoney(total, currency) : "—"}
                 </span>
             </div>

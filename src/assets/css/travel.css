@@ -21,6 +21,14 @@
   ) !important;
 }
 
+.flight-cta-button {
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
+}
+
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
@@ -124,6 +132,45 @@ input[type="number"] {
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.flight-details-popup,
+.flight-details-popup .ant-modal-content,
+.flight-details-popup .ant-modal-header,
+.flight-details-popup .ant-modal-title,
+.flight-details-popup .ant-modal-body,
+.flight-details-popup :where(
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    div,
+    button,
+    label,
+    strong,
+    small,
+    a,
+    li,
+    td,
+    th,
+    input,
+    textarea,
+    select,
+    .ant-typography,
+    .ant-btn,
+    .ant-radio-wrapper,
+    .ant-radio-button-wrapper,
+    .ant-radio-button-label
+  ) {
+  font-family: Inter, sans-serif !important;
+}
+
+.flight-details-popup {
+  font-synthesis: none;
 }
 
 .radioButtonGroup {
@@ -247,12 +294,13 @@ input[type="number"] {
   border-radius: 100px;
   background: linear-gradient(90.59deg, #5383da 0%, #2351a3 50%, #081326 100%);
   color: #f2f2f3;
-  font-size: 16px;
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
   min-height: 47px;
   height: 47px;
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.5px;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
 }
 
 .bottomHeaderSetting {
@@ -781,11 +829,11 @@ input[type="number"] {
 }
 
 .flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn {
-  font-family: "Inter", sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-  line-height: 1;
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.5px !important;
+  line-height: 1 !important;
   padding: 14px 25px;
   border-radius: 100px;
   cursor: pointer;
@@ -799,7 +847,7 @@ input[type="number"] {
   background: #ffffff;
   color: var(--primary-300, #2351a3);
   border: 1.5px solid var(--primary-300, #2351a3);
-  font-size: 14px;
+  font-size: 16px !important;
   font-weight: 600;
   letter-spacing: 0.4px;
   padding: 10px 2;
@@ -872,12 +920,12 @@ input[type="number"] {
   }
 
   .flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn-primary {
-    font-size: 14px;
+    font-size: 16px !important;
     padding: 12px 18px;
   }
 
   .flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn-outline {
-    font-size: 13px;
+    font-size: 16px !important;
     padding: 9px 14px;
   }
 }
@@ -903,7 +951,7 @@ input[type="number"] {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    font-size: 14px;
+    font-size: 16px !important;
     padding: 12px 18px;
   }
 }
@@ -1516,9 +1564,11 @@ input[type="number"] {
   min-width: 0;
   height: 50px;
   border-radius: 999px;
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1;
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
   padding: 0 28px;
   display: inline-flex;
   align-items: center;
@@ -2972,7 +3022,7 @@ input[type="number"] {
     width: auto !important;
     min-width: 118px;
     height: 43px !important;
-    font-size: 13px !important;
+    font-size: 16px !important;
     padding: 10px 16px !important;
   }
 }
@@ -3072,7 +3122,7 @@ input[type="number"] {
   .flightDetailCards.flightDetailRoundTripCards .StartingPrice button {
     min-width: 112px;
     height: 42px !important;
-    font-size: 13px !important;
+    font-size: 16px !important;
   }
 }
 
@@ -3578,8 +3628,11 @@ p.pricingDetailFeatureP {
   border-radius: 100px;
   border: none;
   color: #fff;
-  font-size: 14px;
-  font-weight: 600;
+  font-family: Inter, sans-serif !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.5px !important;
   cursor: pointer;
   background: linear-gradient(
     90.59deg,
@@ -4093,12 +4146,13 @@ img:hover {
   align-self: flex-end;
   padding: 14px 28px !important;
   color: #f2f2f3 !important;
+  font-family: Inter, sans-serif !important;
   font-size: 16px !important;
   min-height: 47px !important;
   height: 47px !important;
   font-weight: 600 !important;
   line-height: 1 !important;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.5px !important;
   background: linear-gradient(
     90.59deg,
     #5383da 0%,
@@ -4208,6 +4262,43 @@ img:hover {
   outline: none !important;
   border-color: #5383da !important;
   box-shadow: 0 0 0 2px rgba(83, 131, 218, 0.2) !important;
+}
+
+.flight-traveler-details-grid {
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.flight-contact-person-grid {
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.flight-traveler-details-grid > * {
+  min-width: 0;
+  width: 100%;
+  max-width: 100% !important;
+}
+
+.flight-contact-person-grid > * {
+  min-width: 0;
+  width: 100%;
+  max-width: 100% !important;
+}
+
+.flight-traveler-details-grid .custom-phone-wrapper {
+  width: 100%;
+}
+
+.flight-contact-person-grid .custom-phone-wrapper {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .flight-contact-person-grid,
+  .flight-traveler-details-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
 }
 
 .phone-input-error .react-international-phone-input {
