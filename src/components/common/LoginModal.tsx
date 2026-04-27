@@ -21,7 +21,6 @@ export default function LoginModal({
   showModal,
   onClose,
   onAuthSuccess,
-  showGoBack,
 }: LoginModalProps) {
   const location = useLocation();
   const [showLoginFailed, setShowLoginFailed] = useState(false);

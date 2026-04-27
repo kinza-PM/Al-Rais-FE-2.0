@@ -714,12 +714,11 @@ export default function FlightBookingBookSection({
                           placeholder="Enter your full name"
                           label="Full name (Filled based on ID/Passport/Driver’s license) *"
                           value={contactPersonDetails.givenName}
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            updateContactPersonField("givenName", v ?? "");
+                          onChange={(event) => {
+                            updateContactPersonField(
+                              "givenName",
+                              event.target.value,
+                            );
                           }}
                           error={
                             hasAttemptedValidation && !isBookingForSomeoneElse
@@ -741,12 +740,11 @@ export default function FlightBookingBookSection({
                           label="Surname *"
                           maxLength={80}
                           value={contactPersonDetails.surname}
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            updateContactPersonField("surname", v ?? "");
+                          onChange={(event) => {
+                            updateContactPersonField(
+                              "surname",
+                              event.target.value,
+                            );
                           }}
                           error={
                             hasAttemptedValidation && !isBookingForSomeoneElse
@@ -851,12 +849,11 @@ export default function FlightBookingBookSection({
                           placeholder="Enter an email"
                           label="Email *"
                           value={contactPersonDetails.email}
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            updateContactPersonField("email", v ?? "");
+                          onChange={(event) => {
+                            updateContactPersonField(
+                              "email",
+                              event.target.value,
+                            );
                           }}
                           error={
                             hasAttemptedValidation && !isBookingForSomeoneElse
