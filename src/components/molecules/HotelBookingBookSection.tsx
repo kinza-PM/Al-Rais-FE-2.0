@@ -15,6 +15,12 @@ import {
   parseLocalDateString,
 } from "../../utils/helpers";
 import {
+  getBirthDatePickerBoundsForPtc,
+  getPassportIssuePickerBounds,
+  sanitizeEmailInput,
+  sanitizeIdentityDocumentInput,
+} from "../../utils/travelerFieldValidation";
+import {
   validateHotelBookingPassengersFields,
   type HotelBookingPayload,
   type HotelPassengerFieldErrors,
@@ -391,545 +397,557 @@ export default function HotelBookingBookSection({
             onInitialFetchLoadingChange={onPassengerCacheFetchLoadingChange}
           />
           {flatPassengers.map(
-            ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
-              <React.Fragment key={p.passengerKey || flatIdx}>
-                <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm">
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
-                    <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                      Contact person {String(flatIdx + 1).padStart(2, "0")}{" "}
-                      details
-                    </h3>
-                  </div>
-                  <div className="px-4 py-4">
-                    <div className="grid grid-cols-1 gap-x-4 gap-y-3 min-w-0 md:grid-cols-2">
-                      <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
-                      >
-                        <SearchableDropdown
-                          options={getHotelTitleOptions(p.ptc)}
-                          value={p.passengerInfo?.nameTitle ?? ""}
-                          onChange={(value) => {
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.nameTitle",
-                              value,
-                            );
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.gender",
-                              genderFromHotelTitle(value),
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.nameTitle",
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.gender",
-                            );
-                          }}
-                          placeholder="Select title"
-                          label="Title"
-                          widthClass="w-full"
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.nameTitle"
-                              ]
-                              : null
-                          }
-                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
-                        />
-                      </div>
-                      <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
-                      >
-                        <TailwindCustomInput
-                          type="text"
-                          placeholder="Enter your full name"
-                          label="Full name (Filled based on ID/Passport)"
-                          value={p.passengerInfo?.givenName ?? ""}
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.givenName",
-                              v ?? "",
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.givenName",
-                            );
-                          }}
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.givenName"
-                              ]
-                              : null
-                          }
-                          className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                        />
-                      </div>
-                      <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
-                      >
-                        <TailwindCustomInput
-                          type="text"
-                          placeholder="Enter your surname"
-                          label="Surname"
-                          maxLength={80}
-                          value={p.passengerInfo?.surname ?? ""}
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.surname",
-                              v ?? "",
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.surname",
-                            );
-                          }}
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.surname"
-                              ]
-                              : null
-                          }
-                          className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                        />
-                      </div>
-                      <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
-                      >
-                        <SearchableDropdown
-                          options={[
-                            { id: "male", value: "male", label: "Male" },
-                            { id: "female", value: "female", label: "Female" },
-                          ]}
-                          value={p.passengerInfo?.gender ?? ""}
-                          onChange={(value) => {
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.gender",
-                              value,
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.gender",
-                            );
-                          }}
-                          placeholder="Select gender"
-                          label="Gender"
-                          widthClass="w-full"
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.gender"
-                              ]
-                              : null
-                          }
-                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-                        />
-                      </div>
+            ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => {
+              const issuePickerBounds = getPassportIssuePickerBounds({
+                birthDateIso: p.passengerInfo?.birthDate ?? null,
+                expiryDateIso: p.identityDocuments?.[0]?.expiryDate ?? null,
+              });
+              const birthPickerBounds = getBirthDatePickerBoundsForPtc(p.ptc);
+              return (
+                <React.Fragment key={p.passengerKey || flatIdx}>
+                  <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
+                      <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                        Contact person {String(flatIdx + 1).padStart(2, "0")}{" "}
+                        details
+                      </h3>
                     </div>
-                  </div>
-                </div>
-
-                {/* Passenger details */}
-                <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm mt-4">
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7] rounded-t-2xl">
-                    <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                      Traveler {String(flatIdx + 1).padStart(2, "0")} details
-                    </h3>
-                    <CustomToggle
-                      label="Save Traveler information in my profile"
-                      checked={saveToggleChecked(
-                        saveToggleKey(roomIndex, passengerIndex, p.passengerKey),
-                      )}
-                      onChange={() =>
-                        toggleSaveTraveler(
-                          saveToggleKey(
-                            roomIndex,
-                            passengerIndex,
-                            p.passengerKey,
-                          ),
-                        )
-                      }
-                    />
-                  </div>
-                  <div className="px-4 py-4 rounded-b-2xl">
-                    <div className="grid grid-cols-1 gap-x-4 gap-y-4 min-w-0 md:grid-cols-2">
-                      <div className="relative w-full min-w-0">
-                        <TailwindCustomInput
-                          type="text"
-                          placeholder="Pax type"
-                          label="Pax type"
-                          value={p.ptc || "ADT"}
-                          disabled
-                        />
-                      </div>
-
-                      {roomOptions.length > 0 && (
-                        <div className="relative w-full min-w-0">
-                          <SearchableDropdown
-                            options={roomOptions}
-                            value={String(roomIndex)}
-                            onChange={() => { }}
-                            placeholder="Room"
-                            label="Room"
-                            widthClass="w-full"
-                            disabled
-                            className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F2F2F3] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none cursor-not-allowed"
-                          />
-                        </div>
-                      )}
-
-                      <div
-                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
-                      >
-                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Birth date
-                        </label>
-                        <TailiwindCustomDatePicker
-                          value={
-                            p.passengerInfo?.birthDate
-                              ? parseLocalDateString(p.passengerInfo?.birthDate)
-                              : null
-                          }
-                          onChange={(date) => {
-                            const iso = formatDateToLocalISO(date);
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.birthDate",
-                              iso,
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "passengerInfo.birthDate",
-                            );
-                          }}
-                          placeholder="Please select"
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "passengerInfo.birthDate"
-                              ]
-                              : null
-                          }
-                          overridesClass
-                          inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-                        />
-                      </div>
-
-                      <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
-                      >
-                        <TailwindCustomInput
-                          type="text"
-                          placeholder="Enter passport number"
-                          label="Passport number"
-                          maxLength={20}
-                          value={
-                            p.identityDocuments?.[0]?.idDocumentNumber ?? ""
-                          }
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "identityDocuments.0.idDocumentNumber",
-                              v ?? "",
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "identityDocuments.0.idDocumentNumber",
-                            );
-                          }}
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "identityDocuments.0.idDocumentNumber"
-                              ]
-                              : null
-                          }
-                        />
-                      </div>
-
-                      <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
-                      >
-                        <SearchableDropdown
-                          options={
-                            countries?.map((c) => ({
-                              id: c.iso2,
-                              value: c.iso2,
-                              label: c.label,
-                            })) || []
-                          }
-                          value={
-                            p.identityDocuments?.[0]?.issuingCountryCode ?? ""
-                          }
-                          onChange={(value) => {
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "identityDocuments.0.issuingCountryCode",
-                              value,
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "identityDocuments.0.issuingCountryCode",
-                            );
-                          }}
-                          placeholder="Select issuing country"
-                          label="Issuing country"
-                          widthClass="w-full"
-                          searchPlaceholder="Search countries..."
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "identityDocuments.0.issuingCountryCode"
-                              ]
-                              : null
-                          }
-                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-                        />
-                      </div>
-
-                      <div
-                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
-                      >
-                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Date of issue
-                        </label>
-                        <TailiwindCustomDatePicker
-                          value={
-                            p.identityDocuments?.[0]?.dateOfIssue
-                              ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.dateOfIssue,
-                              )
-                              : null
-                          }
-                          onChange={(date) => {
-                            const iso = formatDateToLocalISO(date);
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "identityDocuments.0.dateOfIssue",
-                              iso,
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "identityDocuments.0.dateOfIssue",
-                            );
-                          }}
-                          placeholder="Please select"
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "identityDocuments.0.dateOfIssue"
-                              ]
-                              : null
-                          }
-                          overridesClass
-                          inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-                        />
-                      </div>
-
-                      <div
-                        className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
-                      >
-                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Expiry date
-                        </label>
-                        <TailiwindCustomDatePicker
-                          value={
-                            p.identityDocuments?.[0]?.expiryDate
-                              ? parseLocalDateString(
-                                p.identityDocuments?.[0]?.expiryDate,
-                              )
-                              : null
-                          }
-                          onChange={(date) => {
-                            const iso = formatDateToLocalISO(date);
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "identityDocuments.0.expiryDate",
-                              iso,
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "identityDocuments.0.expiryDate",
-                            );
-                          }}
-                          placeholder="Please select"
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "identityDocuments.0.expiryDate"
-                              ]
-                              : null
-                          }
-                          overridesClass
-                          inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
-                        />
-                      </div>
-
-                      <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
-                      >
-                        <TailwindCustomInput
-                          type="email"
-                          placeholder="Enter an email"
-                          label="Email"
-                          value={
-                            p.contact?.contactsProvided?.[0]
-                              ?.emailAddress?.[0] ?? ""
-                          }
-                          onChange={(evOrVal) => {
-                            const v =
-                              evOrVal && evOrVal.target
-                                ? evOrVal.target.value
-                                : evOrVal;
-                            onPassengerFieldChange(
-                              roomIndex,
-                              passengerIndex,
-                              "contact.contactsProvided.0.emailAddress.0",
-                              v ?? "",
-                            );
-                            clearFieldError(
-                              roomIndex,
-                              passengerIndex,
-                              "contact.contactsProvided.0.emailAddress.0",
-                            );
-                          }}
-                          error={
-                            hasAttemptedValidation
-                              ? validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "contact.contactsProvided.0.emailAddress.0"
-                              ]
-                              : null
-                          }
-                        />
-                      </div>
-
-                      <div
-                        className={`relative w-full min-w-0 ${hasAttemptedValidation &&
-                          validationErrors[roomIndex]?.[passengerIndex]?.[
-                          "contact.contactsProvided.0.phone.0"
-                          ]
-                          ? "pb-4"
-                          : ""
-                          }`}
-                      >
-                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Phone
-                        </label>
+                    <div className="px-4 py-4">
+                      <div className="grid grid-cols-1 gap-x-4 gap-y-3 min-w-0 md:grid-cols-2">
                         <div
-                          className={
-                            hasAttemptedValidation &&
-                              validationErrors[roomIndex]?.[passengerIndex]?.[
-                              "contact.contactsProvided.0.phone.0"
-                              ]
-                              ? "phone-input-error"
-                              : ""
-                          }
+                          className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.nameTitle"] ? "pb-4" : ""}`}
                         >
-                          <PhoneInput
-                            defaultCountry="ae"
-                            value={(() => {
-                              const areaCode =
-                                p.contact?.contactsProvided?.[0]?.phone?.[0]
-                                  ?.areaCode ?? "";
-                              const phoneNumber =
-                                p.contact?.contactsProvided?.[0]?.phone?.[0]
-                                  ?.phoneNumber ?? "";
-                              return (
-                                String(areaCode || "") +
-                                String(phoneNumber || "")
-                              );
-                            })()}
-                            onChange={(phone, meta) => {
-                              const dialCode = `+${meta.country.dialCode}`;
-                              const phoneNumber = phone.replace(dialCode, "");
+                          <SearchableDropdown
+                            options={getHotelTitleOptions(p.ptc)}
+                            value={p.passengerInfo?.nameTitle ?? ""}
+                            onChange={(value) => {
                               onPassengerFieldChange(
                                 roomIndex,
                                 passengerIndex,
-                                "contact.contactsProvided.0.phone.0.areaCode",
-                                dialCode,
+                                "passengerInfo.nameTitle",
+                                value,
                               );
                               onPassengerFieldChange(
                                 roomIndex,
                                 passengerIndex,
-                                "contact.contactsProvided.0.phone.0.phoneNumber",
-                                phoneNumber,
+                                "passengerInfo.gender",
+                                genderFromHotelTitle(value),
                               );
                               clearFieldError(
                                 roomIndex,
                                 passengerIndex,
-                                "contact.contactsProvided.0.phone.0",
+                                "passengerInfo.nameTitle",
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.gender",
                               );
                             }}
-                            forceDialCode={true}
-                            hideDropdown={false}
-                            disableCountryGuess={false}
-                            className="custom-phone-wrapper"
-                            countrySelectorStyleProps={{
-                              buttonClassName: "country-selector-btn",
-                            }}
-                            inputProps={{
-                              placeholder: "Phone",
-                            }}
+                            placeholder="Select title"
+                            label="Title"
+                            widthClass="w-full"
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "passengerInfo.nameTitle"
+                                ]
+                                : null
+                            }
+                            className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
                           />
                         </div>
-                        {hasAttemptedValidation &&
-                          validationErrors[roomIndex]?.[passengerIndex]?.[
-                          "contact.contactsProvided.0.phone.0"
-                          ] && (
-                            <p className="text-red-500 text-xs mt-1">
-                              {
-                                validationErrors[roomIndex]?.[passengerIndex]?.[
-                                "contact.contactsProvided.0.phone.0"
+                        <div
+                          className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.givenName"] ? "pb-4" : ""}`}
+                        >
+                          <TailwindCustomInput
+                            type="text"
+                            placeholder="Enter your full name"
+                            label="Full name (Filled based on ID/Passport)"
+                            value={p.passengerInfo?.givenName ?? ""}
+                            onChange={(evOrVal) => {
+                              const v =
+                                evOrVal && evOrVal.target
+                                  ? evOrVal.target.value
+                                  : evOrVal;
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.givenName",
+                                v ?? "",
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.givenName",
+                              );
+                            }}
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "passengerInfo.givenName"
                                 ]
-                              }
-                            </p>
-                          )}
+                                : null
+                            }
+                            className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+                          />
+                        </div>
+                        <div
+                          className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.surname"] ? "pb-4" : ""}`}
+                        >
+                          <TailwindCustomInput
+                            type="text"
+                            placeholder="Enter your surname"
+                            label="Surname"
+                            maxLength={80}
+                            value={p.passengerInfo?.surname ?? ""}
+                            onChange={(evOrVal) => {
+                              const v =
+                                evOrVal && evOrVal.target
+                                  ? evOrVal.target.value
+                                  : evOrVal;
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.surname",
+                                v ?? "",
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.surname",
+                              );
+                            }}
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "passengerInfo.surname"
+                                ]
+                                : null
+                            }
+                            className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+                          />
+                        </div>
+                        <div
+                          className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.gender"] ? "pb-4" : ""}`}
+                        >
+                          <SearchableDropdown
+                            options={[
+                              { id: "male", value: "male", label: "Male" },
+                              { id: "female", value: "female", label: "Female" },
+                            ]}
+                            value={p.passengerInfo?.gender ?? ""}
+                            onChange={(value) => {
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.gender",
+                                value,
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.gender",
+                              );
+                            }}
+                            placeholder="Select gender"
+                            label="Gender"
+                            widthClass="w-full"
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "passengerInfo.gender"
+                                ]
+                                : null
+                            }
+                            className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </React.Fragment>
-            ),
+
+                  {/* Passenger details */}
+                  <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm mt-4">
+                    <div className="flex items-center justify-between px-4 py-2 border-b border-[#E4E4E7] rounded-t-2xl">
+                      <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                        Traveler {String(flatIdx + 1).padStart(2, "0")} details
+                      </h3>
+                      <CustomToggle
+                        label="Save Traveler information in my profile"
+                        checked={saveToggleChecked(
+                          saveToggleKey(roomIndex, passengerIndex, p.passengerKey),
+                        )}
+                        onChange={() =>
+                          toggleSaveTraveler(
+                            saveToggleKey(
+                              roomIndex,
+                              passengerIndex,
+                              p.passengerKey,
+                            ),
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="px-4 py-4 rounded-b-2xl">
+                      <div className="grid grid-cols-1 gap-x-4 gap-y-4 min-w-0 md:grid-cols-2">
+                        <div className="relative w-full min-w-0">
+                          <TailwindCustomInput
+                            type="text"
+                            placeholder="Pax type"
+                            label="Pax type"
+                            value={p.ptc || "ADT"}
+                            disabled
+                          />
+                        </div>
+
+                        {roomOptions.length > 0 && (
+                          <div className="relative w-full min-w-0">
+                            <SearchableDropdown
+                              options={roomOptions}
+                              value={String(roomIndex)}
+                              onChange={() => { }}
+                              placeholder="Room"
+                              label="Room"
+                              widthClass="w-full"
+                              disabled
+                              className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F2F2F3] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none cursor-not-allowed"
+                            />
+                          </div>
+                        )}
+
+                        <div
+                          className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["passengerInfo.birthDate"] ? "pb-4" : ""}`}
+                        >
+                          <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                            Birth date
+                          </label>
+                          <TailiwindCustomDatePicker
+                            value={
+                              p.passengerInfo?.birthDate
+                                ? parseLocalDateString(p.passengerInfo?.birthDate)
+                                : null
+                            }
+                            onChange={(date) => {
+                              const iso = formatDateToLocalISO(date);
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.birthDate",
+                                iso,
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "passengerInfo.birthDate",
+                              );
+                            }}
+                            minDate={birthPickerBounds.minDate}
+                            maxDate={birthPickerBounds.maxDate}
+                            placeholder="Please select"
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "passengerInfo.birthDate"
+                                ]
+                                : null
+                            }
+                            overridesClass
+                            inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                          />
+                        </div>
+
+                        <div
+                          className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.idDocumentNumber"] ? "pb-4" : ""}`}
+                        >
+                          <TailwindCustomInput
+                            type="text"
+                            placeholder="Enter passport number"
+                            label="Passport number"
+                            maxLength={20}
+                            value={
+                              p.identityDocuments?.[0]?.idDocumentNumber ?? ""
+                            }
+                            onChange={(evOrVal) => {
+                              const v =
+                                evOrVal && evOrVal.target
+                                  ? evOrVal.target.value
+                                  : evOrVal;
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "identityDocuments.0.idDocumentNumber",
+                                sanitizeIdentityDocumentInput(typeof v === "string" ? v : ""),
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "identityDocuments.0.idDocumentNumber",
+                              );
+                            }}
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "identityDocuments.0.idDocumentNumber"
+                                ]
+                                : null
+                            }
+                          />
+                        </div>
+
+                        <div
+                          className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.issuingCountryCode"] ? "pb-4" : ""}`}
+                        >
+                          <SearchableDropdown
+                            options={
+                              countries?.map((c) => ({
+                                id: c.iso2,
+                                value: c.iso2,
+                                label: c.label,
+                              })) || []
+                            }
+                            value={
+                              p.identityDocuments?.[0]?.issuingCountryCode ?? ""
+                            }
+                            onChange={(value) => {
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "identityDocuments.0.issuingCountryCode",
+                                value,
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "identityDocuments.0.issuingCountryCode",
+                              );
+                            }}
+                            placeholder="Select issuing country"
+                            label="Issuing country"
+                            widthClass="w-full"
+                            searchPlaceholder="Search countries..."
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "identityDocuments.0.issuingCountryCode"
+                                ]
+                                : null
+                            }
+                            className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                          />
+                        </div>
+
+                        <div
+                          className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.dateOfIssue"] ? "pb-4" : ""}`}
+                        >
+                          <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                            Date of issue
+                          </label>
+                          <TailiwindCustomDatePicker
+                            value={
+                              p.identityDocuments?.[0]?.dateOfIssue
+                                ? parseLocalDateString(
+                                  p.identityDocuments?.[0]?.dateOfIssue,
+                                )
+                                : null
+                            }
+                            onChange={(date) => {
+                              const iso = formatDateToLocalISO(date);
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "identityDocuments.0.dateOfIssue",
+                                iso,
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "identityDocuments.0.dateOfIssue",
+                              );
+                            }}
+                            minDate={issuePickerBounds.minDate}
+                            maxDate={issuePickerBounds.maxDate}
+                            placeholder="Please select"
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "identityDocuments.0.dateOfIssue"
+                                ]
+                                : null
+                            }
+                            overridesClass
+                            inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                          />
+                        </div>
+
+                        <div
+                          className={`w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["identityDocuments.0.expiryDate"] ? "pb-4" : ""}`}
+                        >
+                          <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                            Expiry date
+                          </label>
+                          <TailiwindCustomDatePicker
+                            value={
+                              p.identityDocuments?.[0]?.expiryDate
+                                ? parseLocalDateString(
+                                  p.identityDocuments?.[0]?.expiryDate,
+                                )
+                                : null
+                            }
+                            onChange={(date) => {
+                              const iso = formatDateToLocalISO(date);
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "identityDocuments.0.expiryDate",
+                                iso,
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "identityDocuments.0.expiryDate",
+                              );
+                            }}
+                            minDate={new Date()}
+                            placeholder="Please select"
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "identityDocuments.0.expiryDate"
+                                ]
+                                : null
+                            }
+                            overridesClass
+                            inputClass="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#98A4B3] text-[#0A0C0F] focus:outline-none"
+                          />
+                        </div>
+
+                        <div
+                          className={`relative w-full min-w-0 ${hasAttemptedValidation && validationErrors[roomIndex]?.[passengerIndex]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-4" : ""}`}
+                        >
+                          <TailwindCustomInput
+                            type="email"
+                            placeholder="Enter an email"
+                            label="Email"
+                            value={
+                              p.contact?.contactsProvided?.[0]
+                                ?.emailAddress?.[0] ?? ""
+                            }
+                            onChange={(evOrVal) => {
+                              const v =
+                                evOrVal && evOrVal.target
+                                  ? evOrVal.target.value
+                                  : evOrVal;
+                              onPassengerFieldChange(
+                                roomIndex,
+                                passengerIndex,
+                                "contact.contactsProvided.0.emailAddress.0",
+                                sanitizeEmailInput(typeof v === "string" ? v : ""),
+                              );
+                              clearFieldError(
+                                roomIndex,
+                                passengerIndex,
+                                "contact.contactsProvided.0.emailAddress.0",
+                              );
+                            }}
+                            error={
+                              hasAttemptedValidation
+                                ? validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "contact.contactsProvided.0.emailAddress.0"
+                                ]
+                                : null
+                            }
+                          />
+                        </div>
+
+                        <div
+                          className={`relative w-full min-w-0 ${hasAttemptedValidation &&
+                            validationErrors[roomIndex]?.[passengerIndex]?.[
+                            "contact.contactsProvided.0.phone.0"
+                            ]
+                            ? "pb-4"
+                            : ""
+                            }`}
+                        >
+                          <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                            Phone
+                          </label>
+                          <div
+                            className={
+                              hasAttemptedValidation &&
+                                validationErrors[roomIndex]?.[passengerIndex]?.[
+                                "contact.contactsProvided.0.phone.0"
+                                ]
+                                ? "phone-input-error"
+                                : ""
+                            }
+                          >
+                            <PhoneInput
+                              defaultCountry="ae"
+                              value={(() => {
+                                const areaCode =
+                                  p.contact?.contactsProvided?.[0]?.phone?.[0]
+                                    ?.areaCode ?? "";
+                                const phoneNumber =
+                                  p.contact?.contactsProvided?.[0]?.phone?.[0]
+                                    ?.phoneNumber ?? "";
+                                return (
+                                  String(areaCode || "") +
+                                  String(phoneNumber || "")
+                                );
+                              })()}
+                              onChange={(phone, meta) => {
+                                const dialCode = `+${meta.country.dialCode}`;
+                                const phoneNumber = phone.replace(dialCode, "");
+                                onPassengerFieldChange(
+                                  roomIndex,
+                                  passengerIndex,
+                                  "contact.contactsProvided.0.phone.0.areaCode",
+                                  dialCode,
+                                );
+                                onPassengerFieldChange(
+                                  roomIndex,
+                                  passengerIndex,
+                                  "contact.contactsProvided.0.phone.0.phoneNumber",
+                                  phoneNumber,
+                                );
+                                clearFieldError(
+                                  roomIndex,
+                                  passengerIndex,
+                                  "contact.contactsProvided.0.phone.0",
+                                );
+                              }}
+                              forceDialCode={true}
+                              hideDropdown={false}
+                              disableCountryGuess={false}
+                              className="custom-phone-wrapper"
+                              countrySelectorStyleProps={{
+                                buttonClassName: "country-selector-btn",
+                              }}
+                              inputProps={{
+                                placeholder: "Phone",
+                              }}
+                            />
+                          </div>
+                          {hasAttemptedValidation &&
+                            validationErrors[roomIndex]?.[passengerIndex]?.[
+                            "contact.contactsProvided.0.phone.0"
+                            ] && (
+                              <p className="text-red-500 text-xs mt-1">
+                                {
+                                  validationErrors[roomIndex]?.[passengerIndex]?.[
+                                  "contact.contactsProvided.0.phone.0"
+                                  ]
+                                }
+                              </p>
+                            )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </React.Fragment>
+              );
+            },
           )}
 
           {/* Your rooms (read-only summary) - Figma design */}

@@ -161,9 +161,7 @@ export default function FlightBookingReviewSection({
 
   const seatLabel =
     seatDisplayText ||
-    (seatAddOnAvailable
-      ? "No seat selected"
-      : "Assigned at check-in");
+    (seatAddOnAvailable ? "No seat selected" : "Assigned at check-in");
 
   return (
     <section className="mx-auto max-w-full px-10">
@@ -177,12 +175,12 @@ export default function FlightBookingReviewSection({
                   2,
                   "0",
                 )} details`}
-                // right={
-                //     <HeaderActions
-                //         onEdit={() => startEdit()}
-                //         editLabel="Edit"
-                //     />
-                // }
+              // right={
+              //     <HeaderActions
+              //         onEdit={() => startEdit()}
+              //         editLabel="Edit"
+              //     />
+              // }
               >
                 <div className="px-5 py-4">
                   <dl className="grid grid-cols-2 gap-y-2">
@@ -235,12 +233,12 @@ export default function FlightBookingReviewSection({
               <CardShell
                 key={`passenger-${p.passengerKey || idx}`}
                 title={`Traveler ${String(idx + 1).padStart(2, "0")} details`}
-                // right={
-                //     <HeaderActions
-                //         onEdit={() => startEdit()}
-                //         editLabel="Edit"
-                //     />
-                // }
+              // right={
+              //     <HeaderActions
+              //         onEdit={() => startEdit()}
+              //         editLabel="Edit"
+              //     />
+              // }
               >
                 <div className="px-5 py-4">
                   <dl className="grid grid-cols-2 gap-y-2">
@@ -404,31 +402,36 @@ export default function FlightBookingReviewSection({
         </div>
 
         {/* RIGHT: Trip details */}
-        <div className="md:sticky md:top-6 self-start md:max-h-[calc(100vh-3rem)] md:overflow-auto">
-          <FlightSummaryCard
-            title="Flight details"
-            headerActionText="Change"
-            onHeaderActionClick={() => {
-              if (typeof onChangeFlight === "function") onChangeFlight();
-            }}
-            segments={segments}
-            fare={priceFareFamily}
-          />
+        <div className="md:sticky md:top-6 self-start">
+          <div className="md:max-h-[calc(100vh-3rem)] md:overflow-auto">
+            <FlightSummaryCard
+              title="Flight details"
+              headerActionText="Change"
+              onHeaderActionClick={() => {
+                if (typeof onChangeFlight === "function") onChangeFlight();
+              }}
+              segments={segments}
+              fare={priceFareFamily}
+            />
 
-          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} wideLayout />
+            <FLightFareRule
+              trip={trip.raw}
+              ruleData={fareRuleData}
+              wideLayout
+            />
 
-          <FLightPriceBreakdown
-            open={openPrice}
-            onToggleOpen={() => setOpenPrice((v) => !v)}
-            trip={trip.raw}
-            ancillarySummary={ancillarySummary}
-          />
-
+            <FLightPriceBreakdown
+              open={openPrice}
+              onToggleOpen={() => setOpenPrice((v) => !v)}
+              trip={trip.raw}
+              ancillarySummary={ancillarySummary}
+            />
+          </div>
           {showAddAddOnsBanner && (
             <div className="mt-4 rounded-xl border border-dashed border-[#C2CAD6] bg-[#F9FAFB] px-4 py-3">
               <p className="m-0 text-[12px] leading-5 text-[#3D495C]">
-                Skipped optional add-ons? You can still choose seats, baggage, or
-                meals before payment.
+                Skipped optional add-ons? You can still choose seats, baggage,
+                or meals before payment.
               </p>
               <Button
                 type="button"

@@ -102,13 +102,13 @@ export default function FlightBookingAnicllarySection({
     mealIcon: refundableIcon,
     wifiIcon: durationIcon,
     portIcon: SEAT_ICON,
-    entertainmentIcon: PLANE_ICON
+    entertainmentIcon: PLANE_ICON,
   };
   const segments = buildFlightSegmentFromTrip(trip, assets);
   const firstPrice = getPriceCabinClassForFlightSummary(trip);
   const flightJourneys = useMemo(
     () => transformFlightJourneysToObjects(trip?.raw?.journey),
-    [trip]
+    [trip],
   );
   const allowedPassengerKeys = useMemo(
     () =>
@@ -149,9 +149,7 @@ export default function FlightBookingAnicllarySection({
     onAncillarySelectionResolved?.({
       totalAmount: 0,
       currency:
-        trip?.raw?.fare?.currencyCode ??
-        trip?.raw?.fare?.currency ??
-        "USD",
+        trip?.raw?.fare?.currencyCode ?? trip?.raw?.fare?.currency ?? "USD",
       selectedCount: 0,
       breakdown: [],
     });
@@ -295,9 +293,7 @@ export default function FlightBookingAnicllarySection({
       onAncillarySelectionResolved?.({
         totalAmount: 0,
         currency:
-          trip?.raw?.fare?.currencyCode ??
-          trip?.raw?.fare?.currency ??
-          "USD",
+          trip?.raw?.fare?.currencyCode ?? trip?.raw?.fare?.currency ?? "USD",
         selectedCount: 0,
         breakdown: [],
       });
@@ -343,10 +339,10 @@ export default function FlightBookingAnicllarySection({
 
         const fallbackCurrency =
           trip?.raw?.fare?.currencyCode ?? trip?.raw?.fare?.currency ?? "USD";
-        const currency =
-          breakdown?.[0]?.currency || fallbackCurrency;
+        const currency = breakdown?.[0]?.currency || fallbackCurrency;
         const totalAmount = breakdown.reduce(
-          (sum: number, item: { amount: number }) => sum + Number(item.amount || 0),
+          (sum: number, item: { amount: number }) =>
+            sum + Number(item.amount || 0),
           0,
         );
 
@@ -383,6 +379,13 @@ export default function FlightBookingAnicllarySection({
               >
                 Clear selection
               </Button>
+            </div>
+            <div className="px-4 py-3 bg-[#EEF4FF] border-b border-[#E4E4E7] flex items-center gap-2">
+              {/* <span className="text-[#2351A3] text-[16px]">ℹ️</span> */}
+              <p className="text-[13px] text-[#2351A3] font-medium m-0">
+                All add-ons are optional — you can skip this step and go
+                straight to summary.
+              </p>
             </div>
 
             {flightAncillarySearch?.baggages && (
@@ -436,24 +439,29 @@ export default function FlightBookingAnicllarySection({
         </div>
 
         {/* RIGHT: Trip details */}
-        <div className="md:sticky md:top-6 self-start md:max-h-[calc(100vh-3rem)] md:overflow-auto">
-          <FlightSummaryCard
-            title="Trip details"
-            // headerActionText="View all"
-            // onHeaderActionClick={() => {/* handle view all */ }}
-            segments={segments}
-            fare={priceFareFamily}
-          />
+        <div className="md:sticky md:top-6 self-start ">
+          <div className="md:max-h-[calc(100vh-3rem)] md:overflow-auto">
+            <FlightSummaryCard
+              title="Trip details"
+              // headerActionText="View all"
+              // onHeaderActionClick={() => {/* handle view all */ }}
+              segments={segments}
+              fare={priceFareFamily}
+            />
 
-          <FLightFareRule trip={trip.raw} ruleData={fareRuleData} wideLayout />
+            <FLightFareRule
+              trip={trip.raw}
+              ruleData={fareRuleData}
+              wideLayout
+            />
 
-          <FLightPriceBreakdown
-            open={openPrice}
-            onToggleOpen={() => setOpenPrice((v) => !v)}
-            trip={trip.raw}
-            ancillarySummary={liveAncillarySummary}
-          />
-
+            <FLightPriceBreakdown
+              open={openPrice}
+              onToggleOpen={() => setOpenPrice((v) => !v)}
+              trip={trip.raw}
+              ancillarySummary={liveAncillarySummary}
+            />
+          </div>
           <Button
             type="button"
             overrideClasses
@@ -462,6 +470,27 @@ export default function FlightBookingAnicllarySection({
             disabled={isPending}
           >
             {isPending ? "Confirming add-on prices…" : "Continue"}
+          </Button>
+          <Button
+            type="button"
+            overrideClasses
+            className="mt-2 mx-4 w-[calc(100%-2rem)] rounded-xl border border-[#2351A3] bg-white py-3 text-[16px] font-semibold text-[#2351A3] hover:bg-[#F9FAFB]"
+            onClick={() => {
+              clearAll();
+              onAncillarySelectionResolved?.({
+                totalAmount: 0,
+                currency:
+                  trip?.raw?.fare?.currencyCode ??
+                  trip?.raw?.fare?.currency ??
+                  "USD",
+                selectedCount: 0,
+                breakdown: [],
+              });
+              if (typeof onNext === "function") onNext();
+            }}
+            disabled={isPending}
+          >
+            Skip
           </Button>
         </div>
 

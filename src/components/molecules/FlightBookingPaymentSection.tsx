@@ -59,6 +59,7 @@ import Loader from "../atoms/Loader";
 import { useCitiesOptions } from "../../hooks/masterListings/useQueryListing";
 import LegalModal from "../common/LegalModal";
 import FlightBookingReviewModal from "../common/FlightBookingReviewModal";
+import { Checkbox } from "antd";
 
 type PaymentMethod = "card" | "apple" | "google";
 
@@ -159,6 +160,9 @@ export default function FlightBookingPaymentSection({
     Record<string, string>
   >({});
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false);
+
+  const [isTermsChecked, setIsTermsChecked] = useState(false);
+  const [showTermsError, setShowTermsError] = useState(false);
 
   const { mutateAsync, isPending } = useFlightReservationBooking();
   const {
@@ -298,6 +302,12 @@ export default function FlightBookingPaymentSection({
     //   return;
     // }
     setHasAttemptedValidation(true);
+
+    if (!isTermsChecked) {
+      setShowTermsError(true);
+      // return;
+    }
+
     const fieldErrors = validateReservationFlightBookingDataFields(
       reservation,
       cardDetails,
@@ -1037,6 +1047,39 @@ export default function FlightBookingPaymentSection({
           trip={trip.raw}
           ancillarySummary={ancillarySummary}
         />
+
+        <div className="mt-2">
+          <Checkbox
+            checked={isTermsChecked}
+            onChange={(e) => {
+              setIsTermsChecked(e.target.checked);
+              if (e.target.checked) {
+                setShowTermsError(false);
+              }
+            }}
+            className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
+          >
+            <span className="font-medium text-sm leading-none tracking-normal align-middle">
+              I agree to the{" "}
+              <span
+                className="text-[#5383DA] cursor-pointer hover:underline"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLegalModal({ isOpen: true, type: "terms" });
+                }}
+              >
+                Terms & Conditions
+              </span>{" "}
+              and Payment Rules and Regulations.
+            </span>
+          </Checkbox>
+          {showTermsError && (
+            <p className="text-red-500 text-xs mt-1">
+              You must agree to the Terms & Conditions to proceed.
+            </p>
+          )}
+        </div>
 
         <div className="mt-16 px-5 flex flex-col items-center">
           <Button

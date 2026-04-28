@@ -34,17 +34,24 @@ export default function FLightFareRule({
   trip,
   ruleData,
   wideLayout,
+  externalModalOpen,
+  onExternalModalClose,
 }: {
   trip: any;
   ruleData?: any;
   /** Use inside wide parents (e.g. review modal) so the card is not capped at 576px. */
   wideLayout?: boolean;
+  externalModalOpen?: boolean;
+  onExternalModalClose?: () => void;
 }) {
   const [baggageModalOpen, setBaggageModalOpen] = useState(false);
   const [fareRulesModalOpen, setFareRulesModalOpen] = useState(false);
   const [fareRulesModalTab, setFareRulesModalTab] = useState<
     "penalties" | "policies"
   >("penalties");
+
+  const isModalOpen = !!externalModalOpen || fareRulesModalOpen;
+
   const sourceRule = ruleData ?? trip ?? {};
   const fare = trip?.fare ?? sourceRule?.fare;
 
@@ -52,8 +59,8 @@ export default function FLightFareRule({
   const segmentsFromJourneys =
     Array.isArray(journeys) && journeys.length > 0
       ? journeys.flatMap((j: any) =>
-          Array.isArray(j?.flightSegments) ? j.flightSegments : [],
-        )
+        Array.isArray(j?.flightSegments) ? j.flightSegments : [],
+      )
       : [];
   const segmentsFallback =
     trip?.raw?.journey?.[0]?.flightSegments ??
@@ -137,7 +144,7 @@ export default function FLightFareRule({
           const currency = String(a?.currency ?? "").trim();
           const remark =
             Array.isArray(a?.applicableFeeRemarks) &&
-            a.applicableFeeRemarks.length > 0
+              a.applicableFeeRemarks.length > 0
               ? String(a.applicableFeeRemarks[0]?.value ?? "").trim()
               : "";
           const whenParts = [];
@@ -244,11 +251,11 @@ export default function FLightFareRule({
   }, [penaltyRows]);
 
   useEffect(() => {
-    if (!fareRulesModalOpen) return;
+    if (!isModalOpen) return;
     setFareRulesModalTab(
       penaltyRowGroups.length > 0 ? "penalties" : "policies",
     );
-  }, [fareRulesModalOpen, penaltyRowGroups.length]);
+  }, [isModalOpen, penaltyRowGroups.length]);
 
   const policyCollapseItems = useMemo(
     () =>
@@ -317,6 +324,11 @@ export default function FLightFareRule({
       })),
     [penaltyRowGroups],
   );
+
+  const closeModal = () => {
+    setFareRulesModalOpen(false);
+    onExternalModalClose?.();
+  };
 
   return (
     <div
@@ -398,8 +410,8 @@ export default function FLightFareRule({
             </p>
           </>
         }
-        open={fareRulesModalOpen}
-        onCancel={() => setFareRulesModalOpen(false)}
+        open={isModalOpen}
+        onCancel={closeModal}
         footer={null}
         width={720}
         centered
@@ -422,7 +434,7 @@ export default function FLightFareRule({
               label: "Penalties",
               children: (
                 <div className="rounded-[12px] px-1.5 py-1.5">
-                {/* <div className="rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] px-1.5 py-1.5"> */}
+                  {/* <div className="rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] px-1.5 py-1.5"> */}
                   {penaltyCollapseItems.length > 0 ? (
                     <Collapse
                       bordered={false}
@@ -449,7 +461,7 @@ export default function FLightFareRule({
               //   : "Policies",
               children: (
                 <div className="rounded-[12px] px-1.5 py-1.5">
-                {/* <div className="rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] px-1.5 py-1.5"> */}
+                  {/* <div className="rounded-[12px] border border-[#E2E8F0] bg-[#F8FAFC] px-1.5 py-1.5"> */}
                   {policyCollapseItems.length > 0 ? (
                     <Collapse
                       bordered={false}
