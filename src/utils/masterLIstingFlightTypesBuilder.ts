@@ -87,20 +87,36 @@ export function buildFlightTypeOptions(
 }
 
 export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
+  const isUnknown = (value?: string | null) =>
+    (value || "").trim().toLowerCase() === "unknown";
+
   return (
     (items || [])
       // .filter(i => i.status === 1)
-      .filter(i => i.city && i.city.toLowerCase() !== "unknown")
+      .filter((i) => {
+        const city = (i.city || "").trim();
+        const airportName = (i.airportName || "").trim();
+        return !!i.iataCode && (!!airportName || (!!city && !isUnknown(city)));
+      })
       .map((i, key) => {
-        const cleanCity = i.city.split("-")[0].trim(); 
+        const city = (i.city || "").trim();
+        const airportName = (i.airportName || "").trim();
+        const displayCity = isUnknown(city) ? "" : city.split("-")[0].trim();
+        const displayCountry = (i.country || "").trim();
+        const labelParts = isUnknown(city)
+          ? [displayCountry]
+          : [displayCity, displayCountry];
         return {
           id: `${key}`,
-          label: `${cleanCity}, ${i.country} (${i.iataCode})`,
+          label: labelParts
+            .filter(Boolean)
+            .join(", ")
+            .concat(` (${i.iataCode})`),
           code: i.iataCode,
           // code: i.cityCode,
-          city: i.city,
+          city: displayCity,
           country: i.country,
-          airportName: i.airportName || undefined,
+          airportName: airportName || undefined,
           countryCode: i.countryCode,
         }
       })
