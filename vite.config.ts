@@ -81,15 +81,9 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) =>
             path.replace(/^\/api\/hotel-proxy/, pathPrefix || ""),
         },
-        /** Used for `POST /myActivityBooking` when routed to flight API in dev (see `axios.ts`). */
-        "/api/flight-proxy": {
-          target: "https://y0v4qcjjo5.execute-api.eu-west-1.amazonaws.com",
-          changeOrigin: true,
-          rewrite: (path) => path.replace(/^\/api\/flight-proxy/, "/dev2"),
-        },
         /**
-         * Main app API (`VITE_API_BASE`, e.g. …/dev). Same-origin in dev so routes like
-         * POST /myActivityBooking are not blocked by API Gateway CORS from localhost.
+         * Main app API (`VITE_API_BASE`, e.g. …/dev). Same-origin in dev so browser requests
+         * are not blocked by API Gateway CORS from localhost.
          */
         "/api/app-proxy": {
           target: mainApiProxyTarget,

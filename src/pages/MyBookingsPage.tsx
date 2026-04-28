@@ -18,13 +18,11 @@ import { extractErrorFromAxiosApiError } from "../utils/apiErrorHanlder";
 import toast from "react-hot-toast";
 import { useMyBooking } from "../hooks/useUserProfileBooking";
 import { useMyHotelBooking } from "../hooks/useMyHotelBooking";
-import { useMyActivityBookingsQuery } from "../hooks/useMyActivityBooking";
 import Loader from "../components/atoms/Loader";
 import {
   mergeSightseeingBookingLists,
   transformBookingsResponse,
   transformHotelBookingsResponse,
-  transformSightseeingBookingsResponse,
   type SightseeingBookingCardItem,
 } from "../utils/transformBookingData";
 import UserHotelBookingsListing from "../components/molecules/UserHotelBookingsListing";
@@ -122,7 +120,6 @@ const MyBookingsPage = () => {
   const [userSightseeingBookings, setUserSightseeingBookings] = useState<
     SightseeingBookingCardItem[]
   >([]);
-  const sightseeingErrorToastKey = useRef<string | null>(null);
 
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -202,26 +199,9 @@ const MyBookingsPage = () => {
   const { mutateAsync: fetchHotelBookings, isPending: isHotelPending } =
     useMyHotelBooking();
 
-  const sightFilters =
-    mode === "Sightseeing" || mode === "All"
-      ? {
-          status: active === "Confirmed" ? "confirmed" : active.toLowerCase(),
-        }
-      : null;
-
-  const {
-    data: activityBookingsData,
-    isLoading: isSightLoading,
-    isError: isSightError,
-    error: sightQueryError,
-  } = useMyActivityBookingsQuery(sightFilters);
-
   const showBookingsLoader =
     ((mode === "Flights" || mode === "All") && isPending) ||
-    ((mode === "Hotels" || mode === "All") && isHotelPending) ||
-    ((mode === "Sightseeing" || mode === "All") &&
-      isSightLoading &&
-      !isSightError);
+    ((mode === "Hotels" || mode === "All") && isHotelPending);
 
   const init = async () => {
     try {
@@ -293,42 +273,11 @@ const MyBookingsPage = () => {
   }, [navigationType, location.search, setSearchParams]);
 
   useEffect(() => {
-    if (!isSightError) sightseeingErrorToastKey.current = null;
-  }, [isSightError]);
-
-  useEffect(() => {
     if (mode !== "Sightseeing" && mode !== "All") return;
     const local = getLocalSightseeingBookings();
-    const transformed = transformSightseeingBookingsResponse(
-      activityBookingsData ?? {},
-    );
-    const merged = mergeSightseeingBookingLists(
-      Array.isArray(transformed) ? transformed : [],
-      local,
-    );
+    const merged = mergeSightseeingBookingLists([], local);
     setUserSightseeingBookings(merged);
-  }, [mode, activityBookingsData, active]);
-
-  useEffect(() => {
-    if (!isSightError || (mode !== "Sightseeing" && mode !== "All")) {
-      if (mode !== "Sightseeing" && mode !== "All")
-        sightseeingErrorToastKey.current = null;
-      return;
-    }
-    const local = getLocalSightseeingBookings();
-    setUserSightseeingBookings(mergeSightseeingBookingLists([], local));
-    const err = extractErrorFromAxiosApiError(sightQueryError);
-    if (local.length === 0) {
-      const dedupe = `${sightFilters?.status ?? ""}:${err}`;
-      if (sightseeingErrorToastKey.current !== dedupe) {
-        sightseeingErrorToastKey.current = dedupe;
-        toast.error(
-          err ||
-            "Unable to load sightseeing bookings from the server. Confirm the /myActivityBooking route exists.",
-        );
-      }
-    }
-  }, [isSightError, mode, sightQueryError, sightFilters?.status]);
+  }, [mode, active]);
 
   const sharedListProps = useMemo(
     () => ({

@@ -6,6 +6,7 @@ import ChatBot from "../organisms/ChatBot";
 import AuthModal from "../organisms/AuthModal";
 import { Suspense, useCallback, useEffect, useState } from "react";
 import RouteLoadingFallback from "../common/RouteLoadingFallback";
+import ChunkLoadErrorBoundary from "../common/ChunkLoadErrorBoundary";
 import SessionExpiryWarning from "../../features/auth/components/SessionExpiryWarning";
 import type { AuthMode } from "../../types/AuthTypes";
 import { useAuth } from "../../features/auth/hooks/useAuth";
@@ -172,15 +173,17 @@ const AppLayout: React.FC = () => {
         {isAuthenticated && <SessionExpiryWarning />}
 
         <main className="min-h-screen">
-          <Suspense fallback={<RouteLoadingFallback />}>
-            <Outlet
-              context={{
-                onLoginClick: openLogin,
-                onSignupClick: openSignup,
-                setHideHeader,
-              }}
-            />
-          </Suspense>
+          <ChunkLoadErrorBoundary key={location.pathname}>
+            <Suspense fallback={<RouteLoadingFallback />}>
+              <Outlet
+                context={{
+                  onLoginClick: openLogin,
+                  onSignupClick: openSignup,
+                  setHideHeader,
+                }}
+              />
+            </Suspense>
+          </ChunkLoadErrorBoundary>
         </main>
         <Footer />
         <ChatBot />

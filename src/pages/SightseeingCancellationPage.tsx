@@ -2,7 +2,6 @@ import React, { useMemo, useState } from "react";
 import { Checkbox, Select } from "antd";
 import { InfoCircleOutlined } from "@ant-design/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import Button from "../components/atoms/Button";
 import { useActivitiesCancelBooking } from "../hooks/sightseeing/useActivitiesBooking";
 import {
@@ -172,7 +171,6 @@ function RefundCalcRow({
 const SightseeingCancellationPage: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const state = (location.state || {}) as CancelLocationState;
 
   const bookingReferenceId = (state.bookingReferenceId || "").trim();
@@ -291,7 +289,6 @@ const SightseeingCancellationPage: React.FC = () => {
           markSightseeingBookingCancelled(cr);
         }
         toast.success("Your sightseeing booking was cancelled.");
-        await queryClient.invalidateQueries({ queryKey: ["myActivityBookings"] });
         navigate("/my-bookings", {
           replace: true,
           state: { mode: "Sightseeing" },

@@ -771,17 +771,6 @@ function attachActivitiesProxy(
             }
           }
 
-          if (suffix.startsWith("/myActivityBooking") && req.method === "POST") {
-            sendJsonWithCors(
-              req,
-              res,
-              200,
-              { data: { items: [] } },
-              { "X-Activities-Proxy": "mock-myActivityBooking" },
-            );
-            return;
-          }
-
           if (
             isMockBookingPathSuffix(suffix) &&
             req.method === "POST"

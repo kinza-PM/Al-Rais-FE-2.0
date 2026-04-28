@@ -37,11 +37,6 @@ interface ImportMetaEnv {
   readonly VITE_NETWORK_PING_URL?: string;
   /** Set to `"false"` to call `VITE_API_BASE` directly from the browser in dev (needs CORS on the API). */
   readonly VITE_MAIN_API_PROXY?: string;
-  /**
-   * Where `POST myActivityBooking` is deployed:
-   * `activities` (IAM / same as sightseeing — default in dev), `flight`, `hotel`, or `main` (JWT).
-   */
-  readonly VITE_MY_ACTIVITY_BOOKING_API?: string;
   /** Sightseeing / activities API (execute-api), optional in dev when using proxy */
   readonly VITE_ACTIVITIES_API_BASE?: string;
   readonly VITE_ACTIVITIES_API_KEY?: string;
