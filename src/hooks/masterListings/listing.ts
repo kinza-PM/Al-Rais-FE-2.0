@@ -1,0 +1,144 @@
+// hooks/listings.ts
+import {
+  buildAirlineOptions,
+  buildBaggageOptions,
+  buildCabinClassOptions,
+  buildAirportOptions,
+  buildFlightCancelReasonOptions,
+  buildFlightTypeOptions,
+  buildNumberStopsOptions,
+  buildPassengerSchema,
+  buildPriceSortOptions,
+  buildTransitHourOptions,
+} from "../../utils/masterLIstingFlightTypesBuilder";
+
+import type {
+  BaggageResponse,
+  BaggageOption,
+  CabinClassesResponse,
+  CabinClassOption,
+  FlightCancelReasonItem,
+  FlightCancelReasonSelectOption,
+  FlightCancelReasonsResponse,
+  FlightTypesResponse,
+  FlightTypeOption,
+  NumberStopsResponse,
+  NumberStopsOption,
+  PassengersResponse,
+  PassengerSchema,
+  PriceSortResponse,
+  PriceSortOption,
+  TransitHoursResponse,
+  TransitHoursOption,
+  AirlinesResponse,
+  AirlineOption,
+  AirportsResponse,
+  AirportItem,
+  AirportOption,
+} from "../../features/flights/types";
+
+import { listingExtraParams, listingTables } from "../../config/apiRoute";
+import { getListingDefaultCountry } from "../../utils/listingUserCountry";
+import { useCountriesOptionsListing, useListing } from "./useQueryListing";
+import { useInfiniteListing } from "./useInfiniteListing";
+
+export const useFlightTypesOptions = (enabled = true) =>
+  useListing<FlightTypesResponse, any, FlightTypeOption>(
+    listingTables.flightTypes,
+    buildFlightTypeOptions,
+    enabled,
+  );
+
+// export const useCityOptions = (enabled = true) =>
+//     useListing<CountriesResponse, any, CountryOption>(
+//         listingTables.countries,
+//         buildCountryOptions,
+//         enabled
+//     );
+export const useAiprortOptions = (
+  enabled = true,
+  searchTerm?: string,
+  type?: "from" | "to",
+) => {
+  const trimmed = searchTerm?.trim() ?? "";
+  const search =
+    trimmed.length > 0 ? trimmed : getListingDefaultCountry();
+  return useInfiniteListing<AirportsResponse, AirportItem, AirportOption>(
+    listingTables.airports,
+    buildAirportOptions,
+    enabled,
+    {
+      search,
+      ...(type ? { type } : {}),
+    },
+  );
+};
+
+export const usePassengerSchema = (enabled = true) =>
+  useListing<PassengersResponse, any, PassengerSchema[number]>(
+    listingTables.passengers,
+    (items) =>
+      buildPassengerSchema(
+        items as any,
+      ) as unknown as PassengerSchema[number][],
+    enabled,
+  );
+
+export const useCabinClassOptions = (enabled = true) =>
+  useListing<CabinClassesResponse, any, CabinClassOption>(
+    listingTables.cabinClasses,
+    buildCabinClassOptions,
+    enabled,
+    {
+      listingParams: listingExtraParams.cabinClasses,
+    },
+  );
+
+export const usePriceSortOptions = (enabled = true) =>
+  useListing<PriceSortResponse, any, PriceSortOption>(
+    listingTables.priceSorted,
+    buildPriceSortOptions,
+    enabled,
+  );
+
+export const useNumberStopsOptions = (enabled = true) =>
+  useListing<NumberStopsResponse, any, NumberStopsOption>(
+    listingTables.numberStops,
+    buildNumberStopsOptions,
+    enabled,
+  );
+
+export const useTransitHoursOptions = (enabled = true) =>
+  useListing<TransitHoursResponse, any, TransitHoursOption>(
+    listingTables.transitHours,
+    buildTransitHourOptions,
+    enabled,
+  );
+
+export const useBaggageOptions = (enabled = true) =>
+  useListing<BaggageResponse, any, BaggageOption>(
+    listingTables.baggage,
+    buildBaggageOptions,
+    enabled,
+  );
+
+export const useAirlineOptions = (enabled = true) =>
+  useListing<AirlinesResponse, any, AirlineOption>(
+    listingTables.airlines,
+    buildAirlineOptions,
+    enabled,
+  );
+
+export const useFlightCancelReasonOptions = (enabled = true) =>
+  useListing<
+    FlightCancelReasonsResponse,
+    FlightCancelReasonItem,
+    FlightCancelReasonSelectOption
+  >(
+    listingTables.flightCancelReason,
+    buildFlightCancelReasonOptions,
+    enabled,
+  );
+
+export const useCountriesOptions = (enabled = true) =>
+  useCountriesOptionsListing(enabled);

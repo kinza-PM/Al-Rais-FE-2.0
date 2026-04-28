@@ -1,0 +1,170 @@
+import { useEffect, useState } from "react";
+import { Modal } from "antd";
+import { useLocation } from "react-router-dom";
+import LoginForm from "../molecules/LoginForm";
+import LoginFailedCard from "../molecules/LoginFailedCard";
+import SignupForm from "../molecules/SignupForm";
+import ForgotPasswordForm from "../molecules/ForgotPasswordForm";
+import OTPVerificationForm from "../molecules/OTPVerificationForm";
+import { useAuth } from "../../features/auth/hooks/useAuth";
+
+interface LoginModalProps {
+  showModal?: boolean;
+  onClose?: () => void;
+  onAuthSuccess?: () => void;
+  /** When true, shows a "← Go back" link below the form so the user can
+   *  explicitly cancel the protected action and return to the previous view. */
+  showGoBack?: boolean;
+}
+
+export default function LoginModal({
+  showModal,
+  onClose,
+  onAuthSuccess,
+}: LoginModalProps) {
+  const location = useLocation();
+  const [showLoginFailed, setShowLoginFailed] = useState(false);
+  const [mode, setMode] = useState<"login" | "signup" | "forgot" | "otp">(
+    "login",
+  );
+  const [internalOpen, setInternalOpen] = useState(true);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const { refreshAuth } = useAuth();
+
+  const handleClose = () => {
+    setInternalOpen(false);
+    onClose?.();
+  };
+
+  // When parent asks to show the modal again, reopen our internal state.
+  useEffect(() => {
+    if (showModal) {
+      setInternalOpen(true);
+    }
+  }, [showModal]);
+
+  const handleForgotPassword = () => {
+    setMode("forgot");
+  };
+
+  const handleLoginSuccess = () => {
+    // No hard refresh: update auth state, then close without running cancel/back handlers.
+    void refreshAuth().finally(() => {
+      // Notify the rest of the app (e.g. header) to refresh its auth snapshot.
+      window.dispatchEvent(new Event("alrais:auth-changed"));
+      onAuthSuccess?.();
+      setInternalOpen(false);
+    });
+  };
+
+  const handleLoginFailed = () => {
+    setShowLoginFailed(true);
+  };
+
+  const handleTryAgain = () => {
+    setShowLoginFailed(false);
+  };
+
+  const modalOverlayStyles = {
+    backgroundColor: "rgba(10, 12, 15, 0.55)",
+    backdropFilter: "blur(12px) saturate(1.4)",
+    WebkitBackdropFilter: "blur(12px) saturate(1.4)",
+  };
+
+  return (
+    <Modal
+      closable
+      open={Boolean(showModal) && internalOpen}
+      footer={null}
+      centered
+      maskClosable
+      keyboard
+      onCancel={handleClose}
+      closeIcon={<></>}
+      className="compareModal"
+      styles={{
+        mask: modalOverlayStyles,
+        body: { padding: 0 },
+        content: {
+          padding: 0,
+          background: "transparent",
+          boxShadow: "none",
+        },
+        wrapper: {
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        },
+      }}
+    >
+      <div className="relative flex w-full justify-center">
+        {/* Close button (top-right) — anchored inside modal content */}
+        {/* <button
+          type="button"
+          onClick={handleClose}
+          className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-[#3D495C] shadow hover:bg-white"
+          aria-label="Close"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <path
+              d="M11 3L3 11M3 3L11 11"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button> */}
+
+        <div className="w-full max-w-[468px]">
+          {showLoginFailed ? (
+            <LoginFailedCard onTryAgain={handleTryAgain} />
+          ) : mode === "login" ? (
+            <LoginForm
+              onSignupClick={() => setMode("signup")}
+              onLoginSuccess={handleLoginSuccess}
+              onForgotPasswordClick={handleForgotPassword}
+              onLoginFailed={handleLoginFailed}
+              onClose={handleClose}
+            />
+          ) : mode === "signup" ? (
+            <SignupForm
+              onLoginClick={() => setMode("login")}
+              onSignupSuccess={() => {
+                void refreshAuth().finally(() => {
+                  window.dispatchEvent(new Event("alrais:auth-changed"));
+                  onAuthSuccess?.();
+                  setInternalOpen(false);
+                });
+              }}
+              onClose={handleClose}
+              compact
+              returnUrl={`${location.pathname}${location.search ?? ""}`}
+              bookingData={location.state}
+            />
+          ) : mode === "forgot" ? (
+            <ForgotPasswordForm
+              onBackToLogin={() => setMode("login")}
+              onOTPSent={(email) => {
+                setForgotPasswordEmail(email);
+                setMode("otp");
+              }}
+              prefillEmail={forgotPasswordEmail}
+            />
+          ) : mode === "otp" ? (
+            <OTPVerificationForm
+              email={forgotPasswordEmail}
+              onBackToForgotPassword={() => {
+                setMode("forgot");
+              }}
+              onResetSuccess={() => {
+                setForgotPasswordEmail("");
+                setMode("login");
+              }}
+              onCloseModal={handleClose}
+            />
+          ) : null}
+        </div>
+      </div>
+    </Modal>
+  );
+}
