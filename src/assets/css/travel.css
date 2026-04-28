@@ -13,12 +13,10 @@
 }
 
 .auth-bg-btn {
-  background: linear-gradient(
-    90.59deg,
-    #5383da 0%,
-    #2351a3 50%,
-    #081326 100%
-  ) !important;
+  background: linear-gradient(90.59deg,
+      #5383da 0%,
+      #2351a3 50%,
+      #081326 100%) !important;
 }
 
 .flight-cta-button {
@@ -139,33 +137,31 @@ input[type="number"] {
 .flight-details-popup .ant-modal-header,
 .flight-details-popup .ant-modal-title,
 .flight-details-popup .ant-modal-body,
-.flight-details-popup :where(
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6,
-    p,
-    span,
-    div,
-    button,
-    label,
-    strong,
-    small,
-    a,
-    li,
-    td,
-    th,
-    input,
-    textarea,
-    select,
-    .ant-typography,
-    .ant-btn,
-    .ant-radio-wrapper,
-    .ant-radio-button-wrapper,
-    .ant-radio-button-label
-  ) {
+.flight-details-popup :where(h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  span,
+  div,
+  button,
+  label,
+  strong,
+  small,
+  a,
+  li,
+  td,
+  th,
+  input,
+  textarea,
+  select,
+  .ant-typography,
+  .ant-btn,
+  .ant-radio-wrapper,
+  .ant-radio-button-wrapper,
+  .ant-radio-button-label) {
   font-family: Inter, sans-serif !important;
 }
 
@@ -223,36 +219,24 @@ input[type="number"] {
   margin-right: 0;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-tab.ant-tabs-tab-active
-  .ant-tabs-tab-btn {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
   color: #2351a3 !important;
   text-shadow: 0 0 0.25px #2351a3;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar {
   color: #2351a3 !important;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar:hover {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar:hover {
   color: #2351a3 !important;
 }
 
-.topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs
-  .ant-tabs-ink-bar {
+.topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs .ant-tabs-ink-bar {
   background: #2351a3;
 }
 
-.ant-tabs-ink-bar
-  .topHeaderTabs
-  :where(.css-dev-only-do-not-override-t3en8n).ant-tabs-top
-  > .ant-tabs-nav {
+.ant-tabs-ink-bar .topHeaderTabs :where(.css-dev-only-do-not-override-t3en8n).ant-tabs-top>.ant-tabs-nav {
   margin-bottom: 0px;
 }
 
@@ -360,12 +344,8 @@ input[type="number"] {
   width: calc(100% + 2 * var(--flight-wrap-pad-x));
   max-width: none;
   box-sizing: border-box;
-  padding-left: calc(
-    var(--flight-wrap-pad-x) + var(--flight-search-inner-pad-x)
-  );
-  padding-right: calc(
-    var(--flight-wrap-pad-x) + var(--flight-search-inner-pad-x)
-  );
+  padding-left: calc(var(--flight-wrap-pad-x) + var(--flight-search-inner-pad-x));
+  padding-right: calc(var(--flight-wrap-pad-x) + var(--flight-search-inner-pad-x));
   padding-top: 24px;
   /* padding-bottom removed â€” the flight-search-divider provides bottom spacing */
   padding-bottom: 0;
@@ -375,8 +355,7 @@ input[type="number"] {
 }
 
 /* Multi-city: slightly tighter vertical rhythm (stacked legs + add-stop + search) */
-.flight-search-page
-  .bottomHeaderSetting.flight-search-form-sticky.flight-search-form--multicity {
+.flight-search-page .bottomHeaderSetting.flight-search-form-sticky.flight-search-form--multicity {
   gap: 12px;
   padding-top: 18px;
 }
@@ -397,9 +376,7 @@ input[type="number"] {
   box-sizing: border-box;
 }
 
-.flight-search-page
-  .flight-search-detail-inputs
-  .flight-search-field:not(.flight-search-field--route) {
+.flight-search-page .flight-search-detail-inputs .flight-search-field:not(.flight-search-field--route) {
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -423,9 +400,7 @@ input[type="number"] {
    On detail page, we want those siblings to become grid items (so they don't stack).
    This rule MUST keep `display: contents` so :first-of-type / :last-of-type targeting
    below works on the inputs grid directly. */
-.flight-search-page
-  .flight-search-detail-inputs
-  > .flight-search-field--route {
+.flight-search-page .flight-search-detail-inputs>.flight-search-field--route {
   display: contents;
 }
 
@@ -438,16 +413,13 @@ input[type="number"] {
 }
 
 @media (min-width: 1024px) {
+
   /* Desktop grid: 5 equal-width columns (Trip/Cabin/From/To/Search) plus a fixed
      56px Swap track. All inputs and the Search button get the same width and
      stretch evenly across the full container width. */
   .flight-search-page .flight-search-detail-inputs {
     grid-template-columns:
-      minmax(0, 1fr)
-      minmax(0, 1fr)
-      minmax(0, 1fr)
-      56px
-      minmax(0, 1fr);
+      minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 56px minmax(0, 1fr);
     grid-template-areas:
       "trip cabin from swap to"
       "travellers departure return . search";
@@ -483,27 +455,18 @@ input[type="number"] {
      NOTE: We must use descendant combinators (not >) because the route picker's
      wrapper has `display: contents`, which makes its children grid items but
      keeps them as DOM descendants — direct-child combinators would not match. */
-  .flight-search-page
-    .flight-search-detail-inputs
-    .flight-search-field--route
-    .fromToSelectWidth:first-of-type {
+  .flight-search-page .flight-search-detail-inputs .flight-search-field--route .fromToSelectWidth:first-of-type {
     grid-area: from;
   }
 
-  .flight-search-page
-    .flight-search-detail-inputs
-    .flight-search-field--route
-    .fromToSelectWidth:last-of-type {
+  .flight-search-page .flight-search-detail-inputs .flight-search-field--route .fromToSelectWidth:last-of-type {
     grid-area: to;
   }
 
   /* Swap button: centered between From and To, sitting on the input baseline.
      Override the inline margin-top set by TravelRoutePicker and the mx-2 utility
      class so it sits exactly in the middle of its 56px grid track. */
-  .flight-search-page
-    .flight-search-detail-inputs
-    .flight-search-field--route
-    .fromToBtn {
+  .flight-search-page .flight-search-detail-inputs .flight-search-field--route .fromToBtn {
     grid-area: swap;
     justify-self: center;
     align-self: end;
@@ -520,10 +483,7 @@ input[type="number"] {
 
   /* Force From/To inputs to fill their grid columns (override the global
      `.fromToSelectWidth { max-width: 396px }` rule defined elsewhere). */
-  .flight-search-page
-    .flight-search-detail-inputs
-    .flight-search-field--route
-    .fromToSelectWidth {
+  .flight-search-page .flight-search-detail-inputs .flight-search-field--route .fromToSelectWidth {
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0;
@@ -540,11 +500,7 @@ input[type="number"] {
 @media (min-width: 1600px) {
   .flight-search-page .flight-search-detail-inputs {
     grid-template-columns:
-      minmax(0, 1fr)
-      minmax(0, 1fr)
-      minmax(0, 1fr)
-      56px
-      minmax(0, 1fr);
+      minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr) 56px minmax(0, 1fr);
     max-width: 100%;
   }
 
@@ -554,26 +510,14 @@ input[type="number"] {
 }
 
 /* Flight search one-way cards â€” Figma â€œListings - One Wayâ€ timeline type */
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .flightTiming
-  .startTime
-  h5,
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .flightTiming
-  .EndTime
-  h5 {
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .startTime h5,
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .EndTime h5 {
   font-size: 16px !important;
   font-weight: 500 !important;
   color: #0a0c0f !important;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .flightTiming
-  .startTime
-  p,
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .startTime p,
 .flight-search-page .flightDetailCards.flight-ow-card .flightTiming .EndTime p {
   font-size: 12px !important;
   font-weight: 400 !important;
@@ -595,11 +539,7 @@ input[type="number"] {
   align-self: flex-end;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .flightTiming
-  .startTime
-  p {
+.flight-search-page .flightDetailCards.flight-ow-card .flightTiming .startTime p {
   text-align: right !important;
 }
 
@@ -624,30 +564,22 @@ input[type="number"] {
   margin-bottom: 0;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .topHalfCardWrap.ow-card-wrap {
+.flight-search-page .flightDetailCards.flight-ow-card .topHalfCardWrap.ow-card-wrap {
   padding: 22px 18px;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .topHalfCard.ow-card-main-row {
+.flight-search-page .flightDetailCards.flight-ow-card .topHalfCard.ow-card-main-row {
   align-items: center;
 }
 
 /* Round-trip / multi-city listing: stacked legs + shared price (reuses one-way card tokens) */
-.flight-search-page
-  .flightDetailCards.flight-ow-card.flightDetailRoundTripCards,
-.flight-search-page
-  .flightDetailCards.flight-ow-card.flightDetailMultiCityCards {
+.flight-search-page .flightDetailCards.flight-ow-card.flightDetailRoundTripCards,
+.flight-search-page .flightDetailCards.flight-ow-card.flightDetailMultiCityCards {
   margin-bottom: 0 !important;
   overflow: visible;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .topHalfCard.ow-card-main-row.ow-card-rt-main {
+.flight-search-page .flightDetailCards.flight-ow-card .topHalfCard.ow-card-main-row.ow-card-rt-main {
   /* Vertically center price + CTAs between outbound / inbound rows */
   align-items: center;
 }
@@ -671,17 +603,13 @@ input[type="number"] {
   box-sizing: border-box;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .fightTitle.ow-card-airline-col {
+.flight-search-page .flightDetailCards.flight-ow-card .fightTitle.ow-card-airline-col {
   align-items: flex-start;
   align-self: center;
   gap: 15px;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .stopsOnLarge.ow-card-timing-col {
+.flight-search-page .flightDetailCards.flight-ow-card .stopsOnLarge.ow-card-timing-col {
   align-self: center;
 }
 
@@ -689,26 +617,17 @@ input[type="number"] {
   align-items: center;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .FlightDirection
-  .visualGuid
-  .stopsDetail {
+.flight-search-page .flightDetailCards.flight-ow-card .FlightDirection .visualGuid .stopsDetail {
   gap: 6px;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .flightIcon.ow-card-airline-logo {
+.flight-search-page .flightDetailCards.flight-ow-card .flightIcon.ow-card-airline-logo {
   width: 52px;
   height: 52px;
   flex-shrink: 0;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .flightIcon.ow-card-airline-logo
-  img {
+.flight-search-page .flightDetailCards.flight-ow-card .flightIcon.ow-card-airline-logo img {
   width: 100%;
   height: 100%;
   border-radius: 50%;
@@ -746,27 +665,19 @@ input[type="number"] {
   gap: 8px;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .ow-card-feature-icons
-  img {
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-feature-icons img {
   width: 20px;
   height: 20px;
   object-fit: contain;
   display: block;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .ow-card-feature-icons
-  .featureIconTooltipWrap {
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-feature-icons .featureIconTooltipWrap {
   max-width: none;
   flex-shrink: 0;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .StartingPrice.ow-card-price-block {
+.flight-search-page .flightDetailCards.flight-ow-card .StartingPrice.ow-card-price-block {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -775,10 +686,7 @@ input[type="number"] {
 
 /* Reserve width so price + CTAs stay on one row when airline/timeline columns vary in width */
 @media (min-width: 1561px) {
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .topHalfCard
-    .StartingPrice.ow-card-price-block {
+  .flight-search-page .flightDetailCards.flight-ow-card .topHalfCard .StartingPrice.ow-card-price-block {
     flex: 0 0 auto;
     min-width: 320px;
     max-width: min(520px, 100%);
@@ -786,9 +694,7 @@ input[type="number"] {
 }
 
 /* Price + CTAs on one row (Figma): label/amount left of buttons, vertically centered */
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .ow-card-price-actions-row {
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-price-actions-row {
   display: flex;
   flex-direction: row;
   flex-wrap: nowrap;
@@ -855,9 +761,7 @@ input[type="number"] {
   min-height: 38px;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .ow-card-btn-outline:hover {
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn-outline:hover {
   background: rgba(35, 81, 163, 0.06);
 }
 
@@ -867,22 +771,16 @@ input[type="number"] {
   background: linear-gradient(91.66deg, #5383da 0%, #2351a3 50%, #081326 100%);
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .ow-card-btn-primary:hover {
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn-primary:hover {
   opacity: 0.94;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .ow-card-btn-outline:focus-visible {
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn-outline:focus-visible {
   outline: 2px solid var(--primary-300, #2351a3);
   outline-offset: 2px;
 }
 
-.flight-search-page
-  .flightDetailCards.flight-ow-card
-  .ow-card-btn-primary:focus-visible {
+.flight-search-page .flightDetailCards.flight-ow-card .ow-card-btn-primary:focus-visible {
   outline: 2px solid #ffffff;
   outline-offset: 2px;
 }
@@ -932,22 +830,16 @@ input[type="number"] {
 
 /* â‰¤1024px: stacked timeline (`stopsOnSmall`) â€” keep Book Now last after timeline + badges */
 @media (max-width: 1024px) {
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .ow-card-book-now--inrow {
+  .flight-search-page .flightDetailCards.flight-ow-card .ow-card-book-now--inrow {
     display: none !important;
   }
 
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .ow-card-mobile-book-now {
+  .flight-search-page .flightDetailCards.flight-ow-card .ow-card-mobile-book-now {
     display: block;
     padding-top: 12px;
   }
 
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .ow-card-book-now--footer {
+  .flight-search-page .flightDetailCards.flight-ow-card .ow-card-book-now--footer {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
@@ -958,13 +850,10 @@ input[type="number"] {
 
 /* Flight search cards: narrow main column (sidebar + ~1480px viewport) */
 @media (max-width: 1560px) {
+
   .flight-search-page .flightDetailCards .topHalfCard,
-  .flight-search-page
-    .flightDetailCards.flightDetailRoundTripCards
-    .topHalfCardWrap,
-  .flight-search-page
-    .flightDetailCards.flightDetailMultiCityCards
-    .topHalfCardWrap {
+  .flight-search-page .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap,
+  .flight-search-page .flightDetailCards.flightDetailMultiCityCards .topHalfCardWrap {
     flex-wrap: wrap !important;
     align-items: stretch !important;
     gap: 14px !important;
@@ -980,16 +869,9 @@ input[type="number"] {
     justify-content: flex-start !important;
   }
 
-  .flight-search-page
-    .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block,
-  .flight-search-page
-    .flightDetailCards.flightDetailRoundTripCards
-    .StartingPrice,
-  .flight-search-page
-    .flightDetailCards.flightDetailMultiCityCards
-    .StartingPrice {
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block,
+  .flight-search-page .flightDetailCards.flightDetailRoundTripCards .StartingPrice,
+  .flight-search-page .flightDetailCards.flightDetailMultiCityCards .StartingPrice {
     flex-direction: column !important;
     align-items: flex-start !important;
     justify-content: flex-start !important;
@@ -997,11 +879,7 @@ input[type="number"] {
     max-width: 100% !important;
   }
 
-  .flight-search-page
-    .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-actions-row {
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-actions-row {
     flex-direction: column !important;
     align-items: flex-start !important;
     justify-content: flex-start !important;
@@ -1009,26 +887,12 @@ input[type="number"] {
     gap: 12px !important;
   }
 
-  .flight-search-page
-    .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy {
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy {
     align-items: flex-start !important;
   }
 
-  .flight-search-page
-    .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy
-    h5,
-  .flight-search-page
-    .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy
-    .ow-card-price-label {
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy h5,
+  .flight-search-page .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy .ow-card-price-label {
     text-align: left !important;
     width: 100% !important;
     align-self: flex-start !important;
@@ -1039,9 +903,7 @@ input[type="number"] {
     justify-content: flex-start !important;
   }
 
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .topHalfCard.ow-card-main-row.ow-card-rt-main {
+  .flight-search-page .flightDetailCards.flight-ow-card .topHalfCard.ow-card-main-row.ow-card-rt-main {
     flex-wrap: wrap !important;
     /* Keep price + CTAs vertically centered vs. both legs when row still fits */
     align-items: center !important;
@@ -1054,18 +916,12 @@ input[type="number"] {
     gap: 14px !important;
   }
 
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .ow-card-rt-leg
-    .fightTitle {
+  .flight-search-page .flightDetailCards.flight-ow-card .ow-card-rt-leg .fightTitle {
     min-width: 0 !important;
     width: 100%;
   }
 
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .ow-card-rt-leg
-    .stopsOnLarge {
+  .flight-search-page .flightDetailCards.flight-ow-card .ow-card-rt-leg .stopsOnLarge {
     width: 100%;
     justify-content: flex-start !important;
   }
@@ -1073,19 +929,12 @@ input[type="number"] {
 
 /* Small screens: price + View Details on one row (Book Now stays in footer below timeline/badges) */
 @media (max-width: 1024px) {
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .topHalfCard
-    .StartingPrice.ow-card-price-block {
+  .flight-search-page .flightDetailCards.flight-ow-card .topHalfCard .StartingPrice.ow-card-price-block {
     margin-top: 12px;
     margin-bottom: 16px;
   }
 
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-actions-row {
+  .flight-search-page .flightDetailCards.flight-ow-card .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-actions-row {
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
@@ -1094,11 +943,7 @@ input[type="number"] {
     width: 100% !important;
   }
 
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy {
+  .flight-search-page .flightDetailCards.flight-ow-card .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy {
     align-items: flex-start !important;
     flex: 1 1 auto !important;
     min-width: 0 !important;
@@ -1106,18 +951,8 @@ input[type="number"] {
     max-width: none !important;
   }
 
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy
-    h5,
-  .flight-search-page
-    .flightDetailCards.flight-ow-card
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy
-    .ow-card-price-label {
+  .flight-search-page .flightDetailCards.flight-ow-card .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy h5,
+  .flight-search-page .flightDetailCards.flight-ow-card .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy .ow-card-price-label {
     text-align: left !important;
     width: auto !important;
     max-width: 100%;
@@ -1131,6 +966,7 @@ input[type="number"] {
 }
 
 @media (max-width: 1023.98px) {
+
   /* Mobile/tablet: stack cleanly in logical order */
   .flight-search-page .flight-search-detail-inputs {
     grid-template-columns: 1fr;
@@ -1140,10 +976,7 @@ input[type="number"] {
 
   /* Route picker: keep its default stacking rules, but avoid weird margins.
      Use descendant combinator since the route wrapper has `display: contents`. */
-  .flight-search-page
-    .flight-search-detail-inputs
-    .flight-search-field--route
-    .fromToBtn {
+  .flight-search-page .flight-search-detail-inputs .flight-search-field--route .fromToBtn {
     margin: 8px auto 0 !important;
   }
 
@@ -1165,11 +998,7 @@ input[type="number"] {
   display: grid;
   /* Same five tracks as .flight-search-multicity-legrow; cols 4–5 stay empty on this row */
   grid-template-columns:
-    minmax(0, 1.15fr)
-    56px
-    minmax(0, 1.15fr)
-    minmax(0, 1fr)
-    minmax(0, 1fr);
+    minmax(0, 1.15fr) 56px minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr);
   column-gap: 12px;
   row-gap: 12px;
   align-items: start;
@@ -1238,11 +1067,7 @@ input[type="number"] {
   display: grid;
   /* From | swap | To | Departure | Cabin — swap column wide enough for 48px button + gap */
   grid-template-columns:
-    minmax(0, 1.15fr)
-    56px
-    minmax(0, 1.15fr)
-    minmax(0, 1fr)
-    minmax(0, 1fr);
+    minmax(0, 1.15fr) 56px minmax(0, 1.15fr) minmax(0, 1fr) minmax(0, 1fr);
   column-gap: 12px;
   row-gap: 12px;
   align-items: start;
@@ -1309,13 +1134,11 @@ input[type="number"] {
 }
 
 /* Hotel destination list: divider between rows (options are direct button children of scroll area) */
-.hotel-destination-dropdown-panel .max-h-60.overflow-y-auto > button {
+.hotel-destination-dropdown-panel .max-h-60.overflow-y-auto>button {
   border-bottom: 1px solid #e4e4e7;
 }
 
-.hotel-destination-dropdown-panel
-  .max-h-60.overflow-y-auto
-  > button:last-of-type {
+.hotel-destination-dropdown-panel .max-h-60.overflow-y-auto>button:last-of-type {
   border-bottom: none;
 }
 
@@ -1360,8 +1183,7 @@ input[type="number"] {
 
 /* Multi-city (search page): compact vertical rhythm on small viewports so results stay visible */
 @media (max-width: 1023.98px) {
-  .flight-search-page
-    .bottomHeaderSetting.flight-search-form-sticky.flight-search-form--multicity {
+  .flight-search-page .bottomHeaderSetting.flight-search-form-sticky.flight-search-form--multicity {
     gap: 6px;
     padding-top: 8px;
     margin-bottom: 8px;
@@ -1493,7 +1315,7 @@ input[type="number"] {
   align-items: end;
 }
 
-.hotel-filter-grid > * {
+.hotel-filter-grid>* {
   min-width: 0;
 }
 
@@ -1591,10 +1413,7 @@ input[type="number"] {
   .hotel-filter-grid {
     /* Row1: View | Destination | Dates | Travellers — Row2: Nat | Star | (col3 gap) | Search */
     grid-template-columns:
-      minmax(0, 0.88fr)
-      minmax(0, 1.12fr)
-      minmax(0, 1.05fr)
-      minmax(0, 1.08fr);
+      minmax(0, 0.88fr) minmax(0, 1.12fr) minmax(0, 1.05fr) minmax(0, 1.08fr);
     grid-template-rows: auto auto;
     column-gap: 18px;
     row-gap: 16px;
@@ -1647,6 +1466,7 @@ input[type="number"] {
 }
 
 @media (max-width: 1279px) {
+
   .hotel-filter-view,
   .hotel-filter-country,
   .hotel-filter-dates,
@@ -1699,7 +1519,7 @@ input[type="number"] {
   width: 100%;
 }
 
-.hotel-filter-row > *:not(.hotel-search-btn-cell) {
+.hotel-filter-row>*:not(.hotel-search-btn-cell) {
   flex: 1 1 180px;
   min-width: 0;
 }
@@ -1729,9 +1549,7 @@ input[type="number"] {
   .hotel-filter-grid-hero {
     /* Row 1: Destination | Travellers | Dates — Row 2: Nationality | Star | Search (right) */
     grid-template-columns:
-      minmax(0, 1.05fr)
-      minmax(0, 1fr)
-      minmax(0, 1.28fr);
+      minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1.28fr);
     grid-template-rows: auto auto;
     column-gap: 16px;
     row-gap: 16px;
@@ -1785,11 +1603,12 @@ input[type="number"] {
   }
 }
 
-.hotel-filter-grid-hero > * {
+.hotel-filter-grid-hero>* {
   min-width: 0;
 }
 
 @media (max-width: 1279px) {
+
   .hotel-filter-grid-hero .hero-country,
   .hotel-filter-grid-hero .hero-dates,
   .hotel-filter-grid-hero .hero-nationality,
@@ -1822,7 +1641,7 @@ input[type="number"] {
   }
 }
 
-.sightseeing-hero-grid > * {
+.sightseeing-hero-grid>* {
   min-width: 0;
 }
 
@@ -1860,8 +1679,8 @@ input[type="number"] {
   }
 }
 
-.hotel-filter-row > *,
-.hotel-filter-row-3 > * {
+.hotel-filter-row>*,
+.hotel-filter-row-3>* {
   min-width: 0;
 }
 
@@ -2016,14 +1835,8 @@ input[type="number"] {
 .flight-search-filter-root .timeBox,
 .flight-search-filter-root .stopsRadioStyle .ant-radio-button-label,
 .flight-search-filter-root .transitHours .ant-radio-button-label,
-.flight-search-filter-root
-  .transitHours
-  .ant-radio-button-wrapper
-  .ant-radio-button-label,
-.flight-search-filter-root
-  .stopsRadioStyle
-  .ant-radio-button-wrapper
-  .ant-radio-button-label {
+.flight-search-filter-root .transitHours .ant-radio-button-wrapper .ant-radio-button-label,
+.flight-search-filter-root .stopsRadioStyle .ant-radio-button-wrapper .ant-radio-button-label {
   font-weight: 300 !important;
 }
 
@@ -2031,14 +1844,8 @@ input[type="number"] {
 .hotel-search-filter-root .baggageCheckbox,
 .hotel-search-filter-root .stopsRadioStyle .ant-radio-button-label,
 .hotel-search-filter-root .transitHours .ant-radio-button-label,
-.hotel-search-filter-root
-  .transitHours
-  .ant-radio-button-wrapper
-  .ant-radio-button-label,
-.hotel-search-filter-root
-  .stopsRadioStyle
-  .ant-radio-button-wrapper
-  .ant-radio-button-label {
+.hotel-search-filter-root .transitHours .ant-radio-button-wrapper .ant-radio-button-label,
+.hotel-search-filter-root .stopsRadioStyle .ant-radio-button-wrapper .ant-radio-button-label {
   color: #3d495c !important;
   font-size: 13px !important;
   font-weight: 300 !important;
@@ -2046,14 +1853,8 @@ input[type="number"] {
 }
 
 /* Flight: override global pill label weights inside sidebar */
-.flight-search-filter-root
-  .transitHours
-  .ant-radio-button-wrapper
-  .ant-radio-button-label,
-.flight-search-filter-root
-  .stopsRadioStyle
-  .ant-radio-button-wrapper
-  .ant-radio-button-label {
+.flight-search-filter-root .transitHours .ant-radio-button-wrapper .ant-radio-button-label,
+.flight-search-filter-root .stopsRadioStyle .ant-radio-button-wrapper .ant-radio-button-label {
   font-weight: 300 !important;
 }
 
@@ -2227,12 +2028,10 @@ input[type="number"] {
 }
 
 .stopsRadioStyle .ant-radio-button-wrapper-checked {
-  background: linear-gradient(
-    90.59deg,
-    #5383da 0%,
-    #2351a3 50%,
-    #081326 100%
-  ) !important;
+  background: linear-gradient(90.59deg,
+      #5383da 0%,
+      #2351a3 50%,
+      #081326 100%) !important;
   border-color: #2351a3 !important;
   box-shadow: 0 1px 3px rgba(35, 81, 163, 0.25) !important;
 }
@@ -2243,12 +2042,10 @@ input[type="number"] {
 
 .transitHours .ant-radio-button-wrapper-checked {
   border-color: #2351a3 !important;
-  background: linear-gradient(
-    90.59deg,
-    #5383da 0%,
-    #2351a3 50%,
-    #081326 100%
-  ) !important;
+  background: linear-gradient(90.59deg,
+      #5383da 0%,
+      #2351a3 50%,
+      #081326 100%) !important;
   box-shadow: 0 1px 3px rgba(35, 81, 163, 0.25) !important;
 }
 
@@ -2267,14 +2064,8 @@ input[type="number"] {
   height: 0 !important;
 }
 
-.stopsRadioStyle
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
-    :first-child
-  )::before,
-.transitHours
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not(
-    :first-child
-  )::before {
+.stopsRadioStyle :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not( :first-child)::before,
+.transitHours :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-button-wrapper:not( :first-child)::before {
   content: none !important;
 }
 
@@ -2284,8 +2075,7 @@ input[type="number"] {
   font-weight: 500;
 }
 
-.transitHours
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper-block {
+.transitHours :where(.css-dev-only-do-not-override-1ur7oz).ant-radio-button-wrapper-block {
   flex: 0 0 auto;
 }
 
@@ -2309,31 +2099,15 @@ input[type="number"] {
   border-color: #a8c4f0 !important;
 }
 
-.flight-search-filter-root
-  .baggageCheckbox:not(.ant-checkbox-wrapper-disabled):hover
-  .ant-checkbox-inner,
-.hotel-search-filter-root
-  .baggageCheckbox:not(.ant-checkbox-wrapper-disabled):hover
-  .ant-checkbox-inner {
+.flight-search-filter-root .baggageCheckbox:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-inner,
+.hotel-search-filter-root .baggageCheckbox:not(.ant-checkbox-wrapper-disabled):hover .ant-checkbox-inner {
   border-color: #7ea3e8 !important;
 }
 
-.flight-search-filter-root
-  .baggageCheckbox
-  .ant-checkbox-checked
-  .ant-checkbox-inner,
-.hotel-search-filter-root
-  .baggageCheckbox
-  .ant-checkbox-checked
-  .ant-checkbox-inner,
-.flight-search-filter-root
-  .baggageCheckbox
-  .ant-checkbox-indeterminate
-  .ant-checkbox-inner,
-.hotel-search-filter-root
-  .baggageCheckbox
-  .ant-checkbox-indeterminate
-  .ant-checkbox-inner {
+.flight-search-filter-root .baggageCheckbox .ant-checkbox-checked .ant-checkbox-inner,
+.hotel-search-filter-root .baggageCheckbox .ant-checkbox-checked .ant-checkbox-inner,
+.flight-search-filter-root .baggageCheckbox .ant-checkbox-indeterminate .ant-checkbox-inner,
+.hotel-search-filter-root .baggageCheckbox .ant-checkbox-indeterminate .ant-checkbox-inner {
   background-color: #2351a3 !important;
   border-color: #2351a3 !important;
 }
@@ -2930,6 +2704,7 @@ input[type="number"] {
 
 /* Flight result cards responsive layout */
 @media (min-width: 993px) and (max-width: 1280px) {
+
   .flightDetailCards .topHalfCard,
   .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
     flex-wrap: wrap !important;
@@ -2949,9 +2724,7 @@ input[type="number"] {
   }
 
   /* Round-trip wrapper has an extra left block; keep it full width */
-  .flightDetailCards.flightDetailRoundTripCards
-    .topHalfCardWrap
-    > div:first-child {
+  .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap>div:first-child {
     flex: 1 1 100%;
     min-width: 0;
   }
@@ -2971,25 +2744,15 @@ input[type="number"] {
     gap: 0 !important;
   }
 
-  .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-actions-row {
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-actions-row {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 12px !important;
     width: 100% !important;
   }
 
-  .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy
-    h5,
-  .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy {
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy h5,
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy {
     text-align: right !important;
     align-self: stretch !important;
   }
@@ -2998,13 +2761,11 @@ input[type="number"] {
     align-self: stretch !important;
   }
 
-  .flightDetailCards .topHalfCard .StartingPrice > div,
-  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div,
+  .flightDetailCards .topHalfCard .StartingPrice>div,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice>div,
   .flightDetailCards .topHalfCard .StartingPrice .ow-card-price-actions-row,
   .flightDetailCards .topHalfCard .StartingPrice .ow-card-cta-group,
-  .flightDetailCards.flightDetailRoundTripCards
-    .StartingPrice
-    .ow-card-cta-group {
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice .ow-card-cta-group {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
@@ -3028,6 +2789,7 @@ input[type="number"] {
 }
 
 @media (max-width: 992px) {
+
   .flightDetailCards .topHalfCard,
   .flightDetailCards.flightDetailRoundTripCards .topHalfCardWrap {
     flex-wrap: wrap !important;
@@ -3053,25 +2815,15 @@ input[type="number"] {
     gap: 0 !important;
   }
 
-  .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-actions-row {
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-actions-row {
     flex-direction: column !important;
     align-items: flex-start !important;
     gap: 12px !important;
     width: 100% !important;
   }
 
-  .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy
-    h5,
-  .flightDetailCards
-    .topHalfCard
-    .StartingPrice.ow-card-price-block
-    .ow-card-price-copy {
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy h5,
+  .flightDetailCards .topHalfCard .StartingPrice.ow-card-price-block .ow-card-price-copy {
     text-align: right !important;
     width: 100% !important;
   }
@@ -3085,13 +2837,11 @@ input[type="number"] {
     align-self: flex-start !important;
   }
 
-  .flightDetailCards .topHalfCard .StartingPrice > div,
-  .flightDetailCards.flightDetailRoundTripCards .StartingPrice > div,
+  .flightDetailCards .topHalfCard .StartingPrice>div,
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice>div,
   .flightDetailCards .topHalfCard .StartingPrice .ow-card-price-actions-row,
   .flightDetailCards .topHalfCard .StartingPrice .ow-card-cta-group,
-  .flightDetailCards.flightDetailRoundTripCards
-    .StartingPrice
-    .ow-card-cta-group {
+  .flightDetailCards.flightDetailRoundTripCards .StartingPrice .ow-card-cta-group {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
@@ -3113,6 +2863,7 @@ input[type="number"] {
 }
 
 @media (max-width: 768px) {
+
   .flightDetailCards .topHalfCard .StartingPrice h5,
   .flightDetailCards.flightDetailRoundTripCards .StartingPrice h5 {
     font-size: 22px !important;
@@ -3155,8 +2906,7 @@ input[type="number"] {
   font-weight: 400;
 }
 
-.reminderCard
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-switch.ant-switch-checked {
+.reminderCard :where(.css-dev-only-do-not-override-1ur7oz).ant-switch.ant-switch-checked {
   background: #ffffff;
 }
 
@@ -3164,9 +2914,7 @@ input[type="number"] {
   background: #ffffff;
 }
 
-.reminderCard
-  :where(.css-dev-only-do-not-override-1ur7oz).ant-switch
-  .ant-switch-handle::before {
+.reminderCard :where(.css-dev-only-do-not-override-1ur7oz).ant-switch .ant-switch-handle::before {
   background: var(--primary-300, #2351a3);
 }
 
@@ -3373,9 +3121,7 @@ p.pricingDetailFeatureP {
 
 /* Radio ko checkbox jesa */
 
-.cardPrice
-  :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-wrapper
-  .ant-radio-inne {
+.cardPrice :where(.css-dev-only-do-not-override-1w2pzdr).ant-radio-wrapper .ant-radio-inne {
   border-radius: 6px;
 }
 
@@ -3634,12 +3380,10 @@ p.pricingDetailFeatureP {
   line-height: 1 !important;
   letter-spacing: 0.5px !important;
   cursor: pointer;
-  background: linear-gradient(
-    90.59deg,
-    #5383da 0%,
-    #2351a3 50%,
-    #081326 100%
-  );
+  background: linear-gradient(90.59deg,
+      #5383da 0%,
+      #2351a3 50%,
+      #081326 100%);
 }
 
 .flight-details-book-now-desktop.flight-details-book-now-btn {
@@ -4078,25 +3822,10 @@ img:hover {
 }
 
 /* Alternating surface (light gray). */
-.flight-search-filter-root
-  .flight-filter-blocks
-  > .flight-filter-block:nth-child(odd)
-  .collapseStyle,
-.flight-search-filter-root
-  .flight-filter-blocks
-  > .flight-filter-block:nth-child(odd)
-  .ant-collapse
-  .ant-collapse-header,
-.flight-search-filter-root
-  .flight-filter-blocks
-  > .flight-filter-block:nth-child(odd)
-  .ant-collapse
-  .ant-collapse-content,
-.flight-search-filter-root
-  .flight-filter-blocks
-  > .flight-filter-block:nth-child(odd)
-  .ant-collapse
-  .ant-collapse-content-box {
+.flight-search-filter-root .flight-filter-blocks>.flight-filter-block:nth-child(odd) .collapseStyle,
+.flight-search-filter-root .flight-filter-blocks>.flight-filter-block:nth-child(odd) .ant-collapse .ant-collapse-header,
+.flight-search-filter-root .flight-filter-blocks>.flight-filter-block:nth-child(odd) .ant-collapse .ant-collapse-content,
+.flight-search-filter-root .flight-filter-blocks>.flight-filter-block:nth-child(odd) .ant-collapse .ant-collapse-content-box {
   background: #F2F2F3 !important;
 }
 
@@ -4153,12 +3882,10 @@ img:hover {
   font-weight: 600 !important;
   line-height: 1 !important;
   letter-spacing: 0.5px !important;
-  background: linear-gradient(
-    90.59deg,
-    #5383da 0%,
-    #2351a3 50%,
-    #081326 100%
-  ) !important;
+  background: linear-gradient(90.59deg,
+      #5383da 0%,
+      #2351a3 50%,
+      #081326 100%) !important;
   flex-shrink: 0;
   color: #f2f2f3;
   font-size: 16px;
@@ -4274,13 +4001,13 @@ img:hover {
   align-items: start;
 }
 
-.flight-traveler-details-grid > * {
+.flight-traveler-details-grid>* {
   min-width: 0;
   width: 100%;
   max-width: 100% !important;
 }
 
-.flight-contact-person-grid > * {
+.flight-contact-person-grid>* {
   min-width: 0;
   width: 100%;
   max-width: 100% !important;
@@ -4295,6 +4022,7 @@ img:hover {
 }
 
 @media (min-width: 768px) {
+
   .flight-contact-person-grid,
   .flight-traveler-details-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -4322,8 +4050,7 @@ img:hover {
   margin-top: 4px !important;
 }
 
-.custom-phone-wrapper
-  .react-international-phone-country-selector-dropdown__list-item-search-input {
+.custom-phone-wrapper .react-international-phone-country-selector-dropdown__list-item-search-input {
   width: calc(100% - 16px) !important;
   margin: 8px !important;
   padding: 8px 12px !important;
@@ -4333,8 +4060,7 @@ img:hover {
   color: #3d495c !important;
 }
 
-.custom-phone-wrapper
-  .react-international-phone-country-selector-dropdown__list-item:hover {
+.custom-phone-wrapper .react-international-phone-country-selector-dropdown__list-item:hover {
   background-color: #f3f4f6 !important;
 }
 
@@ -4399,8 +4125,7 @@ img:hover {
     max-width: 100%;
   }
 
-  .bottomHeaderFlex
-    :where(.css-dev-only-do-not-override-1w2pzdr).ant-flex-align-stretch {
+  .bottomHeaderFlex :where(.css-dev-only-do-not-override-1w2pzdr).ant-flex-align-stretch {
     max-width: 100% !important;
   }
 
@@ -4696,13 +4421,13 @@ img:hover {
     gap: 0.5rem;
   }
 
-  .enhance-baggage-grid > *,
-  .enhance-airport-and-travel-grid > * {
+  .enhance-baggage-grid>*,
+  .enhance-airport-and-travel-grid>* {
     grid-column: 1 / -1;
   }
 
-  .enhance-baggage-grid > *:nth-child(5),
-  .enhance-airport-and-travel-grid > *:nth-child(4) {
+  .enhance-baggage-grid>*:nth-child(5),
+  .enhance-airport-and-travel-grid>*:nth-child(4) {
     justify-self: start;
   }
 
@@ -4710,7 +4435,7 @@ img:hover {
     grid-template-columns: 1fr;
   }
 
-  .enhance-seat-grid > * {
+  .enhance-seat-grid>* {
     min-width: 0;
   }
 
@@ -4722,6 +4447,7 @@ img:hover {
 /* Small Screens Filter Toggle */
 
 @media print {
+
   /* page sizing â€” choose A4 or Letter. Change if you prefer Letter (8.5in 11in). */
   @page {
     size: A4 portrait;
@@ -4809,3 +4535,16 @@ img:hover {
     filter: none;
   }
 }
+
+
+.fare-rules-penalty-collapse .ant-collapse-item,
+.fare-rules-policy-collapse .ant-collapse-item {
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  margin-bottom: 8px !important;
+}
+
+/* .fare-rules-penalty-collapse .ant-collapse-item:last-child,
+.fare-rules-policy-collapse .ant-collapse-item:last-child {
+  margin-bottom: 0 !important;
+} */

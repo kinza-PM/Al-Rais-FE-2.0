@@ -24,9 +24,22 @@ function paragraphsToBulletItems(paragraphs: string[]): string[] {
   return out;
 }
 
+function appCodeLabel(code: string | number): string {
+  return String(code) === "2" ? "After departure" : "Before departure";
+}
+
+function formatTimeRange(start?: string, end?: string, unit?: string): string {
+  if (!start && !end) return "";
+  const u = String(unit ?? "").trim().toUpperCase().startsWith("H") ? "hrs" : (unit ?? "").trim();
+  const endNum = Number(end);
+  // 9999 = no upper bound (open-ended)
+  if (endNum >= 9999) return `${start}+ ${u} before departure`;
+  return `${start}–${end} ${u} before departure`;
+}
+
 /** Modal / policy body: readable size and rhythm (matches common 14px / 1.6 UI copy). */
 const fareRulesModalCopyClass =
-  "font-sans text-[13px] leading-[1.65] text-[#374151] font-normal tracking-normal antialiased";
+  "font-sans text-[13px] leading-[1.65] text-[#3D495C] font-normal tracking-normal antialiased";
 
 const fareRulesBulletListClass = `${fareRulesModalCopyClass} mt-2 mb-0 list-disc space-y-2.5 pl-5 [list-style-position:outside] marker:text-[#9CA3AF] break-words`;
 
@@ -152,12 +165,12 @@ export default function FLightFareRule({
             whenParts.push(
               `${pi.startTime}-${pi.endTime}${String(pi?.unit ?? "").trim()}`,
             );
-          const when = whenParts.join(" ");
+          // const when = whenParts.join(" ");
           let feeText = "Policy not available";
           if (Number.isFinite(amountNum)) {
             feeText =
               amountNum < 0
-                ? "Not allowed"
+                ? "Full fare forfeited"
                 : `${currency ? `${currency} ` : ""}${amountNum}`;
           }
           // Some suppliers send `amount: -1` (not allowed) but still include stale fee text
@@ -168,7 +181,8 @@ export default function FLightFareRule({
               : remark;
           return {
             type,
-            when,
+            appCode: String(a?.applicationCode ?? pi?.applicationCode ?? "1"),  // add this
+            when: formatTimeRange(pi?.startTime, pi?.endTime, pi?.unit),         // use new formatter
             feeText,
             remark: safeRemark,
           };
@@ -247,6 +261,9 @@ export default function FLightFareRule({
       key: k,
       typeLabel: byKey.get(k)![0].type,
       rows: byKey.get(k)!,
+      // rows: byKey.get(k)!.filter((row: (typeof penaltyRows)[0], idx: number, arr: typeof penaltyRows) =>
+      //   arr.findIndex((r: (typeof penaltyRows)[0]) => r.appCode === row.appCode && r.feeText === row.feeText && r.remark === row.remark) === idx
+      // ),
     }));
   }, [penaltyRows]);
 
@@ -264,7 +281,7 @@ export default function FLightFareRule({
         return {
           key: String(idx),
           label: (
-            <span className="block max-w-full text-left text-[14px] font-semibold leading-snug text-[#0F172A] line-clamp-2">
+            <span className="block max-w-full text-left text-[14px] font-semibold leading-snug text-[#0A0C0F] line-clamp-2">
               {rule.title}
             </span>
           ),
@@ -295,7 +312,7 @@ export default function FLightFareRule({
       penaltyRowGroups.map((group, gIdx: number) => ({
         key: `penalty-${gIdx}`,
         label: (
-          <span className="text-[14px] font-semibold text-[#0F172A]">
+          <span className="text-[14px] font-semibold text-[#0A0C0F]">
             {group.typeLabel}
           </span>
         ),
@@ -307,13 +324,17 @@ export default function FLightFareRule({
                 className="[padding-inline-start:0.125rem]"
               >
                 <div className="flex min-w-0 items-start justify-between gap-3">
-                  <span
-                    className={`min-w-0 flex-1 break-words ${fareRulesModalCopyClass}`}
-                  >
-                    {[r.when, r.remark].filter(Boolean).join(" - ") ||
-                      "Policy details"}
-                  </span>
-                  <span className="shrink-0 text-right text-[13px] font-semibold tabular-nums text-[#0F172A]">
+                  <div className="min-w-0 flex-1">
+                    {/* Application timing badge */}
+                    <span className="inline-block mb-1 rounded-full bg-[#A7C0EC] px-3.5 py-0.5 text-[11px] font-semibold text-[#1A3C7A]">
+                      {appCodeLabel(r.appCode)}
+                    </span>
+                    <span className={`block break-words ${fareRulesModalCopyClass}`}>
+                      {[r.when, r.remark].filter(Boolean).join(" · ") || "Policy details"}
+                    </span>
+                  </div>
+                  <span className={`shrink-0 text-right text-[13px] font-semibold tabular-nums ${r.feeText === "Full fare forfeited" ? "text-[#FF5270]" : "text-[#0A0C0F]"
+                    }`}>
                     {r.feeText}
                   </span>
                 </div>
