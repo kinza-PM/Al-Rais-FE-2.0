@@ -41,6 +41,11 @@ interface ImportMetaEnv {
   readonly VITE_ACTIVITIES_API_BASE?: string;
   readonly VITE_ACTIVITIES_API_KEY?: string;
   /**
+   * QA/prod default: send `Authorization: Bearer` for activities (JWT authorizer).
+   * Set `"false"` if the stage is IAM/API-key-only and Bearer breaks SigV4 (dev proxy unchanged).
+   */
+  readonly VITE_ACTIVITIES_USE_BEARER?: string;
+  /**
    * Non-dev: browser base for activities (e.g. same-origin `/api/activities-proxy` if CloudFront forwards
    * to a SigV4-capable origin). When unset, requests use `VITE_ACTIVITIES_API_BASE` directly.
    */
