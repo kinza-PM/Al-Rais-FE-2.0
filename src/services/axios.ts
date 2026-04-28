@@ -1,7 +1,5 @@
 import axios from "axios";
 import { extractServerMessageFromAny } from "../utils/apiErrorHanlder";
-// import { StorageService } from "../utils/storage";
-// import { hashString } from "../utils/crypto";
 import { TokenService } from "./tokenService";
 import { StorageService } from "../utils/storage";
 import { fetchAuthSession } from "aws-amplify/auth";
@@ -47,35 +45,24 @@ const hotelApis = [
   "/hotelRetrieve",
 ];
 const locationApis = ["/countries/cities", "/countries"];
-// const resonApis = ["/countries/cities", "/countries"];
 const ticketApis = ["/ticket"];
 const hotelFavouriteApis = ["/addHotelFavourites","/getHotelFavourites"];
 
 export const API_BASE = VITE_API_BASE;
 
-/** Axios base for the main app gateway: in dev, same-origin proxy (see vite `server.proxy./api/app-proxy`). */
 const AXIOS_MAIN_API_CLIENT_BASE =
   import.meta.env.DEV && import.meta.env.VITE_MAIN_API_PROXY !== "false"
     ? "/api/app-proxy"
     : API_BASE;
 
 export const FLIGHT_API_BASE = VITE_FLIGHT_API_BASE;
-
 export const PAYMENT_API_BASE = VITE_PAYMENT_API_BASE;
-
 export const FLIGHT_ANCILLARY_API_BASE = VITE_FLIGHT_ANCILLARY_API_BASE;
-
 export const HOTEL_API_BASE = VITE_HOTEL_API_BASE;
-
 export const LOCATION_API_BASE = VITE_LOCATION_API_BASE;
-
 export const TICKET_API_BASE = VITE_TICKET_API_BASE;
-
 export const HOTEL_FAVOURITE_API_BASE = VITE_HOTEL_FAVOURITE_API_BASE;
-
 export const FLIGHT_CANCELLATION = VITE_FLIGHT_CANCELLATION_API_BASE;
-
-/** Hotel Beds activities execute-api base (mode fallbacks in `publicEnv.ts`). */
 export const ACTIVITIES_API_BASE = VITE_ACTIVITIES_API_BASE;
 
 type WindowWithInjectedActivitiesEnv = Window & {
@@ -92,7 +79,6 @@ function readInjectedActivitiesEnv():
   return (window as WindowWithInjectedActivitiesEnv).__AR_ENV__;
 }
 
-/** API key for activities execute-api (`x-api-key`). Build-time env or optional runtime inject. */
 function resolveActivitiesApiKey(): string | undefined {
   const injected = readInjectedActivitiesEnv()?.VITE_ACTIVITIES_API_KEY?.trim();
   if (injected) return injected;
@@ -103,12 +89,6 @@ function resolveActivitiesApiKey(): string | undefined {
   return undefined;
 }
 
-/**
- * Base URL the browser uses for sightseeing routes.
- * - Dev: always `/api/activities-proxy` (Vite SigV4 / mock).
- * - Prod: `VITE_ACTIVITIES_BROWSER_BASE` or `window.__AR_ENV__.VITE_ACTIVITIES_BROWSER_BASE` if set
- *   (same-origin proxy), else direct `ACTIVITIES_API_BASE` (needs `x-api-key` or gateway CORS+auth).
- */
 function resolveActivitiesClientBase(): string {
   if (import.meta.env.DEV) {
     return "/api/activities-proxy";
@@ -130,9 +110,6 @@ const activitiesApis = [
   "/cancelBooking",
 ];
 
-/**
- * Stable path for prefix matching. Fixes missed routes when `url` is missing a leading `/` or is absolute.
- */
 function requestUrlPath(url: string | undefined): string {
   if (!url) return "";
   const noQuery = url.split("?")[0] ?? "";
@@ -150,19 +127,23 @@ function requestUrlPath(url: string | undefined): string {
   return noQuery.startsWith("/") ? noQuery : `/${noQuery}`;
 }
 
-/**
- * Hotel Beds activities API (execute-api, IAM SigV4 where enabled), unlike hotel search which accepts JWT.
- * Sending `Authorization: Bearer` produces IncompleteSignatureException. In dev, `/api/activities-proxy`
- * signs without this header; in prod you need IAM-capable access or a backend BFF.
- */
+function activitiesShouldUseBearerInBrowser(): boolean {
+  if (import.meta.env.DEV) return false;
+  const raw = import.meta.env.VITE_ACTIVITIES_USE_BEARER;
+  if (raw === "false" || raw === "0") return false;
+  return true;
+}
+
 function pathIsActivities(url: string | undefined): boolean {
   const path = requestUrlPath(url);
   return activitiesApis.some((prefix) => path.startsWith(prefix));
 }
 
-/** Requests that must not trigger JWT refresh / guest-token retry (IAM / SigV4 routes). */
 function pathSkipsJwtGuestRetry(url: string | undefined): boolean {
-  return pathIsActivities(url);
+  if (!pathIsActivities(url)) return false;
+  if (import.meta.env.DEV) return true;
+  if (import.meta.env.VITE_ACTIVITIES_USE_BEARER === "false") return true;
+  return false;
 }
 
 export const axiosClient = axios.create({
@@ -192,13 +173,9 @@ async function refreshCognitoToken(): Promise<string | null> {
 axiosClient.interceptors.request.use(async (config) => {
   const path = requestUrlPath(config.url);
   const isActivities = activitiesApis.some((prefix) => path.startsWith(prefix));
-
-  /**
-   * Activities requests are signed by the dev proxy / backend gateway and must not receive JWT bearer headers.
-   */
-
+  const useBearerOnActivities = activitiesShouldUseBearerInBrowser();
   const token = await TokenService.getToken();
-  if (token && !isActivities) {
+  if (token && (!isActivities || useBearerOnActivities)) {
     config.headers.Authorization = `Bearer ${token}`;
   }
 
@@ -220,16 +197,15 @@ axiosClient.interceptors.request.use(async (config) => {
   } else if (hotelFavouriteApis.some((prefix) => path.startsWith(prefix))) {
     config.baseURL = HOTEL_FAVOURITE_API_BASE;
   } else if (activitiesApis.some((prefix) => path.startsWith(prefix))) {
-    /**
-     * Must end with `/` and use relative paths like `activitiesDetail` (no leading `/`).
-     * Otherwise `new URL('/activitiesDetail', 'https://host/qa')` drops the stage → wrong API path.
-     */
+
     const activitiesBase = resolveActivitiesClientBase();
     config.baseURL = `${activitiesBase.replace(/\/+$/, "")}/`;
   }
 
   if (isActivities) {
-    config.headers.delete("Authorization");
+    if (!useBearerOnActivities) {
+      config.headers.delete("Authorization");
+    }
     const ak = resolveActivitiesApiKey();
     if (ak) {
       config.headers.set("x-api-key", ak);
@@ -257,21 +233,13 @@ axiosClient.interceptors.response.use(
       error.response?.status === 401 &&
       serverMsg.includes("Unauthorized: Invalid or expired token")
     ) {
-      // IMPORTANT:
-      // We must NOT hard-navigate to /auth on API errors. Instead, refresh tokens if possible,
-      // and propagate the error so the UI can show "Something went wrong".
-      //
-      // Also, localStorage auth flags can be stale. Use Cognito session presence as the source of truth.
       const cognitoActive = await hasCognitoSession();
 
-      // If Cognito session is not active, always treat this as a guest flow.
       if (!cognitoActive) {
-        // If Cognito session is not active, always treat this as a guest flow.
-        // Clear any stale auth flags so we don't accidentally force-login on future requests.
+
         try {
           StorageService.clearAuth?.();
         } catch {
-          // ignore
         }
         if (!originalRequest._guestRetry) {
           originalRequest._guestRetry = true;
@@ -294,8 +262,7 @@ axiosClient.interceptors.response.use(
         return Promise.reject(error);
       }
 
-      // Cognito is active but the backend rejected the token.
-      // Try to refresh Cognito token once, retry request, otherwise gracefully fall back to guest token.
+
       if (!originalRequest._authRetry) {
         originalRequest._authRetry = true;
         const refreshed = await refreshCognitoToken();
@@ -306,19 +273,15 @@ axiosClient.interceptors.response.use(
         }
       }
 
-      // If we're here, Cognito refresh didn't help; treat as guest so public flows (like flight search)
-      // keep working without forcing a sign-in redirect/toast.
+
       try {
-        // Clear stale local auth state; don't hard sign-out (it may trigger extra bootstrap calls).
         StorageService.clearAuth?.();
       } catch {
         // ignore
       }
       try {
-        // Clear cached token so guest token will be used next.
         TokenService.clearToken();
       } catch {
-        // ignore
       }
       if (!originalRequest._guestRetry) {
         originalRequest._guestRetry = true;
@@ -330,7 +293,6 @@ axiosClient.interceptors.response.use(
         }
       }
 
-      // If even guest fallback fails, just bubble the error to the UI.
       return Promise.reject(error);
     }
 
@@ -365,7 +327,6 @@ export const api = {
   post: async <T>(
     url: string,
     data?: Record<string, any>,
-    // signal?: AbortSignal
     options?: { signal?: AbortSignal; headers?: Record<string, string> },
   ) => {
     const res = await axiosClient.post<T>(url, data, {
