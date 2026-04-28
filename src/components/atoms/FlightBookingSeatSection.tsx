@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import BookingPlane from "../../assets/images/flight-booking-plane.png";
 // import EmirateLogo from "../../assets/images/emirates.png";
-import INFO_ICON from "../../assets/svgs/info.svg";
 import flightSeatSelection from "../../assets/svgs/flight-seat-selection-svg.svg";
 import standardSeatGlyph from "../../assets/svgs/standard-seat-glyph.svg";
 import extendedSeatGlyph from "../../assets/svgs/extended-seat-glyph.svg";
@@ -11,6 +10,7 @@ import type { SegmentSummary } from "../../utils/flightBookingHelper";
 import { getMarketingAirlineDisplayName } from "../../utils/helpers";
 // import toast from "react-hot-toast";
 import { useAncillaryStore } from "../../store/useAncillaryStore";
+import { createPortal } from "react-dom";
 
 export default function FlightBookingSeatSection({
   open,
@@ -217,8 +217,10 @@ export default function FlightBookingSeatSection({
     if (isSelectedByAny) return "occupied";
 
     if (seatData.noSeat) return "noSeat";
-    if (seatData.availability === "NAV" || seatData.availability === "RES")
+    if (seatData.availability === "NAV")
+      // if (seatData.availability === "NAV" || seatData.availability === "RES")
       return "booked";
+    if (seatData.availability === "RES") return "reserved";
     if (seatData.availability === "NOS") return "noSeat";
     if (
       seatData.exitRow ||
@@ -238,6 +240,37 @@ export default function FlightBookingSeatSection({
       return "extended";
     }
     return "standard";
+  };
+
+  const getSeatCategory = (seatData: any) => {
+    if (seatData?.noSeat || seatData?.availability === "NOS") return "noSeat";
+    if (seatData?.availability === "NAV") return "booked";
+    if (seatData?.availability === "RES") return "reserved";
+    if (
+      seatData?.exitRow ||
+      seatData?.airSeatCharacteristic?.some(
+        (char: any) => char.value === "ExitRowSeat",
+      )
+    ) {
+      // return "extended";
+      return "booked";
+    }
+    if (
+      seatData?.airSeatCharacteristic?.some(
+        (char: any) => char.value === "LegSpaceSeat",
+      )
+    ) {
+      return "extended";
+    }
+    return "standard";
+  };
+
+  const isPassengerAllowedForSeat = (passenger: any, seatData: any) => {
+    const ptc = passenger?.ptc;
+    if (ptc === "ADT") return true;
+    if (ptc === "CHD" || ptc === "CNN") return seatData?.childAllowed !== false;
+    if (ptc === "INF") return seatData?.infantAllowed !== false;
+    return true;
   };
 
   const getAncillaryOfferIdFromSeatData = (seatData: any) => {
@@ -269,7 +302,10 @@ export default function FlightBookingSeatSection({
     if (seatOwnerPassengerKey) {
       // If another passenger is currently focused, jump focus first instead of
       // clearing that passenger's seat unexpectedly.
-      if (selectedPassengerKey && selectedPassengerKey !== seatOwnerPassengerKey) {
+      if (
+        selectedPassengerKey &&
+        selectedPassengerKey !== seatOwnerPassengerKey
+      ) {
         setSelectedPassengerKey(seatOwnerPassengerKey);
         return;
       }
@@ -523,13 +559,16 @@ export default function FlightBookingSeatSection({
     seatNumber: string;
   }) => {
     const status = getSeatStatus(seatData, seatNumber);
+    const [tooltip, setTooltip] = useState<{ x: number; y: number } | null>(
+      null,
+    );
 
     if (status === "noSeat") {
       return <div className="h-6 w-6 md:h-7 md:w-7" aria-hidden />;
     }
 
     const base =
-      "h-6 w-6 md:h-7 md:w-7 rounded transition ring-offset-1 relative group";
+      "h-6 w-6 md:h-7 md:w-7 rounded transition ring-offset-1 relative";
     const cls =
       status === "selected"
         ? "bg-[#2351A3]"
@@ -537,24 +576,59 @@ export default function FlightBookingSeatSection({
           ? "bg-[#2351A3] cursor-pointer"
           : status === "booked"
             ? "bg-[#FF5270] cursor-not-allowed"
-            : status === "extended"
-              ? "border border-dashed border-[#F79E1B]"
-              : "border border-dashed border-[#00522E]";
+            : status === "reserved"
+              ? "bg-[#C2CAD6] cursor-not-allowed"
+              : status === "extended"
+                ? "border border-dashed border-[#F79E1B]"
+                : "border border-dashed border-[#00522E]";
+    // : "border border-dashed border-[#00522E]";
 
-    const clickable = status !== "booked";
+    const segmentSeats = selectedSeats[currentSegment.segmentKey] || {};
+    const targetPassenger = selectedPassengerKey
+      ? eligiblePassengers.find((p) => p.passengerKey === selectedPassengerKey)
+      : eligiblePassengers.find((p) => !segmentSeats[p.passengerKey]);
+    const isBlockedForPassenger = targetPassenger
+      ? !isPassengerAllowedForSeat(targetPassenger, seatData)
+      : false;
+
+    const clickable =
+      status !== "booked" && status !== "reserved" && !isBlockedForPassenger;
+    // const clickable = status !== "booked";
+    const tooltipText = isBlockedForPassenger
+      ? `${seatNumber} • Not allowed for ${getPassengerLabel(targetPassenger?.ptc || "")}.`
+      : seatData?.fare?.[0]?.sellingAmount != null
+        ? `${seatNumber} • ${seatData.fare[0].sellingCurrency} ${seatData.fare[0].sellingAmount}`
+        : seatNumber;
 
     return (
-      <button
-        type="button"
-        aria-label={seatNumber}
-        disabled={!clickable}
-        onClick={() => handleSeatSelect(seatData)}
-        className={`${base} ${cls}`}
-      >
-        <span className="absolute bottom-2 left-3/2 -translate-x-1/2 mt-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-          {seatNumber}
-        </span>
-      </button>
+      <>
+        <button
+          type="button"
+          aria-label={seatNumber}
+          disabled={!clickable}
+          onClick={() => handleSeatSelect(seatData)}
+          className={`${base} ${cls}`}
+          onMouseEnter={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            setTooltip({
+              x: rect.left + rect.width + 4,
+              y: rect.top + rect.height + 6,
+            });
+          }}
+          onMouseLeave={() => setTooltip(null)}
+        />
+
+        {tooltip &&
+          createPortal(
+            <div
+              className="fixed z-[9999] -translate-x-1/2 -translate-y-full px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap pointer-events-none"
+              style={{ left: tooltip.x, top: tooltip.y }}
+            >
+              {tooltipText}
+            </div>,
+            document.body,
+          )}
+      </>
     );
   };
 
@@ -639,6 +713,54 @@ export default function FlightBookingSeatSection({
     if (ptc === "CHD" || ptc === "CNN") return "Child";
     return ptc;
   };
+
+  const seatByNumber = useMemo(() => {
+    const map: Record<string, any> = {};
+    const rows = seatMapData?.rows || [];
+    rows.forEach((row: any) => {
+      (row.airSeats || []).forEach((seatData: any) => {
+        if (seatData?.seatNumber) {
+          map[seatData.seatNumber] = seatData;
+        }
+      });
+    });
+    return map;
+  }, [seatMapData]);
+
+  const seatInsights = useMemo(() => {
+    const rows = seatMapData?.rows || [];
+    let standardAvailable = 0;
+    let extendedAvailable = 0;
+    let reservedCount = 0;
+    let bookedCount = 0;
+    let childRestrictedCount = 0;
+    let infantRestrictedCount = 0;
+
+    rows.forEach((row: any) => {
+      (row.airSeats || []).forEach((seatData: any) => {
+        const category = getSeatCategory(seatData);
+        if (category === "standard") standardAvailable += 1;
+        if (category === "extended") extendedAvailable += 1;
+        if (category === "reserved") reservedCount += 1;
+        if (category === "booked") bookedCount += 1;
+        if (category !== "noSeat" && seatData?.childAllowed === false) {
+          childRestrictedCount += 1;
+        }
+        if (category !== "noSeat" && seatData?.infantAllowed === false) {
+          infantRestrictedCount += 1;
+        }
+      });
+    });
+
+    return {
+      standardAvailable,
+      extendedAvailable,
+      reservedCount,
+      bookedCount,
+      childRestrictedCount,
+      infantRestrictedCount,
+    };
+  }, [seatMapData]);
 
   // useEffect(() => {
   //   setSeatSelections(selectedSeats);
@@ -761,60 +883,87 @@ export default function FlightBookingSeatSection({
 
             <div className="grid gap-6 md:grid-cols-[minmax(320px,420px)_1fr] enhance-seat-grid">
               <div className="md:order-1">
-                <div className="rounded-xl border border-[#E4E4E7] bg-[#FFFFFF] px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#85FFCA]">
-                      <img src={standardSeatGlyph} alt="standard-seat-glyph" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[14px] font-medium text-[#0A0C0F]">
-                        Standard seats
+                {seatInsights.standardAvailable > 0 && (
+                  <div className="rounded-xl border border-[#E4E4E7] bg-[#FFFFFF] px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#85FFCA]">
+                        <img
+                          src={standardSeatGlyph}
+                          alt="standard-seat-glyph"
+                        />
                       </div>
-                      <p className="text-[12px] text-[#3D495C]">
-                        Seats on row 14 on all aircraft and seats on row 32 on
-                        Boeing 737-800 do not recline.
-                      </p>
+                      <div className="flex-1">
+                        <div className="text-[14px] font-medium text-[#0A0C0F]">
+                          Standard seats
+                        </div>
+                        <p className="text-[12px] text-[#3D495C]">
+                          {seatInsights.standardAvailable} standard seats
+                          available in this segment.
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
 
-                <div className="mt-2 rounded-xl border border-[#E4E4E7] bg-[#FFFFFF] px-3 py-2">
-                  <div className="flex items-center gap-2">
-                    <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#FFE2A6]">
-                      <img src={extendedSeatGlyph} alt="extended-seat-glyph" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="text-[14px] font-medium text-[#0A0C0F]">
-                        Extended legroom
+                {seatInsights.extendedAvailable > 0 && (
+                  <div className="mt-2 rounded-xl border border-[#E4E4E7] bg-[#FFFFFF] px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="grid h-10 w-10 place-items-center rounded-lg bg-[#FFE2A6]">
+                        <img
+                          src={extendedSeatGlyph}
+                          alt="extended-seat-glyph"
+                        />
                       </div>
-                      <p className="text-[12px] text-[#3D495C]">
-                        For safety reasons, seats on row 15 do not recline.
-                      </p>
-                    </div>
-                    <div className="ml-1 grid h-6 w-6 place-items-center rounded-full">
+                      <div className="flex-1">
+                        <div className="text-[14px] font-medium text-[#0A0C0F]">
+                          Extended legroom
+                        </div>
+                        <p className="text-[12px] text-[#3D495C]">
+                          {seatInsights.extendedAvailable} extended seats
+                          available. 
+                          {/* Restricted: CHD{" "}
+                          {seatInsights.childRestrictedCount} • INF{" "}
+                          {seatInsights.infantRestrictedCount} */}
+                        </p>
+                      </div>
+                      {/* <div className="ml-1 grid h-6 w-6 place-items-center rounded-full">
                       <img src={INFO_ICON} alt="info-icon" />
+                    </div> */}
                     </div>
                   </div>
-                </div>
+                )}
 
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12px]">
-                  <div className="flex items-center gap-1">
-                    <span className="h-3 w-3 rounded-full bg-[#C2CAD6]" />
-                    <span className="text-[#3D495C]">Reserved</span>
+                {(seatInsights.reservedCount > 0 ||
+                  seatInsights.standardAvailable > 0 ||
+                  seatInsights.extendedAvailable > 0 ||
+                  seatInsights.bookedCount > 0) && (
+                  <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[12px]">
+                    {seatInsights.reservedCount > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="h-3 w-3 rounded-full bg-[#C2CAD6]" />
+                        <span className="text-[#3D495C]">Reserved</span>
+                      </div>
+                    )}
+                    {seatInsights.standardAvailable > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="h-3 w-3 rounded-full bg-[#00522E]" />
+                        <span className="text-[#3D495C]">Standard available</span>
+                      </div>
+                    )}
+                    {seatInsights.extendedAvailable > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="h-3 w-3 rounded-full border border-[#F79E1B] bg-[#F79E1B]" />
+                        <span className="text-[#3D495C]">Extended Available</span>
+                      </div>
+                    )}
+                    {seatInsights.bookedCount > 0 && (
+                      <div className="flex items-center gap-1">
+                        <span className="h-3 w-3 rounded-full bg-[#FF5270]" />
+                        <span className="text-[#3D495C]">Booked</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className="h-3 w-3 rounded-full border border-dashed border-[#00522E]" />
-                    <span className="text-[#3D495C]">Standard available</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="h-3 w-3 rounded border border-dashed border-[#F79E1B]" />
-                    <span className="text-[#3D495C]">Extended Available</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="h-3 w-3 rounded bg-[#FF5270]" />
-                    <span className="text-[#3D495C]">Booked</span>
-                  </div>
-                </div>
+                )}
 
                 <div className="mt-4">
                   <div className="flex items-center justify-between mb-2">
@@ -865,6 +1014,14 @@ export default function FlightBookingSeatSection({
                       const segmentSeats =
                         selectedSeats[currentSegment.segmentKey] || {};
                       const hasSeat = !!segmentSeats[passenger.passengerKey];
+                      const selectedSeatNumber =
+                        segmentSeats[passenger.passengerKey]?.seatNumber;
+                      const selectedSeatData = selectedSeatNumber
+                        ? seatByNumber[selectedSeatNumber]
+                        : null;
+                      const selectedSeatCategory = selectedSeatData
+                        ? getSeatCategory(selectedSeatData)
+                        : null;
                       const isSelected =
                         selectedPassengerKey === passenger.passengerKey;
 
@@ -890,7 +1047,9 @@ export default function FlightBookingSeatSection({
                               <div
                                 className={`px-2 py-1 rounded text-[12px] font-medium ${
                                   hasSeat
-                                    ? "bg-[#85FFCA] text-[#0A0C0F]"
+                                    ? selectedSeatCategory === "extended"
+                                      ? "bg-[#FFE2A6] text-[#0A0C0F]"
+                                      : "bg-[#85FFCA] text-[#0A0C0F]"
                                     : "bg-[#F2F2F3] text-[#3D495C]"
                                 }`}
                               >
@@ -932,24 +1091,25 @@ export default function FlightBookingSeatSection({
                 </div>
 
                 <div className="mt-8 flex justify-center">
-                  {currentSegmentIndex < allSegments.length - 1 ? (
-                    <button
-                      type="button"
-                      onClick={goToNextSegment}
-                      // disabled={!isCurrentSegmentComplete()}
-                      className="px-12 rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Next segment →
-                    </button>
-                  ) : null
-                  // <button
-                  //   type="button"
-                  //   onClick={handleConfirmSelection}
-                  // disabled={!allSegmentsComplete()}
-                  //   className="px-12 rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
-                  // >
-                  //   Confirm selection
-                  // </button>
+                  {
+                    currentSegmentIndex < allSegments.length - 1 ? (
+                      <button
+                        type="button"
+                        onClick={goToNextSegment}
+                        // disabled={!isCurrentSegmentComplete()}
+                        className="px-12 rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next segment →
+                      </button>
+                    ) : null
+                    // <button
+                    //   type="button"
+                    //   onClick={handleConfirmSelection}
+                    // disabled={!allSegmentsComplete()}
+                    //   className="px-12 rounded-xl bg-[#2351A3] py-3 text-[16px] font-semibold text-[#F2F2F3] hover:brightness-95 active:brightness-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    // >
+                    //   Confirm selection
+                    // </button>
                   }
                 </div>
               </div>

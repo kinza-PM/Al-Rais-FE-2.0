@@ -323,6 +323,93 @@ export function getPassportIssuePickerBounds(
   return { minDate, maxDate };
 }
 
+export function getBirthDatePickerBoundsForPtc(
+  ptc: string | null | undefined,
+  todayInput?: Date,
+): { minDate: Date | null; maxDate: Date | null } {
+  const today = startOfLocalDay(todayInput ?? new Date());
+  const t = String(ptc ?? "")
+    .trim()
+    .toUpperCase();
+
+  const shiftYears = (base: Date, years: number) =>
+    new Date(base.getFullYear() + years, base.getMonth(), base.getDate());
+  const addDays = (base: Date, days: number) =>
+    new Date(base.getFullYear(), base.getMonth(), base.getDate() + days);
+
+  if (t === "ADT") {
+    return {
+      minDate: shiftYears(today, -150),
+      maxDate: shiftYears(today, -12),
+    };
+  }
+  if (t === "CHD") {
+    return {
+      minDate: addDays(shiftYears(today, -12), 1),
+      maxDate: shiftYears(today, -2),
+    };
+  }
+  if (t === "INF") {
+    return {
+      minDate: addDays(shiftYears(today, -2), 1),
+      maxDate: today,
+    };
+  }
+
+  return {
+    minDate: shiftYears(today, -150),
+    maxDate: today,
+  };
+}
+
+export function sanitizeEmailInput(raw: string | null | undefined): string {
+  let normalized = String(raw ?? "")
+    .trim()
+    .replace(/\s+/g, "")
+    .replace(/[^A-Za-z0-9@._+-]/g, "");
+
+  // Keep only first @
+  const atIndex = normalized.indexOf("@");
+  if (atIndex !== -1) {
+    const beforeAt = normalized.slice(0, atIndex + 1);
+    const afterAt = normalized.slice(atIndex + 1).replace(/@/g, "");
+    normalized = `${beforeAt}${afterAt}`;
+  }
+
+  // Never allow consecutive dots anywhere
+  normalized = normalized.replace(/\.{2,}/g, ".");
+
+  const splitAt = normalized.indexOf("@");
+  if (splitAt === -1) {
+    // While typing local-part only: no leading dot
+    return normalized.replace(/^\./g, "");
+  }
+
+  const localRaw = normalized.slice(0, splitAt);
+  const domainRaw = normalized.slice(splitAt + 1);
+
+  // Local part: cannot start/end with dot, no consecutive dots.
+  const local = localRaw.replace(/^\.+/, "").replace(/\.+$/, "");
+
+  // Domain part: allow letters/digits/hyphen/dot only.
+  let domain = domainRaw.replace(/[^A-Za-z0-9.-]/g, "");
+  domain = domain.replace(/\.{2,}/g, "."); // no consecutive dots
+  domain = domain.replace(/^\.+/, ""); // no leading dot
+  // Keep trailing dot while user is typing (e.g. `@yopmail.` -> allow typing `com` next).
+  domain = domain.replace(/(^|\.)-+/g, "$1"); // no leading hyphen in each label
+  domain = domain.replace(/-+(?=\.|$)/g, ""); // no trailing hyphen in each label
+
+  return domain ? `${local}@${domain}` : `${local}@`;
+}
+
+export function sanitizeIdentityDocumentInput(
+  raw: string | null | undefined,
+): string {
+  return String(raw ?? "")
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
 /**
  * Combine dial code (+1, +971, …) with the national digits from `react-international-phone`
  * into one E.164 string for validation.

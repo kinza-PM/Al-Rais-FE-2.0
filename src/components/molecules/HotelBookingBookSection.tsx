@@ -15,6 +15,12 @@ import {
   parseLocalDateString,
 } from "../../utils/helpers";
 import {
+  getBirthDatePickerBoundsForPtc,
+  getPassportIssuePickerBounds,
+  sanitizeEmailInput,
+  sanitizeIdentityDocumentInput,
+} from "../../utils/travelerFieldValidation";
+import {
   validateHotelBookingPassengersFields,
   type HotelBookingPayload,
   type HotelPassengerFieldErrors,
@@ -391,7 +397,13 @@ export default function HotelBookingBookSection({
             onInitialFetchLoadingChange={onPassengerCacheFetchLoadingChange}
           />
           {flatPassengers.map(
-            ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => (
+            ({ roomIndex, passengerIndex, passenger: p }, flatIdx) => {
+              const issuePickerBounds = getPassportIssuePickerBounds({
+                birthDateIso: p.passengerInfo?.birthDate ?? null,
+                expiryDateIso: p.identityDocuments?.[0]?.expiryDate ?? null,
+              });
+              const birthPickerBounds = getBirthDatePickerBoundsForPtc(p.ptc);
+              return (
               <React.Fragment key={p.passengerKey || flatIdx}>
                 <div className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm">
                   <div className="flex items-center justify-between px-4 py-3 border-b border-[#E4E4E7]">
@@ -630,6 +642,8 @@ export default function HotelBookingBookSection({
                               "passengerInfo.birthDate",
                             );
                           }}
+                          minDate={birthPickerBounds.minDate}
+                          maxDate={birthPickerBounds.maxDate}
                           placeholder="Please select"
                           error={
                             hasAttemptedValidation
@@ -663,7 +677,7 @@ export default function HotelBookingBookSection({
                               roomIndex,
                               passengerIndex,
                               "identityDocuments.0.idDocumentNumber",
-                              v ?? "",
+                              sanitizeIdentityDocumentInput(typeof v === "string" ? v : ""),
                             );
                             clearFieldError(
                               roomIndex,
@@ -751,6 +765,8 @@ export default function HotelBookingBookSection({
                               "identityDocuments.0.dateOfIssue",
                             );
                           }}
+                          minDate={issuePickerBounds.minDate}
+                          maxDate={issuePickerBounds.maxDate}
                           placeholder="Please select"
                           error={
                             hasAttemptedValidation
@@ -792,6 +808,7 @@ export default function HotelBookingBookSection({
                               "identityDocuments.0.expiryDate",
                             );
                           }}
+                          minDate={new Date()}
                           placeholder="Please select"
                           error={
                             hasAttemptedValidation
@@ -825,7 +842,7 @@ export default function HotelBookingBookSection({
                               roomIndex,
                               passengerIndex,
                               "contact.contactsProvided.0.emailAddress.0",
-                              v ?? "",
+                              sanitizeEmailInput(typeof v === "string" ? v : ""),
                             );
                             clearFieldError(
                               roomIndex,
@@ -929,7 +946,8 @@ export default function HotelBookingBookSection({
                   </div>
                 </div>
               </React.Fragment>
-            ),
+            );
+            },
           )}
 
           {/* Your rooms (read-only summary) - Figma design */}

@@ -90,16 +90,20 @@ export function buildAirportOptions(items: AirportItem[]): AirportOption[] {
   return (
     (items || [])
       // .filter(i => i.status === 1)
-      .map((i, key) => ({
-        id: `${key}`,
-        label: `${i.city}, ${i.country} (${i.iataCode})`,
-        code: i.iataCode,
-        // code: i.cityCode,
-        city: i.city,
-        country: i.country,
-        airportName: i.airportName || undefined,
-        countryCode: i.countryCode,
-      }))
+      .filter(i => i.city && i.city.toLowerCase() !== "unknown")
+      .map((i, key) => {
+        const cleanCity = i.city.split("-")[0].trim(); 
+        return {
+          id: `${key}`,
+          label: `${cleanCity}, ${i.country} (${i.iataCode})`,
+          code: i.iataCode,
+          // code: i.cityCode,
+          city: i.city,
+          country: i.country,
+          airportName: i.airportName || undefined,
+          countryCode: i.countryCode,
+        }
+      })
     // optional: stable sort by city
     // .sort((a, b) => a.city.localeCompare(b.city))
   );

@@ -31,10 +31,13 @@ import {
   withDefaultResidenceCountryFromIssuing,
 } from "../../utils/flightBookingHelper";
 import {
+  getBirthDatePickerBoundsForPtc,
   genderFromFlightBookingNameTitle,
   getFlightBookingNameTitleDropdownOptions,
   getPassportIssuePickerBounds,
   mapSavedTravelerTitleToFlightBookingValue,
+  sanitizeEmailInput,
+  sanitizeIdentityDocumentInput,
 } from "../../utils/travelerFieldValidation";
 import axios from "axios";
 import {
@@ -66,6 +69,7 @@ import {
 } from "../../utils/passengerCacheHelper";
 import ConfirmationModal from "../common/ConfirmationModal";
 import Loader from "../atoms/Loader";
+import { Checkbox } from "antd";
 
 type FlightBookingBookSectionProps = {
   trip: any;
@@ -146,6 +150,10 @@ export default function FlightBookingBookSection({
     successToast: string | undefined;
   } | null>(null);
   const savedTravelerOffKeysRef = useRef<Set<string>>(new Set());
+
+  const [isFareRuleChecked, setIsFareRuleChecked] = useState(false);
+  const [showFareRuleError, setShowFareRuleError] = useState(false);
+  const [fareRulesModalOpen, setFareRulesModalOpen] = useState(false);
 
   const pRules = fareBookingSearchRules?.passengerRules?.[0] ?? {};
   const { mutateAsync, isPending } = useFlightInitialBooking();
@@ -565,7 +573,9 @@ export default function FlightBookingBookSection({
       passenger?.contact?.contactsProvided?.[0]?.phone?.[0]?.phoneNumber ?? "",
   });
 
-  const syncContactPersonToPrimaryTraveler = (contact = separateContactPerson) => {
+  const syncContactPersonToPrimaryTraveler = (
+    contact = separateContactPerson,
+  ) => {
     if (!passengers[0]) return;
 
     onPassengerFieldChange(0, "passengerInfo.nameTitle", contact.nameTitle);
@@ -651,6 +661,7 @@ export default function FlightBookingBookSection({
               birthDateIso: p.passengerInfo?.birthDate ?? null,
               expiryDateIso: p.identityDocuments?.[0]?.expiryDate ?? null,
             });
+            const birthPickerBounds = getBirthDatePickerBoundsForPtc(p.ptc);
             const contactPersonDetails = isBookingForSomeoneElse
               ? separateContactPerson
               : getContactPersonFromPassenger(passengers[0]);
@@ -659,214 +670,214 @@ export default function FlightBookingBookSection({
             return (
               <React.Fragment key={p.passengerKey || idx}>
                 {idx === 0 && (
-                <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
-                  <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px] bg-[#F2F2F3]">
-                    <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                      Contact person details
-                    </h3>
-                    <CustomToggle
-                      label="I'm booking for someone else"
-                      checked={isBookingForSomeoneElse}
-                      onChange={handleBookingForSomeoneElseToggle}
-                    />
-                  </div>
+                  <div className="rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-white shadow-sm">
+                    <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#C2CAD6] rounded-t-[16px] bg-[#F2F2F3]">
+                      <h3 className="text-[15px] font-medium text-[#0A0C0F]">
+                        Contact person details
+                      </h3>
+                      <CustomToggle
+                        label="I'm booking for someone else"
+                        checked={isBookingForSomeoneElse}
+                        onChange={handleBookingForSomeoneElseToggle}
+                      />
+                    </div>
 
-                  <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
-                    <p className="mb-3 text-[12px] leading-5 text-[#3D495C]">
-                      {isBookingForSomeoneElse
-                        ? "Contact person is separate from the traveler. Traveler details below must be filled independently."
-                        : "Contact person is Traveler 01. These details are used for the primary traveler."}
-                    </p>
-                    <div className="flight-contact-person-grid grid gap-x-4 gap-y-3 md:grid-cols-2">
-                      <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.nameTitle"] ? "pb-6" : ""}`}
-                      >
-                        <SearchableDropdown
-                          options={getFlightBookingNameTitleDropdownOptions(
-                            p.ptc,
-                          )}
-                          value={contactPersonDetails.nameTitle}
-                          onChange={(value) => {
-                            updateContactPersonField("nameTitle", value);
-                            updateContactPersonField(
-                              "gender",
-                              genderFromFlightBookingNameTitle(value),
-                            );
-                          }}
-                          placeholder="Select title"
-                          label="Title *"
-                          widthClass="w-full"
-                          error={
-                            hasAttemptedValidation && !isBookingForSomeoneElse
-                              ? validationErrors[0]?.[
-                                  "passengerInfo.nameTitle"
-                                ]
-                              : null
-                          }
-                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
-                        />
-                      </div>
-                      <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.givenName"] ? "pb-6" : ""}`}
-                      >
-                        <TailwindCustomInput
-                          type="text"
-                          placeholder="Enter your full name"
-                          label="Full name (Filled based on ID/Passport/Driver’s license) *"
-                          value={contactPersonDetails.givenName}
-                          onChange={(event) => {
-                            updateContactPersonField(
-                              "givenName",
-                              event.target.value,
-                            );
-                          }}
-                          error={
-                            hasAttemptedValidation && !isBookingForSomeoneElse
-                              ? validationErrors[0]?.[
-                                  "passengerInfo.givenName"
-                                ]
-                              : null
-                          }
-                          className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                        />
-                      </div>
-
-                      <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.surname"] ? "pb-6" : ""}`}
-                      >
-                        <TailwindCustomInput
-                          type="text"
-                          placeholder="Enter your surname"
-                          label="Surname *"
-                          maxLength={80}
-                          value={contactPersonDetails.surname}
-                          onChange={(event) => {
-                            updateContactPersonField(
-                              "surname",
-                              event.target.value,
-                            );
-                          }}
-                          error={
-                            hasAttemptedValidation && !isBookingForSomeoneElse
-                              ? validationErrors[0]?.["passengerInfo.surname"]
-                              : null
-                          }
-                          className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
-                        />
-                      </div>
-
-                      <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.gender"] ? "pb-6" : ""}`}
-                      >
-                        <SearchableDropdown
-                          options={[
-                            { id: "male", value: "M", label: "Male" },
-                            { id: "female", value: "F", label: "Female" },
-                          ]}
-                          value={contactPersonDetails.gender}
-                          onChange={(value) => {
-                            updateContactPersonField("gender", value);
-                          }}
-                          placeholder="Select gender"
-                          label="Gender *"
-                          widthClass="w-full"
-                          error={
-                            hasAttemptedValidation && !isBookingForSomeoneElse
-                              ? validationErrors[0]?.["passengerInfo.gender"]
-                              : null
-                          }
-                          className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
-                        />
-                      </div>
-
-                      <div
-                        className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["contact.contactsProvided.0.phone.0"] ? "pb-6" : ""}`}
-                      >
-                        <label className="mb-1 block text-[12px] text-[#0A0C0F]">
-                          Phone *
-                        </label>
+                    <div className="px-4 py-4 bg-[#F2F2F3] rounded-b-[16px]">
+                      <p className="mb-3 text-[12px] leading-5 text-[#3D495C]">
+                        {isBookingForSomeoneElse
+                          ? "Contact person is separate from the traveler. Traveler details below must be filled independently."
+                          : "Contact person is Traveler 01. These details are used for the primary traveler."}
+                      </p>
+                      <div className="flight-contact-person-grid grid gap-x-4 gap-y-3 md:grid-cols-2">
                         <div
-                          className={
-                            hasAttemptedValidation &&
+                          className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.nameTitle"] ? "pb-6" : ""}`}
+                        >
+                          <SearchableDropdown
+                            options={getFlightBookingNameTitleDropdownOptions(
+                              p.ptc,
+                            )}
+                            value={contactPersonDetails.nameTitle}
+                            onChange={(value) => {
+                              updateContactPersonField("nameTitle", value);
+                              updateContactPersonField(
+                                "gender",
+                                genderFromFlightBookingNameTitle(value),
+                              );
+                            }}
+                            placeholder="Select title"
+                            label="Title *"
+                            widthClass="w-full"
+                            error={
+                              hasAttemptedValidation && !isBookingForSomeoneElse
+                                ? validationErrors[0]?.[
+                                    "passengerInfo.nameTitle"
+                                  ]
+                                : null
+                            }
+                            className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[white] px-3 pr-8 text-sm text-[#C2CAD6] focus:outline-none"
+                          />
+                        </div>
+                        <div
+                          className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.givenName"] ? "pb-6" : ""}`}
+                        >
+                          <TailwindCustomInput
+                            type="text"
+                            placeholder="Enter your full name"
+                            label="Full name (Filled based on ID/Passport/Driver’s license) *"
+                            value={contactPersonDetails.givenName}
+                            onChange={(event) => {
+                              updateContactPersonField(
+                                "givenName",
+                                event.target.value,
+                              );
+                            }}
+                            error={
+                              hasAttemptedValidation && !isBookingForSomeoneElse
+                                ? validationErrors[0]?.[
+                                    "passengerInfo.givenName"
+                                  ]
+                                : null
+                            }
+                            className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+                          />
+                        </div>
+
+                        <div
+                          className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.surname"] ? "pb-6" : ""}`}
+                        >
+                          <TailwindCustomInput
+                            type="text"
+                            placeholder="Enter your surname"
+                            label="Surname *"
+                            maxLength={80}
+                            value={contactPersonDetails.surname}
+                            onChange={(event) => {
+                              updateContactPersonField(
+                                "surname",
+                                event.target.value,
+                              );
+                            }}
+                            error={
+                              hasAttemptedValidation && !isBookingForSomeoneElse
+                                ? validationErrors[0]?.["passengerInfo.surname"]
+                                : null
+                            }
+                            className="h-[50px] w-full rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#F9FAFB] px-3 text-sm placeholder:text-[#C2CAD6] text-[#0A0C0F] focus:outline-none focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/20"
+                          />
+                        </div>
+
+                        <div
+                          className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["passengerInfo.gender"] ? "pb-6" : ""}`}
+                        >
+                          <SearchableDropdown
+                            options={[
+                              { id: "male", value: "M", label: "Male" },
+                              { id: "female", value: "F", label: "Female" },
+                            ]}
+                            value={contactPersonDetails.gender}
+                            onChange={(value) => {
+                              updateContactPersonField("gender", value);
+                            }}
+                            placeholder="Select gender"
+                            label="Gender *"
+                            widthClass="w-full"
+                            error={
+                              hasAttemptedValidation && !isBookingForSomeoneElse
+                                ? validationErrors[0]?.["passengerInfo.gender"]
+                                : null
+                            }
+                            className="h-[50px] w-full appearance-none rounded-[16px] border-[1.5px] border-[#C2CAD6] bg-[#FFFFFF] px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none"
+                          />
+                        </div>
+
+                        <div
+                          className={`relative w-full max-w-[300px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["contact.contactsProvided.0.phone.0"] ? "pb-6" : ""}`}
+                        >
+                          <label className="mb-1 block text-[12px] text-[#0A0C0F]">
+                            Phone *
+                          </label>
+                          <div
+                            className={
+                              hasAttemptedValidation &&
+                              !isBookingForSomeoneElse &&
+                              validationErrors[0]?.[
+                                "contact.contactsProvided.0.phone.0"
+                              ]
+                                ? "phone-input-error"
+                                : ""
+                            }
+                          >
+                            <PhoneInput
+                              defaultCountry="us"
+                              value={`${contactPersonDetails.phoneAreaCode}${contactPersonDetails.phoneNumber}`}
+                              onChange={(phone, meta) => {
+                                const dialCode = `+${meta.country.dialCode}`;
+                                updateContactPersonField(
+                                  "phoneAreaCode",
+                                  dialCode,
+                                );
+                                updateContactPersonField(
+                                  "phoneNumber",
+                                  phone.replace(dialCode, ""),
+                                );
+                                clearFieldError(
+                                  0,
+                                  "contact.contactsProvided.0.phone.0",
+                                );
+                              }}
+                              forceDialCode={true}
+                              hideDropdown={false}
+                              disableCountryGuess={false}
+                              className="custom-phone-wrapper"
+                              countrySelectorStyleProps={{
+                                buttonClassName: "country-selector-btn",
+                              }}
+                              inputProps={{
+                                placeholder: "Phone",
+                              }}
+                            />
+                          </div>
+                          {hasAttemptedValidation &&
                             !isBookingForSomeoneElse &&
                             validationErrors[0]?.[
                               "contact.contactsProvided.0.phone.0"
-                            ]
-                              ? "phone-input-error"
-                              : ""
-                          }
+                            ] && (
+                              <p className="absolute left-0 text-[12px] mt-1 text-[#E65959] whitespace-nowrap">
+                                {
+                                  validationErrors[0][
+                                    "contact.contactsProvided.0.phone.0"
+                                  ]
+                                }
+                              </p>
+                            )}
+                        </div>
+
+                        <div
+                          className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-6" : ""}`}
                         >
-                          <PhoneInput
-                            defaultCountry="us"
-                            value={`${contactPersonDetails.phoneAreaCode}${contactPersonDetails.phoneNumber}`}
-                            onChange={(phone, meta) => {
-                              const dialCode = `+${meta.country.dialCode}`;
+                          <TailwindCustomInput
+                            type="email"
+                            placeholder="Enter an email"
+                            label="Email *"
+                            value={contactPersonDetails.email}
+                            onChange={(event) => {
                               updateContactPersonField(
-                                "phoneAreaCode",
-                                dialCode,
-                              );
-                              updateContactPersonField(
-                                "phoneNumber",
-                                phone.replace(dialCode, ""),
-                              );
-                              clearFieldError(
-                                0,
-                                "contact.contactsProvided.0.phone.0",
+                                "email",
+                                sanitizeEmailInput(event.target.value),
                               );
                             }}
-                            forceDialCode={true}
-                            hideDropdown={false}
-                            disableCountryGuess={false}
-                            className="custom-phone-wrapper"
-                            countrySelectorStyleProps={{
-                              buttonClassName: "country-selector-btn",
-                            }}
-                            inputProps={{
-                              placeholder: "Phone",
-                            }}
+                            error={
+                              hasAttemptedValidation && !isBookingForSomeoneElse
+                                ? validationErrors[0]?.[
+                                    "contact.contactsProvided.0.emailAddress.0"
+                                  ]
+                                : null
+                            }
                           />
                         </div>
-                        {hasAttemptedValidation &&
-                          !isBookingForSomeoneElse &&
-                          validationErrors[0]?.[
-                            "contact.contactsProvided.0.phone.0"
-                          ] && (
-                            <p className="absolute left-0 text-[12px] mt-1 text-[#E65959] whitespace-nowrap">
-                              {
-                                validationErrors[0][
-                                  "contact.contactsProvided.0.phone.0"
-                                ]
-                              }
-                            </p>
-                          )}
-                      </div>
-
-                      <div
-                        className={`relative w-full max-w-[561px] ${hasAttemptedValidation && !isBookingForSomeoneElse && validationErrors[0]?.["contact.contactsProvided.0.emailAddress.0"] ? "pb-6" : ""}`}
-                      >
-                        <TailwindCustomInput
-                          type="email"
-                          placeholder="Enter an email"
-                          label="Email *"
-                          value={contactPersonDetails.email}
-                          onChange={(event) => {
-                            updateContactPersonField(
-                              "email",
-                              event.target.value,
-                            );
-                          }}
-                          error={
-                            hasAttemptedValidation && !isBookingForSomeoneElse
-                              ? validationErrors[0]?.[
-                                  "contact.contactsProvided.0.emailAddress.0"
-                                ]
-                              : null
-                          }
-                        />
                       </div>
                     </div>
                   </div>
-                </div>
                 )}
 
                 {/* Passenger details (separate card) */}
@@ -945,10 +956,7 @@ export default function FlightBookingBookSection({
                                   "passengerInfo.givenName",
                                   v ?? "",
                                 );
-                                clearFieldError(
-                                  idx,
-                                  "passengerInfo.givenName",
-                                );
+                                clearFieldError(idx, "passengerInfo.givenName");
                               }}
                               error={
                                 hasAttemptedValidation
@@ -1107,7 +1115,9 @@ export default function FlightBookingBookSection({
                             onPassengerFieldChange(
                               idx,
                               "identityDocuments.0.idDocumentNumber",
-                              v ?? "",
+                              sanitizeIdentityDocumentInput(
+                                typeof v === "string" ? v : "",
+                              ),
                             );
                             clearFieldError(
                               idx,
@@ -1244,6 +1254,7 @@ export default function FlightBookingBookSection({
                               "identityDocuments.0.expiryDate",
                             );
                           }}
+                          minDate={new Date()}
                           placeholder="Please select"
                           error={
                             hasAttemptedValidation
@@ -1327,7 +1338,9 @@ export default function FlightBookingBookSection({
                             onPassengerFieldChange(
                               idx,
                               "contact.contactsProvided.0.emailAddress.0",
-                              v ?? "",
+                              sanitizeEmailInput(
+                                typeof v === "string" ? v : "",
+                              ),
                             );
                             clearFieldError(
                               idx,
@@ -1370,6 +1383,8 @@ export default function FlightBookingBookSection({
                               );
                               clearFieldError(idx, "passengerInfo.birthDate");
                             }}
+                            minDate={birthPickerBounds.minDate}
+                            maxDate={birthPickerBounds.maxDate}
                             error={
                               hasAttemptedValidation
                                 ? validationErrors[idx]?.[
@@ -1725,13 +1740,50 @@ export default function FlightBookingBookSection({
               fare={priceFareFamily}
             />
 
-            <FLightFareRule trip={trip.raw} ruleData={fareRuleData} wideLayout />
+            <FLightFareRule
+              trip={trip.raw}
+              ruleData={fareRuleData}
+              wideLayout
+              externalModalOpen={fareRulesModalOpen}
+              onExternalModalClose={() => setFareRulesModalOpen(false)}
+            />
 
             <FLightPriceBreakdown
               open={openPrice}
               onToggleOpen={() => setOpenPrice((v) => !v)}
               trip={trip.raw}
             />
+          </div>
+
+          <div className="mt-3">
+            <Checkbox
+              checked={isFareRuleChecked}
+              onChange={(e) => {
+                setIsFareRuleChecked(e.target.checked);
+                if (e.target.checked) setShowFareRuleError(false);
+              }}
+              className="items-start [&_.ant-checkbox-inner]:w-5 [&_.ant-checkbox-inner]:h-5 [&_.ant-checkbox-inner]:rounded-lg [&_.ant-checkbox-inner]:border-[#A7C0EC] [&_.ant-checkbox-inner]:border [&_.ant-checkbox]:mt-[2px]"
+            >
+              <span className="font-medium text-sm leading-none tracking-normal align-middle">
+                I acknowledge and accept the{" "}
+                <span
+                  className="text-[#5383DA] cursor-pointer hover:underline"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setFareRulesModalOpen(true);
+                  }}
+                >
+                  fare rules
+                </span>{" "}
+                for this booking.
+              </span>
+            </Checkbox>
+            {showFareRuleError && (
+              <p className="text-red-500 text-xs mt-1">
+                You must agree to the fare rules policies to continue.
+              </p>
+            )}
           </div>
 
           <Button
@@ -1747,6 +1799,11 @@ export default function FlightBookingBookSection({
                   flightBookingPayload,
                 );
               setValidationErrors(fieldErrors);
+
+              if (!isFareRuleChecked) {
+                setShowFareRuleError(true);
+                return;
+              }
 
               if (Object.keys(fieldErrors).length > 0) return;
 
