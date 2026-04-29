@@ -174,6 +174,14 @@ axiosClient.interceptors.request.use(async (config) => {
   const path = requestUrlPath(config.url);
   const isActivities = activitiesApis.some((prefix) => path.startsWith(prefix));
   const useBearerOnActivities = activitiesShouldUseBearerInBrowser();
+  /**
+   * Sightseeing hits execute-api with a JWT authorizer. If `getToken()` runs before
+   * guest-token bootstrap finishes, the first request can leave without `Authorization`.
+   * Warm guest session first for these routes (no-op if already cached).
+   */
+  if (isActivities && useBearerOnActivities) {
+    await TokenService.ensureGuestToken();
+  }
   const token = await TokenService.getToken();
   if (token && (!isActivities || useBearerOnActivities)) {
     config.headers.Authorization = `Bearer ${token}`;
