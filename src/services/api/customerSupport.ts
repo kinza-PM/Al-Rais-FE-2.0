@@ -4,23 +4,35 @@ import { api, toApiError } from "../axios";
 export type TicketReason = {
   id: string;
   reason: string;
+  specializations?: string[];
   status: boolean;
   createdAt: number;
   updatedAt: number;
 };
 
 export type TicketReasonsResponse = {
-  items: TicketReason[];
-  nextToken: string | null;
+  success: boolean;
+  data: TicketReason[];
 };
 
 export async function getTicketReasons<TResp = TicketReasonsResponse>(): Promise<TResp> {
   const source = "getTicketReasons";
   try {
-    return await api.get<TResp>("/getListingData", {
-      tableName: "ticket-reasons",
-      browserId: ensureBrowserId(),
+    const configBaseUrl = import.meta.env.VITE_CONFIGURATIONS_API_BASE;
+    if (!configBaseUrl) throw new Error("Missing VITE_CONFIGURATIONS_API_BASE");
+    
+    const response = await fetch(`${configBaseUrl}/reasons`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      }
     });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: Failed to fetch reasons`);
+    }
+    
+    return await response.json() as TResp;
   } catch (err) {
     throw toApiError(source, err);
   }

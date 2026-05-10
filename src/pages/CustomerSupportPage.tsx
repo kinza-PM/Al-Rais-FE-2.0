@@ -21,6 +21,7 @@ const CustomerSupportPage = () => {
   const [attachments, setAttachments] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [reasonOptions, setReasonOptions] = useState<{ value: string; label: string }[]>([]);
+  const [reasonMap, setReasonMap] = useState<Record<string, string>>({}); // Map reason ID to reason name
   const [touched, setTouched] = useState({
     name: false,
     email: false,
@@ -51,13 +52,20 @@ const CustomerSupportPage = () => {
     const fetchReasons = async () => {
       try {
         const response = await getTicketReasons();
-        const activeReasons = response.items
+        const activeReasons = response.data
           .filter((item) => item.status === true)
           .map((item) => ({
-            value: item.reason,
+            value: item.id,
             label: item.reason,
           }));
         setReasonOptions(activeReasons);
+        
+        // Build mapping of reason ID to reason name
+        const map: Record<string, string> = {};
+        response.data.forEach((item) => {
+          map[item.id] = item.reason;
+        });
+        setReasonMap(map);
       } catch (error) {
         console.error("Failed to fetch ticket reasons:", error);
       }
@@ -140,16 +148,17 @@ const CustomerSupportPage = () => {
           code: phoneCountryCode,
           number: phoneNumber,
         },
-        reason: formData.reason,
+        reason: reasonMap[formData.reason] || formData.reason,
         message: formData.message,
         attachments: attachments.length > 0 ? attachments : undefined,
       });
-      toast.success("Your message has been sent successfully!");
+      // Only reset form on successful ticket creation
       setFormData({ name: "", email: "", message: "", reason: "" });
       setPhoneCountryCode("+971");
       setPhoneNumber("");
       setAttachments([]);
       setTouched({ name: false, email: false, phone: false, reason: false, message: false });
+      toast.success("Your message has been sent successfully!");
     } catch (error) {
       toast.error("Failed to send message. Please try again.");
       console.error("Create ticket error:", error);
