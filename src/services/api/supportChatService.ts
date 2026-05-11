@@ -1,4 +1,5 @@
 import { chatbotApi } from "./chatbotAxios";
+import { getTicketReasons } from "./customerSupport";
 
 export type SupportMessage = {
   id: string;
@@ -14,7 +15,7 @@ export type SupportConversation = {
   name: string;
   phone: string;
   category: string;
-  subcategory: string;
+  subcategory?: string;
   messages: SupportMessage[];
   ticketId?: string;
   status: string;
@@ -50,7 +51,6 @@ export type SendSupportMessageRequest = {
   name?: string;
   phone?: string;
   category?: string;
-  subcategory?: string;
   createTicket?: boolean;
 };
 
@@ -103,7 +103,6 @@ export async function sendSupportMessage(
       payload.name = data.name;
       payload.phone = data.phone;
       payload.category = data.category;
-      payload.subcategory = data.subcategory;
     }
 
     // console.log("payload", payload);
@@ -116,24 +115,18 @@ export async function sendSupportMessage(
 
 export async function getCategories<TResp = Category[]>(): Promise<TResp> {
   try {
-    const response: any = await chatbotApi.get("/categories");
-    // API returns {success, data} wrapper, extract the data array
-    return (response?.data || response) as TResp;
+    const response = await getTicketReasons();
+    const reasons = response.data
+      .filter((item) => item.status === true)
+      .map((item) => ({
+        categoryId: item.id,
+        categoryName: item.reason,
+        description: "",
+        active: item.status,
+      }));
+    return reasons as TResp;
   } catch (err) {
     console.error("Error fetching categories, using defaults:", err);
     return DEFAULT_CATEGORIES as unknown as TResp;
-  }
-}
-
-export async function getSubcategories<TResp = Subcategory[]>(
-  categoryId: string
-): Promise<TResp> {
-  try {
-    const response: any = await chatbotApi.get(`/subcategories/${categoryId}`);
-    // API returns {success, data} wrapper, extract the data array
-    return (response?.data || response) as TResp;
-  } catch (err) {
-    console.error("Error fetching subcategories:", err);
-    throw err;
   }
 }

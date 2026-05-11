@@ -89,7 +89,7 @@ const QA_ACTIVITIES =
   "https://vfp63x1v88.execute-api.eu-west-1.amazonaws.com/qa";
 
 const SHARED_APPSYNC =
-  "https://q24kjogjhbaufln5mlqcajiwmq.appsync-api.eu-west-1.amazonaws.com/graphql";
+  "https://xkjerxyzcjc47nawai3i4ydkru.appsync-api.eu-west-1.amazonaws.com/graphql";
 const SHARED_S3_TICKET =
   "https://booked-ticket-dev2.s3.eu-west-1.amazonaws.com";
 

@@ -2,9 +2,21 @@ import { GraphQLClient, gql } from 'graphql-request';
 import { Amplify } from 'aws-amplify';
 import { generateClient } from 'aws-amplify/api';
 
-const APPSYNC_ENDPOINT = import.meta.env.VITE_APPSYNC_ENDPOINT || '';
-const APPSYNC_API_KEY = import.meta.env.VITE_APPSYNC_API_KEY || '';
-const APPSYNC_REGION = import.meta.env.VITE_APPSYNC_REGION || 'eu-west-1';
+const APPSYNC_ENDPOINT = (
+  import.meta.env.VITE_APPSYNC_ENDPOINT ||
+  import.meta.env.VITE_APPSYNC_URL ||
+  ''
+).trim().replace(/^"(.*)"$/, '$1');
+const APPSYNC_API_KEY = (
+  import.meta.env.VITE_APPSYNC_API_KEY ||
+  import.meta.env.VITE_APPSYNC_APIKEY ||
+  import.meta.env.VITE_APPSYNC_KEY ||
+  ''
+).trim().replace(/^"(.*)"$/, '$1');
+const APPSYNC_REGION = (
+  import.meta.env.VITE_APPSYNC_REGION ||
+  'eu-west-1'
+).trim().replace(/^"(.*)"$/, '$1');
 
 // Configure Amplify for AppSync
 if (APPSYNC_ENDPOINT && APPSYNC_API_KEY) {

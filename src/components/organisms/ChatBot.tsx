@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { getCategories, sendSupportMessage, getSubcategories } from "../../services/api/supportChatService";
-import type { Category, Subcategory } from "../../services/api/supportChatService";
+import { getCategories, sendSupportMessage } from "../../services/api/supportChatService";
+import type { Category } from "../../services/api/supportChatService";
 import { subscribeToMessageReceived, sendMessage as sendAppSyncMessage } from "../../services/api/appSyncService";
 import type { Message as AppSyncMessage } from "../../services/api/appSyncService";
 
@@ -13,12 +13,11 @@ interface Message {
 
 interface SupportTicketState {
   mode: "ai" | "support";
-  step: "greeting" | "name" | "email" | "phone" | "category" | "subcategory" | "description" | "conversation";
+  step: "greeting" | "name" | "email" | "phone" | "category" | "description" | "conversation";
   email?: string;
   name?: string;
   phone?: string;
   category?: string;
-  subcategory?: string;
   conversationId?: string;
   ticketId?: string;
   isLoggedIn: boolean;
@@ -78,9 +77,14 @@ const ChatBot: React.FC = () => {
   });
   const [messages, setMessages] = useState<Message[]>(STATIC_MESSAGES);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  /** Keeps latest conversation id for AppSync sends (avoids stale state right after ticket creation). */
+  const supportConversationIdRef = useRef<string | undefined>(undefined);
+
+  useEffect(() => {
+    supportConversationIdRef.current = supportState.conversationId;
+  }, [supportState.conversationId]);
 
   useEffect(() => {
     if (isOpen && messagesEndRef.current) {
@@ -314,30 +318,16 @@ const ChatBot: React.FC = () => {
       } else if (step === "category") {
         const selectedCategory = categories.find(c => c.categoryName.toLowerCase() === inputValue.toLowerCase());
         if (selectedCategory) {
-          // Load subcategories for the selected category
-          try {
-            const subs = await getSubcategories(selectedCategory.categoryId);
-            setSubcategories(subs);
-          } catch (error) {
-            console.error("Failed to load subcategories:", error);
-            setSubcategories([]);
-          }
-
           setSupportState(prev => ({
             ...prev,
             category: selectedCategory.categoryName,
-            step: "subcategory"
+            step: "description"
           }));
-
-          // Show subcategories if available
-          const subcategoryList = subcategories.length > 0
-            ? `\n\nAvailable subcategories:\n${subcategories.map((sub: Subcategory) => `• ${sub.subcategoryName}`).join('\n')}`
-            : '';
 
           const assistantMessage: Message = {
             id: `msg-${Date.now()}-1`,
             role: "assistant",
-            content: `Good! You selected "${selectedCategory.categoryName}".${subcategoryList}\n\nPlease select or type a subcategory (or type "skip" if not applicable).`,
+            content: `Good! You selected "${selectedCategory.categoryName}".\n\nPlease describe your issue in detail.`,
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
           };
           setMessages(prev => [...prev, assistantMessage]);
@@ -350,23 +340,6 @@ const ChatBot: React.FC = () => {
           };
           setMessages(prev => [...prev, errorMessage]);
         }
-      } else if (step === "subcategory") {
-        // Collect subcategory
-        const subcategoryValue = inputValue.toLowerCase() === "skip" ? undefined : inputValue;
-
-        setSupportState(prev => ({
-          ...prev,
-          subcategory: subcategoryValue,
-          step: "description"
-        }));
-
-        const assistantMessage: Message = {
-          id: `msg-${Date.now()}-1`,
-          role: "assistant",
-          content: `Perfect! Now, please describe your issue in detail.`,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-        };
-        setMessages(prev => [...prev, assistantMessage]);
       } else if (step === "description") {
         // Create ticket
         try {
@@ -377,15 +350,18 @@ const ChatBot: React.FC = () => {
             name: supportState.name,
             phone: supportState.phone,
             category: supportState.category,
-            subcategory: supportState.subcategory,
             createTicket: true
           });
 
           console.log("response", response);
 
+          const newConvId = response?.data?.conversationId;
+          if (newConvId) {
+            supportConversationIdRef.current = newConvId;
+          }
           setSupportState(prev => ({
             ...prev,
-            conversationId: response?.data?.conversationId,
+            conversationId: newConvId,
             ticketId: response?.data?.ticketId,
             step: "conversation"
           }));
@@ -410,9 +386,10 @@ const ChatBot: React.FC = () => {
       } else if (step === "conversation") {
         // Send message via AppSync in conversation mode
         try {
-          if (supportState.conversationId) {
+          const convId = supportConversationIdRef.current ?? supportState.conversationId;
+          if (convId) {
             await sendAppSyncMessage({
-              conversationId: supportState.conversationId,
+              conversationId: convId,
               message: inputValue,
               sender: "user"
             });
