@@ -1,4 +1,3 @@
-import { ensureBrowserId } from "../../utils/browserId";
 import { api, toApiError } from "../axios";
 
 export type TicketReason = {

@@ -179,8 +179,8 @@ const CustomerSupportPage = () => {
         </p>
       </div>
 
-      {/* Form Container */}
-      <div className="max-w-xl mx-auto px-4 pb-10">
+      {/* Form Container — extra bottom padding clears fixed chat FAB over submit */}
+      <div className="max-w-xl mx-auto px-4 pb-24 sm:pb-28">
         <div className="bg-white rounded-xl border border-[#E4E4E7] w-full px-6 py-8 -mt-2">
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Your name */}
@@ -423,11 +423,16 @@ const CustomerSupportPage = () => {
 
             {/* Submit Button */}
             {/* from #5282d8 to #091428 */}
-            <div className="flex justify-center pt-4"> 
+            <div className="flex justify-center pt-4">
               <Button
                 type="submit"
                 disabled={loading}
-                className="px-12 rounded-full bg-gradient-to-r from-[#5282d8] to-[#091428]"
+                overrideClasses
+                className="min-w-[140px] px-12 py-3 rounded-full font-semibold shadow-md border-0 transition-opacity hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundImage: "linear-gradient(90deg, #5282d8 0%, #091428 100%)",
+                  color: "#ffffff",
+                }}
               >
                 {loading ? "Sending..." : "Send"}
               </Button>
