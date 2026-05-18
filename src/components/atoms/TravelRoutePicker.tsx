@@ -219,7 +219,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           panelClassName="airport-dropdown-panel"
           renderOption={(o) => (
             <div className="min-w-0">
-              <div className="truncate text-[14px] font-semibold text-[#0F172A]">
+              <div className="truncate text-[13px] font-semibold text-[#0F172A]">
                 {o.label}
               </div>
               {o.subLabel ? (
@@ -292,7 +292,7 @@ const TravelRoutePicker: React.FC<Props> = ({
           panelClassName="airport-dropdown-panel"
           renderOption={(o) => (
             <div className="min-w-0">
-              <div className="truncate text-[14px] font-semibold text-[#0F172A]">
+              <div className="truncate text-[13px] font-semibold text-[#0F172A]">
                 {o.label}
               </div>
               {o.subLabel ? (

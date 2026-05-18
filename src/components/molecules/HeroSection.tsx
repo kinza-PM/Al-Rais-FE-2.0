@@ -1,123 +1,131 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import FlightHeroSectionTab from "./FlightHeroSectionTab";
 import HotelHeroSectionTab from "./HotelHeroSectionTab";
-import SightseeingHeroSectionTab from "./SightseeingHeroSectionTab";
 import Celebration from "../../assets/svgs/celebration.svg";
-import CardBg25 from "../../assets/images/3rd-section-image1.png";
-import CardBgExplore from "../../assets/images/3rd-section-image 2.jpg";
+import { useLandingHeroStore } from "../../store/useLandingHeroStore";
+import { useHotelStore } from "../../store/UseHotelStore";
 
-export type HeroSearchTab = "flights" | "hotels" | "sightseeing";
-
-type Props = {
-  activeTab?: HeroSearchTab;
-  onTabChange?: (tab: HeroSearchTab) => void;
-};
-
-const HeroSection: React.FC<Props> = ({ activeTab }) => {
-  const selectedTab = activeTab ?? "flights";
-
-  return (
-    <div>
-      {/* Outer container — gray border pill matching Figma */}
-      <div className="w-full flex justify-center px-4" style={{ marginTop: -10 }}>
-        <div
-          className="w-full max-w-[1268px] bg-[#CFD5E0] border-[2px] border-[#A4A9AD] rounded-[45px] flex justify-center relative z-10 overflow-visible"
-        >
-          {/* Inner white panel — 15px inset on all sides, NO forced bottom padding */}
-          <div
-            id="hero-search-form"
-            className="w-full mx-[15px] my-[15px] rounded-[35px] bg-white shadow-[0_8px_28px_rgba(12,40,86,0.08)] overflow-visible"
-          >
-            {selectedTab === "flights" && <FlightHeroSectionTab />}
-            {selectedTab === "hotels" && <HotelHeroSectionTab />}
-            {selectedTab === "sightseeing" && <SightseeingHeroSectionTab />}
-          </div>
-        </div>
-      </div>
-
-      {/* Promotional cards */}
-      <PromotionalCards />
-    </div>
-  );
-};
+const promoCardShell =
+  "box-border flex min-h-0 w-full min-w-0 flex-col gap-2 overflow-hidden rounded-[16px] p-4 shadow-[0_3px_16px_rgba(8,19,38,0.07)] ring-1 ring-[#E8EDF5]/90 sm:gap-2.5 sm:p-5 md:h-[156px] md:flex-row md:items-center md:justify-between md:gap-3 md:py-3 md:px-5 lg:px-5";
 
 const PromotionalCards: React.FC = () => (
-  <div className="w-full flex justify-center mt-8 px-4">
-    <div className="w-full max-w-[1268px] grid md:grid-cols-3 gap-4 lg:gap-6 justify-items-center">
-      {/* Card 1 — Welcome gift */}
-      <div
-        className="relative flex w-full max-w-[401px] items-center justify-between gap-4 px-4 py-4 shadow-[0_1px_4px_rgba(12,40,86,0.12)] bg-cover bg-right bg-no-repeat rounded-[16px]"
-        style={{
-          height: 113,
-          backgroundImage: `url(${CardBg25})`,
-          backgroundColor: "#FFFFFF",
-        }}
-      >
-        <span
-          className="absolute top-3 left-3 inline-flex items-center gap-1.5 px-2.5 py-[5px] rounded-full text-white text-[12px] font-medium shadow-[0_2px_8px_rgba(12,40,86,0.18)]"
-          style={{
-            background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-          }}
+  <div className="mt-8 w-full sm:mt-10">
+    <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3 md:items-stretch md:gap-3 lg:gap-4">
+      <div className={`${promoCardShell} bg-white`}>
+        <div className="flex min-w-0 flex-1 flex-col gap-2">
+          <span
+            className="inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold text-white shadow-[0_2px_6px_rgba(8,19,38,0.12)]"
+            style={{
+              background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+            }}
+          >
+            <img src={Celebration} alt="" className="h-3 w-3 shrink-0" />
+            Welcome gift
+          </span>
+          <p className="text-balance text-[14px] font-semibold leading-tight tracking-tight text-[#0A0C0F] sm:text-[15px] md:text-[15px] lg:text-[16px]">
+            Get 25% off on your first booking
+          </p>
+        </div>
+        <Link
+          to="/auth"
+          className="inline-flex h-9 shrink-0 items-center justify-center self-start rounded-[8px] bg-[#2B59A2] px-4 text-[11px] font-semibold text-white transition-colors hover:bg-[#244a8a] active:bg-[#1f3f75] md:self-center"
         >
-          <img src={Celebration} alt="celebration" className="w-[16px] h-[16px] shrink-0" />
-          Welcome gift
-        </span>
-        <div className="pt-6">
-          <p
-            className="text-[18px] leading-[1] font-normal text-[#0A0C0F] max-w-[209px]"
-            style={{ fontSize: "13px" }}
-          >
-            Get 25% off on your first
-            <br />
-            booking
-          </p>
-        </div>
+          Sign in to claim
+        </Link>
       </div>
 
-      {/* Card 2 — Did you know */}
       <div
-        className="flex w-full max-w-[401px] items-center justify-between gap-4 px-6 py-4 text-white shadow-[0_8px_28px_rgba(12,40,86,0.18)] rounded-[16px]"
+        className={`${promoCardShell} border-0 text-white ring-white/10`}
         style={{
-          height: 113,
-          background: "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
+          background: "linear-gradient(90deg, #5383DA 0%, #2351A3 42%, #081326 100%)",
+          boxShadow: "0 10px 28px rgba(8,19,38,0.22)",
         }}
       >
-        <div>
-          <p className="text-[12px] opacity-90 mb-2">Did you know?</p>
-          <p
-            className="text-[14px] leading-[1] font-normal opacity-95 max-w-[260px]"
-            style={{ fontSize: "9px" }}
-          >
-            Al-Rais members get better deals
-            <br />
-            and prices on Flights and Hotels.
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <p className="text-[10px] font-medium leading-snug text-[#A7C0EC] sm:text-[11px]">
+            Did you know?
+          </p>
+          <p className="text-balance text-[12px] font-semibold leading-snug text-white sm:text-[13px] md:text-[13px]">
+            Al-Rais members get better deals and prices on Flights and Hotels.
           </p>
         </div>
-        <button className="shrink-0 h-10 px-6 rounded-[999px] bg-white text-[#153C8E] text-[13px] font-semibold border border-white/70">
+        <Link
+          to="/auth"
+          state={{ mode: "signup" }}
+          className="inline-flex h-9 shrink-0 items-center justify-center self-start rounded-[8px] bg-white px-4 text-[11px] font-semibold text-[#081326] transition-colors hover:bg-[#F4F7FB] active:bg-[#E8EDF5] md:self-center"
+        >
           Create an account
-        </button>
+        </Link>
       </div>
 
-      {/* Card 3 — Companion */}
-      <div
-        className="flex w-full max-w-[401px] items-center justify-between gap-4 px-6 py-4 border border-[#E7EEF7] bg-cover bg-right bg-no-repeat shadow-[0_1px_4px_rgba(12,40,86,0.12)] rounded-[16px]"
-        style={{
-          height: 113,
-          backgroundImage: `url(${CardBgExplore})`,
-          backgroundColor: "#FFFFFF",
-        }}
-      >
-        <p className="text-[14px] leading-[1] font-normal text-[#0A0C0F] max-w-[260px]">
-          Your all-in-one travel booking
-          <br />
-          companion!
-        </p>
-        <button className="shrink-0 h-10 px-6 rounded-[999px] bg-[#2351A3] text-white text-[14px] font-medium shadow-sm">
+      <div className={`${promoCardShell} bg-white`}>
+        <div className="flex min-w-0 flex-1 flex-col justify-center">
+          <p className="text-balance text-[14px] font-semibold leading-tight tracking-tight text-[#0A0C0F] sm:text-[15px] md:text-[15px] lg:text-[16px]">
+            Your all-in-one travel booking companion!
+          </p>
+        </div>
+        <Link
+          to="/search_flight"
+          className="inline-flex h-9 shrink-0 items-center justify-center self-start rounded-[8px] bg-[#2351A3] px-4 text-[11px] font-semibold text-white transition-colors hover:bg-[#1b4181] active:bg-[#183875] md:self-center"
+        >
           Explore now
-        </button>
+        </Link>
       </div>
     </div>
   </div>
 );
+
+const HeroSection: React.FC = () => {
+  const heroTab = useLandingHeroStore((s) => s.heroTab);
+  const setHeroTab = useLandingHeroStore((s) => s.setHeroTab);
+  const setLandingHeroSearchTab = useHotelStore((s) => s.setLandingHeroSearchTab);
+
+  const selectTab = (tab: "flights" | "hotels") => {
+    setHeroTab(tab);
+    setLandingHeroSearchTab(tab);
+    const el = document.getElementById("hero-search-form");
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  return (
+    <div className="mx-auto w-full max-w-[1360px] px-3 sm:px-5">
+      <div
+        id="hero-search-form"
+        className="w-full overflow-hidden rounded-[16px] bg-white shadow-[0_10px_32px_rgba(8,19,38,0.1)] ring-1 ring-[#E4E4E7]/80 sm:rounded-[18px]"
+      >
+        <div className="flex border-b border-[#E8EDF5] bg-[#F4F7FB] p-1 sm:p-1.5">
+          <button
+            type="button"
+            onClick={() => selectTab("flights")}
+            className={`min-h-[36px] flex-1 rounded-[10px] text-[12px] font-semibold transition-all ${
+              heroTab === "flights"
+                ? "bg-white text-[#081326] shadow-sm ring-1 ring-[#E4E4E7]/80"
+                : "text-[#3D495C] hover:text-[#2351A3]"
+            }`}
+          >
+            Flights
+          </button>
+          <button
+            type="button"
+            onClick={() => selectTab("hotels")}
+            className={`min-h-[36px] flex-1 rounded-[10px] text-[12px] font-semibold transition-all ${
+              heroTab === "hotels"
+                ? "bg-white text-[#081326] shadow-sm ring-1 ring-[#E4E4E7]/80"
+                : "text-[#3D495C] hover:text-[#2351A3]"
+            }`}
+          >
+            Hotels
+          </button>
+        </div>
+        <div className="px-3 pb-3 pt-2 sm:px-5 sm:pb-4 sm:pt-3">
+          {heroTab === "flights" && <FlightHeroSectionTab />}
+          {heroTab === "hotels" && <HotelHeroSectionTab />}
+        </div>
+      </div>
+      <PromotionalCards />
+    </div>
+  );
+};
 
 export default HeroSection;

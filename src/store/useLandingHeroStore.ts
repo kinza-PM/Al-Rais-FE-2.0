@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type LandingHeroTab = "flights" | "hotels" | "sightseeing";
+export type LandingHeroTab = "flights" | "hotels";
 
 type Store = {
   heroTab: LandingHeroTab;

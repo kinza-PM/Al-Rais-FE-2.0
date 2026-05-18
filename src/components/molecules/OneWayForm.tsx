@@ -243,7 +243,7 @@ const OneWayForm: React.FC<Props> = ({
             ref={depRef}
             type="date"
             defaultValue="2025-06-16"
-            className="h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[14px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20 hide-date-icon"
+            className="h-11 w-full rounded-xl border border-[#DFE7F3] pl-4 pr-10 text-[13px] text-[#0F172A] outline-none focus:ring-2 focus:ring-[#2351A3]/20 hide-date-icon"
           />
           <button
             type="button"

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Layout, Menu, Dropdown, Drawer, Modal, Tooltip, Typography } from "antd";
 import {
+  BellOutlined,
   CalendarOutlined,
   MenuOutlined,
   LogoutOutlined,
@@ -259,37 +260,64 @@ const AppHeader: React.FC<HeaderProps> = ({
   const centerNavClassName =
     "text-[14px] sm:text-[16px] lg:text-[16px] font-light text-[#3D495C] hover:text-[#2351A3] transition-colors whitespace-nowrap";
 
-  const centerNavLinks = [
-    { key: "flights", to: "/search_flight", label: "Flights" },
-    { key: "hotels", to: "/search-hotel", label: "Hotels" },
-    { key: "rentals", to: "/travel", label: "Rentals" },
-    { key: "sights", to: "/search-sightseeing", label: "Sights" },
-    { key: "packages", to: "/packages", label: "Packages" },
-  ] as const;
-
-  const disabledNavKeys = new Set(["rentals", "sights", "packages"]);
   const disabledNavClassName =
     "text-[14px] sm:text-[16px] lg:text-[16px] font-light text-[#3D495C]/50 cursor-not-allowed whitespace-nowrap select-none";
 
-  // Drawer / mobile menu — aligned with Figma “third” navbar destinations + extras
+  type CenterNavItem =
+    | { key: string; kind: "link"; to: string; label: string }
+    | { key: string; kind: "disabled"; label: string }
+    | { key: string; kind: "bookings"; label: string };
+
+  const centerNavItems: CenterNavItem[] = [
+    { key: "flights", kind: "link", to: "/search_flight", label: "Flights" },
+    { key: "hotels", kind: "link", to: "/search-hotel", label: "Hotels" },
+    { key: "packages", kind: "disabled", label: "Packages" },
+    { key: "help", kind: "link", to: "/faq", label: "Help" },
+    { key: "bookings", kind: "bookings", label: "My Bookings" },
+  ];
+
+  const unreadNotificationCount = notifications.filter((n) => !n.read).length;
+
   const navItems = [
-    ...centerNavLinks.map(({ key, to, label }) => ({
-      key,
-      label: disabledNavKeys.has(key) ? (
-        <span style={{ color: "#94A3B8", cursor: "not-allowed" }}>{label}</span>
-      ) : (
-        <Link to={to}>{label}</Link>
-      ),
-      disabled: disabledNavKeys.has(key),
-    })),
-    ...(isAuthenticated
-      ? [
-          {
-            key: "my-bookings",
-            label: <Link to={buildMyBookingsUrl()}>My bookings</Link>,
-          },
-        ]
-      : []),
+    ...centerNavItems.map((item) => {
+      if (item.kind === "disabled") {
+        return {
+          key: item.key,
+          label: (
+            <span style={{ color: "#94A3B8", cursor: "not-allowed" }}>
+              {item.label}
+            </span>
+          ),
+          disabled: true,
+        };
+      }
+      if (item.kind === "bookings") {
+        return {
+          key: item.key,
+          label:
+            isAuthenticated && user ? (
+              <Link to={buildMyBookingsUrl()}>{item.label}</Link>
+            ) : (
+              <span
+                role="presentation"
+                style={{ cursor: "pointer", color: "#3D495C" }}
+                onClick={() => {
+                  setDrawerVisible(false);
+                  onLoginClick();
+                }}
+              >
+                {item.label}
+              </span>
+            ),
+          disabled: false,
+        };
+      }
+      return {
+        key: item.key,
+        label: <Link to={item.to}>{item.label}</Link>,
+        disabled: false,
+      };
+    }),
     { key: "about", label: <Link to="/about">About</Link> },
   ];
 
@@ -385,17 +413,43 @@ const AppHeader: React.FC<HeaderProps> = ({
                 viewportWidth >= 1600 ? 34 : viewportWidth >= 1440 ? 28 : 18,
             }}
           >
-            {centerNavLinks.map(({ key, to, label }) => (
-              disabledNavKeys.has(key) ? (
-                <span key={key} className={disabledNavClassName}>
-                  {label}
-                </span>
-              ) : (
-                <Link key={key} to={to} className={centerNavClassName}>
-                  {label}
+            {centerNavItems.map((item) => {
+              if (item.kind === "disabled") {
+                return (
+                  <span key={item.key} className={disabledNavClassName}>
+                    {item.label}
+                  </span>
+                );
+              }
+              if (item.kind === "bookings") {
+                if (isAuthenticated && user) {
+                  return (
+                    <Link
+                      key={item.key}
+                      to={buildMyBookingsUrl()}
+                      className={centerNavClassName}
+                    >
+                      {item.label}
+                    </Link>
+                  );
+                }
+                return (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={`${centerNavClassName} cursor-pointer border-0 bg-transparent p-0 font-[inherit]`}
+                    onClick={() => onLoginClick()}
+                  >
+                    {item.label}
+                  </button>
+                );
+              }
+              return (
+                <Link key={item.key} to={item.to} className={centerNavClassName}>
+                  {item.label}
                 </Link>
-              )
-            ))}
+              );
+            })}
           </nav>
         )}
 
@@ -524,7 +578,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                       paddingRight: 4,
                     }}
                   >
-                    <FlagIcon src={FlagUAE} size={isTablet ? 26 : 32} />
+                    <FlagIcon src={FlagUSA} size={isTablet ? 26 : 32} />
                     <span
                       style={{
                         fontSize: isTablet ? "13px" : "14px",
@@ -532,7 +586,7 @@ const AppHeader: React.FC<HeaderProps> = ({
                         color: "#0A0C0F",
                       }}
                     >
-                      AED
+                      USD
                     </span>
                   </div>
                   <div
@@ -569,6 +623,41 @@ const AppHeader: React.FC<HeaderProps> = ({
                   </div>
                 </button>
               </Dropdown>
+
+              <Tooltip title="Notifications" placement="bottom">
+                <button
+                  type="button"
+                  aria-label="Notifications"
+                  onClick={() => {
+                    if (isAuthenticated && user) setShowAllNotifications(true);
+                    else onLoginClick();
+                  }}
+                  style={{
+                    width: desktopIconBtn,
+                    height: desktopIconBtn,
+                    border: "1.5px solid #5383DA",
+                    borderRadius: "16px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    backgroundColor: "#FFFFFF",
+                    cursor: "pointer",
+                    position: "relative",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = "#F0F7FF";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = "#FFFFFF";
+                  }}
+                >
+                  <BellOutlined
+                    style={{ fontSize: isTablet ? 20 : 22, color: "#3D495C" }}
+                  />
+                  <IconActionBadge count={unreadNotificationCount} />
+                </button>
+              </Tooltip>
 
               <Tooltip title="My bookings" placement="bottom">
                 <button
@@ -1296,5 +1385,3 @@ const AppHeader: React.FC<HeaderProps> = ({
 };
 
 export default AppHeader;
-
-// DESIGN UI WORKING

@@ -1,15 +1,8 @@
-import React, { useState, useCallback } from "react";
-import { Splide, SplideSlide } from "@splidejs/react-splide";
-import "@splidejs/react-splide/css";
-import GroupImg from "../../assets/images/Group.png";
+import React, { useMemo } from "react";
 import LastSection1 from "../../assets/images/last-sectionimage (1).png";
 import LastSection2 from "../../assets/images/last-sectionimage (2).png";
 import LastSection3 from "../../assets/images/last-sectionimage (3).png";
 import LastSection4 from "../../assets/images/last-sectionimage (4).png";
-import ArrowLeftIcon from "../../assets/images/arrow-left-s-line 1.png";
-import ArrowRightIcon from "../../assets/images/arrow-right-s-line 2.png";
-
-type SplideInstance = { go: (dir: string) => void } | null;
 
 type Testimonial = {
   id: string;
@@ -19,178 +12,139 @@ type Testimonial = {
   text: string;
 };
 
-const TESTIMONIALS: Testimonial[] = [
+/** Exactly four cards per Figma — row 1 and row 2 each show these four (duplicated for marquee). */
+const TESTIMONIALS_ROW_A: Testimonial[] = [
   {
     id: "1",
     name: "Michael Brown",
     role: "Frequent Traveler",
     avatar: LastSection1,
-    text: "The loyalty program is fantastic. I've booked multiple trips and the rewards keep getting better. Al Rais makes every journey feel valued.",
+    text: "Joining the loyalty program was the best decision! I earn points with every booking, and I've already redeemed them for fantastic upgrades and discounts. Highly recommend it!",
   },
   {
     id: "2",
     name: "Martin Williams",
     role: "Doctor",
     avatar: LastSection2,
-    text: "Outstanding customer support. When I had a last-minute change, the team handled it quickly and professionally. Highly recommend.",
+    text: "Al Rais has transformed my travel experiences! Their customer support is exceptional, always available to help with any questions I have. I truly feel valued and supported throughout my journey.",
   },
   {
     id: "3",
     name: "John Smith",
     role: "Travel Blogger",
     avatar: LastSection3,
-    text: "The personalized itineraries and seamless booking experience are top-notch. Al Rais understands what travelers need.",
+    text: "The personalized services at Al Rais are unmatched. They took the time to understand my travel preferences and crafted an itinerary that was perfect for me. Every trip has been unforgettable!",
   },
   {
     id: "4",
     name: "Sarah Davis",
     role: "Healthcare Professional",
     avatar: LastSection4,
-    text: "Peace of mind matters when I travel. Al Rais's safety protocols and clear communication give me confidence every time.",
-  },
-  {
-    id: "5",
-    name: "Sarah Davis",
-    role: "Healthcare Professional",
-    avatar: LastSection4,
-    text: "Peace of mind matters when I travel. Al Rais's safety protocols and clear communication give me confidence every time.",
+    text: "Traveling with Al Rais gives me peace of mind. Their strict health and safety protocols make me feel secure, allowing me to focus on enjoying my trip without worries.",
   },
 ];
 
-const CARD_GAP = 24;
+/** Second row: same four cards, different order for variety */
+const TESTIMONIALS_ROW_B: Testimonial[] = [
+  TESTIMONIALS_ROW_A[3],
+  TESTIMONIALS_ROW_A[2],
+  TESTIMONIALS_ROW_A[1],
+  TESTIMONIALS_ROW_A[0],
+];
 
-function FeedbackCard({
-  testimonial,
-  index,
-}: {
-  testimonial: Testimonial;
-  index: number;
-}) {
-  const isGradientCard = index % 2 === 1;
+const CARD_GAP_PX = 24;
 
+type MarqueeTrackClass =
+  | "testimonials-marquee-track--row-a"
+  | "testimonials-marquee-track--row-b";
+
+function QuoteMarkIcon() {
   return (
-    <div
-      className="relative flex h-[320px] flex-col rounded-[8px] p-5 sm:p-6"
-      style={{
-        background: isGradientCard
-          ? "linear-gradient(360deg, #D2F4FE 0%, #FFFFFF 100%)"
-          : "#FFFFFF",
-        border: "1.5px solid #E4E4E7",
-        boxShadow: "0 0 0 1px #E4E4E7",
-      }}
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      className="h-8 w-8 shrink-0 text-[#2351A3]"
+      aria-hidden
     >
-      {/* Group.png at top-left of every card */}
-      <div className="absolute left-4 top-4 sm:left-5 sm:top-5">
-        <img
-          src={GroupImg}
-          alt=""
-          className="h-10 w-10 object-contain sm:h-12 sm:w-12"
-          aria-hidden
-        />
+      <path
+        fill="currentColor"
+        d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4V21h-9.983zM0 21v-7.391C0 7.905 3.748 4.04 9 3.001l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983V21H0z"
+      />
+    </svg>
+  );
+}
+
+function FeedbackCard({ testimonial }: { testimonial: Testimonial }) {
+  return (
+    <article className="relative box-border flex h-[281px] w-[min(468px,calc(100vw-3rem))] shrink-0 flex-col rounded-[16px] border border-[#E4E4E7] bg-[#FFFFFF] px-8 py-8 sm:px-10">
+      <div className="shrink-0">
+        <QuoteMarkIcon />
       </div>
 
-      {/* Testimonial text - with top padding so it doesn't overlap the icon */}
-      <p className="mt-12 flex-1 text-left text-sm leading-relaxed text-[#0A0C0F] sm:mt-14 sm:text-base">
+      <p className="mt-3 line-clamp-4 flex-1 overflow-hidden text-left text-[14px] font-normal leading-[1.5] text-[#0A0C0F]">
         {testimonial.text}
       </p>
 
-      {/* Customer info: avatar + name + role */}
-      <div className="mt-4 flex items-center gap-3">
+      <div className="mt-auto flex shrink-0 items-center gap-3 pt-2">
         <img
           src={testimonial.avatar}
           alt=""
-          className="h-10 w-10 flex-shrink-0 rounded-full object-cover sm:h-12 sm:w-12"
+          className="h-10 w-10 shrink-0 rounded-full object-cover sm:h-11 sm:w-11"
           aria-hidden
         />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-[#0A0C0F] sm:text-base">
+          <p className="truncate text-[15px] font-bold leading-tight text-[#0A0C0F]">
             {testimonial.name}
           </p>
-          <p className="truncate text-xs text-[#3D495C] opacity-80 sm:text-sm">
+          <p className="truncate text-[13px] font-normal leading-tight text-[#64748B]">
             {testimonial.role}
           </p>
         </div>
+      </div>
+    </article>
+  );
+}
+
+function MarqueeRow({
+  items,
+  trackClass,
+}: {
+  items: Testimonial[];
+  trackClass: MarqueeTrackClass;
+}) {
+  const loop = useMemo(() => [...items, ...items], [items]);
+
+  return (
+    <div className="testimonials-marquee-row overflow-hidden py-1">
+      <div
+        className={`flex w-max ${trackClass}`}
+        style={{ gap: CARD_GAP_PX }}
+      >
+        {loop.map((t, i) => (
+          <FeedbackCard key={`${t.id}-${i}`} testimonial={t} />
+        ))}
       </div>
     </div>
   );
 }
 
 const CustomersFeedbackSection: React.FC = () => {
-  const [splide, setSplide] = useState<SplideInstance>(null);
-  const goPrev = useCallback(() => splide?.go("<"), [splide]);
-  const goNext = useCallback(() => splide?.go(">"), [splide]);
-
   return (
-    <section className="w-full bg-white py-12 sm:py-16 md:py-20">
-      <div className="mx-auto max-w-[1464px] px-4 sm:px-6 lg:px-8">
-        {/* Section header (centered) */}
-        <div className="w-full text-center">
-          <p className="text-sm text-[#3D495C]">Customers feedback</p>
-          <h2 className="mt-2 text-2xl font-bold text-[#0A0C0F] sm:text-3xl lg:text-4xl">
+    <section className="relative w-full overflow-x-clip bg-white py-14 sm:py-16 md:py-20">
+      <div className="mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-8">
+        <header className="w-full text-center">
+          <p className="text-sm font-medium text-[#3D495C]">Customers feedback</p>
+          <h2 className="mt-3 text-balance text-2xl font-bold leading-tight tracking-tight text-[#081326] sm:text-3xl md:text-4xl lg:text-[40px] lg:leading-[1.15]">
             See what travelers think about us
           </h2>
-        </div>
+        </header>
+      </div>
 
-        {/* Slider with arrows outside + light border around track */}
-        <div className="mt-6 flex w-full items-center gap-3 sm:gap-4 lg:gap-6">
-          <button
-            type="button"
-            aria-label="Previous testimonials"
-            onClick={goPrev}
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-[#3D495C] transition-colors hover:text-[#0A0C0F] sm:h-14 sm:w-14"
-            style={{ background: "transparent" }}
-          >
-            <img src={ArrowLeftIcon} alt="prev" className="h-5 w-5 sm:h-6 sm:w-6" />
-          </button>
-
-          <div className="min-w-0 flex-1 overflow-hidden rounded-lg p-2 sm:p-3">
-            <Splide
-              aria-label="Customer testimonials"
-              options={{
-                type: "loop",
-                perPage: 5,
-                perMove: 1,
-                gap: `${CARD_GAP}px`,
-                pagination: false,
-                arrows: false,
-                breakpoints: {
-                  1280: {
-                    perPage: 4,
-                    gap: `${CARD_GAP}px`,
-                  },
-                  1024: {
-                    perPage: 3,
-                    gap: `${CARD_GAP}px`,
-                  },
-                  768: {
-                    perPage: 2,
-                    gap: "16px",
-                  },
-                  640: {
-                    perPage: 1,
-                    gap: "16px",
-                  },
-                },
-              }}
-              onMounted={(instance: SplideInstance) => setSplide(instance)}
-            >
-              {TESTIMONIALS.map((t, index) => (
-                <SplideSlide key={t.id}>
-                  <FeedbackCard testimonial={t} index={index} />
-                </SplideSlide>
-              ))}
-            </Splide>
-          </div>
-
-          <button
-            type="button"
-            aria-label="Next testimonials"
-            onClick={goNext}
-            className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full text-[#3D495C] transition-colors hover:text-[#0A0C0F] sm:h-14 sm:w-14"
-            style={{ background: "transparent" }}
-          >
-            <img src={ArrowRightIcon} alt="next" className="h-5 w-5 sm:h-6 sm:w-6" />
-          </button>
+      {/* True viewport-width rows (breaks out of any horizontal centering) */}
+      <div className="testimonials-marquee-bleed mt-10 sm:mt-12">
+        <div className="flex flex-col gap-6 sm:gap-7 md:gap-8">
+          <MarqueeRow items={TESTIMONIALS_ROW_A} trackClass="testimonials-marquee-track--row-a" />
+          <MarqueeRow items={TESTIMONIALS_ROW_B} trackClass="testimonials-marquee-track--row-b" />
         </div>
       </div>
     </section>

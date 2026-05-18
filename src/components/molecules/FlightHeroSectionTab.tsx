@@ -454,10 +454,10 @@ const FlightHeroSection: React.FC = () => {
       {flightTypesFailed ? (
         <div className="py-16 flex flex-col items-center text-center">
           <img src={noInternet} alt="globe-icon" className="w-5 h-5" />
-          <p className="mt-4 text-[14px] text-[#0F172A]">
+          <p className="mt-4 text-[13px] text-[#0F172A]">
             The server encountered an error and could not complete your request.
           </p>
-          <p className="mt-2 text-[14px] text-[#3D495C]">
+          <p className="mt-2 text-[13px] text-[#3D495C]">
             Please reload this page, or click{" "}
             <button
               type="button"
@@ -471,13 +471,10 @@ const FlightHeroSection: React.FC = () => {
         </div>
       ) : (
         <>
-          {/* Trip type segmented control */}
-          {/* Trip type segmented control */}
-          {/* Trip type segmented control */}
-          <div className="flex justify-center mt-0.5"> {/* Changed from mt-1 to mt-0.5 */}
+          <div className="flex justify-center mt-0.5">
             <div className="flex items-center rounded-xl p-1 bg-white">
               {nsLoading.flightTypes && (
-                <div className="px-6 py-2 text-[14px] rounded-xl text-[#3A4350] opacity-60">
+                <div className="px-5 py-1.5 text-[13px] rounded-xl text-[#3A4350] opacity-60">
                   Loading…
                 </div>
               )}
@@ -487,18 +484,18 @@ const FlightHeroSection: React.FC = () => {
                     key={t.id}
                     type="button"
                     onClick={() => setTrip(t.key)}
-                    className={`text-[14px] transition-colors cursor-pointer flex items-center justify-center ${trip === t.key ? "text-white" : "text-[#3A4350]"
+                    className={`text-[13px] transition-colors cursor-pointer flex items-center justify-center ${trip === t.key ? "text-white" : "text-[#3A4350]"
                       }`}
                     style={{
-                      width: 115,
-                      height: 35,
-                      padding: "0 16px",
-                      borderBottomLeftRadius: 16,
-                      borderBottomRightRadius: 16,
+                      width: 100,
+                      height: 30,
+                      padding: "0 10px",
+                      borderBottomLeftRadius: 14,
+                      borderBottomRightRadius: 14,
                       background: trip === t.key ? "var(--primary-300, #2351A3)" : "#F2F2F3",
                       opacity: 1,
                       transform: "rotate(0deg)",
-                      marginRight: index < tabs.length - 1 ? 8 : 0,
+                      marginRight: index < tabs.length - 1 ? 6 : 0,
                     }}
                   >
                     {t.label}
@@ -507,8 +504,7 @@ const FlightHeroSection: React.FC = () => {
             </div>
           </div>
 
-          {/* ── Form fields + Search button ── */}
-          <div className="px-4 sm:px-6 md:px-10 pt-5 pb-5">
+          <div className="px-3 sm:px-5 md:px-6 pt-3 pb-3">
             <div className="w-full min-w-0 xl:grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end xl:gap-4">
               <div className="min-w-0">
                 {trip === "oneway" && (
@@ -678,13 +674,13 @@ const FlightHeroSection: React.FC = () => {
                 className={`flex justify-center xl:justify-end ${!hasAttemptedValidation ? "mt-4 xl:mt-0" : "mt-8 xl:mt-0"}`}
               >
                 <button
-                  className="flight-cta-button text-white w-full sm:w-auto"
+                  className="flight-cta-button text-[12px] font-semibold text-white w-full sm:w-auto"
                   style={{
                     width: "auto",
-                    minWidth: 137,
-                    height: 47,
+                    minWidth: 112,
+                    height: 38,
                     borderRadius: 100,
-                    padding: "14px 40px",
+                    padding: "9px 24px",
                     background:
                       "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
                   }}

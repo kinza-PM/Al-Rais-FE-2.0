@@ -1,12 +1,9 @@
-import React, { useState, useCallback } from "react";
+import React from "react";
+import { Link } from "react-router-dom";
 import PenidaIsland from "../../assets/images/penida_island.png";
 import MerlionPark from "../../assets/images/merlion_park.png";
 import KoSamui from "../../assets/images/ko_samui.png";
 import Switzerland from "../../assets/images/switzerland.png";
-import { Splide, SplideSlide } from "@splidejs/react-splide";
-import "@splidejs/react-splide/css";
-import ArrowLeft from "../../assets/images/arrow-left-s-line 1.png";
-import ArrowRight from "../../assets/images/arrow-right-s-line 2.png";
 
 type Destination = {
   id: string;
@@ -22,122 +19,52 @@ const DESTINATIONS: Destination[] = [
   { id: "4", title: "Switzerland", subtitle: "Interlaken, Switzerland", image: Switzerland },
 ];
 
-const CARD_WIDTH = 477;
-const CARD_HEIGHT = 520;
-const CARD_GAP = 28;
-
 function DestinationCard({ d }: { d: Destination }) {
   return (
-    <div
-      className="flex flex-col bg-white rounded-[15px] shadow-[0_1px_4px_rgba(15,23,42,0.12)] overflow-hidden w-full max-w-[477px] mx-auto"
-      style={{
-        aspectRatio: `${CARD_WIDTH} / ${CARD_HEIGHT}`,
-        maxHeight: CARD_HEIGHT,
-        borderBottomLeftRadius: 15,
-        borderBottomRightRadius: 15,
-        border: "1.5px solid var(--primary-300, #2351A3)",
-      }}
+    <Link
+      to="/search_flight"
+      className="group relative block aspect-[4/5] w-full max-w-[520px] overflow-hidden rounded-[12px] border border-[#E4E4E7] shadow-[0_6px_22px_rgba(8,19,38,0.08)] ring-1 ring-black/[0.03] transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_36px_rgba(8,19,38,0.12)] sm:rounded-[14px]"
     >
       <img
         src={d.image}
-        alt={d.title}
-        className="w-full object-cover flex-1 min-h-0"
-        style={{
-          height: "calc(100% - 100px)",
-          borderBottomLeftRadius: 15,
-          borderBottomRightRadius: 15,
-        }}
+        alt=""
+        className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
       />
-
-      <div className="flex items-center justify-between gap-4 px-3 sm:px-4 py-4 h-[100px] shrink-0">
-        <div className="flex flex-col justify-center gap-0.5 min-w-0 flex-1 text-left">
-          <h3 className="text-[16px] font-semibold text-[#0A0C0F] truncate leading-tight">{d.title}</h3>
-          <p className="text-[13px] text-[#3D495C] truncate leading-tight">{d.subtitle}</p>
-        </div>
-        <button
-          type="button"
-          className="inline-flex items-center justify-center text-[12px] font-medium text-white transition-colors shrink-0 hover:opacity-90 active:opacity-95"
-          style={{ width: 87, height: 39, borderRadius: 8, padding: "10px 20px", backgroundColor: "#2351A3" }}
-        >
-          Explore
-        </button>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+      <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
+        <p className="text-xl font-semibold text-white drop-shadow-sm sm:text-2xl">{d.title}</p>
+        <p className="mt-1 text-sm text-white/90 sm:text-[15px]">{d.subtitle}</p>
       </div>
-    </div>
+    </Link>
   );
 }
 
-type SplideInstance = { go: (dir: string) => void } | null;
-
-const PopularDestinationsFlexRow: React.FC = () => {
-  const [splide, setSplide] = useState<SplideInstance>(null);
-  const goPrev = useCallback(() => splide?.go("<"), [splide]);
-  const goNext = useCallback(() => splide?.go(">"), [splide]);
-
+const PopularDestinationSection: React.FC = () => {
   return (
-    <div className="mx-auto max-w-[1464px] px-4 sm:px-6 lg:px-8 pt-4 sm:pt-6 md:pt-8 pb-8">
-      {/* Title aligned with card start */}
-      <div className="ml-[68px] sm:ml-[64px] lg:ml-[72px]">
-        <p className="text-sm text-[rgba(61,73,92,1)]">Popular destinations</p>
-        <h2 className="mt-3 text-3xl sm:text-5xl font-medium text-[rgba(10,12,15,1)]">Find your next adventure</h2>
+    <section className="mx-auto w-full max-w-[1280px] px-4 pb-14 pt-12 sm:px-6 sm:pb-16 sm:pt-16 lg:px-8">
+      <div className="text-center sm:text-left">
+        <p className="text-sm font-medium text-[#3D495C]">Destinations</p>
+        <h2 className="mt-2 text-3xl font-medium tracking-tight text-[#081326] sm:text-4xl md:text-5xl">
+          Find your next adventure
+        </h2>
       </div>
 
-      {/* Outer wrapper: arrows outside the slider track (title aligns with track start) */}
-      <div className="mt-6 flex items-center gap-3 sm:gap-4 lg:gap-6 w-full">
-        <button
-          type="button"
-          aria-label="Previous destinations"
-          onClick={goPrev}
-          className="pointer-events-auto -translate-x-2 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors"
-        >
-          <img src={ArrowLeft} alt="Previous" className="custom-arrow" />
-        </button>
-
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <Splide
-            aria-label="Popular destinations"
-            options={{
-              type: "loop",
-              perPage: 3,
-              focus: "center",
-              gap: `${CARD_GAP}px`,
-              pagination: false,
-              arrows: false,
-              breakpoints: {
-                1280: { perPage: 2, focus: "center", gap: `${CARD_GAP}px` },
-                768: { perPage: 1, focus: "center", gap: `${CARD_GAP}px` },
-                640: { perPage: 1, focus: 0, gap: "16px" },
-              },
-            }}
-            onMounted={(instance: any) => setSplide(instance)}
-          >
-            {DESTINATIONS.map((d) => (
-              <SplideSlide key={d.id}>
-                <DestinationCard d={d} />
-              </SplideSlide>
-            ))}
-          </Splide>
-        </div>
-
-        <button
-          type="button"
-          aria-label="Next destinations"
-          onClick={goNext}
-          className="pointer-events-auto translate-x-2 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-transparent transition-colors"
-        >
-          <img src={ArrowRight} alt="Next" className="custom-arrow" />
-        </button>
+      <div className="mt-10 grid grid-cols-1 gap-5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+        {DESTINATIONS.map((d) => (
+          <DestinationCard key={d.id} d={d} />
+        ))}
       </div>
 
-      {/* <div className="mt-8 flex justify-center">
-        <button
-          type="button"
-          className="rounded-lg px-6 py-2 text-white bg-[rgba(35,81,163,1)] hover:bg-[rgba(35,81,163,0.92)] active:bg-[rgba(35,81,163,0.88)] shadow-sm ring-1 ring-black/5 focus:outline-none focus:ring-2 focus:ring-[rgba(35,81,163,0.5)]"
+      <div className="mt-10 flex justify-center sm:mt-12">
+        <Link
+          to="/search_flight"
+          className="inline-flex h-11 min-w-[160px] items-center justify-center rounded-[10px] bg-[#2351A3] px-8 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#1b4181] sm:h-12 sm:rounded-[12px] sm:text-[15px]"
         >
-          Book a flight
-        </button>
-      </div> */}
-    </div>
+          View All
+        </Link>
+      </div>
+    </section>
   );
 };
 
-export default PopularDestinationsFlexRow;
+export default PopularDestinationSection;

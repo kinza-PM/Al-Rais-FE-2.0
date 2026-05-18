@@ -118,21 +118,71 @@ body {
   }
 }
 
-@keyframes partners-marquee {
-  0% {
+/* Partner logos: circular frame + continuous 360° ring rotation */
+@keyframes partner-orbit-ring {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.partner-logo-orbit-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px dashed rgba(35, 81, 163, 0.22);
+  animation: partner-orbit-ring 18s linear infinite;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partner-logo-orbit-ring {
+    animation: none;
+  }
+}
+
+.group:hover .partner-logo-orbit-ring {
+  animation-play-state: paused;
+}
+
+/* Customer testimonials – dual-row infinite marquee */
+@keyframes testimonials-marquee {
+  from {
     transform: translateX(0);
   }
-  100% {
+  to {
     transform: translateX(-50%);
   }
 }
 
-.animate-partners-marquee {
-  animation: partners-marquee 45s linear infinite;
+/* Row 1: scroll left */
+.testimonials-marquee-track--row-a {
+  animation: testimonials-marquee 50s linear infinite;
 }
 
-.animate-partners-marquee:hover {
+/* Row 2: scroll right (reverse of same loop) */
+.testimonials-marquee-track--row-b {
+  animation: testimonials-marquee 56s linear infinite reverse;
+}
+
+.testimonials-marquee-row:hover .testimonials-marquee-track--row-a,
+.testimonials-marquee-row:hover .testimonials-marquee-track--row-b {
   animation-play-state: paused;
+}
+
+/* Break out of centered page content to true viewport width (no side gutters) */
+.testimonials-marquee-bleed {
+  position: relative;
+  width: 100vw;
+  max-width: none;
+  margin-left: calc(50% - 50vw);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonials-marquee-track--row-a,
+  .testimonials-marquee-track--row-b {
+    animation: none !important;
+    transform: translateX(0) !important;
+  }
 }
 
 .custom-arrow {

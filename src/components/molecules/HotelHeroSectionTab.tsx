@@ -361,7 +361,7 @@ const HotelHeroSectionTab: React.FC = () => {
   const labelBaseClass = "block text-[12px] text-[#3D495C]";
 
   return (
-    <div className="px-4 sm:px-6 lg:px-10 pt-5 pb-5">
+    <div className="px-3 sm:px-5 md:px-6 pt-3 pb-3">
       <div className="hotelSearchFilterCard">
         <div className={`hotel-filter-grid-hero ${hasErrorRow1 || hasErrorRow2 ? "pb-4" : ""}`}>
           <div className="hero-country w-full min-w-0">
@@ -446,7 +446,7 @@ const HotelHeroSectionTab: React.FC = () => {
                   buttonIconSrc={true}
                   overridesClass={true}
                   showCalendarIconRight={false}
-                  inputClass="hotel-date-range-input w-full min-w-0 cursor-pointer border-none bg-transparent pl-9 pr-0.5 text-left text-[14px] leading-tight text-[#0F172A] outline-none sm:text-[14px]"
+                  inputClass="hotel-date-range-input w-full min-w-0 cursor-pointer border-none bg-transparent pl-9 pr-0.5 text-left text-[13px] leading-tight text-[#0F172A] outline-none sm:text-[13px]"
                   disablePastDates={true}
                   tooltip="Select check-in date"
                   error={checkInError || null}
@@ -461,7 +461,7 @@ const HotelHeroSectionTab: React.FC = () => {
                   buttonIconSrc={true}
                   overridesClass={true}
                   showCalendarIconRight={false}
-                  inputClass="hotel-date-range-input w-full min-w-0 cursor-pointer border-none bg-transparent pl-9 pr-1 text-left text-[14px] leading-tight text-[#0F172A] outline-none sm:text-[14px]"
+                  inputClass="hotel-date-range-input w-full min-w-0 cursor-pointer border-none bg-transparent pl-9 pr-1 text-left text-[13px] leading-tight text-[#0F172A] outline-none sm:text-[13px]"
                   disablePastDates={true}
                   minDate={checkInDate}
                   tooltip="Select check-out date"
@@ -509,7 +509,7 @@ const HotelHeroSectionTab: React.FC = () => {
           <div className="hero-search">
             <button
               type="button"
-              className="hotel-search-btn-responsive h-[47px] max-xl:w-full rounded-[100px] px-6 text-[14px] font-semibold text-white whitespace-nowrap sm:text-[16px] xl:px-8"
+              className="hotel-search-btn-responsive h-[38px] max-xl:w-full rounded-[100px] px-4 text-[12px] font-semibold text-white whitespace-nowrap sm:text-[12px] xl:px-6"
               style={{
                 background:
                   "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",

@@ -1,89 +1,67 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { Modal, message } from "antd";
 import { useAuth } from "../../features/auth/hooks/useAuth";
-import { Splide, SplideSlide } from "@splidejs/react-splide";
-import "@splidejs/react-splide/css";
-
-import ArrowLeftIcon from "../../assets/images/arrow-left-s-line 1.png";
-import ArrowRightIcon from "../../assets/images/arrow-right-s-line 2.png";
 
 import CardImage1 from "../../assets/images/card-images (1).jpg";
 import CardImage2 from "../../assets/images/card-images (2).jpg";
 import CardImage3 from "../../assets/images/card-images (3).jpg";
 import CardImage4 from "../../assets/images/card-images (4).jpg";
-import CardImage5 from "../../assets/images/card-images (1).jpg";
-
-import FlightIcon from "./Flight-icon-for-card.png";
-import HotelIcon from "./Hotel-icon-for -card.png";
 
 type Deal = {
   id: string;
-  title: string; // overlay title on image
+  name: string;
   image: string;
   price: number;
+  hotelNights: number;
 };
 
-const DEALS: Deal[] = [
+const ALL_DEALS: Deal[] = [
   {
     id: "1",
-    title: "MAKKAH\n& MEDINA",
+    name: "Switzerland",
     image: CardImage1,
-    price: 157,
+    price: 98,
+    hotelNights: 4,
   },
   {
     id: "2",
-    title: "MAKKAH\n& MEDINA",
+    name: "France",
     image: CardImage2,
     price: 157,
+    hotelNights: 2,
   },
   {
     id: "3",
-    title: "MAKKAH\n& MEDINA",
+    name: "England",
     image: CardImage3,
-    price: 157,
+    price: 132,
+    hotelNights: 2,
   },
   {
     id: "4",
-    title: "MAKKAH\n& MEDINA",
+    name: "Dubai",
     image: CardImage4,
-    price: 157,
-  },
-  {
-    id: "5",
-    title: "MAKKAH\n& MEDINA",
-    image: CardImage5,
-    price: 157,
+    price: 189,
+    hotelNights: 4,
   },
 ];
 
-const FILTER_TABS = ["Below $199", "Below $399", "Below $699", "Below $999"] as const;
-
-const CATEGORY_OPTIONS = [
-  "Umrah packages",
-  "Hajj packages",
-  "Flight deals",
-  "Hotel deals",
+const PRICE_FILTERS: { maxPrice: number; label: string }[] = [
+  { maxPrice: 199, label: "Below $199" },
+  { maxPrice: 399, label: "Below $399" },
+  { maxPrice: 699, label: "Below $699" },
+  { maxPrice: 999, label: "Below $999" },
 ];
-
-const MAIN_MAX_WIDTH = 1464;
-// Reduced card width so five cards can fit within the main max width with gaps
-const DEAL_CARD_WIDTH = 280;
-const DEAL_CARD_HEIGHT = 520;
-const DEAL_IMAGE_HEIGHT = 370;
-const DEAL_GAP = 20;
 
 const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
   const { isAuthenticated } = useAuth();
-
   const [successVisible, setSuccessVisible] = useState(false);
   const [loginVisible, setLoginVisible] = useState(false);
 
   const handleBookNow = () => {
-    if (isAuthenticated) {
-      setSuccessVisible(true);
-    } else {
-      setLoginVisible(true);
-    }
+    if (isAuthenticated) setSuccessVisible(true);
+    else setLoginVisible(true);
   };
 
   const handleLoginRedirect = () => {
@@ -92,85 +70,56 @@ const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
   };
 
   return (
-    <div
-      className="flex flex-col"
-      style={{ width: DEAL_CARD_WIDTH, height: DEAL_CARD_HEIGHT }}
-    >
-      {/* Image block (350x460, 16 radius) */}
+    <article className="relative h-[410px] w-full max-w-[348px] overflow-hidden rounded-[16px] shadow-[0_8px_24px_rgba(8,19,38,0.08)]">
+      <img
+        src={d.image}
+        alt={d.name}
+        className="absolute inset-0 h-full w-full object-cover"
+      />
+
       <div
-        className="relative overflow-hidden"
+        className="absolute inset-x-0 bottom-0 flex h-[162px] flex-col px-5 pb-4 pt-3 text-white"
         style={{
-          width: DEAL_CARD_WIDTH,
-          height: DEAL_IMAGE_HEIGHT,
-          borderRadius: 16,
+          borderBottomLeftRadius: 16,
+          borderBottomRightRadius: 16,
+          background: "#00000033",
+          WebkitBackdropFilter: "blur(10px)",
+          backdropFilter: "blur(10px)",
         }}
       >
-        <img
-          src={d.image}
-          alt="Deal"
-          className="h-full w-full object-cover"
-          style={{
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            borderBottomLeftRadius: 16,
-            borderBottomRightRadius: 16,
-          }}
-        />
-
-        {/* subtle readability fade */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-
-        {/* Overlay title */}
-        <div className="absolute bottom-6 left-6">
-          <p className="whitespace-pre-line text-[34px] leading-[38px] font-bold tracking-wide text-white drop-shadow-md">
-            {d.title}
-          </p>
-        </div>
-      </div>
-
-      {/* Bottom content */}
-      <div className="mt-3 flex items-start justify-between gap-3">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-[12px] text-[#3D495C]">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full">
-              <img src={FlightIcon} alt="Flights" className="h-5 w-8" />
-            </span>
-            <span>Round-trip flights</span>
+        <div className="flex min-h-0 flex-1 gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-lg font-bold leading-tight tracking-tight text-white sm:text-[19px]">
+              {d.name}
+            </h3>
+            <p className="mt-1.5 text-[13px] font-normal leading-snug text-white/95">
+              Round-trip flights
+            </p>
+            <p className="text-[13px] font-normal leading-snug text-white/95">
+              {d.hotelNights} nights hotels
+            </p>
           </div>
-          <div className="flex items-center gap-2 text-[12px] text-[#3D495C]">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full">
-              <img src={HotelIcon} alt="Hotels" className="h-5 w-8" />
-            </span>
-            <span>4 nights hotels</span>
+          <div className="shrink-0 text-right">
+            <p className="text-[11px] font-medium leading-tight text-white/90">
+              Starting from
+            </p>
+            <p className="mt-0.5 text-[22px] font-bold leading-none tracking-tight text-white">
+              ${d.price}
+            </p>
           </div>
         </div>
 
-        <div className="text-right">
-          <p className="text-[12px] text-[#3D495C] leading-tight">Starting from</p>
-          <p className="text-[22px] font-semibold text-[#2351A3] leading-tight">
-            ${d.price}
-          </p>
+        <div className="mt-2 flex justify-center">
+          <button
+            type="button"
+            onClick={handleBookNow}
+            className="inline-flex h-[47px] w-[160px] shrink-0 items-center justify-center gap-[10px] rounded-[8px] bg-[#FFFFFF] px-10 py-[14px] text-[14px] font-semibold leading-none text-[#2351A3] shadow-sm transition-colors hover:bg-[#F8FAFC] active:bg-[#EEF2F7]"
+          >
+            Book now
+          </button>
         </div>
       </div>
 
-      {/* Book now — Figma: 119×41, 8px radius, 7px 21px padding, right-aligned */}
-      <div className="mt-auto pt-4 flex justify-end">
-        <button
-          type="button"
-          onClick={handleBookNow}
-          className="text-white bg-[#2351A3] hover:bg-[#1E4690] active:bg-[#1A3C7E] transition-colors shadow-sm ring-1 ring-black/5 font-medium text-[13px]"
-          style={{
-            width: 119,
-            height: 41,
-            borderRadius: 8,
-            padding: "7px 21px",
-          }}
-        >
-          Book now
-        </button>
-      </div>
-
-      {/* Existing behavior kept (login/success) */}
       <Modal
         open={successVisible}
         onOk={() => setSuccessVisible(false)}
@@ -178,9 +127,7 @@ const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
         okText="Great!"
         title="Booking Successful"
       >
-        <p>
-          Your trip has been booked successfully!
-        </p>
+        <p>Your trip has been booked successfully!</p>
       </Modal>
 
       <Modal
@@ -193,243 +140,66 @@ const DealCard: React.FC<{ d: Deal }> = ({ d }) => {
       >
         <p>Please login to book your trip.</p>
       </Modal>
-    </div>
+    </article>
   );
 };
 
 const BestDealsSection: React.FC = () => {
-  const [active, setActive] = useState(0); // UI-only
-  const [category, setCategory] = useState("Umrah packages");
-  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [maxPrice, setMaxPrice] = useState(199);
 
-  const [splide, setSplide] = useState<{ go: (dir: string) => void } | null>(
-    null
+  const visibleDeals = useMemo(
+    () => ALL_DEALS.filter((d) => d.price <= maxPrice),
+    [maxPrice],
   );
-  const goPrev = useCallback(() => splide?.go("<"), [splide]);
-  const goNext = useCallback(() => splide?.go(">"), [splide]);
-
-  const deals = useMemo(() => DEALS, []);
-  const [visibleCount, setVisibleCount] = useState(4);
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  useEffect(() => {
-    const compute = () => {
-      const w = window.innerWidth;
-      // show 4 fully visible cards on wide screens so the 5th appears dimmed/peeked
-      if (w >= 1280) return 4;
-      if (w >= 1024) return 3;
-      if (w >= 768) return 2;
-      return 1;
-    };
-    const update = () => setVisibleCount(compute());
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
 
   return (
-    <div
-      className="mx-auto px-4 sm:px-6 lg:px-8 pt-10 sm:pt-14 md:pt-16 pb-12"
-      style={{ maxWidth: MAIN_MAX_WIDTH }}
-    >
-      {/* Heading aligned with cards — margin-left: 67px */}
-      <div className="ml-[67px] sm:ml-[67px]">
-        <p className="text-sm text-[#3D495C]">Best deals</p>
-        <h2 className="mt-2 text-3xl sm:text-5xl font-medium text-[#0A0C0F]">
+    <div className="mx-auto max-w-[1360px] px-4 pb-14 pt-12 sm:px-6 sm:pb-16 sm:pt-16 lg:px-8">
+      <div className="text-center sm:text-left">
+        <p className="text-sm font-medium text-[#3D495C]">Best deals</p>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight text-[#081326] sm:text-4xl md:text-[40px] md:leading-[1.15]">
           No one can beat these prices
         </h2>
       </div>
 
-      {/* Single line: price buttons + dropdown */}
-      <div className="relative z-50 mt-4 ml-[67px] sm:ml-[67px]">
-        <div className="flex flex-row flex-nowrap items-center justify-between gap-3 sm:gap-4">
-          {/* Price list container: 428×50, 16px radius, Figma colors — no vertical scrollbar */}
-          <div
-            className="flex shrink-0 items-center justify-center p-[5px] overflow-x-auto overflow-y-hidden"
-            style={{
-              width: "min(428px, 100%)",
-              height: 50,
-              borderRadius: 16,
-              background: "var(--white-100, #F2F2F3)",
-              border: "1.5px solid var(--black-200, #3D495C)",
-            }}
-          >
-            <div className="flex items-center gap-1 flex-nowrap">
-              {FILTER_TABS.map((label, i) => (
-                <button
-                  key={label}
-                  type="button"
-                  onClick={() => setActive(i)}
-                  className="text-[12px] font-medium whitespace-nowrap transition-colors rounded-[12px]"
-                  style={{
-                    width: 97,
-                    height: 40,
-                    background: active === i ? "var(--primary-300, #2351A3)" : "transparent",
-                    color: active === i ? "#FFFFFF" : "#3D495C",
-                  }}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Umrah packages dropdown — right-aligned, 178×50, custom UI */}
-          <div
-            className="relative shrink-0 mr-6 sm:mr-8"
-            style={{ width: 178, height: 50 }}
-          >
+      <div className="best-deals-filters-row mt-8 flex flex-wrap justify-center gap-2 sm:mt-10 sm:justify-start">
+        {PRICE_FILTERS.map((tab) => {
+          const active = maxPrice === tab.maxPrice;
+          return (
             <button
-              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-              className="w-full h-full bg-white rounded-[16px] flex items-center justify-between pl-4 pr-3 text-[13px] font-medium text-[#3D495C] outline-none cursor-pointer hover:bg-[#FAFAFA] transition-colors"
-              style={{ border: "1.5px solid var(--black-200, #3D495C)" }}
+              key={tab.label}
+              type="button"
+              onClick={() => setMaxPrice(tab.maxPrice)}
+              className={`h-10 min-w-[104px] rounded-full px-4 text-xs font-semibold transition-colors sm:h-11 sm:min-w-[118px] sm:px-5 sm:text-[13px] ${
+                active
+                  ? "bg-[#2351A3] text-white shadow-[0_6px_18px_rgba(2,6,23,0.18)]"
+                  : "border border-[#D1D9E6] bg-white text-[#081326] hover:border-[#2351A3]/40 hover:bg-[#F8FAFC]"
+              }`}
             >
-              <span>{category}</span>
-              <svg
-                className={`w-4 h-4 transition-transform flex-shrink-0 ${isCategoryOpen ? "rotate-180" : ""}`}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                viewBox="0 0 24 24"
-              >
-                <path d="M7 10l5 5 5-5" />
-              </svg>
+              {tab.label}
             </button>
-
-            {isCategoryOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-[#F2F2F3] rounded-2xl border border-[#F2F2F3] shadow-lg z-10 overflow-hidden">
-                {CATEGORY_OPTIONS.map((option, index) => (
-                  <div
-                    key={option}
-                    onClick={() => {
-                      setCategory(option);
-                      setIsCategoryOpen(false);
-                    }}
-                    className={`px-4 py-2.5 cursor-pointer flex items-center justify-between ${index !== CATEGORY_OPTIONS.length - 1
-                      ? "border-b border-[#E4E4E7]"
-                      : ""
-                      }`}
-                  >
-                    <span
-                      style={{ color: "#0A0C0F", fontSize: 13, fontWeight: 400 }}
-                    >
-                      {option}
-                    </span>
-                    {category === option && (
-                      <svg
-                        width="16"
-                        height="12"
-                        viewBox="0 0 16 12"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M15.4425 1.06754L5.44254 11.0675C5.38449 11.1256 5.31556 11.1717 5.23969 11.2032C5.16381 11.2347 5.08248 11.2508 5.00035 11.2508C4.91821 11.2508 4.83688 11.2347 4.76101 11.2032C4.68514 11.1717 4.61621 11.1256 4.55816 11.0675L0.18316 6.69254C0.0658846 6.57526 0 6.4162 0 6.25035C0 6.0845 0.0658846 5.92544 0.18316 5.80816C0.300435 5.69088 0.459495 5.625 0.625347 5.625C0.7912 5.625 0.95026 5.69088 1.06753 5.80816L5.00035 9.74175L14.5582 0.18316C14.6754 0.0658843 14.8345 -1.2357e-09 15.0003 0C15.1662 1.2357e-09 15.3253 0.0658843 15.4425 0.18316C15.5598 0.300435 15.6257 0.459495 15.6257 0.625347C15.6257 0.7912 15.5598 0.95026 15.4425 1.06754Z"
-                          fill="#2351A3"
-                        />
-                      </svg>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      {/* Slider (opacity + peek) */}
-      <div className="mt-6 flex items-center gap-4">
-        {/* Left arrow */}
-        <button
-          type="button"
-          aria-label="Previous deals"
-          onClick={goPrev}
-          className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-transparent text-[#A1A1AA] hover:text-[#71717A] transition-colors flex items-center justify-center"
-        >
-          <img src={ArrowLeftIcon} alt="Prev" className="custom-arrow" />
-        </button>
+      <div className="mt-10 grid grid-cols-1 justify-items-center gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:justify-items-start">
+        {visibleDeals.map((d) => (
+          <DealCard key={d.id} d={d} />
+        ))}
+      </div>
 
-        <div
-          className={[
-            "flex-1 min-w-0 relative",
-            "[&_.splide__track]:overflow-visible",
-          ].join(" ")}
-        >
-          {/* Figma: right-edge fade — linear-gradient(90deg, transparent 0%, white 67.71%) */}
-          <div
-            className="pointer-events-none absolute inset-y-0 right-0 z-10 w-48 sm:w-56"
-            style={{
-              background: "linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, #FFFFFF 67.71%)",
-            }}
-          />
-          <Splide
-            aria-label="Best deals"
-            options={{
-              type: "loop",
-              arrows: false,
-              pagination: false,
-              perMove: 1,
-              gap: `${DEAL_GAP}px`,
-              fixedWidth: `${DEAL_CARD_WIDTH}px`,
-              focus: 0,
-              padding: { right: `${DEAL_CARD_WIDTH / 2}px` },
-              trimSpace: false,
-              breakpoints: {
-                1440: {
-                  fixedWidth: `${DEAL_CARD_WIDTH}px`,
-                  padding: { right: `${DEAL_CARD_WIDTH / 2}px` },
-                },
-                1280: {
-                  fixedWidth: `${DEAL_CARD_WIDTH}px`,
-                  padding: { right: "100px" },
-                },
-                1024: {
-                  fixedWidth: `${DEAL_CARD_WIDTH}px`,
-                  padding: { right: "100px" },
-                },
-                768: {
-                  fixedWidth: "320px",
-                  padding: { right: "60px" },
-                },
-                480: {
-                  fixedWidth: "280px",
-                  padding: { right: "48px" },
-                  gap: "16px",
-                },
-              },
-            }}
-            onMounted={(instance: { go: (dir: string) => void; index?: number }) => {
-              setSplide(instance);
-              setActiveIndex(typeof instance.index === "number" ? instance.index : 0);
-            }}
-            onMoved={(_splide: unknown, newIndex: number) => setActiveIndex(newIndex)}
-          >
-            {deals.map((d, idx) => {
-              const isFullyVisible =
-                idx >= activeIndex && idx < activeIndex + visibleCount;
-              const opacity = isFullyVisible ? 1 : 0.25;
-              return (
-                <SplideSlide key={d.id}>
-                  <div style={{ opacity, transition: "opacity 220ms ease" }}>
-                    <DealCard d={d} />
-                  </div>
-                </SplideSlide>
-              );
-            })}
-          </Splide>
-        </div>
+      {visibleDeals.length === 0 && (
+        <p className="mt-8 text-center text-sm text-[#3D495C]">
+          No deals match this range. Try a higher price filter.
+        </p>
+      )}
 
-        {/* Right arrow (blue in design) */}
-        <button
-          type="button"
-          aria-label="Next deals"
-          onClick={goNext}
-          className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-transparent text-[#2351A3] hover:text-[#1E4690] transition-colors flex items-center justify-center"
+      <div className="mt-10 flex justify-center sm:mt-12">
+        <Link
+          to="/search_flight"
+          className="inline-flex h-12 w-full max-w-[520px] items-center justify-center rounded-[12px] bg-[#081326] text-sm font-semibold text-white transition-colors hover:bg-[#0f2744] sm:text-[15px]"
         >
-          <img src={ArrowRightIcon} alt="Next" className="custom-arrow" />
-        </button>
+          Explore more deals
+        </Link>
       </div>
     </div>
   );

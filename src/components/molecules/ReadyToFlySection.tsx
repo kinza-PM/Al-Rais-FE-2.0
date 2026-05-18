@@ -1,69 +1,51 @@
 import React from "react";
-
-const SECTION_HEIGHT = 361.68;
-const TEXT_AREA_MIN_HEIGHT = 350.68;
-const MAP_WIDTH = 420;
-const MAP_HEIGHT = 380;
-
-// Image from public folder so it always loads (no bundler path issues)
-const MAP_IMAGE_SRC = "/map1.png";
+import { Link } from "react-router-dom";
+import PlaneImage from "../../assets/images/Plane_Image.png";
 
 const ReadyToFlySection: React.FC = () => {
   return (
-    <section
-      className="relative w-full overflow-hidden"
-      style={{
-        minHeight: SECTION_HEIGHT,
-        background:
-          "linear-gradient(90deg, rgb(83, 131, 218) 0%, rgb(35, 81, 163) 50%, rgb(8, 19, 38) 100%)",
-      }}
-    >
+    <section className="relative z-0 w-full">
       <div
-        className="relative mx-auto flex min-h-full w-full max-w-[1920px] items-center"
-        style={{ minHeight: SECTION_HEIGHT }}
+        className="relative isolate overflow-x-clip pb-16 pt-24 sm:pb-20 sm:pt-28 md:pt-32"
+        style={{
+          background:
+            "linear-gradient(90deg, #5383DA 0%, #2351A3 42%, #0a1628 72%, #081326 100%)",
+        }}
       >
-        {/* Left: text area — min-height 350.68px */}
+        {/* Subtle dotted map layer */}
         <div
-          className="relative z-10 flex flex-1 flex-col justify-center py-12"
-          style={{ 
-            minHeight: TEXT_AREA_MIN_HEIGHT,
-            paddingLeft: "10rem", // 10rem left padding
-            paddingRight: "51rem", // This was previously lg:pr-[51rem]
+          className="pointer-events-none absolute inset-0 z-[1] opacity-[0.22]"
+          style={{
+            backgroundImage:
+              "radial-gradient(circle, rgba(255,255,255,0.5) 1px, transparent 1.05px)",
+            backgroundSize: "20px 20px",
           }}
-        >
-          <h2 className="text-left text-2xl font-bold leading-tight text-white sm:text-3xl md:text-4xl">
+          aria-hidden
+        />
+
+        {/* Plane: top-left, breaks upward past the gradient (Figma) */}
+        <img
+          src={PlaneImage}
+          alt=""
+          className="pointer-events-none absolute left-0 top-0 z-[15] w-[min(520px,70vw)] max-w-[640px] origin-top-left -translate-x-1 -translate-y-[22%] object-contain sm:w-[min(560px,58vw)] sm:-translate-y-[26%] md:left-2 md:w-[600px] md:-translate-y-[28%] lg:left-6 lg:w-[640px]"
+          style={{ mixBlendMode: "screen", marginBottom: "-9rem" }}
+          aria-hidden
+        />
+
+        <div className="relative z-20 mx-auto flex w-full max-w-[1360px] flex-col items-center px-4 pb-2 pt-6 text-center sm:px-6 lg:px-8">
+          <h2 className="max-w-[920px] text-balance text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl md:text-4xl lg:text-[40px] lg:leading-[1.15]">
             Ready to take a trip around the world with us?
           </h2>
-          <p className="mt-3 max-w-[420px] text-left text-sm font-normal leading-relaxed text-white/90 sm:text-base">
+          <p className="mt-4 max-w-[640px] text-pretty text-sm leading-relaxed text-white/88 sm:mt-5 sm:text-base">
             Book your travel with our reliable, transparent platform that is
             committed to customer satisfaction.
           </p>
-          {/* <button
-            type="button"
-            className="mt-6 rounded-md bg-white px-6 py-2.5 text-sm font-medium text-[#2351A3] shadow-sm transition-opacity hover:opacity-95"
+          <Link
+            to="/search_flight"
+            className="mt-8 inline-flex h-12 min-w-[160px] items-center justify-center rounded-[10px] bg-white px-10 text-[15px] font-semibold text-[#2351A3] shadow-[0_8px_24px_rgba(8,19,38,0.15)] transition-colors hover:bg-[#F4F7FB] active:bg-[#E8EDF5] sm:mt-10 sm:h-[52px] sm:rounded-[12px]"
           >
             Book a flight
-          </button> */}
-        </div>
-
-        {/* Right: map image — smaller size, right side, opacity 1 */}
-        <div
-          className="absolute right-4 bottom-0 top-0 z-[1] flex flex-shrink-0 items-center overflow-hidden sm:right-6 md:right-[7rem]"
-          style={{
-            width: MAP_WIDTH,
-            height: MAP_HEIGHT,
-          }}
-        >
-          <img
-            src={MAP_IMAGE_SRC}
-            alt=""
-            className="h-full w-full object-contain object-left"
-            style={{
-              width: MAP_WIDTH,
-              height: MAP_HEIGHT,
-              opacity: 1,
-            }}
-          />
+          </Link>
         </div>
       </div>
     </section>
