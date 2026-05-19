@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../assets/css/travel.css";
 
-import offerViewIcon from "../../assets/svgs/offer-view-icon.svg";
 import defaultAirlineLogo from "../../assets/images/emirates.png";
 
 import { Modal } from "antd";
@@ -37,6 +36,8 @@ import {
 import { offerHasAncillaryDetailsAvailable } from "../../utils/flightFilters";
 import { buildFlightSearchPriceOptions } from "../../utils/flightPriceOptionsUtils";
 import { useFlightFareRuleSearch } from "../../hooks/useFlightBooking";
+import { buildShareFlightListingSnapshot } from "../../utils/shareFlightListingContext";
+import ShareFlightListingModal from "../atoms/ShareFlightListingModal";
 
 type TravelRoundTripProps = {
   passData: any[];
@@ -55,6 +56,8 @@ type TravelRoundTripProps = {
 const getAirlineDisplayName = (item: any, seg?: any) =>
   getMarketingAirlineDisplayName(seg, item);
 
+const listingCardKey = (item: any) => String(item?.offerId ?? item?.id ?? "");
+
 const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   passData,
   passengersForRequest,
@@ -66,17 +69,16 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
   highDemandIndicators = [],
 }) => {
   const [isCompareModalOpen, setIsCompareModalOpen] = useState(false);
-  const [, setFilterDetail] = useState<any[]>([]);
-  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [activeTab, setActiveTab] = useState<"price" | "flight" | "compare">(
-    "price",
-  );
+  const [inlinePanel, setInlinePanel] = useState<{
+    key: string;
+    tab: "price" | "flight" | "compare";
+  } | null>(null);
   const [fareRulePriceByOfferId, setFareRulePriceByOfferId] = useState<
     Record<string, any>
   >({});
   const [fareRuleLoadingOfferId, setFareRuleLoadingOfferId] = useState<string | null>(null);
   const fareRuleInFlightRef = useRef<Record<string, boolean>>({});
+  const [shareListingItem, setShareListingItem] = useState<any | null>(null);
   const { mutateAsync: fetchFareRules } = useFlightFareRuleSearch();
 
   const navigate = useNavigate();
@@ -201,58 +203,24 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
     [highDemandLookup],
   );
 
-  const openDetailsModal = useCallback(
-    (item: any, tab: "price" | "flight" | "compare" = "price") => {
-      setActiveTab(tab);
-      setIsDetailsModalOpen(true);
-      // Open modal first, then mount heavy content/fetches.
-      window.setTimeout(() => {
-        setSelectedItem(item);
-        if (tab === "price") {
-          const filtered = (item?.id !== undefined && detailById[item.id]) || [];
-          setFilterDetail(filtered);
-          void hydrateFareRulesForItem(item);
-        } else if (tab === "compare") {
-          const compareList = pickRandomFlightsForCompare(
-            passData || [],
-            item?.id,
-            4,
-            mapOfferForCompareRoundTrip,
-          );
-          setFilterDetail(compareList);
-        }
-      }, 0);
+  const onListingTabClick = useCallback(
+    (item: any, tab: "price" | "flight" | "compare") => {
+      const key = listingCardKey(item);
+      setInlinePanel((prev) => {
+        if (prev?.key === key && prev.tab === tab) return null;
+        return { key, tab };
+      });
     },
-    [detailById, passData, hydrateFareRulesForItem],
+    [],
   );
 
-  const handleTabChange = useCallback(
-    (tab: "price" | "flight" | "compare") => {
-      if (!selectedItem) return;
-
-      setActiveTab(tab);
-
-      if (tab === "price") {
-        const filtered =
-          (selectedItem?.id !== undefined && detailById[selectedItem.id]) || [];
-        setFilterDetail(filtered);
-        window.setTimeout(() => {
-          void hydrateFareRulesForItem(selectedItem);
-        }, 0);
-      }
-
-      if (tab === "compare") {
-        const compareList = pickRandomFlightsForCompare(
-          passData || [],
-          selectedItem?.id,
-          4,
-          mapOfferForCompareRoundTrip,
-        );
-        setFilterDetail(compareList);
-      }
-    },
-    [selectedItem, detailById, passData, hydrateFareRulesForItem],
-  );
+  useEffect(() => {
+    if (!inlinePanel || inlinePanel.tab !== "price") return;
+    const item = (passData || []).find(
+      (p) => listingCardKey(p) === inlinePanel.key,
+    );
+    if (item) void hydrateFareRulesForItem(item);
+  }, [inlinePanel, passData, hydrateFareRulesForItem]);
 
   const handleCancelCompare = () => {
     setIsCompareModalOpen(false);
@@ -350,11 +318,16 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
           const flightNo = itemForTiming?.flight_detail?.flight_number;
           const flightClass = itemForTiming?.flight_detail?.flight_class;
+          const flightClassMeta = (() => {
+            const c = String(flightClass ?? "").trim();
+            if (!c) return "";
+            return /\bclass\b/i.test(c) ? c : `${c} class`;
+          })();
           const airlineDisplayName = getAirlineDisplayName(d, currentSeg);
           const subtitle =
-            flightNo && flightClass
-              ? `${flightNo} - ${flightClass}`
-              : [flightNo, flightClass].filter(Boolean).join(" • ") ||
+            flightNo && flightClassMeta
+              ? `${flightNo} - ${flightClassMeta}`
+              : [flightNo, flightClassMeta].filter(Boolean).join(" • ") ||
                 airlineDisplayName;
 
           const listingAirlineLogo =
@@ -384,30 +357,44 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     <h5>{airlineDisplayName}</h5>
                     <p>{subtitle}</p>
                   </div>
-
-                  {visible.length ? (
-                    <div className="featureIcons ow-card-feature-icons">
-                      {visible.slice(0, 6).map((f) => (
-                        <div
-                          className="featureIconTooltipWrap"
-                          key={f.key}
-                          style={{ position: "relative" }}
-                        >
-                          <img src={f.icon} alt={f.key} />
-                          <span className="tooltip">{f.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : null}
                 </div>
               </div>
 
               <div className="stopsOnLarge ow-card-timing-col">
-                <FlightTimingAndStops passSome={itemForTiming} />
+                <FlightTimingAndStops
+                  passSome={itemForTiming}
+                  listingStyle
+                />
               </div>
 
+              {visible.length ? (
+                <div
+                  className="featureIcons ow-card-feature-icons ow-card-feature-icons--listing"
+                  aria-label="Flight amenities"
+                >
+                  {visible.slice(0, 6).map((f) => (
+                    <div
+                      className="featureIconTooltipWrap"
+                      key={f.key}
+                      style={{ position: "relative" }}
+                    >
+                      <img src={f.icon} alt={f.key} />
+                      <span className="tooltip">{f.label}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div
+                  className="ow-card-feature-icons ow-card-feature-icons--listing ow-card-feature-icons--empty"
+                  aria-hidden
+                />
+              )}
+
               <div className="stopsOnSmall ow-card-timing-mobile">
-                <FlightTimingAndStops passSome={itemForTiming} />
+                <FlightTimingAndStops
+                  passSome={itemForTiming}
+                  listingStyle
+                />
               </div>
             </div>
           );
@@ -415,6 +402,31 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
 
         const outbound = item?.outbound ?? null;
         const inbound = item?.inbound ?? null;
+
+        const outboundSegsRt =
+          item?.outbound?.raw?.journey?.[0]?.flightSegments ??
+          item?.raw?.journey?.[0]?.flightSegments ??
+          [];
+        const outboundSegRt = Array.isArray(outboundSegsRt)
+          ? outboundSegsRt[0]
+          : (outboundSegsRt?.[0] ?? outboundSegsRt ?? null);
+        const outboundAirlineRt = outboundSegRt?.marketingAirline;
+
+        const inboundSegsRt =
+          item?.inbound?.raw?.journey?.[0]?.flightSegments ??
+          item?.raw?.journey?.[1]?.flightSegments ??
+          [];
+        const inboundSegRt = Array.isArray(inboundSegsRt)
+          ? inboundSegsRt[0]
+          : (inboundSegsRt?.[0] ?? inboundSegsRt ?? null);
+        const inboundAirlineRt = inboundSegRt?.marketingAirline;
+
+        const roundTripHighDemand = getHighDemandInfo(
+          outboundAirlineRt,
+          inboundAirlineRt,
+        );
+
+        const listingKey = listingCardKey(item);
 
         return (
           <div
@@ -430,94 +442,168 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                   {inbound ? renderRoundTopCard(inbound, item) : null}
                 </div>
 
-                <div className="StartingPrice ow-card-price-block">
-                  <div className="ow-card-price-actions-row">
-                    <div className="ow-card-price-copy">
-                      <p className="ow-card-price-label">Starting from</p>
-                      <h5>
-                        {formatListingStartingFare(
-                          item?.raw?.fare?.currencyCode ?? "$",
-                          item.rawTotalStartingFare,
-                        )}
-                      </h5>
-                    </div>
-
-                    <div className="ow-card-cta-group">
-                      <button
-                        type="button"
-                        className="ow-card-btn ow-card-btn-outline"
-                        onClick={() => openDetailsModal(item, "price")}
-                      >
-                        View Details
-                      </button>
-
-                      <button
-                        type="button"
-                        className="ow-card-btn ow-card-btn-primary ow-card-book-now--inrow"
-                        onClick={() =>
-                          handleOfferSelection(item?.offerId, item)
-                        }
-                      >
-                        Book Now
-                      </button>
-                    </div>
+                <div className="StartingPrice ow-card-price-block ow-card-price-block--top">
+                  <div className="ow-card-price-copy">
+                    <p className="ow-card-price-label">Starting from</p>
+                    <h5>
+                      {formatListingStartingFare(
+                        item?.raw?.fare?.currencyCode ?? "$",
+                        item.rawTotalStartingFare,
+                      )}
+                    </h5>
                   </div>
                 </div>
               </div>
 
-              <div className="selectPriceBtn ow-card-badge-row">
-                {item.offerViewCount > 0 ? (
-                  <div
-                    className="inline-flex items-center justify-center whitespace-nowrap bg-[#A7C0EC] px-3 py-1.5 text-[12px] font-medium uppercase text-[#1A3C7A]"
-                    style={{ borderRadius: "6px" }}
+              <div className="ow-card-listing-divider" aria-hidden />
+
+              <div className="ow-card-bottom-bar">
+                <nav
+                  className="ow-card-tab-links"
+                  aria-label="Flight listing actions"
+                >
+                  <button
+                    type="button"
+                    className={`ow-card-tab-link${
+                      inlinePanel?.key === listingKey &&
+                      inlinePanel.tab === "price"
+                        ? " ow-card-tab-link--active"
+                        : ""
+                    }`}
+                    onClick={() => onListingTabClick(item, "price")}
                   >
-                    {item.offerViewCount} PEOPLE VIEWING
-                  </div>
-                ) : null}
-
-                {offerHasAncillaryDetailsAvailable(item) ? (
-                  <div
-                    className="inline-flex items-center justify-center whitespace-nowrap bg-[#D1E7DD] px-3 py-1.5 text-[12px] font-medium uppercase text-[#0F5132]"
-                    style={{ borderRadius: "6px" }}
+                    Price options
+                  </button>
+                  <button
+                    type="button"
+                    className={`ow-card-tab-link${
+                      inlinePanel?.key === listingKey &&
+                      inlinePanel.tab === "flight"
+                        ? " ow-card-tab-link--active"
+                        : ""
+                    }`}
+                    onClick={() => onListingTabClick(item, "flight")}
                   >
-                    Add-ons available
+                    Flight details
+                  </button>
+                  <button
+                    type="button"
+                    className={`ow-card-tab-link${
+                      inlinePanel?.key === listingKey &&
+                      inlinePanel.tab === "compare"
+                        ? " ow-card-tab-link--active"
+                        : ""
+                    }`}
+                    onClick={() => onListingTabClick(item, "compare")}
+                  >
+                    Compare
+                  </button>
+                  <span className="ow-card-tab-sep" aria-hidden />
+                  <button
+                    type="button"
+                    className="ow-card-tab-link ow-card-tab-link--share"
+                    onClick={() => setShareListingItem(item)}
+                  >
+                    Share
+                  </button>
+                </nav>
+
+                <div className="ow-card-bottom-right">
+                  <div className="ow-card-bottom-badges">
+                    {item.offerViewCount > 0 ? (
+                      <div className="ow-card-figma-badge ow-card-figma-badge--viewing">
+                        {item.offerViewCount} viewing
+                      </div>
+                    ) : null}
+
+                    {offerHasAncillaryDetailsAvailable(item) ? (
+                      <div className="ow-card-figma-badge ow-card-figma-badge--addons">
+                        Add-ons available
+                      </div>
+                    ) : null}
+
+                    {roundTripHighDemand ? (
+                      <div className="ow-card-figma-badge ow-card-figma-badge--high-demand">
+                        <svg
+                          className="ow-card-high-demand-icon"
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          aria-hidden
+                        >
+                          <path
+                            d="M4 14 L9 9 L14 12 L20 6"
+                            stroke="currentColor"
+                            strokeWidth="1.75"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                          <path
+                            d="M16 6h4v4"
+                            stroke="currentColor"
+                            strokeWidth="1.75"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        High-demand
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
 
-                {(() => {
-                  const outboundSegs =
-                    item?.outbound?.raw?.journey?.[0]?.flightSegments ??
-                    item?.raw?.journey?.[0]?.flightSegments ??
-                    [];
-                  const outboundSeg = Array.isArray(outboundSegs)
-                    ? outboundSegs[0]
-                    : (outboundSegs?.[0] ?? outboundSegs ?? null);
-                  const outboundAirline = outboundSeg?.marketingAirline;
-
-                  const inboundSegs =
-                    item?.inbound?.raw?.journey?.[0]?.flightSegments ??
-                    item?.raw?.journey?.[1]?.flightSegments ??
-                    [];
-                  const inboundSeg = Array.isArray(inboundSegs)
-                    ? inboundSegs[0]
-                    : (inboundSegs?.[0] ?? inboundSegs ?? null);
-                  const inboundAirline = inboundSeg?.marketingAirline;
-
-                  const highDemandInfo = getHighDemandInfo(
-                    outboundAirline,
-                    inboundAirline,
-                  );
-
-                  return highDemandInfo ? (
-                    <div
-                      className="inline-flex items-center justify-center whitespace-nowrap bg-[#FFB8C4] px-3 py-1.5 text-[12px] font-medium uppercase text-[#B80020]"
-                      style={{ borderRadius: "6px" }}
-                    >
-                      HIGH DEMAND
-                    </div>
-                  ) : null;
-                })()}
+                  <button
+                    type="button"
+                    className="ow-card-btn ow-card-btn-primary ow-card-select-price ow-card-select-price--desktop"
+                    onClick={() =>
+                      handleOfferSelection(item?.offerId, item)
+                    }
+                  >
+                    Select price
+                  </button>
+                </div>
               </div>
+
+              {inlinePanel?.key === listingKey ? (
+                <div
+                  className="ow-card-inline-expand"
+                  id={`flight-listing-expand-rt-${listingKey}`}
+                >
+                  <Loader
+                    show={
+                      inlinePanel.tab === "price" &&
+                      fareRuleLoadingOfferId ===
+                        String(item?.offerId ?? "").trim()
+                    }
+                    label="Loading fare rules..."
+                  />
+                  <React.Suspense
+                    fallback={
+                      <div className="py-4 text-center text-sm text-[#64748B]">
+                        Loading…
+                      </div>
+                    }
+                  >
+                    {inlinePanel.tab === "price" ? (
+                      <PricingDetailCard
+                        passSome={detailById[item.id] || []}
+                      />
+                    ) : inlinePanel.tab === "flight" ? (
+                      <FlightDetailsCard details={item} listingLayout />
+                    ) : (
+                      <CompareCard
+                        currentFlight={mapOfferForCompareRoundTrip(item)}
+                        availableFlights={pickRandomFlightsForCompare(
+                          passData || [],
+                          item.id,
+                          4,
+                          mapOfferForCompareRoundTrip,
+                        )}
+                      />
+                    )}
+                  </React.Suspense>
+                </div>
+              ) : null}
 
               <div className="ow-card-mobile-book-now">
                 <button
@@ -527,7 +613,7 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
                     handleOfferSelection(item?.offerId, item)
                   }
                 >
-                  Book Now
+                  Select price
                 </button>
               </div>
             </div>
@@ -538,142 +624,6 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
       <div ref={loadMoreRef} className="min-h-[1px]">
         {renderLoader?.({ isLoadingMore, hasMore })}
       </div>
-
-      <Modal
-        open={isDetailsModalOpen}
-        onCancel={() => {
-          setIsDetailsModalOpen(false);
-          setSelectedItem(null);
-          setActiveTab("price");
-          setFilterDetail([]);
-        }}
-        footer={null}
-        centered
-        width="100%"
-        destroyOnClose
-        className="flight-details-popup"
-        styles={{
-          content: {
-            maxWidth: 1180,
-            width: "100%",
-            margin: "0 auto",
-          },
-          body: {
-            maxHeight: "92vh",
-            overflowY: "auto",
-            overflowX: "hidden",
-            padding: "16px 24px 20px",
-            minWidth: 0,
-          },
-        }}
-        title={
-          <div style={{ textAlign: "center", paddingTop: 4 }}>
-            <h2 style={{ margin: 0, fontSize: "24px", fontWeight: 700 }}>
-              Flight details
-            </h2>
-            <p style={{ margin: "6px 0 0", color: "#64748B" }}>
-              Review price options, flight details and compare flights
-            </p>
-          </div>
-        }
-      >
-        <Loader
-          show={
-            activeTab === "price" &&
-            fareRuleLoadingOfferId === String(selectedItem?.offerId ?? "").trim()
-          }
-          label="Loading fare rules..."
-        />
-        {selectedItem && (
-          <>
-            <div className="flight-details-modal-toolbar">
-              <div
-                className="flight-details-modal-toolbar__tabs"
-                style={{ display: "flex", gap: "8px" }}
-              >
-                {[
-                  { key: "price", label: "Price options" },
-                  { key: "flight", label: "Flight details" },
-                  { key: "compare", label: "Compare" },
-                ].map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() =>
-                      handleTabChange(tab.key as "price" | "flight" | "compare")
-                    }
-                    style={{
-                      height: "38px",
-                      padding: "0 16px",
-                      borderRadius: "14px 14px 0 0",
-                      border: "none",
-                      cursor: "pointer",
-                      background: activeTab === tab.key ? "#2351A3" : "#F1F5F9",
-                      color: activeTab === tab.key ? "#FFFFFF" : "#64748B",
-                      fontWeight: 500,
-                    }}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              <div
-                className="flight-details-modal-toolbar__actions"
-                style={{ display: "flex", alignItems: "center", gap: "10px" }}
-              >
-                {selectedItem.offerViewCount > 0 && (
-                  <div className="inline-flex items-center justify-center text-xs text-[#1A3C7A] border border-[#1A3C7A] rounded-full px-3 py-2 bg-[#A7C0EC] whitespace-nowrap">
-                    <img src={offerViewIcon} alt="icon" className="mr-1" />
-                    {selectedItem.offerViewCount} People viewing this
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  className="flight-details-book-now-btn flight-details-book-now-desktop"
-                  onClick={() =>
-                    handleOfferSelection(selectedItem?.offerId, selectedItem)
-                  }
-                >
-                  Book Now
-                </button>
-              </div>
-            </div>
-
-            <React.Suspense fallback={<div>Loading…</div>}>
-              {activeTab === "price" ? (
-                <>
-                  <PricingDetailCard passSome={detailById[selectedItem.id] || []} />
-                </>
-              ) : activeTab === "flight" ? (
-                <FlightDetailsCard details={selectedItem} />
-              ) : (
-                <CompareCard
-                  currentFlight={mapOfferForCompareRoundTrip(selectedItem)}
-                  availableFlights={pickRandomFlightsForCompare(
-                    passData || [],
-                    selectedItem.id,
-                    4,
-                    mapOfferForCompareRoundTrip,
-                  )}
-                />
-              )}
-            </React.Suspense>
-
-            <div className="flight-details-book-now-mobile">
-              <button
-                type="button"
-                className="flight-details-book-now-btn"
-                onClick={() =>
-                  handleOfferSelection(selectedItem?.offerId, selectedItem)
-                }
-              >
-                Book Now
-              </button>
-            </div>
-          </>
-        )}
-      </Modal>
 
       <Modal
         title={
@@ -710,6 +660,13 @@ const TravelRoundTrip: React.FC<TravelRoundTripProps> = ({
           </div>
         ))}
       </Modal>
+
+      {shareListingItem ? (
+        <ShareFlightListingModal
+          closeModal={() => setShareListingItem(null)}
+          snapshot={buildShareFlightListingSnapshot(shareListingItem)}
+        />
+      ) : null}
 
       {/* Login required — shown when an unauthenticated user clicks Book Now.
           Closing without logging in cancels the booking action. */}

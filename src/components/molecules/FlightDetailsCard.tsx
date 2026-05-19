@@ -47,12 +47,15 @@ type FlightDetailsCardProps = {
   showMap?: boolean;
   /** Remove the bordered white row wrapper (page-managed container). */
   borderless?: boolean;
+  /** Inline listing expand: Figma layout (section title, map column). */
+  listingLayout?: boolean;
 };
 
 const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({
   details,
   showMap = true,
   borderless = false,
+  listingLayout = false,
 }) => {
   const [mapLocations, setMapLocations] = React.useState<any[]>([]);
   const [baggageModalOpen, setBaggageModalOpen] = React.useState(false);
@@ -280,18 +283,32 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({
           <div
             key={row.key ?? idx}
             style={{
-              border: borderless ? "none" : "1px solid #E5E7EB",
-              borderRadius: borderless ? 0 : "20px",
+              border: borderless
+                ? "none"
+                : listingLayout
+                  ? "1px solid #E4E4E7"
+                  : "1px solid #E5E7EB",
+              borderRadius: borderless ? 0 : listingLayout ? "16px" : "20px",
               padding: borderless ? 0 : "18px",
               background: borderless ? "transparent" : "#FFFFFF",
             }}
           >
-            <div className="flight-details-modal-grid">
-              <Flex
-                justify="start"
-                gap={16}
-                style={{ width: "100%", minWidth: 0 }}
-              >
+            <div
+              className={`flight-details-modal-grid${
+                listingLayout ? " flight-details-modal-grid--figma-listing" : ""
+              }`}
+            >
+              <div>
+                {listingLayout ? (
+                  <div className="fd-listing-leg-heading">
+                    {idx === 0 ? "Departure flight" : "Return flight"}
+                  </div>
+                ) : null}
+                <Flex
+                  justify="start"
+                  gap={16}
+                  style={{ width: "100%", minWidth: 0 }}
+                >
                 <Flex vertical justify="space-between" style={{ minWidth: 120 }}>
                   <div>
                     <CustomTypography className="date_time_center_fd" variant="title">
@@ -499,7 +516,9 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({
                           className="common_typography_fd"
                           variant="paragraph"
                         >
-                          Economy
+                          {row.flight_class
+                            ? String(row.flight_class)
+                            : "Economy"}
                         </CustomTypography>
                       </Flex>
                     </Flex>
@@ -696,15 +715,19 @@ const FlightDetailsCard: React.FC<FlightDetailsCardProps> = ({
                   </div>
                 </Flex>
               </Flex>
+              </div>
 
               {showMap ? (
                 <div
+                  className={listingLayout ? "fd-listing-expand-map" : undefined}
                   style={{
                     width: "100%",
                     height: "220px",
                     borderRadius: "16px",
                     overflow: "hidden",
-                    border: "1px solid #E5E7EB",
+                    border: listingLayout
+                      ? "none"
+                      : "1px solid #E5E7EB",
                   }}
                 >
                   {mapLocations[idx] ? (

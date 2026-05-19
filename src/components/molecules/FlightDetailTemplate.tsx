@@ -37,8 +37,10 @@ import type {
   PassengerSchema,
   CabinClassOption,
   TripType,
+  FlightTypeOption,
 } from "../../features/flights/types";
 import TravelRoutePicker from "../atoms/TravelRoutePicker";
+import TravelSearchPageHeader from "./TravelSearchPageHeader";
 import Loader from "../atoms/Loader";
 import {
   useFlightStore,
@@ -868,6 +870,7 @@ const FlightDetailTemplate: React.FC = () => {
     baggage,
     airline,
     loading,
+    loadingMap,
   } = useMasterListings({
     include: [
       "flightTypes",
@@ -1402,12 +1405,6 @@ const FlightDetailTemplate: React.FC = () => {
       setToCode(""); // invalid combo ko turant clear
     }
   }, [fromCode, toCode]);
-
-  // memo’d options
-  const segOptions = useMemo(
-    () => (flightTypes || []).map((ft) => ({ label: ft.label, value: ft.key })),
-    [flightTypes],
-  );
 
   const cabinSelectOptions = useMemo(
     () => [
@@ -1944,103 +1941,6 @@ const FlightDetailTemplate: React.FC = () => {
         variant="warning"
         containerClassName="top-6 z-40"
       />
-      <div className="topHeaderSetting">
-        <div className="topHeaderSettingInner" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-          {/* <div className="topHeaderTabs">
-            <Tabs
-              defaultActiveKey="1"
-              className="customIndicate"
-              items={items}
-              onChange={onChange}
-              tabBarStyle={{ marginBottom: "16px !important" }}
-            />
-          </div> */}
-          <div className="countrySelectAndGetHelp py-pxTopHeader" style={{ display: 'none' }}>
-            {/* <div>
-              <Select
-                className="countrySelectBox"
-                defaultValue="US"
-                style={{
-                  width: 100,
-                  borderRadius: 12,
-                  height: 44,
-                }}
-                onChange={handleChange}
-                options={[
-                  {
-                    value: "US",
-                    label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagUsa}
-                          alt="US Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
-                        US
-                      </span>
-                    ),
-                  },
-
-                  {
-                    value: "UAE",
-                    label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagUae}
-                          alt="UAE Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
-                        UAE
-                      </span>
-                    ),
-                  },
-                  {
-                    value: "Ind",
-                    label: (
-                      <span
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "5px",
-                          fontWeight: 500,
-                        }}
-                      >
-                        <img
-                          src={FlagInd}
-                          alt="IND Flag"
-                          style={{ width: 28, height: 28, marginRight: 0 }}
-                        />
-                        IND
-                      </span>
-                    ),
-                  },
-                ]}
-              />
-            </div>
-            <div className="smalSeparater">
-              <img src={colSeparater} alt="" style={{ width: 1, height: 30 }} />
-            </div>
-
-            <div className="getHelpLink">
-              <a href="#">Get help</a>
-            </div> */}
-          </div>
-        </div>
-      </div>
 
       <div
         ref={flightPageWrapRef}
@@ -2050,32 +1950,17 @@ const FlightDetailTemplate: React.FC = () => {
           ref={flightSearchFormRef}
           className={`bottomHeaderSetting flight-search-form-sticky${trip === "multicity" ? " flight-search-form--multicity" : ""}`}
         >
+          <TravelSearchPageHeader
+            activeScope="flights"
+            trip={trip}
+            onTripChange={setTrip}
+            flightTypeTabs={(flightTypes ?? []) as FlightTypeOption[]}
+            tripTypesLoading={!!loadingMap?.flightTypes}
+          />
           {trip === "multicity" ? (
             <>
-              {/* First Row: Trip and Passengers */}
               <div className="flight-search-multicity-toprow">
-                {/* Spans same grid area as From + Swap + To; Departure/Cabin columns stay empty */}
-                <div className="flight-search-multicity-toprow-route">
-                  <Flex
-                    vertical
-                    className="flight-search-multicity-trip-cell min-w-0 w-full"
-                  >
-                    <label className="header-labels-common">Trip</label>
-                    <SearchableDropdown
-                      options={segOptions.map((option) => ({
-                        id: option.value,
-                        value: option.value,
-                        label: option.label,
-                        disabled: false,
-                      }))}
-                      value={trip}
-                      onChange={(value) => setTrip(value as TripType)}
-                      placeholder="Select trip type"
-                      widthClass="w-full"
-                      searchPlaceholder="Search trip type..."
-                    />
-                  </Flex>
-
+                <div className="flight-search-multicity-toprow-route flight-search-multicity-toprow-route--travellers-only">
                   <Flex
                     vertical
                     className="flight-search-multicity-travellers-cell min-w-0 w-full"
@@ -2309,44 +2194,7 @@ const FlightDetailTemplate: React.FC = () => {
             </>
           ) : (
             <div className="flight-search-detail-inputs">
-              <div className="flight-search-field flight-search-field--trip">
-                <label className="header-labels-common">Trip</label>
-                <SearchableDropdown
-                  options={segOptions.map((option) => ({
-                    id: option.value,
-                    value: option.value,
-                    label: option.label,
-                    disabled: false,
-                  }))}
-                  value={trip}
-                  onChange={(value) => setTrip(value as TripType)}
-                  placeholder="Select trip type"
-                  widthClass="w-full"
-                  searchPlaceholder="Search trip type..."
-                />
-              </div>
-
-              <div className="flight-search-field flight-search-field--cabin">
-                <label className="header-labels-common">Cabin Class</label>
-                <SearchableDropdown
-                  options={cabinSelectOptions.map((option) => ({
-                    id: option.value || "placeholder",
-                    value: option.value,
-                    label: option.label,
-                    disabled: "disabled" in option ? option.disabled : false,
-                  }))}
-                  value={selectedCabinClassId || ""}
-                  onChange={(value) => setSelectedCabinClassId(value)}
-                  placeholder={
-                    isInitialLoading ? "Loading…" : "Select cabin class"
-                  }
-                  disabled={isInitialLoading}
-                  widthClass="w-full"
-                  searchPlaceholder="Search cabin classes..."
-                  tooltip="Select cabin class"
-                />
-              </div>
-
+              {/* DOM order = Figma left-to-right: From | Swap | To | dates | Passengers | Cabin | Search */}
               <div className="flight-search-field flight-search-field--route">
                 <TravelRoutePicker
                   options={[]}
@@ -2381,6 +2229,7 @@ const FlightDetailTemplate: React.FC = () => {
                   placeholders={{ from: "Please select", to: "Please select" }}
                   disableSameSelection
                   widthClass="fromToSelectWidth"
+                  swapGutter={false}
                   fromError={
                     !loading &&
                     fromCountriesForPicker.length === 0
@@ -2402,9 +2251,42 @@ const FlightDetailTemplate: React.FC = () => {
                 />
               </div>
 
+              <div className="flight-search-field flight-search-field--depart">
+                <label className="header-labels-common">Departure date</label>
+                <TailiwindCustomDatePicker
+                  value={departDate ? new Date(departDate) : null}
+                  onChange={(value) => {
+                    handleDate(value, "depart");
+                  }}
+                  placeholder="Select departure date"
+                  tooltip="Select departure date"
+                  buttonIconSrc={true}
+                  showCalendarIconRight={true}
+                  disablePastDates={true}
+                />
+              </div>
+
+              {trip === "roundtrip" && (
+                <div className="flight-search-field flight-search-field--return">
+                  <label className="header-labels-common">Return date</label>
+                  <TailiwindCustomDatePicker
+                    value={returnDate ? new Date(returnDate) : null}
+                    onChange={(value) => {
+                      handleDate(value, "return");
+                    }}
+                    placeholder="Select return date"
+                    tooltip="Select return date"
+                    buttonIconSrc={true}
+                    showCalendarIconRight={true}
+                    disablePastDates={true}
+                    minDate={departDate ? new Date(departDate) : null}
+                  />
+                </div>
+              )}
+
               <div className="flight-search-field flight-search-field--travellers">
                 <label className="header-labels-common flex items-center gap-2">
-                  Travellers
+                  Passengers
                   <span className="relative inline-flex group/info">
                     <img
                       src={Info}
@@ -2421,7 +2303,7 @@ const FlightDetailTemplate: React.FC = () => {
                     </span>
                   </span>
                 </label>
-                <div style={{ minWidth: "100%", height: 44 }}>
+                <div className="min-w-full min-h-0">
                   <PassengerCounterDropdown
                     value={paxCounts}
                     schema={passengers as PassengerSchema}
@@ -2433,43 +2315,33 @@ const FlightDetailTemplate: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flight-search-field flight-search-field--depart">
-                <label className="header-labels-common ">Departure Date</label>
-                <TailiwindCustomDatePicker
-                  value={departDate ? new Date(departDate) : null}
-                  onChange={(value) => {
-                    handleDate(value, "depart");
-                  }}
-                  placeholder="Select departure date"
-                  tooltip="Select departure date"
-                  buttonIconSrc={true}
-                  disablePastDates={true}
+              <div className="flight-search-field flight-search-field--cabin">
+                <label className="header-labels-common">Cabin class</label>
+                <SearchableDropdown
+                  options={cabinSelectOptions.map((option) => ({
+                    id: option.value || "placeholder",
+                    value: option.value,
+                    label: option.label,
+                    disabled: "disabled" in option ? option.disabled : false,
+                  }))}
+                  value={selectedCabinClassId || ""}
+                  onChange={(value) => setSelectedCabinClassId(value)}
+                  placeholder={
+                    isInitialLoading ? "Loading…" : "Select cabin class"
+                  }
+                  disabled={isInitialLoading}
+                  widthClass="w-full"
+                  searchPlaceholder="Search cabin classes..."
+                  tooltip="Select cabin class"
                 />
               </div>
 
-              {trip === "roundtrip" && (
-                <div className="flight-search-field flight-search-field--return">
-                  <label className="header-labels-common ">Return Date</label>
-                  <TailiwindCustomDatePicker
-                    value={returnDate ? new Date(returnDate) : null}
-                    onChange={(value) => {
-                      handleDate(value, "return");
-                    }}
-                    placeholder="Select return date"
-                    tooltip="Select return date"
-                    buttonIconSrc={true}
-                    disablePastDates={true}
-                    minDate={departDate ? new Date(departDate) : null}
-                  />
-                </div>
-              )}
-
               <div className="flight-search-field flight-search-field--submit">
                 <CustomButton
-                  className="searchFilterBtn"
+                  className="searchFilterBtn flight-search-submit-btn"
                   onClick={() => handleSearch()}
                 >
-                  {isPending ? "Searching..." : "Search"}
+                  {isPending ? "Searching..." : "Search flights"}
                 </CustomButton>
               </div>
             </div>
@@ -2627,7 +2499,8 @@ const FlightDetailTemplate: React.FC = () => {
 
         <div className="contentWrapFlex flight-search-content-row">
           {screens.lg && (
-            <div className="flightDetailFilter">
+            <div className="flightDetailFilter flightDetailFilterOuter">
+              <div className="flightDetailFilterInnerSticky">
               <FlightSearchFilter
                 loading={isInitialLoading}
                 headerContent={headerContent}
@@ -2761,6 +2634,7 @@ const FlightDetailTemplate: React.FC = () => {
                   );
                 }}
               />
+              </div>
             </div>
           )}
           <div className="flightDetailMainContent" style={{ width: "100%" }}>

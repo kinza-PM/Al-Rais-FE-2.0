@@ -24,6 +24,7 @@ import { FilterOutlined } from "@ant-design/icons";
 import HotelSearchListView from "./HotelSearchListView";
 import HotelSearchGridView from "./HotelSearchGridView";
 import HotelSearchMapView from "./HotelSearchMapView";
+import TravelSearchPageHeader from "./TravelSearchPageHeader";
 import type {
   HotelSearchRequest,
   RoomData,
@@ -508,8 +509,6 @@ const HotelSearchListing: React.FC = () => {
             : "Please wait while we are fetching details"
         }
       />
-      <div className="topHeaderSetting"></div>
-
       <div
         ref={hotelPageWrapRef}
         className="flightDetailTemplateWrap hotel-search-listing-page"
@@ -518,7 +517,8 @@ const HotelSearchListing: React.FC = () => {
           ref={hotelSearchFormStickyRef}
           className="bottomHeaderSetting hotelSearchFilterCard hotel-search-form-sticky"
         >
-          {/* Grid (xl+): Row1 View | Destination | Dates | Travellers — Row2 Nationality | Star | (gap) | Search */}
+          <TravelSearchPageHeader activeScope="hotels" showTripSelector={false} />
+          {/* Grid (xl+): single row — View | Destination | Dates | Travellers | Nationality | Star | Search */}
           <div className="hotel-filter-grid">
             <div className="hotel-filter-view w-full min-w-0">
               <SearchableDropdown
@@ -696,7 +696,7 @@ const HotelSearchListing: React.FC = () => {
                 className="searchFilterBtn hotel-search-btn-responsive hotel-search-btn-figma"
                 onClick={handleSearchHotels}
               >
-                {isPending ? "Searching..." : "Search"}
+                {isPending ? "Searching..." : "Search hotels"}
               </CustomButton>
             </div>
           </div>

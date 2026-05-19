@@ -22,16 +22,42 @@ type FlightTimingAndStopsProps = {
           duration?: string;
           layoverTime?: string;
           departureAirportCode?: string;
+          departureTerminal?: string;
+          arrivalAirportCode?: string;
+          arrivalTerminal?: string;
           departureDateTime?: string;
           arrivalDateTime?: string;
         }>;
       }>;
     };
   };
+  /** Figma search listing: airport caps + duration above bar; light blue track */
+  listingStyle?: boolean;
 };
+
+/** e.g. "Terminal 3 Int." for timeline caps (Figma) */
+function listingTerminalPhrase(raw: unknown): string {
+  const s = String(raw ?? "").trim();
+  if (!s) return "Int.";
+  if (/^terminal\s+/i.test(s)) return `${s} Int.`;
+  if (/^T\d+$/i.test(s)) return `Terminal ${s.slice(1)} Int.`;
+  if (/^\d+$/.test(s)) return `Terminal ${s} Int.`;
+  if (/^[A-Z]$/i.test(s) && s.length === 1) {
+    const map: Record<string, string> = {
+      M: "Main Int.",
+      A: "Terminal A Int.",
+      B: "Terminal B Int.",
+      C: "Terminal C Int.",
+      D: "Terminal D Int.",
+    };
+    return map[s.toUpperCase()] ?? `${s} Int.`;
+  }
+  return `${s} Int.`;
+}
 
 const FlightTimingAndStops: React.FC<FlightTimingAndStopsProps> = ({
   passSome,
+  listingStyle = false,
 }) => {
   // Get flight segments from raw data
   const flightSegments = passSome?.raw?.journey?.[0]?.flightSegments ?? [];
@@ -57,10 +83,48 @@ const FlightTimingAndStops: React.FC<FlightTimingAndStopsProps> = ({
   const rawDuration =
     firstSegment?.duration ?? passSome?.flight_detail?.duration ?? "";
   const durationLabel = formatFlightDurationLabel(rawDuration);
+  const durationCenterText =
+    durationLabel ||
+    rawDuration ||
+    formatFlightDurationLabel(firstDuration) ||
+    firstDuration;
+
+  const depCode = String(
+    firstSegment?.departureAirportCode ?? "",
+  ).toUpperCase();
+  const arrCode = String(
+    lastSegment?.arrivalAirportCode ?? "",
+  ).toUpperCase();
+  const depAirLabel =
+    depCode &&
+    `${depCode} (${listingTerminalPhrase(firstSegment?.departureTerminal)})`;
+  const arrAirLabel =
+    arrCode &&
+    `${arrCode} (${listingTerminalPhrase(lastSegment?.arrivalTerminal)})`;
+
+  const showListingAirportStrip =
+    listingStyle &&
+    !passSome?.stop?.length &&
+    depAirLabel &&
+    arrAirLabel;
 
   return (
-    <div className="">
-      <div className="flightTiming">
+    <div
+      className={
+        listingStyle ? "flightTimingWrap flightTimingWrap--listing" : ""
+      }
+    >
+      {showListingAirportStrip ? (
+        <div className="ow-listing-airport-strip" aria-hidden={false}>
+          <span className="ow-listing-airport-strip__dep">{depAirLabel}</span>
+          <span className="ow-listing-airport-strip__dur">
+            {durationCenterText}
+          </span>
+          <span className="ow-listing-airport-strip__arr">{arrAirLabel}</span>
+        </div>
+      ) : null}
+
+      <div className={listingStyle ? "flightTiming flightTiming--listing" : "flightTiming"}>
         <div className="startTime">
           <h5>{startTime}</h5>
           <p>{startDate}</p>
@@ -93,7 +157,9 @@ const FlightTimingAndStops: React.FC<FlightTimingAndStopsProps> = ({
               </>
             ) : (
               <div className="stopsDetail">
-                <span>{durationLabel || rawDuration}</span>
+                {listingStyle ? null : (
+                  <span>{durationLabel || rawDuration}</span>
+                )}
                 <div className=""></div>
                 <span>Direct</span>
               </div>

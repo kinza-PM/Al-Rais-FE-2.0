@@ -5,25 +5,10 @@ import HotelHeroSectionTab from "./HotelHeroSectionTab";
 import Celebration from "../../assets/svgs/celebration.svg";
 import { useLandingHeroStore } from "../../store/useLandingHeroStore";
 import { useHotelStore } from "../../store/UseHotelStore";
+import HeroTabUnderline from "../atoms/HeroTabUnderline";
 
 const promoCardShell =
   "box-border flex min-h-0 w-full min-w-0 flex-col gap-2 overflow-hidden rounded-[16px] p-4 shadow-[0_3px_16px_rgba(8,19,38,0.07)] ring-1 ring-[#E8EDF5]/90 sm:gap-2.5 sm:p-5 md:h-[156px] md:flex-row md:items-center md:justify-between md:gap-3 md:py-3 md:px-5 lg:px-5";
-
-/** Figma-style tab underline: 52×4px bar + soft top bloom (progressive blur feel). */
-const HeroTabUnderline: React.FC = () => (
-  <span
-    className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center"
-    aria-hidden
-  >
-    <span className="relative block h-[4px] w-[52px] overflow-visible">
-      {/* Top-weighted glow: strong blur above, fades toward the solid line (Figma layer blur) */}
-      <span
-        className="absolute left-1/2 top-[-12px] z-0 h-[18px] w-[76px] -translate-x-1/2 rounded-[999px] bg-gradient-to-b from-[#5383DA]/70 via-[#5383DA]/28 to-transparent blur-[8px]"
-      />
-      <span className="relative z-[1] block h-[4px] w-[52px] rounded-[1px] bg-[#5383DA] shadow-[0_-1px_0_rgba(83,131,218,0.35)]" />
-    </span>
-  </span>
-);
 
 const PromotionalCards: React.FC = () => (
   <div className="mt-8 w-full sm:mt-10">

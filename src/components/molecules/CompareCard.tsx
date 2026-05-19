@@ -21,8 +21,14 @@ import {
   formatDate,
   formatTime,
   getMarketingAirlineDisplayName,
+  formatFlightDurationLabel,
 } from "../../utils/helpers";
 import { attachBaggageAllowanceFromOffer } from "../../utils/baggageAllowanceDisplay";
+import {
+  extractFlightFeatures,
+  resolveAirlineLogoFromSegment,
+} from "../../utils/searchFlightListingHelpers";
+import defaultAirlineLogo from "../../assets/images/emirates.png";
 type CompareCardProps = {
   availableFlights?: any[];
   currentFlight?: any;
@@ -211,6 +217,262 @@ const CompareCard: React.FC<CompareCardProps> = ({
       )
     );
     setIsModalOpen(false);
+  };
+
+  const pickPassForAddFlightModal = (item: any): any => {
+    if (
+      Array.isArray((item as any)?.segmentGroups) &&
+      (item as any).segmentGroups.length > 1
+    ) {
+      const group = (item as any).segmentGroups[0] ?? [];
+      return {
+        segments: group,
+        name: item.name,
+        logo: item.logo,
+        flight_detail: group[0]?.flight_detail ?? item.flight_detail,
+        raw: item.raw,
+        stop: [],
+      };
+    }
+    if ((item as any)?.outbound || (item as any)?.inbound) {
+      return (item as any).outbound ?? (item as any).inbound ?? item;
+    }
+    return item;
+  };
+
+  const renderAddFlightFigmaCard = (item: any, index: number) => {
+    const passSome = pickPassForAddFlightModal(item);
+    const flightSegments =
+      passSome?.segments ??
+      passSome?.raw?.journey?.[0]?.flightSegments ??
+      passSome?.rawMinimal?.journey?.[0]?.flightSegments ??
+      item?.raw?.journey?.[0]?.flightSegments ??
+      [];
+    const hasMultipleSegments =
+      Array.isArray(flightSegments) && flightSegments.length > 1;
+
+    const firstSegment =
+      Array.isArray(flightSegments) && flightSegments.length > 0
+        ? flightSegments[0]
+        : null;
+    const lastSegment =
+      Array.isArray(flightSegments) && flightSegments.length > 0
+        ? flightSegments[flightSegments.length - 1]
+        : null;
+
+    const startTime = firstSegment?.departureDateTime
+      ? formatTime(firstSegment.departureDateTime)
+      : (firstSegment?.flight_detail?.start_time ??
+        passSome?.flight_detail?.start_time ??
+        "");
+    const startDate = firstSegment?.departureDateTime
+      ? formatDate(firstSegment.departureDateTime)
+      : (firstSegment?.flight_detail?.start_date ??
+        passSome?.flight_detail?.start_date ??
+        "");
+    const endTime = lastSegment?.arrivalDateTime
+      ? formatTime(lastSegment.arrivalDateTime)
+      : (lastSegment?.flight_detail?.end_time ??
+        passSome?.flight_detail?.end_time ??
+        "");
+    const endDate = lastSegment?.arrivalDateTime
+      ? formatDate(lastSegment.arrivalDateTime)
+      : (lastSegment?.flight_detail?.end_date ??
+        passSome?.flight_detail?.end_date ??
+        "");
+
+    const secondSegment = hasMultipleSegments ? flightSegments[1] : null;
+    const firstDuration =
+      firstSegment?.duration ?? firstSegment?.flight_detail?.duration ?? "";
+    const secondDuration =
+      secondSegment?.duration ?? secondSegment?.flight_detail?.duration ?? "";
+    const layoverTime = secondSegment?.layoverTime ?? "";
+    const stopAirport =
+      secondSegment?.departureAirportCode ?? secondSegment?.fromCode ?? "";
+
+    const primaryForName = firstSegment ?? passSome?.flight_detail ?? {};
+    const marketingDisplay = getMarketingAirlineDisplayName(
+      primaryForName,
+      passSome,
+    );
+    const operatingAirline =
+      passSome?.flight_detail?.operatingAirline ??
+      firstSegment?.operatingAirline ??
+      null;
+    const airlineTitle = operatingAirline
+      ? `${marketingDisplay} / ${getMarketingAirlineDisplayName({ marketingAirline: operatingAirline })}`
+      : marketingDisplay;
+
+    const flightNumber =
+      passSome?.flight_detail?.flight_number ??
+      firstSegment?.flightNumber ??
+      "—";
+    const flightClass =
+      passSome?.flight_detail?.flight_class ??
+      firstSegment?.cabinClass ??
+      "—";
+    const flightClassMeta = (() => {
+      const c = String(flightClass).trim();
+      if (!c || c === "—") return "—";
+      return /\bclass\b/i.test(c) ? c : `${c} class`;
+    })();
+
+    const logoSrc =
+      resolveAirlineLogoFromSegment(firstSegment) ||
+      String(passSome?.logo ?? item?.logo ?? "").trim();
+
+    const visible = extractFlightFeatures(
+      firstSegment,
+      passSome?.flight_detail ?? item?.flight_detail ?? {},
+      item?.raw?.fare ?? {},
+      {
+        cabinIcon,
+        baggageIcon,
+        mealIcon: refundableIcon,
+        durationIcon,
+        seatIcon: SEAT_ICON,
+        entertainmentIcon: PLANE_ICON,
+      },
+    );
+
+    const rawTotalDuration =
+      passSome?.flight_detail?.duration ??
+      item?.flight_detail?.duration ??
+      firstSegment?.duration ??
+      "";
+
+    const legDurParts = hasMultipleSegments
+      ? [firstDuration, secondDuration]
+          .map((d) => formatFlightDurationLabel(d) || d)
+          .filter((s) => String(s).trim() !== "")
+      : [];
+
+    const singleDurPretty =
+      formatFlightDurationLabel(rawTotalDuration) ||
+      formatFlightDurationLabel(firstDuration) ||
+      rawTotalDuration ||
+      firstDuration;
+
+    const durationValue =
+      hasMultipleSegments && legDurParts.length > 0
+        ? legDurParts.join(" + ")
+        : singleDurPretty;
+    const hasDuration =
+      Boolean(durationValue) && String(durationValue).trim() !== "";
+
+    const renderStopBelow = () => {
+      if (passSome?.stop?.length) {
+        return passSome.stop.map((s: any, i: number) => (
+          <div
+            className="compare-add-flight-card__stop-line"
+            key={`add-fl-stop-${index}-${i}`}
+          >
+            {[s?.name, s?.stayTime].filter(Boolean).join(" · ")}
+          </div>
+        ));
+      }
+      if (hasMultipleSegments) {
+        const stopCity =
+          secondSegment?.departureAirportCity ??
+          secondSegment?.departureCity ??
+          "";
+        const code = stopAirport ? String(stopAirport).trim() : "";
+        const where =
+          stopCity && code
+            ? `${stopCity} (${code})`
+            : stopCity || code || "connection";
+        const lay =
+          layoverTime && String(layoverTime).trim()
+            ? ` - ${layoverTime} layover`
+            : "";
+        return (
+          <div className="compare-add-flight-card__stop-line">
+            {`1 Stop in ${where}${lay}`}
+          </div>
+        );
+      }
+      return (
+        <div className="compare-add-flight-card__stop-line">Direct</div>
+      );
+    };
+
+    return (
+      <div
+        key={item.id ?? index}
+        className="compare-add-flight-card"
+        onClick={() => addFlightToCompare(item)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            addFlightToCompare(item);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      >
+        <div className="compare-add-flight-card__row1">
+          <div className="compare-add-flight-card__airline">
+            <div className="compare-add-flight-card__logo">
+              <img
+                src={logoSrc || defaultAirlineLogo}
+                alt=""
+                onError={(e) => {
+                  const t = e.target as HTMLImageElement;
+                  t.onerror = null;
+                  t.src = defaultAirlineLogo;
+                }}
+              />
+            </div>
+            <div className="min-w-0">
+              <div className="compare-add-flight-card__name">{airlineTitle}</div>
+              <div className="compare-add-flight-card__meta">
+                {flightNumber} - {flightClassMeta}
+              </div>
+            </div>
+          </div>
+          {visible.length > 0 ? (
+            <div
+              className="compare-add-flight-card__icons"
+              aria-label="Flight amenities"
+            >
+              {visible.slice(0, 6).map((f) => (
+                <div className="compare-add-flight-card__icon-wrap" key={f.key}>
+                  <img src={f.icon} alt="" title={f.label} />
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="compare-add-flight-card__row2 flightTiming">
+          <div className="startTime compare-add-flight-card__endpoint">
+            <h5>{startTime || "—"}</h5>
+            <p>{startDate}</p>
+          </div>
+          <div className="compare-add-flight-card__timeline-col FlightDirection">
+            {hasDuration ? (
+              <div className="compare-add-flight-card__duration-above">
+                <span className="compare-add-flight-card__duration-line">
+                  Duration: {durationValue}
+                </span>
+              </div>
+            ) : null}
+            <div className="compare-add-flight-card__track" aria-hidden>
+              <span className="compare-add-flight-card__dot" />
+              <span className="compare-add-flight-card__line" />
+              <span className="compare-add-flight-card__dot" />
+            </div>
+            <div className="compare-add-flight-card__stop-below">
+              {renderStopBelow()}
+            </div>
+          </div>
+          <div className="EndTime compare-add-flight-card__endpoint">
+            <h5>{endTime || "—"}</h5>
+            <p>{endDate}</p>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   const removeFromCompare = (itemIdRaw: any) => {
@@ -405,139 +667,6 @@ const CompareCard: React.FC<CompareCardProps> = ({
           <div className="EndTime">
             <h5>{endTime}</h5>
             <p>{endDate}</p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  // Timing + layover summary similar to FlightTimingAndStops.tsx
-  const renderTimingAndStops = (passSome: any, key: string) => {
-    if (!passSome) return null;
-    const flightSegments =
-      passSome?.segments ??
-      passSome?.raw?.journey?.[0]?.flightSegments ??
-      passSome?.rawMinimal?.journey?.[0]?.flightSegments ??
-      [];
-    const hasMultipleSegments =
-      Array.isArray(flightSegments) && flightSegments.length > 1;
-
-    const firstSegment =
-      Array.isArray(flightSegments) && flightSegments.length > 0
-        ? flightSegments[0]
-        : null;
-    const lastSegment =
-      Array.isArray(flightSegments) && flightSegments.length > 0
-        ? flightSegments[flightSegments.length - 1]
-        : null;
-
-    const startTime = firstSegment?.departureDateTime
-      ? formatTime(firstSegment.departureDateTime)
-      : firstSegment?.flight_detail?.start_time ?? passSome?.flight_detail?.start_time ?? "";
-    const startDate = firstSegment?.departureDateTime
-      ? formatDate(firstSegment.departureDateTime)
-      : firstSegment?.flight_detail?.start_date ?? passSome?.flight_detail?.start_date ?? "";
-    const endTime = lastSegment?.arrivalDateTime
-      ? formatTime(lastSegment.arrivalDateTime)
-      : lastSegment?.flight_detail?.end_time ?? passSome?.flight_detail?.end_time ?? "";
-    const endDate = lastSegment?.arrivalDateTime
-      ? formatDate(lastSegment.arrivalDateTime)
-      : lastSegment?.flight_detail?.end_date ?? passSome?.flight_detail?.end_date ?? "";
-
-    const secondSegment = hasMultipleSegments ? flightSegments[1] : null;
-    const firstDuration = firstSegment?.duration ?? firstSegment?.flight_detail?.duration ?? "";
-    const secondDuration = secondSegment?.duration ?? secondSegment?.flight_detail?.duration ?? "";
-    const layoverTime = secondSegment?.layoverTime ?? "";
-    const stopAirport = secondSegment?.departureAirportCode ?? secondSegment?.fromCode ?? "";
-
-    const primaryForName = firstSegment ?? passSome?.flight_detail ?? {};
-    const marketingDisplay = getMarketingAirlineDisplayName(
-      primaryForName,
-      passSome,
-    );
-    const operatingAirline =
-      passSome?.flight_detail?.operatingAirline ??
-      firstSegment?.operatingAirline ??
-      null;
-    const airlineDisplay = operatingAirline
-      ? `${marketingDisplay} / ${getMarketingAirlineDisplayName({ marketingAirline: operatingAirline })}`
-      : marketingDisplay;
-    const flightNumber =
-      passSome?.flight_detail?.flight_number ??
-      firstSegment?.flightNumber ??
-      "—";
-    const flightClass =
-      passSome?.flight_detail?.flight_class ?? firstSegment?.cabinClass ?? "—";
-    const marketingAirlineCode =
-      passSome?.flight_detail?.marketingAirline ??
-      firstSegment?.marketingAirline ??
-      passSome?.name ??
-      "";
-    const logo =
-      passSome?.logo ?? `/airlines/${marketingAirlineCode || "default"}.png`;
-
-    const renderStops = () => {
-      if (passSome?.stop?.length) {
-        return passSome.stop.map((s: any, i: number) => (
-          <div className="stopsDetail" key={`${key}-stop-${i}`}>
-            <span>{s?.stayTime}</span>
-            <div className="stopPoint stopDots" />
-            <span>{s?.name}</span>
-          </div>
-        ));
-      }
-      if (hasMultipleSegments) {
-        return (
-          <>
-            <span className="mb-5">{firstDuration}</span>
-            <div className="stopsDetail">
-              <span>{layoverTime || "Layover"}</span>
-              <div className="stopPoint stopDots" />
-              <span>{stopAirport}</span>
-            </div>
-            <span className="mb-5">{secondDuration}</span>
-          </>
-        );
-      }
-      return (
-        <div className="stopsDetail">
-          <span>
-            {passSome?.flight_detail?.duration ?? firstDuration ?? "—"}
-          </span>
-          <div />
-          <span>Direct</span>
-        </div>
-      );
-    };
-
-    return (
-      <div style={{ marginTop: 8 }} key={key}>
-        <div className="fightTitle" style={{ marginBottom: 8 }}>
-          <div className="flightIcon">
-            <img src={logo} alt="" />
-          </div>
-          <div className="nameAndDetails">
-            <h5>{airlineDisplay}</h5>
-            <p>
-              {flightNumber} • {flightClass}
-            </p>
-          </div>
-        </div>
-        <div className="flightTiming">
-          <div className="startTime">
-            <h5>{startTime || "—"}</h5>
-            <p>{startDate || ""}</p>
-          </div>
-          <div className="FlightDirection">
-            <div className="visualGuid">
-              <div className="stopPoint" />
-              {renderStops()}
-              <div className="stopPoint" />
-            </div>
-          </div>
-          <div className="EndTime">
-            <h5>{endTime || "—"}</h5>
-            <p>{endDate || ""}</p>
           </div>
         </div>
       </div>
@@ -931,181 +1060,13 @@ const CompareCard: React.FC<CompareCardProps> = ({
         footer={null}
         centered
         onCancel={handleCancelCompare}
-        className="compareModal"
+        className="compareModal compare-add-flight-modal"
       >
         <div className="compareModalBody">
           {!localAvailable || localAvailable.length === 0 ? (
             <p>No other flights to show</p>
           ) : (
-            localAvailable.map((item, index) => {
-              const isRound =
-                !!(item as any).outbound || !!(item as any).inbound;
-              const isMultiCity =
-                Array.isArray((item as any).segmentGroups) &&
-                (item as any).segmentGroups.length > 1;
-              return (
-                <div
-                  key={item.id ?? index}
-                  className="modalFlightDetailCard"
-                  onClick={() => addFlightToCompare(item)}
-                >
-                  <div className="modalFlightDetail">
-                    {isMultiCity
-                      ? (() => {
-                          const segmentGroups = (item as any).segmentGroups ?? [];
-                          return (
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 12,
-                              }}
-                            >
-                              {segmentGroups.map((group: any[], gIdx: number) => {
-                                const passSome = {
-                                  segments: group,
-                                  flight_detail: group[0]?.flight_detail,
-                                  logo: item.logo,
-                                  name: item.name,
-                                  stop: [],
-                                };
-                                return (
-                                  <div key={`mc-modal-${gIdx}`}>
-                                    {renderTimingAndStops(
-                                      passSome,
-                                      `mc-${index}-${gIdx}`
-                                    )}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          );
-                        })()
-                      : isRound
-                      ? (() => {
-                          const outbound = (item as any).outbound ?? null;
-                          const inbound = (item as any).inbound ?? null;
-                          const outboundSegs = normalizeLegSegments(
-                            outbound,
-                            item,
-                          );
-                          const inboundSegs = normalizeLegSegments(
-                            inbound,
-                            item,
-                          );
-                          const outBlock =
-                            renderTimingAndStops(outbound, `out-${index}`) ??
-                            (outboundSegs[0]
-                              ? renderSegmentSummary(outboundSegs[0])
-                              : null);
-                          const inBlock =
-                            renderTimingAndStops(inbound, `in-${index}`) ??
-                            (inboundSegs[0]
-                              ? renderSegmentSummary(inboundSegs[0])
-                              : null);
-                          return (
-                            <div
-                              style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 12,
-                              }}
-                            >
-                              {outBlock}
-                              {inBlock}
-                            </div>
-                          );
-                        })()
-                      : (() => {
-                          const oneWaySegs = normalizeOneWaySegments(item);
-                          const timingBlock = renderTimingAndStops(
-                            item,
-                            `ow-${index}`
-                          );
-                          const fallbackSeg = oneWaySegs[0]
-                            ? renderSegmentSummary(oneWaySegs[0])
-                            : null;
-                          return timingBlock || fallbackSeg ? (
-                            timingBlock || fallbackSeg
-                          ) : (
-                            <>
-                              <div className="fightTitle">
-                                <div className="flightIcon">
-                                  <img src={item.logo} alt="" />
-                                </div>
-                                <div className="nameAndDetails">
-                                  <h5>{item.name}</h5>
-                                  <p>
-                                    {item.flight_detail?.flight_number} -{" "}
-                                    {item.flight_detail?.flight_class}
-                                  </p>
-                                </div>
-                              </div>
-                              <div
-                                className="featureIcons"
-                                style={{ marginTop: 8 }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    gap: 12,
-                                    alignItems: "center",
-                                  }}
-                                >
-                                  <div>
-                                    <strong>
-                                      {item.currency ?? ""}{" "}
-                                      {item.price?.economyLite?.price ??
-                                        item.totalFare ??
-                                        "-"}
-                                    </strong>
-                                  </div>
-                                </div>
-                              </div>
-                            </>
-                          );
-                        })()}
-                  </div>
-
-                  {/* timing block for single-segment items */}
-                  {/* {!isRound && item.flight_detail && (
-                    <div className="modalFlightTiming">
-                      <div className="flightTiming">
-                        <div className="startTime">
-                          <h5>{item.flight_detail?.start_time}</h5>
-                          <p>{item.flight_detail?.start_date}</p>
-                        </div>
-                        <div className="FlightDirection">
-                          <div className="visualGuid">
-                            <div className="stopPoint"></div>
-                            {Array.isArray(item.stop) && item.stop.length > 0 ? (
-                              item.stop.map((s: any, i: number) => (
-                                <div key={i} className="stopsDetail">
-                                  <span>{s?.stayTime}</span>
-                                  <div className="stopPoint stopDots"></div>
-                                  <span>{s?.name}</span>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="stopsDetail">
-                                <span>{item.flight_detail?.duration ?? "—"}</span>
-                                <div />
-                                <span>Direct</span>
-                              </div>
-                            )}
-                            <div className="stopPoint"></div>
-                          </div>
-                        </div>
-                        <div className="EndTime">
-                          <h5>{item.flight_detail?.end_time}</h5>
-                          <p>{item.flight_detail?.end_date}</p>
-                        </div>
-                      </div>
-                    </div>
-                  )} */}
-                </div>
-              );
-            })
+            localAvailable.map((item, index) => renderAddFlightFigmaCard(item, index))
           )}
         </div>
       </Modal>
