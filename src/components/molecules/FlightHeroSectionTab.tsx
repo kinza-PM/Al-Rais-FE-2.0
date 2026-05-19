@@ -90,6 +90,27 @@ const FlightHeroSection: React.FC = () => {
 
   const tabs = useMemo<FlightTypeOption[]>(() => flightTypes, [flightTypes]);
 
+  /** Sliding pill uses `left` + % (not `transform`), because % inside translateX is relative to the pill itself and misaligns. */
+  const tripSelectorLayout = useMemo(() => {
+    const gapPx = 10;
+    const padPx = 5;
+    const n = Math.max(1, tabs.length);
+    const rawIdx = tabs.findIndex((t) => t.key === trip);
+    const fallbackIdx = ["oneway", "roundtrip", "multicity"].indexOf(trip);
+    const idx =
+      rawIdx >= 0
+        ? Math.min(rawIdx, n - 1)
+        : fallbackIdx >= 0
+          ? Math.min(fallbackIdx, n - 1)
+          : 0;
+    const pillW = `calc((100% - ${(n - 1) * gapPx}px) / ${n})`;
+    const left =
+      idx === 0
+        ? `${padPx}px`
+        : `calc(${padPx}px + ${idx} * (((100% - ${(n - 1) * gapPx}px) / ${n}) + ${gapPx}px))`;
+    return { pillW, left };
+  }, [tabs, trip]);
+
   // Don't block the whole page with loader while user is typing/searching in From/To.
   const isInitialLoading =
     !fromCountriesSearchTerm.trim() &&
@@ -471,41 +492,53 @@ const FlightHeroSection: React.FC = () => {
         </div>
       ) : (
         <>
-          <div className="flex justify-center mt-0.5">
-            <div className="flex items-center rounded-xl p-1 bg-white">
+          <div className="mt-0.5 flex justify-center overflow-x-auto px-1 pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="relative box-border h-[50px] w-[468px] min-w-[468px] shrink-0 rounded-[16px] border border-[#E4E4E7] bg-white p-[5px]">
               {nsLoading.flightTypes && (
-                <div className="px-5 py-1.5 text-[13px] rounded-xl text-[#3A4350] opacity-60">
+                <div className="flex h-[40px] items-center justify-center px-5 text-[13px] text-[#3A4350] opacity-60">
                   Loading…
                 </div>
               )}
-              {!nsLoading.flightTypes &&
-                tabs.map((t, index) => (
-                  <button
-                    key={t.id}
-                    type="button"
-                    onClick={() => setTrip(t.key)}
-                    className={`text-[13px] transition-colors cursor-pointer flex items-center justify-center ${trip === t.key ? "text-white" : "text-[#3A4350]"
-                      }`}
+              {!nsLoading.flightTypes && tabs.length > 0 ? (
+                <>
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute top-[5px] z-0 h-[40px] rounded-[12px] bg-[#2351A3] transition-[left,width] duration-200 ease-out"
                     style={{
-                      width: 100,
-                      height: 30,
-                      padding: "0 10px",
-                      borderBottomLeftRadius: 14,
-                      borderBottomRightRadius: 14,
-                      background: trip === t.key ? "var(--primary-300, #2351A3)" : "#F2F2F3",
-                      opacity: 1,
-                      transform: "rotate(0deg)",
-                      marginRight: index < tabs.length - 1 ? 6 : 0,
+                      width: tripSelectorLayout.pillW,
+                      left: tripSelectorLayout.left,
                     }}
+                  />
+                  <div
+                    className="relative z-[1] flex h-[40px] w-full items-stretch gap-[10px]"
+                    role="tablist"
+                    aria-label="Flight type"
                   >
-                    {t.label}
-                  </button>
-                ))}
+                    {tabs.map((t) => (
+                      <button
+                        key={t.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={trip === t.key}
+                        onClick={() => setTrip(t.key)}
+                        className={`flex min-w-0 flex-1 cursor-pointer items-center justify-center whitespace-nowrap rounded-[12px] px-1 text-center text-[14px] font-medium leading-none transition-colors sm:text-[15px] ${
+                          trip === t.key
+                            ? "text-white"
+                            : "text-[#3D495C] hover:text-[#2351A3]"
+                        }`}
+                        style={{ height: 40 }}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
 
           <div className="px-3 sm:px-5 md:px-6 pt-3 pb-3">
-            <div className="w-full min-w-0 xl:grid xl:grid-cols-[minmax(0,1fr)_auto] xl:items-end xl:gap-4">
+            <div className="flex w-full min-w-0 flex-col gap-4">
               <div className="min-w-0">
                 {trip === "oneway" && (
                   <OneWayForm
@@ -669,21 +702,12 @@ const FlightHeroSection: React.FC = () => {
                 )}
               </div>
 
-              {/* ── Search button (aligned to the right on xl+) ── */}
               <div
-                className={`flex justify-center xl:justify-end ${!hasAttemptedValidation ? "mt-4 xl:mt-0" : "mt-8 xl:mt-0"}`}
+                className={`flex justify-center ${!hasAttemptedValidation ? "pt-0" : "pt-2"}`}
               >
                 <button
-                  className="flight-cta-button text-[12px] font-semibold text-white w-full sm:w-auto"
-                  style={{
-                    width: "auto",
-                    minWidth: 112,
-                    height: 38,
-                    borderRadius: 100,
-                    padding: "9px 24px",
-                    background:
-                      "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-                  }}
+                  type="button"
+                  className="flight-cta-button inline-flex h-[47px] min-w-[137px] items-center justify-center gap-[10px] rounded-[8px] bg-[#2351A3] px-10 py-[14px] text-base font-semibold leading-none text-white transition-none"
                   onClick={handleSearch}
                 >
                   Search

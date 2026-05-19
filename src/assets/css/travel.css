@@ -1716,7 +1716,7 @@ input[type="number"] {
     flex: 0 0 25%;
     width: 25%;
     min-width: 260px;
-    max-width: 320px;
+    max-width: 307px;
     top: calc(var(--flight-search-sticky-h, 180px) + 12px);
     align-self: flex-start;
     max-height: calc(100dvh - var(--flight-search-sticky-h, 180px) - 36px);
@@ -1728,47 +1728,45 @@ input[type="number"] {
   }
 }
 
-/* Number of stops — row1: non-stop + one-stop; row2: two-stop full width (3 options) */
 .flight-stops-pills {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
   width: 100%;
 }
 
-.flight-stops-pill:nth-child(3) {
-  grid-column: 1 / -1;
-}
-
 .flight-stops-pill {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
-  height: auto;
+  box-sizing: border-box;
+  min-width: 51px;
+  height: 39px;
   margin: 0;
-  padding: 8px 6px;
-  border-radius: 999px;
-  border: 1.5px solid #c2cad6;
+  padding: 10px 20px;
+  border-radius: 100px;
+  border: 1px solid #e4e4e7;
   background: #ffffff;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   font-family: Inter, sans-serif;
-  color: #0a0c0f;
-  line-height: 1.25;
+  color: #3d495c;
+  line-height: 1;
   cursor: pointer;
-  white-space: normal;
+  white-space: nowrap;
   text-align: center;
-  word-break: break-word;
   transition:
     background 0.15s ease,
     color 0.15s ease,
-    border-color 0.15s ease,
-    box-shadow 0.15s ease;
+    border-color 0.15s ease;
 }
 
 .flight-stops-pill:hover:not(:disabled) {
   border-color: #2351a3;
+  color: #2351a3;
 }
 
 .flight-stops-pill:disabled {
@@ -1778,9 +1776,65 @@ input[type="number"] {
 
 .flight-stops-pill--active {
   border-color: #2351a3;
-  background: linear-gradient(90.59deg, #5383da 0%, #2351a3 50%, #081326 100%);
+  background: #2351a3;
   color: #ffffff;
-  box-shadow: 0 1px 3px rgba(35, 81, 163, 0.25);
+  box-shadow: none;
+}
+
+.flight-transit-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 39px;
+  padding: 10px 16px;
+  border-radius: 100px;
+  border: 1px solid #e4e4e7;
+  background: #ffffff;
+  font-family: Inter, sans-serif;
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1;
+  color: #3d495c;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.flight-transit-pill:hover {
+  border-color: #2351a3;
+  color: #2351a3;
+}
+
+.flight-transit-pill--active {
+  border-color: #2351a3;
+  background: #2351a3;
+  color: #ffffff;
+}
+
+.flight-price-histogram-root .flight-price-range-slider.ant-slider-horizontal {
+  margin-inline: 0 !important;
+  padding-block: 6px 2px;
+}
+
+.flight-price-histogram-root .flight-price-range-slider .ant-slider-rail,
+.flight-price-histogram-root .flight-price-range-slider .ant-slider-track,
+.flight-price-histogram-root .flight-price-range-slider .ant-slider-tracks {
+  transition: background-color 0.25s ease;
+}
+
+.flight-price-histogram-root .flight-price-range-slider .ant-slider-handle::after {
+  display: none !important;
+}
+
+.flight-price-histogram-root
+  .flight-price-range-slider.ant-slider:not(.ant-slider-disabled)
+  .ant-slider-handle:hover,
+.flight-price-histogram-root
+  .flight-price-range-slider.ant-slider:not(.ant-slider-disabled)
+  .ant-slider-handle:focus-visible {
+  box-shadow: 0 3px 14px rgba(35, 81, 163, 0.4) !important;
 }
 
 /* Prevent flex overflow inside flight filter (e.g. price min/max row) */
@@ -1859,7 +1913,7 @@ input[type="number"] {
 }
 
 .flight-search-filter-root .flight-stops-pill {
-  font-weight: 300 !important;
+  font-weight: 500 !important;
 }
 
 /* Hotel search: Filters header — Figma “Filters header” (5099:19211) */
@@ -3806,14 +3860,12 @@ img:hover {
   border: none !important;
 }
 
-/* Flight filters: alternate card surface like Figma (gray/white/gray/white...). */
 .flight-search-filter-root .flight-filter-blocks {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 
-/* Default surface (white). */
 .flight-search-filter-root .flight-filter-block .collapseStyle,
 .flight-search-filter-root .flight-filter-block .ant-collapse .ant-collapse-header,
 .flight-search-filter-root .flight-filter-block .ant-collapse .ant-collapse-content,
@@ -3821,12 +3873,14 @@ img:hover {
   background: #ffffff !important;
 }
 
-/* Alternating surface (light gray). */
-.flight-search-filter-root .flight-filter-blocks>.flight-filter-block:nth-child(odd) .collapseStyle,
-.flight-search-filter-root .flight-filter-blocks>.flight-filter-block:nth-child(odd) .ant-collapse .ant-collapse-header,
-.flight-search-filter-root .flight-filter-blocks>.flight-filter-block:nth-child(odd) .ant-collapse .ant-collapse-content,
-.flight-search-filter-root .flight-filter-blocks>.flight-filter-block:nth-child(odd) .ant-collapse .ant-collapse-content-box {
-  background: #F2F2F3 !important;
+.flight-search-filter-root .flight-filter-block .collapseStyle {
+  border: 1px solid #e4e4e7 !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+
+.flight-search-filter-root .flight-filter-block.stopsCollapse .collapseStyle {
+  border-radius: 15px !important;
 }
 
 .stopsCollapse .collapseStyle,
@@ -3834,7 +3888,7 @@ img:hover {
 .refundableFilterCollapse .collapseStyle,
 .flightTimeFilter .collapseStyle,
 .timeCollapse .collapseStyle {
-  border: 1px solid #C2CAD6 !important;
+  border: 1px solid #e4e4e7 !important;
   background: #ffffff !important;
   box-shadow: none !important;
 }

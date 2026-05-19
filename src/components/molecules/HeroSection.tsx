@@ -9,6 +9,22 @@ import { useHotelStore } from "../../store/UseHotelStore";
 const promoCardShell =
   "box-border flex min-h-0 w-full min-w-0 flex-col gap-2 overflow-hidden rounded-[16px] p-4 shadow-[0_3px_16px_rgba(8,19,38,0.07)] ring-1 ring-[#E8EDF5]/90 sm:gap-2.5 sm:p-5 md:h-[156px] md:flex-row md:items-center md:justify-between md:gap-3 md:py-3 md:px-5 lg:px-5";
 
+/** Figma-style tab underline: 52×4px bar + soft top bloom (progressive blur feel). */
+const HeroTabUnderline: React.FC = () => (
+  <span
+    className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center"
+    aria-hidden
+  >
+    <span className="relative block h-[4px] w-[52px] overflow-visible">
+      {/* Top-weighted glow: strong blur above, fades toward the solid line (Figma layer blur) */}
+      <span
+        className="absolute left-1/2 top-[-12px] z-0 h-[18px] w-[76px] -translate-x-1/2 rounded-[999px] bg-gradient-to-b from-[#5383DA]/70 via-[#5383DA]/28 to-transparent blur-[8px]"
+      />
+      <span className="relative z-[1] block h-[4px] w-[52px] rounded-[1px] bg-[#5383DA] shadow-[0_-1px_0_rgba(83,131,218,0.35)]" />
+    </span>
+  </span>
+);
+
 const PromotionalCards: React.FC = () => (
   <div className="mt-8 w-full sm:mt-10">
     <div className="grid w-full grid-cols-1 gap-3 md:grid-cols-3 md:items-stretch md:gap-3 lg:gap-4">
@@ -92,30 +108,32 @@ const HeroSection: React.FC = () => {
     <div className="mx-auto w-full max-w-[1360px] px-3 sm:px-5">
       <div
         id="hero-search-form"
-        className="w-full overflow-hidden rounded-[16px] bg-white shadow-[0_10px_32px_rgba(8,19,38,0.1)] ring-1 ring-[#E4E4E7]/80 sm:rounded-[18px]"
+        className="w-full overflow-x-clip overflow-y-visible rounded-[16px] bg-white shadow-[0_10px_32px_rgba(8,19,38,0.1)] ring-1 ring-[#E4E4E7]/80 sm:rounded-[18px]"
       >
-        <div className="flex border-b border-[#E8EDF5] bg-[#F4F7FB] p-1 sm:p-1.5">
+        <div className="flex items-end justify-center gap-10 border-b border-[#E8EDF5] bg-white px-4 py-2 sm:gap-14 sm:py-3">
           <button
             type="button"
             onClick={() => selectTab("flights")}
-            className={`min-h-[36px] flex-1 rounded-[10px] text-[12px] font-semibold transition-all ${
+            className={`relative flex w-max flex-col items-center justify-end pb-3 pt-1 text-center font-sans text-[16px] font-medium leading-none tracking-normal transition-colors ${
               heroTab === "flights"
-                ? "bg-white text-[#081326] shadow-sm ring-1 ring-[#E4E4E7]/80"
+                ? "text-[#2351A3]"
                 : "text-[#3D495C] hover:text-[#2351A3]"
             }`}
           >
-            Flights
+            <span className="inline-block whitespace-nowrap">Flights</span>
+            {heroTab === "flights" ? <HeroTabUnderline /> : null}
           </button>
           <button
             type="button"
             onClick={() => selectTab("hotels")}
-            className={`min-h-[36px] flex-1 rounded-[10px] text-[12px] font-semibold transition-all ${
+            className={`relative flex w-max flex-col items-center justify-end pb-3 pt-1 text-center font-sans text-[16px] font-medium leading-none tracking-normal transition-colors ${
               heroTab === "hotels"
-                ? "bg-white text-[#081326] shadow-sm ring-1 ring-[#E4E4E7]/80"
+                ? "text-[#2351A3]"
                 : "text-[#3D495C] hover:text-[#2351A3]"
             }`}
           >
-            Hotels
+            <span className="inline-block whitespace-nowrap">Hotels</span>
+            {heroTab === "hotels" ? <HeroTabUnderline /> : null}
           </button>
         </div>
         <div className="px-3 pb-3 pt-2 sm:px-5 sm:pb-4 sm:pt-3">

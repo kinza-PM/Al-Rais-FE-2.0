@@ -264,7 +264,7 @@ function computeMaxLayoverMinutesFromJourney(journey: any): number | null {
 
 function parseTransitRange(range?: string | null): [number, number] | null {
     if (!range || typeof range !== "string") return null;
-    // formats like "0-3h", "3-6h", "6-12h", "12h+"
+    if (range === "12-24h") return [12 * 60, 24 * 60];
     const plus = range.match(/^(\d+)\s*h\s*\+$/i);
     if (plus) {
         const minH = Number(plus[1]);

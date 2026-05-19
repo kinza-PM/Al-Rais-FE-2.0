@@ -310,6 +310,8 @@ const FlightDetailTemplate: React.FC = () => {
   const [selectedPriceRange, setSelectedPriceRange] = React.useState<
     [number, number]
   >([0, 1000]);
+  const [priceHistogramFares, setPriceHistogramFares] = useState<number[]>([]);
+  const [listingCurrencyCode, setListingCurrencyCode] = useState("$");
   const PRICE_STEP = 50;
   const filterChangeDebounceRef = useRef<number | null>(null);
   
@@ -732,6 +734,12 @@ const FlightDetailTemplate: React.FC = () => {
         ),
       ].filter((n) => !Number.isNaN(n) && isFinite(n));
 
+      if (Array.isArray(raw) && raw.length > 0) {
+        const cc = String(raw[0]?.fare?.currencyCode ?? "").trim();
+        setListingCurrencyCode(cc || "$");
+      }
+      setPriceHistogramFares(fares);
+
       const minFare = fares.length ? Math.min(...fares) : 0;
       const maxFare = fares.length ? Math.max(...fares) : 1000;
       const roundedMax = Math.ceil(maxFare / PRICE_STEP) * PRICE_STEP;
@@ -819,6 +827,19 @@ const FlightDetailTemplate: React.FC = () => {
           sortBy,
         ),
       );
+
+      const extraFares = [
+        ...oneWayFormatted.map((it) =>
+          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN),
+        ),
+        ...roundFormatted.map((it) =>
+          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN),
+        ),
+        ...multiCityFormatted.map((it) =>
+          Number(it?.rawTotalStartingFare ?? it?.raw?.fare?.totalFare ?? NaN),
+        ),
+      ].filter((n) => !Number.isNaN(n) && isFinite(n));
+      setPriceHistogramFares((prev) => [...prev, ...extraFares]);
 
       const anyHasMore = (raw || []).some(
         (it: any) => !!it?.detail?.moreFaresAvailable,
@@ -1197,6 +1218,9 @@ const FlightDetailTemplate: React.FC = () => {
 
     setResponseData([]);
     setRoundResponseData([]);
+    setMulticityResponseData([]);
+    setPriceHistogramFares([]);
+    setListingCurrencyCode("$");
     setHasMore(false);
     setIoReady(false);
     setHasSearched(false);
@@ -1306,6 +1330,7 @@ const FlightDetailTemplate: React.FC = () => {
     setResponseData([]);
     setRoundResponseData([]);
     setMulticityResponseData([]);
+    setPriceHistogramFares([]);
     setHasSearched(false);
     setHasMore(false);
     setIoReady(false);
@@ -1791,6 +1816,8 @@ const FlightDetailTemplate: React.FC = () => {
     setResponseData([]);
     setRoundResponseData([]);
     setMulticityResponseData([]);
+    setPriceHistogramFares([]);
+    setListingCurrencyCode("$");
     // setDepartDate("");
     // setReturnDate("");
     setSelectedCabinClassId("5");
@@ -2467,6 +2494,8 @@ const FlightDetailTemplate: React.FC = () => {
                 priceRangeBounds={priceRangeBounds}
                 selectedPriceRange={selectedPriceRange}
                 priceStep={PRICE_STEP}
+                priceCurrencyCode={listingCurrencyCode}
+                priceHistogramFares={priceHistogramFares}
                 onPriceRangeChange={(next) => {
                   setSelectedPriceRange(next);
                   applyFlightSearchFilters(
@@ -2605,6 +2634,8 @@ const FlightDetailTemplate: React.FC = () => {
                 priceRangeBounds={priceRangeBounds}
                 selectedPriceRange={selectedPriceRange}
                 priceStep={PRICE_STEP}
+                priceCurrencyCode={listingCurrencyCode}
+                priceHistogramFares={priceHistogramFares}
                 onPriceRangeChange={(next) => {
                   setSelectedPriceRange(next);
                   applyFlightSearchFilters(
