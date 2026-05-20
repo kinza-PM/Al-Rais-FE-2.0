@@ -3,7 +3,6 @@ import {
   useEffect,
   useLayoutEffect,
   useMemo,
-  useRef,
   useState,
 } from "react";
 import {
@@ -20,27 +19,15 @@ import { useMyBooking } from "../hooks/useUserProfileBooking";
 import { useMyHotelBooking } from "../hooks/useMyHotelBooking";
 import Loader from "../components/atoms/Loader";
 import {
-  mergeSightseeingBookingLists,
   transformBookingsResponse,
   transformHotelBookingsResponse,
-  type SightseeingBookingCardItem,
 } from "../utils/transformBookingData";
 import UserHotelBookingsListing from "../components/molecules/UserHotelBookingsListing";
-import UserSightseeingBookingsListing from "../components/molecules/UserSightseeingBookingsListing";
-import { getLocalSightseeingBookings } from "../utils/sightseeingLocalBookings";
 import {
   MY_BOOKINGS_LAST_QS_SESSION_KEY,
   MY_BOOKINGS_RESTORE_FLAG_SESSION_KEY,
   type MyBookingsStatusParam,
 } from "../utils/myBookingsUrl";
-import SearchableDropdown, {
-  type DropdownOption,
-} from "../components/common/SearchableDropdown";
-import TailiwindCustomDatePicker from "../components/common/TailiwindCustomDatePicker";
-import { convertDateToString } from "../utils/hotelBookingParams";
-import CalendarIcon from "../assets/svgs/calendar.svg";
-import "../assets/css/travel.css";
-
 const statusTabs = [
   "All",
   "Pending",
@@ -49,25 +36,11 @@ const statusTabs = [
   "Cancelled",
 ] as const;
 
-/**
- * My Bookings filter bar — Types/Status triggers match hotel `hotel-date-range-row`:
- * 50px tall, 1px #c2cad6 border, 16px radius (see travel.css).
- */
 const FILTER_LABEL_CLASS =
   "mb-[5px] block text-[12px] font-normal leading-none text-[#3D495C]";
 
-/** Shared typography for Types, Status, and date-range field text (size, weight, color). */
-const FILTER_FIELD_VALUE_TEXT_CLASS =
-  "text-[14px] font-medium leading-normal text-[#0A0C0F] antialiased";
-
-const FILTER_DROPDOWN_TRIGGER_CLASS = `box-border appearance-none h-[50px] w-full rounded-[16px] border border-[#C2CAD6] bg-white pl-[15px] pr-12 outline-none flex min-w-0 items-center cursor-pointer transition-colors focus:border-[#5383DA] focus:ring-2 focus:ring-[#5383DA]/15 disabled:cursor-not-allowed disabled:opacity-60 ${FILTER_FIELD_VALUE_TEXT_CLASS}`;
-
-const FILTER_DROPDOWN_VALUE_CLASS = FILTER_FIELD_VALUE_TEXT_CLASS;
-
-const FILTER_DATE_INPUT_CLASS = `hotel-date-range-input !pl-2 !pr-0.5 ${FILTER_FIELD_VALUE_TEXT_CLASS} !text-[#0A0C0F] placeholder:!font-medium placeholder:!text-[#0A0C0F]`;
-
 type StatusTab = (typeof statusTabs)[number];
-type BookingsMode = "All" | "Flights" | "Hotels" | "Sightseeing";
+type BookingsMode = "Flights" | "Hotels";
 
 function parseStatusParam(value: string | null): StatusTab {
   const s = (value ?? "all").toLowerCase();
@@ -84,32 +57,18 @@ function statusToParam(t: StatusTab): MyBookingsStatusParam {
 }
 
 function parseModeParam(value: string | null): BookingsMode {
-  const s = (value ?? "all").toLowerCase();
-  if (s === "hotels") return "Hotels";
-  if (s === "sightseeing") return "Sightseeing";
-  if (s === "flights") return "Flights";
-  return "All";
+  if ((value ?? "").toLowerCase() === "hotels") return "Hotels";
+  return "Flights";
 }
 
 function modeToParam(m: BookingsMode): string {
-  if (m === "Hotels") return "hotels";
-  if (m === "Sightseeing") return "sightseeing";
-  if (m === "Flights") return "flights";
-  return "all";
+  return m === "Hotels" ? "hotels" : "flights";
 }
 
-const MODE_OPTIONS: DropdownOption[] = [
-  { id: "all", value: "all", label: "All" },
-  { id: "flights", value: "flights", label: "Flights" },
-  { id: "hotels", value: "hotels", label: "Hotels" },
-  { id: "sightseeing", value: "sightseeing", label: "Sightseeing" },
+const CATEGORY_TABS: { mode: BookingsMode; label: string }[] = [
+  { mode: "Flights", label: "Flights" },
+  { mode: "Hotels", label: "Hotels" },
 ];
-
-const STATUS_OPTIONS: DropdownOption[] = statusTabs.map((t) => ({
-  id: statusToParam(t),
-  value: statusToParam(t),
-  label: t,
-}));
 
 const MyBookingsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -117,29 +76,6 @@ const MyBookingsPage = () => {
   const navigationType = useNavigationType();
   const [userMyFlightBooking, setUserMyFlightBookings] = useState<any>([]);
   const [userMyHotelBookings, setUserMyHotelBookings] = useState<any[]>([]);
-  const [userSightseeingBookings, setUserSightseeingBookings] = useState<
-    SightseeingBookingCardItem[]
-  >([]);
-
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const myBookingsDateFromWrapRef = useRef<HTMLDivElement>(null);
-  const myBookingsDateToWrapRef = useRef<HTMLDivElement>(null);
-
-  const openMyBookingsRangeCalendar = useCallback(() => {
-    const fromInput = myBookingsDateFromWrapRef.current?.querySelector(
-      "input",
-    ) as HTMLInputElement | null | undefined;
-    const toInput = myBookingsDateToWrapRef.current?.querySelector("input") as
-      | HTMLInputElement
-      | null
-      | undefined;
-    if (!dateFrom && fromInput) {
-      fromInput.click();
-      return;
-    }
-    toInput?.click();
-  }, [dateFrom]);
 
   const active = useMemo(
     () => parseStatusParam(searchParams.get("status")),
@@ -150,16 +86,13 @@ const MyBookingsPage = () => {
     [searchParams],
   );
 
-  const modeSelectValue = modeToParam(mode);
-  const statusSelectValue = statusToParam(active);
-
   const setStatusFilter = useCallback(
     (t: StatusTab) => {
       setSearchParams(
         (prev) => {
           const p = new URLSearchParams(prev);
           p.set("status", statusToParam(t));
-          if (!p.get("mode")) p.set("mode", "all");
+          if (!p.get("mode")) p.set("mode", "flights");
           return p;
         },
         { replace: true },
@@ -185,14 +118,9 @@ const MyBookingsPage = () => {
 
   useEffect(() => {
     const m = (location.state as { mode?: string } | null)?.mode;
-    if (
-      m === "Sightseeing" ||
-      m === "Hotels" ||
-      m === "Flights" ||
-      m === "All"
-    ) {
-      setModeFilter(m);
-    }
+    if (m === "Hotels") setModeFilter("Hotels");
+    else if (m === "Flights") setModeFilter("Flights");
+    else if (m === "All" || m === "Sightseeing") setModeFilter("Flights");
   }, [location.state, setModeFilter]);
 
   const { mutateAsync, isPending } = useMyBooking();
@@ -200,15 +128,14 @@ const MyBookingsPage = () => {
     useMyHotelBooking();
 
   const showBookingsLoader =
-    ((mode === "Flights" || mode === "All") && isPending) ||
-    ((mode === "Hotels" || mode === "All") && isHotelPending);
+    (mode === "Flights" && isPending) || (mode === "Hotels" && isHotelPending);
 
   const init = async () => {
     try {
       const response = await mutateAsync({
         status: active === "Confirmed" ? "completed" : active.toLowerCase(),
       });
-      const transformedBookings = transformBookingsResponse(response);
+      const transformedBookings = transformBookingsResponse(response ?? {});
       setUserMyFlightBookings(transformedBookings);
     } catch (error) {
       const err = extractErrorFromAxiosApiError(error);
@@ -231,16 +158,9 @@ const MyBookingsPage = () => {
   };
 
   useEffect(() => {
-    if (mode === "Flights" || mode === "All") {
-      void init();
-    }
-  }, [active, mode]);
-
-  useEffect(() => {
-    if (mode === "Hotels" || mode === "All") {
-      void initHotel();
-    }
-  }, [active, mode]);
+    void init();
+    void initHotel();
+  }, [active]);
 
   useEffect(() => {
     const qs = searchParams.toString();
@@ -272,20 +192,19 @@ const MyBookingsPage = () => {
     setSearchParams(new URLSearchParams(saved), { replace: true });
   }, [navigationType, location.search, setSearchParams]);
 
-  useEffect(() => {
-    if (mode !== "Sightseeing" && mode !== "All") return;
-    const local = getLocalSightseeingBookings();
-    const merged = mergeSightseeingBookingLists([], local);
-    setUserSightseeingBookings(merged);
-  }, [mode, active]);
-
-  const sharedListProps = useMemo(
-    () => ({
-      dateFrom,
-      dateTo,
-    }),
-    [dateFrom, dateTo],
-  );
+  useLayoutEffect(() => {
+    const s = (searchParams.get("mode") ?? "").toLowerCase();
+    if (s === "flights" || s === "hotels") return;
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.set("mode", "flights");
+        if (!p.get("status")) p.set("status", "all");
+        return p;
+      },
+      { replace: true },
+    );
+  }, [searchParams, setSearchParams]);
 
   return (
     <div className="py-6">
@@ -293,149 +212,75 @@ const MyBookingsPage = () => {
         show={showBookingsLoader}
         label="Please wait while we are fetching your bookings"
       />
-      <div className="mx-auto w-full max-w-[1168px] px-6">
-        <div className="flex w-full flex-col gap-4 min-[640px]:flex-row min-[640px]:items-end min-[640px]:justify-between">
-          {/* LEFT SIDE: Types + Status */}
-          <div className="flex w-full flex-col gap-3 min-[640px]:w-auto min-[640px]:flex-row min-[640px]:items-end min-[640px]:gap-4">
-            {/* Types */}
-            <div className="w-full min-[640px]:w-[120px] min-[640px]:shrink-0">
-              <SearchableDropdown
-                label="Types"
-                labelClass={FILTER_LABEL_CLASS}
-                options={MODE_OPTIONS}
-                value={modeSelectValue}
-                onChange={(v) => {
-                  const next =
-                    v === "hotels"
-                      ? "Hotels"
-                      : v === "sightseeing"
-                        ? "Sightseeing"
-                        : v === "flights"
-                          ? "Flights"
-                          : "All";
-                  setModeFilter(next);
-                }}
-                placeholder="All"
-                widthClass="w-full"
-                className={FILTER_DROPDOWN_TRIGGER_CLASS}
-                selectedValueClassName={FILTER_DROPDOWN_VALUE_CLASS}
-                placeholderValueClassName={FILTER_DROPDOWN_VALUE_CLASS}
-                noInnerOptionsScroll
-                hidePanelSearch
-                cacheKey="my-bookings-mode"
-              />
-            </div>
-
-            {/* Status */}
-            <div className="w-full min-[640px]:w-[120px] min-[640px]:shrink-0">
-              <SearchableDropdown
-                label="Status"
-                labelClass={FILTER_LABEL_CLASS}
-                options={STATUS_OPTIONS}
-                value={statusSelectValue}
-                onChange={(v) => {
-                  const next = parseStatusParam(v);
-                  setStatusFilter(next);
-                }}
-                placeholder="All"
-                widthClass="w-full"
-                className={FILTER_DROPDOWN_TRIGGER_CLASS}
-                selectedValueClassName={FILTER_DROPDOWN_VALUE_CLASS}
-                placeholderValueClassName={FILTER_DROPDOWN_VALUE_CLASS}
-                noInnerOptionsScroll
-                hidePanelSearch
-                cacheKey="my-bookings-status"
-              />
+      <div className="mx-auto w-full max-w-[1168px] border-t border-[#E5E7EB] px-6 pt-5">
+        {/* Status left; Flights/Hotels centered in the remaining row — no negative margins (they break hit-testing). */}
+        <div className="relative isolate flex w-full min-w-0 flex-col gap-5 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between min-[900px]:gap-8">
+          <div className="relative z-0 min-w-0 shrink-0 self-start min-[900px]:max-w-[min(100%,50%)]">
+            <span className={FILTER_LABEL_CLASS}>Status</span>
+            <div
+              className="mt-1.5 inline-flex h-[50px] w-max min-w-[417px] max-w-full flex-nowrap items-stretch gap-1 overflow-x-auto rounded-[16px] border border-[#C2CAD6] bg-[#F9FAFB] p-[5px] [scrollbar-width:thin]"
+              role="tablist"
+              aria-label="Booking status"
+            >
+              {statusTabs.map((tab) => {
+                const selected = active === tab;
+                return (
+                  <button
+                    key={tab}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setStatusFilter(tab)}
+                    className={[
+                      "min-h-0 shrink-0 cursor-pointer select-none rounded-[12px] px-3 text-[13px] font-medium leading-none transition-colors sm:px-3.5",
+                      selected
+                        ? "bg-[#2351A3] text-white shadow-sm"
+                        : "text-[#374151] hover:bg-white/90 hover:text-[#111827]",
+                    ].join(" ")}
+                  >
+                    <span className="flex h-full items-center justify-center whitespace-nowrap py-2 text-center">
+                      {tab}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* RIGHT SIDE: Filter by Date (UNCHANGED) */}
-          <div className="w-full min-w-0 min-[540px]:w-[360px] min-[540px]:shrink-0">
-            <span className={FILTER_LABEL_CLASS}>Filter by Date</span>
-
-            <div className="hotel-date-range-row">
+          <div className="relative z-10 flex min-w-0 flex-1 justify-center min-[900px]:mr-[20rem] min-[900px]:items-end">
+            <nav className="min-w-0" aria-label="Booking type">
               <div
-                ref={myBookingsDateFromWrapRef}
-                className="min-w-0 flex-1 basis-0"
+                className="flex select-none items-stretch justify-center gap-3 border-b border-[#E5E7EB] sm:gap-4"
+                role="tablist"
               >
-                <TailiwindCustomDatePicker
-                  value={dateFrom ? new Date(dateFrom) : null}
-                  onChange={(date) => {
-                    const dateStr = convertDateToString(date);
-                    setDateFrom(dateStr);
-                    if (dateTo && dateStr && dateTo < dateStr) setDateTo("");
-                  }}
-                  placeholder="From"
-                  buttonIconSrc={true}
-                  overridesClass={true}
-                  showCalendarIconRight={false}
-                  hideCalendarButton
-                  inputClass={FILTER_DATE_INPUT_CLASS}
-                  disablePastDates={false}
-                  tooltip="Select from date"
-                />
+                {CATEGORY_TABS.map((item) => {
+                  const selected = mode === item.mode;
+                  return (
+                    <button
+                      key={item.mode}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      onClick={() => setModeFilter(item.mode)}
+                      className={[
+                        "relative -mb-px min-w-[72px] cursor-pointer px-3 pb-3 pt-1 text-[15px] font-medium transition-colors sm:min-w-[80px] sm:px-4",
+                        selected
+                          ? "text-[#2351A3]"
+                          : "text-[#6B7280] hover:text-[#374151]",
+                      ].join(" ")}
+                    >
+                      {item.label}
+                      {selected ? (
+                        <span
+                          className="absolute bottom-0 left-2 right-2 h-[3px] rounded-t bg-[#2351A3] sm:left-3 sm:right-3"
+                          aria-hidden
+                        />
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
-
-              <span
-                className={`shrink-0 select-none ${FILTER_FIELD_VALUE_TEXT_CLASS}`}
-                aria-hidden
-              >
-                —
-              </span>
-
-              <div
-                ref={myBookingsDateToWrapRef}
-                className="min-w-0 flex-1 basis-0"
-              >
-                <TailiwindCustomDatePicker
-                  value={dateTo ? new Date(dateTo) : null}
-                  onChange={(date) => setDateTo(convertDateToString(date))}
-                  placeholder="To"
-                  buttonIconSrc={true}
-                  overridesClass={true}
-                  showCalendarIconRight={false}
-                  hideCalendarButton
-                  inputClass={FILTER_DATE_INPUT_CLASS}
-                  disablePastDates={false}
-                  minDate={dateFrom ? new Date(dateFrom) : null}
-                  tooltip="Select to date"
-                />
-              </div>
-
-              <button
-                type="button"
-                onClick={openMyBookingsRangeCalendar}
-                className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-md text-[#64748B] transition-colors hover:bg-[#F1F5F9]"
-                aria-label="Open calendar"
-              >
-                <img
-                  src={CalendarIcon}
-                  alt=""
-                  className="pointer-events-none h-4 w-4 opacity-80"
-                />
-              </button>
-
-              {(dateFrom || dateTo) && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setDateFrom("");
-                    setDateTo("");
-                  }}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center self-center rounded-md text-[#94A3B8] transition-colors hover:bg-[#F1F5F9] hover:text-[#64748B]"
-                  aria-label="Clear date filter"
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M18 6 6 18M6 6l12 12"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              )}
-            </div>
+            </nav>
           </div>
         </div>
       </div>
@@ -446,39 +291,12 @@ const MyBookingsPage = () => {
             bookings={userMyFlightBooking}
             filterStatus={active}
             mode={"Flights" as TripMode}
-            {...sharedListProps}
           />
-        ) : mode === "Hotels" ? (
+        ) : (
           <UserHotelBookingsListing
             filterStatus={active}
             bookings={userMyHotelBookings}
-            {...sharedListProps}
           />
-        ) : mode === "Sightseeing" ? (
-          <UserSightseeingBookingsListing
-            filterStatus={active}
-            bookings={userSightseeingBookings}
-            {...sharedListProps}
-          />
-        ) : (
-          <div className="space-y-10">
-            <UserBookingsListing
-              bookings={userMyFlightBooking}
-              filterStatus={active}
-              mode={"Flights" as TripMode}
-              {...sharedListProps}
-            />
-            <UserHotelBookingsListing
-              filterStatus={active}
-              bookings={userMyHotelBookings}
-              {...sharedListProps}
-            />
-            <UserSightseeingBookingsListing
-              filterStatus={active}
-              bookings={userSightseeingBookings}
-              {...sharedListProps}
-            />
-          </div>
         )}
       </div>
     </div>

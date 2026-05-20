@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-// import EmirateLogo from "../../assets/images/emirates.png";
+import EmirateLogo from "../../assets/images/emirates.png";
 import AlRaisLogo from "../../assets/images/al-rais-logo.png";
 import tripImageCard1 from "../../assets/images/tripimagecard1.jpg";
 import tripImageCard2 from "../../assets/images/tripimagecard2.jpg";
@@ -30,6 +30,30 @@ import { VITE_S3_TICKET_PUBLIC_BASE } from "../../config/publicEnv";
 
 /** Base URL for uploaded ticket PDFs on S3 (bucket + region) */
 const S3_TICKET_BASE = VITE_S3_TICKET_PUBLIC_BASE;
+
+const TICKET_LINE = "border-[#E0E0E0]";
+const TICKET_LABEL = "text-[12px] font-normal text-[#666666]";
+const TICKET_VALUE = "text-[14px] font-semibold leading-snug text-[#1A1A1A]";
+
+function AirlineMark({ code }: { code: string }) {
+  const c = String(code || "").toUpperCase();
+  if (c === "EK") {
+    return (
+      <img
+        src={EmirateLogo}
+        alt=""
+        className="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-[#E0E0E0]"
+      />
+    );
+  }
+  return (
+    <div
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#F3F4F6] text-[11px] font-bold text-[#4B5563] ring-1 ${TICKET_LINE}`}
+    >
+      {c.slice(0, 2) || "—"}
+    </div>
+  );
+}
 
 type FlightBookingETicketSectionProps = {
   reservedFlightBooking?: any;
@@ -154,6 +178,31 @@ export default function FlightBookingETicketSection({
             }
           }
         }
+        const lastSeg =
+          allSegments.length > 0
+            ? allSegments[allSegments.length - 1]
+            : seg;
+        const depCode = seg?.departureAirportCode || "";
+        const arrCode =
+          allSegments.length > 0
+            ? (lastSeg as any)?.arrivalAirportCode ?? seg?.arrivalAirportCode ?? ""
+            : seg?.arrivalAirportCode || "";
+        const depTitle =
+          (seg?.departureAirportName &&
+            String(seg.departureAirportName).trim()) ||
+          (seg?.departureAirportCity
+            ? `${String(seg.departureAirportCity).trim()} (${depCode})`
+            : "");
+        const depDisplayName =
+          depTitle || (depCode ? `${depCode} Airport (${depCode})` : "—");
+        const arrTitle =
+          ((lastSeg as any)?.arrivalAirportName &&
+            String((lastSeg as any).arrivalAirportName).trim()) ||
+          ((lastSeg as any)?.arrivalAirportCity
+            ? `${String((lastSeg as any).arrivalAirportCity).trim()} (${arrCode})`
+            : "");
+        const arrDisplayName =
+          arrTitle || (arrCode ? `${arrCode} Airport (${arrCode})` : "—");
         return {
           heading,
           airlineCode: seg?.marketingAirline || "EK",
@@ -162,14 +211,10 @@ export default function FlightBookingETicketSection({
           duration,
           stops: stopsLabel,
           stopDetails,
-          depCode: seg?.departureAirportCode || "",
-          arrCode:
-            allSegments.length > 0
-              ? ((allSegments[allSegments.length - 1] as any)
-                  ?.arrivalAirportCode ??
-                seg?.arrivalAirportCode ??
-                "")
-              : seg?.arrivalAirportCode || "",
+          depCode,
+          arrCode,
+          depDisplayName,
+          arrDisplayName,
           depTime: seg?.departureDateTime || "",
           arrTime:
             allSegments.length > 0
@@ -198,6 +243,8 @@ export default function FlightBookingETicketSection({
       stopDetails: Array<{ airportCode: string; layover?: string }>;
       depCode: string;
       arrCode: string;
+      depDisplayName: string;
+      arrDisplayName: string;
       depTime: string;
       arrTime: string;
       depTerminal: string;
@@ -218,12 +265,42 @@ export default function FlightBookingETicketSection({
       (item: any) => item.paxType === ptc,
     );
 
+    const personalArr = baggageAllowance?.personalItemBaggage;
+    const personalForPax = Array.isArray(personalArr)
+      ? personalArr.find((item: any) => item.paxType === ptc)
+      : null;
+    const personalFromRoot =
+      typeof baggageAllowance?.personalItem === "string"
+        ? baggageAllowance.personalItem.trim()
+        : "";
+
     return {
+      personalItem: personalForPax
+        ? formatQuantityUnit(personalForPax.value, personalForPax.unit) ||
+          String(personalForPax.description ?? "")
+            .replace(/\s+/g, " ")
+            .trim() ||
+          "As per airline policy"
+        : personalFromRoot || "No free baggage allowance",
       carryOn: carryOnForPax
-        ? formatQuantityUnit(carryOnForPax.value, carryOnForPax.unit) || "None"
+        ? [
+            formatQuantityUnit(carryOnForPax.value, carryOnForPax.unit),
+            String(carryOnForPax.description ?? "")
+              .replace(/\s+/g, " ")
+              .trim(),
+          ]
+            .filter(Boolean)
+            .join(", ") || "None"
         : "None",
       checkedIn: checkedInForPax
-        ? formatQuantityUnit(checkedInForPax.value, checkedInForPax.unit) || "None"
+        ? [
+            formatQuantityUnit(checkedInForPax.value, checkedInForPax.unit),
+            String(checkedInForPax.description ?? "")
+              .replace(/\s+/g, " ")
+              .trim(),
+          ]
+            .filter(Boolean)
+            .join(", ") || "None"
         : "None",
     };
   };
@@ -262,6 +339,30 @@ export default function FlightBookingETicketSection({
       ? "No seat selected"
       : "Assigned at check-in";
   }, [seatDisplayText, seatAddOnAvailable]);
+
+  const seatDisplayForTicket = useMemo(() => {
+    if (seatLabelsFromAncillaries.length || seatLabelsFromPassengers.length) {
+      const raw =
+        seatLabelsFromAncillaries[0] ||
+        String(seatLabelsFromPassengers[0] || "").replace(/^Seat\s+/i, "");
+      const code = String(raw || seatDisplayText || "")
+        .replace(/^Seat\s+/i, "")
+        .trim();
+      if (
+        code &&
+        !/no seat|check-in|assigned/i.test(code) &&
+        !code.toLowerCase().includes("no seat")
+      ) {
+        return `${code} (Confirmed)`;
+      }
+    }
+    return seatStatusText;
+  }, [
+    seatLabelsFromAncillaries,
+    seatLabelsFromPassengers,
+    seatDisplayText,
+    seatStatusText,
+  ]);
 
   const ancillaryBreakdownNonSeat = useMemo(() => {
     return (ancillarySummary?.breakdown ?? []).filter(
@@ -339,10 +440,10 @@ export default function FlightBookingETicketSection({
     }
   };
 
-  const NotchDivider = () => (
-    <div className="relative mt-7 mb-10 -mx-2">
-      <div className="absolute inset-x-0 bottom-2">
-        <div className="border-t border-dashed border-[#E4E4E7]" />
+  const TicketPerforation = () => (
+    <div className="relative my-1 h-[22px] w-full">
+      <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 px-3">
+        <div className="border-t border-dashed border-[#E0E0E0]" />
       </div>
 
       <span
@@ -359,7 +460,7 @@ export default function FlightBookingETicketSection({
           <path
             d="M0.5 0.512695C5.51429 0.772696 9.5 4.92101 9.5 10C9.5 15.079 5.51426 19.2263 0.5 19.4863V0.512695Z"
             fill="white"
-            stroke="#C2CAD6"
+            stroke="#E0E0E0"
           />
         </svg>
       </span>
@@ -378,7 +479,7 @@ export default function FlightBookingETicketSection({
           <path
             d="M9.5 0.512695C4.48571 0.772696 0.5 4.92101 0.5 10C0.5 15.079 4.48574 19.2263 9.5 19.4863V0.512695Z"
             fill="white"
-            stroke="#C2CAD6"
+            stroke="#E0E0E0"
           />
         </svg>
       </span>
@@ -388,7 +489,7 @@ export default function FlightBookingETicketSection({
   const InfoRow = ({ children }: { children: React.ReactNode }) => (
     <div className="flex items-center gap-2">
       <img src={INFO_ICON} alt="info" />
-      <p className="text-[13px] text-[#3D495C]">{children}</p>
+      <p className="text-[13px] leading-relaxed text-[#666666]">{children}</p>
     </div>
   );
 
@@ -396,7 +497,7 @@ export default function FlightBookingETicketSection({
     <>
       <div
         id="flight-instructions-content"
-        className="rounded-2xl border border-[#E4E4E7] bg-white shadow-sm px-4 pt-4 pb-2"
+        className="overflow-hidden rounded-xl border border-[#E0E0E0] bg-white px-5 py-5 shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:px-6"
       >
         <div>
           <InfoRow>
@@ -421,7 +522,7 @@ export default function FlightBookingETicketSection({
           </InfoRow>
         </div>
 
-        <NotchDivider />
+        <TicketPerforation />
 
         {/* Baggage table */}
         {/* <div className="grid grid-cols-[120px_1fr] gap-x-2 gap-y-2 [font-variant-numeric:tabular-nums]">
@@ -439,9 +540,7 @@ export default function FlightBookingETicketSection({
           <div className="text-[14px] font-medium text-[#0A0C0F] text-right">
             {checkedInText}
           </div>
-        </div>
-
-        <NotchDivider /> */}
+        </div> */}
 
         {/* Individual passenger baggage details */}
         <div className="space-y-3">
@@ -453,25 +552,28 @@ export default function FlightBookingETicketSection({
                 className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1.4fr]"
               >
                 <div>
-                  <div className="text-[15px] font-medium text-[#0A0C0F]">
+                  <div className={TICKET_LABEL}>
                     Passenger {String(index + 1).padStart(2, "0")} (
                     {getPassengerType(passenger)})
+                  </div>
+                  <div className="mt-1 text-[16px] font-semibold leading-snug text-[#1A1A1A]">
+                    {getPassengerName(passenger)}
                   </div>
                 </div>
 
                 <div className="[font-variant-numeric:tabular-nums]">
-                  <div className="grid grid-cols-[1fr_auto] items-center gap-y-2">
-                    <div className="text-[12px] text-[#3D495C]">
-                      Carry-on baggage
+                  <div className="grid grid-cols-[1fr_auto] items-center gap-y-2.5">
+                    <div className={TICKET_LABEL}>Personal item</div>
+                    <div className={`${TICKET_VALUE} text-right`}>
+                      {baggage.personalItem}
                     </div>
-                    <div className="text-[15px] font-medium text-[#0A0C0F] text-right">
+                    <div className={TICKET_LABEL}>Carry-on baggage</div>
+                    <div className={`${TICKET_VALUE} text-right`}>
                       {baggage.carryOn}
                     </div>
 
-                    <div className="text-[12px] text-[#3D495C]">
-                      Checked baggage
-                    </div>
-                    <div className="text-[15px] font-medium text-[#0A0C0F] text-right">
+                    <div className={TICKET_LABEL}>Checked baggage</div>
+                    <div className={`${TICKET_VALUE} text-right`}>
                       {baggage.checkedIn}
                     </div>
                   </div>
@@ -481,7 +583,7 @@ export default function FlightBookingETicketSection({
           })}
         </div>
 
-        <NotchDivider />
+        <TicketPerforation />
 
         <div className="pb-6 pt-2 flex flex-col items-center gap-2">
           <div className="flex items-center gap-2 select-none">
@@ -495,13 +597,13 @@ export default function FlightBookingETicketSection({
         </div>
 
         <div className="pdf-hide">
-          <NotchDivider />
+          <TicketPerforation />
         </div>
 
         <div className="pb-2 text-center">
           <Button
             type="button"
-            className="text-[15px] font-medium text-[#5383DA] hover:underline pdf-hide"
+            className="text-[15px] font-semibold text-[#2351A3] hover:underline pdf-hide"
             onClick={() => setShowInstructions(false)}
             overrideClasses
           >
@@ -515,10 +617,10 @@ export default function FlightBookingETicketSection({
   const FlightTicketContentCard = () => (
     <div
       id="flight-ticket-content"
-      className="rounded-2xl border border-[#E4E4E7] bg-[#ededed] shadow-sm px-4 pt-4 pb-2"
+      className="overflow-hidden rounded-xl border border-[#E0E0E0] bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]"
     >
-      <div>
-        <div className="flex items-start justify-center gap-2 px-4 sm:px-6">
+      <div className="px-5 pt-5 sm:px-6">
+        <div className="flex items-start gap-3">
           <svg
             width="20"
             height="20"
@@ -532,102 +634,99 @@ export default function FlightBookingETicketSection({
             />
           </svg>
 
-          <p className="text-[13px] leading-5 text-[#3D495C]">
+          <p className="text-[13px] leading-relaxed text-[#666666]">
             We advise you to print out your itinerary and take it with you to
             ensure your trip goes as smoothly as possible.
           </p>
         </div>
 
-        <div className="my-4 grid grid-cols-3 gap-x-4 gap-y-3">
+        <div className="mt-5 grid grid-cols-3 gap-3 sm:gap-4">
           <div className="min-w-0">
-            <div className="text-[13px] text-[#3D495C]">Booking number</div>
-            <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
+            <div className={TICKET_LABEL}>Booking number</div>
+            <div className={`mt-1.5 ${TICKET_VALUE} break-words`}>
               {bookingRef}
             </div>
           </div>
 
           <div className="min-w-0">
-            <div className="text-[13px] text-[#3D495C]">E-ticket number</div>
-            <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
+            <div className={TICKET_LABEL}>E-ticket number</div>
+            <div className={`mt-1.5 ${TICKET_VALUE} break-words`}>
               {ticketNumber}
             </div>
           </div>
 
           <div className="min-w-0">
-            <div className="text-[13px] text-[#3D495C]">
-              Airline booking reference
-            </div>
-            <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
+            <div className={TICKET_LABEL}>Airline booking reference</div>
+            <div className={`mt-1.5 ${TICKET_VALUE} break-words`}>
               {airlineLocator}
             </div>
           </div>
         </div>
       </div>
 
-      <NotchDivider />
+      <TicketPerforation />
 
-      <div className="my-4 grid grid-cols-3 gap-x-4 gap-y-3">
-        <div className="min-w-0">
-          <div className="text-[13px] text-[#3D495C]">Title & Full Name</div>
-          <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
-            {getPassengerName(passengers[0])}
+      <div className="px-5 py-4 sm:px-6">
+        <div className="grid grid-cols-3 gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <div className={TICKET_LABEL}>Title & Full Name</div>
+            <div className={`mt-1.5 ${TICKET_VALUE} break-words`}>
+              {getPassengerName(passengers[0])}
+            </div>
           </div>
-        </div>
-        <div className="min-w-0">
-          <div className="text-[13px] text-[#3D495C]">Class</div>
-          <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F]">
-            {outboundCabinClass}
+          <div className="min-w-0">
+            <div className={TICKET_LABEL}>Class</div>
+            <div className={`mt-1.5 ${TICKET_VALUE}`}>
+              {outboundCabinClass}
+            </div>
           </div>
-        </div>
-        <div className="min-w-0">
-          <div className="text-[13px] text-[#3D495C]">Seat</div>
-          <div className="mt-1 text-[15px] font-medium leading-6 text-[#0A0C0F] break-words">
-            {seatStatusText}
+          <div className="min-w-0">
+            <div className={TICKET_LABEL}>Seat</div>
+            <div className={`mt-1.5 ${TICKET_VALUE} break-words`}>
+              {seatDisplayForTicket}
+            </div>
           </div>
         </div>
       </div>
 
-      <NotchDivider />
+      <TicketPerforation />
 
-      <div className="space-y-3">
+      <div className="space-y-0 px-5 pb-1 sm:px-6">
         {/* Flight(s): oneway (1), roundtrip (2), multicity (N) */}
         {flightBlocks.map((block, blockIndex) => (
           <div key={blockIndex}>
-            {blockIndex > 0 && <NotchDivider />}
-            <div className={blockIndex > 0 ? "mt-4" : ""}>
-              <div className="mb-2">
-                <div className="text-[12px] font-medium text-[#3D495C]">
+            {blockIndex > 0 && <TicketPerforation />}
+              <div className={blockIndex > 0 ? "mt-2" : ""}>
+              <div className="mb-3">
+                <div className={`${TICKET_LABEL} font-medium uppercase tracking-wide`}>
                   {block.heading}
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-x-4 gap-y-2">
-                <div className="min-w-0 flex items-center gap-2">
+              <div className="grid grid-cols-3 gap-3 sm:gap-4">
+                <div className="flex min-w-0 items-start gap-2.5">
+                  <AirlineMark code={block.airlineCode} />
                   <div className="min-w-0">
-                    <div className="text-[14px] font-medium leading-5 text-[#0A0C0F] break-words">
+                    <div className={`${TICKET_VALUE} leading-snug`}>
                       {block.airlineDisplayName}
                     </div>
-                    <div className="text-[12px] text-[#3D495C]">
+                    <div className={`mt-0.5 text-[12px] text-[#666666]`}>
                       {block.airlineCode} {block.flightNumber}
                     </div>
                   </div>
                 </div>
                 <div>
-                  <div className="text-[12px] text-[#3D495C]">Duration</div>
-                  <div className="text-[14px] font-medium text-[#0A0C0F]">
-                    {block.duration}
-                  </div>
+                  <div className={TICKET_LABEL}>Duration</div>
+                  <div className={`mt-1 ${TICKET_VALUE}`}>{block.duration}</div>
                 </div>
                 <div>
-                  <div className="text-[12px] text-[#3D495C]">Stops</div>
-                  <div className="text-[14px] font-medium text-[#0A0C0F]">
-                    {block.stops}
-                  </div>
+                  <div className={TICKET_LABEL}>Stops</div>
+                  <div className={`mt-1 ${TICKET_VALUE}`}>{block.stops}</div>
                 </div>
               </div>
               {block.stopDetails && block.stopDetails.length > 0 && (
-                <div className="mt-3 px-3 py-2">
-                  <div className="text-[11px] font-medium text-[#3D495C] mb-1.5">
-                    Stop(s) & layover
+            <div className="mt-3 rounded-lg border border-[#ECECEC] bg-[#FAFAFA] px-3 py-2 sm:px-4">
+                  <div className={`${TICKET_LABEL} mb-1.5 font-medium`}>
+                    Stop(s) &amp; layover
                   </div>
                   <ul className="space-y-1.5">
                     {block.stopDetails.map((stop, stopIdx) => (
@@ -648,9 +747,10 @@ export default function FlightBookingETicketSection({
                   </ul>
                 </div>
               )}
-              <div className="py-4">
-                <div className="flex items-center gap-2">
+              <div className="space-y-3 pt-3">
+                <div className="flex items-start gap-2.5">
                   <svg
+                    className="mt-0.5 shrink-0"
                     width="20"
                     height="14"
                     viewBox="0 0 20 14"
@@ -659,23 +759,24 @@ export default function FlightBookingETicketSection({
                   >
                     <path
                       d="M13.7486 13.375C13.7486 13.5408 13.6828 13.6998 13.5656 13.817C13.4483 13.9342 13.2894 14 13.1236 14H1.87362C1.70786 14 1.54889 13.9342 1.43167 13.817C1.31446 13.6998 1.24862 13.5408 1.24862 13.375C1.24862 13.2093 1.31446 13.0503 1.43167 12.9331C1.54889 12.8159 1.70786 12.75 1.87362 12.75H13.1236C13.2894 12.75 13.4483 12.8159 13.5656 12.9331C13.6828 13.0503 13.7486 13.2093 13.7486 13.375ZM19.3627 3.77737C19.3463 3.86436 19.3117 3.94688 19.261 4.01947C19.2104 4.09207 19.1449 4.15308 19.0689 4.19846L7.55252 11.0735C7.07247 11.355 6.52621 11.5038 5.96971 11.5047C5.17699 11.5038 4.41457 11.2 3.83846 10.6555L3.82909 10.6461L1.01424 7.89065C0.865311 7.74922 0.753524 7.57328 0.688765 7.37837C0.624005 7.18347 0.608269 6.97561 0.642948 6.77317C0.677626 6.57074 0.761651 6.37997 0.887593 6.21773C1.01353 6.05549 1.17751 5.92679 1.36502 5.843L1.5994 5.72815C1.74741 5.65549 1.91814 5.64425 2.0744 5.6969L4.28221 6.44221L5.85799 5.48909L4.15252 3.83362C3.99915 3.69232 3.88356 3.51489 3.8163 3.31749C3.74903 3.12009 3.73222 2.909 3.7674 2.70344C3.80258 2.49789 3.88863 2.3044 4.01771 2.14061C4.14679 1.97681 4.31479 1.84791 4.50643 1.76565L4.53143 1.7555L5.09002 1.54378C5.23086 1.49126 5.3859 1.49126 5.52674 1.54378L9.7408 3.09221L13.7697 0.687527C14.4118 0.305408 15.1699 0.167121 15.9055 0.297947C16.6411 0.428772 17.305 0.819971 17.776 1.40003L17.7853 1.41175L19.2416 3.27815C19.296 3.34803 19.3349 3.42868 19.3558 3.51475C19.3767 3.60081 19.379 3.69033 19.3627 3.77737ZM17.8205 3.48831L16.8049 2.18596C16.5222 1.84016 16.1248 1.60724 15.685 1.52954C15.2452 1.45183 14.792 1.53451 14.408 1.76253L10.1267 4.31878C10.0466 4.36632 9.95682 4.39547 9.864 4.40411C9.77119 4.41276 9.67761 4.40069 9.59002 4.36878L5.31112 2.79534L4.99862 2.91487L5.01502 2.9305L7.30877 5.15628C7.37727 5.22284 7.42961 5.30422 7.46176 5.39416C7.49391 5.4841 7.50502 5.58021 7.49423 5.67511C7.48344 5.77002 7.45104 5.86119 7.39953 5.94162C7.34801 6.02205 7.27875 6.0896 7.19705 6.13909L4.68065 7.66175C4.6028 7.70876 4.51563 7.73822 4.42523 7.74807C4.33482 7.75792 4.24335 7.74793 4.15721 7.71878L1.91737 6.96331L1.90252 6.97112L1.87362 6.9844C1.87738 6.98709 1.88079 6.99024 1.88377 6.99378L4.69627 9.74847C4.98979 10.0243 5.36478 10.1976 5.76506 10.2424C6.16535 10.2872 6.56937 10.201 6.91659 9.9969L17.8205 3.48831Z"
-                      fill="#3D495C"
+                      fill="#666666"
                     />
                   </svg>
-                  <div>
-                    <div className="text-[12px] font-medium text-[#0A0C0F]">
-                      {block.depCode} Airport ({block.depCode})
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-semibold leading-snug text-[#1A1A1A]">
+                      {block.depDisplayName}
                     </div>
-                    <div className="text-[12px] text-[#3D495C]">
-                      {formatTime(block.depTime)} • {formatDate(block.depTime)}{" "}
+                    <div className="mt-1 text-[12px] leading-relaxed text-[#666666]">
+                      {formatTime(block.depTime)} • {formatDate(block.depTime)}
                       {block.depTerminal
-                        ? `• Terminal ${block.depTerminal}`
+                        ? ` • Terminal ${block.depTerminal} international`
                         : ""}
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-start gap-2.5">
                   <svg
+                    className="mt-0.5 shrink-0"
                     width="19"
                     height="15"
                     viewBox="0 0 19 15"
@@ -684,17 +785,17 @@ export default function FlightBookingETicketSection({
                   >
                     <path
                       d="M19 14.375C19 14.5407 18.9342 14.6997 18.8169 14.8169C18.6997 14.9341 18.5408 15 18.375 15H7.125C6.95924 15 6.80027 14.9341 6.68306 14.8169C6.56585 14.6997 6.5 14.5407 6.5 14.375C6.5 14.2092 6.56585 14.0502 6.68306 13.933C6.80027 13.8158 6.95924 13.75 7.125 13.75H18.375C18.5408 13.75 18.6997 13.8158 18.8169 13.933C18.9342 14.0502 19 14.2092 19 14.375ZM16.9562 12.4765L3.15703 8.61247C2.5012 8.42715 1.92365 8.03312 1.51186 7.49009C1.10008 6.94705 0.876497 6.2846 0.875 5.6031V1.24997C0.874985 1.0519 0.922042 0.856653 1.01229 0.680333C1.10254 0.504013 1.2334 0.351665 1.39409 0.235844C1.55477 0.120023 1.74068 0.0440462 1.93649 0.0141745C2.1323 -0.0156971 2.3324 0.00139196 2.52031 0.0640332L2.94766 0.206221C3.03728 0.236003 3.11899 0.285711 3.18665 0.351608C3.25431 0.417505 3.30615 0.497879 3.33828 0.586689L4.16641 2.88122L6.5 3.54606V1.24997C6.49999 1.0519 6.54704 0.856653 6.63729 0.680333C6.72754 0.504013 6.8584 0.351665 7.01909 0.235844C7.17977 0.120023 7.36568 0.0440462 7.56149 0.0141745C7.7573 -0.0156971 7.9574 0.00139196 8.14531 0.0640332L8.57266 0.206221C8.65723 0.234407 8.7348 0.280361 8.80016 0.340997C8.86551 0.401634 8.91713 0.47555 8.95156 0.557783L10.7094 4.74763L15.4625 6.07575C16.1197 6.2603 16.6986 6.65428 17.1115 7.19785C17.5244 7.74142 17.7485 8.40489 17.75 9.08747V11.875C17.75 11.9714 17.7276 12.0666 17.6847 12.153C17.6417 12.2393 17.5794 12.3146 17.5025 12.3729C17.4256 12.4311 17.3363 12.4708 17.2415 12.4888C17.1468 12.5068 17.0491 12.5026 16.9562 12.4765ZM16.5 9.08747C16.4989 8.67784 16.3642 8.27974 16.1163 7.95361C15.8685 7.62749 15.521 7.39114 15.1266 7.28044L10.082 5.87419C9.99116 5.84888 9.9072 5.80333 9.83644 5.74096C9.76568 5.67859 9.70995 5.60101 9.67344 5.51403L7.90625 1.30231L7.75 1.24997V4.37497C7.75007 4.47169 7.72769 4.56711 7.68462 4.65371C7.64155 4.74032 7.57897 4.81574 7.5018 4.87405C7.42463 4.93237 7.33498 4.97197 7.23991 4.98975C7.14484 5.00754 7.04693 5.00301 6.95391 4.97653L3.51641 3.99685C3.42096 3.96949 3.33341 3.91979 3.26099 3.85186C3.18858 3.78393 3.13339 3.69973 3.1 3.60622L2.26484 1.29606L2.125 1.24997V5.6031C2.12601 6.01209 2.26023 6.40962 2.50734 6.73553C2.75444 7.06143 3.10099 7.29797 3.49453 7.40935L16.5 11.0508V9.08747Z"
-                      fill="#3D495C"
+                      fill="#666666"
                     />
                   </svg>
-                  <div>
-                    <div className="text-[12px] font-medium text-[#0A0C0F]">
-                      {block.arrCode} Airport ({block.arrCode})
+                  <div className="min-w-0">
+                    <div className="text-[14px] font-semibold leading-snug text-[#1A1A1A]">
+                      {block.arrDisplayName}
                     </div>
-                    <div className="text-[12px] text-[#3D495C]">
-                      {formatTime(block.arrTime)} • {formatDate(block.arrTime)}{" "}
+                    <div className="mt-1 text-[12px] leading-relaxed text-[#666666]">
+                      {formatTime(block.arrTime)} • {formatDate(block.arrTime)}
                       {block.arrTerminal
-                        ? `• Terminal ${block.arrTerminal}`
+                        ? ` • Terminal ${block.arrTerminal} international`
                         : ""}
                     </div>
                   </div>
@@ -705,38 +806,39 @@ export default function FlightBookingETicketSection({
         ))}
       </div>
 
-      <NotchDivider />
+      <TicketPerforation />
 
+      <div className="px-5 pb-4 pt-1 sm:px-6">
       {passengers.map((passenger: any, index: number) => {
         const baggage = getBaggageForPassenger(passenger);
         return (
           <div
             key={index}
-            className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_1.4fr] mt-3"
+            className="grid grid-cols-1 gap-4 border-b border-[#F3F4F6] py-4 last:border-b-0 sm:grid-cols-[1fr_1.35fr]"
           >
             <div>
-              <div className="text-[13px] text-[#3D495C]">
+              <div className={TICKET_LABEL}>
                 Passenger {String(index + 1).padStart(2, "0")} (
                 {getPassengerType(passenger)})
               </div>
-              <div className="text-[16px] font-medium text-[#0A0C0F]">
+              <div className="mt-1 text-[16px] font-semibold leading-snug text-[#1A1A1A]">
                 {getPassengerName(passenger)}
               </div>
             </div>
 
             <div className="[font-variant-numeric:tabular-nums]">
-              <div className="grid grid-cols-[1fr_auto] items-center gap-y-2">
-                <div className="text-[12px] text-[#3D495C]">
-                  Carry-on baggage
+              <div className="grid grid-cols-[1fr_auto] items-center gap-y-2.5">
+                <div className={TICKET_LABEL}>Personal item</div>
+                <div className={`${TICKET_VALUE} text-right`}>
+                  {baggage.personalItem}
                 </div>
-                <div className="text-[15px] font-medium text-[#0A0C0F] text-right">
+                <div className={TICKET_LABEL}>Carry-on baggage</div>
+                <div className={`${TICKET_VALUE} text-right`}>
                   {baggage.carryOn}
                 </div>
 
-                <div className="text-[12px] text-[#3D495C]">
-                  Checked baggage
-                </div>
-                <div className="text-[15px] font-medium text-[#0A0C0F] text-right">
+                <div className={TICKET_LABEL}>Checked baggage</div>
+                <div className={`${TICKET_VALUE} text-right`}>
                   {baggage.checkedIn}
                 </div>
               </div>
@@ -744,12 +846,13 @@ export default function FlightBookingETicketSection({
           </div>
         );
       })}
+      </div>
 
       {ancillaryBreakdownNonSeat.length > 0 && (
           <>
-            <NotchDivider />
-            <div className="mt-3">
-              <div className="text-[13px] text-[#3D495C]">Ancillaries</div>
+            <TicketPerforation />
+            <div className="px-5 pb-4 pt-1 sm:px-6">
+              <div className={TICKET_LABEL}>Ancillaries</div>
               <div className="mt-2 space-y-2 [font-variant-numeric:tabular-nums]">
                 {ancillaryBreakdownNonSeat.map((item, idx) => (
                   <div
@@ -781,13 +884,13 @@ export default function FlightBookingETicketSection({
         )}
 
       <div className="pdf-hide">
-        <NotchDivider />
+        <TicketPerforation />
       </div>
 
-      <div className="pb-2 text-center">
+      <div className="px-5 pb-5 pt-2 text-center">
         <Button
           type="button"
-          className="text-[15px] font-medium text-[#5383DA] hover:underline pdf-hide"
+          className="text-[15px] font-semibold text-[#2351A3] hover:underline pdf-hide"
           onClick={() => setShowInstructions(true)}
           overrideClasses
         >
@@ -856,45 +959,22 @@ export default function FlightBookingETicketSection({
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-4 mt-10 mb-12">
-            {/* Share Button */}
+          <div className="mb-12 mt-10 flex w-full max-w-[503px] flex-col gap-3 sm:flex-row sm:gap-4">
             <Button
               type="button"
               overrideClasses
               onClick={() => setOpenShareModal(true)}
-              className="
-              h-[47px]
-              px-[40px]
-              rounded-[100px]
-              border-[1.5px]
-              border-[#2351A3]
-              text-[#2351A3]
-              text-[16px]
-              font-semibold
-              flex items-center justify-center gap-[10px]
-              bg-transparent
-            "
+              className="flex h-[52px] w-full flex-1 items-center justify-center rounded-xl border-2 border-[#2351A3] bg-white text-[15px] font-semibold text-[#2351A3] transition-colors hover:bg-[#F8FAFF]"
             >
               Share your ticket
             </Button>
 
-            {/* Download Button */}
             <Button
               type="button"
               overrideClasses
               onClick={handleDownloadPDF}
               disabled={isGeneratingPDF}
-              className="
-              h-[47px]
-              px-[40px]
-              rounded-[100px]
-              text-white
-              text-[16px]
-              font-semibold
-              flex items-center justify-center gap-[10px]
-              disabled:opacity-50 disabled:cursor-not-allowed
-              bg-[linear-gradient(90.59deg,#5383DA_0%,#2351A3_50%,#081326_100%)]
-            "
+              className="flex h-[52px] w-full flex-1 items-center justify-center rounded-xl bg-[#2351A3] text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-[#1c4594] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isGeneratingPDF ? "Generating PDF..." : "Download your ticket"}
             </Button>

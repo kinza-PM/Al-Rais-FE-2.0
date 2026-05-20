@@ -6,6 +6,8 @@ type Props = {
     open: boolean;
     onToggleOpen: () => void;
     trip?: any;
+    /** Figma booking review: 12px radius, single border weight, no drop shadow. */
+    cardTone?: "default" | "review";
     ancillarySummary?: {
         totalAmount: number;
         currency: string;
@@ -73,7 +75,7 @@ function shouldShowInfantPassengerGroup(pg: {
     return Math.abs(Number(pg.groupTotal) || 0) >= 0.005;
 }
 
-export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancillarySummary }: Props) {
+export default function FLightPriceBreakdown({ open, onToggleOpen, trip, cardTone = "default", ancillarySummary }: Props) {
     const fare = trip?.fare ?? trip?.financials?.fare ?? null;
     const fareBreakdown = Array.isArray(fare?.fareBreakdown) ? fare.fareBreakdown : fare?.fareBreakdown ?? [];
     const currency = fare?.currencyCode ?? fare?.currency ?? "USD";
@@ -243,9 +245,14 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
     const hasAncillary = ancillaryTotal > 0 || breakdown.length > 0;
     const total = baseTotal + ancillaryTotal;
 
+    const shellTone =
+        cardTone === "review"
+            ? "mt-6 rounded-[12px] border border-[#E4E4E7] bg-white w-full max-w-full"
+            : "mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm w-full max-w-full";
+
     return (
-        <div className="mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm w-full max-w-full">
-            <div className="flex items-center justify-between px-4 py-3 border-b-[1.5px] border-[#E4E4E7]">
+        <div className={shellTone}>
+            <div className={`flex items-center justify-between border-b-[1.5px] border-[#E4E4E7] ${cardTone === "review" ? "px-5 py-4" : "px-4 py-3"}`}>
                 <div className="text-[16px] font-semibold text-[#0A0C0F]">Price breakdown</div>
                 <CardCollapseToggle open={open} onClick={onToggleOpen} />
             </div>
@@ -432,20 +439,35 @@ export default function FLightPriceBreakdown({ open, onToggleOpen, trip, ancilla
 
             <div
                 className={[
-                    "flex items-center justify-between px-4 py-2",
-                    showCollapsedFareSummary ? "pt-3" : "",
-                ].join(" ")}
+                    "flex items-center justify-between",
+                    cardTone === "review" ? "px-5 py-4" : "px-4 py-2",
+                    showCollapsedFareSummary && cardTone !== "review"
+                        ? "pt-3"
+                        : "",
+                ]
+                    .filter(Boolean)
+                    .join(" ")}
             >
                 <span
                     className={
-                        showCollapsedFareSummary
-                            ? "text-[14px] font-normal text-[#0A0C0F]"
-                            : "text-[14px] font-normal text-[#3D495C]"
+                        cardTone === "review"
+                            ? "text-[16px] font-semibold text-[#0A0C0F]"
+                            : showCollapsedFareSummary
+                              ? "text-[14px] font-normal text-[#0A0C0F]"
+                              : "text-[14px] font-normal text-[#3D495C]"
                     }
                 >
-                    {showCollapsedFareSummary ? "Total all inclusive" : "Total"}
+                    {showCollapsedFareSummary && cardTone !== "review"
+                        ? "Total all inclusive"
+                        : "Total"}
                 </span>
-                <span className="text-[16px] font-normal text-[#0A0C0F] tabular-nums">
+                <span
+                    className={
+                        cardTone === "review"
+                            ? "text-[18px] font-semibold tabular-nums text-[#2351A3]"
+                            : "text-[16px] font-normal tabular-nums text-[#0A0C0F]"
+                    }
+                >
                     {total != null ? formatMoney(total, currency) : "—"}
                 </span>
             </div>

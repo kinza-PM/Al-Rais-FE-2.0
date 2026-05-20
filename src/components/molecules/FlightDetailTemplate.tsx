@@ -1951,7 +1951,6 @@ const FlightDetailTemplate: React.FC = () => {
           className={`bottomHeaderSetting flight-search-form-sticky${trip === "multicity" ? " flight-search-form--multicity" : ""}`}
         >
           <TravelSearchPageHeader
-            activeScope="flights"
             trip={trip}
             onTripChange={setTrip}
             flightTypeTabs={(flightTypes ?? []) as FlightTypeOption[]}

@@ -480,11 +480,12 @@ export default function UserHotelBookingsListing({
 
     let rows =
       filterStatus === "All"
-        ? bookings
-        : bookings.filter((b) => b?.status === filterStatus);
+        ? bookings.filter((b) => b != null)
+        : bookings.filter((b) => b != null && b.status === filterStatus);
 
     rows = rows.filter(
       (b) =>
+        b != null &&
         hotelBookingMatchesQuery(b, searchQuery) &&
         hotelBookingInDateRange(b, dateFrom, dateTo),
     );

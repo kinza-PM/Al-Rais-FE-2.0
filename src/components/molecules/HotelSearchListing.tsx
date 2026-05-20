@@ -517,7 +517,7 @@ const HotelSearchListing: React.FC = () => {
           ref={hotelSearchFormStickyRef}
           className="bottomHeaderSetting hotelSearchFilterCard hotel-search-form-sticky"
         >
-          <TravelSearchPageHeader activeScope="hotels" showTripSelector={false} />
+          <TravelSearchPageHeader showTripSelector={false} />
           {/* Grid (xl+): single row — View | Destination | Dates | Travellers | Nationality | Star | Search */}
           <div className="hotel-filter-grid">
             <div className="hotel-filter-view w-full min-w-0">

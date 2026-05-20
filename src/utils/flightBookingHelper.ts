@@ -694,18 +694,15 @@ export const validateReservationFlightBookingDataFields = (
     }
   }
 
-  // Email
-  // if (isEmpty(reservation?.customerInfo?.emailAddress)) {
-  //   errors["customerInfo.emailAddress"] = "Email is required.";
-  // }
+  // Email (optional — validate format only when provided)
   const emailVal = reservation?.customerInfo?.emailAddress ?? "";
-  if (isEmpty(emailVal)) {
-    errors["customerInfo.emailAddress"] = "Email is required.";
-  } else if (emailVal !== emailVal.trim()) {
-    errors["customerInfo.emailAddress"] =
-      "Remove spaces at the beginning or end of your email.";
-  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim())) {
-    errors["customerInfo.emailAddress"] = "Enter a valid email address.";
+  if (!isEmpty(emailVal)) {
+    if (emailVal !== emailVal.trim()) {
+      errors["customerInfo.emailAddress"] =
+        "Remove spaces at the beginning or end of your email.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal.trim())) {
+      errors["customerInfo.emailAddress"] = "Enter a valid email address.";
+    }
   }
 
   return errors;
@@ -770,8 +767,15 @@ export const validateReservationFlightBookingData = (
     return { valid: false, error: "City is required." };
   if (isEmpty(address.countryCode))
     return { valid: false, error: "Country is required." };
-  if (isEmpty(reservation?.customerInfo?.emailAddress))
-    return { valid: false, error: "Email is required." };
+
+  const emailVal = reservation?.customerInfo?.emailAddress ?? "";
+  const emailTrimmed = String(emailVal).trim();
+  if (
+    !isEmpty(emailTrimmed) &&
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)
+  ) {
+    return { valid: false, error: "Enter a valid email address." };
+  }
 
   return { valid: true };
 };

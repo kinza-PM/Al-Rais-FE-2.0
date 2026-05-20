@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Collapse, Modal, Tabs } from "antd";
 import BaggageInfoModal from "../common/BaggageInfoModal";
+import { baggageStringsFromAllowance } from "../../utils/baggageAllowanceDisplay";
 
 /** Strip tags for display; keep `<br>` as newlines inside the same block (not separate bullets). */
 function stripFareRuleHtmlKeepBreaks(raw: string): string {
@@ -49,6 +50,7 @@ export default function FLightFareRule({
   wideLayout,
   externalModalOpen,
   onExternalModalClose,
+  presentation = "default",
 }: {
   trip: any;
   ruleData?: any;
@@ -56,6 +58,8 @@ export default function FLightFareRule({
   wideLayout?: boolean;
   externalModalOpen?: boolean;
   onExternalModalClose?: () => void;
+  /** `review` = Figma booking review summary (four key rows + compact chrome). */
+  presentation?: "default" | "review";
 }) {
   const [baggageModalOpen, setBaggageModalOpen] = useState(false);
   const [fareRulesModalOpen, setFareRulesModalOpen] = useState(false);
@@ -199,6 +203,23 @@ export default function FLightFareRule({
     miniFarePenaltySummaries.reissue ?? "Change policy not available";
   const noShowText =
     miniFarePenaltySummaries.noShow ?? "No-show policy not available";
+
+  const checkedBaggageSummary = useMemo(() => {
+    const first =
+      segments.find(
+        (s: any) =>
+          s?.baggageAllowance &&
+          typeof s.baggageAllowance === "object" &&
+          Array.isArray(s.baggageAllowance.checkedInBaggage) &&
+          s.baggageAllowance.checkedInBaggage.length > 0,
+      ) ?? segments[0];
+    if (!first?.baggageAllowance) return "—";
+    const { baggageChecked } = baggageStringsFromAllowance(
+      first.baggageAllowance,
+    );
+    if (!baggageChecked) return "—";
+    return baggageChecked.split("·")[0]?.trim() || baggageChecked;
+  }, [segments]);
 
   const fareRuleSections = useMemo(() => {
     const fareRules = Array.isArray(sourceRule?.fareRules)
@@ -353,63 +374,113 @@ export default function FLightFareRule({
 
   return (
     <div
-      className={`mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm ${wideLayout ? "w-full max-w-full" : "max-w-[576px]"}`}
+      className={
+        presentation === "review"
+          ? `mt-0 w-full rounded-[12px] border border-[#E4E4E7] bg-white ${wideLayout ? "max-w-full" : ""}`
+          : `mt-4 rounded-[16px] border-[1.5px] border-[#E4E4E7] bg-white shadow-sm ${wideLayout ? "w-full max-w-full" : "max-w-[576px]"}`
+      }
     >
-      <div className="px-4 py-3 flex items-center justify-between">
-        <span className="text-[16px] font-semibold text-[#0A0C0F]">
-          Important fare rules
-        </span>
-        <div className="flex items-center gap-3">
-          {(mergedFareRuleSections.length > 0 || penaltyRows.length > 0) && (
-            <button
-              type="button"
-              onClick={() => setFareRulesModalOpen(true)}
-              className="text-[12px] text-[#2563EB] hover:underline cursor-pointer"
-            >
-              Show fare rules
-            </button>
-          )}
-          {hasBaggageInfo && (
-            <button
-              type="button"
-              onClick={() => setBaggageModalOpen(true)}
-              className="text-[12px] text-[#2563EB] hover:underline cursor-pointer"
-            >
-              View baggage details
-            </button>
-          )}
-        </div>
-      </div>
-      <div className="h-[1.5px] bg-[#E4E4E7]" />
-
-      <ul className="px-4 py-2 space-y-1">
-        <li className="flex items-center justify-between py-1">
-          <span className="text-[#3D495C] text-[12px]">Changes</span>
-          <span className="text-[#0A0C0F] text-[14px] font-medium">
-            {changesText}
-          </span>
-        </li>
-        <li className="flex items-center justify-between py-1">
-          <span className="text-[#3D495C] text-[12px]">Refundability</span>
-          <span className="text-[#0A0C0F] text-[14px] font-medium">
-            {refundableText}
-          </span>
-        </li>
-        <li className="flex items-center justify-between py-1">
-          <span className="text-[#3D495C] text-[12px]">No-show</span>
-          <span className="text-[#0A0C0F] text-[14px] font-medium">
-            {noShowText}
-          </span>
-        </li>
-        {/* {fare?.fareType?.farePreference && (
-          <li className="flex items-center justify-between py-1">
-            <span className="text-[#3D495C] text-[12px]">Fare preference</span>
-            <span className="text-[#0A0C0F] text-[14px] font-medium">
-              {fare.fareType.farePreference}
+      {presentation === "review" ? (
+        <>
+          <div className="border-b border-[#E4E4E7] px-5 py-4">
+            <span className="text-[16px] font-semibold text-[#0A0C0F]">
+              Important fare rules
             </span>
-          </li>
-        )} */}
-      </ul>
+          </div>
+          <ul className="m-0 list-none divide-y divide-[#E4E4E7] p-0">
+            {(
+              [
+                ["Checked baggage", checkedBaggageSummary],
+                ["Change fee", changesText],
+                ["No show penalty", noShowText],
+                ["Refund fee", refundableText],
+              ] as const
+            ).map(([label, val]) => (
+              <li
+                key={label}
+                className="flex items-start justify-between gap-6 px-5 py-3"
+              >
+                <span className="shrink-0 text-[12px] text-[#3D495C]">
+                  {label}
+                </span>
+                <span className="break-words text-right text-[14px] font-medium text-[#0A0C0F]">
+                  {val}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-[#E4E4E7] px-5 py-3">
+            {(mergedFareRuleSections.length > 0 || penaltyRows.length > 0) && (
+              <button
+                type="button"
+                onClick={() => setFareRulesModalOpen(true)}
+                className="cursor-pointer border-none bg-transparent p-0 text-[14px] font-medium text-[#2351A3] hover:underline"
+              >
+                View full fare rules
+              </button>
+            )}
+            {hasBaggageInfo && (
+              <button
+                type="button"
+                onClick={() => setBaggageModalOpen(true)}
+                className="cursor-pointer border-none bg-transparent p-0 text-[14px] font-medium text-[#2351A3] hover:underline"
+              >
+                Baggage details
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center justify-between px-4 py-3">
+            <span className="text-[16px] font-semibold text-[#0A0C0F]">
+              Important fare rules
+            </span>
+            <div className="flex items-center gap-3">
+              {(mergedFareRuleSections.length > 0 || penaltyRows.length > 0) && (
+                <button
+                  type="button"
+                  onClick={() => setFareRulesModalOpen(true)}
+                  className="cursor-pointer border-none bg-transparent p-0 text-[12px] text-[#2563EB] hover:underline"
+                >
+                  Show fare rules
+                </button>
+              )}
+              {hasBaggageInfo && (
+                <button
+                  type="button"
+                  onClick={() => setBaggageModalOpen(true)}
+                  className="cursor-pointer border-none bg-transparent p-0 text-[12px] text-[#2563EB] hover:underline"
+                >
+                  View baggage details
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="h-[1.5px] bg-[#E4E4E7]" />
+
+          <ul className="space-y-1 px-4 py-2">
+            <li className="flex items-center justify-between py-1">
+              <span className="text-[12px] text-[#3D495C]">Changes</span>
+              <span className="text-[14px] font-medium text-[#0A0C0F]">
+                {changesText}
+              </span>
+            </li>
+            <li className="flex items-center justify-between py-1">
+              <span className="text-[12px] text-[#3D495C]">Refundability</span>
+              <span className="text-[14px] font-medium text-[#0A0C0F]">
+                {refundableText}
+              </span>
+            </li>
+            <li className="flex items-center justify-between py-1">
+              <span className="text-[12px] text-[#3D495C]">No-show</span>
+              <span className="text-[14px] font-medium text-[#0A0C0F]">
+                {noShowText}
+              </span>
+            </li>
+          </ul>
+        </>
+      )}
 
       <BaggageInfoModal
         open={baggageModalOpen}

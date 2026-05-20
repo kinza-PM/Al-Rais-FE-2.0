@@ -70,7 +70,8 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       allowedHosts: [
-        "gloomily-tranquil-release.ngrok-free.dev",
+        // "gloomily-tranquil-release.ngrok-free.dev",
+        "spectroheliographic-mariko-subterrestrial.ngrok-free.dev",
       ],
       host: true,
       proxy: {

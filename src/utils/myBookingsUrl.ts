@@ -33,7 +33,7 @@ export function buildMyBookingsUrl(
   }> = {},
 ): string {
   const params = new URLSearchParams();
-  params.set("mode", opts.mode ?? "all");
+  params.set("mode", opts.mode ?? "flights");
   params.set("status", opts.status ?? "all");
   return `${MY_BOOKINGS_PATH}?${params.toString()}`;
 }

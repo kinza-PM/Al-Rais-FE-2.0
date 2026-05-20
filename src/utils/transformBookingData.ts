@@ -129,6 +129,9 @@ function calculateCountdown(createdAt: string): {
 
 // Transform a single booking from API response
 export function transformBookingItem(apiItem: any): any {
+  if (apiItem == null) {
+    return null;
+  }
   // Map status: API returns completed/active -> Confirmed, pending -> Pending, expired -> Expired
   const statusMap: Record<string, BookingStatus> = {
     expired: "Expired",
@@ -141,7 +144,7 @@ export function transformBookingItem(apiItem: any): any {
     refunded: "Cancelled",
   };
 
-  const status = statusMap[apiItem.status?.toLowerCase()] || "Pending";
+  const status = statusMap[apiItem?.status?.toLowerCase()] || "Pending";
 
   // Get journeys
   const journeys = apiItem.request?.journey || [];
@@ -298,7 +301,10 @@ export function transformBookingsResponse(apiResponse: any): any[] {
     return [];
   }
 
-  return apiResponse.items.map((item: any) => transformBookingItem(item));
+  return apiResponse.items
+    .filter((item: unknown) => item != null)
+    .map((item: any) => transformBookingItem(item))
+    .filter(Boolean);
 }
 
 // --- Hotel bookings transform ---
@@ -384,9 +390,9 @@ export function transformHotelBookingItem(apiItem: any): HotelBookingCardItem {
     refunded: "Cancelled",
   };
   const rawStatus = (
-    apiItem.status ||
-    apiItem.bookingStatus ||
-    apiItem.detail?.status ||
+    apiItem?.status ||
+    apiItem?.bookingStatus ||
+    apiItem?.detail?.status ||
     ""
   )
     .toString()
@@ -573,7 +579,9 @@ export function transformHotelBookingsResponse(
     apiResponse;
   const items = Array.isArray(raw) ? raw : [];
   try {
-    return items.map((item: any) => transformHotelBookingItem(item));
+    return items
+      .filter((item: unknown) => item != null)
+      .map((item: any) => transformHotelBookingItem(item));
   } catch {
     return [];
   }

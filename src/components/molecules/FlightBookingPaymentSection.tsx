@@ -10,7 +10,6 @@ import SEAT_ICON from "../../assets/svgs/seat.svg";
 import PLANE_ICON from "../../assets/svgs/plane.svg";
 import applePay from "../../assets/images/ApplePay (1).png";
 import googlePay from "../../assets/images/GooglePay.png";
-import shareIcon from "../../assets/svgs/share.svg";
 import secureLockIcon from "../../assets/svgs/secure-lock.svg";
 import visaIcon from "../../assets/svgs/visa.svg";
 import masterCardIcon from "../../assets/svgs/mastercard.svg";
@@ -22,7 +21,6 @@ import Tabby from "../../assets/images/tabbycard.png";
 import Tamara from "../../assets/images/tamara1.png";
 import { useEffect, useMemo, useRef, useState } from "react";
 import FLightPriceBreakdown from "../atoms/FlightPriceBreakdown";
-import CardCollapseToggle from "../common/CardCollapseToggle";
 import Button from "../atoms/Button";
 import FlightSummaryCard from "../atoms/FlightSummaryCard";
 import TailwindCustomInput from "../common/TailwindCustomInput";
@@ -62,6 +60,88 @@ import FlightBookingReviewModal from "../common/FlightBookingReviewModal";
 import { Checkbox } from "antd";
 
 type PaymentMethod = "card" | "apple" | "google";
+
+/** US states for billing "Select a state" when country is United States */
+const US_STATE_NAMES = [
+  "Alabama",
+  "Alaska",
+  "Arizona",
+  "Arkansas",
+  "California",
+  "Colorado",
+  "Connecticut",
+  "Delaware",
+  "District of Columbia",
+  "Florida",
+  "Georgia",
+  "Hawaii",
+  "Idaho",
+  "Illinois",
+  "Indiana",
+  "Iowa",
+  "Kansas",
+  "Kentucky",
+  "Louisiana",
+  "Maine",
+  "Maryland",
+  "Massachusetts",
+  "Michigan",
+  "Minnesota",
+  "Mississippi",
+  "Missouri",
+  "Montana",
+  "Nebraska",
+  "Nevada",
+  "New Hampshire",
+  "New Jersey",
+  "New Mexico",
+  "New York",
+  "North Carolina",
+  "North Dakota",
+  "Ohio",
+  "Oklahoma",
+  "Oregon",
+  "Pennsylvania",
+  "Rhode Island",
+  "South Carolina",
+  "South Dakota",
+  "Tennessee",
+  "Texas",
+  "Utah",
+  "Vermont",
+  "Virginia",
+  "Washington",
+  "West Virginia",
+  "Wisconsin",
+  "Wyoming",
+] as const;
+
+const US_STATE_SELECT_OPTIONS: Array<{
+  id: string;
+  value: string;
+  label: string;
+}> = US_STATE_NAMES.map((name) => ({
+  id: name,
+  value: name,
+  label: name,
+}));
+
+const PAY_FIELD_LABEL =
+  "mb-1.5 block text-[12px] font-medium leading-snug text-[#4B5563]";
+
+function payInputClass(hasError: boolean): string {
+  return [
+    "h-11 w-full rounded-[10px] border bg-white px-3.5 text-[14px] text-[#111827] shadow-sm placeholder:text-[#9CA3AF] transition-colors",
+    "hover:border-[#D1D5DB] focus:border-[#5383DA] focus:outline-none focus:ring-2 focus:ring-[#5383DA]/10",
+    hasError
+      ? "border-[#E65959] focus:border-[#E65959] focus:ring-red-500/10"
+      : "border-[#E5E7EB]",
+  ].join(" ");
+}
+
+/** Borderless trigger inside unified billing panel */
+const PAY_DD_INLINE =
+  "h-11 min-h-[44px] w-full rounded-none border-0 bg-transparent px-0 text-left text-[14px] text-[#111827] shadow-none ring-0 focus:ring-0 focus:ring-offset-0";
 
 const toCents = (value: number | string) => {
   const raw =
@@ -137,7 +217,6 @@ export default function FlightBookingPaymentSection({
 }: FlightBookingPaymentSectionProps) {
   const [payMethod, setPayMethod] = useState<PaymentMethod>("card");
   const nonCardPaymentsDisabled = true;
-  const [openAddress, setOpenAddress] = useState(true);
   const [openPrice, setOpenPrice] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -195,6 +274,7 @@ export default function FlightBookingPaymentSection({
   const baseTotal = typeof baseTotalRaw === "number" ? baseTotalRaw : 0;
   const ancillaryTotal = Number(ancillarySummary?.totalAmount || 0);
   const total = centsToAmount(toCents(baseTotal) + toCents(ancillaryTotal));
+  const flightSubtotal = centsToAmount(toCents(baseTotal));
 
   const priceFareFamily = {
     label: "Fare family",
@@ -208,6 +288,18 @@ export default function FlightBookingPaymentSection({
       ),
     [countries, reservation?.paymentDetails?.address?.countryCode],
   );
+
+  const isUnitedStates = useMemo(() => {
+    const iso2 = selectedCountry?.iso2?.toUpperCase();
+    const iso3 = String(address.countryCode ?? "").toUpperCase();
+    return iso2 === "US" || iso3 === "USA" || iso3 === "840";
+  }, [selectedCountry?.iso2, address.countryCode]);
+
+  const billingFlagSrc = useMemo(() => {
+    const iso2 = selectedCountry?.iso2?.trim();
+    if (!iso2 || !/^[A-Za-z]{2}$/.test(iso2)) return null;
+    return `https://flagcdn.com/24x18/${iso2.toLowerCase()}.png`;
+  }, [selectedCountry?.iso2]);
 
   const { data: citiesData, isLoading: isCitiesLoading } = useCitiesOptions(
     selectedCountry?.label || "",
@@ -602,10 +694,10 @@ export default function FlightBookingPaymentSection({
                 : "Please wait while we are fetching records..."
         }
       />
-      <div className="w-full max-w-[550px]">
+      <div className="w-full max-w-[560px] lg:max-w-[600px]">
         <FlightSummaryCard
           title="Flight details"
-          headerActionText="Review"
+          headerActionText="View all"
           onHeaderActionClick={() => setReviewOpen(true)}
           segments={segments}
           fare={priceFareFamily}
@@ -620,28 +712,25 @@ export default function FlightBookingPaymentSection({
           countries={countries}
         />
 
-        <div className="mt-6">
-          <div className="flex items-center justify-center gap-[0.45rem]">
-            {/* Pay with Card */}
+        <div className="mt-8">
+          <div className="grid grid-cols-3 gap-3 sm:flex sm:justify-center sm:gap-4">
             <Button
               type="button"
               onClick={() => setPayMethod("card")}
               aria-pressed={payMethod === "card"}
               className={[
-                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
-                "w-[102px] h-[65px] rounded-[8px] border-[1.5px]",
+                "flex min-h-[56px] w-full items-center justify-center rounded-[12px] border px-2 transition-all duration-200 sm:min-w-[140px] sm:flex-1 sm:max-w-[200px]",
                 payMethod === "card"
-                  ? "bg-[rgba(167,192,236,0.3)] text-[#2351A3] border-[#2351A3]"
-                  : "bg-white text-[#0A0C0F] border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
+                  ? "border-[#2351A3] bg-[#2351A3] text-white shadow-sm"
+                  : "border-[#E4E4E7] bg-white text-[#0A0C0F] hover:border-[#2351A3]/40",
               ].join(" ")}
               overrideClasses
             >
-              <span className="text-[12px] font-semibold text-center px-2">
+              <span className="text-center text-[13px] font-semibold leading-tight sm:text-[14px]">
                 Pay with card
               </span>
             </Button>
 
-            {/* Apple Pay */}
             <Button
               type="button"
               onClick={() => {
@@ -650,24 +739,22 @@ export default function FlightBookingPaymentSection({
               aria-pressed={payMethod === "apple"}
               disabled={nonCardPaymentsDisabled}
               className={[
-                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
-                "w-[102px] h-[65px] rounded-[8px] border-[1.5px] p-8",
+                "flex min-h-[56px] w-full items-center justify-center rounded-[12px] border p-3 transition-all duration-200 sm:min-w-[140px] sm:flex-1 sm:max-w-[200px]",
                 payMethod === "apple"
-                  ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
+                  ? "border-[#2351A3] bg-[#2351A3] shadow-sm"
                   : nonCardPaymentsDisabled
-                    ? "bg-[#F9FAFB] border-[#E4E4E7] opacity-50 cursor-not-allowed"
-                    : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
+                    ? "cursor-not-allowed border-[#E4E4E7] bg-[#F9FAFB] opacity-50"
+                    : "border-[#E4E4E7] bg-white hover:border-[#2351A3]/40",
               ].join(" ")}
               overrideClasses
             >
               <img
                 src={applePay}
                 alt="Apple Pay"
-                className="h-auto w-full object-contain"
+                className={`h-7 w-auto max-w-full object-contain ${payMethod === "apple" ? "brightness-0 invert" : ""}`}
               />
             </Button>
 
-            {/* Google Pay */}
             <Button
               type="button"
               onClick={() => {
@@ -676,379 +763,412 @@ export default function FlightBookingPaymentSection({
               aria-pressed={payMethod === "google"}
               disabled={nonCardPaymentsDisabled}
               className={[
-                "flex items-center justify-center transition-all duration-200 flex-shrink-0",
-                "w-[103px] h-[65px] rounded-[6px] border-[1.5px] p-8",
+                "flex min-h-[56px] w-full items-center justify-center rounded-[12px] border p-3 transition-all duration-200 sm:min-w-[140px] sm:flex-1 sm:max-w-[200px]",
                 payMethod === "google"
-                  ? "bg-[rgba(167,192,236,0.3)] border-[#2351A3]"
+                  ? "border-[#2351A3] bg-[#2351A3] shadow-sm"
                   : nonCardPaymentsDisabled
-                    ? "bg-[#F9FAFB] border-[#E4E4E7] opacity-50 cursor-not-allowed"
-                    : "bg-white border-[#C2CAD6] hover:border-[#5383DA] hover:shadow-sm",
+                    ? "cursor-not-allowed border-[#E4E4E7] bg-[#F9FAFB] opacity-50"
+                    : "border-[#E4E4E7] bg-white hover:border-[#2351A3]/40",
               ].join(" ")}
               overrideClasses
             >
               <img
                 src={googlePay}
                 alt="Google Pay"
-                className="h-auto w-full object-contain"
+                className={`h-7 w-auto max-w-full object-contain ${payMethod === "google" ? "brightness-0 invert" : ""}`}
               />
-            </Button>
-
-            {/* Tabby */}
-            <Button
-              type="button"
-              disabled={nonCardPaymentsDisabled}
-              style={{ width: "103px", height: "65px" }}
-              className={[
-                "flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 rounded-[6px] border-[1.5px] p-3 focus:outline-none",
-                nonCardPaymentsDisabled
-                  ? "border-[#E4E4E7] bg-[#F9FAFB] opacity-50 cursor-not-allowed"
-                  : "border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm",
-              ].join(" ")}
-              overrideClasses
-            >
-              <img
-                src={Tabby}
-                alt="Tabby"
-                style={{ width: "40px", height: "16px" }}
-                className="object-contain"
-              />
-              <span className="text-[9px] text-[#64748B] text-center">
-                Buy now pay later
-              </span>
-            </Button>
-
-            {/* Tamara */}
-            <Button
-              type="button"
-              disabled={nonCardPaymentsDisabled}
-              style={{ width: "103px", height: "65px" }}
-              className={[
-                "flex flex-col items-center justify-center gap-2 transition-all duration-200 flex-shrink-0 rounded-[6px] border-[1.5px] p-3 focus:outline-none",
-                nonCardPaymentsDisabled
-                  ? "border-[#E4E4E7] bg-[#F9FAFB] opacity-50 cursor-not-allowed"
-                  : "border-[#C2CAD6] bg-white hover:border-[#5383DA] hover:shadow-sm",
-              ].join(" ")}
-              overrideClasses
-            >
-              <img
-                src={Tamara}
-                alt="Tamara"
-                style={{ width: "40px", height: "16px" }}
-                className="object-contain"
-              />
-              <span className="text-[9px] text-[#64748B] text-center">
-                Buy now pay later
-              </span>
             </Button>
           </div>
         </div>
 
         {payMethod === "card" && (
-          <div className="mt-6">
-            <div className="rounded-xl border border-[#E4E4E7] bg-white">
-              <div className="px-3 py-3">
-                <div>
-                  <h3 className="text-[15px] font-medium text-[#0A0C0F]">
-                    Payment details
-                  </h3>
-                  <div className="mt-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[13px] text-[#3D495C]">
-                      <img
-                        alt="lock-icon"
-                        src={secureLockIcon}
-                        className="h-3.5 w-3.5"
-                      />
-                      <span>Secure payment link</span>
-                    </div>
-                    <img alt="share-icon" src={shareIcon} className="h-3 w-3" />
-                  </div>
-                </div>
-                <div className="mt-5 space-y-4">
-                  <div
-                    className={`relative w-full ${hasAttemptedValidation && validationErrors["customerInfo.emailAddress"] ? "pb-4" : ""}`}
-                  >
-                    <TailwindCustomInput
-                      type="email"
-                      placeholder="Enter an email"
-                      className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["customerInfo.emailAddress"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 text-[14px] text-[#3D495C] placeholder:text-[#C2CAD6] focus:outline-none`}
-                      label="Email"
-                      name="customerInfo.emailAddress"
-                      value={reservation?.customerInfo?.emailAddress ?? ""}
-                      onChange={(e) => {
-                        onReservationChange(e);
-                        clearFieldError("customerInfo.emailAddress");
-                      }}
-                      error={
-                        hasAttemptedValidation
-                          ? validationErrors["customerInfo.emailAddress"]
-                          : null
-                      }
+          <div className="mt-8">
+            <div className="rounded-[12px] border border-[#E5E7EB] bg-white px-5 py-6 shadow-[0_1px_3px_rgba(15,23,42,0.06)] sm:px-6 sm:py-7">
+              <div>
+                <h3 className="text-[17px] font-semibold tracking-tight text-[#111827]">
+                  Payment details
+                </h3>
+                <div className="mt-2.5 flex items-center justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2 text-[13px] leading-snug text-[#4B5563]">
+                    <img
+                      alt=""
+                      src={secureLockIcon}
+                      className="h-4 w-4 shrink-0 opacity-80"
                     />
+                    <span>Secure payment link</span>
                   </div>
-
-                  <div
-                    className={`relative w-full ${hasAttemptedValidation && validationErrors["card.number"] ? "pb-4" : ""}`}
+                  <svg
+                    className="h-4 w-4 shrink-0 text-[#5383DA]"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden
                   >
-                    <label className="mb-1 block text-[12px] text-[#3D495C]">
-                      Card number
-                    </label>
-                    <div className="relative">
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="0000 0000 0000 0000"
-                        className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["card.number"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 pr-20 text-[14px] ...`}
-                        name="number"
-                        value={cardDetails.number}
-                        onChange={handleCardFieldChange}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors["card.number"]
-                            : null
-                        }
-                      />
-                      <div className="pointer-events-none absolute inset-y-0 right-4 flex items-center gap-3">
-                        <img
-                          alt="visa-icon"
-                          src={visaIcon}
-                          className="w-4.5 h-4.5"
-                        />
-                        <img
-                          alt="mastercard-icon"
-                          src={masterCardIcon}
-                          className="w-4.5 h-4.5"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                    <path
+                      d="M10 13a5 5 0 007.07.07l3-3a5 5 0 00-7.07-7.07l-1.41 1.41"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                    <path
+                      d="M14 11a5 5 0 00-7.07-.07l-3 3a5 5 0 007.07 7.07l1.41-1.41"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </div>
+              </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
-                    <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors["card.expiry"] ? "pb-4" : ""}`}
-                    >
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="MM/YY"
-                        className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["card.expiry"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 text-[14px] ...`}
-                        name="expiry"
-                        value={cardDetails.expiryDisplay}
-                        onChange={handleCardFieldChange}
-                        maxLength={5}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors["card.expiry"]
-                            : null
-                        }
-                      />
-                    </div>
-                    <div
-                      className={`relative w-full ${hasAttemptedValidation && validationErrors["card.cvv"] ? "pb-4" : ""}`}
-                    >
-                      <TailwindCustomInput
-                        type="text"
-                        placeholder="000"
-                        className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["card.cvv"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 text-[14px] ...`}
-                        name="cvv"
-                        value={cardDetails.cvv}
-                        onChange={handleCardFieldChange}
-                        maxLength={4}
-                        error={
-                          hasAttemptedValidation
-                            ? validationErrors["card.cvv"]
-                            : null
-                        }
-                      />
-                    </div>
-                  </div>
+              <div className="mt-7 space-y-5">
+                <div
+                  className={`relative w-full ${hasAttemptedValidation && validationErrors["customerInfo.emailAddress"] ? "pb-4" : ""}`}
+                >
+                  <TailwindCustomInput
+                    type="email"
+                    placeholder="Enter an email"
+                    className={payInputClass(
+                      !!(
+                        hasAttemptedValidation &&
+                        validationErrors["customerInfo.emailAddress"]
+                      ),
+                    )}
+                    label="Email (Optional)"
+                    labelClass={PAY_FIELD_LABEL}
+                    name="customerInfo.emailAddress"
+                    value={reservation?.customerInfo?.emailAddress ?? ""}
+                    onChange={(e) => {
+                      onReservationChange(e);
+                      clearFieldError("customerInfo.emailAddress");
+                    }}
+                    error={
+                      hasAttemptedValidation
+                        ? validationErrors["customerInfo.emailAddress"]
+                        : null
+                    }
+                  />
+                </div>
 
-                  <div
-                    className={`relative w-full ${hasAttemptedValidation && validationErrors["card.holderName"] ? "pb-4" : ""}`}
-                  >
+                <div
+                  className={`relative w-full ${hasAttemptedValidation && validationErrors["card.number"] ? "pb-4" : ""}`}
+                >
+                  <label className={PAY_FIELD_LABEL}>Card number</label>
+                  <div className="relative">
                     <TailwindCustomInput
                       type="text"
-                      placeholder="Enter cardholder name"
-                      className={`h-12 w-full rounded-2xl border ${hasAttemptedValidation && validationErrors["card.holderName"] ? "border-[#E65959]" : "border-[#C2CAD6]"} px-4 text-[14px] ...`}
-                      label="Cardholder name"
-                      name="holderName"
-                      value={cardDetails.holderName}
+                      placeholder="0000 0000 0000 0000"
+                      className={`${payInputClass(
+                        !!(
+                          hasAttemptedValidation &&
+                          validationErrors["card.number"]
+                        ),
+                      )} pr-[4.5rem]`}
+                      name="number"
+                      value={cardDetails.number}
                       onChange={handleCardFieldChange}
                       error={
                         hasAttemptedValidation
-                          ? validationErrors["card.holderName"]
+                          ? validationErrors["card.number"]
+                          : null
+                      }
+                    />
+                    <div className="pointer-events-none absolute inset-y-0 right-3.5 flex items-center gap-2.5">
+                      <img
+                        alt=""
+                        src={visaIcon}
+                        className="h-[18px] w-[28px] object-contain opacity-90"
+                      />
+                      <img
+                        alt=""
+                        src={masterCardIcon}
+                        className="h-[18px] w-[28px] object-contain opacity-90"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div
+                    className={`relative w-full ${hasAttemptedValidation && validationErrors["card.expiry"] ? "pb-4" : ""}`}
+                  >
+                    <TailwindCustomInput
+                      type="text"
+                      placeholder="MM/YY"
+                      className={payInputClass(
+                        !!(
+                          hasAttemptedValidation &&
+                          validationErrors["card.expiry"]
+                        ),
+                      )}
+                      label="Expiry date"
+                      labelClass={PAY_FIELD_LABEL}
+                      name="expiry"
+                      value={cardDetails.expiryDisplay}
+                      onChange={handleCardFieldChange}
+                      maxLength={5}
+                      error={
+                        hasAttemptedValidation
+                          ? validationErrors["card.expiry"]
+                          : null
+                      }
+                    />
+                  </div>
+                  <div
+                    className={`relative w-full ${hasAttemptedValidation && validationErrors["card.cvv"] ? "pb-4" : ""}`}
+                  >
+                    <TailwindCustomInput
+                      type="text"
+                      placeholder="000"
+                      className={payInputClass(
+                        !!(
+                          hasAttemptedValidation &&
+                          validationErrors["card.cvv"]
+                        ),
+                      )}
+                      label="Security code"
+                      labelClass={PAY_FIELD_LABEL}
+                      name="cvv"
+                      value={cardDetails.cvv}
+                      onChange={handleCardFieldChange}
+                      maxLength={4}
+                      error={
+                        hasAttemptedValidation
+                          ? validationErrors["card.cvv"]
+                          : null
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div
+                  className={`relative w-full ${hasAttemptedValidation && validationErrors["card.holderName"] ? "pb-4" : ""}`}
+                >
+                  <TailwindCustomInput
+                    type="text"
+                    placeholder="Enter cardholder name"
+                    className={payInputClass(
+                      !!(
+                        hasAttemptedValidation &&
+                        validationErrors["card.holderName"]
+                      ),
+                    )}
+                    label="Cardholder name"
+                    labelClass={PAY_FIELD_LABEL}
+                    name="holderName"
+                    value={cardDetails.holderName}
+                    onChange={handleCardFieldChange}
+                    error={
+                      hasAttemptedValidation
+                        ? validationErrors["card.holderName"]
+                        : null
+                    }
+                  />
+                </div>
+
+                <div className="overflow-hidden rounded-[10px] border border-[#E5E7EB] bg-white">
+                  <div className="flex min-h-[52px] items-center gap-3 border-b border-[#E5E7EB] px-4 py-2.5 sm:px-4">
+                    {billingFlagSrc ? (
+                      <img
+                        src={billingFlagSrc}
+                        alt=""
+                        width={28}
+                        height={20}
+                        className="h-5 w-7 shrink-0 rounded-[3px] object-cover shadow-sm"
+                      />
+                    ) : (
+                      <span
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#F3F4F6] text-[10px] font-medium text-[#9CA3AF]"
+                        aria-hidden
+                      >
+                        —
+                      </span>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <CardOverlaySearchableDropdown
+                        options={
+                          countries?.map((c) => ({
+                            id: c.iso2,
+                            value: c.iso3,
+                            label: c.label,
+                          })) || []
+                        }
+                        value={address.countryCode ?? ""}
+                        onChange={(val) => {
+                          onReservationChange(
+                            "paymentDetails.address.countryCode",
+                            val,
+                          );
+                          clearFieldError("address.countryCode");
+                        }}
+                        error={
+                          hasAttemptedValidation
+                            ? validationErrors["address.countryCode"]
+                            : null
+                        }
+                        placeholder="Select a country"
+                        className={`${PAY_DD_INLINE} pl-0 pr-8 ${hasAttemptedValidation && validationErrors["address.countryCode"] ? "text-[#B91C1C]" : ""}`}
+                      />
+                    </div>
+                  </div>
+
+                  <div
+                    className={`border-b border-[#E5E7EB] px-4 py-2.5 sm:px-4 ${hasAttemptedValidation && validationErrors["address.street.0"] ? "bg-red-50/40" : ""}`}
+                  >
+                    <TailwindCustomInput
+                      type="text"
+                      placeholder="Address line 1"
+                      className="h-11 w-full border-0 bg-transparent px-0 text-[14px] text-[#111827] shadow-none placeholder:text-[#9CA3AF] ring-0 focus:border-0 focus:outline-none focus:ring-0"
+                      label="Address line 1"
+                      labelClass="sr-only"
+                      name="paymentDetails.address.street.0"
+                      value={
+                        Array.isArray(address.street)
+                          ? (address.street[0] ?? "")
+                          : ""
+                      }
+                      onChange={(e) => {
+                        onReservationChange(e);
+                        clearFieldError("address.street.0");
+                      }}
+                      error={
+                        hasAttemptedValidation
+                          ? validationErrors["address.street.0"]
                           : null
                       }
                     />
                   </div>
 
-                  <div className="rounded-xl border border-[#C2CAD6] overflow-hidden">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => setOpenAddress((v) => !v)}
-                      onKeyDown={(e) =>
-                        (e.key === "Enter" || e.key === " ") &&
-                        setOpenAddress((v) => !v)
-                      }
-                      className="flex h-12 w-full items-center justify-between bg-white px-3"
-                    >
-                      <span className="flex items-center gap-3 text-[15px] font-medium text-[#0A0C0F]">
-                        {/* <img
-                          src={FlagUae}
-                          alt="usa-flag"
-                          className="h-6 w-6 rounded-full"
-                        /> */}
-                        {/* <span>United Arab Emirates</span> */}
-                        {selectedCountry?.label || "Select a country"}
-                      </span>
-
-                      <CardCollapseToggle
-                        open={openAddress}
-                        onClick={() => { }}
-                        className="pointer-events-none"
+                  <div className="border-b border-[#E5E7EB] px-4 py-2 sm:px-4">
+                    {isUnitedStates ? (
+                      <CardOverlaySearchableDropdown
+                        options={US_STATE_SELECT_OPTIONS}
+                        value={String(
+                          (address as { stateProvince?: string })
+                            .stateProvince ?? "",
+                        )}
+                        onChange={(val) => {
+                          onReservationChange(
+                            "paymentDetails.address.stateProvince",
+                            val,
+                          );
+                        }}
+                        placeholder="Select a state"
+                        className={`${PAY_DD_INLINE} pl-0 pr-8`}
                       />
-                    </div>
-
-                    {openAddress && (
-                      <div className="border-t border-[#E4E4E7]" />
+                    ) : (
+                      <TailwindCustomInput
+                        type="text"
+                        placeholder="State or province"
+                        className="h-11 w-full border-0 bg-transparent px-0 text-[14px] text-[#111827] shadow-none placeholder:text-[#9CA3AF] ring-0 focus:border-0 focus:outline-none focus:ring-0"
+                        label="State or province"
+                        labelClass="sr-only"
+                        name="paymentDetails.address.stateProvince"
+                        value={String(
+                          (address as { stateProvince?: string })
+                            .stateProvince ?? "",
+                        )}
+                        onChange={(e) => {
+                          onReservationChange(e);
+                        }}
+                      />
                     )}
+                  </div>
 
+                  <div className="grid grid-cols-2 divide-x divide-[#E5E7EB]">
                     <div
-                      className={[
-                        "grid transition-[grid-template-rows,opacity] duration-200 ease-out",
-                        openAddress
-                          ? "grid-rows-[1fr] opacity-100"
-                          : "grid-rows-[0fr] opacity-0",
-                      ].join(" ")}
+                      className={`px-4 py-3 sm:px-4 ${hasAttemptedValidation && validationErrors["address.cityName"] ? "bg-red-50/40" : ""}`}
                     >
-                      <div className="overflow-hidden">
-                        <div className="divide-y divide-[#E4E4E7]">
-                          <div
-                            className={`relative px-3 ${hasAttemptedValidation && validationErrors["address.street.0"] ? "border border-[#E65959]" : ""}`}
-                          >
-                            <TailwindCustomInput
-                              type="text"
-                              placeholder="Address line 1"
-                              className={`h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none border-[#C2CAD6]`}
-                              name="paymentDetails.address.street.0"
-                              value={
-                                Array.isArray(address.street)
-                                  ? (address.street[0] ?? "")
-                                  : ""
-                              }
-                              onChange={(e) => {
-                                onReservationChange(e);
-                                clearFieldError("address.street.0");
-                              }}
-                            />
-                          </div>
-
-                          <div className="relative">
-                            <CardOverlaySearchableDropdown
-                              options={
-                                countries?.map((c) => ({
-                                  id: c.iso2,
-                                  value: c.iso3,
-                                  label: c.label,
-                                })) || []
-                              }
-                              value={address.countryCode ?? ""}
-                              onChange={(val) => {
-                                onReservationChange(
-                                  "paymentDetails.address.countryCode",
-                                  val,
-                                );
-                                clearFieldError("address.countryCode");
-                              }}
-                              error={
-                                hasAttemptedValidation
-                                  ? validationErrors["address.countryCode"]
-                                  : null
-                              }
-                              placeholder="Select a country"
-                              className={`h-11 w-full appearance-none bg-transparent pr-6 text-sm text-[#0A0C0F] focus:outline-none px-3`}
-                            />
-                          </div>
-
-                          <div className="grid grid-cols-2">
-                            <div className="relative">
-                              <CardOverlaySearchableDropdown
-                                options={citiesData.map((c, index) => ({
-                                  id: `${index}-${c.value}`,
-                                  value: c.value,
-                                  label: c.label,
-                                }))}
-                                value={address.cityName ?? ""}
-                                onChange={(val) => {
-                                  onReservationChange(
-                                    "paymentDetails.address.cityName",
-                                    val,
-                                  );
-                                  clearFieldError("address.cityName");
-                                }}
-                                placeholder="Select a city"
-                                error={
-                                  hasAttemptedValidation
-                                    ? validationErrors["address.cityName"]
-                                    : null
-                                }
-                                className={`h-11 w-full appearance-none bg-transparent px-3 pr-8 text-sm text-[#0A0C0F] focus:outline-none`}
-                              />
-                            </div>
-                            <div
-                              className={`relative px-3 ${hasAttemptedValidation && validationErrors["address.postalCode"] ? "border border-[#E65959]" : "border-l border-[#E4E4E7]"}`}
-                            >
-                              <TailwindCustomInput
-                                type="text"
-                                placeholder="Zip code"
-                                className={`h-11 w-full bg-transparent px-0 text-sm text-[#0A0C0F] placeholder:text-[#C2CAD6] focus:outline-none`}
-                                name="paymentDetails.address.postalCode"
-                                value={address.postalCode ?? ""}
-                                onChange={(e) => {
-                                  onReservationChange(e);
-                                  clearFieldError("address.postalCode");
-                                }}
-                                error={
-                                  hasAttemptedValidation
-                                    ? validationErrors["address.postalCode"]
-                                    : null
-                                }
-                              />
-                            </div>
-                          </div>
-                        </div>
+                      <label className={PAY_FIELD_LABEL}>City</label>
+                      <div className="mt-1">
+                        <CardOverlaySearchableDropdown
+                          options={citiesData.map((c, index) => ({
+                            id: `${index}-${c.value}`,
+                            value: c.value,
+                            label: c.label,
+                          }))}
+                          value={address.cityName ?? ""}
+                          onChange={(val) => {
+                            onReservationChange(
+                              "paymentDetails.address.cityName",
+                              val,
+                            );
+                            clearFieldError("address.cityName");
+                          }}
+                          placeholder="City"
+                          error={
+                            hasAttemptedValidation
+                              ? validationErrors["address.cityName"]
+                              : null
+                          }
+                          className={`${PAY_DD_INLINE} pl-0 pr-8 ${hasAttemptedValidation && validationErrors["address.cityName"] ? "text-[#B91C1C]" : ""}`}
+                        />
                       </div>
                     </div>
-                  </div>
-
-                  <div className="mt-8 space-y-1 [font-variant-numeric:tabular-nums]">
-                    {/* <div className="flex items-center justify-between text-[15px]">
-                                            <span className="font-medium text-[#3D495C]">Subtotal</span>
-                                            <span className="font-semibold text-[#0A0C0F] text-right">$852.45</span>
-                                        </div> */}
-
-                    <div className="flex items-center justify-between">
-                      <span className="text-[15px] font-semibold text-[#3D495C]">
-                        Total
-                      </span>
-                      <span className="text-[22px] font-bold text-[#0A0C0F] text-right">
-                        {" "}
-                        {total != null ? formatMoney(total, currency) : "—"}
-                      </span>
+                    <div
+                      className={`px-4 py-3 sm:px-4 ${hasAttemptedValidation && validationErrors["address.postalCode"] ? "bg-red-50/40" : ""}`}
+                    >
+                      <TailwindCustomInput
+                        type="text"
+                        placeholder="Zip code"
+                        className="mt-1 h-11 w-full border-0 bg-transparent px-0 text-[14px] text-[#111827] shadow-none placeholder:text-[#9CA3AF] ring-0 focus:border-0 focus:outline-none focus:ring-0"
+                        label="Zip code"
+                        labelClass={PAY_FIELD_LABEL}
+                        name="paymentDetails.address.postalCode"
+                        value={address.postalCode ?? ""}
+                        onChange={(e) => {
+                          onReservationChange(e);
+                          clearFieldError("address.postalCode");
+                        }}
+                        error={
+                          hasAttemptedValidation
+                            ? validationErrors["address.postalCode"]
+                            : null
+                        }
+                      />
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-2 space-y-1.5 border-t border-[#E5E7EB] pt-5 [font-variant-numeric:tabular-nums]">
+                  <div className="flex items-center justify-between text-[15px]">
+                    <span className="font-normal text-[#4B5563]">Subtotal</span>
+                    <span className="font-semibold text-[#111827]">
+                      {formatMoney(flightSubtotal, currency)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[15px] font-semibold text-[#111827]">
+                      Total
+                    </span>
+                    <span className="text-[22px] font-bold text-[#111827]">
+                      {total != null ? formatMoney(total, currency) : "—"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="-mx-1 mt-1">
+                  <FLightPriceBreakdown
+                    open={openPrice}
+                    onToggleOpen={() => setOpenPrice((v) => !v)}
+                    trip={trip.raw}
+                    cardTone="review"
+                    ancillarySummary={ancillarySummary}
+                  />
                 </div>
               </div>
             </div>
           </div>
         )}
 
-        <FLightPriceBreakdown
-          open={openPrice}
-          onToggleOpen={() => setOpenPrice((v) => !v)}
-          trip={trip.raw}
-          ancillarySummary={ancillarySummary}
-        />
+        {payMethod !== "card" && (
+          <FLightPriceBreakdown
+            open={openPrice}
+            onToggleOpen={() => setOpenPrice((v) => !v)}
+            trip={trip.raw}
+            ancillarySummary={ancillarySummary}
+          />
+        )}
 
-        <div className="mt-2">
+        <div className="mt-6">
           <Checkbox
             checked={isTermsChecked}
             onChange={(e) => {
@@ -1062,7 +1182,7 @@ export default function FlightBookingPaymentSection({
             <span className="font-medium text-sm leading-none tracking-normal align-middle">
               I agree to the{" "}
               <span
-                className="text-[#5383DA] cursor-pointer hover:underline"
+                className="cursor-pointer text-[#5383DA] hover:underline"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -1075,32 +1195,19 @@ export default function FlightBookingPaymentSection({
             </span>
           </Checkbox>
           {showTermsError && (
-            <p className="text-red-500 text-xs mt-1">
+            <p className="mt-1 text-xs text-red-500">
               You must agree to the Terms & Conditions to proceed.
             </p>
           )}
         </div>
 
-        <div className="mt-16 px-5 flex flex-col items-center">
+        <div className="mt-8 flex w-full flex-col items-stretch sm:items-center">
           <Button
             type="button"
-            style={{
-              background:
-                "linear-gradient(90.59deg, #5383DA 0%, #2351A3 50%, #081326 100%)",
-            }}
-            className={`
-    w-[252px]
-    h-[47px]
-    rounded-[100px]
-    py-[14px]
-    px-[40px]
-    text-[#F2F2F3]
-    text-[16px]
-    font-semibold
-    flex items-center justify-center gap-3
-    transition-all duration-300
-    ${isPayButtonLoading ? "cursor-not-allowed opacity-90" : ""}
-  `}
+            className={[
+              "flex h-[52px] w-full items-center justify-center gap-3 rounded-lg bg-[#2351A3] px-6 text-[16px] font-semibold text-white shadow-sm transition-colors hover:bg-[#1c4594]",
+              isPayButtonLoading ? "cursor-not-allowed opacity-90" : "",
+            ].join(" ")}
             overrideClasses
             disabled={isPayButtonLoading}
             onClick={generatePayfortPaymentTokenization}
@@ -1130,21 +1237,33 @@ export default function FlightBookingPaymentSection({
             <span>{getPayButtonText()}</span>
           </Button>
 
-          <div className="mt-6 text-center text-[12px] text-[#3D495C]">
-            Secure payments by Al Rais •{" "}
-            <span
-              className="cursor-pointer hover:text-[#2351A3] hover:underline"
-              onClick={() => setLegalModal({ isOpen: true, type: "terms" })}
-            >
-              Terms
-            </span>{" "}
-            •{" "}
-            <span
+          <div className="mt-6 flex w-full flex-col items-center gap-3">
+            <p className="text-center text-[13px] text-[#3D495C]">
+              Buy now, pay later with:
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-8 opacity-90">
+              <img
+                src={Tabby}
+                alt="Tabby"
+                className="h-6 w-auto max-w-[120px] object-contain"
+              />
+              <img
+                src={Tamara}
+                alt="Tamara"
+                className="h-6 w-auto max-w-[120px] object-contain"
+              />
+            </div>
+          </div>
+
+          <div className="mt-8 text-center text-[12px] text-[#3D495C]">
+            Secure payments by Al Rais Travel ·{" "}
+            <button
+              type="button"
               className="cursor-pointer hover:text-[#2351A3] hover:underline"
               onClick={() => setLegalModal({ isOpen: true, type: "privacy" })}
             >
               Privacy
-            </span>
+            </button>
           </div>
         </div>
       </div>

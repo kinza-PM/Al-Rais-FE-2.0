@@ -353,6 +353,9 @@ function normalizeFlightBookingStatus(raw: unknown): BookingStatus {
 }
 
 function BookingCard({ booking }: { booking: any }) {
+  if (booking == null) {
+    return null;
+  }
   const status = normalizeFlightBookingStatus(booking.status);
   const isExpired = status === "Expired";
   const isCancelled = status === "Cancelled";
@@ -748,11 +751,14 @@ export default function UserBookingsListing({
     let rows = bookings;
     if (filterStatus !== "All") {
       rows = rows.filter(
-        (b) => normalizeFlightBookingStatus(b.status) === filterStatus,
+        (b) =>
+          b != null &&
+          normalizeFlightBookingStatus(b.status) === filterStatus,
       );
     }
     rows = rows.filter(
       (b) =>
+        b != null &&
         flightBookingMatchesQuery(b, searchQuery) &&
         flightBookingInDateRange(b, dateFrom, dateTo),
     );
