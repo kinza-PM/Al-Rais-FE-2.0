@@ -156,11 +156,11 @@ const FlightTimingAndStops: React.FC<FlightTimingAndStopsProps> = ({
                 </span>
               </>
             ) : (
-              <div className="stopsDetail">
+              <div className="stopsDetail" style={{ marginTop: "15px" }}>
                 {listingStyle ? null : (
                   <span>{durationLabel || rawDuration}</span>
                 )}
-                <div className=""></div>
+                <div className="" aria-hidden />
                 <span>Direct</span>
               </div>
             )}
